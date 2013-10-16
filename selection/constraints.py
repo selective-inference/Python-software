@@ -22,7 +22,7 @@ class constraint(object):
             else:
                 dim_equality = self.equality.shape[0]
         else:
-            self.equality = self.equality_offset = None
+            self.equality = self.equality_offset = dim_equality = None
 
         if inequality is not None:
             self.inequality, self.inequality_offset = \
@@ -32,11 +32,18 @@ class constraint(object):
             else:
                 dim_inequality = self.inequality.shape[0]
         else:
-            self.inequality = self.inequality_offset = None
+            self.inequality = self.inequality_offset = dim_inequality = None
 
-        if dim_equality != dim_inequality:
+        if ((dim_equality is not None) and
+            (dim_inequality is not None) and
+            (dim_equality != dim_inequality)):
             raise ValueError('constraint dimensions do not match')
-        self.dim = dim_equality
+
+        if dim_equality is not None:
+            self.dim = dim_equality
+        else:
+            self.dim = dim_inequality
+
         if covariance is None:
             covariance = np.identity(self.dim)
         self.covariance = covariance
@@ -104,7 +111,7 @@ def stack(*cons):
     eq_off = np.hstack(eq_off)
     return constraint((ineq, ineq_off), (eq, eq_off))
 
-def simulate_from_constraints(con, tol=1.e-3):
+def simulate_from_constraints(con, tol=1.e-3, mu=None):
     if con.equality is not None:
         V = np.linalg.pinv(con.equality)
         a = -np.dot(V, con.equality_offset)
@@ -115,6 +122,8 @@ def simulate_from_constraints(con, tol=1.e-3):
     if con.inequality is not None:
         while True:
             Z = np.dot(P, np.random.standard_normal(con.dim)) + a
+            if mu is not None:
+                Z += mu
             W = np.dot(con.inequality, Z) + con.inequality_offset  
             if np.all(W > - tol * np.fabs(W).max()):
                 break
