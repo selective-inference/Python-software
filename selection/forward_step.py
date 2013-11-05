@@ -10,6 +10,11 @@ import numpy as np
 import scipy.sparse
 from scipy.stats import norm as ndist
 
+# local imports 
+
+from .constraints import constraints
+from .chisq import quadratic_test
+
 DEBUG = False
 
 class projection(object):
@@ -47,16 +52,23 @@ class projection(object):
 
 class forward_stepwise(object):
 
-    def __init__(self, X, Y):
-        self.X = X
-        self.Y = Y
+    def __init__(self, X, Y, sigma=1.,
+                 subset=None):
+        self.sigma = sigma
+        if subset is None:
+            subset = np.ones(Y.shape[0], np.bool)
+        self.X = X[subset]
+        self.Y = Y[subset]
         self.P = [None] # residual forming projections
         self.A = None
         self.variables = []
         self.signs = []
-        self.covariance = np.identity(X.shape[0])
+        self.covariance = self.sigma**2 * np.identity(self.X.shape[0])
 
-    def step(self):
+    def __iter__(self):
+        return self
+
+    def next(self):
         """
         Take one step of forward stepwise.
         Internally, this has the effect of: 
@@ -69,7 +81,7 @@ class forward_stepwise(object):
 
         * signs are also tracked (unnecessarily for the moment) in `self.signs`
 
-        The multiplication `np.dot(self.A, gamma)` can be made more 
+        The multiplication `np.dot(self.A, eta)` can be made more 
         efficient because the projections are just a list of 
         Gram-Schmidt orthogonalized vectors.
 
@@ -127,7 +139,7 @@ class forward_stepwise(object):
         """
         return np.dot(self.A, self.Y).min() > 0
 
-    def bounds(self, gamma):
+    def bounds(self, eta):
         """
         Find implied upper and lower limits for a given
         direction of interest.
@@ -135,28 +147,44 @@ class forward_stepwise(object):
         Parameters
         ==========
 
-        gamma : `np.array(n)`
+        eta : `np.array(n)`
 
         Returns
         =======
 
         Mplus: float
-             Lower bound for $\gamma^TY$ for cone determined by `self`.
+             Lower bound for $\eta^TY$ for cone determined by `self`.
 
         V : float
-             The center $\gamma^TY$.
+             The center $\eta^TY$.
 
         Mminus : float
-             Lower bound for $\gamma^TY$ for cone determined by `self`.
+             Lower bound for $\eta^TY$ for cone determined by `self`.
 
         sigma : float
-             $\ell_2$ norm of `gamma` (assuming `self.covariance` is $I$)
+             $\ell_2$ norm of `eta` (assuming `self.covariance` is $I$)
         """
-        return interval_constraints(self.A,
-                                    np.zeros(self.A.shape[0]),
-                                    self.covariance,
-                                    self.Y,
-                                    gamma)
+
+        return self.constraints.pivots(eta, self.Y)
+
+    @property
+    def constraints(self):
+        return constraints((self.A, np.zeros(self.A.shape[0])), None,
+                           covariance=self.covariance)
+
+    # pivots we might care about
+
+    def model_pivots(self, which_step):
+        pivots = []
+        LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
+        for i in range(LSfunc.shape[0]):
+            pivots.append(self.bounds(LSfunc[i]))
+        return pivots
+
+    def model_quadratic(self, which_step):
+        LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
+        P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
+        return quadratic_test(self.Y / self.sigma, P_LS, self.constraints)
 
 def canonicalA(RX, RY, idx, sign, scale=None):
     """
@@ -212,57 +240,6 @@ def canonicalA(RX, RY, idx, sign, scale=None):
     V = np.dot(A, RX.T)
     return V
 
-def interval_constraints(support_directions, 
-                         support_offsets,
-                         covariance,
-                         observed_data, 
-                         direction_of_interest,
-                         tol = 1.e-4):
-    """
-    Given an affine cone constraint $Ax+b \geq 0$ (elementwise)
-    specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $w$, and
-    an observed Gaussian vector $Z$ with some `covariance`, this
-    function returns $w^TZ$ as well as an interval
-    bounding this value. 
-
-    The interval constructed is such that the endpoints are 
-    independent of $w^TZ$, hence the $p$-value
-    of `Kac-Rice <http://arxiv.org/abs/1308.3020>`_
-    can be used to form an exact pivot.
-
-    Parameters
-    ==========
-
-    support_directions : `np.array((q,n))`
-
-    support_offsets : `np.array(q)`
-
-    covariance : `np.array((n,n))`
-        Covariance of $Z$.
-
-    observed_data : `np.array(n)`
-        The observed $Z$.
-
-    direction_of_interest : `np.array(n)`
-        For what combination of $Z$ do we want bounds?
-
-    Returns
-    =======
-
-        Mplus: float
-             Lower bound for $\gamma^TY$ for cone determined by `self`.
-
-        V : float
-             The center $\gamma^TY$.
-
-        Mminus : float
-             Lower bound for $\gamma^TY$ for cone determined by `self`.
-
-        sigma : float
-             The covariance of this linear combination of $Z$: $\sqrt{\gamma^T S\gamma}$.
-
-    """
 
     # shorthand
     A, b, S, X, w = (support_directions,
@@ -294,25 +271,3 @@ def interval_constraints(support_directions,
     return lower_bound, V, upper_bound, sigma
 
 
-if __name__ == "__main__":
-
-    n, p = 100, 40
-    X = np.random.standard_normal((n,p))
-    X /= (X.std(0)[None,:] * np.sqrt(n))
-    
-    Y = np.random.standard_normal(100)
-    
-    FS = forward_stepwise(X, Y)
-    
-    for i in range(30):
-        FS.step()
-        if not FS.check_constraints():
-            raise ValueError('constraints not satisfied')
-
-    print 'first 30 variables selected', FS.variables
-
-    print 'M^{\pm} for the 10th selected model knowing that we performed 30 steps of forward stepwise'
-
-    LSfunc = np.linalg.pinv(X[:,FS.variables[:10]])
-    for i in range(LSfunc.shape[0]):
-        print FS.bounds(LSfunc[i])

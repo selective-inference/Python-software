@@ -16,7 +16,7 @@ def test_apply_equality():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con1 = C.constraint((A,b), (E, f))
+    con1 = C.constraints((A,b), (E, f))
     con2 = con1.impose_equality()
     con3 = con2.impose_equality()
 
@@ -40,12 +40,12 @@ def test_stack():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con1 = C.constraint((A,b), (E,f))
+    con1 = C.constraints((A,b), (E,f))
 
     A, b = np.random.standard_normal((5,30)), np.random.standard_normal(5)
     E, f = np.random.standard_normal((3,30)), np.random.standard_normal(3)
 
-    con2 = C.constraint((A,b), (E,f))
+    con2 = C.constraints((A,b), (E,f))
 
     return C.stack(con1, con2)
 
@@ -54,7 +54,7 @@ def test_simulate():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = C.constraint((A,b), (E,f))
+    con = C.constraints((A,b), (E,f))
     return con, C.simulate_from_constraints(con)
 
 def test_pivots():
@@ -62,7 +62,7 @@ def test_pivots():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = C.constraint((A,b), (E,f))
+    con = C.constraints((A,b), (E,f))
     Z = C.simulate_from_constraints(con)
     u = np.zeros(con.dim)
     u[4] = 1
@@ -73,7 +73,7 @@ def test_pivots2():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = C.constraint((A,b), (E,f))
+    con = C.constraints((A,b), (E,f))
     nsim = 10000
     u = np.zeros(con.dim)
     u[4] = 1
@@ -90,7 +90,7 @@ def test_pivots2():
 def test_chisq_central():
 
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
-    con = C.constraint((A,b), None)
+    con = C.constraints((A,b), None)
 
     nsim = 3000
     P = []
@@ -116,7 +116,7 @@ def test_chisq_noncentral():
     ncp = np.linalg.norm(mu[:3])**2
 
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
-    con = C.constraint((A,b), None)
+    con = C.constraints((A,b), None)
 
     ro.r('fncp=%f' % ncp)
     ro.r('f = function(x) {pchisq(x,3,ncp=fncp)}')

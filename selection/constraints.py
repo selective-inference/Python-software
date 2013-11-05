@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm as ndist
 from warnings import warn
 
-class constraint(object):
+class constraints(object):
 
     def __init__(self, 
                  inequality, 
@@ -63,7 +63,7 @@ class constraint(object):
             equality_linear = np.dot(M3, self.equality)
             equality_offset = np.dot(M3, self.equality_offset)
             
-            return constraint((self.inequality - equality_linear,
+            return constraints((self.inequality - equality_linear,
                                self.inequality_offset - equality_offset),
                               (self.equality, self.equality_offset),
                               independent=True)
@@ -109,7 +109,7 @@ def stack(*cons):
 
     eq = np.vstack(eq)
     eq_off = np.hstack(eq_off)
-    return constraint((ineq, ineq_off), (eq, eq_off))
+    return constraints((ineq, ineq_off), (eq, eq_off))
 
 def simulate_from_constraints(con, tol=1.e-3, mu=None):
     if con.equality is not None:
@@ -167,7 +167,7 @@ def interval_constraints(support_directions,
     sigma = np.sqrt((w*Sw).sum())
     C = np.dot(A, Sw) / sigma**2
     V = (w*X).sum()
-    RHS = (-b - np.dot(A, X) + V * C) / C
+    RHS = (-U + V * C) / C
     pos_coords = C > tol * np.fabs(C).max()
     if np.any(pos_coords):
         lower_bound = RHS[pos_coords].max()

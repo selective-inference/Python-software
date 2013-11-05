@@ -45,7 +45,7 @@ NUMPY_MIN_VERSION='1.3'
 SCIPY_MIN_VERSION = '0.5'
 CYTHON_MIN_VERSION = '0.11.1'
 
-NAME                = 'fixed_lambda'
+NAME                = 'selection'
 MAINTAINER          = "Jonathan Taylor"
 MAINTAINER_EMAIL    = ""
 DESCRIPTION         = description
