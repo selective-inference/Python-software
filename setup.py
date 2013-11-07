@@ -13,7 +13,7 @@ if os.path.exists('MANIFEST'): os.remove('MANIFEST')
 import numpy as np
 
 # Get version and release info, which is all stored in regreg/info.py
-ver_file = os.path.join('fixed_lambda', 'info.py')
+ver_file = os.path.join('selection', 'info.py')
 # Use exec for compabibility with Python 3
 exec(open(ver_file).read())
 
@@ -49,7 +49,7 @@ def main(**extra_args):
           version=VERSION,
           requires=REQUIRES,
           provides=PROVIDES,
-          packages     = ['fixed_lambda',
+          packages     = ['selection',
                           ],
           ext_modules = EXTS,
           package_data = {},
