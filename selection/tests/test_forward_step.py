@@ -1,10 +1,12 @@
 import numpy as np
-from ..forward_step import forward_stepwise
+from selection.forward_step import forward_stepwise
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
 
 def test_FS():
 
     n, p = 100, 40
-    X = np.random.standard_normal((n,p))
+    X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
     X /= (X.std(0)[None,:] * np.sqrt(n))
     
     Y = np.random.standard_normal(100) * 0.5
@@ -22,3 +24,35 @@ def test_FS():
 
     FS.model_pivots(3)
     FS.model_quadratic(3)
+
+def simulate_null():
+
+    n, p = 100, 40
+    X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    
+    Y = np.random.standard_normal(100) * 0.5
+    
+    FS = forward_stepwise(X, Y, sigma=0.5)
+    
+    for i in range(5):
+        FS.next()
+
+    return [p[-1] for p in FS.model_pivots(3)]
+
+def test_ecdf(nsim=1000):
+    
+    P = []
+    for _ in range(nsim):
+        P.append(simulate_null())
+    P = np.array(P)
+
+    ecdf1 = sm.distributions.ECDF(P[:,0])
+    ecdf2 = sm.distributions.ECDF(P[:,1])
+    ecdf3 = sm.distributions.ECDF(P[:,2])
+
+    plt.clf()
+    plt.plot(ecdf1.x, ecdf1.y, linewidth=4, color='black', label='Fixed (but random) $A$')
+    plt.plot(ecdf2.x, ecdf2.y, linewidth=4, color='purple', label='Selected $A$')
+    plt.plot(ecdf3.x, ecdf3.y, linewidth=4, color='green', label='Deterministic $A$')
+    plt.show()
