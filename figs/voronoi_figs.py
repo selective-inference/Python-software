@@ -369,6 +369,7 @@ def cone_with_slice(angles, which, fill_args={}, ax=None, label=None,
 
 if __name__ == "__main__":
 
+    Y = np.array([0.5,0.5])
     import os
 
     if os.path.exists('points.npy'):
@@ -442,7 +443,6 @@ if __name__ == "__main__":
     pyplot.clf()
 
     region = 5
-    Y = np.array([0.5,0.5])
     ax, poly, dual_rays, active_rays = cone_with_point(angles,
                                                        region,
                                                        label=r'$y$',
