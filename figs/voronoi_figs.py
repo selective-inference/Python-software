@@ -51,7 +51,7 @@ def just_hull(W, fill=True, fill_args={}, label=None, ax=None):
                        perimeter_vertices[:,1], c='gray', s=100)
         pyplot.fill(perimeter_vertices[:,0], perimeter_vertices[:,1],
                     label=label, **fill_args)
-    a.scatter(0,0, marker='+')
+    a.scatter(0,0, marker='+', c='k', s=50)
     return f, A, b, pairs, angles, perimeter 
     
 def extract_constraints(hull):
@@ -191,13 +191,15 @@ def hull_with_slice(W, fill=True, fill_args={}, label=None, ax=None,
 
     return f, A, b, pairs, angles, perimeter
 
-def hull_with_point_and_rays(W, fill=True, fill_args={}, label=None, ax=None):
+def hull_with_point_and_rays(W, fill=True, fill_args={}, label=None, ax=None,
+                             Y=None):
     
     f, A, b, pairs, angles, perimeter = hull_with_point(W,
                                                         fill=fill,
                                                         label=label,
                                                         ax=ax,
-                                                        fill_args=fill_args)
+                                                        fill_args=fill_args,
+                                                        Y=Y)
 
     a = f.gca()
     for i in range(len(pairs)):
@@ -210,13 +212,15 @@ def hull_with_point_and_rays(W, fill=True, fill_args={}, label=None, ax=None):
     
     return f, A, b, pairs, angles, perimeter 
 
-def hull_zoom(W, fill=True, fill_args={}, label=None, ax=None):
+def hull_zoom(W, fill=True, fill_args={}, label=None, ax=None,
+              Y=None):
     
     f, A, b, pairs, angles, perimeter = hull_with_point(W,
                                                         fill=fill,
                                                         label=label,
                                                         ax=ax,
-                                                        fill_args=fill_args)
+                                                        fill_args=fill_args,
+                                                        Y=Y)
 
     a = f.gca()
     for i in range(len(pairs)):
@@ -229,9 +233,8 @@ def hull_zoom(W, fill=True, fill_args={}, label=None, ax=None):
     
     return f, A, b, pairs, angles, perimeter 
     
-def cone_voronoi(angles, which=None, ax=None, fill_args={}):
+def cone_rays(angles, which=None, ax=None, fill_args={}):
     """
-    # modified from voronoi_plot_2d
 
     Plot the given Voronoi diagram in 2-D based on a set of directions
 
@@ -275,29 +278,6 @@ def cone_voronoi(angles, which=None, ax=None, fill_args={}):
 
     for ray in rays:
         ax.plot([0,ray[0]],[0,ray[1]], 'k--')
-
-#     ptp_bound = vor.points.ptp(axis=0)
-#     rays = np.zeros(points.shape)
-#     center = vor.points.mean(axis=0)
-#     for pointidx, simplex in zip(vor.ridge_points, vor.ridge_vertices):
-#         simplex = np.asarray(simplex)
-#         if np.any(simplex < 0):
-#             i = simplex[simplex >= 0][0]  # finite end Voronoi vertex
-
-#             t = vor.points[pointidx[1]] - vor.points[pointidx[0]]  # tangent
-#             t /= np.linalg.norm(t)
-#             n = np.array([-t[1], t[0]])  # normal
-
-#             midpoint = vor.points[pointidx].mean(axis=0)
-#             direction = np.sign(np.dot(midpoint - center, n)) * n
-#             far_point = vor.vertices[i] + direction * ptp_bound.max()
-
-#             ax.plot([vor.vertices[i,0], far_point[0]],
-#                     [vor.vertices[i,1], far_point[1]], 'k--')
-#             if (max(pointidx) == rays.shape[0]-1) and (min(pointidx) == 0):
-#                 rays[max(pointidx)] = far_point
-#             else:
-#                 rays[min(pointidx)] = far_point        
     
     if which is not None:
         if which < rays.shape[0]-1:
@@ -321,7 +301,7 @@ def cone_voronoi(angles, which=None, ax=None, fill_args={}):
 def cone_with_point(angles, which, fill_args={}, ax=None, label=None,
                     Y=None):
 
-    ax, poly, constraint, rays = cone_voronoi(angles, which, ax=ax, fill_args=fill_args)
+    ax, poly, constraint, rays = cone_rays(angles, which, ax=ax, fill_args=fill_args)
     eta = rays[0]
     representation = constraints((constraint, np.zeros(2)), None)
     if Y is None:
@@ -332,7 +312,7 @@ def cone_with_point(angles, which, fill_args={}, ax=None, label=None,
 def cone_with_region(angles, which, fill_args={}, ax=None, label=None,
                     Y=None):
 
-    ax, poly, constraint, rays = cone_voronoi(angles, which, ax=ax, fill_args=fill_args)
+    ax, poly, constraint, rays = cone_rays(angles, which, ax=ax, fill_args=fill_args)
     eta = rays[0]
     representation = constraints((constraint, np.zeros(2)), None)
     if Y is None:
@@ -344,7 +324,7 @@ def cone_with_region(angles, which, fill_args={}, ax=None, label=None,
 def cone_with_arrow(angles, which, fill_args={}, ax=None, label=None,
                     Y=None):
 
-    ax, poly, constraint, rays = cone_voronoi(angles, which, ax=ax, fill_args=fill_args)
+    ax, poly, constraint, rays = cone_rays(angles, which, ax=ax, fill_args=fill_args)
     eta = rays[0]
     representation = constraints((constraint, np.zeros(2)), None)
     if Y is None:
@@ -357,7 +337,7 @@ def cone_with_arrow(angles, which, fill_args={}, ax=None, label=None,
 def cone_with_slice(angles, which, fill_args={}, ax=None, label=None,
                     Y=None):
 
-    ax, poly, constraint, rays = cone_voronoi(angles, which, ax=ax, fill_args=fill_args)
+    ax, poly, constraint, rays = cone_rays(angles, which, ax=ax, fill_args=fill_args)
     eta = rays[0]
     representation = constraints((constraint, np.zeros(2)), None)
 
@@ -410,7 +390,8 @@ if __name__ == "__main__":
     f = hull_with_point(W, 
                         fill_args={'facecolor':'gray', 'alpha':0.2}, 
                         ax=f.gca(),
-                        label=r'$K$')[0]
+                        label=r'$K$',
+                        Y=Y)[0]
     f.gca().legend(**{'scatterpoints':1, 'fontsize':30, 'loc':'lower right'})
     for ext in ['.svg', '.pdf']:
         pyplot.savefig('hull_after_sampling%s' % ext)
@@ -419,7 +400,8 @@ if __name__ == "__main__":
     f = hull_with_point_and_rays(W, 
                                  fill_args={'facecolor':'gray', 'alpha':0.2}, 
                                  ax=f.gca(),
-                                 label=r'$K$')[0]
+                                 label=r'$K$',
+                                 Y=Y)[0]
 
     f.gca().legend(**legend_args)
     for ext in ['.svg', '.pdf']:
@@ -429,16 +411,18 @@ if __name__ == "__main__":
     f = hull_zoom(W, 
                   fill_args={'facecolor':'gray', 'alpha':0.2}, 
                   ax=f.gca(),
-                  label=r'$K$')[0]
+                  label=r'$K$',
+                  Y=Y)[0]
 
     for ext in ['.svg', '.pdf']:
         pyplot.savefig('hull_zoom%s' % ext)
     pyplot.clf()
 
     f = hull_with_slice(W, 
-                  fill_args={'facecolor':'gray', 'alpha':0.2}, 
-                  ax=f.gca(),
-                  label=r'$K$')[0]
+                        fill_args={'facecolor':'gray', 'alpha':0.2}, 
+                        ax=f.gca(),
+                        label=r'$K$',
+                        Y=Y)[0]
     f.gca().legend(**{'scatterpoints':1, 'fontsize':30, 'loc':'lower right'})
 
     for ext in ['.svg', '.pdf']:
@@ -452,7 +436,7 @@ if __name__ == "__main__":
                   label=r'$K$')
     pyplot.clf()
 
-    ax, poly, dual_rays, active_rays = cone_voronoi(angles)
+    ax, poly, dual_rays, active_rays = cone_rays(angles)
     for ext in ['.svg', '.pdf']:
         pyplot.savefig('cone_rays%s' % ext)
     pyplot.clf()
