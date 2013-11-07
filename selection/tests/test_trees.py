@@ -49,5 +49,27 @@ def test_tree_small():
     print A.shape
     return tree
 
-if __name__ == "__main__":
-    tree = test_tree()
+def test_null():
+    import statsmodels.api as sm
+
+    n, p = 500, 2
+    X = np.random.standard_normal((n,p))
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    
+    V = np.random.standard_normal(n)
+    P = []
+    for _ in range(100):
+        Y = np.random.standard_normal(n) * 0.5
+        Y -= Y.mean()
+    
+        tree = regression_tree(X, Y, sigma=0.5, 
+                               subset=range(495))
+        tree.grow(max_depth=3)
+        P.append(tree.pivots(V)[-1])
+
+    ecdf = sm.distributions.ECDF(P)
+    import matplotlib.pyplot as plt
+    plt.plot(ecdf.x, ecdf.y, linewidth=4, color='black', label='Fixed (but random) $A$')
+    plt.show()
+    return P
+

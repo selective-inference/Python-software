@@ -111,7 +111,7 @@ class regression_tree(BinaryTree):
         Sw = self.sigma**2 * direction # covariance is assumed 
                                        # to be $\sigma^2 I$
         sigma = np.sqrt((direction*Sw).sum())
-        print 'sigma', sigma
+
         c = []; self.evaluate_constraints(Sw, c)
         C = np.array(c) / sigma**2 # replaces np.dot(A, Sw)
 
