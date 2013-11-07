@@ -267,33 +267,37 @@ def cone_voronoi(angles, which=None, ax=None, fill_args={}):
     if ax is None:
         ax = pyplot.gca()
 
-    ptp_bound = vor.points.ptp(axis=0)
-    rays = np.zeros(points.shape)
-    center = vor.points.mean(axis=0)
-    for pointidx, simplex in zip(vor.ridge_points, vor.ridge_vertices):
-        simplex = np.asarray(simplex)
-        if np.any(simplex < 0):
-            i = simplex[simplex >= 0][0]  # finite end Voronoi vertex
-
-            t = vor.points[pointidx[1]] - vor.points[pointidx[0]]  # tangent
-            t /= np.linalg.norm(t)
-            n = np.array([-t[1], t[0]])  # normal
-
-            midpoint = vor.points[pointidx].mean(axis=0)
-            direction = np.sign(np.dot(midpoint - center, n)) * n
-            far_point = vor.vertices[i] + direction * ptp_bound.max()
-
-            ax.plot([vor.vertices[i,0], far_point[0]],
-                    [vor.vertices[i,1], far_point[1]], 'k--')
-            if (max(pointidx) == rays.shape[0]-1) and (min(pointidx) == 0):
-                rays[max(pointidx)] = far_point
-            else:
-                rays[min(pointidx)] = far_point        
-    
-    rays = np.array(rays)
+    rays = np.array([(np.cos(angle), np.sin(angle)) for angle in angles])
     for i in range(rays.shape[0]):
         rays[i] /= np.linalg.norm(rays[i])
     rays *= 100
+    
+
+    for ray in rays:
+        ax.plot([0,ray[0]],[0,ray[1]], 'k--')
+
+#     ptp_bound = vor.points.ptp(axis=0)
+#     rays = np.zeros(points.shape)
+#     center = vor.points.mean(axis=0)
+#     for pointidx, simplex in zip(vor.ridge_points, vor.ridge_vertices):
+#         simplex = np.asarray(simplex)
+#         if np.any(simplex < 0):
+#             i = simplex[simplex >= 0][0]  # finite end Voronoi vertex
+
+#             t = vor.points[pointidx[1]] - vor.points[pointidx[0]]  # tangent
+#             t /= np.linalg.norm(t)
+#             n = np.array([-t[1], t[0]])  # normal
+
+#             midpoint = vor.points[pointidx].mean(axis=0)
+#             direction = np.sign(np.dot(midpoint - center, n)) * n
+#             far_point = vor.vertices[i] + direction * ptp_bound.max()
+
+#             ax.plot([vor.vertices[i,0], far_point[0]],
+#                     [vor.vertices[i,1], far_point[1]], 'k--')
+#             if (max(pointidx) == rays.shape[0]-1) and (min(pointidx) == 0):
+#                 rays[max(pointidx)] = far_point
+#             else:
+#                 rays[min(pointidx)] = far_point        
     
     if which is not None:
         if which < rays.shape[0]-1:
