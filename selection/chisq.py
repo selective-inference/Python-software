@@ -2,8 +2,6 @@ import numpy as np
 import selection.constraints as C
 from scipy.stats import chi
 import matplotlib.pyplot as plt
-import statsmodels.api as sm
-
 
 def tangent_space(operator, y):
     """
@@ -67,6 +65,12 @@ def quadratic_test(y, operator, con):
 
 
 if __name__ == "__main__":
+
+    from warnings import warn
+    try:
+        import statsmodels.api as sm
+    except ImportError:
+        warn('unable to plot ECDF as statsmodels has not imported')
 
     def full_sim(L, b, p):
         k, q = L.shape

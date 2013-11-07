@@ -101,7 +101,7 @@ class regression_tree(BinaryTree):
         """
         u = []
         Y = np.zeros(self.n)
-        Y[self.subset] = Y
+        Y[self.subset] = self.Y
         self.evaluate_constraints(Y, u) # replaces np.dot(A, Y)
         U = np.array(u)
 
@@ -128,7 +128,18 @@ class regression_tree(BinaryTree):
         else:
             upper_bound = np.inf
 
-        pval = (ndist.cdf(upper_bound / sigma) - ndist.cdf(V / sigma)) / (ndist.cdf(upper_bound / sigma) - ndist.cdf(lower_bound / sigma))
+        # for the test, ensure that the V is positive by multiplying
+        # by sign
+        if V > 0:
+            U = upper_bound
+            L = lower_bound
+            C = V
+        else:
+            L = -upper_bound
+            U = -lower_bound
+            C = -V
+            
+        pval = (ndist.cdf(U / sigma) - ndist.cdf(C / sigma)) / (ndist.cdf(U / sigma) - ndist.cdf(L / sigma))
         return lower_bound, V, upper_bound, sigma, pval
 
 
