@@ -76,7 +76,7 @@ class isotonic(object):
         self.fitted, self.subgrad = fitted, subgrad
         self.constraints = constraints((A, np.zeros(A.shape[0])), None,
                                        covariance = self.sigma**2 * 
-                                       self.Y.shape[0])
+                                       np.identity(self.Y.shape[0]))
     
     # Various test statistics we might consider
 
@@ -97,7 +97,7 @@ class isotonic(object):
     @property
     def largest_jump(self):
         n = self.Y.shape[0]
-        D = (np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
+        D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
         Dmu = np.dot(D, self.fitted)
         jumps = np.nonzero(Dmu)[0]
         if jumps.sum() > 0:
@@ -112,10 +112,10 @@ class isotonic(object):
 
             all_constraints = np.vstack([-diffD, self.constraints.inequality])
             return interval_constraints(all_constraints, \
-                         np.zeros(all_constraints.shape[0]), 
-                         self.sigma**2 * np.identity(n),
-                         self.Y,
-                         eta)
+                             np.zeros(all_constraints.shape[0]), 
+                             self.sigma**2 * np.identity(n),
+                             self.Y,
+                             eta)
         else:
             return None
         
@@ -124,10 +124,13 @@ class isotonic(object):
         D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
         Dmu = np.dot(D, self.fitted)
         jumps = np.fabs(Dmu) > 1.0e-3 * np.fabs(Dmu).max()
+
         if jumps.sum() > 0:
+
             order_idx = np.argsort(Dmu)[::-1]
             orderedD = D[order_idx]
 
+            self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
             idx = min(idx, jumps.sum())
             A = np.dot(orderedD[:idx], self.fit_matrix)
             P_test = np.linalg.svd(A, full_matrices=0)[2] 
@@ -136,9 +139,11 @@ class isotonic(object):
             diffD = np.dot(diffD, self.fit_matrix)
 
             all_constraints = np.vstack([diffD, self.constraints.inequality])
+
             con = constraints((all_constraints, 
                                np.zeros(all_constraints.shape[0])), None,
-                              covariance = self.sigma**2 * self.Y.shape[0])
+                              covariance = self.sigma**2 * np.identity(self.Y.shape[0]))
+
             return quadratic_test(self.Y, P_test, con)
         else:
             return None
