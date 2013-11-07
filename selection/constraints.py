@@ -2,6 +2,8 @@ import numpy as np
 from scipy.stats import norm as ndist
 from warnings import warn
 
+WARNINGS = False
+
 class constraints(object):
 
     def __init__(self, 
@@ -66,6 +68,7 @@ class constraints(object):
             return constraints((self.inequality - equality_linear,
                                self.inequality_offset - equality_offset),
                               (self.equality, self.equality_offset),
+                               covariance=self.covariance,
                               independent=True)
         else:
             return self
@@ -160,7 +163,7 @@ def interval_constraints(support_directions,
                      direction_of_interest)
 
     U = np.dot(A, X) + b
-    if not np.all(U > -tol * np.fabs(U).max()):
+    if not np.all(U > -tol * np.fabs(U).max()) and WARNINGS:
         warn('constraints not satisfied: %s' % `U`)
 
     Sw = np.dot(S, w)

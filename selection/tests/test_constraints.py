@@ -1,9 +1,8 @@
 import numpy as np
-import nose.tools as nt
-import constraints as C; reload(C)
+import selection.constraints as C
 import matplotlib.pyplot as plt
 import statsmodels.api as sm 
-from scipy.stats import chi, ncx2, chi2
+from scipy.stats import chi
 
 from rpy2.robjects.packages import importr
 import rpy2.robjects as ro
