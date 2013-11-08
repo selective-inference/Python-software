@@ -118,6 +118,44 @@ class isotonic(object):
                              eta)
         else:
             return None
+
+    def sum_jumps(self, idx):
+        n = self.Y.shape[0]
+        D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
+        Dmu = np.dot(D, self.fitted)
+
+        jumps = np.fabs(Dmu) > 1.0e-3 * np.fabs(Dmu).max()
+        if jumps.sum() > 0:
+
+            idx = min(idx, jumps.sum())
+            order_idx = np.argsort(Dmu)[::-1]
+            orderedD = D[order_idx][:jumps.sum()]
+
+            self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
+            orderedD = np.dot(orderedD, self.fit_matrix)
+
+            if idx < jumps.sum():
+                A = np.zeros((orderedD.shape[0], orderedD.shape[0]))
+
+                for i in range(idx):
+                    A[i,i] = 1
+                    A[i,idx] = -1
+                for j in range(idx, A.shape[0]-1):
+                    A[j,j] = 1
+                    A[j,j+1] = -1
+                A[-1,-1] = 1
+            else:
+                A = np.identity(idx)
+
+            all_constraints = np.vstack([np.dot(A, orderedD), self.constraints.inequality])
+
+            con = constraints((all_constraints, 
+                               np.zeros(all_constraints.shape[0])), None,
+                              covariance = self.sigma**2 * np.identity(self.Y.shape[0]))
+            eta = orderedD[:idx].sum(0)
+            return con.pivots(eta, self.Y)
+        else:
+            return None
         
     def combine_jumps(self, idx):
         n = self.Y.shape[0]
