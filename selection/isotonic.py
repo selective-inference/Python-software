@@ -8,7 +8,7 @@ rpy.conversion.py2ri = numpy2ri
 
 # local imports
 
-from .constraints import constraints, interval_constraints
+from .constraints import (constraints, interval_constraints, selection_interval)
 from .chisq import quadratic_test
 
 def _isoreg(y):
@@ -89,7 +89,6 @@ class isotonic(object):
         if jumps.sum() > 0:
             first_idx = jumps.min()
             eta = D[first_idx]
-       
             return self.constraints.pivots(eta, self.Y)
         else:
             return None
@@ -103,7 +102,7 @@ class isotonic(object):
         if jumps.sum() > 0:
             max_idx = np.argmax(Dmu)
             self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
-            eta = D[max_idx]
+            eta = np.dot(D[max_idx], self.fit_matrix)
 
             diffD = D - D[max_idx]
             indices = range(diffD.shape[0])
@@ -116,6 +115,33 @@ class isotonic(object):
                              self.sigma**2 * np.identity(n),
                              self.Y,
                              eta)
+        else:
+            return None
+
+    @property
+    def largest_jump_interval(self):
+        n = self.Y.shape[0]
+        D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
+        Dmu = np.dot(D, self.fitted)
+        jumps = np.nonzero(Dmu)[0]
+        if jumps.sum() > 0:
+            max_idx = np.argmax(Dmu)
+            self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
+            eta = np.dot(D[max_idx], self.fit_matrix)
+
+            diffD = D - D[max_idx]
+            indices = range(diffD.shape[0])
+            indices.pop(max_idx)
+            diffD = np.dot(diffD[indices], self.fit_matrix)
+
+            all_constraints = np.vstack([-diffD, self.constraints.inequality])
+            return eta, selection_interval(all_constraints, \
+                             np.zeros(all_constraints.shape[0]), 
+                             self.sigma**2 * np.identity(n),
+                             self.Y,
+                             eta, dps=22,
+                             upper_target=0.95,
+                             lower_target=0.05)
         else:
             return None
 
@@ -154,6 +180,51 @@ class isotonic(object):
                               covariance = self.sigma**2 * np.identity(self.Y.shape[0]))
             eta = orderedD[:idx].sum(0)
             return con.pivots(eta, self.Y)
+        else:
+            return None
+        
+    def sum_jumps_interval(self, idx):
+        n = self.Y.shape[0]
+        D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
+        Dmu = np.dot(D, self.fitted)
+
+        jumps = np.fabs(Dmu) > 1.0e-3 * np.fabs(Dmu).max()
+        if jumps.sum() > 0:
+
+            idx = min(idx, jumps.sum())
+            order_idx = np.argsort(Dmu)[::-1]
+            orderedD = D[order_idx][:jumps.sum()]
+
+            self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
+            orderedD = np.dot(orderedD, self.fit_matrix)
+
+            if idx < jumps.sum():
+                A = np.zeros((orderedD.shape[0], orderedD.shape[0]))
+
+                for i in range(idx):
+                    A[i,i] = 1
+                    A[i,idx] = -1
+                for j in range(idx, A.shape[0]-1):
+                    A[j,j] = 1
+                    A[j,j+1] = -1
+                A[-1,-1] = 1
+            else:
+                A = np.identity(idx)
+
+            all_constraints = np.vstack([np.dot(A, orderedD), self.constraints.inequality])
+
+            con = constraints((all_constraints, 
+                               np.zeros(all_constraints.shape[0])), None,
+                              covariance = self.sigma**2 * np.identity(self.Y.shape[0]))
+            eta = orderedD[:idx].sum(0)
+            return eta, selection_interval(all_constraints, \
+                             np.zeros(all_constraints.shape[0]), 
+                             self.sigma**2 * np.identity(n),
+                             self.Y,
+                             eta, dps=22,
+                             upper_target=0.95,
+                             lower_target=0.05)
+
         else:
             return None
         
