@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.stats import norm as ndist
+from .intervals import pivot, interval
 from warnings import warn
 
 WARNINGS = False
@@ -141,7 +141,7 @@ def interval_constraints(support_directions,
                          direction_of_interest,
                          tol = 1.e-4):
     """
-    Given an affine cone constraint $Ax+b \geq 0$ (elementwise)
+    Given an affine in cone constraint $Ax+b \geq 0$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
     `support_offset`, a new direction of interest $w$, and
     an observed Gaussian vector $X$ with some `covariance`, this
@@ -182,5 +182,57 @@ def interval_constraints(support_directions,
     else:
         upper_bound = np.inf
 
-    pval = (ndist.cdf(upper_bound / sigma) - ndist.cdf(V / sigma)) / (ndist.cdf(upper_bound / sigma) - ndist.cdf(lower_bound / sigma))
+    pval = float(pivot(lower_bound, V, upper_bound, sigma, dps=15))
     return lower_bound, V, upper_bound, sigma, pval
+
+def selection_interval(support_directions, 
+                       support_offsets,
+                       covariance,
+                       observed_data, 
+                       direction_of_interest,
+                       tol = 1.e-4,
+                       dps = 100,
+                       upper_target=0.975,
+                       lower_target=0.025):
+    """
+    Given an affine in cone constraint $Ax+b \geq 0$ (elementwise)
+    specified with $A$ as `support_directions` and $b$ as
+    `support_offset`, a new direction of interest $w$, and
+    an observed Gaussian vector $X$ with some `covariance`, this
+    function returns a confidence interval
+    for $w^T\mu$.
+
+    """
+
+    # shorthand
+    A, b, S, X, w = (support_directions,
+                     support_offsets,
+                     covariance,
+                     observed_data,
+                     direction_of_interest)
+
+    U = np.dot(A, X) + b
+    if not np.all(U > -tol * np.fabs(U).max()) and WARNINGS:
+        warn('constraints not satisfied: %s' % `U`)
+
+    Sw = np.dot(S, w)
+    sigma = np.sqrt((w*Sw).sum())
+    C = np.dot(A, Sw) / sigma**2
+    V = (w*X).sum()
+    RHS = (-U + V * C) / C
+    pos_coords = C > tol * np.fabs(C).max()
+    if np.any(pos_coords):
+        lower_bound = RHS[pos_coords].max()
+    else:
+        lower_bound = -np.inf
+    neg_coords = C < -tol * np.fabs(C).max()
+    if np.any(neg_coords):
+        upper_bound = RHS[neg_coords].min()
+    else:
+        upper_bound = np.inf
+
+    _selection_interval = interval(lower_bound, V, upper_bound, sigma,
+                                   upper_target=upper_target,
+                                   lower_target=lower_target,
+                                   dps=dps)
+    return _selection_interval
