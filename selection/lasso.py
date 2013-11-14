@@ -541,6 +541,57 @@ def interval_constraint_max(Z, S, offset, tol=1.e-3,
 
     return L, Vplus, Vminus, var_star, offset_star
  
+class lasso(object):
+
+    def __init__(self, y, X, frac=0.9, sigma_epsilon=1):
+        self.y = y
+        self.X = X
+        self.frac = frac
+        self.sigma_epsilon = sigma_epsilon
+        self.lagrange = frac * np.fabs(np.dot(X.T, y)).max()
+
+    def fit(self, tol=1.e-8,
+            min_its=50):
+        """
+        self.soln only updated after self.fit
+        """
+        X, y = self.X, self.y
+        n, p = self.X.shape
+        penalty = rr.l1norm(p, lagrange=self.lagrange)
+        loss = rr.squared_error(X, y)
+        problem = rr.simple_problem(loss, penalty)
+        self._soln = problem.solve(tol=tol, min_its=min_its)
+        return self._soln
+
+    @property
+    def soln(self):
+        if not hasattr(self, "_soln"):
+            self.fit()
+        return self._soln
+
+    @property
+    def centered_test(self):
+        return fixed_pvalue_centered(self.y, 
+                                     self.X, 
+                                     self.lagrange, 
+                                     self.soln, 
+                                     sigma_epsilon=self.sigma_epsilon)[:2]
+
+    @property
+    def basic_test(self):
+        return fixed_pvalue_uncentered(self.y, 
+                                       self.X, 
+                                       self.lagrange, 
+                                       self.soln, 
+                                       sigma_epsilon=self.sigma_epsilon)[:2]
+
+
+def test_class(n=100, p=20, frac=0.9):
+    y = np.random.standard_normal(n)
+    X = np.random.standard_normal((n,p))
+    L = lasso(y,X,frac=frac)
+    return L.centered_test, L.basic_test
+
 def test(n=100, p=20, frac=0.9):
 
     y = np.random.standard_normal(n)
