@@ -5,9 +5,11 @@ def test_class(n=100, p=20, frac=0.9):
     y = np.random.standard_normal(n)
     X = np.random.standard_normal((n,p))
     L = lasso(y,X,frac=frac)
+    L.lagrange = 12
     C = L.constraints
     I = L.intervals
-    return L.centered_test, L.basic_test, L, C, I
+    P = L.active_pvalues
+    return L.centered_test, L.basic_test, L, C, I, P
 
 def test_fit_and_test(n=100, p=20, frac=0.9):
 

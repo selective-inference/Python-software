@@ -1,6 +1,7 @@
 import numpy as np
 import regreg.api as rr
-from .constraints import constraints, selection_interval
+from .constraints import (constraints, selection_interval,
+                          interval_constraints)
 from .intervals import pivot
 from scipy.stats import norm as ndist
 import warnings
@@ -446,7 +447,10 @@ class lasso(object):
                 XA = X[:,A]
                 XnotA = X[:,~A]
                 self._XAinv = XAinv = np.linalg.pinv(XA)
-                active_constraints = [(sA[:,None] * XAinv, np.zeros(sA.shape))]
+                self._SigmaA = np.dot(XAinv, XAinv.T) * self.sigma_epsilon**2
+                active_constraints = [(sA[:,None] * XAinv, 
+                                       -self.lagrange*sA*np.dot(self._SigmaA, 
+                                                                sA))]
                 PA = np.dot(XA, XAinv)
                 irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
 
@@ -499,17 +503,34 @@ class lasso(object):
         return self._intervals
 
     @property
+    def active_pvalues(self, doc="OLS intervals for active variables adjusted for selection."):
+        if not hasattr(self, "_pvals"):
+            self._pvals = []
+            C = self.constraints
+            XAinv = self._XAinv
+            for i in range(XAinv.shape[0]):
+                eta = XAinv[i]
+                _pval = interval_constraints( \
+                       C.inequality,
+                       C.inequality_offset,
+                       self._covariance,
+                       self.y,
+                       eta,
+                       two_sided=True)[-1]
+                self._pvals.append((self.active[i], _pval))
+        return self._pvals
+
+    @property
     def unadjusted_intervals(self, doc="Unadjusted OLS intervals for active variables."):
         if not hasattr(self, "_intervals_unadjusted"):
-            self.constraints # force _XAinv to be computed -- 
+            self.constraints # force self._SigmaA to be computed -- 
                              # bad use of property
             self._intervals_unadjusted = []
             XAinv = self._XAinv
-            SigmaA = np.dot(XAinv, XAinv.T) * self.sigma_epsilon**2
-            for i in range(XAinv.shape[0]):
+            for i in range(self.active.shape[0]):
                 eta = XAinv[i]
                 center = (eta*self.y).sum()
-                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(SigmaA[i,i])
+                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(self._SigmaA[i,i])
                 _interval = [center-width, center+width]
                 self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
