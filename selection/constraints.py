@@ -139,7 +139,8 @@ def interval_constraints(support_directions,
                          covariance,
                          observed_data, 
                          direction_of_interest,
-                         tol = 1.e-4):
+                         tol = 1.e-4,
+                         two_sided=False):
     """
     Given an affine in cone constraint $Ax+b \geq 0$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
@@ -191,6 +192,8 @@ def interval_constraints(support_directions,
         upper_bound = np.inf
 
     pval = float(pivot(lower_bound, V, upper_bound, sigma, dps=15))
+    if two_sided:
+        pval = 2*min(pval, 1-pval)
     return lower_bound, V, upper_bound, sigma, pval
 
 def selection_interval(support_directions, 

@@ -2,7 +2,7 @@ import numpy as np
 import regreg.api as rr
 from .constraints import constraints, selection_interval
 from .intervals import pivot
-from scipy.stats import norm
+from scipy.stats import norm as ndist
 import warnings
 
 try:
@@ -360,6 +360,10 @@ class lasso(object):
     Better to create a new instance.
 
     """
+    
+    # level for coverage is 1-alpha
+    alpha = 0.05
+
     def __init__(self, y, X, frac=0.9, sigma_epsilon=1):
         self.y = y
         self.X = X
@@ -474,7 +478,7 @@ class lasso(object):
         return self._constraints
 
     @property
-    def intervals(self, doc="OLS intervals for active variables."):
+    def intervals(self, doc="OLS intervals for active variables adjusted for selection."):
         if not hasattr(self, "_intervals"):
             self._intervals = []
             C = self.constraints
@@ -487,10 +491,29 @@ class lasso(object):
                        self._covariance,
                        self.y,
                        eta,
-                       dps=15)
+                       dps=15,
+                       upper_target=1-self.alpha/2,
+                       lower_target=self.alpha/2)
                 self._intervals.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals
+
+    @property
+    def unadjusted_intervals(self, doc="Unadjusted OLS intervals for active variables."):
+        if not hasattr(self, "_intervals_unadjusted"):
+            self.constraints # force _XAinv to be computed -- 
+                             # bad use of property
+            self._intervals_unadjusted = []
+            XAinv = self._XAinv
+            SigmaA = np.dot(XAinv, XAinv.T) * self.sigma_epsilon**2
+            for i in range(XAinv.shape[0]):
+                eta = XAinv[i]
+                center = (eta*self.y).sum()
+                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(SigmaA[i,i])
+                _interval = [center-width, center+width]
+                self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
+                                        _interval))
+        return self._intervals_unadjusted
 
 def fit_and_test(y, X, frac, sigma_epsilon=1, use_cvx=False,
                  test='centered',
