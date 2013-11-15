@@ -13,7 +13,7 @@ check.cutoffs <- function(cutoffs) {
 }
 
 negate.cutoffs <- function(cutoffs) {
-    -cutoffs[nrow(cutoffs):1,2:1]
+    -cutoffs[nrow(cutoffs):1,2:1,drop=FALSE]
 }
 
 negate.cutoffs(rbind(c(-Inf,-4),c(-3,-2),c(7,Inf)))
@@ -227,22 +227,32 @@ umau.normal <- function(x, cutoffs, sigma=1, alpha=.05, tol=1E-8) {
 x.vals <- c(seq(-20,-14,1),seq(-13,-10.4,.1),seq(-10.3,-10.06,.02),seq(-10.05,-10.01,.01),seq(-10.01,-10,.002))
 length(x.vals)
 CIs10 <- umau.normal(x.vals, two.sided.cutoff(10))
-
-
 CIsMid <- umau.normal(x.vals, rbind(c(-Inf,-10),c(-.1,.1),c(10,Inf)))
 
-pdf("UMAU.pdf",width=10)
-par(mfrow=c(1,2))
+x.vals1side <- c(seq(10.14,10.3,.01),seq(10.4,11,.1),12:15)
+CIs1side <- umau.normal(x.vals1side, t(c(10,Inf)))
+
+pdf("UMAU.pdf",width=16)
+par(mfrow=c(1,3))
+
+matplot(x.vals1side,t(CIs1side),type="l",xlim=c(-20,20),ylim=c(-23,23),
+        main=expression(S==(10*","*infinity)))
+abline(h=0,lty=2)
+abline(v=10,lty=3)
+abline(0,1,lty=3)
+
 matplot(x.vals,t(CIs10),type="l",xlim=c(-20,20),ylim=c(-23,23),
         main=expression(S==(-infinity*","*10)~U~(10*","*infinity)))
 matplot(-x.vals,t(-CIs10),type="l",add=TRUE)
 abline(h=0,lty=2)
+abline(v=c(-10,10),lty=3)
 abline(0,1,lty=3)
 
 matplot(x.vals,t(CIsMid),type="l",xlim=c(-20,20),ylim=c(-23,23),
         main=expression(S==(-infinity*","*10)~U~(-.1*","*.1)~U~(10*","*infinity)))
 matplot(-x.vals,-t(CIsMid),type="l",add=TRUE)
 abline(h=0,lty=2)
+abline(v=c(-10,10),lty=3)
 abline(0,1,lty=3)
 dev.off()
 
