@@ -1,9 +1,70 @@
-"""
-do marginal screening
+import numpy as np
+from .constraints import (constraints, selection_interval,
+                          interval_constraints)
+from .intervals import pivot
+from scipy.stats import norm as ndist
+from scipy.sparse import eye as sparse_eye
 
-do discrete local max
+def _basis_vector(j,n):
+    """
+    j-th elementary basis vector in R^n
+    """
+    e = np.zeros(n)
+    e[j] = 1.
+    return e
 
-"""
+class positive_screen(object):
+
+    alpha = 0.1
+
+    def __init__(self, Z, covariance, threshold):
+        self.Z = Z
+        self.covariance = covariance
+        self.threshold = threshold
+        self.selected = self.Z > self.threshold
+
+    @property 
+    def constraints(self):
+        if not hasattr(self, "_constraints"):
+            n = self.Z.shape[0]
+            if self.selected.sum():
+                S = np.vstack([_basis_vector(j,n) for j in 
+                               np.nonzero(self.selected)[0]])
+                self._constraints = constraints((S, -self.threshold * 
+                                                 np.ones(S.shape[0])),
+                                                None)
+            else:
+                self._constraints = None
+        return self._constraints
+
+    @property
+    def intervals(self, doc="OLS intervals for active variables adjusted for selection."):
+        if not hasattr(self, "_intervals"):
+            n = self.Z.shape[0]
+            self._intervals = []
+            C = self.constraints
+            selected_indices = np.nonzero(self.selected)[0]
+            for j in selected_indices:
+                eta = _basis_vector(j, n)
+                _interval = selection_interval( \
+                       C.inequality,
+                       C.inequality_offset,
+                       self.covariance,
+                       self.Z,
+                       eta,
+                       dps=15,
+                       upper_target=1-self.alpha/2,
+                       lower_target=self.alpha/2)
+                self._intervals.append((j, eta, (eta*self.Z).sum(), 
+                                        _interval))
+        return self._intervals
+        
+class absolute_screen(positive_screen):
+    pass
+
+# This can be used for the test and is optimized for the 
+# max constraint. 
+
 
 def interval_constraint_max(Z, S, offset, tol=1.e-3, 
                             lower_bound=None,

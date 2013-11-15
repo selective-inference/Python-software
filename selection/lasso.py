@@ -589,4 +589,4 @@ def fit_and_test(y, X, frac, sigma_epsilon=1, use_cvx=False,
         return v1, v2, v3
     else:
         raise FixedLambdaError('test must be one of ["centered", "uncentered", "both"]')
-
+_howlong = fit_and_test
