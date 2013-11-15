@@ -5,6 +5,7 @@
 */*.bbl
 */*.blg
 */*.vrb
+*/*.synctex*
 */*.toc
 */*.snm
 */*.odt
