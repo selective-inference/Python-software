@@ -2,7 +2,7 @@ import numpy as np
 import regreg.api as rr
 from .constraints import constraints, selection_interval
 from .intervals import pivot
-from scipy.stats import norm
+from scipy.stats import norm as ndist
 import warnings
 
 try:
@@ -509,7 +509,7 @@ class lasso(object):
             for i in range(XAinv.shape[0]):
                 eta = XAinv[i]
                 center = (eta*self.y).sum()
-                width = 1.95 * np.sqrt(SigmaA[i,i])
+                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(SigmaA[i,i])
                 _interval = [center-width, center+width]
                 self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
