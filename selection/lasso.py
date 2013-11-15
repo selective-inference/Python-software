@@ -492,7 +492,7 @@ class lasso(object):
                        self.y,
                        eta,
                        dps=15,
-                       upper_target=1-self.alpha/2
+                       upper_target=1-self.alpha/2,
                        lower_target=self.alpha/2)
                 self._intervals.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))

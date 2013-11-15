@@ -2,7 +2,7 @@
 Provides functions to accurately compute the pivots used in 
 `selection` as well as the capability to invert these pivots.
 
-By default, it uses `mpmath` with 100 decimal places (`mpmath.dps=100`).
+By default, it uses `mpmath` with 20 decimal places (`mpmath.dps=20`).
 
 """
 
@@ -11,8 +11,9 @@ from mpmath import mp
 from scipy.optimize import bisect
 
 DEBUG = False
+DEFAULT_DPS = 20
 
-def _CDF(a, b, dps=100):
+def _CDF(a, b, dps=DEFAULT_DPS):
     '''
     Evaluates
     $$
@@ -34,7 +35,7 @@ def _CDF(a, b, dps=100):
 
     integral : `float`
     '''
-    old_dps, mp.dps = mp.dps, 100
+    old_dps, mp.dps = mp.dps, dps
 
     if a > b:
         b, a = a, b
@@ -55,7 +56,7 @@ def _CDF(a, b, dps=100):
     mp.dps = old_dps
     return integral
 
-def pivot(Vplus, V, Vminus, sigma, delta=0, dps=100):
+def pivot(Vplus, V, Vminus, sigma, delta=0, dps=DEFAULT_DPS):
     """
     Evaluates
 
@@ -98,7 +99,7 @@ def pivot(Vplus, V, Vminus, sigma, delta=0, dps=100):
         pivot = A/(A+B)
     return pivot
 
-def solve_for_pivot(Vplus, V, Vminus, sigma, target, dps=100):
+def solve_for_pivot(Vplus, V, Vminus, sigma, target, dps=DEFAULT_DPS):
     """
     Evaluates
 
@@ -134,34 +135,52 @@ def solve_for_pivot(Vplus, V, Vminus, sigma, target, dps=100):
 
     """
 
+    maxits = 80 # stop increasing limit after this many iterations
     upper_guess = 1
     lower_guess = -1
 
     # find an upper bound
+    idx = 0
+    upper_success = False
     while True:
         test = pivot(Vplus, V, Vminus, sigma, delta=upper_guess)
         if test > target:
+            upper_success = True
             break
         upper_guess *= 1.5
+        idx += 1
+        if idx > maxits:
+            break
 
     # find a lower bound
+    idx = 0 
+    lower_success = False
     while True:
         test = pivot(Vplus, V, Vminus, sigma, delta=lower_guess)
         if test < target:
+            lower_success = True
             break
         lower_guess *= 1.5
+        idx += 1
+        if idx > maxits:
+            break
     
     anon_func = lambda D: pivot(Vplus, V, Vminus, sigma, delta=D,
                                 dps=dps) - target
-    soln = bisect(anon_func, lower_guess, upper_guess)    
-    
+    try:
+        soln = bisect(anon_func, lower_guess, upper_guess)    
+    except ValueError: # TODO figure out the error
+        if not upper_success:
+            soln = np.inf
+        else:
+            soln = -np.inf
     if DEBUG:
         print pivot(Vplus, V, Vminus, sigma, delta=soln,
                     dps=dps), target
     return soln
 
 def interval(Vplus, V, Vminus, sigma, upper_target=0.975, lower_target=0.025,
-             dps=100):
+             dps=DEFAULT_DPS):
     """
     Form an interval for the $\eta^T\mu$
     based on observing $V=\eta^TY$ and the
