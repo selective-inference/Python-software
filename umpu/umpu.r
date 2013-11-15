@@ -235,22 +235,25 @@ CIs1side <- umau.normal(x.vals1side, t(c(10,Inf)))
 pdf("UMAU.pdf",width=16)
 par(mfrow=c(1,3))
 
-matplot(x.vals1side,t(CIs1side),type="l",xlim=c(-20,20),ylim=c(-23,23),
+matplot(x.vals1side,t(CIs1side),type="l",xlim=c(-20,20),ylim=c(-23,23),lty=1,col=1,
+        xlab="Observed X", ylab="UMAU Confidence Interval",
         main=expression(S==(10*","*infinity)))
 abline(h=0,lty=2)
 abline(v=10,lty=3)
 abline(0,1,lty=3)
 
-matplot(x.vals,t(CIs10),type="l",xlim=c(-20,20),ylim=c(-23,23),
+matplot(x.vals,t(CIs10),type="l",xlim=c(-20,20),ylim=c(-23,23),lty=1,col=1,
+        xlab="Observed X", ylab="UMAU Confidence Interval",
         main=expression(S==(-infinity*","*10)~U~(10*","*infinity)))
-matplot(-x.vals,t(-CIs10),type="l",add=TRUE)
+matplot(-x.vals,t(-CIs10),type="l",lty=1,col=1,add=TRUE)
 abline(h=0,lty=2)
 abline(v=c(-10,10),lty=3)
 abline(0,1,lty=3)
 
-matplot(x.vals,t(CIsMid),type="l",xlim=c(-20,20),ylim=c(-23,23),
+matplot(x.vals,t(CIsMid),type="l",xlim=c(-20,20),ylim=c(-23,23),lty=1,col=1,
+        xlab="Observed X", ylab="UMAU Confidence Interval",
         main=expression(S==(-infinity*","*10)~U~(-.1*","*.1)~U~(10*","*infinity)))
-matplot(-x.vals,-t(CIsMid),type="l",add=TRUE)
+matplot(-x.vals,-t(CIsMid),type="l",lty=1,col=1,add=TRUE)
 abline(h=0,lty=2)
 abline(v=c(-10,10),lty=3)
 abline(0,1,lty=3)
