@@ -1,0 +1,109 @@
+\documentclass{article}
+
+
+\usepackage{graphicx,natbib}
+\usepackage{../Stats/LaTeX/mycommands}
+\usepackage{amsmath,amssymb,amsthm,bm,enumerate}
+\usepackage{latexsym,color,verbatim,minipage-marginpar,caption,multirow}
+
+\begin{document}
+
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{observation}[theorem]{Observation}
+\newtheorem{proposition}[theorem]{Proposition}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{fact}[theorem]{Fact}
+\newtheorem{assumption}[theorem]{Assumption}
+
+\renewcommand{\S}{\mathcal{S}}
+\newcommand{\FDR}{\textnormal{FDR}}
+\newcommand{\FCR}{\textnormal{FCR}}
+
+\title{UMAU Interval Computation}
+\maketitle
+
+\newcommand{\crt}{\rho}
+
+\begin{abstract}
+  This document explains how to compute UMPU rejection regions for a
+  truncated Gaussian distribution, and invert them to obtain UMAU
+  confidence intervals for $\mu$.
+\end{abstract}
+
+Let $X\sim \L(N(\mu, \sigma^2) \gv X \in S)$, for $S = \bigcup_{k=1}^K
+(a_k, b_k)$.  Without loss of generality, assume $\sigma^2 = 1$.
+
+Write
+\begin{equation}
+  p_k(\mu) = \Phi(b_k-\mu) - \Phi(a_k-\mu), \;\;\; p(\mu) =
+  \sum_{k=1}^K p_k(\mu)
+\end{equation}
+
+The density function of $X$ is
+\begin{equation}
+  f_\mu(x) = p(\mu)^{-1} \phi(x-\mu) \1\{x\in S\},
+\end{equation}
+which is a one-parameter exponential family with sufficient statistic
+$x$ and natural parameter $\mu$.  Then, according to Lehmann \&
+Romano, the UMPU acceptance region for $H_0:\,\mu_0$ is an interval $(c_1, c_2)$,
+satisfying
+\begin{align}
+  \P_{\mu_0}(c_1 \leq X \leq c_2) &= 1-\alpha\\
+  \E_{\mu_0}(X; c_1 \leq X \leq c_2) &= (1-\alpha) \E_{\mu_0} X
+\end{align}
+which can be written as
+\begin{align}
+  \int_{(c_1,c_2) \cap S} \phi(x-\mu)\,dx &= (1-\alpha) \int_S
+  \phi(x-\mu)\,dx = (1-\alpha)p, \\
+  \int_{(c_1,c_2) \cap S} x\phi(x-\mu)\,dx &= (1-\alpha) \int_S
+  x\phi(x-\mu)\,dx = m(\mu)
+\end{align}
+
+The first thing we do is to write $c_2$ implicitly as a function of
+$c_1$ (for $F_\mu(c_1) \leq \alpha$):
+\begin{equation}
+  c_2(c_1) = F_\mu^{-1}(F_\mu(c_1) + 1-\alpha)
+\end{equation}
+Note that $c_2'(c_1) = \frac{\phi(c_1-\mu)}{\phi(c_2(c_1)-\mu)}$ for $c_1, c_2 \in S$.
+
+Now, we need to solve the following:
+\begin{equation}
+  0 = g_\mu(c_1) = \int_{(c_1,c_2(c_1)) \cap S} x \phi(x-\mu)\, dx -  m(\mu)
+\end{equation}
+
+
+Next, exploiting the identity
+\begin{align}
+  \delta_\mu(a,b) &\triangleq \int_a^b x\phi(x-\mu)\,dx \\
+  &= - \phi(b-\mu) + \phi(a-\mu) +
+  \mu\left(\Phi(b-\mu)-\Phi(a-\mu)\right),
+\end{align}
+we can evaluate $g_\mu(c_1)$ with relative ease in terms of sums of $\delta_\mu(a,b)$.
+
+We can also easily evaluate first derivatives of $g_\mu$
+for $c_1, c_2(c_1) \in S$:
+\begin{align}
+  g_\mu'(c_1) &= c_2(c_1) \phi(c_2(c_1) - \mu)c_2'(c_1) - c_1\phi(c_1-\mu)\\
+  &= (c_2(c_1)-c_1) \phi(c_1-\mu) > 0
+\end{align}
+
+That is, we are just finding a root of a continuous function which is
+monotone-increasing for $c_1\in S$.
+
+The easiest way to get confidence intervals is to use bisection,
+noting that
+\begin{equation}
+  g_\mu(x) > 0 \dimp x > c_1(\mu) \dimp \mu_{\text{hi}} > \mu
+\end{equation}
+
+
+
+
+\bibliographystyle{plainnat}
+%%\bibliography{../../LaTex/biblio}
+
+\end{document}
