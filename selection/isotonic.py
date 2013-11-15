@@ -119,6 +119,35 @@ class isotonic(object):
             return None
 
     @property
+    def largest_jump_univariate(self):
+        n = self.Y.shape[0]
+        D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
+        Dmu = np.dot(D, self.fitted)
+        jumps = np.nonzero(Dmu)[0]
+        if jumps.sum() > 0:
+            max_idx = np.argmax(Dmu)
+            self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
+            eta = np.zeros(n)
+            eta[:max_idx] = 1
+            eta -= eta.mean()
+            eta /= np.linalg.norm(eta)
+
+            diffD = D - D[max_idx]
+            indices = range(diffD.shape[0])
+            indices.pop(max_idx)
+            diffD = np.dot(diffD[indices], self.fit_matrix)
+
+            all_constraints = np.vstack([-diffD, self.constraints.inequality])
+            return interval_constraints(all_constraints, \
+                             np.zeros(all_constraints.shape[0]), 
+                             self.sigma**2 * np.identity(n),
+                             self.Y,
+                             eta,
+                             two_sided=True)
+        else:
+            return None
+
+    @property
     def largest_jump_interval(self):
         n = self.Y.shape[0]
         D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
@@ -128,6 +157,36 @@ class isotonic(object):
             max_idx = np.argmax(Dmu)
             self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
             eta = np.dot(D[max_idx], self.fit_matrix)
+
+            diffD = D - D[max_idx]
+            indices = range(diffD.shape[0])
+            indices.pop(max_idx)
+            diffD = np.dot(diffD[indices], self.fit_matrix)
+
+            all_constraints = np.vstack([-diffD, self.constraints.inequality])
+            return eta, selection_interval(all_constraints, \
+                             np.zeros(all_constraints.shape[0]), 
+                             self.sigma**2 * np.identity(n),
+                             self.Y,
+                             eta, dps=22,
+                             upper_target=0.95,
+                             lower_target=0.05)
+        else:
+            return None
+
+    @property
+    def largest_jump_univariate_interval(self):
+        n = self.Y.shape[0]
+        D = -(np.identity(n) - np.diag(np.ones(n-1),1))[:-1]
+        Dmu = np.dot(D, self.fitted)
+        jumps = np.nonzero(Dmu)[0]
+        if jumps.sum() > 0:
+            max_idx = np.argmax(Dmu)
+            self.fit_matrix = self.P_active + np.ones((n,n), np.float) / n
+            eta = np.zeros(n)
+            eta[:max_idx] = 1
+            eta -= eta.mean()
+            eta /= np.linalg.norm(eta)
 
             diffD = D - D[max_idx]
             indices = range(diffD.shape[0])
