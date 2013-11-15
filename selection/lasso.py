@@ -474,7 +474,7 @@ class lasso(object):
         return self._constraints
 
     @property
-    def intervals(self, doc="OLS intervals for active variables."):
+    def intervals(self, doc="OLS intervals for active variables adjusted for selection."):
         if not hasattr(self, "_intervals"):
             self._intervals = []
             C = self.constraints
@@ -491,6 +491,23 @@ class lasso(object):
                 self._intervals.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals
+
+    @property
+    def unadjusted_intervals(self, doc="Unadjusted OLS intervals for active variables."):
+        if not hasattr(self, "_intervals_unadjusted"):
+            self.constraints # force _XAinv to be computed -- 
+                             # bad use of property
+            self._intervals_unadjusted = []
+            XAinv = self._XAinv
+            SigmaA = np.dot(XAinv, XAinv.T) * self.sigma_epsilon**2
+            for i in range(XAinv.shape[0]):
+                eta = XAinv[i]
+                center = (eta*self.y).sum()
+                width = 1.95 * np.sqrt(SigmaA[i,i])
+                _interval = [center-width, center+width]
+                self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
+                                        _interval))
+        return self._intervals_unadjusted
 
 def fit_and_test(y, X, frac, sigma_epsilon=1, use_cvx=False,
                  test='centered',
