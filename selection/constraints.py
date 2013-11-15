@@ -170,7 +170,15 @@ def interval_constraints(support_directions,
     sigma = np.sqrt((w*Sw).sum())
     C = np.dot(A, Sw) / sigma**2
     V = (w*X).sum()
-    RHS = (-U + V * C) / C
+
+    # adding the zero_coords in the denominator ensures that
+    # there are no divide-by-zero errors in RHS
+    # these coords are never used in upper_bound or lower_bound
+
+    zero_coords = C == 0
+    RHS = (-U + V * C) / (C + zero_coords)
+    RHS[zero_coords] = np.nan
+
     pos_coords = C > tol * np.fabs(C).max()
     if np.any(pos_coords):
         lower_bound = RHS[pos_coords].max()
@@ -219,7 +227,15 @@ def selection_interval(support_directions,
     sigma = np.sqrt((w*Sw).sum())
     C = np.dot(A, Sw) / sigma**2
     V = (w*X).sum()
-    RHS = (-U + V * C) / C
+
+    # adding the zero_coords in the denominator ensures that
+    # there are no divide-by-zero errors in RHS
+    # these coords are never used in upper_bound or lower_bound
+
+    zero_coords = C == 0
+    RHS = (-U + V * C) / (C + zero_coords)
+    RHS[zero_coords] = np.nan
+
     pos_coords = C > tol * np.fabs(C).max()
     if np.any(pos_coords):
         lower_bound = RHS[pos_coords].max()
