@@ -505,12 +505,20 @@ class lasso(object):
         return self._intervals
 
     @property
-    def l1norm_interval(self, doc="Interval for $s^T\beta$."):
+    def l1norm_interval(self, doc="Interval for $s^T\beta_E(\mu)$."):
         if not hasattr(self, "_l1interval"):
             self._intervals = []
             C = self.constraints
             XAinv = self._XAinv
             eta = np.dot(self.signs, XAinv)
+            if DEBUG:
+                print interval_constraints( \
+                    C.inequality,
+                    C.inequality_offset,
+                    self._covariance,
+                    self.y,
+                    eta)[:3]
+
             self._l1interval = selection_interval( \
                 C.inequality,
                 C.inequality_offset,
