@@ -446,13 +446,15 @@ class lasso(object):
             self.active = np.nonzero(nonzero_coef)[0]
             if A.sum() > 0:
                 sA = np.sign(soln[A])
+                self.signs = sA
                 XA = X[:,A]
                 XnotA = X[:,~A]
                 self._XAinv = XAinv = np.linalg.pinv(XA)
-                self._SigmaA = np.dot(XAinv, XAinv.T) * self.sigma_epsilon**2
+                self._SigmaA = np.dot(XAinv, XAinv.T)
                 active_constraints = [(sA[:,None] * XAinv, 
                                        -self.lagrange*sA*np.dot(self._SigmaA, 
                                                                 sA))]
+                self._SigmaA *=  self.sigma_epsilon**2
                 PA = np.dot(XA, XAinv)
                 irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
 
@@ -501,6 +503,22 @@ class lasso(object):
                 self._intervals.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals
+
+    @property
+    def l1norm_interval(self, doc="Interval for $s^T\beta$."):
+        if not hasattr(self, "_l1interval"):
+            self._intervals = []
+            C = self.constraints
+            XAinv = self._XAinv
+            eta = np.dot(self.signs, XAinv)
+            self._l1interval = selection_interval( \
+                C.inequality,
+                C.inequality_offset,
+                self._covariance,
+                self.y,
+                eta,
+                alpha=self.alpha)
+        return self._l1interval
 
     @property
     def active_pvalues(self, doc="OLS intervals for active variables adjusted for selection."):
