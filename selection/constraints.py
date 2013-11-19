@@ -1,5 +1,6 @@
 import numpy as np
 from .intervals import pivot, interval
+from .truncated import truncated_gaussian, UMAU_interval
 from warnings import warn
 
 WARNINGS = False
@@ -203,8 +204,7 @@ def selection_interval(support_directions,
                        direction_of_interest,
                        tol = 1.e-4,
                        dps = 100,
-                       upper_target=0.975,
-                       lower_target=0.025):
+                       alpha = 0.05):
     """
     Given an affine in cone constraint $Ax+b \geq 0$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
@@ -250,8 +250,15 @@ def selection_interval(support_directions,
     else:
         upper_bound = np.inf
 
-    _selection_interval = interval(lower_bound, V, upper_bound, sigma,
-                                   upper_target=upper_target,
-                                   lower_target=lower_target,
-                                   dps=dps)
+    truncated = truncated_gaussian([(lower_bound, upper_bound)], sigma=sigma)
+    truncated.use_R = False
+    _selection_interval = UMAU_interval(V, alpha/2, truncated)
+
+    # poor man's intervals
+    #
+    #_selection_interval = interval(lower_bound, V, upper_bound, sigma,
+    #                               upper_target=upper_target,
+    #                               lower_target=lower_target,
+    #                               dps=dps)
+
     return _selection_interval

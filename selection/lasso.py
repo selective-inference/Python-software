@@ -2,6 +2,8 @@ import numpy as np
 import regreg.api as rr
 from .constraints import (constraints, selection_interval,
                           interval_constraints)
+import selection.truncated
+
 from .intervals import pivot
 from scipy.stats import norm as ndist
 import warnings
@@ -495,9 +497,7 @@ class lasso(object):
                        self._covariance,
                        self.y,
                        eta,
-                       dps=15,
-                       upper_target=1-self.alpha/2,
-                       lower_target=self.alpha/2)
+                       alpha=self.alpha)
                 self._intervals.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals

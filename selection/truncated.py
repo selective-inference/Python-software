@@ -24,28 +24,34 @@ _Rdnorm = rpy.r("dnorm")
 _Rqnorm = rpy.r("qnorm")
 _pnorm_interval = rpy.r('pnorm.interval')
 
-def _cdf(a, b, mu=0, useR=True):
-    if not useR:
+def _cdf(a, b, mu=0, use_R=True):
+    if not use_R:
         return _CDF(a-mu,b-mu) # using mpmath
     return np.squeeze(_pnorm_interval(mu, np.array([a,b]))) # using R
 
-def _dnorm(x, useR=True):
-    if not useR:
+def _dnorm(x, use_R=True):
+    if not use_R:
+        print 'here'
         return np.array(mp.npdf(x))
     x = np.asarray(x)
     return np.asarray(_Rdnorm(x)).reshape(x.shape)
 
-def _qnorm(q, useR=True):
-    if not useR:
+def _qnorm(q, use_R=True):
+    if not use_R:
         return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
     q = np.asarray(q)
     return np.asarray(_Rqnorm(q)).reshape(q.shape)
+
+class TruncatedGaussianError(ValueError):
+    pass
 
 class truncated_gaussian(object):
     
     """
     A Gaussian distribution, truncated to
     """
+
+    use_R = True
 
     def __init__(self, intervals, mu=0, sigma=1):
         intervals = np.asarray(intervals).reshape(-1)
@@ -77,8 +83,8 @@ class truncated_gaussian(object):
     def _mu_or_sigma_changed(self):
         mu, sigma = self.mu, self.sigma
         self.P = np.array([_cdf((a-mu)/sigma, 
-                                (b-mu)/sigma) for a, b in self.intervals])
-        self.D = np.array([(_dnorm((a-mu)/sigma), _dnorm((b-mu)/sigma)) for a, b in self.intervals])
+                                (b-mu)/sigma, use_R=self.use_R) for a, b in self.intervals])
+        self.D = np.array([(_dnorm((a-mu)/sigma, use_R=self.use_R), _dnorm((b-mu)/sigma, use_R=self.use_R)) for a, b in self.intervals])
 
     # mean parameter : mu
 
@@ -146,18 +152,23 @@ class truncated_gaussian(object):
         P, mu = self.P, self.mu
         k = self.find_interval(x)
         return (P[:k].sum() + _cdf(self.intervals[k,0] - mu, 
-                                  x - mu)) / P.sum()
+                                  x - mu, use_R=self.use_R)) / P.sum()
     
     def quantile(self, q):
         P, mu = self.P, self.mu
         Psum = P.sum()
         Csum = np.cumsum(np.array([0]+list(P)))
-        k = max(np.nonzero(Csum < Psum*q)[0])
+        try:
+            k = max(np.nonzero(Csum < Psum*q)[0])
+        except ValueError:
+            if np.isnan(q):
+                raise TruncatedGaussianError('invalid quantile')
+
         pnorm_increment = Psum*q - Csum[k]
         if np.mean(self.intervals[k]) < 0:
-            return mu + _qnorm(_cdf(-np.inf,self.intervals[k,0]-mu) + pnorm_increment)
+            return mu + _qnorm(_cdf(-np.inf,self.intervals[k,0]-mu, use_R=self.use_R) + pnorm_increment, use_R=self.use_R)
         else:
-            return mu - _qnorm(_cdf(self.intervals[k,0]-mu, np.inf) - pnorm_increment)
+            return mu - _qnorm(_cdf(self.intervals[k,0]-mu, np.inf, use_R=self.use_R) - pnorm_increment, use_R=self.use_R)
         
     # make a function for vector version?
     def right_endpoint(self, left_endpoint, alpha):
@@ -197,7 +208,7 @@ class truncated_gaussian(object):
         c1 = left_endpoint # shorthand from Will's code
         D = self.D
         return (self.right_endpoint(left_endpoint, alpha) - 
-                left_endpoint) * (_dnorm((left_endpoint - self.mu) / self.sigma))
+                left_endpoint) * _dnorm((left_endpoint - self.mu) / self.sigma, use_R=self.use_R)
     
 def G(left_endpoints, mus, alpha, tg):
     """
@@ -265,16 +276,25 @@ def UMAU_interval(observed, alpha, tg,
                   mu_lo=None,
                   mu_hi=None,
                   tol=1.e-8):
-    upper = _UMAU(observed,
-                  alpha, tg,
-                  mu_lo=mu_lo,
-                  mu_hi=mu_hi,
-                  tol=tol)
+    try:
+        upper = _UMAU(observed,
+                      alpha, tg,
+                      mu_lo=mu_lo,
+                      mu_hi=mu_hi,
+                      tol=tol)
+    except TruncatedGaussianError:
+        upper = np.inf
+
     tg_neg = tg.negated
-    lower = -_UMAU(-observed,
-                  alpha, tg_neg,
-                  mu_lo=mu_hi,
-                  mu_hi=mu_lo,
-                  tol=tol)
+    try:
+
+        lower = -_UMAU(-observed,
+                      alpha, tg_neg,
+                      mu_lo=mu_hi,
+                      mu_hi=mu_lo,
+                      tol=tol)
+
+    except:
+        lower = -np.inf
 
     return lower, upper
