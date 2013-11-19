@@ -10,15 +10,36 @@ from scipy.stats import norm as ndist
 from mpmath import mp
 mp.dps = 60
 import rpy2.robjects as rpy
+from rpy2.robjects import numpy2ri
+numpy2ri.activate()
 
-def _cdf(a,b):
-    return np.array(_CDF(a,b))
+rpy.r("""
+    pnorm.interval <- function(mu, ab) {
+    ifelse(mean(ab) - mu < 0,
+           pnorm(ab[2] - mu) - pnorm(ab[1] - mu),
+           pnorm(mu - ab[1]) - pnorm(mu - ab[2]))
+}
+""")
+_Rdnorm = rpy.r("dnorm")
+_Rqnorm = rpy.r("qnorm")
+_pnorm_interval = rpy.r('pnorm.interval')
 
-def _dnorm(x):
-    return np.array(mp.npdf(x))
+def _cdf(a, b, mu=0, useR=True):
+    if not useR:
+        return _CDF(a-mu,b-mu) # using mpmath
+    return np.squeeze(_pnorm_interval(mu, np.array([a,b]))) # using R
 
-def _qnorm(q):
-    return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
+def _dnorm(x, useR=True):
+    if not useR:
+        return np.array(mp.npdf(x))
+    x = np.asarray(x)
+    return np.asarray(_Rdnorm(x)).reshape(x.shape)
+
+def _qnorm(q, useR=True):
+    if not useR:
+        return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
+    q = np.asarray(q)
+    return np.asarray(_Rqnorm(q)).reshape(q.shape)
 
 class truncated_gaussian(object):
     
@@ -47,7 +68,7 @@ class truncated_gaussian(object):
     def negated(self):
         if not hasattr(self,"_negated"):
             self._negated = truncated_gaussian(np.asarray(-self._cutoff_array[::-1]),
-                                               mu=self.mu,
+                                               mu=-self.mu,
                                                sigma=self.sigma)
         return self._negated
     
@@ -105,14 +126,14 @@ class truncated_gaussian(object):
                                   mu=mu, sigma=sigma)
     
     def __repr__(self):
-        return '''%s(%s, mu=%0.3e, sigma=%0.3e)''' % (self.__class__.name,
+        return '''%s(%s, mu=%0.3e, sigma=%0.3e)''' % (self.__class__.__name__,
                                                       self.intervals,
                                                       self.mu,
                                                       self.sigma)
 
 
     def find_interval(self, x):
-        check = (x >= self.intervals[:,0]) * (x < self.intervals[:,1])
+        check = (x >= self.intervals[:,0]) * (x <= self.intervals[:,1])
         k = np.nonzero(check)[0]
         if k.shape[0] > 1:
             raise ValueError('intervals are not disjoint: x is in %s' % `self.intervals[k]`)
@@ -124,8 +145,8 @@ class truncated_gaussian(object):
     def CDF(self, x):
         P, mu = self.P, self.mu
         k = self.find_interval(x)
-        return float(P[:k].sum() + _cdf(self.intervals[k,0] - mu, 
-                                        x - mu)) / P.sum()
+        return (P[:k].sum() + _cdf(self.intervals[k,0] - mu, 
+                                  x - mu)) / P.sum()
     
     def quantile(self, q):
         P, mu = self.P, self.mu
@@ -145,8 +166,8 @@ class truncated_gaussian(object):
         alpha1 = self.CDF(left_endpoint)
         if (alpha1 > alpha):
             return np.nan
-        alpha2 = np.array(alpha - alpha1, np.float128)
-        return self.quantile(mp.one-alpha2)
+        alpha2 = np.array(alpha - alpha1)
+        return self.quantile(1-alpha2)
             
     def G(self, left_endpoint, alpha):
         """
@@ -155,8 +176,10 @@ class truncated_gaussian(object):
         c1 = left_endpoint # shorthand from Will's code
         mu, P, D = self.mu, self.P, self.D
 
-        const = np.array(1-alpha, np.float128)*(np.sum(D[:,0]-D[:,1]) + mu*P.sum())
+        const = np.array(1-alpha)*(np.sum(D[:,0]-D[:,1]) + mu*P.sum())
         right_endpoint = self.right_endpoint(left_endpoint, alpha)
+        if np.isnan(right_endpoint):
+            return np.inf
         valid_intervals = []
         for a, b in self.intervals:
             intersection = (max(left_endpoint, a),
@@ -165,8 +188,7 @@ class truncated_gaussian(object):
                 valid_intervals.append(intersection)
         if valid_intervals:
             return truncated_gaussian(valid_intervals, mu=self.mu, sigma=self.sigma).delta.sum() - const
-        else:
-            return 0
+        return 0
 
     def dG(self, left_endpoint, alpha):
         """
@@ -209,6 +231,7 @@ def _UMAU(observed, alpha, tg,
          mu_lo=None,
          mu_hi=None,
          tol=1.e-8):
+
     tg = truncated_gaussian(tg.intervals, sigma=tg.sigma)
 
     X = observed # shorthand
@@ -226,7 +249,7 @@ def _UMAU(observed, alpha, tg,
     tg.mu = mu_hi
     while tg.G(X, alpha) > 0: # mu_too_low
         mu_lo, mu_hi = mu_hi, mu_hi + 2
-        tg.mu = mu_ho
+        tg.mu = mu_hi
 
     # bisection
     while mu_hi - mu_lo > tol:
@@ -238,3 +261,20 @@ def _UMAU(observed, alpha, tg,
             mu_lo = mu_bar
     return mu_bar
 
+def UMAU_interval(observed, alpha, tg, 
+                  mu_lo=None,
+                  mu_hi=None,
+                  tol=1.e-8):
+    upper = _UMAU(observed,
+                  alpha, tg,
+                  mu_lo=mu_lo,
+                  mu_hi=mu_hi,
+                  tol=tol)
+    tg_neg = tg.negated
+    lower = -_UMAU(-observed,
+                  alpha, tg_neg,
+                  mu_lo=mu_hi,
+                  mu_hi=mu_lo,
+                  tol=tol)
+
+    return lower, upper
