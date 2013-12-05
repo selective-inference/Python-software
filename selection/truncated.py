@@ -80,6 +80,9 @@ class truncated_gaussian(object):
     
     # private method to update P and D after a change of parameters
 
+    # WARNING: when switching self.use_R to True after it was False, it is possible P and D
+    # will be mpmath values
+
     def _mu_or_sigma_changed(self):
         mu, sigma = self.mu, self.sigma
         self.P = np.array([_cdf((a-mu)/sigma, 
@@ -144,7 +147,7 @@ class truncated_gaussian(object):
         if k.shape[0] > 1:
             raise ValueError('intervals are not disjoint: x is in %s' % `self.intervals[k]`)
         if k.shape == (0,):
-            raise ValueError('x is not in the support')
+            raise TruncatedGaussian('x is not in the support')
         k = k[0]
         return k
     
