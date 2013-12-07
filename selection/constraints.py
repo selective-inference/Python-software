@@ -10,16 +10,29 @@ class constraints(object):
     def __init__(self, 
                  inequality, 
                  equality, 
-                 independent=False,
-                 covariance=None):
+                 covariance=None,
+                 mean=None):
         """
-        Create a new inequality. If independent, then
-        it is assumed that the rows of inequality
-        and equality are independent (for a given covariance).
+        Create a new inequality. 
 
         Parameters:
         -----------
 
+        inequality : (A,b)
+            A pair specifying the inequality constraint 
+            $\{z:Az+b \geq 0\}$. Can be `None`.
+
+        equality: (C,d)
+            A pair specifing the equality constraint
+            $\{z:Cz+d=0\}$. Can be `None`.
+
+        covariance : `np.float`
+            Covariance matrix of Gaussian distribution to be 
+            truncated. Defaults to `np.identity(self.dim)`.
+
+        mean : `np.float`
+            Mean vector of Gaussian distribution to be 
+            truncated. Defaults to `np.zeros(self.dim)`.
 
         """
         if equality is not None:
@@ -56,10 +69,34 @@ class constraints(object):
             covariance = np.identity(self.dim)
         self.covariance = covariance
 
+        if mean is None:
+            mean = np.zeros(self.dim)
+        self.mean = mean
+
+    def _repr_latex_(self):
+        if self.inequality is not None and self.equality is None:
+            return """$$Z \sim N(\mu,\Sigma) | AZ+b \geq 0$$"""
+        elif self.equality is not None and self.inequality is None:
+            return """$$Z \sim N(\mu,\Sigma) | CZ+d = 0$$"""
+        else:
+            return """$$Z \sim N(\mu,\Sigma) | AZ+b \geq 0, CZ+d = 0$$"""
+
     def impose_equality(self):
         """
-        Return an equivalent constraint with the equality
+        Return an equivalent constraint with a
+        new inequality constraint which has equality
         constraint enforced.
+        
+        Let the inequality constraints be specified by
+        `(A,b)` and the inequality constraints be specified
+        by `(C,d)`. We form equivalent inequality constraints by 
+        considering the residual
+
+        .. math::
+           
+           AY - E(AY|CZ+d=0)
+
+
         """
         if self.equality is not None:
             M1 = np.dot(self.inequality, np.dot(self.covariance, 
@@ -74,8 +111,7 @@ class constraints(object):
             return constraints((self.inequality - equality_linear,
                                self.inequality_offset - equality_offset),
                               (self.equality, self.equality_offset),
-                               covariance=self.covariance,
-                              independent=True)
+                               covariance=self.covariance)
         else:
             return self
 
@@ -84,14 +120,59 @@ class constraints(object):
         Check whether Y satisfies the linear
         inequality and equality constraints.
         """
-        V1 = np.dot(self.inequality, Y) + self.inequality_offset
-        test1 = np.all(V1 > -tol * np.fabs(V1).max())
-
-        V2 = np.dot(self.equality, Y) + self.equality_offset
-        test2 = np.linalg.norm(V2) < tol * np.linalg.norm(self.equality)
+        if self.inequality is not None:
+            V1 = np.dot(self.inequality, Y) + self.inequality_offset
+            test1 = np.all(V1 > -tol * np.fabs(V1).max())
+        else:
+            test1 = True
+        if self.equality is not None:
+            V2 = np.dot(self.equality, Y) + self.equality_offset
+            test2 = np.linalg.norm(V2) < tol * np.linalg.norm(self.equality)
+        else:
+            test2 = True
         return test1 and test2
 
     def bounds(self, direction_of_interest, Y):
+        """
+        For a realization $Y$ of the random variable $N(\mu,\Sigma)$
+        truncated to $C$ specified by `self.constraints` compute
+        the slice of the inequality constraints in a 
+        given direction $\eta$.
+
+        Parameters
+        ----------
+
+        direction_of_interest: `np.float`
+            A direction $\eta$ for which we may want to form 
+            selection intervals or a test.
+
+        Y : `np.float`
+            A realization of $N(0,\Sigma)$ where 
+            $\Sigma$ is `self.covariance`.
+
+        Returns
+        -------
+
+        L : np.float
+            Lower truncation bound.
+
+        Z : np.float
+            The observed $\eta^TY$
+
+        U : np.float
+            Upper truncation bound.
+
+        S : np.float
+            Standard deviation of $\eta^TY$.
+
+        WARNING
+        -------
+        
+        This implicitly assumes that equality constraints
+        have been enforced and direction of interest
+        is in the row space of any equality constraint matrix.
+        
+        """
         return interval_constraints(self.inequality,
                                           self.inequality_offset,
                                           self.covariance,
@@ -101,13 +182,54 @@ class constraints(object):
     def pivot(self, direction_of_interest, Y,
               alternative='greater'):
         """
+        For a realization $Y$ of the random variable $N(\mu,\Sigma)$
+        truncated to $C$ specified by `self.constraints` compute
+        the slice of the inequality constraints in a 
+        given direction $\eta$ and test whether 
+        $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.
 
+        Parameters
+        ----------
+
+        direction_of_interest: `np.float`
+            A direction $\eta$ for which we may want to form 
+            selection intervals or a test.
+
+        Y : `np.float`
+            A realization of $N(0,\Sigma)$ where 
+            $\Sigma$ is `self.covariance`.
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+
+        P : np.float
+            $p$-value of corresponding test.
+
+        Notes
+        -----
+
+        All of the tests are based on the exact pivot $F$ given
+        by the truncated Gaussian distribution for the
+        given direction $\eta$. If the alternative is 'greater'
+        then we return $1-F$; if it is 'less' we return $F$
+        and if it is 'twosided' we return $2 \min(F,1-F)$.
+
+        WARNING
+        -------
+        
+        This implicitly assumes that equality constraints
+        have been enforced and direction of interest
+        is in the row space of any equality constraint matrix.
+        
         """
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
         L, Z, U, S = self.bounds(direction_of_interest, Y)
-        P = truncnorm_cdf(Z/S, L/S, U/S)
-        #P = float(pivot(*self.bounds(direction_of_interest, Y)))
+        meanZ = (direction_of_interest * self.mean).sum()
+        P = truncnorm_cdf((Z-meanZ)/S, (L-meanZ)/S, (U-meanZ)/S)
         if alternative == 'greater':
             return 1 - P
         elif alternative == 'less':
@@ -118,7 +240,24 @@ class constraints(object):
 def stack(*cons):
     """
     Combine constraints into a large constaint
-    by intersection.
+    by intersection. 
+
+    Parameters
+    ----------
+
+    cons : [`constraints`]
+         A sequence of constraints.
+
+    Returns
+    -------
+
+    intersection : `constraints`
+
+    WARNING
+    -------
+
+    Resulting constraint will have mean 0 and covariance $I$.
+
     """
     ineq, ineq_off = [], []
     eq, eq_off = [], []
@@ -130,14 +269,31 @@ def stack(*cons):
             eq.append(con.equality)
             eq_off.append(con.equality_offset)
 
-    ineq = np.vstack(ineq)
-    ineq_off = np.hstack(ineq_off)
+    if ineq and eq:
+        intersection = constraints((np.vstack(ineq), 
+                                    np.hstack(ineq_off)), 
+                                   (np.vstack(eq), 
+                                    np.hstack(eq_off)))
+    elif eq:
+        intersection = constraints(None, 
+                                   (np.vstack(eq), 
+                                    np.hstack(eq_off)))
+    elif ineq:
+        intersection = constraints((np.vstack(ineq), 
+                                    np.hstack(ineq_off)), None)
+    return intersection
 
-    eq = np.vstack(eq)
-    eq_off = np.hstack(eq_off)
-    return constraints((ineq, ineq_off), (eq, eq_off))
+def simulate_from_constraints(con, tol=1.e-3):
+    """
+    Use naive acceptance rule to simulate from `con`.
 
-def simulate_from_constraints(con, tol=1.e-3, mu=None):
+    WARNING
+    -------
+
+    This function implicitly assuems the covariance is
+    proportional to the identity.
+
+    """
     if con.equality is not None:
         V = np.linalg.pinv(con.equality)
         a = -np.dot(V, con.equality_offset)
@@ -148,8 +304,7 @@ def simulate_from_constraints(con, tol=1.e-3, mu=None):
     if con.inequality is not None:
         while True:
             Z = np.dot(P, np.random.standard_normal(con.dim)) + a
-            if mu is not None:
-                Z += mu
+            Z += con.mean
             W = np.dot(con.inequality, Z) + con.inequality_offset  
             if np.all(W > - tol * np.fabs(W).max()):
                 break

@@ -1,7 +1,8 @@
 import numpy as np
 import regreg.api as rr
 from .constraints import (constraints, selection_interval,
-                          interval_constraints)
+                          interval_constraints,
+                          stack)
 import selection.truncated
 
 from .intervals import pivot
@@ -451,9 +452,11 @@ class lasso(object):
                 XnotA = X[:,~A]
                 self._XAinv = XAinv = np.linalg.pinv(XA)
                 self._SigmaA = np.dot(XAinv, XAinv.T)
-                active_constraints = [(sA[:,None] * XAinv, 
-                                       -self.lagrange*sA*np.dot(self._SigmaA, 
-                                                                sA))]
+
+                self.active_constraints = constraints(  
+                    (sA[:,None] * XAinv, 
+                     -self.lagrange*sA*np.dot(self._SigmaA, 
+                                              sA)), None)
                 self._SigmaA *=  self.sigma_epsilon**2
                 PA = np.dot(XA, XAinv)
                 irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
@@ -462,26 +465,35 @@ class lasso(object):
                 XnotA = X
                 PA = 0
                 irrep_supgrad = np.zeros(p)
-                active_constraints = []
+                self.active_constraints = None
 
             if A.sum() < X.shape[1]:
                 inactiveX = np.dot(np.identity(n) - PA, XnotA)
                 scaling = np.sqrt((inactiveX**2).sum(0))
                 inactiveX /= scaling[None,:]
 
-                inactive_constraints = [(-inactiveX.T, (lagrange - 
-                                                        irrep_subgrad) / scaling),
-                                        (inactiveX.T, (lagrange + 
-                                                        irrep_subgrad) / scaling)]
+                self.inactive_constraints = stack( 
+                    constraints(((-inactiveX.T, 
+                                   (lagrange - 
+                                    irrep_subgrad) / scaling)), None),
+                    constraints(((inactiveX.T, 
+                                   (lagrange +
+                                    irrep_subgrad) / scaling)), None))
             else:
-                inactive_constraints = []
+                self.inactive_constraints = None
 
-            _constraints = active_constraints + inactive_constraints
-            _linear_part = np.vstack([A for A, _ in _constraints])
-            _offset_part = np.hstack([b for _, b in _constraints])
-            self._constraints = constraints((_linear_part, 
-                                             _offset_part),
-                                            None)
+            #_constraints = active_constraints + inactive_constraints
+            #_linear_part = np.vstack([A for A, _ in _constraints])
+            #_offset_part = np.hstack([b for _, b in _constraints])
+            if (self.active_constraints is not None 
+                and self.inactive_constraints is not None):
+                self._constraints = stack(self.active_constraints,
+                                          self.inactive_constraints)
+            elif self.active_constraints is not None:
+                self._constraints = self.active_constraints
+            else:
+                self._constraints = self.inactive_constraints
+
 
         return self._constraints
 
