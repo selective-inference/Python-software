@@ -97,10 +97,23 @@ class constraints(object):
                                           self.covariance,
                                           Y,
                                           direction_of_interest)
-    def pivot(self, direction_of_interest, Y):
+
+    def pivot(self, direction_of_interest, Y,
+              alternative='greater'):
+        """
+
+        """
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
         L, Z, U, S = self.bounds(direction_of_interest, Y)
-        return truncnorm_cdf(Z/S, L/S, U/S)
-        #return float(pivot(*self.bounds(direction_of_interest, Y)))
+        P = truncnorm_cdf(Z/S, L/S, U/S)
+        #P = float(pivot(*self.bounds(direction_of_interest, Y)))
+        if alternative == 'greater':
+            return 1 - P
+        elif alternative == 'less':
+            return P
+        else:
+            return 2 * min(P, 1-P)
 
 def stack(*cons):
     """

@@ -61,7 +61,6 @@ class isotonic(object):
         subgrad = np.dot(X.T, y - fitted)
         self.active = subgrad > -subgrad_tol    
         self.inactive = ~self.active
-        self.sigma = sigma
 
         # inefficient, but this is just a prototype
         if self.active.sum():
@@ -75,7 +74,7 @@ class isotonic(object):
 
         self.fitted, self.subgrad = fitted, subgrad
         self.constraints = constraints((A, np.zeros(A.shape[0])), None,
-                                       covariance = self.sigma**2 * 
+                                       covariance = sigma**2 * 
                                        np.identity(self.Y.shape[0]))
     
     # Various test statistics we might consider
@@ -112,7 +111,7 @@ class isotonic(object):
             all_constraints = np.vstack([-diffD, self.constraints.inequality])
             return interval_constraints(all_constraints, \
                              np.zeros(all_constraints.shape[0]), 
-                             self.sigma**2 * np.identity(n),
+                             self.constraints.covariance,
                              self.Y,
                              eta)
         else:
@@ -140,7 +139,7 @@ class isotonic(object):
             all_constraints = np.vstack([-diffD, self.constraints.inequality])
             return interval_constraints(all_constraints, \
                              np.zeros(all_constraints.shape[0]), 
-                             self.sigma**2 * np.identity(n),
+                             self.constraints.covariance,
                              self.Y,
                              eta,
                              two_sided=True)
@@ -166,7 +165,7 @@ class isotonic(object):
             all_constraints = np.vstack([-diffD, self.constraints.inequality])
             return eta, selection_interval(all_constraints, \
                              np.zeros(all_constraints.shape[0]), 
-                             self.sigma**2 * np.identity(n),
+                             self.constraints.covariance,
                              self.Y,
                              eta, dps=22,
                              upper_target=0.95,
@@ -196,7 +195,7 @@ class isotonic(object):
             all_constraints = np.vstack([-diffD, self.constraints.inequality])
             return eta, selection_interval(all_constraints, \
                              np.zeros(all_constraints.shape[0]), 
-                             self.sigma**2 * np.identity(n),
+                             self.constraints.covariance,
                              self.Y,
                              eta, dps=22,
                              upper_target=0.95,
@@ -236,7 +235,7 @@ class isotonic(object):
 
             con = constraints((all_constraints, 
                                np.zeros(all_constraints.shape[0])), None,
-                              covariance = self.sigma**2 * np.identity(self.Y.shape[0]))
+                              covariance = self.constraints.covariance)
             eta = orderedD[:idx].sum(0)
             return con.pivots(eta, self.Y)
         else:
@@ -274,11 +273,11 @@ class isotonic(object):
 
             con = constraints((all_constraints, 
                                np.zeros(all_constraints.shape[0])), None,
-                              covariance = self.sigma**2 * np.identity(self.Y.shape[0]))
+                              covariance = self.constraints.covariance)
             eta = orderedD[:idx].sum(0)
             return eta, selection_interval(all_constraints, \
                              np.zeros(all_constraints.shape[0]), 
-                             self.sigma**2 * np.identity(n),
+                             self.constraints.covariance,
                              self.Y,
                              eta, dps=22,
                              upper_target=0.95,
@@ -310,7 +309,7 @@ class isotonic(object):
 
             con = constraints((all_constraints, 
                                np.zeros(all_constraints.shape[0])), None,
-                              covariance = self.sigma**2 * np.identity(self.Y.shape[0]))
+                              covariance = self.constraints.covariance)
 
             return quadratic_test(self.Y, P_test, con)
         else:
