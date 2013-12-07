@@ -6,7 +6,9 @@ restricted to a set of intervals.
 """
 import numpy as np
 from selection.intervals import _CDF
-from scipy.stats import norm as ndist
+from scipy.stats import norm as ndist, truncnorm 
+from scipy.integrate import quad
+
 from mpmath import mp
 mp.dps = 60
 import rpy2.robjects as rpy
@@ -41,6 +43,20 @@ def _qnorm(q, use_R=True):
         return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
     q = np.asarray(q)
     return np.asarray(_Rqnorm(q)).reshape(q.shape)
+
+def truncnorm_cdf(x, a, b):
+    """
+    calculates P(Z < x | a < Z < b) where Z ~ N(0,1)
+    """
+    if abs(a)>37 and abs(b)>37:
+        fun = lambda t: np.exp(-.5*t**2-a*t)
+        num, err_num = quad(fun, 0, x-a, epsabs=0)
+        denom, err_denom = quad(fun, 0, b-a, epsabs=0)
+        return num / denom
+    elif a>7 and b>7:
+        return truncnorm.sf(-x, -b, -a)
+    else:
+        return truncnorm.cdf(x, a, b)
 
 class TruncatedGaussianError(ValueError):
     pass

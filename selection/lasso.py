@@ -536,13 +536,13 @@ class lasso(object):
             XAinv = self._XAinv
             for i in range(XAinv.shape[0]):
                 eta = XAinv[i]
-                _pval = interval_constraints( \
-                       C.inequality,
-                       C.inequality_offset,
-                       self._covariance,
-                       self.y,
-                       eta,
-                       two_sided=True)[-1]
+                _pval = pivot(interval_constraints( \
+                        C.inequality,
+                        C.inequality_offset,
+                        self._covariance,
+                        self.y,
+                        eta))
+                _pval = 2 * min(_pval, 1 - _pval)
                 self._pvals.append((self.active[i], _pval))
         return self._pvals
 

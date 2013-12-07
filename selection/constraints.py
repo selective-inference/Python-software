@@ -1,6 +1,6 @@
 import numpy as np
 from .intervals import pivot, interval
-from .truncated import truncated_gaussian, UMAU_interval
+from .truncated import truncated_gaussian, UMAU_interval, truncnorm_cdf
 from warnings import warn
 
 WARNINGS = False
@@ -16,6 +16,11 @@ class constraints(object):
         Create a new inequality. If independent, then
         it is assumed that the rows of inequality
         and equality are independent (for a given covariance).
+
+        Parameters:
+        -----------
+
+
         """
         if equality is not None:
             self.equality, self.equality_offset = \
@@ -86,12 +91,16 @@ class constraints(object):
         test2 = np.linalg.norm(V2) < tol * np.linalg.norm(self.equality)
         return test1 and test2
 
-    def pivots(self, direction_of_interest, Y):
+    def bounds(self, direction_of_interest, Y):
         return interval_constraints(self.inequality,
-                                    self.inequality_offset,
-                                    self.covariance,
-                                    Y,
-                                    direction_of_interest)
+                                          self.inequality_offset,
+                                          self.covariance,
+                                          Y,
+                                          direction_of_interest)
+    def pivot(self, direction_of_interest, Y):
+        L, Z, U, S = self.bounds(direction_of_interest, Y)
+        return truncnorm_cdf(Z/S, L/S, U/S)
+        #return float(pivot(*self.bounds(direction_of_interest, Y)))
 
 def stack(*cons):
     """
@@ -140,8 +149,7 @@ def interval_constraints(support_directions,
                          covariance,
                          observed_data, 
                          direction_of_interest,
-                         tol = 1.e-4,
-                         two_sided=False):
+                         tol = 1.e-4):
     """
     Given an affine in cone constraint $Ax+b \geq 0$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
@@ -192,10 +200,7 @@ def interval_constraints(support_directions,
     else:
         upper_bound = np.inf
 
-    pval = float(pivot(lower_bound, V, upper_bound, sigma, dps=15))
-    if two_sided:
-        pval = 2*min(pval, 1-pval)
-    return lower_bound, V, upper_bound, sigma, pval
+    return lower_bound, V, upper_bound, sigma
 
 def selection_interval(support_directions, 
                        support_offsets,
@@ -216,40 +221,13 @@ def selection_interval(support_directions,
 
     """
 
-    # shorthand
-    A, b, S, X, w = (support_directions,
-                     support_offsets,
-                     covariance,
-                     observed_data,
-                     direction_of_interest)
-
-    U = np.dot(A, X) + b
-    if not np.all(U > -tol * np.fabs(U).max()) and WARNINGS:
-        warn('constraints not satisfied: %s' % `U`)
-
-    Sw = np.dot(S, w)
-    sigma = np.sqrt((w*Sw).sum())
-    C = np.dot(A, Sw) / sigma**2
-    V = (w*X).sum()
-
-    # adding the zero_coords in the denominator ensures that
-    # there are no divide-by-zero errors in RHS
-    # these coords are never used in upper_bound or lower_bound
-
-    zero_coords = C == 0
-    RHS = (-U + V * C) / (C + zero_coords)
-    RHS[zero_coords] = np.nan
-
-    pos_coords = C > tol * np.fabs(C).max()
-    if np.any(pos_coords):
-        lower_bound = RHS[pos_coords].max()
-    else:
-        lower_bound = -np.inf
-    neg_coords = C < -tol * np.fabs(C).max()
-    if np.any(neg_coords):
-        upper_bound = RHS[neg_coords].min()
-    else:
-        upper_bound = np.inf
+    lower_bound, V, upper_bound, sigma = interval_constraints( \
+        support_directions, 
+        support_offsets,
+        covariance,
+        observed_data, 
+        direction_of_interest,
+        tol=tol)
 
     if UMAU:
         truncated = truncated_gaussian([(lower_bound, upper_bound)], sigma=sigma)
