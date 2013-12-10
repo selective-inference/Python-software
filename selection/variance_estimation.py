@@ -17,6 +17,8 @@ import numpy as np
 from scipy.stats import truncnorm
 from warnings import warn
 
+DEBUG = True
+
 def gibbs_step(direction, Y, C):
     """
     Take a Gibbs step in given direction from $Y$
@@ -131,9 +133,9 @@ def expected_norm_squared(initial, C, ndraw=300):
     for _ in range(ndraw):
         state = draw_truncated(state, C)
         sample.append(state.copy())
-    return np.mean(np.sum(np.array(sample)**2, 1)), np.std(np.sum(np.array(sample)**2, 1))**2
+    return np.mean(np.sum(np.array(sample)**2, 1)), np.std(np.sum(np.array(sample)**2, 1))**2, state
 
-def estimate_sigma(Y, C, niter=500):
+def estimate_sigma(Y, C, niter=100, ndraw=100, inflation=4):
     """
     A stochastic gradient descent algorithm
     to estimate $\sigma$ assuming that
@@ -155,6 +157,14 @@ def estimate_sigma(Y, C, niter=500):
         stochastic optimization algorithm
         should we use.
 
+    ndraw : int
+        How many draws should we use to form estimate
+        the gradient.
+
+    inflation : float
+        Factor to inflate naive estimate of $\sigma$ by as an 
+        initial condition.
+    
     Returns
     -------
 
@@ -165,24 +175,27 @@ def estimate_sigma(Y, C, niter=500):
 
     n = Y.shape[0]
     observed = (Y**2).sum()
-    initial = np.sqrt(observed / n)
+    initial = inflation * np.sqrt(observed / n)
 
     S_hat = initial
-    
+    state = Y.copy()
+
     for i in range(niter):
         C.covariance = S_hat**2 * np.identity(n)
-        E = expected_norm_squared(Y, C, ndraw=20)[0]
+        E, _, state = expected_norm_squared(state, C, ndraw=ndraw)
         grad = (observed - E) / S_hat**3
-        step = grad / (i + 1)
+        step = grad / (i + 1)**(0.75)
         
         S_trial = S_hat + step
         while S_trial < 0:
             step /= 2
             S_trial = S_hat + step
         S_hat = S_trial
+        if DEBUG:
+            print S_hat
     return S_hat
         
-def estimate_sigma_newton(Y, C, niter=40, ndraw=500):
+def estimate_sigma_newton(Y, C, niter=40, ndraw=500, inflation=4):
     """
     A quasi-Newton algorithm
     to estimate $\sigma$ assuming that
@@ -208,6 +221,10 @@ def estimate_sigma_newton(Y, C, niter=40, ndraw=500):
         How many draws should we use to form estimate
         the gradient and Hessian.
 
+    inflation : float
+        Factor to inflate naive estimate of $\sigma$ by as an 
+        initial condition.
+    
     Returns
     -------
 
@@ -217,23 +234,34 @@ def estimate_sigma_newton(Y, C, niter=40, ndraw=500):
     """
     n = Y.shape[0]
     observed = (Y**2).sum()
-    initial = np.sqrt(observed / n)
+    initial = inflation * np.sqrt(observed / n)
 
     S = initial
     G = -1./S**2
+    state = Y.copy()
+
+    alpha = initial / 10.
+
     for i in range(niter):
         C.covariance = S**2 * np.identity(n)
-        E, V = expected_norm_squared(Y, C, ndraw=1000)
-        grad = (observed - E) / 2
-        hessian = V / 4
-        step = (grad / hessian) 
+        E, V, state = expected_norm_squared(Y, C, ndraw=ndraw)
+        
+        step = alpha * np.sign(observed - E) 
+        S_trial = S + step
+        C.covariance = S_trial**2 * np.identity(n)
+        new_E = expected_norm_squared(Y, C, ndraw=ndraw)[0]
 
-        G_trial = G + step
-        while G_trial > 0:
+        while np.sign(observed - E) != np.sign(observed - new_E):
             step /= 2
-            G_trial = G + step
-        G = G_trial
-        S = 1. / np.sqrt(-G)
+            S_trial = S + step
+            C.covariance = S_trial**2 * np.identity(n)
+            new_E = expected_norm_squared(Y, C, ndraw=ndraw)[0]
+            print (S, S_trial, np.sign(observed - E), np.sign(observed - new_E), observed, E, new_E)
+            
+        #G = G_trial
+        S = S_trial
+        if DEBUG:
+            print S, observed, E, new_E
 
     S_hat = S
     return S_hat

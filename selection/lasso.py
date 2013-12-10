@@ -407,6 +407,8 @@ class lasso(object):
             problem = rr.simple_problem(loss, penalty)
             soln = problem.solve(tol=tol, min_its=min_its)
         self._soln = soln
+        # evaluate properties -- bad form
+        self.constraints
         return self._soln
 
     @property
@@ -458,12 +460,12 @@ class lasso(object):
                      -self.lagrange*sA*np.dot(self._SigmaA, 
                                               sA)), None)
                 self._SigmaA *=  self.sigma_epsilon**2
-                PA = np.dot(XA, XAinv)
+                self.PA = PA = np.dot(XA, XAinv)
                 irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
 
             else:
                 XnotA = X
-                PA = 0
+                self.PA = PA = 0
                 irrep_supgrad = np.zeros(p)
                 self.active_constraints = None
 
