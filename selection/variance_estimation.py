@@ -15,9 +15,25 @@ algorithm but could be handled by a simple modification of the Gibbs scheme.
 
 import numpy as np
 from scipy.stats import truncnorm
+from scipy.optimize import bisect
+from scipy.interpolate import interp1d
+from scipy.integrate import quad
+
 from warnings import warn
 
-DEBUG = True
+from sklearn.isotonic import IsotonicRegression
+
+# load rpy2 and initialize for numpy support
+import rpy2.robjects as rpy
+from rpy2.robjects import numpy2ri
+numpy2ri.activate()
+
+from mpmath import quad as mpquad, exp as mpexp, log as mplog, mp
+mp.dps = 60
+
+from .chisq import quadratic_constraints
+
+DEBUG = False
 
 def gibbs_step(direction, Y, C):
     """
@@ -66,7 +82,7 @@ def gibbs_step(direction, Y, C):
     Y_perp = Y - (Y*direction).sum() / (direction**2).sum() * direction
     return Y_perp + sample * direction * S # reintroduce the scale 
 
-def draw_truncated(initial, C, nstep=10):
+def draw_truncated(initial, C, ndraw=1000, burnin=1000):
     """
     Starting with a point in $C$, simulate by taking `nstep` 
     Gibbs steps and return the resulting point.
@@ -88,13 +104,16 @@ def draw_truncated(initial, C, nstep=10):
         State after taking a certain number of Gibbs steps.
 
     """
-    final = initial.copy()
-    n = final.shape[0]
-    for _ in range(nstep):
-      final = gibbs_step(np.random.standard_normal(n), final, C)
-    return final
+    state = initial.copy()
+    n = state.shape[0]
+    sample = np.zeros((ndraw,n))
+    for i in range(ndraw + burnin):
+      state = gibbs_step(np.random.standard_normal(n), state, C)
+      if i >= burnin:
+          sample[i-burnin] = state.copy()
+    return sample
 
-def expected_norm_squared(initial, C, ndraw=300):
+def expected_norm_squared(initial, C, ndraw=1000, burnin=1000):
     """
     Starting with a point in $C$, estimate
     the expected value of $\|Y\|^2_2$ under
@@ -115,6 +134,9 @@ def expected_norm_squared(initial, C, ndraw=300):
         How many draws should be used to 
         estimate the mean and variance.
 
+    burnin : int
+        How many iterations for burnin.
+
     Returns
     -------
 
@@ -127,12 +149,8 @@ def expected_norm_squared(initial, C, ndraw=300):
         under the distribution implied by $C$.
 
     """
-    sample = []
-    state = initial.copy()
-    state = draw_truncated(initial, C)
-    for _ in range(ndraw):
-        state = draw_truncated(state, C)
-        sample.append(state.copy())
+
+    sample = draw_truncated(initial, C, ndraw=ndraw, burnin=burnin)
     return np.mean(np.sum(np.array(sample)**2, 1)), np.std(np.sum(np.array(sample)**2, 1))**2, state
 
 def estimate_sigma(Y, C, niter=100, ndraw=100, inflation=4):
@@ -256,7 +274,8 @@ def estimate_sigma_newton(Y, C, niter=40, ndraw=500, inflation=4):
             S_trial = S + step
             C.covariance = S_trial**2 * np.identity(n)
             new_E = expected_norm_squared(Y, C, ndraw=ndraw)[0]
-            print (S, S_trial, np.sign(observed - E), np.sign(observed - new_E), observed, E, new_E)
+            if DEBUG:
+                print (S, S_trial, np.sign(observed - E), np.sign(observed - new_E), observed, E, new_E)
             
         #G = G_trial
         S = S_trial
@@ -265,3 +284,232 @@ def estimate_sigma_newton(Y, C, niter=40, ndraw=500, inflation=4):
 
     S_hat = S
     return S_hat
+
+def interpolation_estimate(Z, Z_constraint,
+                           lower=0.5,
+                           upper=4,
+                           npts=30,
+                           ndraw=5000,
+                           burnin=1000,
+                           estimator='truncated'):
+    """
+    Estimate the parameter $\sigma$ in $Z \sim N(0, \sigma^2 I) | Z \in C$
+    where $C$ is the convex set encoded by `Z_constraints`
+
+    .. math::
+
+       C = \left\{z: Az+b \geq 0 \right\}
+
+    with $(A,b)$ being `(Z_constraints.inequality, 
+    Z_constraints.inequality_offset)`.
+
+    The algorithm proceeds by estimating $\|Z\|^2_2$ 
+    by Monte Carlo for a range of `npts` values starting from
+    `lower*np.linalg.norm(Z)/np.sqrt(n)` to
+    `upper*np.linalg.norm(Z)/np.sqrt(n)` with `n=Z.shape[0]`.
+
+    These values are then used to compute the GCM 
+    (Greated Convex Minorant) which is interpolated and solved 
+    for an arguments such that the expected value matches the observed
+    value `(Z**2).sum()`.
+
+    Parameters
+    ----------
+
+    Z : `np.float`
+        Observed data to be used to estimate $\sigma$. Should be in
+        the cone specified by `Z_constraints`.
+
+    Z_constraint : `constraints`
+        Constraints under which we observe $Z$.
+
+    lower : float
+        Multiple of naive estimate to use as lower endpoint.
+
+    upper : float
+        Multiple of naive estimate to use as upper endpoint.
+
+    npts : int
+        Number of points in interpolation grid.
+
+    ndraw : int
+        Number of Gibbs steps to use for estimating
+        each expectation.
+
+    burnin : int
+        How many Gibbs steps to use for burning in.
+
+    Returns
+    -------
+
+    sigma_hat : float
+        The root of the interpolant derived from GCM values.
+
+    interpolant : `interp1d`
+        The interpolant, to be used for plotting or other 
+        diagnostics.
+
+    WARNING
+    -------
+
+    * It is assumed that `Z_constraints.equality` is `None`.
+    
+    * Uses `rpy2` and `fdrtool` library to compute the GCM.
+
+    """
+
+    initial = np.linalg.norm(Z) / np.sqrt(Z.shape[0])
+
+    Svalues = np.linspace(lower*initial,upper*initial, npts)
+    Evalues = []
+
+    n = Z.shape[0]
+    L, V, U, S = quadratic_constraints(Z, np.identity(n), Z_constraint)
+
+    if estimator == 'truncated':
+        def _estimator(S, Z, Z_constraint):
+            L, V, U, _ = quadratic_constraints(Z, np.identity(n), Z_constraint)
+            num = mpquad(lambda x: mpexp(-x**2/(2*S**2) -L*x / S**2 + (n-1) * mplog((x+L)/S) + 2 * mplog(x+L)),
+                       [0, U-L])
+            den = mpquad(lambda x: mpexp(-x**2/(2*S**2) -L*x / S**2 + (n-1) * mplog((x+L)/S)),
+                       [0, U-L])
+            print num / den, V**2, S, (L, U)
+            return num / den
+    elif estimator == 'simulate':
+        
+        state = Z.copy()
+        rpy.r.assign('state', state)
+        def _estimator(S, state, Z_constraint):
+            Z_constraint.covariance = S**2 * np.identity(Z.shape[0])
+            e, v, _state = expected_norm_squared(state, 
+                                               Z_constraint, ndraw=ndraw,
+                                               burnin=burnin)            
+            state[:] = _state
+            return e
+
+    state = Z.copy()
+    for S in Svalues:
+        Evalues.append(_estimator(S, state, Z_constraint))
+    ir = IsotonicRegression()
+    if DEBUG:
+        print Svalues, Evalues
+    Eiso = ir.fit_transform(Svalues, Evalues)
+    Sinterp, Einterp = Svalues, Eiso
+#     rpy.r.assign('S', Svalues)
+#     rpy.r.assign('E', np.array(Evalues))
+#     rpy.r('''
+#     library(fdrtool);
+#     G = gcmlcm(S, E, 'gcm');
+#     Sgcm = G$x.knots;
+#     Egcm = G$y.knots;
+#     ''')
+#     Sgcm = np.asarray(rpy.r('Sgcm'))
+#     Egcm = np.asarray(rpy.r('Egcm'))
+#     interpolant = interp1d(Sgcm, Egcm - (Z**2).sum())
+
+    interpolant = interp1d(Sinterp, Einterp - (Z**2).sum())
+    try:
+        sigma_hat = bisect(interpolant, Sinterp.min(), Sinterp.max())
+    except:
+        raise ValueError('''Bisection failed -- check (lower, upper). Observed = %0.1e, Range = (%0.1e,%0.1e)''' % ((Z**2).sum(), Einterp.min(), Einterp.max()))
+    return sigma_hat, interpolant
+
+def truncated_estimate(Z, Z_constraint,
+                      lower=0.5,
+                      upper=2,
+                      npts=15):
+    """
+    Estimate the parameter $\sigma$ in $Z \sim N(0, \sigma^2 I) | Z \in C$
+    where $C$ is the convex set encoded by `Z_constraints`
+
+    .. math::
+
+       C = \left\{z: Az+b \geq 0 \right\}
+
+    with $(A,b)$ being `(Z_constraints.inequality, 
+    Z_constraints.inequality_offset)`.
+
+    The algorithm proceeds by estimating $\|Z\|^2_2$ 
+    by Monte Carlo for a range of `npts` values starting from
+    `lower*np.linalg.norm(Z)/np.sqrt(n)` to
+    `upper*np.linalg.norm(Z)/np.sqrt(n)` with `n=Z.shape[0]`.
+
+    These values are then used to compute the GCM 
+    (Greated Convex Minorant) which is interpolated and solved 
+    for an arguments such that the expected value matches the observed
+    value `(Z**2).sum()`.
+
+    Parameters
+    ----------
+
+    Z : `np.float`
+        Observed data to be used to estimate $\sigma$. Should be in
+        the cone specified by `Z_constraints`.
+
+    Z_constraint : `constraints`
+        Constraints under which we observe $Z$.
+
+    lower : float
+        Multiple of naive estimate to use as lower endpoint.
+
+    upper : float
+        Multiple of naive estimate to use as upper endpoint.
+
+    npts : int
+        Number of points in interpolation grid.
+
+    Returns
+    -------
+
+    sigma_hat : float
+        The root of the interpolant derived from GCM values.
+
+    interpolant : `interp1d`
+        The interpolant, to be used for plotting or other 
+        diagnostics.
+
+    WARNING
+    -------
+
+    * It is assumed that `Z_constraints.equality` is `None`.
+    
+    * Uses `rpy2` and `fdrtool` library to compute the GCM.
+
+    """
+
+    initial = np.linalg.norm(Z) / np.sqrt(Z.shape[0])
+
+    Svalues = np.linspace(lower*initial,upper*initial, npts)
+    Evalues = []
+
+    # use truncated chi to estimate integral
+    # with scipy.integrate.quad
+    n = Z.shape[0]
+    operator = np.identity(n)
+    L, V, U, S = quadratic_constraints(Z, operator, Z_constraint)
+
+    for S in Svalues:
+        num = quad(lambda x: np.exp(-x**2/(2*S**2) + (n+1) * np.log(x)),
+                   L, U)
+        den = quad(lambda x: np.exp(-x**2/(2*S**2) + (n-1) * np.log(x)),
+                   L, U)
+        Evalues.append(num[0] / den[0])
+        print num, den
+
+    ir = IsotonicRegression()
+    if DEBUG:
+        print Svalues, Evalues
+    Eiso = ir.fit_transform(Svalues, Evalues)
+    Sinterp, Einterp = Svalues, Eiso
+
+
+    interpolant = interp1d(Sinterp, Einterp - (Z**2).sum())
+    try:
+        sigma_hat = bisect(interpolant, Sinterp.min(), Sinterp.max())
+    except:
+        raise ValueError('''Bisection failed -- check (lower, upper). Observed = %0.1e, Range = (%0.1e,%0.1e)''' % ((Z**2).sum(), Einterp.min(), Einterp.max()))
+    return sigma_hat, interpolant
+
+
+    print L, V, U, S
+

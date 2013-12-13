@@ -46,6 +46,27 @@ def tangent_space(operator, y):
     else:
         return eta, None
     
+def quadratic_constraints(y, operator, con):
+    """
+    Perform a quadratic test based on some constraints. 
+    """
+    A = operator # shortand
+    p, q = A.shape
+
+    eta, TA = tangent_space(A, y)
+    if TA is not None:
+        newcon = C.constraints((con.inequality, 
+                                con.inequality_offset),
+                               (TA, np.zeros(TA.shape[0])),
+                               covariance=con.covariance)
+        newcon = newcon.impose_equality()
+        P = np.identity(q) - np.dot(np.linalg.pinv(TA), TA)
+        eta = np.dot(P, eta)
+    else:
+        newcon = con.impose_equality()
+
+    return newcon.bounds(eta, y)
+
 def quadratic_test(y, operator, con):
     """
     Perform a quadratic test based on some constraints. 
@@ -65,7 +86,7 @@ def quadratic_test(y, operator, con):
     else:
         newcon = con.impose_equality()
 
-    Vp, V, Vm, sigma = newcon.pivots(eta, y)[:4]
+    Vp, V, Vm, sigma = quadratic_constraints(y, operator, con)
     Vp = max(0, Vp)
     
     sf = chi.sf
@@ -76,7 +97,6 @@ def quadratic_test(y, operator, con):
         pval = ((sf(Vm/sigma, p) - sf(V/sigma,p)) / 
                 (sf(Vm/sigma, p) - sf(Vp/sigma,p)))
     return np.clip(pval, 0, 1)
-
 
 if __name__ == "__main__":
 
@@ -98,18 +118,8 @@ if __name__ == "__main__":
         def sim(A):
 
             y = C.simulate_from_constraints(con) 
-            p = A.shape[0]
-            eta, B = tangent_space(A, y)
-
-            newcon = C.constraints((L, b), (B, np.zeros(B.shape[0])))
-            newcon = newcon.impose_equality()
-            P = np.identity(q) - np.dot(np.linalg.pinv(B), B)
-            eta = np.dot(P, eta)
-            Vp, V, Vm, sigma = newcon.pivots(eta, y)[:4]
-
-            Vp = max(0, Vp)
-            pval = chi_pvalue(V, Vp, Vm, sigma, p, method='MC', nsim=10000)
-            return np.clip(pval,0,1)
+            return quadratic_test(y, np.identity(con.dim),
+                                  con)
 
         return sim(A1), sim(A2), sim(A3)
 

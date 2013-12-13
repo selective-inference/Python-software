@@ -6,6 +6,10 @@ from .constraints import (constraints, selection_interval,
 import selection.truncated
 
 from .intervals import pivot
+from .variance_estimation import (interpolation_estimate,
+                                  truncated_estimate)
+
+
 from scipy.stats import norm as ndist
 import warnings
 
@@ -575,6 +579,88 @@ class lasso(object):
                 self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals_unadjusted
+
+def estimate_sigma(y, X, frac=0.1, 
+                   lower=0.5,
+                   upper=2,
+                   npts=15,
+                   ndraw=5000,
+                   burnin=1000):
+    """
+    Estimate the parameter $\sigma$ in $y \sim N(X\beta, \sigma^2 I)$
+    after fitting LASSO with Lagrange parameter `frac` times
+    $\lambda_{\max}=\|X^Ty\|_{\infty}$.
+
+    Uses `selection.variance_estimation.interpolation_estimate`
+
+    Parameters
+    ----------
+
+    y : `np.float`
+        Response to be used for LASSO.
+
+    X : `np.float`
+        Design matrix to be used for LASSO.
+
+    frac : float
+        What fraction of $\lambda_{\max}$ should be used to fit
+        LASSO.
+
+    lower : float
+        Multiple of naive estimate to use as lower endpoint.
+
+    upper : float
+        Multiple of naive estimate to use as upper endpoint.
+
+    npts : int
+        Number of points in interpolation grid.
+
+    ndraw : int
+        Number of Gibbs steps to use for estimating
+        each expectation.
+
+    burnin : int
+        How many Gibbs steps to use for burning in.
+
+    Returns
+    -------
+
+    sigma_hat : float
+        The root of the interpolant derived from GCM values.
+
+    interpolaint : `interp1d`
+        The interpolant, to be used for plotting or other 
+        diagnostics.
+
+    """
+
+    n, p = X.shape
+    L = lasso(y, X, frac=frac)
+    soln = L.fit(tol=1.e-14, min_its=200)
+
+    # now form the constraint for the inactive variables
+
+    C = L.inactive_constraints
+    PR = np.identity(n) - L.PA
+    try:
+        U, D, V = np.linalg.svd(PR)
+    except np.linalg.LinAlgError:
+        D, U = np.linalg.eigh(PR)
+
+    keep = D >= 0.5
+    U = U[:,keep]
+    Z = np.dot(U.T, y)
+    Z_inequality = np.dot(C.inequality, U)
+    Z_constraint = constraints((Z_inequality, C.inequality_offset), None)
+    if not Z_constraint(Z):
+        raise ValueError('Constraint not satisfied. Gibbs algorithm will fail.')
+    return interpolation_estimate(Z, Z_constraint,
+                                  lower=lower,
+                                  upper=upper,
+                                  npts=npts,
+                                  ndraw=ndraw,
+                                  burnin=burnin,
+                                  estimator='simulate')
 
 def fit_and_test(y, X, frac, sigma_epsilon=1, use_cvx=False,
                  test='centered',
