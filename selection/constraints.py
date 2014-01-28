@@ -237,6 +237,55 @@ class constraints(object):
         else:
             return 2 * min(P, 1-P)
 
+    def interval(self, direction_of_interest, Y,
+                 alpha=0.05, UMAU=False):
+        """
+        For a realization $Y$ of the random variable $N(\mu,\Sigma)$
+        truncated to $C$ specified by `self.constraints` compute
+        the slice of the inequality constraints in a 
+        given direction $\eta$ and test whether 
+        $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.
+
+        Parameters
+        ----------
+
+        direction_of_interest: `np.float`
+            A direction $\eta$ for which we may want to form 
+            selection intervals or a test.
+
+        Y : `np.float`
+            A realization of $N(0,\Sigma)$ where 
+            $\Sigma$ is `self.covariance`.
+
+        alpha : float
+            What level of confidence?
+
+        UMAU : bool
+            Use the UMAU intervals?
+
+        Returns
+        -------
+
+        [U,L] : selection interval
+
+        WARNING
+        -------
+        
+        This implicitly assumes that equality constraints
+        have been enforced and direction of interest
+        is in the row space of any equality constraint matrix.
+        
+        """
+
+        return selection_interval( \
+            self.inequality,
+            self.inequality_offset,
+            self.covariance,
+            Y,
+            direction_of_interest,
+            alpha=alpha,
+            UMAU=UMAU)
+
 def stack(*cons):
     """
     Combine constraints into a large constaint
@@ -406,6 +455,6 @@ def selection_interval(support_directions,
         _selection_interval = interval(lower_bound, V, upper_bound, sigma,
                                        upper_target=1-alpha/2,
                                        lower_target=alpha/2,
-                                       dps=15)
+                                       dps=dps)
     
     return _selection_interval

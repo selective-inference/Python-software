@@ -371,6 +371,7 @@ class lasso(object):
     
     # level for coverage is 1-alpha
     alpha = 0.05
+    UMAU = False
 
     def __init__(self, y, X, frac=0.9, sigma_epsilon=1):
         self.y = y
@@ -517,7 +518,8 @@ class lasso(object):
                        self._covariance,
                        self.y,
                        eta,
-                       alpha=self.alpha)
+                       alpha=self.alpha,
+                       UMAU=self.UMAU)
                 self._intervals.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals
