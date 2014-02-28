@@ -174,10 +174,10 @@ class constraints(object):
         
         """
         return interval_constraints(self.inequality,
-                                          self.inequality_offset,
-                                          self.covariance,
-                                          Y,
-                                          direction_of_interest)
+                                    self.inequality_offset,
+                                    self.covariance,
+                                    Y,
+                                    direction_of_interest)
 
     def pivot(self, direction_of_interest, Y,
               alternative='greater'):
