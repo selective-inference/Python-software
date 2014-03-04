@@ -101,6 +101,7 @@ class truncated_gaussian(object):
             self._negated = truncated_gaussian(np.asarray(-self._cutoff_array[::-1]),
                                                mu=-self.mu,
                                                sigma=self.sigma)
+            self._negated.use_R = self.use_R
         return self._negated
     
     # private method to update P and D after a change of parameters
@@ -164,32 +165,20 @@ class truncated_gaussian(object):
                                                       self.intervals,
                                                       self.mu,
                                                       self.sigma)
-
-
-    def find_interval(self, x):
-        check = (x >= self.intervals[:,0]) * (x <= self.intervals[:,1])
-        k = np.nonzero(check)[0]
-        if k.shape[0] > 1:
-            raise ValueError('intervals are not disjoint: x is in %s' % `self.intervals[k]`)
-        if k.shape == (0,):
-            if x >= self.intervals.max():
-                return np.inf
-            else:
-                return -np.inf
-        return k[0]
     
-    def CDF(self, observed, parameter=0):
+    def CDF(self, observed):
         P, mu, sigma = self.P, self.mu, self.sigma
-        z = observed - parameter
-        k = self.find_interval(z)
-        if np.isfinite(k):
-            return (P[:k].sum() + _cdf((self.intervals[k,0] - mu) / sigma, 
-                                       (z - mu)/sigma, use_R=self.use_R)) / P.sum()
-        elif k == np.inf:
-            return 1.
+        z = observed
+        k = int(np.floor((self.intervals <= observed).sum() / 2))
+        if k < self.intervals.shape[0]:
+            if observed > self.intervals[k,0]:
+                return (P[:k].sum() + _cdf((self.intervals[k,0] - mu) / sigma, 
+                                           (observed - mu)/sigma, use_R=self.use_R)) / P.sum()
+            else:
+                return P[:k].sum() / P.sum()
         else:
-            return 0.
-    
+            return 1.
+
     def quantile(self, q):
         P, mu, sigma = self.P, self.mu, self.sigma
         Psum = P.sum()
@@ -199,7 +188,6 @@ class truncated_gaussian(object):
         try:
             k = max(np.nonzero(Csum < Psum*q)[0])
         except ValueError:
-            print q, 'huh'
             if np.isnan(q):
                 raise TruncatedGaussianError('invalid quantile')
 
@@ -207,7 +195,7 @@ class truncated_gaussian(object):
         if np.mean(self.intervals[k]) < 0:
             return mu + _qnorm(_cdf(-np.inf,(self.intervals[k,0]-mu)/sigma, use_R=self.use_R) + pnorm_increment, use_R=self.use_R) * sigma
         else:
-            return mu - _qnorm(_cdf((self.intervals[k,0]-mu)/sigma, np.inf, use_R=self.use_R) - pnorm_increment, use_R=self.use_R)
+            return mu - _qnorm(_cdf((self.intervals[k,0]-mu)/sigma, np.inf, use_R=self.use_R) - pnorm_increment, use_R=self.use_R) * sigma
         
     # make a function for vector version?
     def right_endpoint(self, left_endpoint, alpha):
@@ -249,6 +237,47 @@ class truncated_gaussian(object):
         return (self.right_endpoint(left_endpoint, alpha) - 
                 left_endpoint) * _dnorm((left_endpoint - self.mu) / self.sigma, use_R=self.use_R)
     
+    def naive_interval(self, observed, alpha):
+        old_mu = self.mu
+        lb = self.mu - 20 * self.sigma
+        ub = self.mu + 20 * self.sigma
+        def F(param):
+            self.mu = param
+            return self.CDF(observed)
+        L = find_root(F, 1.0 - 0.5 * alpha, lb, ub)
+        U = find_root(F, 0.5 * alpha, lb, ub)
+        self.mu = old_mu
+        return np.array([L, U])
+
+    def UMAU_interval(self, observed, alpha,
+                      mu_lo=None,
+                      mu_hi=None,
+                      tol=1.e-8):
+        old_mu = self.mu
+        try:
+            upper = _UMAU(observed,
+                          alpha, self,
+                          mu_lo=mu_lo,
+                          mu_hi=mu_hi,
+                          tol=tol)
+        except TruncatedGaussianError:
+            upper = np.inf
+
+        tg_neg = self.negated
+        try:
+
+            lower = -_UMAU(-observed,
+                          alpha, tg_neg,
+                          mu_lo=mu_hi,
+                          mu_hi=mu_lo,
+                          tol=tol)
+
+        except:
+            lower = -np.inf
+
+        self.mu, self.negated.mu = old_mu, old_mu
+        return np.array([lower, upper])
+
 def G(left_endpoints, mus, alpha, tg):
     """
     Compute the $G$ function of `tg(intervals)` over 
@@ -311,42 +340,6 @@ def _UMAU(observed, alpha, tg,
             mu_lo = mu_bar
     return mu_bar
 
-def UMAU_interval(observed, alpha, tg, 
-                  mu_lo=None,
-                  mu_hi=None,
-                  tol=1.e-8):
-    try:
-        upper = _UMAU(observed,
-                      alpha, tg,
-                      mu_lo=mu_lo,
-                      mu_hi=mu_hi,
-                      tol=tol)
-    except TruncatedGaussianError:
-        upper = np.inf
-
-    tg_neg = tg.negated
-    try:
-
-        lower = -_UMAU(-observed,
-                      alpha, tg_neg,
-                      mu_lo=mu_hi,
-                      mu_hi=mu_lo,
-                      tol=tol)
-
-    except:
-        lower = -np.inf
-
-    return lower, upper
-
-def naive_interval(observed, alpha, tg):
-    lb = tg.mu - 15 * tg.sigma
-    ub = tg.mu + 15 * tg.sigma
-    F = lambda param: tg.CDF(observed, param)
-    L = find_root(F, 1.0 - 0.5 * alpha, lb, ub)
-    U = find_root(F, 0.5 * alpha, L, ub)
-    print F(L), F(U)
-    return L, U
-
 def find_root(f, y, lb, ub, tol=1e-6):
     """
     searches for solution to f(x) = y in (lb, ub), where 
@@ -367,7 +360,7 @@ def find_root(f, y, lb, ub, tol=1e-6):
     
     # determine the necessary number of iterations
     max_iter = int( np.ceil( ( np.log(tol) - np.log(b-a) ) / np.log(0.5) ) )
-    
+
     # bisect (slow but sure) until solution is obtained
     for _ in xrange(max_iter):
         c, fc  = (a+b)/2, f((a+b)/2)

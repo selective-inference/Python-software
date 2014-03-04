@@ -1,6 +1,6 @@
 import numpy as np
-from .intervals import pivot, interval
-from .truncated import truncated_gaussian, UMAU_interval, truncnorm_cdf
+from .intervals import pivot
+from .truncated import truncated_gaussian, truncnorm_cdf
 from warnings import warn
 
 WARNINGS = False
@@ -449,12 +449,13 @@ def selection_interval(support_directions,
     if UMAU:
         truncated = truncated_gaussian([(lower_bound, upper_bound)], sigma=sigma)
         truncated.use_R = False
-        _selection_interval = UMAU_interval(V, alpha/2, truncated)
+        _selection_interval = truncated.UMAU_interval(V, alpha)
 
     else:
-        _selection_interval = interval(lower_bound, V, upper_bound, sigma,
-                                       upper_target=1-alpha/2,
-                                       lower_target=alpha/2,
-                                       dps=dps)
+        _selection_interval = truncated.naive_interval(V, alpha)
+        # interval(lower_bound, V, upper_bound, sigma,
+#                                        upper_target=1-alpha/2,
+#                                        lower_target=alpha/2,
+#                                        dps=dps)
     
     return _selection_interval

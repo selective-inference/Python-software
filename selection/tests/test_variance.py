@@ -72,10 +72,10 @@ class variance_estimator(object):
         """
         norm_squared = self.sample
         M = norm_squared.mean()
-        M0 = float(np.mean([mp.exp(gamma*(ns-M)) for ns in norm_squared]))
-        M0 *= mp.exp(gamma*M)
-        M1 = np.mean([np.exp(float(gamma*ns+np.log(ns)-mp.log(M0))) for ns in norm_squared])
-        M2 = np.mean([np.exp(float(gamma*ns+2*np.log(ns)-mp.log(M0))) for ns in norm_squared])
+        M0 = float(np.mean([np.exp(gamma*(ns-M)) for ns in norm_squared]))
+        M0 *= np.exp(gamma*M)
+        M1 = np.mean([np.exp(float(gamma*ns+np.log(ns)-np.log(M0))) for ns in norm_squared])
+        M2 = np.mean([np.exp(float(gamma*ns+2*np.log(ns)-np.log(M0))) for ns in norm_squared])
         return M0, M1, (M2-M1**2)
 
     def newton(self, initial=0, niter=20):

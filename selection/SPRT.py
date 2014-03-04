@@ -1,12 +1,12 @@
 import numpy as np
 
 from .constraints import constraints
-from .truncated import truncated_gaussian, UMAU_interval, naive_interval
+from .truncated import truncated_gaussian
 
 class SPRT(object):
 
     DEBUG = False
-    alpha = 0.05
+    use_R = False
 
     def __init__(self, upper_boundary, 
                  lower_boundary=None, nmin=5, nmax=20):
@@ -42,7 +42,7 @@ class SPRT(object):
         self.nmin = nmin
         self.nmax = nmax
 
-    def __call__(self, Z, sigma=1):
+    def __call__(self, Z, sigma=1, extra_samples=0):
         """
         Perform the sequential test.
 
@@ -52,6 +52,10 @@ class SPRT(object):
         Z : `np.float`
            The observed pairs of data.
 
+        sigma : `(float, float)` or `float`
+           Variance of each entry of Z.
+           If not a tuple or list, assumed to be a float.
+
         Returns
         -------
 
@@ -60,6 +64,10 @@ class SPRT(object):
 
         """
 
+        if type(sigma) not in [type(()),type([])]:
+            sigma = (float(sigma), float(sigma))
+        noise_sd = np.sqrt(sigma[0]**2 + sigma[1]**2)
+
         Z = np.asarray(Z)
         diff = Z[:,1] - Z[:,0]
         stopped = False
@@ -67,11 +75,12 @@ class SPRT(object):
         boundary = []
 
         outcome = 'reached max time'
+
         while True:
             running_sum += diff[stopping_time]
             stopping_time += 1
-            upper_bound = sigma * self.upper_boundary(stopping_time)
-            lower_bound = sigma * self.lower_boundary(stopping_time)
+            upper_bound = noise_sd * self.upper_boundary(stopping_time)
+            lower_bound = noise_sd * self.lower_boundary(stopping_time)
 
             boundary.append((lower_bound, upper_bound))
 
@@ -91,18 +100,24 @@ class SPRT(object):
 
         n, nmin, nmax = stopping_time, self.nmin, self.nmax # shorthand
 
+        # take some extra steps after stopping
+
+        ntot = min(n+extra_samples, self.nmax)
+
         # Form the constraints
 
-        A = np.tril(np.ones((n,n)))[(nmin-1):-1]
+        A = np.tril(np.ones((n,ntot)))[(nmin-1):-1]
+        A[:, n:] = 0
 
         # If the boundary is hit, there should be
         # two intervals, each formed from 2(n-nmin)+1 constraints
 
-        diff = diff[:n]
+        diff = diff[:ntot]
 
         if stopped:
 
-            last_row = np.ones(n)
+            last_row = np.ones(ntot)
+            last_row[n:] = 0.
             m = A.shape[0]
             AU = np.vstack([A,-A,last_row.reshape((1,-1))])
             bU = np.zeros(2*m+1)
@@ -111,9 +126,9 @@ class SPRT(object):
             bU[-1] = -upper_bound
 
             conU = constraints((AU,bU), None)
-            conU.covariance *= sigma**2
+            conU.covariance *= noise_sd**2
 
-            eta = np.ones(n)
+            eta = np.ones(ntot)
 
             L1, _, U1, V = conU.bounds(eta, diff)
 
@@ -122,7 +137,7 @@ class SPRT(object):
             bL = bU.copy()
             bL[-1] = lower_bound
             conL = constraints((AL,bL), None)
-            conL.covariance *= sigma**2
+            conL.covariance *= noise_sd**2
 
             L2, _, U2, _ = conL.bounds(eta, diff)
 
@@ -139,52 +154,63 @@ class SPRT(object):
             b[m:2*m] = boundary[(nmin-1):-1,1]
 
             con = constraints((A,b), None)
-            con.covariance *= sigma**2
+            con.covariance *= noise_sd**2
 
-            eta = np.ones(n)
+            eta = np.ones(ntot)
             L1, _, U1, V = con.bounds(eta, diff)
 
             intervals = ((L1, U1))
             observed = (eta*diff).sum()
             selection_constraints = [con]
 
-        tg = truncated_gaussian(intervals, sigma=np.sqrt(V))
-        tg.use_R = False
-        naive = naive_interval(observed, 
-                                        self.alpha, 
-                                        tg)
-        naive = np.array(naive) / n
-        
-        umau_interval = UMAU_interval(observed,
-                                      self.alpha, 
-                                      tg)
-        umau_interval = np.array(umau_interval) / n
-
+        tg = truncated_gaussian(np.array(intervals) / ntot, sigma=V / ntot)
+        tg.use_R = self.use_R
         return SPRT_result(stopping_time, 
-                           naive,
-                           umau_interval, 
+                           ntot, 
                            boundary, 
                            selection_constraints, 
                            tg, 
                            outcome, 
-                           observed / n)
+                           observed / ntot)
 
 class SPRT_result(object):
 
+    alpha = 0.05
+
     def __init__(self, stopping_time, 
-                 naive_interval, 
-                 umau_interval, 
+                 ntot,
                  boundary,
                  selection_constraints,
                  trunc_gauss,
                  outcome,
-                 observed):
+                 observed,
+                 true_difference=0):
 
         self.stopping_time = stopping_time
-        self.naive_interval = naive_interval
-        self.umau_interval = umau_interval
+        self.ntot = ntot
         self.boundary = boundary
         self.selection_constraints = selection_constraints
         self.trunc_gauss = trunc_gauss
         self.outcome = outcome
         self.observed = observed
+        self.true_difference = true_difference
+
+    @property
+    def naive_interval(self):
+        if not hasattr(self, "_naive_interval"):
+            self._naive_interval = self.trunc_gauss.naive_interval(self.observed, self.alpha)
+        return self._naive_interval
+
+    @property
+    def UMAU_interval(self):
+        if not hasattr(self, "_UMAU_interval"):
+            self._UMAU_interval = self.trunc_gauss.UMAU_interval(self.observed, self.alpha)
+        return self._UMAU_interval
+
+    def pvalue(self, truth=0):
+        old_mu = self.trunc_gauss.mu
+        self.trunc_gauss.mu = truth
+        P = self.trunc_gauss.CDF(self.observed)
+        pval = min(P, 1-P)
+        self.trunc_gauss.mu = old_mu
+        return pval
