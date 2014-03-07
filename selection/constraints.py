@@ -1,6 +1,6 @@
 import numpy as np
-from .intervals import pivot
-from .truncated import truncated_gaussian, truncnorm_cdf
+from .intervals import pivot, interval
+from .truncated import truncated_gaussian, UMAU_interval, truncnorm_cdf
 from warnings import warn
 
 WARNINGS = False
@@ -174,10 +174,10 @@ class constraints(object):
         
         """
         return interval_constraints(self.inequality,
-                                    self.inequality_offset,
-                                    self.covariance,
-                                    Y,
-                                    direction_of_interest)
+                                          self.inequality_offset,
+                                          self.covariance,
+                                          Y,
+                                          direction_of_interest)
 
     def pivot(self, direction_of_interest, Y,
               alternative='greater'):
@@ -449,13 +449,12 @@ def selection_interval(support_directions,
     if UMAU:
         truncated = truncated_gaussian([(lower_bound, upper_bound)], sigma=sigma)
         truncated.use_R = False
-        _selection_interval = truncated.UMAU_interval(V, alpha)
+        _selection_interval = UMAU_interval(V, alpha/2, truncated)
 
     else:
-        _selection_interval = truncated.naive_interval(V, alpha)
-        # interval(lower_bound, V, upper_bound, sigma,
-#                                        upper_target=1-alpha/2,
-#                                        lower_target=alpha/2,
-#                                        dps=dps)
+        _selection_interval = interval(lower_bound, V, upper_bound, sigma,
+                                       upper_target=1-alpha/2,
+                                       lower_target=alpha/2,
+                                       dps=dps)
     
     return _selection_interval

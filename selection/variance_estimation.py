@@ -21,7 +21,7 @@ from scipy.integrate import quad
 
 from warnings import warn
 
-#from sklearn.isotonic import IsotonicRegression
+from sklearn.isotonic import IsotonicRegression
 
 # load rpy2 and initialize for numpy support
 import rpy2.robjects as rpy
