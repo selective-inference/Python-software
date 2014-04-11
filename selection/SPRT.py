@@ -202,6 +202,15 @@ class SPRT_result(object):
         return self._naive_interval
 
     @property
+    def nominal_interval(self):
+        if not hasattr(self, "_nominal_interval"):
+            from selection.truncated import _qnorm
+            center, sd = self.observed, self.trunc_gauss.sigma
+            q = np.fabs(_qnorm(self.alpha / 2., use_R=True))
+            self._nominal_interval = np.array([center-q*sd, center+q*sd])
+        return self._nominal_interval
+
+    @property
     def UMAU_interval(self):
         if not hasattr(self, "_UMAU_interval"):
             self._UMAU_interval = self.trunc_gauss.UMAU_interval(self.observed, self.alpha)
