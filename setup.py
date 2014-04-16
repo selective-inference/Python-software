@@ -50,6 +50,7 @@ def main(**extra_args):
           requires=REQUIRES,
           provides=PROVIDES,
           packages     = ['selection',
+                          'selection.utils',
                           ],
           ext_modules = EXTS,
           package_data = {},
