@@ -35,11 +35,12 @@ exec(open(_info_fname, 'rt').read(), {}, rel)
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.doctest',
-              'sphinx.ext.pngmath',
+              'sphinx.ext.mathjax',
               'sphinx.ext.autosummary',
               'sphinx.ext.graphviz',
               'sphinx.ext.inheritance_diagram',
-              'numpydoc.numpydoc'
+              'numpydoc.numpydoc',
+              'math_dollar'
               ]
 
 # Current version (as of 11/2010) of numpydoc is only compatible with sphinx >
@@ -200,3 +201,7 @@ latex_preamble = r"""
 
 # If false, no module index is generated.
 latex_use_modindex = True
+
+# Mathjax
+
+# mathjax_path = "http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"

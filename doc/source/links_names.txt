@@ -8,6 +8,9 @@
    __not_case_sensitive__, so only one target definition is needed for
    nipy, NIPY, Nipy, etc...
 
+.. Post selection papers
+.. _covtest: http://arxiv.org/abs/1301.7161
+
 .. Documentation tools
 .. _graphviz: http://www.graphviz.org/
 .. _Sphinx: http://sphinx.pocoo.org/
