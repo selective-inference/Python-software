@@ -1,5 +1,5 @@
 import numpy as np
-import .constraints as C
+from .constraints import constraints
 from .pvalue import chi_pvalue
 
 def tangent_space(operator, y):
@@ -49,7 +49,7 @@ def tangent_space(operator, y):
         return eta, None
     
 def quadratic_bounds(y, operator, affine_constraints):
-    """
+    r"""
     Given a set specified by an affine constraint
 
     .. math::
@@ -93,16 +93,23 @@ def quadratic_bounds(y, operator, affine_constraints):
 
     sd  : float
 
+    Notes
+    -----
+
+    The test is based on the fact that, conditional
+    on $\eta$ and the constraints, $Ay$ is a
+    truncated $\chi$ random variable.
+
     """
     con = affine_constraints
     p, q = operator.shape
 
     eta, TA = tangent_space(operator, y)
     if TA is not None:
-        newcon = C.constraints((con.inequality, 
-                                con.inequality_offset),
-                               (TA, np.zeros(TA.shape[0])),
-                               covariance=con.covariance)
+        newcon = constraints((con.inequality, 
+                              con.inequality_offset),
+                             (TA, np.zeros(TA.shape[0])),
+                             covariance=con.covariance)
         newcon = newcon.impose_equality()
         P = np.identity(q) - np.dot(np.linalg.pinv(TA), TA)
         eta = np.dot(P, eta)
@@ -112,8 +119,8 @@ def quadratic_bounds(y, operator, affine_constraints):
     return newcon.bounds(eta, y)
 
 def quadratic_test(y, operator, affine_contraints):
-    """
-    Test the null hypothesis $H_0:A\mu = 0$ based on
+    r"""
+    Test the null hypothesis $H_0:A_{p \times q}\mu_{q \times 1} = 0$ based on
     $y \sim N(\mu,\Sigma)$ with $\Sigma$ given by `affine_constraints.covariance`
     where `affine_constraints` represents the set
 
