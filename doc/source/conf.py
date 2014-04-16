@@ -37,6 +37,7 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.doctest',
               'sphinx.ext.pngmath',
               'sphinx.ext.autosummary',
+              'sphinx.ext.graphviz',
               'sphinx.ext.inheritance_diagram',
               'numpydoc.numpydoc'
               ]
