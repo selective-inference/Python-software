@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-''' Installation script for fixed_lambda package '''
+''' Installation script for selection package '''
 
 import os
 import sys
