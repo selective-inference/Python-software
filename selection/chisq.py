@@ -80,7 +80,7 @@ def quadratic_bounds(y, operator, affine_constraints):
 
     operator : np.float((p,q))
 
-    affine_con : `selection.constraints.constraints`
+    affine_constraints : `selection.constraints.constraints`_
 
     Returns
     -------
@@ -101,7 +101,7 @@ def quadratic_bounds(y, operator, affine_constraints):
     truncated $\chi$ random variable.
 
     """
-    con = affine_constraints
+    con = affine_constraints # shorthand
     p, q = operator.shape
 
     eta, TA = tangent_space(operator, y)
@@ -118,7 +118,7 @@ def quadratic_bounds(y, operator, affine_constraints):
 
     return newcon.bounds(eta, y)
 
-def quadratic_test(y, operator, affine_contraints):
+def quadratic_test(y, operator, affine_constraints):
     r"""
     Test the null hypothesis $H_0:A_{p \times q}\mu_{q \times 1} = 0$ based on
     $y \sim N(\mu,\Sigma)$ with $\Sigma$ given by `affine_constraints.covariance`
@@ -135,7 +135,7 @@ def quadratic_test(y, operator, affine_contraints):
 
     operator : np.float((p,q))
 
-    affine_con : `selection.constraints.constraints`
+    affine_constraints : `selection.constraints.constraints`_
 
     Returns
     -------
@@ -145,7 +145,8 @@ def quadratic_test(y, operator, affine_contraints):
     """
     p, q = operator.shape
 
-    lower_bound, observed, upper_bound, sigma = quadratic_bounds(y, operator, con)
+    lower_bound, observed, upper_bound, sigma = quadratic_bounds(y, operator, 
+                                                                 affine_constraints)
     lower_bound = max(0, lower_bound)
     
     pval = chi_pvalue(observed, lower_bound, upper_bound, sigma, p, 

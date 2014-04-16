@@ -34,9 +34,9 @@ exec(open(_info_fname, 'rt').read(), {}, rel)
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = ['sphinx.ext.autodoc',
+              'sphinx.ext.autosummary',
               'sphinx.ext.doctest',
               'sphinx.ext.mathjax',
-              'sphinx.ext.autosummary',
               'sphinx.ext.graphviz',
               'sphinx.ext.inheritance_diagram',
               'numpydoc.numpydoc',
@@ -47,6 +47,10 @@ extensions = ['sphinx.ext.autodoc',
 # 1.0.  We keep copies of this version in 'numpy_ext'.  For a while we will also
 # keep a copy of the older numpydoc version to allow compatibility with sphinx
 # 0.6
+
+# numpydoc config
+numpydoc_show_class_members = False # Otherwise Sphinx emits thousands of warnings
+numpydoc_class_members_toctree = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -83,7 +87,6 @@ unused_docs = []
 # exclude_trees = []
 
 # what to put into API doc (just class doc, just init, or both)
-autoclass_content = 'both'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
@@ -202,6 +205,6 @@ latex_preamble = r"""
 # If false, no module index is generated.
 latex_use_modindex = True
 
-# Mathjax
 
-# mathjax_path = "http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+autodoc_member_order = 'bysource'
+autoclass_content = 'both'

@@ -9,6 +9,9 @@ p-value test.
 They are described in the `Kac Rice`_ paper.
 
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
+.. _Spacings: http://arxiv.org/abs/1401.3889
+.. _post selection LASSO: http://arxiv.org/abs/1311.6238
+
 
 
 """
@@ -91,9 +94,6 @@ def gaussian_pvalue(observed, lower_bound, upper_bound, sd, method='cdf', nsim=1
 
     This is the basis of the exact tests described in `Kac Rice`_, `Spacings`_ 
     and `post selection LASSO`_ papers.
-
-    .. _Spacings: http://arxiv.org/abs/1401.3889
-    .. _post selection LASSO: http://arxiv.org/abs/1311.6238
 
     Parameters
     ----------
