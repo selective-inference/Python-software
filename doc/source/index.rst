@@ -4,6 +4,8 @@
 The Selection project
 =====================
 
+.. include:: ./links_names.txt
+
 This is a project that collects various tools for
 post-selection inference.
 
@@ -15,12 +17,13 @@ post-selection inference.
    documentation
    docattribute
 
-This website is based on the `NIPY website <http://nipy.sourceforge.net/nipy/stable/index.html>`_, see :ref:`doc-attribute` for details.
+This website is based on the `NIPY website <http://nipy.sourceforge.net/nipy/stable/index.html>`_, see :ref:`doc-attribute` for details. 
 
 Thanks
 ======
 
-Jonathan Taylor and Brad Klingenberg were funded by NSF in writing their
+
+Jonathan Taylor was funded by NSF in writing their
 portion of the software. As such, this material is based upon work supported by the 
 National Science Foundation under Grant DMS 1208857, and by the AFOSR grant 113039.
 
@@ -32,3 +35,5 @@ Any opinions, findings, and conclusions or recommendations expressed in this mat
    :hidden:
 
    documentation
+
+.. include:: ../links_names.txt

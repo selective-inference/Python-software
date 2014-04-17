@@ -1,3 +1,16 @@
+"""
+This module contains the core code needed for post selection
+inference based on affine selection procedures as
+described in the papers `Kac Rice`_, `Spacings`_, `covTest`_
+and `post selection LASSO`_.
+
+.. _covTest: http://arxiv.org/abs/1301.7161
+.. _Kac Rice: http://arxiv.org/abs/1308.3020
+.. _Spacings: http://arxiv.org/abs/1401.3889
+.. _post selection LASSO: http://arxiv.org/abs/1311.6238
+
+"""
+
 import numpy as np
 from .intervals import pivot
 from .truncated import truncated_gaussian, truncnorm_cdf
@@ -7,30 +20,47 @@ WARNINGS = False
 
 class constraints(object):
 
+    r"""
+    This class is the core object for affine selection procedures.
+    It is meant to describe sets of the form $C \cap E$
+    where
+
+    .. math::
+
+       C = \left\{z: Az\leq b\}
+
+       E = \left\{z: Cz = d\}
+
+    Its main purpose is to consider slices through $C \cap E$
+    and the conditional distribution of a Gaussian $N(\mu,\Sigma)$
+    restricted to such slices.
+
+    """
+
     def __init__(self, 
                  inequality, 
                  equality, 
                  covariance=None,
                  mean=None):
-        """
+        r"""
         Create a new inequality. 
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
 
         inequality : (A,b)
             A pair specifying the inequality constraint 
-            $\{z:Az+b \geq 0\}$. Can be `None`.
+            $\{z:Az \leq b\}$. Can be `None`.
 
         equality: (C,d)
             A pair specifing the equality constraint
-            $\{z:Cz+d=0\}$. Can be `None`.
+            $\{z:Cz=d\}$. Can be `None`.
 
-        covariance : `np.float`
+        covariance : np.float
             Covariance matrix of Gaussian distribution to be 
             truncated. Defaults to `np.identity(self.dim)`.
 
-        mean : `np.float`
+        mean : np.float
             Mean vector of Gaussian distribution to be 
             truncated. Defaults to `np.zeros(self.dim)`.
 
@@ -75,11 +105,11 @@ class constraints(object):
 
     def _repr_latex_(self):
         if self.inequality is not None and self.equality is None:
-            return """$$Z \sim N(\mu,\Sigma) | AZ+b \geq 0$$"""
+            return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
         elif self.equality is not None and self.inequality is None:
-            return """$$Z \sim N(\mu,\Sigma) | CZ+d = 0$$"""
+            return """$$Z \sim N(\mu,\Sigma) | CZ = d$$"""
         else:
-            return """$$Z \sim N(\mu,\Sigma) | AZ+b \geq 0, CZ+d = 0$$"""
+            return """$$Z \sim N(\mu,\Sigma) | AZ \leq b, CZ = d$$"""
 
     def impose_equality(self):
         """
@@ -94,7 +124,7 @@ class constraints(object):
 
         .. math::
            
-           AY - E(AY|CZ+d=0)
+           AY - E(AY|CZ=d)
 
 
         """
@@ -109,31 +139,31 @@ class constraints(object):
             equality_offset = np.dot(M3, self.equality_offset)
             
             return constraints((self.inequality - equality_linear,
-                               self.inequality_offset - equality_offset),
+                                self.inequality_offset - equality_offset),
                               (self.equality, self.equality_offset),
                                covariance=self.covariance)
         else:
             return self
 
     def __call__(self, Y, tol=1.e-3):
-        """
+        r"""
         Check whether Y satisfies the linear
         inequality and equality constraints.
         """
         if self.inequality is not None:
-            V1 = np.dot(self.inequality, Y) + self.inequality_offset
-            test1 = np.all(V1 > -tol * np.fabs(V1).max())
+            V1 = np.dot(self.inequality, Y) - self.inequality_offset
+            test1 = np.all(V1 < tol * np.fabs(V1).max())
         else:
             test1 = True
         if self.equality is not None:
-            V2 = np.dot(self.equality, Y) + self.equality_offset
+            V2 = np.dot(self.equality, Y) - self.equality_offset
             test2 = np.linalg.norm(V2) < tol * np.linalg.norm(self.equality)
         else:
             test2 = True
         return test1 and test2
 
     def bounds(self, direction_of_interest, Y):
-        """
+        r"""
         For a realization $Y$ of the random variable $N(\mu,\Sigma)$
         truncated to $C$ specified by `self.constraints` compute
         the slice of the inequality constraints in a 
@@ -142,11 +172,11 @@ class constraints(object):
         Parameters
         ----------
 
-        direction_of_interest: `np.float`
+        direction_of_interest: np.float
             A direction $\eta$ for which we may want to form 
             selection intervals or a test.
 
-        Y : `np.float`
+        Y : np.float
             A realization of $N(0,\Sigma)$ where 
             $\Sigma$ is `self.covariance`.
 
@@ -165,10 +195,10 @@ class constraints(object):
         S : np.float
             Standard deviation of $\eta^TY$.
 
-        WARNING
-        -------
+        Notes
+        -----
         
-        This implicitly assumes that equality constraints
+        This method assumes that equality constraints
         have been enforced and direction of interest
         is in the row space of any equality constraint matrix.
         
@@ -181,7 +211,7 @@ class constraints(object):
 
     def pivot(self, direction_of_interest, Y,
               alternative='greater'):
-        """
+        r"""
         For a realization $Y$ of the random variable $N(\mu,\Sigma)$
         truncated to $C$ specified by `self.constraints` compute
         the slice of the inequality constraints in a 
@@ -191,11 +221,11 @@ class constraints(object):
         Parameters
         ----------
 
-        direction_of_interest: `np.float`
+        direction_of_interest: np.float
             A direction $\eta$ for which we may want to form 
             selection intervals or a test.
 
-        Y : `np.float`
+        Y : np.float
             A realization of $N(0,\Sigma)$ where 
             $\Sigma$ is `self.covariance`.
 
@@ -217,10 +247,7 @@ class constraints(object):
         then we return $1-F$; if it is 'less' we return $F$
         and if it is 'twosided' we return $2 \min(F,1-F)$.
 
-        WARNING
-        -------
-        
-        This implicitly assumes that equality constraints
+        This method assumes that equality constraints
         have been enforced and direction of interest
         is in the row space of any equality constraint matrix.
         
@@ -239,7 +266,7 @@ class constraints(object):
 
     def interval(self, direction_of_interest, Y,
                  alpha=0.05, UMAU=False):
-        """
+        r"""
         For a realization $Y$ of the random variable $N(\mu,\Sigma)$
         truncated to $C$ specified by `self.constraints` compute
         the slice of the inequality constraints in a 
@@ -249,11 +276,11 @@ class constraints(object):
         Parameters
         ----------
 
-        direction_of_interest: `np.float`
+        direction_of_interest: np.float
             A direction $\eta$ for which we may want to form 
             selection intervals or a test.
 
-        Y : `np.float`
+        Y : np.float
             A realization of $N(0,\Sigma)$ where 
             $\Sigma$ is `self.covariance`.
 
@@ -268,10 +295,10 @@ class constraints(object):
 
         [U,L] : selection interval
 
-        WARNING
-        -------
+        Notes
+        -----
         
-        This implicitly assumes that equality constraints
+        This method assumes that equality constraints
         have been enforced and direction of interest
         is in the row space of any equality constraint matrix.
         
@@ -294,16 +321,16 @@ def stack(*cons):
     Parameters
     ----------
 
-    cons : [`constraints`]
+    cons : [`selection.constraints.constraints`_]
          A sequence of constraints.
 
     Returns
     -------
 
-    intersection : `constraints`
+    intersection : `selection.constraints.constraints`_
 
-    WARNING
-    -------
+    Notes
+    -----
 
     Resulting constraint will have mean 0 and covariance $I$.
 
@@ -333,19 +360,24 @@ def stack(*cons):
     return intersection
 
 def simulate_from_constraints(con, tol=1.e-3):
-    """
+    r"""
     Use naive acceptance rule to simulate from `con`.
 
-    WARNING
-    -------
+    Parameters
+    ----------
 
-    This function implicitly assuems the covariance is
+    con : `selection.constraints.constraints`_
+
+    Notes
+    -----
+
+    This function assumes the covariance is
     proportional to the identity.
 
     """
     if con.equality is not None:
         V = np.linalg.pinv(con.equality)
-        a = -np.dot(V, con.equality_offset)
+        a = np.dot(V, con.equality_offset)
         P = np.identity(con.dim) - np.dot(con.equality.T, V.T)
     else:
         a = 0
@@ -354,8 +386,8 @@ def simulate_from_constraints(con, tol=1.e-3):
         while True:
             Z = np.dot(P, np.random.standard_normal(con.dim)) + a
             Z += con.mean
-            W = np.dot(con.inequality, Z) + con.inequality_offset  
-            if np.all(W > - tol * np.fabs(W).max()):
+            W = np.dot(con.inequality, Z) - con.inequality_offset  
+            if np.all(W < tol * np.fabs(W).max()):
                 break
         return Z
     else:
@@ -367,8 +399,8 @@ def interval_constraints(support_directions,
                          observed_data, 
                          direction_of_interest,
                          tol = 1.e-4):
-    """
-    Given an affine in cone constraint $Ax+b \geq 0$ (elementwise)
+    r"""
+    Given an affine in cone constraint $\{z:Az \leq b\}$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
     `support_offset`, a new direction of interest $w$, and
     an observed Gaussian vector $X$ with some `covariance`, this
@@ -377,7 +409,7 @@ def interval_constraints(support_directions,
 
     The interval constructed is such that the endpoints are 
     independent of $w^TX$, hence the $p$-value
-    of `Kac-Rice <http://arxiv.org/abs/1308.3020>`_
+    of `Kac-Rice`_
     can be used to form an exact pivot.
 
     """
@@ -389,33 +421,33 @@ def interval_constraints(support_directions,
                      observed_data,
                      direction_of_interest)
 
-    U = np.dot(A, X) + b
-    if not np.all(U > -tol * np.fabs(U).max()) and WARNINGS:
+    U = np.dot(A, X) - b
+    if not np.all(U  < tol * np.fabs(U).max()) and WARNINGS:
         warn('constraints not satisfied: %s' % `U`)
 
     Sw = np.dot(S, w)
     sigma = np.sqrt((w*Sw).sum())
-    C = np.dot(A, Sw) / sigma**2
-    V = (w*X).sum()
+    alpha = np.dot(A, Sw) / sigma**2
+    V = (w*X).sum() # \eta^TZ
 
     # adding the zero_coords in the denominator ensures that
     # there are no divide-by-zero errors in RHS
     # these coords are never used in upper_bound or lower_bound
 
-    zero_coords = C == 0
-    RHS = (-U + V * C) / (C + zero_coords)
+    zero_coords = alpha == 0
+    RHS = (-U + V * alpha) / (alpha + zero_coords)
     RHS[zero_coords] = np.nan
 
-    pos_coords = C > tol * np.fabs(C).max()
+    pos_coords = alpha > tol * np.fabs(alpha).max()
     if np.any(pos_coords):
-        lower_bound = RHS[pos_coords].max()
-    else:
-        lower_bound = -np.inf
-    neg_coords = C < -tol * np.fabs(C).max()
-    if np.any(neg_coords):
-        upper_bound = RHS[neg_coords].min()
+        upper_bound = RHS[pos_coords].min()
     else:
         upper_bound = np.inf
+    neg_coords = alpha < -tol * np.fabs(alpha).max()
+    if np.any(neg_coords):
+        lower_bound = RHS[neg_coords].max()
+    else:
+        lower_bound = -np.inf
 
     return lower_bound, V, upper_bound, sigma
 
@@ -453,9 +485,5 @@ def selection_interval(support_directions,
 
     else:
         _selection_interval = truncated.naive_interval(V, alpha)
-        # interval(lower_bound, V, upper_bound, sigma,
-#                                        upper_target=1-alpha/2,
-#                                        lower_target=alpha/2,
-#                                        dps=dps)
     
     return _selection_interval
