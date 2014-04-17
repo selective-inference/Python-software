@@ -1,5 +1,5 @@
 import numpy as np
-from .constraints import (constraints, selection_interval,
+from .affine import (constraints, selection_interval,
                           interval_constraints)
 from .intervals import pivot
 from scipy.stats import norm as ndist

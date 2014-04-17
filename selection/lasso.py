@@ -1,8 +1,8 @@
 import numpy as np
 import regreg.api as rr
-from .constraints import (constraints, selection_interval,
-                          interval_constraints,
-                          stack)
+from .affine import (constraints, selection_interval,
+                     interval_constraints,
+                     stack)
 import selection.truncated
 
 from .intervals import pivot

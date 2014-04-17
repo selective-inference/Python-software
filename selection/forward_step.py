@@ -12,7 +12,7 @@ from scipy.stats import norm as ndist
 
 # local imports 
 
-from .constraints import constraints
+from .affine import constraints
 from .chisq import quadratic_test
 
 DEBUG = False

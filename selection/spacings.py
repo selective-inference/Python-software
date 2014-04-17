@@ -1,5 +1,5 @@
 import numpy as np
-from .constraints import constraints
+from .affine import constraints
 
 def covtest(X, Y, sigma=1):
     """
