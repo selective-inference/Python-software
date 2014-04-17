@@ -17,4 +17,6 @@
 */*.nav
 */*.bak
 */*.vrb
-
+*/*.pyc
+*/*/*.pyc
+build
