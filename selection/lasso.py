@@ -462,8 +462,8 @@ class lasso(object):
 
                 self.active_constraints = constraints(  
                     (sA[:,None] * XAinv, 
-                     -self.lagrange*sA*np.dot(self._SigmaA, 
-                                              sA)), None)
+                     self.lagrange*sA*np.dot(self._SigmaA, 
+                                             sA)), None)
                 self._SigmaA *=  self.sigma_epsilon**2
                 self.PA = PA = np.dot(XA, XAinv)
                 irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
@@ -481,10 +481,10 @@ class lasso(object):
 
                 self.inactive_constraints = stack( 
                     constraints(((-inactiveX.T, 
-                                   (lagrange - 
+                                   -(lagrange - 
                                     irrep_subgrad) / scaling)), None),
                     constraints(((inactiveX.T, 
-                                   (lagrange +
+                                   -(lagrange +
                                     irrep_subgrad) / scaling)), None))
             else:
                 self.inactive_constraints = None

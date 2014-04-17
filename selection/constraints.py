@@ -440,12 +440,12 @@ def interval_constraints(support_directions,
 
     pos_coords = alpha > tol * np.fabs(alpha).max()
     if np.any(pos_coords):
-        upper_bound = RHS[pos_coords].max()
+        upper_bound = RHS[pos_coords].min()
     else:
         upper_bound = np.inf
     neg_coords = alpha < -tol * np.fabs(alpha).max()
     if np.any(neg_coords):
-        lower_bound = RHS[neg_coords].min()
+        lower_bound = RHS[neg_coords].max()
     else:
         lower_bound = -np.inf
 
