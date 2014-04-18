@@ -65,13 +65,24 @@ class lasso(object):
         self.lagrange = frac * np.fabs(np.dot(X.T, y)).max() / n
         self._covariance = self.sigma_epsilon**2 * np.identity(X.shape[0])
 
-    def fit(self, tol=1.e-8,
-            min_its=50, use_cvx=False):
+    def fit(self, **lasso_args):
         """
         self.soln only updated after self.fit
-        """
 
-        self._lasso = Lasso(alpha=self.lagrange)
+        Parameters
+        ----------
+
+        lasso_args : keyword args
+             Passed to `sklearn.linear_model.Lasso`_
+
+        Returns
+        -------
+
+        soln : np.float
+             Solution to lasso with `alpha=self.lagrange`.
+
+        """
+        self._lasso = Lasso(alpha=self.lagrange, **lasso_args)
         self._lasso.fit(self.X, self.Y)
         self._soln = self._lasso.coef_
         return self._soln
@@ -82,7 +93,7 @@ class lasso(object):
         necessary for inference.
 
         This sets the attributes: `active_constraints`,
-        `inactive_constraints`, `active`
+        `inactive_constraints`, `active`.
         """
 
         X, y, soln, lagrange = self.X, self.y, self.soln, self.lagrange

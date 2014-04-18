@@ -418,8 +418,6 @@ def interval_constraints(support_directions,
     of `Kac Rice`_
     can be used to form an exact pivot.
 
-.. _Kac Rice: http://arxiv.org/abs/1308.3020
-
     Parameters
     ----------
 
