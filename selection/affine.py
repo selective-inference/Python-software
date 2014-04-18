@@ -178,7 +178,7 @@ class constraints(object):
             selection intervals or a test.
 
         Y : np.float
-            A realization of $N(0,\Sigma)$ where 
+            A realization of $N(\mu,\Sigma)$ where 
             $\Sigma$ is `self.covariance`.
 
         Returns
@@ -278,17 +278,21 @@ class constraints(object):
         ----------
 
         direction_of_interest: np.float
+
             A direction $\eta$ for which we may want to form 
             selection intervals or a test.
 
         Y : np.float
+
             A realization of $N(0,\Sigma)$ where 
             $\Sigma$ is `self.covariance`.
 
         alpha : float
+
             What level of confidence?
 
         UMAU : bool
+
             Use the UMAU intervals?
 
         Returns
@@ -322,13 +326,13 @@ def stack(*cons):
     Parameters
     ----------
 
-    cons : [`selection.constraints.constraints`_]
+    cons : [`selection.affine.constraints`_]
          A sequence of constraints.
 
     Returns
     -------
 
-    intersection : `selection.constraints.constraints`_
+    intersection : `selection.affine.constraints`_
 
     Notes
     -----
@@ -367,7 +371,7 @@ def simulate_from_constraints(con, tol=1.e-3):
     Parameters
     ----------
 
-    con : `selection.constraints.constraints`_
+    con : `selection.affine.constraints`_
 
     Notes
     -----
@@ -411,7 +415,7 @@ def interval_constraints(support_directions,
 
     The interval constructed is such that the endpoints are 
     independent of $\eta^TZ$, hence the $p$-value
-    of `Kac-Rice`_
+    of `Kac Rice`_
     can be used to form an exact pivot.
 
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
