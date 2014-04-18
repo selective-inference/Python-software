@@ -65,7 +65,7 @@ class lasso(object):
         self.lagrange = frac * np.fabs(np.dot(X.T, y)).max() / n
         self._covariance = self.sigma_epsilon**2 * np.identity(X.shape[0])
 
-    def fit(self, **lasso_args):
+    def fit(self, alpha=None, **lasso_args):
         """
         self.soln only updated after self.fit
 
@@ -81,7 +81,14 @@ class lasso(object):
         soln : np.float
              Solution to lasso with `alpha=self.lagrange`.
 
+        Notes
+        -----
+
+        Also calls `form_constraints`.
+
         """
+        if alpha is not None:
+            self.lagrange = alpha / n #?
         self._lasso = Lasso(alpha=self.lagrange, **lasso_args)
         self._lasso.fit(self.X, self.Y)
         self._soln = self._lasso.coef_
