@@ -1,5 +1,25 @@
+"""
+This module contains a class `lasso`_ that implements
+post selection for the lasso
+as described in `post selection LASSO`_.
+
+It also includes a function `covtest`_ that computes
+the exact form of the covariance test described in 
+`Spacings`_.
+
+The covariance test itself is asymptotically exponential
+(under certain conditions) and is  described in 
+`covTest`_.
+
+.. _covTest: http://arxiv.org/abs/1301.7161
+.. _Kac Rice: http://arxiv.org/abs/1308.3020
+.. _Spacings: http://arxiv.org/abs/1401.3889
+.. _post selection LASSO: http://arxiv.org/abs/1311.6238
+
+
+"""
 import numpy as np
-import regreg.api as rr
+from sklearn.linear_model import Lasso
 from .affine import (constraints, selection_interval,
                      interval_constraints,
                      stack)
@@ -42,7 +62,7 @@ class lasso(object):
         self.X = X
         self.frac = frac
         self.sigma_epsilon = sigma_epsilon
-        self.lagrange = frac * np.fabs(np.dot(X.T, y)).max()
+        self.lagrange = frac * np.fabs(np.dot(X.T, y)).max() / n
         self._covariance = self.sigma_epsilon**2 * np.identity(X.shape[0])
 
     def fit(self, tol=1.e-8,
@@ -51,34 +71,75 @@ class lasso(object):
         self.soln only updated after self.fit
         """
 
-        if use_cvx: 
-            beta = cvx.variable(p)
-            _X = cvx.parameter(n,p)
-            _X.value = cvx.matrix(X)
-
-            _Y = cvx.parameter(n,1)
-            _Y.value = cvx.matrix(y.reshape((n,1)))
-
-            beta = cvx.variable(p)
-
-            objective = cvx.sum(cvx.square(_Y-_X*beta))
-            penalty = cvx.sum(cvx.abs(beta))
-            program = cvx.program(cvx.minimize(0.5*objective + lagrange*penalty))
-            program.solve(quiet=True)
-
-            soln = np.array(beta.value).reshape(-1)
-            soln[np.fabs(soln) < tol * np.fabs(soln).max()] = 0
-        else: # use regreg
-            X, y = self.X, self.y
-            n, p = self.X.shape
-            penalty = rr.l1norm(p, lagrange=self.lagrange)
-            loss = rr.squared_error(X, y)
-            problem = rr.simple_problem(loss, penalty)
-            soln = problem.solve(tol=tol, min_its=min_its)
-        self._soln = soln
-        # evaluate properties -- bad form
-        self.constraints
+        self._lasso = Lasso(alpha=self.lagrange)
+        self._lasso.fit(self.X, self.Y)
+        self._soln = self._lasso.coef_
         return self._soln
+
+    def form_constraints(self):
+        """
+        After having fit lasso, form the constraints
+        necessary for inference.
+
+        This sets the attributes: `active_constraints`,
+        `inactive_constraints`, `active`
+        """
+
+        X, y, soln, lagrange = self.X, self.y, self.soln, self.lagrange
+        n, p = X.shape
+
+        nonzero_coef = soln != 0
+        tight_subgrad = np.fabs(np.fabs(np.dot(X.T, y - np.dot(X, soln))) / lagrange - 1) < 1.e-3
+        if DEBUG:
+            print 'KKT consistency', (nonzero_coef - tight_subgrad).sum()
+
+        A = nonzero_coef
+        self.active = np.nonzero(nonzero_coef)[0]
+        if A.sum() > 0:
+            sA = np.sign(soln[A])
+            self.signs = sA
+            XA = X[:,A]
+            XnotA = X[:,~A]
+            self._XAinv = XAinv = np.linalg.pinv(XA)
+            self._SigmaA = np.dot(XAinv, XAinv.T)
+
+            self.active_constraints = constraints(  
+                (sA[:,None] * XAinv, 
+                 self.lagrange*sA*np.dot(self._SigmaA, 
+                                         sA)), None)
+            self._SigmaA *=  self.sigma_epsilon**2
+            self._PA = PA = np.dot(XA, XAinv)
+            irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
+
+        else:
+            XnotA = X
+            self._PA = PA = 0
+            irrep_supgrad = np.zeros(p)
+            self.active_constraints = None
+
+        if A.sum() < X.shape[1]:
+            inactiveX = np.dot(np.identity(n) - PA, XnotA)
+            scaling = np.sqrt((inactiveX**2).sum(0))
+            inactiveX /= scaling[None,:]
+
+            self.inactive_constraints = stack( 
+                constraints(((-inactiveX.T, 
+                               -(lagrange - 
+                                irrep_subgrad) / scaling)), None),
+                constraints(((inactiveX.T, 
+                               -(lagrange +
+                                irrep_subgrad) / scaling)), None))
+        else:
+            self.inactive_constraints = None
+
+        if (self.active_constraints is not None 
+            and self.inactive_constraints is not None):
+            self._constraints = stack(self.active_constraints,
+                                      self.inactive_constraints)
+        elif self.active_constraints is not None:
+            self._constraints = self.active_constraints
+        else:
+            self._constraints = self.inactive_constraints
 
     @property
     def soln(self):
@@ -87,85 +148,9 @@ class lasso(object):
         return self._soln
 
     @property
-    def centered_test(self):
-        return fixed_pvalue_centered(self.y, 
-                                     self.X, 
-                                     self.lagrange, 
-                                     self.soln, 
-                                     sigma_epsilon=self.sigma_epsilon)[:2]
-
-    @property
-    def basic_test(self):
-        return fixed_pvalue_uncentered(self.y, 
-                                       self.X, 
-                                       self.lagrange, 
-                                       self.soln, 
-                                       sigma_epsilon=self.sigma_epsilon)[:2]
-
-
-    @property
     def constraints(self, doc="Constraint matrix for this LASSO problem"):
         if not hasattr(self, "_constraints"):
-            X, y, soln, lagrange = self.X, self.y, self.soln, self.lagrange
-            n, p = X.shape
-
-            nonzero_coef = soln != 0
-            tight_subgrad = np.fabs(np.fabs(np.dot(X.T, y - np.dot(X, soln))) / lagrange - 1) < 1.e-3
-            if DEBUG:
-                print 'KKT consistency', (nonzero_coef - tight_subgrad).sum()
-
-            A = nonzero_coef
-            self.active = np.nonzero(nonzero_coef)[0]
-            if A.sum() > 0:
-                sA = np.sign(soln[A])
-                self.signs = sA
-                XA = X[:,A]
-                XnotA = X[:,~A]
-                self._XAinv = XAinv = np.linalg.pinv(XA)
-                self._SigmaA = np.dot(XAinv, XAinv.T)
-
-                self.active_constraints = constraints(  
-                    (sA[:,None] * XAinv, 
-                     self.lagrange*sA*np.dot(self._SigmaA, 
-                                             sA)), None)
-                self._SigmaA *=  self.sigma_epsilon**2
-                self.PA = PA = np.dot(XA, XAinv)
-                irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
-
-            else:
-                XnotA = X
-                self.PA = PA = 0
-                irrep_supgrad = np.zeros(p)
-                self.active_constraints = None
-
-            if A.sum() < X.shape[1]:
-                inactiveX = np.dot(np.identity(n) - PA, XnotA)
-                scaling = np.sqrt((inactiveX**2).sum(0))
-                inactiveX /= scaling[None,:]
-
-                self.inactive_constraints = stack( 
-                    constraints(((-inactiveX.T, 
-                                   -(lagrange - 
-                                    irrep_subgrad) / scaling)), None),
-                    constraints(((inactiveX.T, 
-                                   -(lagrange +
-                                    irrep_subgrad) / scaling)), None))
-            else:
-                self.inactive_constraints = None
-
-            #_constraints = active_constraints + inactive_constraints
-            #_linear_part = np.vstack([A for A, _ in _constraints])
-            #_offset_part = np.hstack([b for _, b in _constraints])
-            if (self.active_constraints is not None 
-                and self.inactive_constraints is not None):
-                self._constraints = stack(self.active_constraints,
-                                          self.inactive_constraints)
-            elif self.active_constraints is not None:
-                self._constraints = self.active_constraints
-            else:
-                self._constraints = self.inactive_constraints
-
-
+            self.form_constraints()
         return self._constraints
 
     @property
@@ -176,44 +161,17 @@ class lasso(object):
             XAinv = self._XAinv
             for i in range(XAinv.shape[0]):
                 eta = XAinv[i]
-                _interval = selection_interval( \
-                       C.inequality,
-                       C.inequality_offset,
-                       self._covariance,
-                       self.y,
-                       eta,
-                       alpha=self.alpha,
-                       UMAU=self.UMAU)
-                self._intervals.append((self.active[i], eta, (eta*self.y).sum(), 
+                _interval = C.interval(eta, self.y,
+                                       alpha=self.alpha,
+                                       UMAU=self.UMAU)
+                self._intervals.append((self.active[i], eta, 
+                                        (eta*self.y).sum(), 
                                         _interval))
         return self._intervals
 
     @property
-    def l1norm_interval(self, doc="Interval for $s^T\beta_E(\mu)$."):
-        if not hasattr(self, "_l1interval"):
-            self._intervals = []
-            C = self.constraints
-            XAinv = self._XAinv
-            eta = np.dot(self.signs, XAinv)
-            if DEBUG:
-                print interval_constraints( \
-                    C.inequality,
-                    C.inequality_offset,
-                    self._covariance,
-                    self.y,
-                    eta)[:3]
-
-            self._l1interval = selection_interval( \
-                C.inequality,
-                C.inequality_offset,
-                self._covariance,
-                self.y,
-                eta,
-                alpha=self.alpha)
-        return self._l1interval
-
-    @property
-    def active_pvalues(self, doc="OLS intervals for active variables adjusted for selection."):
+    def active_pvalues(self, doc="Tests for active variables adjusted " + \
+        " for selection."):
         if not hasattr(self, "_pvals"):
             self._pvals = []
             C = self.constraints
@@ -228,8 +186,8 @@ class lasso(object):
     @property
     def unadjusted_intervals(self, doc="Unadjusted OLS intervals for active variables."):
         if not hasattr(self, "_intervals_unadjusted"):
-            self.constraints # force self._SigmaA to be computed -- 
-                             # bad use of property
+            if not hasattr(self, "_constraints"):
+                self.form_constraints()
             self._intervals_unadjusted = []
             XAinv = self._XAinv
             for i in range(self.active.shape[0]):
