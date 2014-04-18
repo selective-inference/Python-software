@@ -205,6 +205,5 @@ latex_preamble = r"""
 # If false, no module index is generated.
 latex_use_modindex = True
 
-
 autodoc_member_order = 'bysource'
-autoclass_content = 'both'
+autoclass_content = 'class'

@@ -1,9 +1,9 @@
 .. _download:
 
-Downloading and installing RegReg
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Downloading and installing the code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The RegReg source code is hosted at 
+The post-selection inference source code is hosted at 
 
 http://bitbucket.org/jetaylor74/selection
 

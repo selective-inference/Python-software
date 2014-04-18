@@ -1,4 +1,4 @@
-.. _about_regreg:
+.. _about_selection:
 
 =====================
 The Selection project

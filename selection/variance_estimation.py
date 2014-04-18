@@ -31,7 +31,7 @@ numpy2ri.activate()
 from mpmath import quad as mpquad, exp as mpexp, log as mplog, mp
 mp.dps = 60
 
-from .chisq import quadratic_constraints
+from .chisq import quadratic_bounds
 
 DEBUG = False
 
@@ -364,11 +364,11 @@ def interpolation_estimate(Z, Z_constraint,
     Evalues = []
 
     n = Z.shape[0]
-    L, V, U, S = quadratic_constraints(Z, np.identity(n), Z_constraint)
+    L, V, U, S = quadratic_bounds(Z, np.identity(n), Z_constraint)
 
     if estimator == 'truncated':
         def _estimator(S, Z, Z_constraint):
-            L, V, U, _ = quadratic_constraints(Z, np.identity(n), Z_constraint)
+            L, V, U, _ = quadratic_bounds(Z, np.identity(n), Z_constraint)
             num = mpquad(lambda x: mpexp(-x**2/(2*S**2) -L*x / S**2 + (n-1) * mplog((x+L)/S) + 2 * mplog(x+L)),
                        [0, U-L])
             den = mpquad(lambda x: mpexp(-x**2/(2*S**2) -L*x / S**2 + (n-1) * mplog((x+L)/S)),
@@ -486,7 +486,7 @@ def truncated_estimate(Z, Z_constraint,
     # with scipy.integrate.quad
     n = Z.shape[0]
     operator = np.identity(n)
-    L, V, U, S = quadratic_constraints(Z, operator, Z_constraint)
+    L, V, U, S = quadratic_bounds(Z, operator, Z_constraint)
 
     for S in Svalues:
         num = quad(lambda x: np.exp(-x**2/(2*S**2) + (n+1) * np.log(x)),
@@ -512,4 +512,5 @@ def truncated_estimate(Z, Z_constraint,
 
 
     print L, V, U, S
+
 

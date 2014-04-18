@@ -19,6 +19,99 @@ They are described in the `Kac Rice`_ paper.
 import numpy as np
 from scipy.stats import chi
 
+from scipy.stats import norm as ndist, truncnorm 
+from scipy.integrate import quad
+
+from mpmath import mp
+mp.dps = 30
+
+def norm_q(prob):
+    """
+    A multi-precision calculation of the
+    standard normal quantile function:
+
+    .. math::
+
+       \int_{-\infty}^{q(p)} \frac{e^{-z^2/2}}{\sqrt{2\pi}} \; dz = p
+
+    where $p$ is `prob`.
+
+    Parameters
+    ----------
+
+    prob : float
+
+    Returns
+    -------
+
+    quantile : float
+
+    """
+    return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
+
+def norm_pdf(observed):
+    """
+    A multi-precision calculation of the
+    standard normal density function:
+
+    .. math::
+
+       \frac{e^{-T^2/2}}{\sqrt{2\pi}}
+
+    where `T` is observed.
+
+    Parameters
+    ----------
+
+    observed : float
+
+    Returns
+    -------
+
+    density : float
+
+    """
+    return np.array(mp.npdf(observed))
+
+def truncnorm_cdf(observed, lower, upper):
+    """
+    Compute the truncated normal 
+    distribution function.
+
+    .. math::
+
+        \frac{\Phi(U) - \Phi(T)}{\Phi(U) - \Phi(L)}
+
+    where $T$ is `observed`, $L$ is `lower_bound` and $U$ is `upper_bound`.
+
+    Parameters
+    ----------
+
+    observed : float
+
+    lower : float
+
+    upper : float
+
+    Returns
+    -------
+
+    P : float
+
+    """
+    x, a, b = observed, lower, upper
+
+    x = max(x, a)
+    x = min(x, b)
+
+    if a > 0 and b > 0:
+        Fx, Fa, Fb = mp.ncdf(-x), mp.ncdf(-a), mp.ncdf(-b)
+        return float( ( Fa - Fx ) / ( Fa - Fb ) )
+    else:
+        Fx, Fa, Fb = mp.ncdf(x), mp.ncdf(a), mp.ncdf(b)
+        return float( ( Fx - Fa ) / ( Fb - Fa ) )
+
+
 def chi_pvalue(observed, lower_bound, upper_bound, sd, df, method='MC', nsim=1000):
     r"""
 
@@ -69,9 +162,11 @@ def chi_pvalue(observed, lower_bound, upper_bound, sd, df, method='MC', nsim=100
     L, T, U = lower_bound, observed, upper_bound # shorthand
 
     if method == 'cdf':
-        pval = (chi.cdf(U / sd, k) - chi.cdf(T / sd, k)) / (chi.cdf(U / sd, k) - chi.cdf(L / sd, k))
+        pval = ((chi.cdf(U / sd, k) - chi.cdf(T / sd, k)) / 
+                (chi.cdf(U / sd, k) - chi.cdf(L / sd, k)))
     elif method == 'sf':
-        pval = (chi.sf(U / sd, k) - chi.sf(T / sd, k)) / (chi.sf(U / sd, k) - chi.sf(L / sd, k))
+        pval = ((chi.sf(U / sd, k) - chi.sf(T / sd, k)) / 
+                (chi.sf(U / sd, k) - chi.sf(L / sd, k)))
     elif method == 'MC':
         if k == 1:
             H = []
@@ -85,56 +180,6 @@ def chi_pvalue(observed, lower_bound, upper_bound, sd, df, method='MC', nsim=100
     if pval > 1:
         pval = 1
     return pval
-
-def gaussian_pvalue(observed, lower_bound, upper_bound, sd, method='cdf', nsim=1000):
-    r"""
-
-    Compute a truncated $\chi$ p-value based on the 
-    conditional survival function. 
-
-    This is the basis of the exact tests described in `Kac Rice`_, `Spacings`_ 
-    and `post selection LASSO`_ papers.
-
-    Parameters
-    ----------
-
-    observed : float
-
-    lower_bound : float
-
-    upper_bound : float
-
-    sd : float
-        Standard deviation.
-
-    df : float
-        Degrees of freedom.
-
-    method: string
-        One of ['MC', 'cdf', 'sf']
-
-    nsim : int
-        How many draws from $N(0,1)$ should we use if using Monte Carlo.
-
-    Returns
-    -------
-
-    pvalue : float
-
-    Notes
-    -----
-
-    Let $T$ be `observed`, $L$ be `lower_bound` and $U$ be `upper_bound`,
-    and $\sigma$ be `sd`.
-    The p-value, for $L \leq T \leq U$ is, for $Z \sim N(0,1)$
-
-    .. math::
-
-         \frac{\Phi(U/\sigma) - \Phi(T/\sigma)}
-              {\Phi(U/\sigma) - \Phi(L/\sigma)}
-
-    """
-    return chi_pvalue(observed, lower_bound, upper_bound, sd, 1, method=method, nsim=nsim)
 
 def gauss_poly(lower_bound, upper_bound, curvature, nsim=100):
     r"""

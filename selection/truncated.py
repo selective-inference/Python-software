@@ -5,66 +5,9 @@ restricted to a set of intervals.
 
 """
 import numpy as np
-from selection.intervals import _CDF
-from scipy.stats import norm as ndist, truncnorm 
-from scipy.integrate import quad
-
-from mpmath import mp
-mp.dps = 30
-import rpy2.robjects as rpy
-from rpy2.robjects import numpy2ri
-numpy2ri.activate()
-
-rpy.r("""
-    pnorm.interval <- function(mu, ab) {
-    ifelse(mean(ab) - mu < 0,
-           pnorm(ab[2] - mu) - pnorm(ab[1] - mu),
-           pnorm(mu - ab[1]) - pnorm(mu - ab[2]))
-}
-""")
-_Rdnorm = rpy.r("dnorm")
-_Rqnorm = rpy.r("qnorm")
-_pnorm_interval = rpy.r('pnorm.interval')
-
-def _cdf(a, b, mu=0, use_R=False):
-    if not use_R:
-        return _cdf2(a-mu,b-mu) # using mpmath
-    return np.squeeze(_pnorm_interval(mu, np.array([a,b]))) # using R
-
-def _dnorm(x, use_R=True):
-    if not use_R:
-        return np.array(mp.npdf(x))
-    x = np.asarray(x)
-    return np.asarray(_Rdnorm(x)).reshape(x.shape)
-
-def _qnorm(q, use_R=True):
-    if not use_R:
-        return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
-    q = np.asarray(q)
-    return np.asarray(_Rqnorm(q)).reshape(q.shape)
-
-def _cdf2(a, b):
-    if a > 0 and b > 0:
-        Fa, Fb = mp.ncdf(-a), mp.ncdf(-b)
-        return float(Fa - Fb)
-    else:
-        Fa, Fb = mp.ncdf(a), mp.ncdf(b)
-        return float(Fb - Fa)
-
-def truncnorm_cdf(x, a, b):
-    """                                                                         
-    calculates P(Z < x | a < Z < b) where Z ~ N(0,1)                            
-    """
-    if a > 0 and b > 0:
-        Fx, Fa, Fb = mp.ncdf(-x), mp.ncdf(-a), mp.ncdf(-b)
-        return float( ( Fa - Fx ) / ( Fa - Fb ) )
-    else:
-        Fx, Fa, Fb = mp.ncdf(x), mp.ncdf(a), mp.ncdf(b)
-        return float( ( Fx - Fa ) / ( Fb - Fa ) )
-
-
-class TruncatedGaussianError(ValueError):
-    pass
+from .pvalue import (norm_pdf, 
+                     truncnorm_cdf, 
+                     norm_q)
 
 class truncated_gaussian(object):
     
@@ -111,9 +54,11 @@ class truncated_gaussian(object):
 
     def _mu_or_sigma_changed(self):
         mu, sigma = self.mu, self.sigma
-        self.P = np.array([_cdf((a-mu)/sigma, 
-                                (b-mu)/sigma, use_R=self.use_R) for a, b in self.intervals])
-        self.D = np.array([(_dnorm((a-mu)/sigma, use_R=self.use_R), _dnorm((b-mu)/sigma, use_R=self.use_R)) for a, b in self.intervals])
+        self.P = np.array([truncnorm_cdf((a-mu)/sigma, 
+                                (b-mu)/sigma) for a, b in self.intervals])
+        self.D = np.array([(norm_pdf((a-mu)/sigma), 
+                            norm_pdf((b-mu)/sigma)) 
+                           for a, b in self.intervals])
 
     # mean parameter : mu
 
@@ -172,7 +117,7 @@ class truncated_gaussian(object):
         k = int(np.floor((self.intervals <= observed).sum() / 2))
         if k < self.intervals.shape[0]:
             if observed > self.intervals[k,0]:
-                return (P[:k].sum() + _cdf((self.intervals[k,0] - mu) / sigma, 
+                return (P[:k].sum() + truncnorm_cdf((self.intervals[k,0] - mu) / sigma, 
                                            (observed - mu)/sigma, use_R=self.use_R)) / P.sum()
             else:
                 return P[:k].sum() / P.sum()
@@ -193,9 +138,9 @@ class truncated_gaussian(object):
 
         pnorm_increment = Psum*q - Csum[k]
         if np.mean(self.intervals[k]) < 0:
-            return mu + _qnorm(_cdf(-np.inf,(self.intervals[k,0]-mu)/sigma, use_R=self.use_R) + pnorm_increment, use_R=self.use_R) * sigma
+            return mu + norm_q(truncnorm_cdf(-np.inf,(self.intervals[k,0]-mu)/sigma, use_R=self.use_R) + pnorm_increment, use_R=self.use_R) * sigma
         else:
-            return mu - _qnorm(_cdf((self.intervals[k,0]-mu)/sigma, np.inf, use_R=self.use_R) - pnorm_increment, use_R=self.use_R) * sigma
+            return mu - norm_q(truncnorm_cdf((self.intervals[k,0]-mu)/sigma, np.inf, use_R=self.use_R) - pnorm_increment, use_R=self.use_R) * sigma
         
     # make a function for vector version?
     def right_endpoint(self, left_endpoint, alpha):
@@ -305,6 +250,9 @@ def dG(left_endpoints, mus, alpha, tg):
         tg.mu = mu
         results.append(tg.dG(left_endpoint, alpha))
     return np.array(results)
+
+class TruncatedGaussianError(ValueError):
+    pass
 
 def _UMAU(observed, alpha, tg, 
          mu_lo=None,

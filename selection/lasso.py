@@ -3,9 +3,7 @@ import regreg.api as rr
 from .affine import (constraints, selection_interval,
                      interval_constraints,
                      stack)
-import selection.truncated
 
-from .intervals import pivot
 from .variance_estimation import (interpolation_estimate,
                                   truncated_estimate)
 
@@ -20,340 +18,6 @@ except ImportError:
     pass
 
 DEBUG = False
-
-class FixedLambdaError(ValueError):
-    pass
-
-def interval_constraint_linf(Z, S, offset, 
-                             lower_bound=None,
-                             upper_bound=None):
-    '''
-
-    Compute the maximum of np.fabs(Z) and return 
-    an interval within which it is constrained to lie. 
-    The interval is constructed so that, if Z has
-    covariance matrix S, then the upper and lower
-    end points are independent of Z[j]
-    conditional on (j,s) = (j_star, s_star)
-    where s_star * Z[j_star] = np.max(np.fabs(Z)).
-
-    This is used for a p-value under the assumption 
-    $y \sim N(\mu, \sigma^2 I)$.
-
-    Parameters
-    ==========
-
-    Z : np.array((p,))
-        Response vector.
-
-    S : np.array((p,p))
-        Covariance matrix
-
-    offset : np.array((p,))
-        Hypothesized offset of response vector.
-
-    lower_bound : np.array((p,)) (optional)
-        A vector of lower bound that X^Ty is constrained to lie above.
-
-    upper_bound : np.array((p,)) (optional)
-        A vector of upper bounds that X^Ty is constrained to lie below.
-
-    Returns
-    =======
-
-    L : np.float
-        Maximum of np.fabs(np.dot(X.T,y)),
-        possibly after having added offset to y.
-
-    Vplus : np.float
-        A lower bound for L.
-
-    Vminus : np.float
-        An upper bound for L.
-
-    var_star : np.float
-        Variance of np.dot(X.T,y) evaluated at argmax.
-
-    offset_star : 
-        Offset vector evaluated at argmax, multiplied by sign at
-        argmax.
-
-    '''
-
-    Z += offset
-    j_star = np.argmax(np.fabs(Z))
-    s_star = np.sign(Z[j_star])
-    offset_star = offset[j_star] * s_star
-    Z_star = Z[j_star]
-    
-    L = np.fabs(Z).max()
-    var_star = S[j_star, j_star]
-    C_X = s_star * S[j_star] / var_star
-
-    Mplus = {}
-    Mminus = {}
-    keep = np.ones(Z.shape[0], np.bool)
-    keep[j_star] = 0
-    
-    den = 1 - C_X
-    num = Z - C_X * L
-    Mplus[1] = (num / den * (den > 0))[keep]
-    Mminus[1] = (num * keep / (den + (1 - keep)))
-    
-    den = 1 + C_X
-    num =  -(Z - C_X * L)
-    Mplus[-1] = (num / den * (den > 0))[keep]
-    Mminus[-1] = (num * keep / (den + (1 - keep)))[den < 0]
-    
-    mplus = np.hstack([Mplus[1],Mplus[-1]])
-    Vplus = np.max(mplus)
-    
-    mminus = []
-    if Mminus[1].shape:
-        mminus.extend(list(Mminus[1]))
-    if Mminus[-1].shape:
-        mminus.extend(list(Mminus[-1]))
-    if mminus:
-        mminus = np.array(mminus)
-        mminus = mminus[mminus > L]
-        if mminus.shape != (0,):
-            Vminus = mminus.min()
-        else:
-            Vminus = np.inf
-    else:
-        Vminus = np.inf
-    
-    # enforce the interval constraint
-
-    if DEBUG:
-        print 'before:', Vplus, L, Vminus
-
-    if upper_bound is not None:
-        # we need to rewrite all constraints
-        # as an inequality between Z[j_star] and 
-        # something independent of Z[j_star]
-
-        u_star = upper_bound[j_star]
-
-        W = (upper_bound - (Z - L * C_X)) / C_X
-
-        pos_coords = (C_X > 0) * keep
-        if np.any(pos_coords): 
-            pos_implied_bounds = W[pos_coords]
-            Vminus = min(Vminus, pos_implied_bounds.min())
-
-        neg_coords = (C_X < 0) * keep
-
-        if np.any(neg_coords):
-            neg_implied_bounds = W[neg_coords]
-            Vplus = max(Vplus, neg_implied_bounds.max())
-
-        if s_star == 1:
-            Vminus = min(Vminus, s_star * u_star)
-        else:
-            Vplus = max(Vplus, s_star * u_star)
-
-    if DEBUG:
-        print 'upper:', Vplus, L, Vminus
-
-    if lower_bound is not None:
-
-        l_star = lower_bound[j_star]
-
-        W = (lower_bound - (Z - L * C_X)) / C_X
-
-        pos_coords = (C_X > 0) * keep
-        if np.any(pos_coords): 
-            pos_implied_bounds = W[pos_coords]
-            Vplus = max(Vplus, pos_implied_bounds.max())
-
-        neg_coords = (C_X < 0) * keep
-
-        if np.any(neg_coords):
-            neg_implied_bounds = W[neg_coords]
-            Vminus = min(Vminus, neg_implied_bounds.min())
-
-        if s_star == 1:
-            Vplus = max(Vplus, s_star * l_star)
-        else:
-            Vminus = min(Vminus, s_star * l_star)
-
-    if DEBUG:
-        print 'lower:', Vplus, L, Vminus
-
-    return L, Vplus, Vminus, var_star, offset_star
- 
-def fixed_pvalue_uncentered(y, X, lagrange, soln, sigma_epsilon=1):
-    """
-    Compute a p-value for testing whether the LASSO
-    has found all important variables at some fixed
-    percentage of $\lambda_1 = \|X^Ty\|_{\infty}$
-    under model $y \sim N(X\beta_0, \sigma^2 I)$.
-    
-    This test is based on the uncentered inactive subgradient
-    
-    .. math::
-
-       X_{-E}^T((I-P_E)y + \lambda (X_E^T)^{\dagger} s_E)
-
-    which is constrained to have $\ell_{\infty}$ norm
-    less than `lagrange` by the KKT conditions.
-
-    Parameters
-    ==========
-
-    y : np.array(n)
-        Response vector.
-
-    X : np.array((n,p))
-        Design matrix
-
-    lagrange : float
-        How far down the regularization path should we test?
-
-    soln : np.array(p)
-        Solution at this value of L
-
-    sigma_epsilon : float
-        Standard deviation of noise, $\sigma$.
-
-    """
-
-    n, p = X.shape
-
-    nonzero_coef = soln != 0
-    tight_subgrad = np.fabs(np.fabs(np.dot(X.T, y - np.dot(X, soln))) / lagrange - 1) < 1.e-3
-    if DEBUG:
-        print 'KKT consistency', (nonzero_coef - tight_subgrad).sum()
-
-    A = nonzero_coef
-
-    if A.sum() > 0:
-        sA = np.sign(soln[A])
-        XA = X[:,A]
-        XnotA = X[:,~A]
-        XAinv = np.linalg.pinv(XA)
-        PA = np.dot(XA, XAinv)
-        irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
-
-    else:
-        XnotA = X
-        PA = 0
-        irrep_supgrad = np.zeros(p)
-
-    if A.sum() < X.shape[1]:
-        inactiveX = np.dot(np.identity(n) - PA, XnotA)
-        scaling = np.sqrt((inactiveX**2).sum(0))
-        inactiveX /= scaling[None,:]
-        upper_bound = lagrange * np.zeros(inactiveX.shape[1])
-        lower_bound = -upper_bound
-        covX = np.dot(inactiveX.T, inactiveX)
-
-        L, Vp, Vm, var_star, offset_star = \
-            interval_constraint_linf(np.dot(inactiveX.T, y), covX, 
-                                     irrep_subgrad,
-                                     lower_bound=lower_bound,
-                                     upper_bound=upper_bound)
-        sigma = np.sqrt(var_star) * sigma_epsilon
-
-        if np.isnan(Vp):
-            raise FixedLambdaError('saturated solution?')
-
-        pval = pivot(Vp-offset_star, L-offset_star, Vm-offset_star, sigma, dps=30)
-        return pval, soln, (Vp-offset_star) / sigma, (L-offset_star) / sigma, (Vm-offset_star) / sigma
-    else:
-        pval = 1.
-        soln = soln
-        return np.clip(pval, 0, 1), soln, None, None, None
-
-def fixed_pvalue_centered(y, X, lagrange, soln, sigma_epsilon=1):
-    """
-    Compute a p-value for testing whether the LASSO
-    has found all important variables at some fixed
-    percentage of $\lambda_1 = \|X^Ty\|_{\infty}$
-    under model $y \sim N(X\beta_0, \sigma^2 I)$.
-    
-    This test is based on a centered, scaled
-    inactive subgradient
-    
-    .. math::
-
-       X_{-E}^T(I-P_E)y
-
-    subject to the constraints imposed by the KKT conditions.
-    That is, it is contained within
-    an $\ell_{\infty}$ ball of radius `lagrange`
-    of $-X_{-E}^T(X_E^T)^{\dagger}s_e$.
-
-    The scaling is such that each entry above has constant
-    variance.
-
-    Parameters
-    ==========
-
-    y : np.array(n)
-        Response vector.
-
-    X : np.array((n,p))
-        Design matrix
-
-    lagrange : float
-        How far down the regularization path should we test?
-
-    soln : np.array(p)
-        Solution at this value of L
-
-    sigma_epsilon : float
-        Standard deviation of noise, $\sigma$.
-
-    """
-
-    n, p = X.shape
-
-    nonzero_coef = soln != 0
-    tight_subgrad = np.fabs(np.fabs(np.dot(X.T, y - np.dot(X, soln))) / lagrange - 1) < 1.e-3
-    if DEBUG:
-        print 'KKT consistency', (nonzero_coef - tight_subgrad).sum()
-
-    A = nonzero_coef
-
-    if A.sum() > 0:
-        sA = np.sign(soln[A])
-        XA = X[:,A]
-        XnotA = X[:,~A]
-        XAinv = np.linalg.pinv(XA)
-        PA = np.dot(XA, XAinv)
-        irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
-
-    else:
-        XnotA = X
-        PA = 0
-        irrep_supgrad = np.zeros(p)
-
-    if A.sum() < X.shape[1]:
-        inactiveX = np.dot(np.identity(n) - PA, XnotA)
-        scaling = np.sqrt((inactiveX**2).sum(0))
-        inactiveX /= scaling[None,:]
-        upper_bound = (lagrange - irrep_subgrad) / scaling
-        lower_bound = (- lagrange - irrep_subgrad) / scaling
-        covX = np.dot(inactiveX.T, inactiveX)
-
-        L, Vp, Vm, var_star, offset_star = \
-            interval_constraint_linf(np.dot(inactiveX.T, y), covX, 
-                                     np.zeros(covX.shape[0]),
-                                     lower_bound=lower_bound,
-                                     upper_bound=upper_bound)
-        sigma = np.sqrt(var_star) * sigma_epsilon
-
-        if np.isnan(Vp):
-            raise FixedLambdaError
-
-        pval = pivot(Vp, L, Vm, sigma, dps=30)
-        return pval, soln, (Vp-offset_star) / sigma, (L-offset_star) / sigma, (Vm-offset_star) / sigma
-    else:
-        pval = 1.
-        soln = soln
-        return np.clip(pval, 0, 1), soln, None, None, None
 
 class lasso(object):
 
@@ -556,12 +220,7 @@ class lasso(object):
             XAinv = self._XAinv
             for i in range(XAinv.shape[0]):
                 eta = XAinv[i]
-                _pval = pivot(interval_constraints( \
-                        C.inequality,
-                        C.inequality_offset,
-                        self._covariance,
-                        self.y,
-                        eta))
+                _pval = C.pivot(eta, self.y)
                 _pval = 2 * min(_pval, 1 - _pval)
                 self._pvals.append((self.active[i], _pval))
         return self._pvals
@@ -582,6 +241,9 @@ class lasso(object):
                                         _interval))
         return self._intervals_unadjusted
 
+class FixedLambdaError(ValueError):
+    pass
+
 def estimate_sigma(y, X, frac=0.1, 
                    lower=0.5,
                    upper=2,
@@ -598,10 +260,10 @@ def estimate_sigma(y, X, frac=0.1,
     Parameters
     ----------
 
-    y : `np.float`
+    y : np.float
         Response to be used for LASSO.
 
-    X : `np.float`
+    X : np.float
         Design matrix to be used for LASSO.
 
     frac : float
@@ -630,7 +292,7 @@ def estimate_sigma(y, X, frac=0.1,
     sigma_hat : float
         The root of the interpolant derived from GCM values.
 
-    interpolaint : `interp1d`
+    interpolaint : scipy.interpolate.interp1d
         The interpolant, to be used for plotting or other 
         diagnostics.
 
@@ -664,57 +326,48 @@ def estimate_sigma(y, X, frac=0.1,
                                   burnin=burnin,
                                   estimator='simulate')
 
-def fit_and_test(y, X, frac, sigma_epsilon=1, use_cvx=False,
-                 test='centered',
-                 tol=1.e-8,
-                 min_its=50):
+def covtest(X, Y, sigma=1):
     """
-    Fit a LASSO at some fraction of $\lambda_1$, return 
-    solution and $p$-value based on solution.
+    The exact form of the covariance test, described
+    in the `Kac Rice`_ and `Spacings`_ papers.
 
-    The tolerance, when use_cvx=True is used to
-    zero out coordinates, so coordinates are set to zero if their absolute
-    value is less than tol times the $\ell_{\infty}$ norm.
-    
-    When not using cvx, it used as tol for regreg, as
-    are the min_its.
+    .. _Kac Rice: http://arxiv.org/abs/1308.3020
+    .. _Spacings: http://arxiv.org/abs/1401.3889
+
+    Parameters
+    ----------
+
+    X : np.float((n,p))
+
+    Y : np.float(n)
+
+    sigma : float
+
+    Returns
+    -------
+
+    con : `selection.constraints.constraints`_
+        The constraint based on conditioning
+        on the sign and location of the maximizer.
+
+    pvalue : float
+        Exact covariance test p-value.
 
     """
     n, p = X.shape
 
-    lagrange = frac*np.fabs(np.dot(X.T,y)).max()
+    Z = np.dot(X.T, Y)
+    idx = np.argsort(np.fabs(Z))[-1]
+    sign = np.sign(Z[idx])
 
-    if use_cvx: 
-        beta = cvx.variable(p)
-        _X = cvx.parameter(n,p)
-        _X.value = cvx.matrix(X)
+    I = np.identity(p)
+    subset = np.ones(p, np.bool)
+    subset[idx] = 0
+    selector = np.vstack([X.T[subset],-X.T[subset]])
+    selector -= (sign * X[:,idx])[None,:]
 
-        _Y = cvx.parameter(n,1)
-        _Y.value = cvx.matrix(y.reshape((n,1)))
+    con = constraints((selector, np.zeros(selector.shape[0])),
+                      None)
 
-        beta = cvx.variable(p)
+    return con, con.pivot(X[:,idx] * sign, Y, 'greater')
 
-        objective = cvx.sum(cvx.square(_Y-_X*beta))
-        penalty = cvx.sum(cvx.abs(beta))
-        program = cvx.program(cvx.minimize(0.5*objective + lagrange*penalty))
-        program.solve(quiet=True)
-
-        soln = np.array(beta.value).reshape(-1)
-        soln[np.fabs(soln) < tol * np.fabs(soln).max()] = 0
-    else:
-        penalty = rr.l1norm(p, lagrange=lagrange)
-        loss = rr.squared_error(X, y)
-        problem = rr.simple_problem(loss, penalty)
-        soln = problem.solve(tol=tol, min_its=min_its)
-    
-    if test == 'centered':
-        return fixed_pvalue_centered(y, X, lagrange, soln, sigma_epsilon=sigma_epsilon)
-    elif test == 'uncentered':
-        return fixed_pvalue_uncentered(y, X, lagrange, soln, sigma_epsilon=sigma_epsilon)
-    elif test == 'both':
-        v1, v3 = fixed_pvalue_centered(y, X, lagrange, soln, sigma_epsilon=sigma_epsilon)
-        v2 = fixed_pvalue_uncentered(y, X, lagrange, soln, sigma_epsilon=sigma_epsilon)
-        return v1, v2, v3
-    else:
-        raise FixedLambdaError('test must be one of ["centered", "uncentered", "both"]')
-_howlong = fit_and_test

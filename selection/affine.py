@@ -12,8 +12,9 @@ and `post selection LASSO`_.
 """
 
 import numpy as np
-from .intervals import pivot
-from .truncated import truncated_gaussian, truncnorm_cdf
+from .pvalue import truncnorm_cdf
+from .truncated import truncated_gaussian
+                        
 from warnings import warn
 
 WARNINGS = False
@@ -27,9 +28,9 @@ class constraints(object):
 
     .. math::
 
-       C = \left\{z: Az\leq b\}
+       C = \left\{z: Az\leq b \right \}
 
-       E = \left\{z: Cz = d\}
+       E = \left\{z: Cz = d \right\}
 
     Its main purpose is to consider slices through $C \cap E$
     and the conditional distribution of a Gaussian $N(\mu,\Sigma)$
@@ -400,17 +401,43 @@ def interval_constraints(support_directions,
                          direction_of_interest,
                          tol = 1.e-4):
     r"""
-    Given an affine in cone constraint $\{z:Az \leq b\}$ (elementwise)
+    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $w$, and
-    an observed Gaussian vector $X$ with some `covariance`, this
-    function returns $w^TX$ as well as an interval
+    `support_offset`, a new direction of interest $\eta$, and
+    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
+    with `covariance` matrix $\Sigma$, this
+    function returns $\eta^TZ$ as well as an interval
     bounding this value. 
 
     The interval constructed is such that the endpoints are 
-    independent of $w^TX$, hence the $p$-value
+    independent of $\eta^TZ$, hence the $p$-value
     of `Kac-Rice`_
     can be used to form an exact pivot.
+
+.. _Kac Rice: http://arxiv.org/abs/1308.3020
+
+    Parameters
+    ----------
+
+    support_directions : np.float
+         Matrix specifying constraint, $A$.
+
+    support_offset : np.float
+         Offset in constraint, $b$.
+
+    covariance : np.float
+         Covariance matrix of `observed_data`.
+
+    observed_data : np.float
+         Observations.
+
+    direction_of_interest : np.float
+         Direction in which we're interested for the
+         contrast.
+
+    tol : float
+         Relative tolerance parameter for deciding 
+         sign of $Az-b$.
 
     """
 
@@ -457,16 +484,47 @@ def selection_interval(support_directions,
                        observed_data, 
                        direction_of_interest,
                        tol = 1.e-4,
-                       dps = 100,
                        alpha = 0.05,
                        UMAU=True):
     """
-    Given an affine in cone constraint $Ax+b \geq 0$ (elementwise)
+    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $w$, and
-    an observed Gaussian vector $X$ with some `covariance`, this
+    `support_offset`, a new direction of interest $\eta$, and
+    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
+    with `covariance` matrix $\Sigma$, this
     function returns a confidence interval
-    for $w^T\mu$.
+    for $\eta^T\mu$.
+
+    Parameters
+    ----------
+
+    support_directions : np.float
+         Matrix specifying constraint, $A$.
+
+    support_offset : np.float
+         Offset in constraint, $b$.
+
+    covariance : np.float
+         Covariance matrix of `observed_data`.
+
+    observed_data : np.float
+         Observations.
+
+    direction_of_interest : np.float
+         Direction in which we're interested for the
+         contrast.
+
+    tol : float
+         Relative tolerance parameter for deciding 
+         sign of $Az-b$.
+
+    UMAU : bool
+         Use the UMAU interval, or two-sided pivot.
+
+    Returns
+    -------
+
+    selection_interval : (float, float)
 
     """
 

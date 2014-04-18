@@ -1,6 +1,6 @@
 import numpy as np
 
-from selection.spacings import covtest
+from selection.lasso import covtest
 
 def test_covtest():
 
