@@ -7,7 +7,8 @@ restricted to a set of intervals.
 import numpy as np
 from .pvalue import (norm_pdf, 
                      truncnorm_cdf, 
-                     norm_q)
+                     norm_q,
+                     mp)
 
 class truncated_gaussian(object):
     
@@ -53,9 +54,11 @@ class truncated_gaussian(object):
     # will be mpmath values
 
     def _mu_or_sigma_changed(self):
+        
         mu, sigma = self.mu, self.sigma
-        self.P = np.array([truncnorm_cdf((a-mu)/sigma, 
-                                (b-mu)/sigma) for a, b in self.intervals])
+        self.P = np.array([norm_interval((a-mu)/sigma,
+                                         (b-mu)/sigma) 
+                           for a, b in self.intervals])
         self.D = np.array([(norm_pdf((a-mu)/sigma), 
                             norm_pdf((b-mu)/sigma)) 
                            for a, b in self.intervals])
@@ -117,8 +120,10 @@ class truncated_gaussian(object):
         k = int(np.floor((self.intervals <= observed).sum() / 2))
         if k < self.intervals.shape[0]:
             if observed > self.intervals[k,0]:
-                return (P[:k].sum() + truncnorm_cdf((self.intervals[k,0] - mu) / sigma, 
-                                           (observed - mu)/sigma, use_R=self.use_R)) / P.sum()
+                return (P[:k].sum() + 
+                        (norm_interval((self.intervals[k,0] - mu) / sigma,
+                                       (observed - mu) / sigma))
+                        ) / P.sum()
             else:
                 return P[:k].sum() / P.sum()
         else:
@@ -180,7 +185,8 @@ class truncated_gaussian(object):
         c1 = left_endpoint # shorthand from Will's code
         D = self.D
         return (self.right_endpoint(left_endpoint, alpha) - 
-                left_endpoint) * _dnorm((left_endpoint - self.mu) / self.sigma, use_R=self.use_R)
+                left_endpoint) * norm_pdf((left_endpoint - self.mu) / 
+                                          self.sigma)
     
     def naive_interval(self, observed, alpha):
         old_mu = self.mu

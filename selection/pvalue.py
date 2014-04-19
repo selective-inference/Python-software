@@ -13,7 +13,6 @@ They are described in the `Kac Rice`_ paper.
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
 
 
-
 """
 
 import numpy as np
@@ -23,7 +22,7 @@ from scipy.stats import norm as ndist, truncnorm
 from scipy.integrate import quad
 
 from mpmath import mp
-mp.dps = 30
+mp.dps = 80
 
 def norm_q(prob):
     """
@@ -49,6 +48,7 @@ def norm_q(prob):
     """
     return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
 
+
 def norm_pdf(observed):
     """
     A multi-precision calculation of the
@@ -72,6 +72,29 @@ def norm_pdf(observed):
 
     """
     return np.array(mp.npdf(observed))
+
+def norm_interval(lower, upper):
+    """
+    A multiprecision evaluation of
+
+    .. math::
+
+        \frac{\Phi(U) - \Phi(L)}
+
+    Parameters
+    ----------
+
+    lower : float
+        The lower limit $L$
+
+    upper : float
+        The upper limit $U$
+
+    """
+    if lower > 0 and upper > 0:
+        return mp.ncdf(-lower) - mp.ncdf(-upper)
+    else:
+        return mp.ncdf(upper) - mp.ncdf(lower)
 
 def truncnorm_cdf(observed, lower, upper):
     """

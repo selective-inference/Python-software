@@ -42,35 +42,46 @@ DEBUG = False
 class lasso(object):
 
     """
-    A class for the LASSO that performs the two tests,
-    and returns selection intervals for the 
-    active coefficients.
+    A class for the LASSO for post-selection inference.
+    The problem solved is
 
-    WARNING: Changing `frac` will not propagate:
-    constraints will not be updated, not soln, etc.
-    
-    Better to create a new instance.
+    .. math::
+
+       \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
+            f \lambda_{\max} \|\beta\|_1
+
+    where $f$ is `frac` and 
+
+    .. math::
+
+       \lambda_{\max} = \frac{1}{n} \|X^ty\|_{\infty}
 
     """
-    
+
     # level for coverage is 1-alpha
     alpha = 0.05
     UMAU = False
 
     def __init__(self, y, X, frac=0.9, sigma_epsilon=1):
+
+
         self.y = y
         self.X = X
         self.frac = frac
         self.sigma_epsilon = sigma_epsilon
+        n, p = X.shape
         self.lagrange = frac * np.fabs(np.dot(X.T, y)).max() / n
         self._covariance = self.sigma_epsilon**2 * np.identity(X.shape[0])
 
-    def fit(self, alpha=None, **lasso_args):
+    def fit(self, sklearn_alpha=None, **lasso_args):
         """
         self.soln only updated after self.fit
 
         Parameters
         ----------
+
+        sklearn_alpha : float
+            Lagrange parameter, in the normalization set by `sklearn`.
 
         lasso_args : keyword args
              Passed to `sklearn.linear_model.Lasso`_
@@ -79,7 +90,7 @@ class lasso(object):
         -------
 
         soln : np.float
-             Solution to lasso with `alpha=self.lagrange`.
+             Solution to lasso with `sklearn_alpha=self.lagrange`.
 
         Notes
         -----
@@ -87,10 +98,10 @@ class lasso(object):
         Also calls `form_constraints`.
 
         """
-        if alpha is not None:
-            self.lagrange = alpha / n #?
+        if sklearn_alpha is not None:
+            self.lagrange = sklearn_alpha
         self._lasso = Lasso(alpha=self.lagrange, **lasso_args)
-        self._lasso.fit(self.X, self.Y)
+        self._lasso.fit(self.X, self.y)
         self._soln = self._lasso.coef_
         return self._soln
 
@@ -122,31 +133,33 @@ class lasso(object):
             self._SigmaA = np.dot(XAinv, XAinv.T)
 
             self.active_constraints = constraints(  
-                (sA[:,None] * XAinv, 
-                 self.lagrange*sA*np.dot(self._SigmaA, 
+                (-sA[:,None] * XAinv, 
+                 -n*lagrange*sA*np.dot(self._SigmaA, 
                                          sA)), None)
             self._SigmaA *=  self.sigma_epsilon**2
             self._PA = PA = np.dot(XA, XAinv)
-            irrep_subgrad = lagrange * np.dot(np.dot(XnotA.T, XAinv.T), sA)
+            irrep_subgrad = (n * lagrange * 
+                             np.dot(np.dot(XnotA.T, XAinv.T), sA))
 
         else:
             XnotA = X
             self._PA = PA = 0
-            irrep_supgrad = np.zeros(p)
+            self._XAinv = None
+            irrep_subgrad = np.zeros(p)
             self.active_constraints = None
 
         if A.sum() < X.shape[1]:
             inactiveX = np.dot(np.identity(n) - PA, XnotA)
-            scaling = np.sqrt((inactiveX**2).sum(0))
+            scaling = np.ones(inactiveX.shape[1]) # np.sqrt((inactiveX**2).sum(0))
             inactiveX /= scaling[None,:]
 
             self.inactive_constraints = stack( 
-                constraints(((-inactiveX.T, 
-                               -(lagrange - 
-                                irrep_subgrad) / scaling)), None),
-                constraints(((inactiveX.T, 
-                               -(lagrange +
-                                irrep_subgrad) / scaling)), None))
+                constraints((-inactiveX.T, 
+                              lagrange * n + 
+                              irrep_subgrad), None),
+                constraints((inactiveX.T, 
+                             lagrange * n -
+                             irrep_subgrad), None))
         else:
             self.inactive_constraints = None
 
@@ -177,14 +190,15 @@ class lasso(object):
             self._intervals = []
             C = self.constraints
             XAinv = self._XAinv
-            for i in range(XAinv.shape[0]):
-                eta = XAinv[i]
-                _interval = C.interval(eta, self.y,
-                                       alpha=self.alpha,
-                                       UMAU=self.UMAU)
-                self._intervals.append((self.active[i], eta, 
-                                        (eta*self.y).sum(), 
-                                        _interval))
+            if XAinv is not None:
+                for i in range(XAinv.shape[0]):
+                    eta = XAinv[i]
+                    _interval = C.interval(eta, self.y,
+                                           alpha=self.alpha,
+                                           UMAU=self.UMAU)
+                    self._intervals.append((self.active[i], eta, 
+                                            (eta*self.y).sum(), 
+                                            _interval))
         return self._intervals
 
     @property
@@ -194,11 +208,12 @@ class lasso(object):
             self._pvals = []
             C = self.constraints
             XAinv = self._XAinv
-            for i in range(XAinv.shape[0]):
-                eta = XAinv[i]
-                _pval = C.pivot(eta, self.y)
-                _pval = 2 * min(_pval, 1 - _pval)
-                self._pvals.append((self.active[i], _pval))
+            if XAinv is not None:
+                for i in range(XAinv.shape[0]):
+                    eta = XAinv[i]
+                    _pval = C.pivot(eta, self.y)
+                    _pval = 2 * min(_pval, 1 - _pval)
+                    self._pvals.append((self.active[i], _pval))
         return self._pvals
 
     @property
