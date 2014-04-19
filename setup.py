@@ -26,6 +26,8 @@ class installer(install.install):
     def run(self):
         package_check('numpy', NUMPY_MIN_VERSION)
         package_check('scipy', SCIPY_MIN_VERSION)
+        package_check('sklearn', SKLEARN_MIN_VERSION)
+        package_check('mpmath', MPMATH_MIN_VERSION)
         install.install.run(self)
 
 
