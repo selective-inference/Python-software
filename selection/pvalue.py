@@ -25,7 +25,7 @@ from mpmath import mp
 mp.dps = 80
 
 def norm_q(prob):
-    """
+    r"""
     A multi-precision calculation of the
     standard normal quantile function:
 
@@ -50,7 +50,7 @@ def norm_q(prob):
 
 
 def norm_pdf(observed):
-    """
+    r"""
     A multi-precision calculation of the
     standard normal density function:
 
@@ -74,7 +74,7 @@ def norm_pdf(observed):
     return np.array(mp.npdf(observed))
 
 def norm_interval(lower, upper):
-    """
+    r"""
     A multiprecision evaluation of
 
     .. math::
