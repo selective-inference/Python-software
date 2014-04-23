@@ -344,6 +344,12 @@ def covtest(X, Y, sigma=1):
     pvalue : float
         Exact covariance test p-value.
 
+    idx : int
+        Variable achieving $\lambda_1$
+
+    sign : int
+        Sign of $X^Ty$ for variable achieving $\lambda_1$.
+
     """
     n, p = X.shape
 
@@ -360,5 +366,5 @@ def covtest(X, Y, sigma=1):
     con = constraints((selector, np.zeros(selector.shape[0])),
                       None)
 
-    return con, con.pivot(X[:,idx] * sign, Y, 'greater')
+    return con, con.pivot(X[:,idx] * sign, Y, 'greater'), idx, sign
 
