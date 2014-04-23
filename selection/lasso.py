@@ -359,6 +359,6 @@ def covtest(X, Y, sigma=1):
 
     con = constraints((selector, np.zeros(selector.shape[0])),
                       None)
-
+    con.covariance *= sigma**2
     return con, con.pivot(X[:,idx] * sign, Y, 'greater')
 
