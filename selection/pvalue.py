@@ -79,7 +79,7 @@ def norm_interval(lower, upper):
 
     .. math::
 
-        \frac{\Phi(U) - \Phi(L)}
+        \Phi(U) - \Phi(L)
 
     Parameters
     ----------
@@ -97,7 +97,7 @@ def norm_interval(lower, upper):
         return mp.ncdf(upper) - mp.ncdf(lower)
 
 def truncnorm_cdf(observed, lower, upper):
-    """
+    r"""
     Compute the truncated normal 
     distribution function.
 
@@ -245,7 +245,7 @@ def gauss_poly(lower_bound, upper_bound, curvature, nsim=100):
 
     """
 
-    T, H = observed, curvature
+    T, H = lower_bound, curvature
     Z = np.fabs(np.random.standard_normal(nsim))
     keep = Z < upper_bound - T
     proportion = keep.sum() * 1. / nsim
