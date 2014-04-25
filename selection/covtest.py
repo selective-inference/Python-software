@@ -22,8 +22,8 @@ that can use sigma but does not need it.
 """
 
 import numpy as np
-from .sample_truncnorm import sample_truncnorm_white
-from .affine import constraints
+from .affine import constraints, simulate_from_constraints
+from .forward_step import forward_stepwise
 
 def covtest(X, Y, sigma=1, exact=True):
     """
@@ -53,7 +53,7 @@ def covtest(X, Y, sigma=1, exact=True):
     Returns
     -------
 
-    con : `selection.constraints.constraints`_
+    con : `selection.affine.constraints`_
         The constraint based on conditioning
         on the sign and location of the maximizer.
 
@@ -89,51 +89,6 @@ def covtest(X, Y, sigma=1, exact=True):
         exp_pvalue = np.exp(-L1 * (L1-L2) / S**2) # upper bound is ignored
         return con, exp_pvalue, idx, sign
 
-def _conditional_simulation(cone_constraint, Y, 
-                            ndraw=1000, burnin=1000, 
-                            normalize=True, sigma=1):
-    """
-    Simulate from a cone instersect a sphere of radius `norm_y`.
-    Assumes (implicitly) that `cone_constraint` encodes a cone constraint.
-
-    Parameters
-    ----------
-
-    cone_constraint : `selection.affine.constraints`_
-
-    Y : np.float
-        A point in the cone. The Gibbs sampling assumes the
-        point is in the cone.
-
-    ndraw : int (optional)
-        Defaults to 1000.
-
-    burnin : int (optional)
-        Defaults to 1000.
-
-    normalize : bool (optional)
-        If True, normalize sample to have Euclidean norm
-        np.linalg.norm(Y)
-    
-    sigma : float (optional)
-        Defaults to 1. Used for covariance 
-        of Gaussian in the Gibbs sampler.
-        
-    """
-    cone_matrix = cone_constraint.inequality
-    
-    Z = sample_truncnorm_white(cone_matrix, 
-                               np.zeros(cone_matrix.shape[0]), 
-                               Y, 
-                               ndraw=ndraw, 
-                               burnin=burnin,
-                               sigma=sigma or 1.)
-    if normalize:
-        norm_Y = np.linalg.norm(Y)
-        Z /= np.sqrt((Z**2).sum(1))[:,None]
-        Z *= norm_Y
-    return Z
-
 def reduced_covtest(X, Y, ndraw=5000, burnin=1000, sigma=None):
     """
     An exact test that is more
@@ -164,7 +119,7 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=1000, sigma=None):
     Returns
     -------
 
-    con : `selection.constraints.constraints`_
+    con : `selection.affine.constraints`_
         The constraint based on conditioning
         on the sign and location of the maximizer.
 
@@ -179,15 +134,60 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=1000, sigma=None):
 
     """
 
-    cone, _, idx, sign = covtest(X, Y)
-    A = _conditional_simulation(cone, 
-                                Y,
-                                ndraw=ndraw, 
-                                burnin=burnin,
-                                normalize=(sigma is None),
-                                sigma=sigma)
-    test_statistic = np.dot(A, X[:,idx]) * sign
+    cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1)
+    if sigma is not None:
+        cone.covariance /= sigma**2
+        cone.inequality /= sigma
+        cone.inequality_offset /= sigma
+
+    Z = simulate_from_constraints(cone,
+                                  Y,
+                                  ndraw=ndraw,
+                                  burnin=burnin,
+                                  white=True)
+    if sigma is None:
+        norm_Y = np.linalg.norm(Y)
+        Z /= np.sqrt((Z**2).sum(1))[:,None]
+        Z *= norm_Y
+    else:
+        Z *= sigma
+
+    test_statistic = np.dot(Z, X[:,idx]) * sign
     lam1 = np.fabs(np.dot(X.T,Y)).max()
     pvalue = (test_statistic >= lam1).sum() * 1. / ndraw
     return cone, pvalue, idx, sign
 
+def forward_step(X, Y, sigma=1,
+                 nstep=5,
+                 test='reduced'):
+    """
+    A simple implementation of forward stepwise
+    that uses the `reduced_covtest` iteratively
+    after adjusting fully for the selected variable.
+
+    This implementation is not efficient, in
+    that it computes more SVDs than it really has to.
+
+    Parameters
+    ----------
+
+    X : np.float((n,p))
+
+    Y : np.float(n)
+
+    nstep : int
+        How many steps of forward stepwise?
+
+    sigma : float (optional) 
+        Noise level (not needed for reduced).
+
+    test : ['reduced', 'covtest'] (optional)
+        Which test to use?
+
+    """
+
+    FS = forward_stepwise(X, Y)
+    for _ in range(nstep):
+        FS.next()
+    return FS
+    

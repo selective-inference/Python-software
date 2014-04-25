@@ -14,6 +14,7 @@ and `post selection LASSO`_.
 import numpy as np
 from .pvalue import truncnorm_cdf
 from .truncated import truncated_gaussian
+from .sample_truncnorm import sample_truncnorm_white
                         
 from warnings import warn
 
@@ -112,6 +113,23 @@ class constraints(object):
         else:
             return """$$Z \sim N(\mu,\Sigma) | AZ \leq b, CZ = d$$"""
 
+    def __call__(self, Y, tol=1.e-3):
+        r"""
+        Check whether Y satisfies the linear
+        inequality and equality constraints.
+        """
+        if self.inequality is not None:
+            V1 = np.dot(self.inequality, Y) - self.inequality_offset
+            test1 = np.all(V1 < tol * np.fabs(V1).max())
+        else:
+            test1 = True
+        if self.equality is not None:
+            V2 = np.dot(self.equality, Y) - self.equality_offset
+            test2 = np.linalg.norm(V2) < tol * np.linalg.norm(self.equality)
+        else:
+            test2 = True
+        return test1 and test2
+
     def impose_equality(self):
         """
         Return an equivalent constraint with a
@@ -129,11 +147,14 @@ class constraints(object):
 
 
         """
+        #TODO: how does self.mean play here?
         if self.equality is not None:
             M1 = np.dot(self.inequality, np.dot(self.covariance, 
                                                 self.equality.T))
             M2 = np.dot(self.equality, np.dot(self.covariance, 
                                               self.equality.T))
+            M2i = np.linalg.pinv(M2)
+            delta_cov = np.dot(self.equality.T, np.dot(M2i, self.equality))
             M3 = np.dot(M1, np.linalg.pinv(M2))
             
             equality_linear = np.dot(M3, self.equality)
@@ -141,27 +162,10 @@ class constraints(object):
             
             return constraints((self.inequality - equality_linear,
                                 self.inequality_offset - equality_offset),
-                              (self.equality, self.equality_offset),
-                               covariance=self.covariance)
+                               None,
+                               covariance=self.covariance - delta_cov)
         else:
             return self
-
-    def __call__(self, Y, tol=1.e-3):
-        r"""
-        Check whether Y satisfies the linear
-        inequality and equality constraints.
-        """
-        if self.inequality is not None:
-            V1 = np.dot(self.inequality, Y) - self.inequality_offset
-            test1 = np.all(V1 < tol * np.fabs(V1).max())
-        else:
-            test1 = True
-        if self.equality is not None:
-            V2 = np.dot(self.equality, Y) - self.equality_offset
-            test2 = np.linalg.norm(V2) < tol * np.linalg.norm(self.equality)
-        else:
-            test2 = True
-        return test1 and test2
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -318,6 +322,32 @@ class constraints(object):
             alpha=alpha,
             UMAU=UMAU)
 
+    def whiten(self):
+        """
+        Return a whitened version of constraints in a different
+        basis, and a change of basis matrix.
+
+        If `self.covariance` is rank deficient, the change-of
+        basis matrix will not be square.
+
+        Assumes the linear constraints have been imposed.
+        """
+
+        rank = np.linalg.matrix_rank(self.covariance)
+        D, U = np.linalg.eigh(self.covariance)
+        D = np.sqrt(D[-rank:])
+        U = U[:,-rank:]
+        U *= D[None,:]
+
+        # original matrix is np.dot(U, U.T)
+
+        new_A = np.dot(self.inequality, U)
+        new_b = self.inequality_offset - np.dot(self.inequality, self.mean)
+
+        mu = self.mean.copy()
+        inverse_map = lambda W: np.dot(U, W) + mu[:,None]
+        return inverse_map, constraints((new_A, new_b), None)
+
 def stack(*cons):
     """
     Combine constraints into a large constaint
@@ -364,7 +394,11 @@ def stack(*cons):
                                     np.hstack(ineq_off)), None)
     return intersection
 
-def simulate_from_constraints(con, tol=1.e-3):
+def simulate_from_constraints(con, 
+                              Y,
+                              ndraw=1000,
+                              burnin=1000,
+                              white=False):
     r"""
     Use naive acceptance rule to simulate from `con`.
 
@@ -373,30 +407,36 @@ def simulate_from_constraints(con, tol=1.e-3):
 
     con : `selection.affine.constraints`_
 
-    Notes
-    -----
+    Y : np.float
+        Point satisfying the constraint.
 
-    This function assumes the covariance is
-    proportional to the identity.
+    ndraw : int (optional)
+        Defaults to 1000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    white : bool (optional)
+        Is con.covariance equal to identity?
+        If not, it is whitened first, after
+        imposing any equality constraints.
+
 
     """
-    if con.equality is not None:
-        V = np.linalg.pinv(con.equality)
-        a = np.dot(V, con.equality_offset)
-        P = np.identity(con.dim) - np.dot(con.equality.T, V.T)
+    if not white:
+        con = con.impose_equality()
+        invmap, white = con.whiten()
     else:
-        a = 0
-        P = np.identity(con.dim)
-    if con.inequality is not None:
-        while True:
-            Z = np.dot(P, np.random.standard_normal(con.dim)) + a
-            Z += con.mean
-            W = np.dot(con.inequality, Z) - con.inequality_offset  
-            if np.all(W < tol * np.fabs(W).max()):
-                break
-        return Z
-    else:
-        return np.dot(P, np.random.standard_normal(con.dim)) + a
+        white = con
+        invmap = lambda V: V
+
+    white_samples = sample_truncnorm_white(white.inequality,
+                                           white.inequality_offset,
+                                           Y, 
+                                           ndraw=ndraw, 
+                                           burnin=burnin,
+                                           sigma=1.)
+    return invmap(white_samples.T).T
 
 def interval_constraints(support_directions, 
                          support_offsets,

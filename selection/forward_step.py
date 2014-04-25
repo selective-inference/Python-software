@@ -98,7 +98,8 @@ class forward_stepwise(object):
             sign = np.sign(U[idx])
             Unew = X[:,idx] / scale[idx]
             Pnew = projection(Unew.reshape((-1,1)))
-            self.A = canonicalA(X, Y, idx, sign, scale=scale)
+            self.As = [canonicalA(X, Y, idx, sign, scale=scale)]
+            self.A = self.As[0]
             self.variables.append(idx)
             self.signs.append(sign)
         else:
@@ -118,6 +119,7 @@ class forward_stepwise(object):
             Unew = RX[:,idx] / scale[idx]
             Pnew = P.stack(Unew.reshape((-1,1)))
             newA = canonicalA(RX, RY, idx, sign, scale=scale)
+            self.As.append(newA)
             if DEBUG:
                 print np.linalg.norm(np.dot(newA, Y) - np.dot(newA, RY)), 'should be 0'
                 print np.linalg.norm(P(newA.T)), np.linalg.norm(P(RX)), 'newA'
@@ -137,7 +139,7 @@ class forward_stepwise(object):
         """
         Verify whether or not constraints are consistent with `self.Y`.
         """
-        return np.dot(self.A, self.Y).min() > 0
+        return np.dot(self.A, self.Y).max() <= 0
 
     def bounds(self, eta):
         """
@@ -189,7 +191,8 @@ class forward_stepwise(object):
 def canonicalA(RX, RY, idx, sign, scale=None):
     """
     The canonical set of inequalities for a step of forward stepwise.
-    These encode that `sign*np.dot(RX.T[idx],RY)=np.fabs(np.dot(RX,RY)).max()` which is
+    These encode that 
+    `sign*np.dot(RX.T[idx],RY)=np.fabs(np.dot(RX,RY)).max()` which is
     $\|RX^TRY\|_{\infty}$.
 
     Parameters
@@ -238,36 +241,5 @@ def canonicalA(RX, RY, idx, sign, scale=None):
     A = A[keep]
 
     V = np.dot(A, RX.T)
-    return V
-
-
-    # shorthand
-    A, b, S, X, w = (support_directions,
-                     support_offsets,
-                     covariance,
-                     observed_data,
-                     direction_of_interest)
-
-    U = np.dot(A, X) + b
-    if not np.all(U > -tol * np.fabs(U).max()):
-        warn('constraints not satisfied: %s' % `U`)
-
-    Sw = np.dot(S, w)
-    sigma = np.sqrt((w*Sw).sum())
-    C = np.dot(A, Sw) / sigma**2
-    V = (w*X).sum()
-    RHS = (-b - np.dot(A, X) + V * C) / C
-    pos_coords = C > tol * np.fabs(C).max()
-    if np.any(pos_coords):
-        lower_bound = RHS[pos_coords].max()
-    else:
-        lower_bound = -np.inf
-    neg_coords = C < -tol * np.fabs(C).max()
-    if np.any(neg_coords):
-        upper_bound = RHS[neg_coords].min()
-    else:
-        upper_bound = np.inf
-
-    return lower_bound, V, upper_bound, sigma
-
+    return -V
 
