@@ -337,16 +337,18 @@ class constraints(object):
         D, U = np.linalg.eigh(self.covariance)
         D = np.sqrt(D[-rank:])
         U = U[:,-rank:]
-        U *= D[None,:]
-
+        
+        sqrt_cov = U * D[None,:]
+        sqrt_inv = (U / D[None,:]).T
         # original matrix is np.dot(U, U.T)
 
-        new_A = np.dot(self.inequality, U)
+        new_A = np.dot(self.inequality, sqrt_cov)
         new_b = self.inequality_offset - np.dot(self.inequality, self.mean)
 
         mu = self.mean.copy()
-        inverse_map = lambda W: np.dot(U, W) + mu[:,None]
-        return inverse_map, constraints((new_A, new_b), None)
+        inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
+        forward_map = lambda W: np.dot(sqrt_inv, W - mu)
+        return inverse_map, forward_map, constraints((new_A, new_b), None)
 
 def stack(*cons):
     """
@@ -425,10 +427,11 @@ def simulate_from_constraints(con,
     """
     if not white:
         con = con.impose_equality()
-        invmap, white = con.whiten()
+        inverse_map, forward_map, white = con.whiten()
+        Y = forward_map(Y)
     else:
         white = con
-        invmap = lambda V: V
+        inverse_map = lambda V: V
 
     white_samples = sample_truncnorm_white(white.inequality,
                                            white.inequality_offset,
@@ -436,7 +439,7 @@ def simulate_from_constraints(con,
                                            ndraw=ndraw, 
                                            burnin=burnin,
                                            sigma=1.)
-    return invmap(white_samples.T).T
+    return inverse_map(white_samples.T).T
 
 def interval_constraints(support_directions, 
                          support_offsets,

@@ -1,21 +1,15 @@
 import numpy as np
-import selection.constraints as C
+import selection.affine as A
 import matplotlib.pyplot as plt
 import statsmodels.api as sm 
 from scipy.stats import chi
-
-from rpy2.robjects.packages import importr
-import rpy2.robjects as ro
-from rpy2.robjects.numpy2ri import numpy2ri
-ro.conversion.py2ri = numpy2ri
-ro.numpy2ri.activate()
 
 def test_apply_equality():
 
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con1 = C.constraints((A,b), (E, f))
+    con1 = A.constraints((A,b), (E, f))
     con2 = con1.impose_equality()
     con3 = con2.impose_equality()
 
@@ -39,30 +33,47 @@ def test_stack():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con1 = C.constraints((A,b), (E,f))
+    con1 = A.constraints((A,b), (E,f))
 
     A, b = np.random.standard_normal((5,30)), np.random.standard_normal(5)
     E, f = np.random.standard_normal((3,30)), np.random.standard_normal(3)
 
-    con2 = C.constraints((A,b), (E,f))
+    con2 = A.constraints((A,b), (E,f))
 
-    return C.stack(con1, con2)
+    return A.stack(con1, con2)
 
 def test_simulate():
 
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = C.constraints((A,b), (E,f))
-    return con, C.simulate_from_constraints(con)
+    con = A.constraints((A,b), (E,f))
+    return con, A.simulate_from_constraints(con)
+
+def test_simulate_nonwhitened():
+    n, p = 50, 200
+
+    X = np.random.standard_normal((n,p))
+    cov = np.dot(X.T, X)
+
+    W = np.random.standard_normal((3,p))
+    con = constraints((W, np.ones(3)), None, covariance=cov)
+
+    while True:
+        W = np.random.standard_normal(p)
+        if np.dot(X, W).max() <= 1:
+            break
+
+    Z = A.simulate_from_constraints(con, W)
+
 
 def test_pivots():
 
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = C.constraints((A,b), (E,f))
-    Z = C.simulate_from_constraints(con)
+    con = A.constraints((A,b), (E,f))
+    Z = A.simulate_from_constraints(con)
     u = np.zeros(con.dim)
     u[4] = 1
     return con.pivots(u, Z)
@@ -72,14 +83,14 @@ def test_pivots2():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = C.constraints((A,b), (E,f))
+    con = A.constraints((A,b), (E,f))
     nsim = 10000
     u = np.zeros(con.dim)
     u[4] = 1
 
     P = []
     for i in range(nsim):
-        Z = C.simulate_from_constraints(con)
+        Z = A.simulate_from_constraints(con)
         P.append(con.pivots(u, Z)[-1])
     P = np.array(P)
     P = P[P > 0]
@@ -89,12 +100,12 @@ def test_pivots2():
 def test_chisq_central():
 
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
-    con = C.constraints((A,b), None)
+    con = A.constraints((A,b), None)
 
     nsim = 3000
     P = []
     for i in range(nsim):
-        Z = C.simulate_from_constraints(con)
+        Z = A.simulate_from_constraints(con)
         u = 0 * Z
         u[:3] = Z[:3] / np.linalg.norm(Z[:3])
         L, V, U = con.pivots(u, Z)[:3]
@@ -115,7 +126,7 @@ def test_chisq_noncentral():
     ncp = np.linalg.norm(mu[:3])**2
 
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
-    con = C.constraints((A,b), None)
+    con = A.constraints((A,b), None)
 
     ro.r('fncp=%f' % ncp)
     ro.r('f = function(x) {pchisq(x,3,ncp=fncp)}')
@@ -128,7 +139,7 @@ def test_chisq_noncentral():
     nsim = 2000
     P = []
     for i in range(nsim):
-        Z = C.simulate_from_constraints(con,mu=mu)
+        Z = A.simulate_from_constraints(con,mu=mu)
         print i
         u = 0 * Z
         u[:3] = Z[:3] / np.linalg.norm(Z[:3])

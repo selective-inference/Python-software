@@ -25,7 +25,8 @@ import numpy as np
 from .affine import constraints, simulate_from_constraints
 from .forward_step import forward_stepwise
 
-def covtest(X, Y, sigma=1, exact=True):
+def covtest(X, Y, sigma=1, exact=True,
+            covariance=None):
     """
     The exact and approximate
     form of the covariance test, described
@@ -80,7 +81,7 @@ def covtest(X, Y, sigma=1, exact=True):
     selector -= (sign * X[:,idx])[None,:]
 
     con = constraints((selector, np.zeros(selector.shape[0])),
-                      None)
+                      None, covariance=covariance)
     con.covariance *= sigma**2
     if exact:
         return con, con.pivot(X[:,idx] * sign, Y, 'greater'), idx, sign
@@ -89,7 +90,8 @@ def covtest(X, Y, sigma=1, exact=True):
         exp_pvalue = np.exp(-L1 * (L1-L2) / S**2) # upper bound is ignored
         return con, exp_pvalue, idx, sign
 
-def reduced_covtest(X, Y, ndraw=5000, burnin=1000, sigma=None):
+def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
+                    covariance=None):
     """
     An exact test that is more
     powerful than `covtest`_ but that requires
@@ -132,9 +134,15 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=1000, sigma=None):
     sign : int
         Sign of $X^Ty$ for variable achieving $\lambda_1$.
 
+    covariance : np.float (optional)
+        Optional covariance for cone constraint.
+        Will be scaled by sigma if it is not None.
+
     """
 
-    cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1)
+    cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,
+                                 covariance=covariance)
+
     if sigma is not None:
         cone.covariance /= sigma**2
         cone.inequality /= sigma
@@ -144,7 +152,7 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=1000, sigma=None):
                                   Y,
                                   ndraw=ndraw,
                                   burnin=burnin,
-                                  white=True)
+                                  white=(covariance is None))
     if sigma is None:
         norm_Y = np.linalg.norm(Y)
         Z /= np.sqrt((Z**2).sum(1))[:,None]
@@ -157,9 +165,9 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=1000, sigma=None):
     pvalue = (test_statistic >= lam1).sum() * 1. / ndraw
     return cone, pvalue, idx, sign
 
-def forward_step(X, Y, sigma=1,
+def forward_step(X, Y, sigma=None,
                  nstep=5,
-                 test='reduced'):
+                 tests=['reduced_unknown']):
     """
     A simple implementation of forward stepwise
     that uses the `reduced_covtest` iteratively
@@ -181,13 +189,42 @@ def forward_step(X, Y, sigma=1,
     sigma : float (optional) 
         Noise level (not needed for reduced).
 
-    test : ['reduced', 'covtest'] (optional)
-        Which test to use?
+    tests : ['reduced_known', 'covtest', 'reduced_unknown']
+        Which test to use? A subset of the above sequence.
 
     """
 
+    n, p = X.shape
     FS = forward_stepwise(X, Y)
     for _ in range(nstep):
         FS.next()
-    return FS
-    
+        
+    results = {}
+    for test in tests:
+        results[test] = []
+
+    def _unknown(X, Y, sigma=None, covariance=None): 
+        return reduced_covtest(X, Y, sigma=None, covariance=covariance)
+
+    for i in range(nstep):
+        if FS.P[i] is not None:
+            RX = X - FS.P[i](X)
+            RY = Y - FS.P[i](Y)
+            covariance = np.identity(n) - np.dot(FS.P[i].U, FS.P[i].U.T)
+        else:
+            RX = X
+            RY = Y
+            covariance = None
+        RX -= RX.mean(0)[None,:]
+        RX /= RX.std(0)[None,:]
+
+        for test in results.keys():
+            pval = {'reduced_known':reduced_covtest,
+                    'covtest':covtest,
+                    'reduced_unknown':_unknown}[test](RX, 
+                                                      RY, 
+                                                      sigma=sigma,
+                                                      covariance=covariance)[1]
+            results[test].append(pval)
+
+    return results
