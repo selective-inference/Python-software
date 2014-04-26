@@ -109,7 +109,7 @@ def quadratic_bounds(y, operator, affine_constraints):
         newcon = constraints((con.inequality, 
                               con.inequality_offset),
                              covariance=con.covariance)
-        newcon = newcon.impose_equality(TA, np.zeros(TA.shape[0]))
+        newcon = newcon.conditional(TA, np.zeros(TA.shape[0]))
         P = np.identity(q) - np.dot(np.linalg.pinv(TA), TA)
         eta = np.dot(P, eta)
 

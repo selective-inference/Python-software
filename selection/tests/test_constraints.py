@@ -1,54 +1,54 @@
 import numpy as np
-import selection.affine as A
 import matplotlib.pyplot as plt
 import statsmodels.api as sm 
 from scipy.stats import chi
+import nose.tools as nt
 
-def test_apply_equality():
+import selection.affine as AC
 
-    A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
-    E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
+def test_conditional():
 
-    con1 = A.constraints((A,b), (E, f))
-    con2 = con1.impose_equality()
-    con3 = con2.impose_equality()
+    p = 20
+    b = np.random.standard_normal((3,))
+    A = np.random.standard_normal((3,p))
+    con = AC.constraints(A,b)
+    w = np.random.standard_normal(p)
+    con.mean = w
+    C = np.random.standard_normal((2,p))
+    d = np.random.standard_normal(2)
+    new_con = con.conditional(C,d)
 
-    np.testing.assert_allclose(con1.equality, 
-                               con2.equality)
-    np.testing.assert_allclose(con1.equality_offset, 
-                               con2.equality_offset)
+    while True:
+        W = np.random.standard_normal(p)
+        W -= np.dot(np.linalg.pinv(C), np.dot(C, W) - d)  
+        if con(W):
+            break
+    Z = simulate_from_constraints(new_con, W)
 
-    np.testing.assert_allclose(con1.equality, 
-                               con3.equality)
-    np.testing.assert_allclose(con1.equality_offset, 
-                               con3.equality_offset)
-
-    np.testing.assert_allclose(con2.inequality, 
-                               con3.inequality)
-    np.testing.assert_allclose(con2.inequality_offset, 
-                               con3.inequality_offset)
+    nt.assert_true((np.dot(Z, A.T) - b[None,:]).max() < 0)
+    nt.assert_true(np.linalg.norm(np.dot(Z, C.T) - d[None,:]) < 1.e-7)
 
 def test_stack():
 
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con1 = A.constraints((A,b), (E,f))
+    con1 = AC.constraints((A,b), (E,f))
 
     A, b = np.random.standard_normal((5,30)), np.random.standard_normal(5)
     E, f = np.random.standard_normal((3,30)), np.random.standard_normal(3)
 
-    con2 = A.constraints((A,b), (E,f))
+    con2 = AC.constraints((A,b), (E,f))
 
-    return A.stack(con1, con2)
+    return AC.stack(con1, con2)
 
 def test_simulate():
 
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = A.constraints((A,b), (E,f))
-    return con, A.simulate_from_constraints(con)
+    con = AC.constraints((A,b), (E,f))
+    return con, AC.simulate_from_constraints(con)
 
 def test_simulate_nonwhitened():
     n, p = 50, 200
@@ -64,7 +64,7 @@ def test_simulate_nonwhitened():
         if np.dot(X, W).max() <= 1:
             break
 
-    Z = A.simulate_from_constraints(con, W)
+    Z = AC.simulate_from_constraints(con, W)
 
 
 def test_pivots():
@@ -72,8 +72,8 @@ def test_pivots():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = A.constraints((A,b), (E,f))
-    Z = A.simulate_from_constraints(con)
+    con = AC.constraints((A,b), (E,f))
+    Z = AC.simulate_from_constraints(con)
     u = np.zeros(con.dim)
     u[4] = 1
     return con.pivots(u, Z)
@@ -83,14 +83,14 @@ def test_pivots2():
     A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
     E, f = np.random.standard_normal((2,30)), np.random.standard_normal(2)
 
-    con = A.constraints((A,b), (E,f))
+    con = AC.constraints((A,b), (E,f))
     nsim = 10000
     u = np.zeros(con.dim)
     u[4] = 1
 
     P = []
     for i in range(nsim):
-        Z = A.simulate_from_constraints(con)
+        Z = AC.simulate_from_constraints(con)
         P.append(con.pivots(u, Z)[-1])
     P = np.array(P)
     P = P[P > 0]
@@ -100,12 +100,12 @@ def test_pivots2():
 def test_chisq_central():
 
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
-    con = A.constraints((A,b), None)
+    con = AC.constraints((A,b), None)
 
     nsim = 3000
     P = []
     for i in range(nsim):
-        Z = A.simulate_from_constraints(con)
+        Z = AC.simulate_from_constraints(con)
         u = 0 * Z
         u[:3] = Z[:3] / np.linalg.norm(Z[:3])
         L, V, U = con.pivots(u, Z)[:3]
@@ -126,7 +126,7 @@ def test_chisq_noncentral():
     ncp = np.linalg.norm(mu[:3])**2
 
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
-    con = A.constraints((A,b), None)
+    con = AC.constraints((A,b), None)
 
     ro.r('fncp=%f' % ncp)
     ro.r('f = function(x) {pchisq(x,3,ncp=fncp)}')
@@ -139,7 +139,7 @@ def test_chisq_noncentral():
     nsim = 2000
     P = []
     for i in range(nsim):
-        Z = A.simulate_from_constraints(con,mu=mu)
+        Z = AC.simulate_from_constraints(con,mu=mu)
         print i
         u = 0 * Z
         u[:3] = Z[:3] / np.linalg.norm(Z[:3])

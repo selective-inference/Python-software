@@ -92,7 +92,7 @@ class constraints(object):
         V1 = np.dot(self.linear_part, Y) - self.offset
         return np.all(V1 < tol * np.fabs(V1).max())
 
-    def impose_equality(self, equality, equality_offset):
+    def conditional(self, linear_part, value):
         """
         Return an equivalent constraint with a
         after having conditioned on a linear equality.
@@ -107,22 +107,24 @@ class constraints(object):
            AY - E(AY|CZ=d)
 
         """
-        #TODO: how does self.mean play here?
 
-        M1 = np.dot(self.linear_part, np.dot(self.covariance, 
-                                            equality.T))
-        M2 = np.dot(equality, np.dot(self.covariance, 
-                                          equality.T))
+        A, b, S = self.linear_part, self.offset, self.covariance
+        C, d = linear_part, value
+
+        #M1 = np.dot(A, np.dot(S, C.T))
+        M1 = np.dot(S, C.T)
+        M2 = np.dot(C, M1)
         M2i = np.linalg.pinv(M2)
-        delta_cov = np.dot(equality.T, np.dot(M2i, equality))
-        M3 = np.dot(M1, np.linalg.pinv(M2))
 
-        equality_linear = np.dot(M3, equality)
-        equality_offset = np.dot(M3, equality_offset)
+        #M3 = np.dot(M1, M2i)
 
-        return constraints((self.linear_part - equality_linear,
-                            self.offset - equality_offset),
-                           covariance=self.covariance - delta_cov)
+        delta_cov = np.dot(M1, np.dot(M2i, C))
+        delta_mean = np.dot(C.T, np.dot(M2i, d - np.dot(C, self.mean)))
+
+        return constraints(self.linear_part,
+                           self.offset,
+                           covariance=self.covariance - delta_cov,
+                           mean=self.mean + delta_mean)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -287,7 +289,6 @@ class constraints(object):
         If `self.covariance` is rank deficient, the change-of
         basis matrix will not be square.
 
-        Assumes the linear constraints have been imposed.
         """
 
         rank = np.linalg.matrix_rank(self.covariance)
@@ -305,7 +306,7 @@ class constraints(object):
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
         forward_map = lambda W: np.dot(sqrt_inv, W - mu)
-        return inverse_map, forward_map, constraints((new_A, new_b), None)
+        return inverse_map, forward_map, constraints(new_A, new_b)
 
 def stack(*cons):
     """
@@ -363,9 +364,6 @@ def simulate_from_constraints(con,
 
     white : bool (optional)
         Is con.covariance equal to identity?
-        If not, it is whitened first, after
-        imposing any equality constraints.
-
 
     """
     if not white:
