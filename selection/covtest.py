@@ -80,8 +80,8 @@ def covtest(X, Y, sigma=1, exact=True,
     selector = np.vstack([X.T[subset],-X.T[subset]])
     selector -= (sign * X[:,idx])[None,:]
 
-    con = constraints((selector, np.zeros(selector.shape[0])),
-                      None, covariance=covariance)
+    con = constraints(selector, np.zeros(selector.shape[0]),
+                      covariance=covariance)
     con.covariance *= sigma**2
     if exact:
         return con, con.pivot(X[:,idx] * sign, Y, 'greater'), idx, sign

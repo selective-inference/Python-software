@@ -171,7 +171,7 @@ class forward_stepwise(object):
 
     @property
     def constraints(self):
-        return constraints((self.A, np.zeros(self.A.shape[0])), None,
+        return constraints(self.A, np.zeros(self.A.shape[0]), 
                            covariance=self.covariance)
 
     # pivots we might care about

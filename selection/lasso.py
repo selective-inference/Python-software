@@ -133,9 +133,9 @@ class lasso(object):
             self._SigmaA = np.dot(XAinv, XAinv.T)
 
             self.active_constraints = constraints(  
-                (-sA[:,None] * XAinv, 
+                -sA[:,None] * XAinv, 
                  -n*lagrange*sA*np.dot(self._SigmaA, 
-                                         sA)), None)
+                                         sA))
             self._SigmaA *=  self.sigma_epsilon**2
             self._PA = PA = np.dot(XA, XAinv)
             irrep_subgrad = (n * lagrange * 
@@ -154,12 +154,12 @@ class lasso(object):
             inactiveX /= scaling[None,:]
 
             self.inactive_constraints = stack( 
-                constraints((-inactiveX.T, 
+                constraints(-inactiveX.T, 
                               lagrange * n + 
-                              irrep_subgrad), None),
-                constraints((inactiveX.T, 
+                              irrep_subgrad),
+                constraints(inactiveX.T, 
                              lagrange * n -
-                             irrep_subgrad), None))
+                             irrep_subgrad))
         else:
             self.inactive_constraints = None
 
@@ -306,7 +306,7 @@ def estimate_sigma(y, X, frac=0.1,
     U = U[:,keep]
     Z = np.dot(U.T, y)
     Z_inequality = np.dot(C.inequality, U)
-    Z_constraint = constraints((Z_inequality, C.inequality_offset), None)
+    Z_constraint = constraints(Z_inequality, C.inequality_offset)
     if not Z_constraint(Z):
         raise ValueError('Constraint not satisfied. Gibbs algorithm will fail.')
     return interpolation_estimate(Z, Z_constraint,

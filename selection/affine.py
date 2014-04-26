@@ -24,24 +24,22 @@ class constraints(object):
 
     r"""
     This class is the core object for affine selection procedures.
-    It is meant to describe sets of the form $C \cap E$
+    It is meant to describe sets of the form $C$
     where
 
     .. math::
 
        C = \left\{z: Az\leq b \right \}
 
-       E = \left\{z: Cz = d \right\}
-
-    Its main purpose is to consider slices through $C \cap E$
+    Its main purpose is to consider slices through $C$
     and the conditional distribution of a Gaussian $N(\mu,\Sigma)$
     restricted to such slices.
 
     """
 
     def __init__(self, 
-                 inequality, 
-                 equality, 
+                 linear_part,
+                 offset,
                  covariance=None,
                  mean=None):
         r"""
@@ -50,13 +48,13 @@ class constraints(object):
         Parameters
         ----------
 
-        inequality : (A,b)
-            A pair specifying the inequality constraint 
-            $\{z:Az \leq b\}$. Can be `None`.
+        linear_part : np.float((q,p))
+            The linear part, $A$ of the affine constraint
+            $\{z:Az \leq b\}$. 
 
         equality: (C,d)
-            A pair specifing the equality constraint
-            $\{z:Cz=d\}$. Can be `None`.
+            The offset part, $b$ of the affine constraint
+            $\{z:Cz=d\}$. 
 
         covariance : np.float
             Covariance matrix of Gaussian distribution to be 
@@ -67,35 +65,13 @@ class constraints(object):
             truncated. Defaults to `np.zeros(self.dim)`.
 
         """
-        if equality is not None:
-            self.equality, self.equality_offset = \
-                np.asarray(equality[0]), equality[1]
-            if self.equality.ndim == 2:
-                dim_equality = self.equality.shape[1]
-            else:
-                dim_equality = self.equality.shape[0]
-        else:
-            self.equality = self.equality_offset = dim_equality = None
 
-        if inequality is not None:
-            self.inequality, self.inequality_offset = \
-                np.asarray(inequality[0]), inequality[1]
-            if self.inequality.ndim == 2:
-                dim_inequality = self.inequality.shape[1]
-            else:
-                dim_inequality = self.inequality.shape[0]
+        self.linear_part, self.offset = \
+            np.asarray(linear_part), np.asarray(offset)
+        if self.linear_part.ndim == 2:
+            self.dim = self.linear_part.shape[1]
         else:
-            self.inequality = self.inequality_offset = dim_inequality = None
-
-        if ((dim_equality is not None) and
-            (dim_inequality is not None) and
-            (dim_equality != dim_inequality)):
-            raise ValueError('constraint dimensions do not match')
-
-        if dim_equality is not None:
-            self.dim = dim_equality
-        else:
-            self.dim = dim_inequality
+            self.dim = self.linear_part.shape[0]
 
         if covariance is None:
             covariance = np.identity(self.dim)
@@ -106,35 +82,20 @@ class constraints(object):
         self.mean = mean
 
     def _repr_latex_(self):
-        if self.inequality is not None and self.equality is None:
-            return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
-        elif self.equality is not None and self.inequality is None:
-            return """$$Z \sim N(\mu,\Sigma) | CZ = d$$"""
-        else:
-            return """$$Z \sim N(\mu,\Sigma) | AZ \leq b, CZ = d$$"""
+        return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
 
     def __call__(self, Y, tol=1.e-3):
         r"""
         Check whether Y satisfies the linear
         inequality and equality constraints.
         """
-        if self.inequality is not None:
-            V1 = np.dot(self.inequality, Y) - self.inequality_offset
-            test1 = np.all(V1 < tol * np.fabs(V1).max())
-        else:
-            test1 = True
-        if self.equality is not None:
-            V2 = np.dot(self.equality, Y) - self.equality_offset
-            test2 = np.linalg.norm(V2) < tol * np.linalg.norm(self.equality)
-        else:
-            test2 = True
-        return test1 and test2
+        V1 = np.dot(self.linear_part, Y) - self.offset
+        return np.all(V1 < tol * np.fabs(V1).max())
 
-    def impose_equality(self):
+    def impose_equality(self, equality, equality_offset):
         """
         Return an equivalent constraint with a
-        new inequality constraint which has equality
-        constraint enforced.
+        after having conditioned on a linear equality.
         
         Let the inequality constraints be specified by
         `(A,b)` and the inequality constraints be specified
@@ -145,27 +106,23 @@ class constraints(object):
            
            AY - E(AY|CZ=d)
 
-
         """
         #TODO: how does self.mean play here?
-        if self.equality is not None:
-            M1 = np.dot(self.inequality, np.dot(self.covariance, 
-                                                self.equality.T))
-            M2 = np.dot(self.equality, np.dot(self.covariance, 
-                                              self.equality.T))
-            M2i = np.linalg.pinv(M2)
-            delta_cov = np.dot(self.equality.T, np.dot(M2i, self.equality))
-            M3 = np.dot(M1, np.linalg.pinv(M2))
-            
-            equality_linear = np.dot(M3, self.equality)
-            equality_offset = np.dot(M3, self.equality_offset)
-            
-            return constraints((self.inequality - equality_linear,
-                                self.inequality_offset - equality_offset),
-                               None,
-                               covariance=self.covariance - delta_cov)
-        else:
-            return self
+
+        M1 = np.dot(self.linear_part, np.dot(self.covariance, 
+                                            equality.T))
+        M2 = np.dot(equality, np.dot(self.covariance, 
+                                          equality.T))
+        M2i = np.linalg.pinv(M2)
+        delta_cov = np.dot(equality.T, np.dot(M2i, equality))
+        M3 = np.dot(M1, np.linalg.pinv(M2))
+
+        equality_linear = np.dot(M3, equality)
+        equality_offset = np.dot(M3, equality_offset)
+
+        return constraints((self.linear_part - equality_linear,
+                            self.offset - equality_offset),
+                           covariance=self.covariance - delta_cov)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -208,8 +165,8 @@ class constraints(object):
         is in the row space of any equality constraint matrix.
         
         """
-        return interval_constraints(self.inequality,
-                                    self.inequality_offset,
+        return interval_constraints(self.linear_part,
+                                    self.offset,
                                     self.covariance,
                                     Y,
                                     direction_of_interest)
@@ -314,8 +271,8 @@ class constraints(object):
         """
 
         return selection_interval( \
-            self.inequality,
-            self.inequality_offset,
+            self.linear_part,
+            self.offset,
             self.covariance,
             Y,
             direction_of_interest,
@@ -342,8 +299,8 @@ class constraints(object):
         sqrt_inv = (U / D[None,:]).T
         # original matrix is np.dot(U, U.T)
 
-        new_A = np.dot(self.inequality, sqrt_cov)
-        new_b = self.inequality_offset - np.dot(self.inequality, self.mean)
+        new_A = np.dot(self.linear_part, sqrt_cov)
+        new_b = self.offset - np.dot(self.linear_part, self.mean)
 
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
@@ -375,25 +332,11 @@ def stack(*cons):
     ineq, ineq_off = [], []
     eq, eq_off = [], []
     for con in cons:
-        if con.inequality is not None:
-            ineq.append(con.inequality)
-            ineq_off.append(con.inequality_offset)
-        if con.equality is not None:
-            eq.append(con.equality)
-            eq_off.append(con.equality_offset)
+        ineq.append(con.linear_part)
+        ineq_off.append(con.offset)
 
-    if ineq and eq:
-        intersection = constraints((np.vstack(ineq), 
-                                    np.hstack(ineq_off)), 
-                                   (np.vstack(eq), 
-                                    np.hstack(eq_off)))
-    elif eq:
-        intersection = constraints(None, 
-                                   (np.vstack(eq), 
-                                    np.hstack(eq_off)))
-    elif ineq:
-        intersection = constraints((np.vstack(ineq), 
-                                    np.hstack(ineq_off)), None)
+    intersection = constraints((np.vstack(ineq), 
+                                np.hstack(ineq_off)))
     return intersection
 
 def simulate_from_constraints(con, 
@@ -426,15 +369,14 @@ def simulate_from_constraints(con,
 
     """
     if not white:
-        con = con.impose_equality()
         inverse_map, forward_map, white = con.whiten()
         Y = forward_map(Y)
     else:
         white = con
         inverse_map = lambda V: V
 
-    white_samples = sample_truncnorm_white(white.inequality,
-                                           white.inequality_offset,
+    white_samples = sample_truncnorm_white(white.linear_part,
+                                           white.offset,
                                            Y, 
                                            ndraw=ndraw, 
                                            burnin=burnin,
