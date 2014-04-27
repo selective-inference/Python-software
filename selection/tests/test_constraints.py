@@ -23,10 +23,41 @@ def test_conditional():
         W -= np.dot(np.linalg.pinv(C), np.dot(C, W) - d)  
         if con(W):
             break
-    Z = simulate_from_constraints(new_con, W)
+    Z = AC.simulate_from_constraints(new_con, W)
 
     nt.assert_true((np.dot(Z, A.T) - b[None,:]).max() < 0)
     nt.assert_true(np.linalg.norm(np.dot(Z, C.T) - d[None,:]) < 1.e-7)
+
+def test_conditional_simple():
+
+    A = np.ones((1,2))
+    b = np.array([1])
+    con = AC.constraints(A,b)
+
+    C = np.array([[0,1]])
+    d = np.array([2])
+
+    new_con = con.conditional(C,d)
+
+    while True:
+        W = np.random.standard_normal(2)
+        W -= np.dot(np.linalg.pinv(C), np.dot(C, W) - d)  
+        if con(W):
+            break
+    Z1 = AC.simulate_from_constraints(new_con, W, ndraw=10000)
+
+    counter = 0
+    new_sample = []
+    while True:
+        W = np.random.standard_normal() + 2 # conditional distribution
+        if W < 1:
+            new_sample.append(W)
+            counter += 1
+
+        if counter >= 10000:
+            break
+
+    return Z1, np.array(new_sample)
 
 def test_stack():
 
@@ -57,15 +88,15 @@ def test_simulate_nonwhitened():
     cov = np.dot(X.T, X)
 
     W = np.random.standard_normal((3,p))
-    con = constraints((W, np.ones(3)), None, covariance=cov)
+    con = AC.constraints(W, np.ones(3), covariance=cov)
 
     while True:
-        W = np.random.standard_normal(p)
-        if np.dot(X, W).max() <= 1:
+        z = np.random.standard_normal(p)
+        if np.dot(W, z).max() <= 1:
             break
 
-    Z = AC.simulate_from_constraints(con, W)
-
+    Z = AC.simulate_from_constraints(con, z)
+    nt.assert_true((np.dot(Z, W.T) - 1).max() < 0)
 
 def test_pivots():
 

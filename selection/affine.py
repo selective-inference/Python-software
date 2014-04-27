@@ -111,15 +111,16 @@ class constraints(object):
         A, b, S = self.linear_part, self.offset, self.covariance
         C, d = linear_part, value
 
-        #M1 = np.dot(A, np.dot(S, C.T))
         M1 = np.dot(S, C.T)
         M2 = np.dot(C, M1)
-        M2i = np.linalg.pinv(M2)
-
-        #M3 = np.dot(M1, M2i)
-
-        delta_cov = np.dot(M1, np.dot(M2i, C))
-        delta_mean = np.dot(C.T, np.dot(M2i, d - np.dot(C, self.mean)))
+        if M2.shape:
+            M2i = np.linalg.pinv(M2)
+            delta_cov = np.dot(M1, np.dot(M2i, M1.T))
+            delta_mean = np.dot(M1, np.dot(M2i, d - np.dot(C, self.mean)))
+        else:
+            M2i = 1. / M2
+            delta_cov = np.multiply.outer(M1, M1) / M2i
+            delta_mean = M1 * (d - np.dot(C, self.mean)) / M2i
 
         return constraints(self.linear_part,
                            self.offset,
