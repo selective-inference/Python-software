@@ -77,7 +77,7 @@ def covtest(X, Y, sigma=1, exact=True,
     I = np.identity(p)
     subset = np.ones(p, np.bool)
     subset[idx] = 0
-    selector = np.vstack([X.T[subset],-X.T[subset]])
+    selector = np.vstack([X.T[subset],-X.T[subset],-sign*X[:,idx]])
     selector -= (sign * X[:,idx])[None,:]
 
     con = constraints(selector, np.zeros(selector.shape[0]),
@@ -145,8 +145,8 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
 
     if sigma is not None:
         cone.covariance /= sigma**2
-        cone.inequality /= sigma
-        cone.inequality_offset /= sigma
+        cone.linear_part /= sigma
+        cone.offset /= sigma
 
     Z = simulate_from_constraints(cone,
                                   Y,
@@ -167,7 +167,9 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
 
 def forward_step(X, Y, sigma=None,
                  nstep=5,
-                 tests=['reduced_unknown']):
+                 tests=['reduced_unknown'],
+                 burnin=1000,
+                 ndraw=5000):
     """
     A simple implementation of forward stepwise
     that uses the `reduced_covtest` iteratively
@@ -196,17 +198,13 @@ def forward_step(X, Y, sigma=None,
 
     n, p = X.shape
     FS = forward_stepwise(X, Y)
-    for _ in range(nstep):
-        FS.next()
-        
-    results = {}
-    for test in tests:
-        results[test] = []
 
-    def _unknown(X, Y, sigma=None, covariance=None): 
-        return reduced_covtest(X, Y, sigma=None, covariance=covariance)
-
+    covtest_P = []
+    reduced_P = []
     for i in range(nstep):
+        FS.next()
+
+        # covtest
         if FS.P[i] is not None:
             RX = X - FS.P[i](X)
             RY = Y - FS.P[i](Y)
@@ -218,13 +216,28 @@ def forward_step(X, Y, sigma=None,
         RX -= RX.mean(0)[None,:]
         RX /= RX.std(0)[None,:]
 
-        for test in results.keys():
-            pval = {'reduced_known':reduced_covtest,
-                    'covtest':covtest,
-                    'reduced_unknown':_unknown}[test](RX, 
-                                                      RY, 
-                                                      sigma=sigma,
-                                                      covariance=covariance)[1]
-            results[test].append(pval)
+        con, pval, idx, sign = covtest(RX, RY, sigma=sigma,
+                                     covariance=covariance)
+        covtest_P.append(pval)
 
-    return results
+        # reduced
+
+        eta = RX[:,idx] * sign
+        Acon = constraints(FS.A, np.zeros(FS.A.shape[0]))
+        if i > 0:
+            U = FS.P[-2].U.T
+            Uy = np.dot(U, Y)
+            Acon = Acon.conditional(U, Uy)
+        else:
+            Acon = Acon
+        Acon.covariance *= sigma**2
+
+        Z = simulate_from_constraints(Acon,
+                                      Y,
+                                      ndraw=ndraw,
+                                      burnin=burnin)
+        observed = (eta * Y).sum()
+        reduced_pval = (np.dot(Z, eta) >= observed).mean()
+        reduced_P.append(reduced_pval)
+
+    return covtest_P, reduced_P

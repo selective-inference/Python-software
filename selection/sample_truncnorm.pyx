@@ -14,6 +14,7 @@ DTYPE_int = np.int
 ctypedef np.int_t DTYPE_int_t
 
 @cython.boundscheck(False)
+@cython.cdivision(True)
 def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A, 
                            np.ndarray[DTYPE_float_t, ndim=1] b, 
                            np.ndarray[DTYPE_float_t, ndim=1] initial, 
@@ -75,28 +76,75 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
         np.random.sample(burnin + ndraw)
-    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx = \
-        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
-    cdef np.ndarray[DTYPE_float_t, ndim=1] alpha_max = \
-        np.fabs(A).max(0) * tol
 
+    # directions not parallel to coordinate axes
+    cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
+        np.vstack([A, 
+                   np.random.standard_normal((int(nvar/5),nvar))])
+
+    directions /= np.sqrt((directions**2).sum(1))[:,None]
+    cdef int ndir = directions.shape[0]
+
+    cdef np.ndarray[DTYPE_float_t, ndim=2] alphas = \
+        np.dot(A, directions.T)
+
+    cdef np.ndarray[DTYPE_float_t, ndim=1] alphas_max = \
+        np.fabs(alphas).max(0) * tol    
+
+    cdef np.ndarray[DTYPE_float_t, ndim=1] alpha_max_coord = \
+        np.fabs(A).max(0) * tol    
+
+    # choose the order of sampling (randomly)
+
+    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx = \
+        np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
+
+    cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_coord = \
+        np.random.random_integers(0, nvar-1, size=(burnin+ndraw,))
+
+    DEBUG = 0
+    if DEBUG:
+        print directions.shape[0], directions.shape[1], 'directions'
+        print alphas.shape[0], alphas.shape[1], 'alphas'
+
+    cdef int invperiod = 2
+    cdef int coord = 0
+    cdef int docoord = 0
     for iter_count in range(ndraw + burnin):
-        idx = random_idx[iter_count]
-        V = state[idx]
+
+        docoord = int(int(nvar/invperiod) != 0)
+        if docoord:
+            idx = random_idx_coord[iter_count]
+            V = state[idx]
+        else:
+            print 'here'
+            idx = random_idx[iter_count]
+            V = 0
+            for ivar in range(nvar):
+                V = V + directions[idx, ivar] * state[ivar]
+
         lower_bound = -1e12
         upper_bound = 1e12
         for irow in range(nconstraint):
-            alpha = A[irow,idx]
-            val = -U[irow] / alpha + V
-            if alpha > alpha_max[idx] and (val < upper_bound):
-                upper_bound = val
-            elif alpha < -alpha_max[idx] and (val > lower_bound):
-                lower_bound = val
+            if docoord:
+                alpha = A[irow,idx]
+                val = -U[irow] / alpha + V
+                if alpha > alpha_max_coord[idx] and (val < upper_bound):
+                    upper_bound = val
+                elif alpha < -alpha_max_coord[idx] and (val > lower_bound):
+                    lower_bound = val
+            else:
+                alpha = alphas[irow,idx]
+                val = -U[irow] / alpha + V
+                if alpha > alphas_max[idx] and (val < upper_bound):
+                    upper_bound = val
+                elif alpha < -alphas_max[idx] and (val > lower_bound):
+                    lower_bound = val
 
         if lower_bound > V:
-            state[idx] = lower_bound + tol * (upper_bound - lower_bound)
+            lower_bound = V - tol * sigma
         elif upper_bound < V:
-            state[idx] = upper_bound + tol * (lower_bound - upper_bound)
+            upper_bound = V + tol * sigma
 
         lower_bound = lower_bound / sigma
         upper_bound = upper_bound / sigma
@@ -118,12 +166,17 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
             else:
                 tnorm = ndtri(1-unif) * sigma
             
-        state[idx] = tnorm
-        tnorm  = tnorm - V
-
-        U = np.dot(A, state) - b
-        #for irow in range(nconstraint):
-        #    U[irow] = U[irow] + tnorm * A[irow,idx]
+        tnorm = tnorm - V
+        if docoord:
+            state[idx] = (tnorm + V)
+            for irow in range(nconstraint):
+                U[irow] = U[irow] + tnorm * A[irow, idx]
+        else:
+            for ivar in range(nvar):
+                state[ivar] = state[ivar] + tnorm * directions[ivar,idx]
+                for irow in range(nconstraint):
+                    U[irow] = (U[irow] + A[irow, ivar] * 
+                               tnorm * directions[ivar,idx])
 
         if iter_count >= burnin:
             for ivar in range(nvar):
