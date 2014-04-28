@@ -8,6 +8,7 @@ import numpy as np
 from .pvalue import (norm_pdf, 
                      truncnorm_cdf, 
                      norm_q,
+                     norm_interval,
                      mp)
 
 class truncated_gaussian(object):

@@ -532,7 +532,6 @@ def selection_interval(support_directions,
     truncated = truncated_gaussian([(lower_bound, upper_bound)], sigma=sigma)
     if UMAU:
         _selection_interval = truncated.UMAU_interval(V, alpha)
-
     else:
         _selection_interval = truncated.naive_interval(V, alpha)
     
