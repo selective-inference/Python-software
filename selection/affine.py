@@ -344,8 +344,8 @@ def stack(*cons):
         ineq.append(con.linear_part)
         ineq_off.append(con.offset)
 
-    intersection = constraints((np.vstack(ineq), 
-                                np.hstack(ineq_off)))
+    intersection = constraints(np.vstack(ineq), 
+                               np.hstack(ineq_off))
     return intersection
 
 def simulate_from_constraints(con, 
