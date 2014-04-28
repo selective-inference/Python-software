@@ -136,6 +136,7 @@ class lasso(object):
                 -sA[:,None] * XAinv, 
                  -n*lagrange*sA*np.dot(self._SigmaA, 
                                          sA))
+            self.active_constraints.covariance *= self.sigma_epsilon**2
             self._SigmaA *=  self.sigma_epsilon**2
             self._PA = PA = np.dot(XA, XAinv)
             irrep_subgrad = (n * lagrange * 
@@ -160,6 +161,7 @@ class lasso(object):
                 constraints(inactiveX.T, 
                              lagrange * n -
                              irrep_subgrad))
+            self.inactive_constraints.covariance *= self.sigma_epsilon**2
         else:
             self.inactive_constraints = None
 
@@ -167,6 +169,7 @@ class lasso(object):
             and self.inactive_constraints is not None):
             self._constraints = stack(self.active_constraints,
                                       self.inactive_constraints)
+            self._constraints.covariance *= self.sigma_epsilon**2
         elif self.active_constraints is not None:
             self._constraints = self.active_constraints
         else:
