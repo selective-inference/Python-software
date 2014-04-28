@@ -20,20 +20,20 @@ def simulation(n, p, sigma, nnz=0, value=4, nsim=1000): # nnz = number nonzero
         fs = forward_step(X,
                           Y,
                           sigma=sigma,
-                          burnin=5000,
-                          ndraw=20000,
+                          burnin=1000,
+                          ndraw=5000,
                           nstep=10)
         reduced.append(fs[1])
         covtest.append(fs[0])
-        print (np.mean(np.array(covtest)[:,:(nnz+1)],0), 
-               np.std(np.array(covtest)[:,:(nnz+1)],0), 'cov')
-        print (np.mean(np.array(reduced)[:,:(nnz+1)],0), 
-               np.std(np.array(reduced)[:,:(nnz+1)],0), 'reduced')
+        print (np.mean(np.array(covtest)[:,:(nnz+3)],0), 
+               np.std(np.array(covtest)[:,:(nnz+3)],0), 'cov')
+        print (np.mean(np.array(reduced)[:,:(nnz+3)],0), 
+               np.std(np.array(reduced)[:,:(nnz+3)],0), 'reduced')
 
     np.save('reduced%d_%0.1f.npy' % (nnz, value), np.array(reduced))
     np.save('covtest%d_%0.1f.npy' % (nnz, value), np.array(covtest))
 
-simulation(n,p,sigma,0)
-simulation(n,p,sigma,1)
+#simulation(n,p,sigma,0)
+#simulation(n,p,sigma,1)
 simulation(n,p,sigma,2)
 simulation(n,p,sigma,5)
