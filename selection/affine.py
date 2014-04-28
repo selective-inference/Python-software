@@ -12,9 +12,9 @@ and `post selection LASSO`_.
 """
 
 import numpy as np
-from .pvalue import truncnorm_cdf
+from .pvalue import truncnorm_cdf, norm_interval
 from .truncated import truncated_gaussian
-from .sample_truncnorm import sample_truncnorm_white
+from .sample_truncnorm import sample_truncnorm_white, sample_truncnorm_white_sphere
                         
 from warnings import warn
 
