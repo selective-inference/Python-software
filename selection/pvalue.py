@@ -310,3 +310,53 @@ def general_pvalue(observed, lower_bound, upper_bound, curvature, nsim=100):
     exponent_2, C2 = gauss_poly(lower_bound, upper_bound, curvature, nsim=nsim)
 
     return np.exp(C1-C2) * exponent_1 / exponent_2
+
+
+class SelectionInterval(object):
+    """
+    Compute a selection interval for
+    a Gaussian truncated to an interval.
+    """
+
+    def __init__(self, lower_bound, observed, upper_bound, sigma):
+        self.lower_bound, self.observed, self.upper_bound, self.sigma = lower_bound, observed, upper_bound, sigma
+
+
+    def pivot(self, exp):
+        L, obs, U, sd = self.lower_bound, self.observed, self.upper_bound, self.sigma 
+        return truncnorm_cdf((obs-exp)/sd, (L-exp)/sd, (U-exp)/sd)
+
+    def conf_int(self, lb, ub, alpha=0.05):
+        F = lambda exp: self.pivot(exp)         
+        L = _find_root(F, 1.0 - 0.5 * alpha, lb, ub)
+        U = _find_root(F, 0.5 * alpha, L, ub)
+        return L, U
+
+def _find_root(f, y, lb, ub, tol=1e-6):
+    """
+    searches for solution to f(x) = y in (lb, ub), where 
+    f is a monotone decreasing function
+    """       
+    
+    # make sure solution is in range
+    a, b   = lb, ub
+    fa, fb = f(a), f(b)
+    
+    # assume a < b
+    if fa > y and fb > y:
+        while fb > y : 
+            b, fb = b + (b-a), f(b + (b-a))
+    elif fa < y and fb < y:
+        while fa < y : 
+            a, fa = a - (b-a), f(a - (b-a))
+    
+    # determine the necessary number of iterations
+    max_iter = int( np.ceil( ( np.log(tol) - np.log(b-a) ) / np.log(0.5) ) )
+    
+    # bisect (slow but sure) until solution is obtained
+    for _ in xrange(max_iter):
+        c, fc  = (a+b)/2, f((a+b)/2)
+        if fc > y: a = c
+        elif fc < y: b = c
+
+    return c
