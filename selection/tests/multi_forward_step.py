@@ -12,15 +12,15 @@ def simulation(n, p, sigma, nnz=0, value=4, nsim=1000): # nnz = number nonzero
     covtest = []
     single_step = []
     for i in range(nsim):
-        print i
-        X = np.random.standard_normal((n,p)) + 0.7 * np.random.standard_normal(n)[:,None]
+        X = (np.random.standard_normal((n,p)) + 
+             0.7 * np.random.standard_normal(n)[:,None])
         X -= X.mean(0)[None,:]
         X /= X.std(0)[None,:] * np.sqrt(n)
         Y = np.random.standard_normal(n) * sigma + np.dot(X, beta)
         fs = forward_step(X,
                           Y,
                           sigma=sigma,
-                          burnin=1000,
+                          burnin=5000,
                           ndraw=5000,
                           nstep=10)
         reduced.append(fs[1])
@@ -33,7 +33,7 @@ def simulation(n, p, sigma, nnz=0, value=4, nsim=1000): # nnz = number nonzero
     np.save('reduced%d_%0.1f.npy' % (nnz, value), np.array(reduced))
     np.save('covtest%d_%0.1f.npy' % (nnz, value), np.array(covtest))
 
-#simulation(n,p,sigma,0)
-#simulation(n,p,sigma,1)
+simulation(n,p,sigma,0)
+simulation(n,p,sigma,1)
 simulation(n,p,sigma,2)
 simulation(n,p,sigma,5)

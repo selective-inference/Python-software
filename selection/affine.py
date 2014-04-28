@@ -35,6 +35,13 @@ class constraints(object):
     and the conditional distribution of a Gaussian $N(\mu,\Sigma)$
     restricted to such slices.
 
+    Notes
+    -----
+
+    In this parameterization, the parameter `self.mean` corresponds
+    to the *reference measure* that is being truncated. It is not the
+    mean of the truncated Gaussian.
+
     """
 
     def __init__(self, 
