@@ -298,7 +298,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
             a2 = 0
             for ivar in range(nvar):
                 a2 = a2 + A[irow,ivar] * eta[ivar]
-            L, U = _Cfind_interval(a1, a2 * norm_state, b[irow])
+            L, U = _find_interval(a1, a2 * norm_state, b[irow])
 
             if L > lower_bound:
                 lower_bound = L
@@ -358,14 +358,17 @@ def _find_interval(a1, a2, b):
         if a2 < 0:
             alpha = PI - alpha
         tstar1 = np.arcsin(b/norm_a) - alpha
+        if tstar1 < -PI:
+            tstar1 = tstar1 + 2 * PI
+        if tstar1 > PI:
+            tstar1 = tstar1 - 2 * PI
+
         tstar2 = (PI - np.arcsin(b/norm_a) - alpha) 
+        if tstar2 < -PI:
+            tstar2 = tstar2 + 2 *PI
+        if tstar2 > PI:
+            tstar2 = tstar2 - 2 * PI
         lower, upper = sorted([tstar1, tstar2])
-        tmean = 0.5 * (upper + lower)
-        if a1 * np.cos(tmean) + a2 * np.sin(tmean) - b > 0:
-            if upper < 0:
-                lower, upper = upper, PI
-            else:
-                lower, upper = -PI, lower
         return lower, upper
     else:
         return -PI, PI
