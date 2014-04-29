@@ -278,6 +278,9 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     for iter_count in range(ndraw + burnin):
 
+        if (np.dot(A, state) - b).max() > 0:
+            print (np.dot(A, state) - b).max(), 'test failed'
+
         lower_bound = -np.pi
         upper_bound = np.pi
 
@@ -290,13 +293,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
             for ivar in range(nvar):
                 a2 = a2 + A[irow,ivar] * eta[ivar]
             L, U = _find_interval(a1, a2 * norm_state, b[irow])
-            if L != -np.pi:
-                print (a1*np.cos(L) + a2*norm_state*np.sin(L) - b[irow], 
-                       a1*np.cos(U) + a2*norm_state*np.sin(U) - b[irow],
-                       a1*np.cos((L+U)/2) + a2*norm_state*np.sin((L+U)/2) - b[irow]), 'soln'
-                if ((a1*np.cos((L+U)/2) + a2*norm_state*np.sin((L+U)/2) - b[irow]) > 0):
-                    raise ValueError(`a1,a2*norm_state,b[irow],L,U`)
-            print L, U, a1, b[irow], (a1 <= b[irow])
+            #print a1 <= b[irow], L, U, 'bounds'
             if L > lower_bound:
                 lower_bound = L
             if U < upper_bound:
@@ -306,19 +303,13 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
         cos_theta = np.cos(theta)
         sin_theta_norm = np.sin(theta) * norm_state
 
-        print 'before step', (np.dot(A, state) - b).max()
-
         for ivar in range(nvar):
             state[ivar] = cos_theta * state[ivar] + sin_theta_norm * eta[ivar]
 
-        state_new = cos_theta * state + sin_theta_norm * eta
-        print np.linalg.norm(state_new), np.linalg.norm(state), theta, lower_bound, upper_bound, np.linalg.norm(eta)
         for irow in range(nconstraint):
             Astate[irow] = 0
             for ivar in range(nvar):
                 Astate[irow] = Astate[irow] + A[irow,ivar] * state[ivar]
-
-        print 'step taken', (np.dot(A, state) - b).max()
 
         if iter_count >= burnin:
             for ivar in range(nvar):
@@ -343,12 +334,14 @@ def _find_interval(a1, a2, b):
         if a2 < 0:
             alpha = np.pi - alpha
         tstar1 = np.arcsin(b/norm_a) - alpha
-        if tstar1 > np.pi:
-            tstar1 = tstar1 - 2 * np.pi
-        tstar2 = (np.pi - np.arcsin(b/norm_a) - alpha) % (2 * np.pi)
-        if tstar2 > np.pi:
-            tstar2 = tstar2 - 2 * np.pi
+        tstar2 = (np.pi - np.arcsin(b/norm_a) - alpha) 
         lower, upper = sorted([tstar1, tstar2])
+        tmean = 0.5 * (upper + lower)
+        if a1 * np.cos(tmean) + a2 * np.sin(tmean) - b > 0:
+            if upper < 0:
+                lower, upper = upper, np.pi
+            else:
+                lower, upper = -np.pi, lower
         return lower, upper
     else:
         return -np.pi, np.pi

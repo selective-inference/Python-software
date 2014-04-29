@@ -354,7 +354,7 @@ def simulate_from_constraints(con,
                               burnin=1000,
                               white=False):
     r"""
-    Use naive acceptance rule to simulate from `con`.
+    Use Gibbs sampler to simulate from `con`.
 
     Parameters
     ----------
@@ -387,6 +387,47 @@ def simulate_from_constraints(con,
                                            ndraw=ndraw, 
                                            burnin=burnin,
                                            sigma=1.)
+    return inverse_map(white_samples.T).T
+
+def simulate_from_sphere(con, 
+                         Y,
+                         ndraw=1000,
+                         burnin=1000,
+                         white=False):
+    r"""
+    Use Gibbs sampler to simulate from `con` 
+    intersected with (whitened) sphere of radius `np.linalg.norm(Y)`.
+
+    Parameters
+    ----------
+
+    con : `selection.affine.constraints`_
+
+    Y : np.float
+        Point satisfying the constraint.
+
+    ndraw : int (optional)
+        Defaults to 1000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    white : bool (optional)
+        Is con.covariance equal to identity?
+
+    """
+    if not white:
+        inverse_map, forward_map, white = con.whiten()
+        Y = forward_map(Y)
+    else:
+        white = con
+        inverse_map = lambda V: V
+
+    white_samples = sample_truncnorm_white_sphere(white.linear_part,
+                                                  white.offset,
+                                                  Y, 
+                                                  ndraw=ndraw, 
+                                                  burnin=burnin)
     return inverse_map(white_samples.T).T
 
 def interval_constraints(support_directions, 
