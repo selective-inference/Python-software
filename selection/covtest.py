@@ -22,7 +22,7 @@ that can use sigma but does not need it.
 """
 
 import numpy as np
-from .affine import constraints, simulate_from_constraints
+from .affine import constraints, simulate_from_constraints, gibbs_test
 from .forward_step import forward_stepwise
 
 def covtest(X, Y, sigma=1, exact=True,
@@ -84,9 +84,9 @@ def covtest(X, Y, sigma=1, exact=True,
                       covariance=covariance)
     con.covariance *= sigma**2
     if exact:
-        return con, con.pivot(X[:,idx] * sign, Y, 'greater'), idx, sign
+        return con, con.pivot(X[:,idx] * sign, Y, alternative='greater'), idx, sign
     else:
-        L2, L1, _, S = con.bounds(X[:,idx] * sign, Y, 'greater')
+        L2, L1, _, S = con.bounds(X[:,idx] * sign, Y)
         exp_pvalue = np.exp(-L1 * (L1-L2) / S**2) # upper bound is ignored
         return con, exp_pvalue, idx, sign
 
@@ -110,13 +110,20 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
 
     Y : np.float(n)
 
+    burnin : int
+        How many iterations until we start
+        recording samples?
+
+    ndraw : int
+        How many samples should we return?
+
     sigma : float (optional)
         If provided, this value is used for the
         Gibbs sampler.
 
-    exact : bool (optional)
-        If True, use the first spacings test, else use
-        the exponential approximation.
+    covariance : np.float (optional)
+        Optional covariance for cone constraint.
+        Will be scaled by sigma if it is not None.
 
     Returns
     -------
@@ -134,40 +141,43 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     sign : int
         Sign of $X^Ty$ for variable achieving $\lambda_1$.
 
-    covariance : np.float (optional)
-        Optional covariance for cone constraint.
-        Will be scaled by sigma if it is not None.
 
     """
 
     cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,
                                  covariance=covariance)
 
-    if sigma is not None:
-        cone.covariance /= sigma**2
-        cone.linear_part /= sigma
-        cone.offset /= sigma
+    pvalue = gibbs_test(cone, Y, X[:,idx] * sign,
+                        ndraw=ndraw,
+                        burnin=burnin,
+                        sigma_known=sigma is not None)
 
-    Z = simulate_from_constraints(cone,
-                                  Y,
-                                  ndraw=ndraw,
-                                  burnin=burnin,
-                                  white=(covariance is None))
-    if sigma is None:
-        norm_Y = np.linalg.norm(Y)
-        Z /= np.sqrt((Z**2).sum(1))[:,None]
-        Z *= norm_Y
-    else:
-        Z *= sigma
+#     if sigma is not None:
+#         cone.covariance /= sigma**2
+#         cone.linear_part /= sigma
+#         cone.offset /= sigma
 
-    test_statistic = np.dot(Z, X[:,idx]) * sign
-    lam1 = np.fabs(np.dot(X.T,Y)).max()
-    pvalue = (test_statistic >= lam1).sum() * 1. / ndraw
+#     Z = simulate_from_sphere(cone,
+#                              Y,
+#                              ndraw=ndraw,
+#                              burnin=burnin,
+#                              white=(covariance is None) and (sigma is None))
+#     if sigma is None:
+#         norm_Y = np.linalg.norm(Y)
+#         Z /= np.sqrt((Z**2).sum(1))[:,None]
+#         Z *= norm_Y
+#     else:
+#         Z *= sigma
+
+#     test_statistic = np.dot(Z, 
+#     observed = np.fabs(np.dot(X.T,Y)).max()
+#     pvalue = (test_statistic >= observed).mean()
+
     return cone, pvalue, idx, sign
 
 def forward_step(X, Y, sigma=None,
                  nstep=5,
-                 tests=['reduced_unknown'],
+                 exact=False,
                  burnin=1000,
                  ndraw=5000):
     """
@@ -185,11 +195,21 @@ def forward_step(X, Y, sigma=None,
 
     Y : np.float(n)
 
+    sigma : float (optional) 
+        Noise level (not needed for reduced).
+
     nstep : int
         How many steps of forward stepwise?
 
-    sigma : float (optional) 
-        Noise level (not needed for reduced).
+    exact : bool
+        Which version of covtest should we use?
+
+    burnin : int
+        How many iterations until we start
+        recording samples?
+
+    ndraw : int
+        How many samples should we return?
 
     tests : ['reduced_known', 'covtest', 'reduced_unknown']
         Which test to use? A subset of the above sequence.
@@ -217,7 +237,8 @@ def forward_step(X, Y, sigma=None,
         RX /= RX.std(0)[None,:]
 
         con, pval, idx, sign = covtest(RX, RY, sigma=sigma,
-                                     covariance=covariance)
+                                       covariance=covariance,
+                                       exact=exact)
         covtest_P.append(pval)
 
         # reduced

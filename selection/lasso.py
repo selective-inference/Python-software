@@ -41,7 +41,7 @@ DEBUG = False
 
 class lasso(object):
 
-    """
+    r"""
     A class for the LASSO for post-selection inference.
     The problem solved is
 

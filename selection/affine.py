@@ -577,3 +577,67 @@ def selection_interval(support_directions,
         _selection_interval = truncated.naive_interval(V, alpha)
     
     return _selection_interval
+
+def gibbs_test(affine_con, Y, direction_of_interest,
+               ndraw=5000,
+               burnin=2000,
+               white=False,
+               alternative='two-sided',
+               sigma_known=False):
+    """
+    A Monte Carlo significance test for
+    a given function of `con.mean`.
+
+    Parameters
+    ----------
+
+    affine_con : `selection.affine.constraints`_
+
+    Y : np.float
+        Point satisfying the constraint.
+
+    direction_of_interest: np.float
+        Which linear function of `con.mean` is of interest?
+        (a.k.a. $\eta$ in many of related papers)
+
+    ndraw : int (optional)
+        Defaults to 1000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    white : bool (optional)
+        Is con.covariance equal to identity?
+
+    alternative : str
+        One of ['greater', 'less', 'two-sided']
+
+    """
+    eta = direction_of_interest # shorthand
+
+    if alternative not in ['greater', 'less', 'two-sided']:
+        raise ValueError("expecting alternative to be in ['greater', 'less', 'two-sided']")
+
+    if not sigma_known:
+        Z = simulate_from_sphere(affine_con,
+                                 Y,
+                                 ndraw=ndraw,
+                                 burnin=burnin,
+                                 white=white)
+    else:
+        Z = simulate_from_constraints(affine_con,
+                                      Y,
+                                      ndraw=ndraw,
+                                      burnin=burnin,
+                                      white=white)
+        
+    null_statistics = np.dot(Z, eta)
+    observed = (eta*Y).sum()
+    if alternative == 'greater':
+        pvalue = (null_statistics >= observed).mean()
+    elif alternative == 'less':
+        pvalue = (null_statistics <= observed).mean()
+    else:
+        pvalue = (np.fabs(null_statistics) <= np.fabs(observed)).mean()
+
+    return pvalue

@@ -1,7 +1,10 @@
 import numpy as np, cython
 cimport numpy as np
 
+from libc.math cimport sin, cos, acos, asin, sqrt, fabs
 from scipy.special import ndtr, ndtri
+
+cdef double PI = np.pi
 
 """
 This module has a code to sample from a truncated normal distribution
@@ -269,7 +272,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef np.ndarray[DTYPE_float_t, ndim=2] Adir = \
         np.dot(A, directions.T)
 
-    cdef double theta, cos_theta, sin_theta_norm, dir_state
+    cdef double theta, cos_theta, sin_theta_norm, dir_state, eta_norm
 
     # choose the order of sampling (randomly)
 
@@ -278,38 +281,59 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     for iter_count in range(ndraw + burnin):
 
-        if (np.dot(A, state) - b).max() > 0:
-            print (np.dot(A, state) - b).max(), 'test failed'
+        lower_bound = -PI
+        upper_bound = PI
 
-        lower_bound = -np.pi
-        upper_bound = np.pi
+        idx = random_idx_dir[iter_count]
 
         eta = directions[idx] - (directions[idx] * state).sum() * state / (norm_state**2)
-        eta = eta / np.linalg.norm(eta)
+        for ivar in range(nvar):
+            eta_norm = eta_norm + eta[ivar]**2
+        eta_norm = sqrt(eta_norm)
+        for ivar in range(nvar):
+            eta[ivar] = eta[ivar] / eta_norm
 
         for irow in range(nconstraint):
             a1 = Astate[irow]
             a2 = 0
             for ivar in range(nvar):
                 a2 = a2 + A[irow,ivar] * eta[ivar]
-            L, U = _find_interval(a1, a2 * norm_state, b[irow])
-            #print a1 <= b[irow], L, U, 'bounds'
+            L, U = _Cfind_interval(a1, a2 * norm_state, b[irow])
+
             if L > lower_bound:
                 lower_bound = L
             if U < upper_bound:
                 upper_bound = U
 
         theta = lower_bound + usample[iter_count] * (upper_bound - lower_bound)
-        cos_theta = np.cos(theta)
-        sin_theta_norm = np.sin(theta) * norm_state
+        cos_theta = cos(theta)
+        sin_theta_norm = sin(theta) * norm_state
 
         for ivar in range(nvar):
             state[ivar] = cos_theta * state[ivar] + sin_theta_norm * eta[ivar]
 
+        Amax = -1e12
         for irow in range(nconstraint):
             Astate[irow] = 0
             for ivar in range(nvar):
                 Astate[irow] = Astate[irow] + A[irow,ivar] * state[ivar]
+            if Astate[irow] > Amax:
+                Amax = Astate[irow]
+
+        if Amax > 0:
+            theta = theta / 2.
+
+            cos_theta = cos(theta)
+            sin_theta_norm = sin(theta) * norm_state
+
+            for ivar in range(nvar):
+                state[ivar] = cos_theta * state[ivar] + sin_theta_norm * eta[ivar]
+
+            Amax = -1e12
+            for irow in range(nconstraint):
+                Astate[irow] = 0
+                for ivar in range(nvar):
+                    Astate[irow] = Astate[irow] + A[irow,ivar] * state[ivar]
 
         if iter_count >= burnin:
             for ivar in range(nvar):
@@ -332,17 +356,54 @@ def _find_interval(a1, a2, b):
     if np.fabs(b / norm_a) < 1:
         alpha = np.arcsin(a1/norm_a)
         if a2 < 0:
-            alpha = np.pi - alpha
+            alpha = PI - alpha
         tstar1 = np.arcsin(b/norm_a) - alpha
-        tstar2 = (np.pi - np.arcsin(b/norm_a) - alpha) 
+        tstar2 = (PI - np.arcsin(b/norm_a) - alpha) 
         lower, upper = sorted([tstar1, tstar2])
         tmean = 0.5 * (upper + lower)
         if a1 * np.cos(tmean) + a2 * np.sin(tmean) - b > 0:
             if upper < 0:
-                lower, upper = upper, np.pi
+                lower, upper = upper, PI
             else:
-                lower, upper = -np.pi, lower
+                lower, upper = -PI, lower
         return lower, upper
     else:
-        return -np.pi, np.pi
+        return -PI, PI
+
+cdef _Cfind_interval(double a1, 
+                    double a2, 
+                    double b):
+    """
+    Find the interval 
+
+    {t: a1*cos(t) + a2*sin(t) <= b}
+
+    under the assumption that a1 <= b (i.e. the interval is non-empty).
+
+    The assumption is not checked.
+
+    """
+    cdef double norm_a = sqrt(a1*a1+a2*a2)
+    cdef double lower, upper
+
+    if fabs(b / norm_a) < 1:
+        alpha = asin(a1/norm_a)
+        if a2 < 0:
+            alpha = PI - alpha
+        tstar1 = asin(b/norm_a) - alpha
+        tstar2 = PI - asin(b/norm_a) - alpha 
+        if tstar1 > tstar2:
+            lower, upper = tstar2, tstar1
+        else:
+            lower, upper = tstar1, tstar2
+        lower, upper = sorted([tstar1, tstar2])
+        tmean = 0.5 * (upper + lower)
+        if a1 * cos(tmean) + a2 * sin(tmean) - b > 0:
+            if upper < 0:
+                lower, upper = upper, PI
+            else:
+                lower, upper = -PI, lower
+        return lower, upper
+    else:
+        return -PI, PI
 
