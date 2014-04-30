@@ -21,6 +21,8 @@ ctypedef np.int_t DTYPE_int_t
 def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A, 
                            np.ndarray[DTYPE_float_t, ndim=1] b, 
                            np.ndarray[DTYPE_float_t, ndim=1] initial, 
+                           np.ndarray[DTYPE_float_t, ndim=1] bias_direction, #eta
+                           DTYPE_int_t how_often=1000,
                            DTYPE_float_t sigma=1.,
                            DTYPE_int_t burnin=500,
                            DTYPE_int_t ndraw=1000,
@@ -85,6 +87,7 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack([A, 
                    np.random.standard_normal((int(nvar/5),nvar))])
+    directions[-1][:] = bias_direction
 
     directions /= np.sqrt((directions**2).sum(1))[:,None]
 
@@ -112,26 +115,36 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
     # for switching between coordinate updates and
     # other directions
 
-    cdef int invperiod = 20
+    cdef int invperiod = 13
     cdef int docoord = 0
     cdef int iperiod = 0
+    cdef int ibias = 0
+    cdef int dobias = 0
 
     for iter_count in range(ndraw + burnin):
 
+        docoord = 1
         iperiod = iperiod + 1
-        if iperiod == invperiod:
+        ibias = ibias + 1
+
+        if iperiod == invperiod: 
             docoord = 0
             iperiod = 0
-        else:
-            docoord = 1
+            dobias = 0
 
-        docoord = 1 # other directions
-                    # is buggy
+        if ibias == how_often:
+            docoord = 0
+            ibias = 0
+            dobias = 1
+        
         if docoord == 1:
             idx = random_idx_coord[iter_count]
             V = state[idx]
         else:
-            idx = random_idx_dir[iter_count]
+            if not dobias:
+                idx = random_idx_dir[iter_count]
+            else:
+                idx = directions.shape[0]-1 # last row of directions is bias_direction
             V = 0
             for ivar in range(nvar):
                 V = V + directions[idx, ivar] * state[ivar]
@@ -186,10 +199,10 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
         else:
             tnorm = tnorm - V
             for ivar in range(nvar):
-                state[ivar] = state[ivar] + tnorm * directions[ivar,idx]
-            for irow in range(nconstraint):
-                U[irow] = (U[irow] + A[irow, ivar] * 
-                           tnorm * directions[ivar,idx])
+                state[ivar] = state[ivar] + tnorm * directions[idx,ivar]
+                for irow in range(nconstraint):
+                    U[irow] = (U[irow] + A[irow, ivar] * 
+                               tnorm * directions[idx,ivar])
 
         if iter_count >= burnin:
             for ivar in range(nvar):
