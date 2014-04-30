@@ -14,7 +14,9 @@ and `post selection LASSO`_.
 import numpy as np
 from .pvalue import truncnorm_cdf, norm_interval
 from .truncated import truncated_gaussian
-from .sample_truncnorm import sample_truncnorm_white, sample_truncnorm_white_sphere
+from .sample_truncnorm import (sample_truncnorm_white, 
+                               sample_truncnorm_white_ball,
+                               sample_truncnorm_white_sphere)
                         
 from warnings import warn
 
@@ -348,11 +350,13 @@ def stack(*cons):
                                np.hstack(ineq_off))
     return intersection
 
-def simulate_from_constraints(con, 
-                              Y,
-                              ndraw=1000,
-                              burnin=1000,
-                              white=False):
+def sample_from_constraints(con, 
+                            Y,
+                            direction_of_interest=None,
+                            how_often=-1,
+                            ndraw=1000,
+                            burnin=1000,
+                            white=False):
     r"""
     Use Gibbs sampler to simulate from `con`.
 
@@ -364,6 +368,13 @@ def simulate_from_constraints(con,
     Y : np.float
         Point satisfying the constraint.
 
+    direction_of_interest : np.float (optional)
+        Which projection is of most interest?
+
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
+
     ndraw : int (optional)
         Defaults to 1000.
 
@@ -373,10 +384,22 @@ def simulate_from_constraints(con,
     white : bool (optional)
         Is con.covariance equal to identity?
 
+    Returns
+    -------
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
     """
+    if direction_of_interest is None:
+        direction_of_interest = np.random.standard_normal(Y.shape)
+    if how_often < 0:
+        how_often = ndraw + burnin
+
     if not white:
         inverse_map, forward_map, white = con.whiten()
         Y = forward_map(Y)
+        direction_of_interest = forward_map(direction_of_interest)
     else:
         white = con
         inverse_map = lambda V: V
@@ -384,16 +407,20 @@ def simulate_from_constraints(con,
     white_samples = sample_truncnorm_white(white.linear_part,
                                            white.offset,
                                            Y, 
+                                           direction_of_interest,
+                                           how_often=how_often,
                                            ndraw=ndraw, 
                                            burnin=burnin,
                                            sigma=1.)
     return inverse_map(white_samples.T).T
 
-def simulate_from_sphere(con, 
-                         Y,
-                         ndraw=1000,
-                         burnin=1000,
-                         white=False):
+def sample_from_sphere(con, 
+                       Y,
+                       direction_of_interest=None,
+                       how_often=-1,
+                       ndraw=1000,
+                       burnin=1000,
+                       white=False):
     r"""
     Use Gibbs sampler to simulate from `con` 
     intersected with (whitened) sphere of radius `np.linalg.norm(Y)`.
@@ -406,6 +433,13 @@ def simulate_from_sphere(con,
     Y : np.float
         Point satisfying the constraint.
 
+    direction_of_interest : np.float (optional)
+        Which projection is of most interest?
+
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
+
     ndraw : int (optional)
         Defaults to 1000.
 
@@ -415,20 +449,39 @@ def simulate_from_sphere(con,
     white : bool (optional)
         Is con.covariance equal to identity?
 
+    Returns
+    -------
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
+    weights : np.float(ndraw)
+        Importance weights for the sample.
+
     """
+    if direction_of_interest is None:
+        direction_of_interest = np.random.standard_normal(Y.shape)
+    if how_often < 0:
+        how_often = ndraw + burnin
+
     if not white:
         inverse_map, forward_map, white = con.whiten()
         Y = forward_map(Y)
+        direction_of_interest = forward_map(direction_of_interest)
     else:
         white = con
         inverse_map = lambda V: V
 
-    white_samples = sample_truncnorm_white_sphere(white.linear_part,
-                                                  white.offset,
-                                                  Y, 
-                                                  ndraw=ndraw, 
-                                                  burnin=burnin)
-    return inverse_map(white_samples.T).T
+    white_samples, weights = sample_truncnorm_white_sphere(white.linear_part,
+                                                           white.offset,
+                                                           Y, 
+                                                           direction_of_interest,
+                                                           how_often=how_often,
+                                                           ndraw=ndraw, 
+                                                           burnin=burnin)
+
+    Z = inverse_map(white_samples.T).T
+    return Z, weights
 
 def interval_constraints(support_directions, 
                          support_offsets,
@@ -472,6 +525,17 @@ def interval_constraints(support_directions,
     tol : float
          Relative tolerance parameter for deciding 
          sign of $Az-b$.
+
+    Returns
+    -------
+
+    lower_bound : float
+
+    observed : float
+
+    upper_bound : float
+
+    sigma : float
 
     """
 
@@ -579,6 +643,7 @@ def selection_interval(support_directions,
     return _selection_interval
 
 def gibbs_test(affine_con, Y, direction_of_interest,
+               how_often=-1,
                ndraw=5000,
                burnin=2000,
                white=False,
@@ -600,6 +665,10 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         Which linear function of `con.mean` is of interest?
         (a.k.a. $\eta$ in many of related papers)
 
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
+
     ndraw : int (optional)
         Defaults to 1000.
 
@@ -612,31 +681,48 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     alternative : str
         One of ['greater', 'less', 'two-sided']
 
+    Returns
+    -------
+
+    pvalue : float
+        P-value (using importance weights) for specified hypothesis test.
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
+    weights : np.float(ndraw)
+        Importance weights for the sample.
     """
+
     eta = direction_of_interest # shorthand
 
     if alternative not in ['greater', 'less', 'two-sided']:
         raise ValueError("expecting alternative to be in ['greater', 'less', 'two-sided']")
 
     if not sigma_known:
-        Z = simulate_from_sphere(affine_con,
-                                 Y,
-                                 ndraw=ndraw,
-                                 burnin=burnin,
-                                 white=white)
+        Z, W = sample_from_sphere(affine_con,
+                                  Y,
+                                  eta,
+                                  how_often=how_often,
+                                  ndraw=ndraw,
+                                  burnin=burnin,
+                                  white=white)
     else:
-        Z = simulate_from_constraints(affine_con,
-                                      Y,
-                                      ndraw=ndraw,
-                                      burnin=burnin,
-                                      white=white)
-        
+        Z = sample_from_constraints(affine_con,
+                                    Y,
+                                    eta,
+                                    how_often=how_often,
+                                    ndraw=ndraw,
+                                    burnin=burnin,
+                                    white=white)
+        W = np.ones(Z.shape[0], np.float)
+
     null_statistics = np.dot(Z, eta)
     observed = (eta*Y).sum()
     if alternative == 'greater':
-        pvalue = (null_statistics >= observed).mean()
+        pvalue = (W*(null_statistics >= observed)).sum() / W.sum()
     elif alternative == 'less':
-        pvalue = (null_statistics <= observed).mean()
+        pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
     else:
-        pvalue = (np.fabs(null_statistics) <= np.fabs(observed)).mean()
-    return pvalue, Z
+        pvalue = (W*(np.fabs(null_statistics) <= np.fabs(observed))).sum() / W.sum()
+    return pvalue, Z, W

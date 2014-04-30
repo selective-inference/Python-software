@@ -22,7 +22,7 @@ that can use sigma but does not need it.
 """
 
 import numpy as np
-from .affine import constraints, simulate_from_constraints, gibbs_test
+from .affine import constraints, sample_from_constraints, gibbs_test
 from .forward_step import forward_stepwise
 
 def covtest(X, Y, sigma=1, exact=True,
@@ -147,32 +147,11 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,
                                  covariance=covariance)
 
-    pvalue, Z2 = gibbs_test(cone, Y, X[:,idx] * sign,
-                        ndraw=ndraw,
-                        burnin=burnin,
-                        sigma_known=sigma is not None)
-
-    if sigma is not None:
-        cone.covariance /= sigma**2
-        cone.linear_part /= sigma
-        cone.offset /= sigma
-
-    Z = simulate_from_constraints(cone,
-                                  Y,
-                                  ndraw=ndraw,
-                                  burnin=burnin,
-                                  white=(covariance is None) and (sigma is None))
-    if sigma is None:
-        norm_Y = np.linalg.norm(Y)
-        Z /= np.sqrt((Z**2).sum(1))[:,None]
-        Z *= norm_Y
-    else:
-        Z *= sigma
-
-        
-    test_statistic = np.dot(Z, X[:,idx]*sign)
-    observed = np.fabs(np.dot(X.T,Y)).max()
-    pvalue2 = (test_statistic >= observed).mean()
+    pvalue, Z = gibbs_test(cone, Y, X[:,idx] * sign,
+                           ndraw=ndraw,
+                           burnin=burnin,
+                           sigma_known=sigma is not None,
+                           alternative='greater')
 
     return cone, pvalue, idx, sign
 
@@ -221,7 +200,9 @@ def forward_step(X, Y, sigma=None,
     FS = forward_stepwise(X, Y)
 
     covtest_P = []
-    reduced_P = []
+    reduced_Pknown = []
+    reduced_Punknown = []
+
     for i in range(nstep):
         FS.next()
 
@@ -254,12 +235,18 @@ def forward_step(X, Y, sigma=None,
             Acon = Acon
         Acon.covariance *= sigma**2
 
-        Z = simulate_from_constraints(Acon,
-                                      Y,
-                                      ndraw=ndraw,
-                                      burnin=burnin)
-        observed = (eta * Y).sum()
-        reduced_pval = (np.dot(Z, eta) >= observed).mean()
-        reduced_P.append(reduced_pval)
+        reduced_pval, _ = gibbs_test(Acon, Y, eta,
+                                     ndraw=ndraw,
+                                     burnin=burnin,
+                                     sigma_known=sigma is not None,
+                                     alternative='greater')
+        reduced_Pknown.append(reduced_pval)
 
-    return covtest_P, reduced_P
+        reduced_pval, _ = gibbs_test(Acon, Y, eta,
+                                     ndraw=ndraw,
+                                     burnin=burnin,
+                                     sigma_known=False,
+                                     alternative='greater')
+        reduced_Punknown.append(reduced_pval)
+
+    return covtest_P, reduced_Pknown, reduced_Punknown
