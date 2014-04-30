@@ -639,5 +639,4 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         pvalue = (null_statistics <= observed).mean()
     else:
         pvalue = (np.fabs(null_statistics) <= np.fabs(observed)).mean()
-
-    return pvalue
+    return pvalue, Z

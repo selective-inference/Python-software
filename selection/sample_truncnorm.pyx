@@ -247,19 +247,15 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef np.ndarray[DTYPE_float_t, ndim=2] trunc_sample = \
             np.empty((ndraw, nvar), np.float)
     cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
-    cdef int idx, iter_count, irow, ivar
-    cdef double lower_bound, upper_bound, V
-    cdef double U, L
+    cdef np.ndarray[DTYPE_float_t, ndim=1] state_new = initial.copy()
+    cdef int idx, irow, ivar
     cdef double norm_state = np.linalg.norm(state)
-    cdef double tol = 1.e-7
 
-    cdef np.ndarray[DTYPE_float_t, ndim=1] Astate = np.dot(A, state)
+    cdef double Astate = 0
 
     cdef np.ndarray[DTYPE_float_t, ndim=1] usample = \
-        np.random.sample(burnin + ndraw)
+        np.random.sample(burnin + ndraw) * 2 * PI
 
-    # directions not parallel to coordinate axes
-    # NOT BEING USED CURRENTLY
     cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack([np.identity(nvar),
                    A, 
@@ -269,9 +265,6 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     cdef int ndir = directions.shape[0]
 
-    cdef np.ndarray[DTYPE_float_t, ndim=2] Adir = \
-        np.dot(A, directions.T)
-
     cdef double theta, cos_theta, sin_theta_norm, dir_state, eta_norm
 
     # choose the order of sampling (randomly)
@@ -279,66 +272,63 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef np.ndarray[DTYPE_int_t, ndim=1] random_idx_dir = \
         np.random.random_integers(0, ndir-1, size=(burnin+ndraw,))
 
-    for iter_count in range(ndraw + burnin):
+    cdef int sample_count = 0
+    cdef int iter_count = 0
 
-        lower_bound = -PI
-        upper_bound = PI
+    state = np.random.standard_normal((nvar,))
+    state /= np.linalg.norm(state)
+    state *= norm_state
 
-        idx = random_idx_dir[iter_count]
+    state_new = np.random.standard_normal((nvar,))
+    state_new /= np.linalg.norm(state_new)
+    state_new *= norm_state
 
-        eta = directions[idx] - (directions[idx] * state).sum() * state / (norm_state**2)
-        for ivar in range(nvar):
-            eta_norm = eta_norm + eta[ivar]**2
-        eta_norm = sqrt(eta_norm)
-        for ivar in range(nvar):
-            eta[ivar] = eta[ivar] / eta_norm
+    while sample_count < (ndraw + burnin):
 
-        for irow in range(nconstraint):
-            a1 = Astate[irow]
-            a2 = 0
-            for ivar in range(nvar):
-                a2 = a2 + A[irow,ivar] * eta[ivar]
-            L, U = _find_interval(a1, a2 * norm_state, b[irow])
+        idx = random_idx_dir[iter_count % (ndraw + burnin)]
+        #eta = directions[idx] - (directions[idx] * state).sum() * state / (norm_state**2)
+#         eta_norm = 0
+#         for ivar in range(nvar):
+#             eta_norm = eta_norm + eta[ivar]**2
+#         eta_norm = sqrt(eta_norm)
+#         for ivar in range(nvar):
+#             eta[ivar] = eta[ivar] / eta_norm
 
-            if L > lower_bound:
-                lower_bound = L
-            if U < upper_bound:
-                upper_bound = U
+        eta = directions[idx] - np.dot(directions[idx], state) * state / norm_state**2
+        eta /= np.linalg.norm(eta)
 
-        theta = lower_bound + usample[iter_count] * (upper_bound - lower_bound)
+        theta = np.random.sample() * 2 * PI #usample[iter_count % (ndraw + burnin)] 
         cos_theta = cos(theta)
         sin_theta_norm = sin(theta) * norm_state
 
-        for ivar in range(nvar):
-            state[ivar] = cos_theta * state[ivar] + sin_theta_norm * eta[ivar]
+        # proposed state
 
-        Amax = -1e12
-        for irow in range(nconstraint):
-            Astate[irow] = 0
+        state_new = np.cos(theta) * state + np.sin(theta) * eta * norm_state
+        #for ivar in range(nvar):
+        #    state_new[ivar] = cos_theta * state[ivar] + sin_theta_norm * eta[ivar]
+
+        slack = (np.dot(A, state_new) - b).max()
+#         slack = -1e12
+#         for irow in range(nconstraint):
+#             Astate = 0
+#             for ivar in range(nvar):
+#                 Astate = Astate + A[irow,ivar] * state_new[ivar]
+#             if Astate - b[irow] > slack:
+#                 slack = Astate - b[irow]
+
+        if slack < 0: # if in the set, move to it
             for ivar in range(nvar):
-                Astate[irow] = Astate[irow] + A[irow,ivar] * state[ivar]
-            if Astate[irow] > Amax:
-                Amax = Astate[irow]
-
-        if Amax > 0:
-            theta = theta / 2.
-
-            cos_theta = cos(theta)
-            sin_theta_norm = sin(theta) * norm_state
-
-            for ivar in range(nvar):
-                state[ivar] = cos_theta * state[ivar] + sin_theta_norm * eta[ivar]
-
-            Amax = -1e12
-            for irow in range(nconstraint):
-                Astate[irow] = 0
+                state[ivar] = state_new[ivar]
+            state[:] = state_new
+            if sample_count >= burnin:
                 for ivar in range(nvar):
-                    Astate[irow] = Astate[irow] + A[irow,ivar] * state[ivar]
+                    trunc_sample[sample_count - burnin, ivar] = state_new[ivar]
+                trunc_sample[sample_count - burnin,:] = state_new.copy()
+            sample_count = sample_count + 1
+        iter_count = iter_count + 1
 
-        if iter_count >= burnin:
-            for ivar in range(nvar):
-                trunc_sample[iter_count - burnin, ivar] = state[ivar]
-        
+    print iter_count, ndraw
+
     return trunc_sample
 
 def _find_interval(a1, a2, b):
@@ -357,25 +347,26 @@ def _find_interval(a1, a2, b):
         alpha = np.arcsin(a1/norm_a)
         if a2 < 0:
             alpha = PI - alpha
-        tstar1 = np.arcsin(b/norm_a) - alpha
-        if tstar1 < -PI:
-            tstar1 = tstar1 + 2 * PI
-        if tstar1 > PI:
-            tstar1 = tstar1 - 2 * PI
-
-        tstar2 = (PI - np.arcsin(b/norm_a) - alpha) 
-        if tstar2 < -PI:
-            tstar2 = tstar2 + 2 *PI
-        if tstar2 > PI:
-            tstar2 = tstar2 - 2 * PI
-        lower, upper = sorted([tstar1, tstar2])
-        return lower, upper
+        soln_1 = np.arcsin(b/norm_a) - alpha
+        if soln_1 < -PI:
+            soln_1 = soln_1 + 2 * PI
+        if soln_1 > PI:
+            soln_1 = soln_1 - 2 * PI
+        soln_2 = (PI - np.arcsin(b/norm_a) - alpha) 
+        if soln_2 < -PI:
+            soln_2 = soln_2 + 2 *PI
+        if soln_2 > PI:
+            soln_2 = soln_2 - 2 * PI
+        if soln_2 > soln_1:
+            return soln_2, soln_1
+        else:
+            return soln_1, soln_2
     else:
         return -PI, PI
 
 cdef _Cfind_interval(double a1, 
-                    double a2, 
-                    double b):
+                     double a2, 
+                     double b):
     """
     Find the interval 
 

@@ -147,31 +147,32 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,
                                  covariance=covariance)
 
-    pvalue = gibbs_test(cone, Y, X[:,idx] * sign,
+    pvalue, Z2 = gibbs_test(cone, Y, X[:,idx] * sign,
                         ndraw=ndraw,
                         burnin=burnin,
                         sigma_known=sigma is not None)
 
-#     if sigma is not None:
-#         cone.covariance /= sigma**2
-#         cone.linear_part /= sigma
-#         cone.offset /= sigma
+    if sigma is not None:
+        cone.covariance /= sigma**2
+        cone.linear_part /= sigma
+        cone.offset /= sigma
 
-#     Z = simulate_from_sphere(cone,
-#                              Y,
-#                              ndraw=ndraw,
-#                              burnin=burnin,
-#                              white=(covariance is None) and (sigma is None))
-#     if sigma is None:
-#         norm_Y = np.linalg.norm(Y)
-#         Z /= np.sqrt((Z**2).sum(1))[:,None]
-#         Z *= norm_Y
-#     else:
-#         Z *= sigma
+    Z = simulate_from_constraints(cone,
+                                  Y,
+                                  ndraw=ndraw,
+                                  burnin=burnin,
+                                  white=(covariance is None) and (sigma is None))
+    if sigma is None:
+        norm_Y = np.linalg.norm(Y)
+        Z /= np.sqrt((Z**2).sum(1))[:,None]
+        Z *= norm_Y
+    else:
+        Z *= sigma
 
-#     test_statistic = np.dot(Z, 
-#     observed = np.fabs(np.dot(X.T,Y)).max()
-#     pvalue = (test_statistic >= observed).mean()
+        
+    test_statistic = np.dot(Z, X[:,idx]*sign)
+    observed = np.fabs(np.dot(X.T,Y)).max()
+    pvalue2 = (test_statistic >= observed).mean()
 
     return cone, pvalue, idx, sign
 
