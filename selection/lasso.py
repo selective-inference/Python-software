@@ -3,13 +3,6 @@ This module contains a class `lasso`_ that implements
 post selection for the lasso
 as described in `post selection LASSO`_.
 
-It also includes a function `covtest`_ that computes
-the exact form of the covariance test described in 
-`Spacings`_.
-
-The covariance test itself is asymptotically exponential
-(under certain conditions) and is  described in 
-`covTest`_.
 
 .. _covTest: http://arxiv.org/abs/1301.7161
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
@@ -103,7 +96,10 @@ class lasso(object):
         self._lasso = Lasso(alpha=self.lagrange, **lasso_args)
         self._lasso.fit(self.X, self.y)
         self._soln = self._lasso.coef_
+        self.form_constraints()
+
         return self._soln
+      
 
     def form_constraints(self):
         """
@@ -183,8 +179,6 @@ class lasso(object):
 
     @property
     def constraints(self, doc="Constraint matrix for this LASSO problem"):
-        if not hasattr(self, "_constraints"):
-            self.form_constraints()
         return self._constraints
 
     @property
@@ -235,8 +229,6 @@ class lasso(object):
                                         _interval))
         return self._intervals_unadjusted
 
-class FixedLambdaError(ValueError):
-    pass
 
 def estimate_sigma(y, X, frac=0.1, 
                    lower=0.5,
@@ -320,4 +312,6 @@ def estimate_sigma(y, X, frac=0.1,
                                   burnin=burnin,
                                   estimator='simulate')
 
+class FixedLambdaError(ValueError):
+    pass
 
