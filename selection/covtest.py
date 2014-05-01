@@ -147,11 +147,11 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,
                                  covariance=covariance)
 
-    pvalue, Z = gibbs_test(cone, Y, X[:,idx] * sign,
-                           ndraw=ndraw,
-                           burnin=burnin,
-                           sigma_known=sigma is not None,
-                           alternative='greater')
+    pvalue, Z, W = gibbs_test(cone, Y, X[:,idx] * sign,
+                              ndraw=ndraw,
+                              burnin=burnin,
+                              sigma_known=sigma is not None,
+                              alternative='greater')
 
     return cone, pvalue, idx, sign
 
@@ -235,18 +235,18 @@ def forward_step(X, Y, sigma=None,
             Acon = Acon
         Acon.covariance *= sigma**2
 
-        reduced_pval, _ = gibbs_test(Acon, Y, eta,
-                                     ndraw=ndraw,
-                                     burnin=burnin,
-                                     sigma_known=sigma is not None,
-                                     alternative='greater')
+        reduced_pval, _, _ = gibbs_test(Acon, Y, eta,
+                                        ndraw=ndraw,
+                                        burnin=burnin,
+                                        sigma_known=sigma is not None,
+                                        alternative='greater')
         reduced_Pknown.append(reduced_pval)
 
-        reduced_pval, _ = gibbs_test(Acon, Y, eta,
-                                     ndraw=ndraw,
-                                     burnin=burnin,
-                                     sigma_known=False,
-                                     alternative='greater')
+        reduced_pval, _, _ = gibbs_test(Acon, Y, eta,
+                                        ndraw=ndraw,
+                                        burnin=burnin,
+                                        sigma_known=False,
+                                        alternative='greater')
         reduced_Punknown.append(reduced_pval)
 
     return covtest_P, reduced_Pknown, reduced_Punknown
