@@ -47,7 +47,7 @@ class lasso(object):
 
     .. math::
 
-       \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
+        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
             f \lambda_{\max} \|\beta\|_1
 
     where $f$ is `frac` and 
@@ -62,16 +62,16 @@ class lasso(object):
     alpha = 0.05
     UMAU = False
 
-    def __init__(self, y, X, frac=0.9, sigma_epsilon=1):
+    def __init__(self, y, X, frac=0.9, sigma=1):
 
 
         self.y = y
         self.X = X
         self.frac = frac
-        self.sigma_epsilon = sigma_epsilon
+        self.sigma = sigma
         n, p = X.shape
         self.lagrange = frac * np.fabs(np.dot(X.T, y)).max() / n
-        self._covariance = self.sigma_epsilon**2 * np.identity(X.shape[0])
+        self._covariance = self.sigma**2 * np.identity(X.shape[0])
 
     def fit(self, sklearn_alpha=None, **lasso_args):
         """
@@ -136,8 +136,8 @@ class lasso(object):
                 -sA[:,None] * XAinv, 
                  -n*lagrange*sA*np.dot(self._SigmaA, 
                                          sA))
-            self.active_constraints.covariance *= self.sigma_epsilon**2
-            self._SigmaA *=  self.sigma_epsilon**2
+            self.active_constraints.covariance *= self.sigma**2
+            self._SigmaA *=  self.sigma**2
             self._PA = PA = np.dot(XA, XAinv)
             irrep_subgrad = (n * lagrange * 
                              np.dot(np.dot(XnotA.T, XAinv.T), sA))
@@ -161,7 +161,7 @@ class lasso(object):
                 constraints(inactiveX.T, 
                              lagrange * n -
                              irrep_subgrad))
-            self.inactive_constraints.covariance *= self.sigma_epsilon**2
+            self.inactive_constraints.covariance *= self.sigma**2
         else:
             self.inactive_constraints = None
 
@@ -169,7 +169,7 @@ class lasso(object):
             and self.inactive_constraints is not None):
             self._constraints = stack(self.active_constraints,
                                       self.inactive_constraints)
-            self._constraints.covariance *= self.sigma_epsilon**2
+            self._constraints.covariance *= self.sigma**2
         elif self.active_constraints is not None:
             self._constraints = self.active_constraints
         else:
