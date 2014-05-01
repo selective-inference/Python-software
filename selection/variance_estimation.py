@@ -294,7 +294,7 @@ def interpolation_estimate(Z, Z_constraint,
                            estimator='truncated'):
     """
     Estimate the parameter $\sigma$ in $Z \sim N(0, \sigma^2 I) | Z \in C$
-    where $C$ is the convex set encoded by `Z_constraints`
+    where $C$ is the convex set encoded by `Z_constraint`
 
     .. math::
 

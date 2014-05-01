@@ -47,7 +47,7 @@ class lasso(object):
 
     .. math::
 
-       \lambda_{\max} = \frac{1}{n} \|X^ty\|_{\infty}
+       \lambda_{\max} = \frac{1}{n} \|X^Ty\|_{\infty}
 
     """
 
@@ -68,7 +68,10 @@ class lasso(object):
 
     def fit(self, sklearn_alpha=None, **lasso_args):
         """
-        self.soln only updated after self.fit
+        Fit the lasso using `Lasso` from `sklearn`.
+        This sets the attribute `soln` and
+        forms the constraints necessary for post-selection inference
+        by caling `form_constraints()`.
 
         Parameters
         ----------
@@ -84,11 +87,6 @@ class lasso(object):
 
         soln : np.float
              Solution to lasso with `sklearn_alpha=self.lagrange`.
-
-        Notes
-        -----
-
-        Also calls `form_constraints`.
 
         """
         if sklearn_alpha is not None:
@@ -236,10 +234,12 @@ def estimate_sigma(y, X, frac=0.1,
                    npts=15,
                    ndraw=5000,
                    burnin=1000):
-    """
+    r"""
     Estimate the parameter $\sigma$ in $y \sim N(X\beta, \sigma^2 I)$
     after fitting LASSO with Lagrange parameter `frac` times
     $\lambda_{\max}=\|X^Ty\|_{\infty}$.
+
+    ## FUNCTION NEEDS TO BE UPDATED
 
     Uses `selection.variance_estimation.interpolation_estimate`
 
@@ -278,7 +278,7 @@ def estimate_sigma(y, X, frac=0.1,
     sigma_hat : float
         The root of the interpolant derived from GCM values.
 
-    interpolaint : scipy.interpolate.interp1d
+    interpolant : scipy.interpolate.interp1d
         The interpolant, to be used for plotting or other 
         diagnostics.
 
