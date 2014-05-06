@@ -43,10 +43,11 @@ def sample_split(X, Y, sigma=None,
         RX -= RX.mean(0)[None,:]
         RX /= (RX.std(0)[None,:] * np.sqrt(RX.shape[0]))
 
+        # covtest on half -- not saved
+
         con, pval, idx, sign = covtest(RX, RY, sigma=sigma,
                                        covariance=covariance,
                                        exact=True)
-        covtest_P.append(pval)
 
         # spacings on half -- not saved
 
