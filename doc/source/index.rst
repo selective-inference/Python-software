@@ -1,4 +1,4 @@
-.. _about_selection:
+n.. _about_selection:
 
 =====================
 The Selection project
@@ -12,10 +12,13 @@ post-selection inference.
 .. We need the following toctree directive to include the documentation
 .. in the document heirarchy - see http://sphinx.pocoo.org/concepts.html
 
-.. toctree::
+.. toctree:: 
+   :maxdepth: 2
 
    documentation
    docattribute
+   covtest
+   spacings
 
 This website is based on the `NIPY website <http://nipy.sourceforge.net/nipy/stable/index.html>`_, see :ref:`doc-attribute` for details. 
 
