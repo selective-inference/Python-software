@@ -52,18 +52,22 @@ class projection(object):
 
 class forward_stepwise(object):
 
-    def __init__(self, X, Y, sigma=1.,
+    """
+    Centers columns of X!
+    """
+
+    def __init__(self, X, Y, 
                  subset=None):
-        self.sigma = sigma
         if subset is None:
             subset = np.ones(Y.shape[0], np.bool)
-        self.X = X[subset]
-        self.Y = Y[subset]
+        self.X = X.copy()[subset]
+        self.X -= self.X.mean(0)[None,:]
+        self.Y = Y.copy()[subset]
         self.P = [None] # residual forming projections
         self.A = None
         self.variables = []
         self.signs = []
-        self.covariance = self.sigma**2 * np.identity(self.X.shape[0])
+        self.covariance = np.identity(self.X.shape[0]) # should be scaled if needed!
 
     def __iter__(self):
         return self
@@ -135,13 +139,7 @@ class forward_stepwise(object):
 
         self.P.append(Pnew)
 
-    def check_constraints(self):
-        """
-        Verify whether or not constraints are consistent with `self.Y`.
-        """
-        return np.dot(self.A, self.Y).max() <= 0
-
-    def bounds(self, eta):
+    def bounds(self, eta, sigma):
         """
         Find implied upper and lower limits for a given
         direction of interest.
@@ -167,7 +165,7 @@ class forward_stepwise(object):
              $\ell_2$ norm of `eta` (assuming `self.covariance` is $I$)
         """
 
-        return self.constraints.pivots(eta, self.Y)
+        return self.constraints.bounds(eta, self.Y)
 
     @property
     def constraints(self):
@@ -176,17 +174,17 @@ class forward_stepwise(object):
 
     # pivots we might care about
 
-    def model_pivots(self, which_step):
+    def model_pivots(self, which_step, sigma):
         pivots = []
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         for i in range(LSfunc.shape[0]):
             pivots.append(self.bounds(LSfunc[i]))
         return pivots
 
-    def model_quadratic(self, which_step):
+    def model_quadratic(self, which_step, sigma):
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
-        return quadratic_test(self.Y / self.sigma, P_LS, self.constraints)
+        return quadratic_test(self.Y / sigma, P_LS, self.constraints)
 
 def canonicalA(RX, RY, idx, sign, scale=None):
     """
