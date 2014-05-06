@@ -88,7 +88,7 @@ class truncated_gaussian(object):
 
     @property
     def delta(self):
-        """
+        r"""
         .. math::
  
             \begin{align}
