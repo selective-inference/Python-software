@@ -617,7 +617,7 @@ def selection_interval(support_directions,
          sign of $Az-b$.
 
     UMAU : bool
-         Use the UMAU interval, or two-sided pivot.
+         Use the UMAU interval, or twosided pivot.
 
     Returns
     -------
@@ -647,7 +647,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                ndraw=5000,
                burnin=2000,
                white=False,
-               alternative='two-sided',
+               alternative='twosided',
                sigma_known=False):
     """
     A Monte Carlo significance test for
@@ -679,7 +679,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         Is con.covariance equal to identity?
 
     alternative : str
-        One of ['greater', 'less', 'two-sided']
+        One of ['greater', 'less', 'twosided']
 
     Returns
     -------
@@ -696,8 +696,8 @@ def gibbs_test(affine_con, Y, direction_of_interest,
 
     eta = direction_of_interest # shorthand
 
-    if alternative not in ['greater', 'less', 'two-sided']:
-        raise ValueError("expecting alternative to be in ['greater', 'less', 'two-sided']")
+    if alternative not in ['greater', 'less', 'twosided']:
+        raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
 
     if not sigma_known:
         Z, W = sample_from_sphere(affine_con,
@@ -724,5 +724,5 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     elif alternative == 'less':
         pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
     else:
-        pvalue = (W*(np.fabs(null_statistics) <= np.fabs(observed))).sum() / W.sum()
+        pvalue = (W*(np.fabs(null_statistics) >= np.fabs(observed))).sum() / W.sum()
     return pvalue, Z, W
