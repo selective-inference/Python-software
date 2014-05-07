@@ -17,7 +17,12 @@ def sample_split(X, Y, sigma=None,
     n, p = X.shape
     half_n = int(n/2)
     X1, Y1 = X[:half_n,:]*1., Y[:half_n]*1.
+    X1 -= X1.mean(0)[None,:]
+    Y1 -= Y1.mean()
+
     X2, Y2 = X[half_n:], Y[half_n:]
+    X2 -= X2.mean(0)[None,:]
+    Y2 -= Y2.mean()
 
     FS_half = forward_stepwise(X1, Y1) # sample splitting model
     FS_full = forward_stepwise(X.copy(), Y.copy()) # full data model
@@ -35,11 +40,12 @@ def sample_split(X, Y, sigma=None,
         if FS_half.P[i] is not None:
             RX = FS_half.X - FS_half.P[i](FS_half.X)
             RY = FS_half.Y - FS_half.P[i](FS_half.Y)
-            covariance = np.identity(FS_half.Y.shape[0]) - np.dot(FS_half.P[i].U, FS_half.P[i].U.T)
+            covariance = centering(FS_half.Y.shape[0]) - np.dot(FS_half.P[i].U, FS_half.P[i].U.T)
         else:
             RX = FS_half.X
             RY = FS_half.Y
-            covariance = None
+            covariance = centering(FS_half.Y.shape[0])
+
         RX -= RX.mean(0)[None,:]
         RX /= (RX.std(0)[None,:] * np.sqrt(RX.shape[0]))
 
@@ -52,7 +58,8 @@ def sample_split(X, Y, sigma=None,
         # spacings on half -- not saved
 
         eta1 = RX[:,idx] * sign
-        Acon = constraints(FS_half.A, np.zeros(FS_half.A.shape[0]))
+        Acon = constraints(FS_half.A, np.zeros(FS_half.A.shape[0]),
+                           covariance=centering(FS_half.Y.shape[0]))
         Acon.covariance *= sigma**2
         Acon.pivot(eta1, FS_half.Y)
 
@@ -66,12 +73,12 @@ def sample_split(X, Y, sigma=None,
 
         zero_block = np.zeros((Acon.linear_part.shape[0], (n-half_n)))
         linear_part = np.hstack([Acon.linear_part, zero_block])
-        Fcon = constraints(linear_part, Acon.offset)
+        Fcon = constraints(linear_part, Acon.offset,
+                           covariance=centering(n))
         Fcon.covariance *= sigma**2
 
         if i > 0:
-            U = FS_half.P[-2].U.T
-            U = np.hstack([U, np.zeros((U.shape[0], (n-half_n)))])
+            U = np.linalg.pinv(X[:,FS_half.variables[:-1]])
             Uy = np.dot(U, Y)
             Fcon = Fcon.conditional(U, Uy)
         else:
@@ -101,11 +108,11 @@ def sample_split(X, Y, sigma=None,
         if FS_full.P[i] is not None:
             RX = X - FS_full.P[i](X)
             RY = Y - FS_full.P[i](Y)
-            covariance = np.identity(RY.shape[0]) - np.dot(FS_full.P[i].U, FS_full.P[i].U.T)
+            covariance = centering(RY.shape[0]) - np.dot(FS_full.P[i].U, FS_full.P[i].U.T)
         else:
             RX = X
             RY = Y.copy()
-            covariance = None
+            covariance = centering(RY.shape[0])
         RX -= RX.mean(0)[None,:]
         RX /= RX.std(0)[None,:]
 
@@ -117,11 +124,15 @@ def sample_split(X, Y, sigma=None,
         # spacings on full data
 
         eta1 = RX[:,idx] * sign
-        Acon = constraints(FS_full.A, np.zeros(FS_full.A.shape[0]))
+        Acon = constraints(FS_full.A, np.zeros(FS_full.A.shape[0]),
+                           centering(RY.shape[0]))
         Acon.covariance *= sigma**2
         spacings_P.append(Acon.pivot(eta1, Y))
 
     return split_P, reduced_Pknown, reduced_Punknown, spacings_P, covtest_P, FS_half.variables
+
+def centering(n):
+    return np.identity(n) - np.ones((n,n)) / n
 
 def simulation(n, p, sigma, nnz=0, nsim=1000,
                reduced=True,
@@ -148,6 +159,7 @@ def simulation(n, p, sigma, nnz=0, nsim=1000,
         X -= X.mean(0)[None,:]
         X /= (X.std(0)[None,:] * np.sqrt(n))
         Y = np.random.standard_normal(n) * sigma + np.dot(X, beta)
+        Y -= Y.mean()
 
         split = sample_split(X.copy(),
                              Y.copy(),
@@ -205,7 +217,7 @@ def simulation(n, p, sigma, nnz=0, nsim=1000,
             np.save('hypotheses_splitfull_%d.npy' % (nnz,), np.array(hypotheses_full))
             np.save('reduced_splitfull_known%d.npy' % (nnz,), np.array(reduced_known_full))
             np.save('reduced_splitfull_unknown%d.npy' % (nnz,), np.array(reduced_unknown_full))
-        os.system('cp *split*npy ~/Dropbox/sample_split')
+        #os.system('cp *split*npy ~/Dropbox/sample_split')
 
 if __name__ == "__main__":
 
