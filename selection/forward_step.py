@@ -63,6 +63,7 @@ class forward_stepwise(object):
         self.X = X.copy()[subset]
         self.X -= self.X.mean(0)[None,:]
         self.Y = Y.copy()[subset]
+        self.Y -= self.Y.mean()
         self.P = [None] # residual forming projections
         self.A = None
         self.variables = []
