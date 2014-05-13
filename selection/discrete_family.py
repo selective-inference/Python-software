@@ -33,7 +33,7 @@ def crit_func(test_statistic, left_cut, right_cut):
         value += gammaR * (test_statistic == CR)
     return value
 
-class DiscreteExFam(object):
+class discrete_family(object):
 
     def __init__(self, suff_stat, weights):
         r"""
