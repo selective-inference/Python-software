@@ -35,11 +35,11 @@ def crit_func(test_statistic, left_cut, right_cut):
 
 class discrete_family(object):
 
-    def __init__(self, suff_stat, weights):
+    def __init__(self, sufficient_stat, weights):
         r"""
         A  discrete 1-dimensional
         exponential family with reference measure $\sum_j w_j \delta_{X_j}$
-        and sufficient statistic `suff_stat`. For any $\theta$, the distribution
+        and sufficient statistic `sufficient_stat`. For any $\theta$, the distribution
         is
 
         .. math::
@@ -57,7 +57,7 @@ class discrete_family(object):
 
         The weights are normalized to sum to 1.
         """
-        xw = np.array(sorted(zip(suff_stat, weights)))
+        xw = np.array(sorted(zip(sufficient_stat, weights)))
         self._x = xw[:,0]
         self._w = xw[:,1]
         self._w /= self._w.sum() # make sure they are a pmf
@@ -75,7 +75,7 @@ class discrete_family(object):
     def theta(self, _theta):
         print 'here'
         if _theta != self._old_theta:
-            _thetaX = _theta * self.suff_stat
+            _thetaX = _theta * self.sufficient_stat
             _largest = _thetaX.max() + 4 # try to avoid overflow, 4 seems arbitrary
             _exp_thetaX = np.exp(_thetaX - _largest)
             _prod = _exp_thetaX * self.weights
@@ -98,7 +98,7 @@ class discrete_family(object):
             return self._partition
 
     @property
-    def suff_stat(self):
+    def sufficient_stat(self):
         """
         Sufficient statistics of the exponential family.
         """
@@ -161,9 +161,9 @@ class discrete_family(object):
         if x is None:
             return np.cumsum(pdf) - pdf * (1 - gamma)
         else:
-            tr = np.sum(pdf * (self.suff_stat < x)) 
-            if x in self.suff_stat:
-                tr += gamma * pdf[np.where(self.suff_stat == x)]
+            tr = np.sum(pdf * (self.sufficient_stat < x)) 
+            if x in self.sufficient_stat:
+                tr += gamma * pdf[np.where(self.sufficient_stat == x)]
             return tr
 
     def ccdf(self, theta, x=None, gamma=0, return_unnorm=False):
@@ -198,9 +198,9 @@ class discrete_family(object):
         if x is None:
             return np.cumsum(pdf[::-1])[::-1] - pdf * (1 - gamma)
         else:
-            tr = np.sum(pdf * (self.suff_stat > x)) 
-            if x in self.suff_stat:
-                tr += gamma * pdf[np.where(self.suff_stat == x)]
+            tr = np.sum(pdf * (self.sufficient_stat > x)) 
+            if x in self.sufficient_stat:
+                tr += gamma * pdf[np.where(self.sufficient_stat == x)]
             return tr
 
     def E(self, theta, func):
@@ -225,7 +225,7 @@ class discrete_family(object):
         E : np.float
 
         """
-        return (func(self.suff_stat) * self.pdf(theta)).sum()
+        return (func(self.sufficient_stat) * self.pdf(theta)).sum()
 
     def Var(self, theta, func):
         r"""
@@ -300,7 +300,7 @@ class discrete_family(object):
              Boundary and randomization weight for right endpoint.
 
         """
-        CL = max([x for x in self.suff_stat if self._critCovFromLeft(theta, (x, 0), alpha) >= 0])
+        CL = max([x for x in self.sufficient_stat if self._critCovFromLeft(theta, (x, 0), alpha) >= 0])
         gammaL = find_root(lambda x: self._critCovFromLeft(theta, (CL, x), alpha), 0., 0., 1., tol)
         CR, gammaR = self._rightCutFromLeft(theta, (CL, gammaL), alpha)
         return (CL, gammaL), (CR, gammaR)
@@ -403,7 +403,7 @@ class discrete_family(object):
             alpha2 = alpha - alpha1
             P = self.ccdf(theta, gamma=0)
             idx = np.nonzero(P < alpha2)[0].min()
-            cut = self.suff_stat[idx]
+            cut = self.sufficient_stat[idx]
             pdf_term = np.exp(theta * cut) / self.partition * self.weights[idx]
             ccdf_term = P[idx]
             gamma2 = (alpha2 - ccdf_term) / pdf_term
@@ -421,7 +421,7 @@ class discrete_family(object):
             alpha1 = alpha - alpha2
             P = self.cdf(theta, gamma=0)
             idx = np.nonzero(P < alpha1)[0].max()
-            cut = self.suff_stat[idx]
+            cut = self.sufficient_stat[idx]
             cdf_term = P[idx]
             pdf_term = np.exp(theta * cut) / self.partition * self.weights[idx]
             gamma1 = (alpha1 - cdf_term) / pdf_term
@@ -476,9 +476,9 @@ class discrete_family(object):
         """
         upper bound of two-sided umpu interval
         """
-        if observed < self.suff_stat[0] or (observed == self.suff_stat[0] and auxVar <= alpha):
+        if observed < self.sufficient_stat[0] or (observed == self.sufficient_stat[0] and auxVar <= alpha):
             return -np.inf # observed, auxVar too small, every test rejects left
-        if observed > self.suff_stat[self.n - 2] or (observed == self.suff_stat[self.n - 2] and auxVar == 1.):
+        if observed > self.sufficient_stat[self.n - 2] or (observed == self.sufficient_stat[self.n - 2] and auxVar == 1.):
             return np.inf # observed, auxVar too large, no test rejects left
         return find_root(lambda theta: -1*self._test2RejectsLeft(theta, observed, alpha, auxVar), -0.5, -1., 1., tol)
         
@@ -486,9 +486,9 @@ class discrete_family(object):
         """
         lower bound of two-sided umpu interval
         """
-        if observed > self.suff_stat[self.n-1] or (observed == self.suff_stat[self.n-1] and auxVar >= 1.-alpha):
+        if observed > self.sufficient_stat[self.n-1] or (observed == self.sufficient_stat[self.n-1] and auxVar >= 1.-alpha):
             return np.inf # observed, auxVar too large, every test rejects right
-        if observed < self.suff_stat[1] or (observed == self.suff_stat[1] and auxVar == 0.):
+        if observed < self.sufficient_stat[1] or (observed == self.sufficient_stat[1] and auxVar == 0.):
             return -np.inf # observed, auxVar too small, no test rejects right
         return find_root(lambda theta: 1.*self._test2RejectsRight(theta, observed, alpha, auxVar), 0.5, -1., 1., tol)
 
