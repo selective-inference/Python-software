@@ -17,6 +17,7 @@ from .truncated import truncated_gaussian
 from .sample_truncnorm import (sample_truncnorm_white, 
                                sample_truncnorm_white_ball,
                                sample_truncnorm_white_sphere)
+from .discrete_family import discrete_family
                         
 from warnings import warn
 
@@ -648,7 +649,9 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                burnin=2000,
                white=False,
                alternative='twosided',
-               sigma_known=False):
+               UMPU=True,
+               sigma_known=False,
+               alpha=0.05):
     """
     A Monte Carlo significance test for
     a given function of `con.mean`.
@@ -680,6 +683,15 @@ def gibbs_test(affine_con, Y, direction_of_interest,
 
     alternative : str
         One of ['greater', 'less', 'twosided']
+
+    UMPU : bool
+        Perform the UMPU test?
+
+    sigma_known : bool
+        Is $\sigma$ assumed known?
+
+    alpha : 
+        Level for UMPU test.
 
     Returns
     -------
@@ -723,6 +735,10 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         pvalue = (W*(null_statistics >= observed)).sum() / W.sum()
     elif alternative == 'less':
         pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
-    else:
+    elif not UMPU:
         pvalue = (W*(np.fabs(null_statistics) >= np.fabs(observed))).sum() / W.sum()
+    else:
+        dfam = discrete_family(null_statistics, W)
+        decision = dfam.two_sided(0, observed, alpha=alpha)
+        return decision, Z, W
     return pvalue, Z, W

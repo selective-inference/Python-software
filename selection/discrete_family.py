@@ -22,7 +22,16 @@ def crit_func(test_statistic, left_cut, right_cut):
         Observed value of test statistic.
 
     left_cut : (float, float)
-        (CL,gammaL): left endpoint and value at exactly the left endpoint (should be in [0,1]).
+        (CL, gammaL): left endpoint and value at exactly the left endpoint (should be in [0,1]).
+
+    right_cut : (float, float)
+        (CR, gammaR): right endpoint and value at exactly the right endpoint (should be in [0,1]).
+
+    Returns
+    -------
+
+    decision : np.float
+
     """
     CL, gammaL = left_cut
     CR, gammaR = right_cut
@@ -73,7 +82,6 @@ class discrete_family(object):
 
     @theta.setter
     def theta(self, _theta):
-        print 'here'
         if _theta != self._old_theta:
             _thetaX = _theta * self.sufficient_stat
             _largest = _thetaX.max() + 4 # try to avoid overflow, 4 seems arbitrary
@@ -82,7 +90,6 @@ class discrete_family(object):
             self._partition = np.sum(_prod)
             self._pdf = _prod / self._partition
             self._partition *= np.exp(_largest)
-            print 'now'
         self._old_theta = _theta
 
     @property
@@ -300,13 +307,15 @@ class discrete_family(object):
              Boundary and randomization weight for right endpoint.
 
         """
-        CL = max([x for x in self.sufficient_stat if self._critCovFromLeft(theta, (x, 0), alpha) >= 0])
-        gammaL = find_root(lambda x: self._critCovFromLeft(theta, (CL, x), alpha), 0., 0., 1., tol)
-        CR, gammaR = self._rightCutFromLeft(theta, (CL, gammaL), alpha)
-        return (CL, gammaL), (CR, gammaR)
+        if theta != self._old_theta:
+            CL = np.max([x for x in self.sufficient_stat if self._critCovFromLeft(theta, (x, 0), alpha) >= 0])
+            gammaL = find_root(lambda x: self._critCovFromLeft(theta, (CL, x), alpha), 0., 0., 1., tol)
+            CR, gammaR = self._rightCutFromLeft(theta, (CL, gammaL), alpha)
+            self._left_cut, self._right_cut = (CL, gammaL), (CR, gammaR)
+        return self._left_cut, self._right_cut
 
     def two_sided_test(self, theta0, observed, alpha=0.05, randomize=True, auxVar=None):
-        """
+        r"""
         Perform UMPU two-sided test.
 
         Parameters
@@ -352,6 +361,63 @@ class discrete_family(object):
             rejRight = self._test2RejectsRight(theta0, observed, alpha)        
         return rejLeft or rejRight
         
+    def one_sided_test(self, theta0, observed, alternative='greater', alpha=0.05, randomize=True, auxVar=None):
+        r"""
+        Perform UMPU one-sided test.
+
+        Parameters
+        ----------
+
+        theta0 : float
+             Natural parameter under null hypothesis.
+
+        observed : float
+             Observed sufficient statistic.
+
+        alternative : str
+             One of ['greater', 'less']
+
+        alpha : float (optional)
+             Size of two-sided test.
+
+        randomize : bool
+             Perform the randomized test (or conservative test).
+
+        auxVar : [None, float]
+             If randomizing and not None, use this
+             as the random uniform variate.
+
+        Returns
+        -------
+
+        decision : np.bool
+             Is the null hypothesis $H_0:\theta=\theta_0$ rejected?
+   
+        Notes
+        -----
+
+        We need an auxiliary uniform variable to carry out the randomized test.
+        Larger auxVar corresponds to x being slightly "larger." It can be passed in,
+        or chosen at random. If randomize=False, we get a conservative test.
+        """
+
+        if alternative not in ['greater', 'less']:
+            raise ValueError('alternative must be one of ["greater", "less"]')
+
+        self.theta = theta0
+        if randomize:
+            if auxVar is None:
+                auxVar = np.random.random()
+            if alternative == 'greater':
+                return self.ccdf(theta0, observed, gamma=auxVar) < alpha
+            else:
+                return self.cdf(theta0, observed, gamma=auxVar) < alpha
+        else:
+            if alternative == 'greater':
+                return self.ccdf(theta0, observed) < alpha
+            else:
+                return self.cdf(theta0, observed) < alpha
+
     def interval(self, observed, alpha=0.05, randomize=True, auxVar=None, tol=1e-6):
         """
         Form UMAU confidence interval.
@@ -388,6 +454,43 @@ class discrete_family(object):
             upper = self._inter2Upper(observed, 1., alpha, tol)
             lower = self._inter2Lower(observed, 0., alpha, tol)
         return lower, upper
+
+    def naive_interval(self, observed, alpha=0.05, randomize=True, auxVar=None, tol=1e-6):
+        """
+        Form naive symmetric interval with $\alpha/2$ in each tail.
+
+        Parameters
+        ----------
+
+        observed : float
+             Observed sufficient statistic.
+
+        alpha : float (optional)
+             Size of two-sided test.
+
+        randomize : bool
+             Perform the randomized test (or conservative test).
+
+        auxVar : [None, float]
+             If randomizing and not None, use this
+             as the random uniform variate.
+
+        Returns
+        -------
+
+        lower, upper : float
+             Limits of confidence interval.
+
+        """
+
+        mu = self.E(self.theta, lambda x: x)
+        sigma  = np.sqrt(self.Var(self.theta, lambda x: x))
+        lb = mu - 20 * sigma
+        ub = mu + 20 * sigma
+        F = lambda th : self.cdf(th, observed)
+        L = find_root(F, 1.0 - 0.5 * alpha, lb, ub)
+        U = find_root(F, 0.5 * alpha, lb, ub)
+        return L, U
 
     # Private methods
 
