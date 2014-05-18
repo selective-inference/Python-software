@@ -455,9 +455,10 @@ class discrete_family(object):
             lower = self._inter2Lower(observed, 0., alpha, tol)
         return lower, upper
 
-    def naive_interval(self, observed, alpha=0.05, randomize=True, auxVar=None, tol=1e-6):
+    def equal_tailed_interval(self, observed, alpha=0.05, randomize=True, auxVar=None, tol=1e-6):
         """
-        Form naive symmetric interval with $\alpha/2$ in each tail.
+        Form interval by inverting
+        equal-tailed test with $\alpha/2$ in each tail.
 
         Parameters
         ----------
@@ -491,6 +492,142 @@ class discrete_family(object):
         L = find_root(F, 1.0 - 0.5 * alpha, lb, ub)
         U = find_root(F, 0.5 * alpha, lb, ub)
         return L, U
+
+    def equal_tailed_test(self, theta0, observed, alpha=0.05, randomize=True, auxVar=None):
+        r"""
+        Perform UMPU two-sided test.
+
+        Parameters
+        ----------
+
+        theta0 : float
+             Natural parameter under null hypothesis.
+
+        observed : float
+             Observed sufficient statistic.
+
+        alpha : float (optional)
+             Size of two-sided test.
+
+        randomize : bool
+             Perform the randomized test (or conservative test).
+
+        auxVar : [None, float]
+             If randomizing and not None, use this
+             as the random uniform variate.
+
+        Returns
+        -------
+
+        decision : np.bool
+             Is the null hypothesis $H_0:\theta=\theta_0$ rejected?
+   
+        Notes
+        -----
+
+        We need an auxiliary uniform variable to carry out the randomized test.
+        Larger auxVar corresponds to x being slightly "larger." It can be passed in,
+        or chosen at random. If randomize=False, we get a conservative test.
+        """
+
+        pval = self.cdf(theta, observed, randomize=randomize,
+                        auxVar=auxVar)
+        return min(p, 1-p) < alpha
+
+    def one_sided_acceptance(self, theta, 
+                             alpha=0.05, 
+                             alternative='greater',
+                             tol=1e-6):
+        r"""
+        Compute the acceptance region cutoffs of UMPU one-sided test.
+        
+        TODO: Include randomization?
+
+        Parameters
+        ----------
+
+        theta : float
+             Natural parameter.
+
+        alpha : float (optional)
+             Size of two-sided test.
+
+        alternative : str
+             One of ['greater', 'less'].
+
+        tol : float
+             Tolerance for root-finding.
+
+        Returns
+        -------
+
+        left_cut : (float, float)
+             Boundary and randomization weight for left endpoint.
+   
+        right_cut : (float, float)
+             Boundary and randomization weight for right endpoint.
+
+        """
+
+        if alternative == 'greater':
+            f = lambda x: self.ccdf(theta, x, gamma=0.5)
+        elif alternative == 'less':
+            f = lambda x: self.cdf(theta, x, gamma=0.5)
+        else:
+            raise ValueError("alternative should be one of ['greater', 'less']")
+        E = self.E(theta, lambda x: x)
+        S = np.sqrt(self.Var(theta, lambda x: x))
+        cutoff = find_root(f,
+                           alpha, 
+                           E-10*S, 
+                           E+10*S)
+        if alternative == 'greater':
+            return -np.inf, cutoff
+        else:
+            return cutoff, np.inf
+
+    def equal_tailed_acceptance(self, theta, alpha=0.05, tol=1e-6):
+        r"""
+        Compute the acceptance region cutoffs of UMPU one-sided test.
+        
+        TODO: Include randomization?
+
+        Parameters
+        ----------
+
+        theta : float
+             Natural parameter.
+
+        alpha : float (optional)
+             Size of two-sided test.
+
+        tol : float
+             Tolerance for root-finding.
+
+        Returns
+        -------
+
+        left_cut : (float, float)
+             Boundary and randomization weight for left endpoint.
+   
+        right_cut : (float, float)
+             Boundary and randomization weight for right endpoint.
+
+        """
+
+        f = lambda x: self.cdf(theta, x, gamma=0.5)
+        E = self.E(theta, lambda x: x)
+        S = np.sqrt(self.Var(theta, lambda x: x))
+        Lcutoff = find_root(f,
+                            alpha*0.5, 
+                            E-10*S, 
+                            E+10*S)
+        Rcutoff = find_root(f,
+                            1 - alpha*0.5, 
+                            E-10*S, 
+                            E+10*S)
+        print self.cdf(theta, Lcutoff), self.cdf(theta,Rcutoff)
+        return Lcutoff, Rcutoff
 
     # Private methods
 
@@ -551,7 +688,6 @@ class discrete_family(object):
             return np.inf
         else:
             return self.Cov(theta, lambda x: x, lambda x: crit_func(x, (C1, gamma1), (C2, gamma2)))
-                                
 
     def _test2RejectsLeft(self, theta, observed, alpha=0.05, auxVar=1.):
         """
