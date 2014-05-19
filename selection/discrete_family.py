@@ -170,7 +170,7 @@ class discrete_family(object):
         else:
             tr = np.sum(pdf * (self.sufficient_stat < x)) 
             if x in self.sufficient_stat:
-                tr += gamma * pdf[np.where(self.sufficient_stat == x)]
+                tr += gamma * np.sum(pdf[np.where(self.sufficient_stat == x)])
             return tr
 
     def ccdf(self, theta, x=None, gamma=0, return_unnorm=False):
@@ -207,7 +207,7 @@ class discrete_family(object):
         else:
             tr = np.sum(pdf * (self.sufficient_stat > x)) 
             if x in self.sufficient_stat:
-                tr += gamma * pdf[np.where(self.sufficient_stat == x)]
+                tr += gamma * np.sum(pdf[np.where(self.sufficient_stat == x)])
             return tr
 
     def E(self, theta, func):
@@ -281,7 +281,7 @@ class discrete_family(object):
         mu2 = self.E(theta, func2)
         return self.E(theta, lambda x: (func1(x)-mu1)*(func2(x)-mu2))
 
-    def two_sided_cutoffs(self, theta, alpha=0.05, tol=1e-6):
+    def two_sided_acceptance(self, theta, alpha=0.05, tol=1e-6):
         r"""
         Compute cutoffs of UMPU two-sided test.
 
@@ -570,27 +570,22 @@ class discrete_family(object):
         """
 
         if alternative == 'greater':
-            f = lambda x: self.ccdf(theta, x, gamma=0.5)
+            F = self.ccdf(theta, gamma=0.5)
+            cutoff = np.min(self.sufficient_stat[F <= alpha])
+            acceptance = (-np.inf, cutoff)
         elif alternative == 'less':
-            f = lambda x: self.cdf(theta, x, gamma=0.5)
+            F = self.ccdf(theta, gamma=0.5)
+            cutoff = np.max(self.sufficient_stat[F <= alpha])
+            acceptance = (cutoff, np.inf)
         else:
             raise ValueError("alternative should be one of ['greater', 'less']")
-        E = self.E(theta, lambda x: x)
-        S = np.sqrt(self.Var(theta, lambda x: x))
-        cutoff = find_root(f,
-                           alpha, 
-                           E-10*S, 
-                           E+10*S)
-        if alternative == 'greater':
-            return -np.inf, cutoff
-        else:
-            return cutoff, np.inf
+        return acceptance
 
     def equal_tailed_acceptance(self, theta, alpha=0.05, tol=1e-6):
         r"""
-        Compute the acceptance region cutoffs of UMPU one-sided test.
-        
-        TODO: Include randomization?
+        Compute the acceptance region cutoffs of 
+        equal-tailed test (without randomization).
+        Therefore, size may not be exactly $\alpha$.
 
         Parameters
         ----------
@@ -615,18 +610,9 @@ class discrete_family(object):
 
         """
 
-        f = lambda x: self.cdf(theta, x, gamma=0.5)
-        E = self.E(theta, lambda x: x)
-        S = np.sqrt(self.Var(theta, lambda x: x))
-        Lcutoff = find_root(f,
-                            alpha*0.5, 
-                            E-10*S, 
-                            E+10*S)
-        Rcutoff = find_root(f,
-                            1 - alpha*0.5, 
-                            E-10*S, 
-                            E+10*S)
-        print self.cdf(theta, Lcutoff), self.cdf(theta,Rcutoff)
+        F = self.cdf(theta, gamma=0.5)
+        Lcutoff = np.max(self.sufficient_stat[F <= 0.5 * alpha])
+        Rcutoff = np.min(self.sufficient_stat[F >= 1 - 0.5*alpha])
         return Lcutoff, Rcutoff
 
     # Private methods
