@@ -106,6 +106,12 @@ class lasso(object):
 
         This sets the attributes: `active_constraints`,
         `inactive_constraints`, `active`.
+
+        Returns
+        -------
+
+        None
+
         """
 
         X, y, soln, lagrange = self.X, self.y, self.soln, self.lagrange
@@ -126,11 +132,11 @@ class lasso(object):
             self._XAinv = XAinv = np.linalg.pinv(XA)
             self._SigmaA = np.dot(XAinv, XAinv.T)
 
-            self.active_constraints = constraints(  
+            self._active_constraints = constraints(  
                 -sA[:,None] * XAinv, 
                  -n*lagrange*sA*np.dot(self._SigmaA, 
                                          sA))
-            self.active_constraints.covariance *= self.sigma**2
+            self._active_constraints.covariance *= self.sigma**2
             self._SigmaA *=  self.sigma**2
             self._PA = PA = np.dot(XA, XAinv)
             irrep_subgrad = (n * lagrange * 
@@ -141,46 +147,74 @@ class lasso(object):
             self._PA = PA = 0
             self._XAinv = None
             irrep_subgrad = np.zeros(p)
-            self.active_constraints = None
+            self._active_constraints = None
 
         if A.sum() < X.shape[1]:
             inactiveX = np.dot(np.identity(n) - PA, XnotA)
             scaling = np.ones(inactiveX.shape[1]) # np.sqrt((inactiveX**2).sum(0))
             inactiveX /= scaling[None,:]
 
-            self.inactive_constraints = stack( 
+            self._inactive_constraints = stack( 
                 constraints(-inactiveX.T, 
                               lagrange * n + 
                               irrep_subgrad),
                 constraints(inactiveX.T, 
                              lagrange * n -
                              irrep_subgrad))
-            self.inactive_constraints.covariance *= self.sigma**2
+            self._inactive_constraints.covariance *= self.sigma**2
         else:
-            self.inactive_constraints = None
+            self._inactive_constraints = None
 
-        if (self.active_constraints is not None 
-            and self.inactive_constraints is not None):
-            self._constraints = stack(self.active_constraints,
-                                      self.inactive_constraints)
+        if (self._active_constraints is not None 
+            and self._inactive_constraints is not None):
+            self._constraints = stack(self._active_constraints,
+                                      self._inactive_constraints)
             self._constraints.covariance *= self.sigma**2
-        elif self.active_constraints is not None:
-            self._constraints = self.active_constraints
+        elif self._active_constraints is not None:
+            self._constraints = self._active_constraints
         else:
-            self._constraints = self.inactive_constraints
+            self._constraints = self._inactive_constraints
 
     @property
     def soln(self):
+        """
+        Solution to the lasso problem, set by `fit` method.
+        """
         if not hasattr(self, "_soln"):
             self.fit()
         return self._soln
 
     @property
-    def constraints(self, doc="Constraint matrix for this LASSO problem"):
+    def active_constraints(self):
+        """
+        Affine constraints imposed on the
+        active variables by the KKT conditions.
+        """
+        return self._active_constraints
+
+    @property
+    def inactive_constraints(self):
+        """
+        Affine constraints imposed on the
+        inactive subgradient by the KKT conditions.
+        """
+        return self._inactive_constraints
+
+    @property
+    def constraints(self):
+        """
+        Affine constraints for this LASSO problem.
+        This is `self.active_constraints` stacked with
+        `self.inactive_constraints`.
+        """
         return self._constraints
 
     @property
-    def intervals(self, doc="OLS intervals for active variables adjusted for selection."):
+    def intervals(self):
+        """
+        Intervals for OLS parameters of active variables
+        adjusted for selection.
+        """
         if not hasattr(self, "_intervals"):
             self._intervals = []
             C = self.constraints
@@ -212,7 +246,11 @@ class lasso(object):
         return self._pvals
 
     @property
-    def unadjusted_intervals(self, doc="Unadjusted OLS intervals for active variables."):
+    def nominal_intervals(self):
+        """
+        Intervals for OLS parameters of active variables
+        that have not been adjusted for selection.
+        """
         if not hasattr(self, "_intervals_unadjusted"):
             if not hasattr(self, "_constraints"):
                 self.form_constraints()
@@ -312,6 +350,4 @@ def estimate_sigma(y, X, frac=0.1,
                                   burnin=burnin,
                                   estimator='simulate')
 
-class FixedLambdaError(ValueError):
-    pass
 

@@ -24,7 +24,8 @@ class projection(object):
     
     Warning: we do not check if U has orthonormal columns. 
 
-    This can be enforced by calling the `orthogonalize` method.
+    This can be enforced by calling the `orthogonalize` method
+    which returns a new instance.
     
     """
     def __init__(self, U):
@@ -57,7 +58,8 @@ class forward_stepwise(object):
     """
 
     def __init__(self, X, Y, 
-                 subset=None):
+                 subset=None,
+                 covariance=None):
         if subset is None:
             subset = np.ones(Y.shape[0], np.bool)
         self.X = X.copy()[subset]
@@ -68,7 +70,9 @@ class forward_stepwise(object):
         self.A = None
         self.variables = []
         self.signs = []
-        self.covariance = np.identity(self.X.shape[0]) # should be scaled if needed!
+        if covariance is None:
+            covariance = np.identity(self.X.shape[0])
+        self.covariance = covariance
 
     def __iter__(self):
         return self
@@ -136,7 +140,7 @@ class forward_stepwise(object):
             print self.variables, 'selected variables'
             print self.signs, 'signs'
             print self.A.shape, 'A shape'
-            print np.dot(self.A, Y).min(), 'should be nonnegative'
+            print np.dot(self.A, Y).max(), 'should be nonpositive'
 
         self.P.append(Pnew)
 
@@ -179,13 +183,13 @@ class forward_stepwise(object):
         pivots = []
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         for i in range(LSfunc.shape[0]):
-            pivots.append(self.bounds(LSfunc[i]))
+            pivots.append(self.bounds(LSfunc[i], sigma))
         return pivots
 
     def model_quadratic(self, which_step, sigma):
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
-        return quadratic_test(self.Y / sigma, P_LS, self.constraints)
+        return quadratic_test(self.Y, P_LS, self.constraints)
 
 def canonicalA(RX, RY, idx, sign, scale=None):
     """
