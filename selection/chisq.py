@@ -117,7 +117,7 @@ def quadratic_bounds(y, operator, affine_constraints):
 
 def quadratic_test(y, operator, affine_constraints):
     r"""
-    Test the null hypothesis $H_0:A_{p \times q}\mu_{q \times 1} = 0$ based on
+    Test the null hypothesis $$H_0:A_{p \times q}\mu_{q \times 1} = 0$$ based on
     $y \sim N(\mu,\Sigma)$ with $\Sigma$ given by `affine_constraints.covariance`
     where `affine_constraints` represents the set
 

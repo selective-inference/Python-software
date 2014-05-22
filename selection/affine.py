@@ -104,11 +104,11 @@ class constraints(object):
 
     def conditional(self, linear_part, value):
         """
-        Return an equivalent constraint with a
+        Return an equivalent constraint 
         after having conditioned on a linear equality.
         
         Let the inequality constraints be specified by
-        `(A,b)` and the inequality constraints be specified
+        `(A,b)` and the equality constraints be specified
         by `(C,d)`. We form equivalent inequality constraints by 
         considering the residual
 
