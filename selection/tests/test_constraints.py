@@ -5,28 +5,41 @@ from scipy.stats import chi
 import nose.tools as nt
 
 import selection.affine as AC
+reload(AC)
 
 def test_conditional():
 
-    p = 20
-    b = np.random.standard_normal((3,))
-    A = np.random.standard_normal((3,p))
+    p = 200
+    k1, k2 = 5, 3
+    b = np.random.standard_normal((k1,))
+    A = np.random.standard_normal((k1,p))
     con = AC.constraints(A,b)
     w = np.random.standard_normal(p)
     con.mean = w
-    C = np.random.standard_normal((2,p))
-    d = np.random.standard_normal(2)
-    new_con = con.conditional(C,d)
+    C = np.random.standard_normal((k2,p))
+    d = np.random.standard_normal(k2)
+    new_con = con.conditional(C, d)
 
     while True:
         W = np.random.standard_normal(p)
         W -= np.dot(np.linalg.pinv(C), np.dot(C, W) - d)  
-        if con(W):
+        if new_con(W) and con(W):
             break
-    Z = AC.simulate_from_constraints(new_con, W)
 
-    nt.assert_true((np.dot(Z, A.T) - b[None,:]).max() < 0)
+    Z = AC.sample_from_constraints(new_con, W, ndraw=5000)
+
+    tol = 0
+    
     nt.assert_true(np.linalg.norm(np.dot(Z, C.T) - d[None,:]) < 1.e-7)
+    Zn = Z - new_con.translate[None,:]
+    V = (np.dot(Zn, new_con.linear_part.T) - new_con.offset[None,:]).max(1)
+    V2 = (np.dot(Z, con.linear_part.T) - con.offset[None,:]).max(1)
+    print ('failing:', 
+           (V>tol).sum(), 
+           (V2>tol).sum(), 
+           np.linalg.norm(np.dot(C, W) - d))
+    nt.assert_true(np.sum(V > tol) < 0.001*V.shape[0])
+
 
 def test_conditional_simple():
 

@@ -51,7 +51,8 @@ class constraints(object):
                  linear_part,
                  offset,
                  covariance=None,
-                 mean=None):
+                 mean=None,
+                 translate=None):
         r"""
         Create a new inequality. 
 
@@ -90,6 +91,7 @@ class constraints(object):
         if mean is None:
             mean = np.zeros(self.dim)
         self.mean = mean
+        self.translate = translate
 
     def _repr_latex_(self):
         return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
@@ -126,16 +128,18 @@ class constraints(object):
         if M2.shape:
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_mean = np.dot(M1, np.dot(M2i, d - np.dot(C, self.mean)))
+            delta_offset = np.dot(M1, np.dot(M2i, d))
+            delta_mean = np.dot(M1, np.dot(M2i, np.dot(C, self.mean)))
         else:
             M2i = 1. / M2
             delta_cov = np.multiply.outer(M1, M1) / M2i
             delta_mean = M1 * d  / M2i
 
         return constraints(self.linear_part,
-                           self.offset,
+                           self.offset - np.dot(self.linear_part, delta_offset),
                            covariance=self.covariance - delta_cov,
-                           mean=self.mean + delta_mean)
+                           mean=self.mean - delta_mean,
+                           translate=delta_offset)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -413,7 +417,10 @@ def sample_from_constraints(con,
                                            ndraw=ndraw, 
                                            burnin=burnin,
                                            sigma=1.)
-    return inverse_map(white_samples.T).T
+    Z = inverse_map(white_samples.T).T
+    if con.translate is not None:
+        Z += con.translate[None,:]
+    return Z
 
 def sample_from_sphere(con, 
                        Y,
@@ -482,6 +489,8 @@ def sample_from_sphere(con,
                                                            burnin=burnin)
 
     Z = inverse_map(white_samples.T).T
+    if con.translate is not None:
+        Z += con.translate[None,:]
     return Z, weights
 
 def interval_constraints(support_directions, 
@@ -739,6 +748,6 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         pvalue = (W*(np.fabs(null_statistics) >= np.fabs(observed))).sum() / W.sum()
     else:
         dfam = discrete_family(null_statistics, W)
-        decision = dfam.two_sided(0, observed, alpha=alpha)
+        decision = dfam.two_sided_test(0, observed, alpha=alpha)
         return decision, Z, W
     return pvalue, Z, W
