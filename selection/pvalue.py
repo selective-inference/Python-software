@@ -46,7 +46,7 @@ def norm_q(prob):
     quantile : float
 
     """
-    return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
+    return np.array(mp.erfinv(2*prob-1)*mp.sqrt(2))
 
 
 def norm_pdf(observed):

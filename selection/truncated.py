@@ -17,8 +17,6 @@ class truncated_gaussian(object):
     A Gaussian distribution, truncated to
     """
 
-    use_R = True
-
     def __init__(self, intervals, mu=0, sigma=1):
         intervals = np.unique(intervals)
         intervals = np.asarray(intervals).reshape(-1)
@@ -46,13 +44,9 @@ class truncated_gaussian(object):
             self._negated = truncated_gaussian(np.asarray(-self._cutoff_array[::-1]),
                                                mu=-self.mu,
                                                sigma=self.sigma)
-            self._negated.use_R = self.use_R
         return self._negated
     
     # private method to update P and D after a change of parameters
-
-    # WARNING: when switching self.use_R to True after it was False, it is possible P and D
-    # will be mpmath values
 
     def _mu_or_sigma_changed(self):
         
@@ -144,9 +138,9 @@ class truncated_gaussian(object):
 
         pnorm_increment = Psum*q - Csum[k]
         if np.mean(self.intervals[k]) < 0:
-            return mu + norm_q(truncnorm_cdf(-np.inf,(self.intervals[k,0]-mu)/sigma, use_R=self.use_R) + pnorm_increment, use_R=self.use_R) * sigma
+            return mu + norm_q(norm_interval(-np.inf,(self.intervals[k,0]-mu)/sigma) + pnorm_increment) * sigma
         else:
-            return mu - norm_q(truncnorm_cdf((self.intervals[k,0]-mu)/sigma, np.inf, use_R=self.use_R) - pnorm_increment, use_R=self.use_R) * sigma
+            return mu - norm_q(norm_interval((self.intervals[k,0]-mu)/sigma, np.inf) - pnorm_increment) * sigma
         
     # make a function for vector version?
     def right_endpoint(self, left_endpoint, alpha):
@@ -166,7 +160,7 @@ class truncated_gaussian(object):
         mu, P, D = self.mu, self.P, self.D
 
         const = np.array(1-alpha)*(np.sum(D[:,0]-D[:,1]) + mu*P.sum())
-        right_endpoint = self.right_endpoint(left_endpoint, alpha)
+        right_endpoint = float(self.right_endpoint(left_endpoint, alpha))
         if np.isnan(right_endpoint):
             return np.inf
         valid_intervals = []

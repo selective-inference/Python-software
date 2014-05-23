@@ -136,7 +136,7 @@ class constraints(object):
             delta_mean = M1 * d  / M2i
 
         if self.translate is None:
-            translate = np.zeros(self.A.shape[1])
+            translate = np.zeros(A.shape[1])
         else:
             translate = self.translate
         return constraints(self.linear_part,
