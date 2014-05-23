@@ -106,8 +106,8 @@ def quadratic_bounds(y, operator, affine_constraints):
 
     eta, TA = tangent_space(operator, y)
     if TA is not None:
-        newcon = constraints((con.inequality, 
-                              con.inequality_offset),
+        newcon = constraints(con.linear_part,
+                             con.offset,
                              covariance=con.covariance)
         newcon = newcon.conditional(TA, np.zeros(TA.shape[0]))
         P = np.identity(q) - np.dot(np.linalg.pinv(TA), TA)

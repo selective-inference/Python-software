@@ -185,16 +185,16 @@ def chi_pvalue(observed, lower_bound, upper_bound, sd, df, method='MC', nsim=100
     L, T, U = lower_bound, observed, upper_bound # shorthand
 
     if method == 'cdf':
-        pval = ((chi.cdf(U / sd, k) - chi.cdf(T / sd, k)) / 
-                (chi.cdf(U / sd, k) - chi.cdf(L / sd, k)))
+        pval = ((chi.cdf(U / sd, df) - chi.cdf(T / sd, df)) / 
+                (chi.cdf(U / sd, df) - chi.cdf(L / sd, df)))
     elif method == 'sf':
-        pval = ((chi.sf(U / sd, k) - chi.sf(T / sd, k)) / 
-                (chi.sf(U / sd, k) - chi.sf(L / sd, k)))
+        pval = ((chi.sf(U / sd, df) - chi.sf(T / sd, df)) / 
+                (chi.sf(U / sd, df) - chi.sf(L / sd, df)))
     elif method == 'MC':
-        if k == 1:
+        if df == 1:
             H = []
         else:
-            H = [0]*(k-1)
+            H = [0]*(df-1)
         pval = general_pvalue(T / sd, L / sd, U / sd, H, nsim=nsim)
     else:
         raise ValueError('method should be one of ["cdf", "sf", "MC"]')

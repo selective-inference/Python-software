@@ -5,7 +5,6 @@ from scipy.stats import chi
 import nose.tools as nt
 
 import selection.affine as AC
-reload(AC)
 
 def test_conditional():
 

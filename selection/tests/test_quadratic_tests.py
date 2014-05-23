@@ -1,6 +1,11 @@
 import numpy as np
-import selection.constraints as C
+import selection.affine as AC
+from selection import chisq 
 from scipy.stats import chi
+import nose.tools as nt
+
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
 
 # we use R's chisq
 
@@ -12,26 +17,29 @@ ro.numpy2ri.activate()
 
 def test_chisq_central():
 
-    A, b = np.random.standard_normal((4,6)), np.zeros(4)
+    n, p = 4, 10
+    A, b = np.random.standard_normal((n, p)), np.zeros(n)
     con = AC.constraints(A,b)
 
-    nsim = 3000
-    P = []
-    for i in range(nsim):
-        Z = AC.sample_from_constraints(con)
-        u = 0 * Z
-        u[:3] = Z[:3] / np.linalg.norm(Z[:3])
-        L, V, U = con.pivots(u, Z)[:3]
-        ncp = 1.e-3
-        P.append((chi.cdf(U,3) - chi.cdf(V,3)) 
-                 / (chi.cdf(U,3) - chi.cdf(L,3)))
+    while True:
+        z = np.random.standard_normal(p)
+        if con(z):
+            break
 
+    S = np.identity(p)[:3]
+    Z = AC.sample_from_constraints(con, z, ndraw=10000)
+    P = []
+    for i in range(Z.shape[0]/10):
+        P.append(chisq.quadratic_test(Z[10*i], S, con))
     ecdf = sm.distributions.ECDF(P)
 
     plt.clf()
     x = np.linspace(0,1,101)
     plt.plot(x, ecdf(x), c='red')
     plt.plot([0,1],[0,1], c='blue', linewidth=2)
+    nt.assert_true(np.fabs(np.mean(P)-0.5) < 0.03)
+    nt.assert_true(np.fabs(np.std(P)-1/np.sqrt(12)) < 0.03)
+    
 
 def test_chisq_noncentral():
 
@@ -39,7 +47,7 @@ def test_chisq_noncentral():
     ncp = np.linalg.norm(mu[:3])**2
 
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
-    con = AC.constraints((A,b), None)
+    con = AC.constraints(A,b, mean=mu)
 
     ro.r('fncp=%f' % ncp)
     ro.r('f = function(x) {pchisq(x,3,ncp=fncp)}')
@@ -81,14 +89,8 @@ def test_chisq_noncentral():
     plt.plot(x, ecdf(x), c='red')
     plt.plot([0,1],[0,1], c='blue', linewidth=2)
 
-if __name__ == "__main__":
+def main():
 
-    import matplotlib.pyplot as plt
-    from warnings import warn
-    try:
-        import statsmodels.api as sm
-    except ImportError:
-        warn('unable to plot ECDF as statsmodels has not imported')
 
     def full_sim(L, b, p):
         k, q = L.shape
@@ -96,7 +98,7 @@ if __name__ == "__main__":
         A2 = L[:p]
         A3 = np.array([np.arange(q)**(i/2.) for i in range(1,4)])
 
-        con = C.constraints((L, b), None)
+        con = AC.constraints((L, b), None)
         
         def sim(A):
 
