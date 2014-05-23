@@ -126,16 +126,16 @@ class constraints(object):
         if M2.shape:
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_offset = np.dot(M1, np.dot(M2i, d))
+            delta_mean = np.dot(M1, np.dot(M2i, d - np.dot(C, self.mean)))
         else:
             M2i = 1. / M2
             delta_cov = np.multiply.outer(M1, M1) / M2i
-            delta_offset = M1 * d  / M2i
+            delta_mean = M1 * d  / M2i
 
         return constraints(self.linear_part,
-                           self.offset - np.dot(self.linear_part, delta_offset),
+                           self.offset,
                            covariance=self.covariance - delta_cov,
-                           mean=self.mean)
+                           mean=self.mean + delta_mean)
 
     def bounds(self, direction_of_interest, Y):
         r"""
