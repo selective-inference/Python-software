@@ -135,11 +135,15 @@ class constraints(object):
             delta_cov = np.multiply.outer(M1, M1) / M2i
             delta_mean = M1 * d  / M2i
 
+        if self.translate is None:
+            translate = np.zeros(self.A.shape[1])
+        else:
+            translate = self.translate
         return constraints(self.linear_part,
                            self.offset - np.dot(self.linear_part, delta_offset),
                            covariance=self.covariance - delta_cov,
                            mean=self.mean - delta_mean,
-                           translate=delta_offset)
+                           translate=translate + delta_offset)
 
     def bounds(self, direction_of_interest, Y):
         r"""
