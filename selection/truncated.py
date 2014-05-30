@@ -109,7 +109,7 @@ class truncated_gaussian(object):
                                                       self.mu,
                                                       self.sigma)
     
-    def CDF(self, observed):
+    def cdf(self, observed):
         P, mu, sigma = self.P, self.mu, self.sigma
         z = observed
         k = int(np.floor((self.intervals <= observed).sum() / 2))
@@ -146,7 +146,7 @@ class truncated_gaussian(object):
     def right_endpoint(self, left_endpoint, alpha):
         c1 = left_endpoint # shorthand from Will's code
         mu, P = self.mu, self.P
-        alpha1 = self.CDF(left_endpoint)
+        alpha1 = self.cdf(left_endpoint)
         if (alpha1 > alpha):
             return np.nan
         alpha2 = np.array(alpha - alpha1)
@@ -183,13 +183,13 @@ class truncated_gaussian(object):
                 left_endpoint) * norm_pdf((left_endpoint - self.mu) / 
                                           self.sigma)
     
-    def naive_interval(self, observed, alpha):
+    def equal_tailed_interval(self, observed, alpha):
         old_mu = self.mu
-        lb = self.mu - 20 * self.sigma
-        ub = self.mu + 20 * self.sigma
+        lb = self.mu - 20. * self.sigma
+        ub = self.mu + 20. * self.sigma
         def F(param):
             self.mu = param
-            return self.CDF(observed)
+            return self.cdf(observed)
         L = find_root(F, 1.0 - 0.5 * alpha, lb, ub)
         U = find_root(F, 0.5 * alpha, lb, ub)
         self.mu = old_mu

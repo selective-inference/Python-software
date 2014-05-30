@@ -365,7 +365,8 @@ def sample_from_constraints(con,
                             how_often=-1,
                             ndraw=1000,
                             burnin=1000,
-                            white=False):
+                            white=False,
+                            use_constraint_directions=True):
     r"""
     Use Gibbs sampler to simulate from `con`.
 
@@ -392,6 +393,10 @@ def sample_from_constraints(con,
 
     white : bool (optional)
         Is con.covariance equal to identity?
+
+    use_constraint_directions : bool (optional)
+        Use the directions formed by the constraints as in
+        the Gibbs scheme?
 
     Returns
     -------
@@ -420,7 +425,8 @@ def sample_from_constraints(con,
                                            how_often=how_often,
                                            ndraw=ndraw, 
                                            burnin=burnin,
-                                           sigma=1.)
+                                           sigma=1.,
+                                           use_A=use_constraint_directions)
     Z = inverse_map(white_samples.T).T
     if con.translate is not None:
         Z += con.translate[None,:]
