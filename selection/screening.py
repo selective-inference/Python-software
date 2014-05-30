@@ -33,9 +33,8 @@ class topK(object):
         for k in range(1, K+1):
             partial_cp = partial.copy()
             partial_cp[:,order[-k]] = -self.sign[order[-k]]
-            full_matrix.append(partial_cp)
-        self._full = np.vstack(full_matrix)
-        linear_part = np.dot(self._full, X.T)
+            full_matrix.append(np.dot(partial_cp, X.T))
+        linear_part = np.vstack(full_matrix)
         self.constraints = constraints(linear_part, 
                                        np.zeros(linear_part.shape[0]),
                                        covariance=covariance)
