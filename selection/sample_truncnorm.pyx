@@ -1,7 +1,7 @@
 import numpy as np, cython
 cimport numpy as np
 
-from libc.math cimport pow, sqrt, log # sin, cos, acos, asin, sqrt, fabs
+from libc.math cimport pow, sqrt, log, exp # sin, cos, acos, asin, sqrt, fabs
 from scipy.special import ndtr, ndtri
 
 cdef double PI = np.pi
@@ -188,18 +188,19 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
         lower_bound = lower_bound / sigma
         upper_bound = upper_bound / sigma
 
-        print 'bounds', lower_bound, upper_bound
         if lower_bound > upper_bound:
-            raise ValueError('stop')
+            raise ValueError('bound violation')
 
         if upper_bound < -10: # use Exp approximation
-            tnorm = -log(usample[iter_count]) / upper_bound + upper_bound
-            if tnorm < lower_bound:
-                tnorm = lower_bound + 0.001 * (upper_bound - lower_bound)
+            unif = usample[iter_count] * (1 - exp((
+                        lower_bound - upper_bound) * upper_bound))
+            tnorm = upper_bound - log(1 - unif) / upper_bound 
         elif lower_bound > 10:
-            tnorm = -log(usample[iter_count]) / lower_bound + lower_bound
-            if tnorm > upper_bound:
-                tnorm = upper_bound - 0.001 * (upper_bound - lower_bound)
+            unif = usample[iter_count] * (1 - exp(-(
+                        upper_bound - lower_bound) * lower_bound))
+            tnorm = -log(1 - unif) / lower_bound + lower_bound
+            #if tnorm < lower_bound:
+            #    tnorm = lower_bound + 0.001 * (upper_bound - lower_bound)
         elif lower_bound < 0:
             cdfL = ndtr(lower_bound)
             cdfU = ndtr(upper_bound)
