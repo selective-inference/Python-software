@@ -732,7 +732,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
 
     if not sigma_known:
         Z, W = sample_from_sphere(affine_con,
-                                  Y,
+                                  Y - affine_con.translate,
                                   eta,
                                   how_often=how_often,
                                   ndraw=ndraw,
@@ -740,7 +740,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                   white=white)
     else:
         Z = sample_from_constraints(affine_con,
-                                    Y,
+                                    Y - affine_con.translate,
                                     eta,
                                     how_often=how_often,
                                     ndraw=ndraw,
