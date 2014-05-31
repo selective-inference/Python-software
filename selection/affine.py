@@ -63,9 +63,9 @@ class constraints(object):
             The linear part, $A$ of the affine constraint
             $\{z:Az \leq b\}$. 
 
-        equality: (C,d)
+        offset: np.float(b)
             The offset part, $b$ of the affine constraint
-            $\{z:Cz=d\}$. 
+            $\{z:Az \leq b\}$. 
 
         covariance : np.float
             Covariance matrix of Gaussian distribution to be 
@@ -99,7 +99,7 @@ class constraints(object):
     def __call__(self, Y, tol=1.e-3):
         r"""
         Check whether Y satisfies the linear
-        inequality and equality constraints.
+        inequality constraints.
         """
         V1 = np.dot(self.linear_part, Y) - self.offset
         return np.all(V1 < tol * np.fabs(V1).max())
@@ -178,12 +178,6 @@ class constraints(object):
         S : np.float
             Standard deviation of $\eta^TY$.
 
-        Notes
-        -----
-        
-        This method assumes that equality constraints
-        have been enforced and direction of interest
-        is in the row space of any equality constraint matrix.
         
         """
         return interval_constraints(self.linear_part,
@@ -230,9 +224,6 @@ class constraints(object):
         then we return $1-F$; if it is 'less' we return $F$
         and if it is 'twosided' we return $2 \min(F,1-F)$.
 
-        This method assumes that equality constraints
-        have been enforced and direction of interest
-        is in the row space of any equality constraint matrix.
         
         """
         if alternative not in ['greater', 'less', 'twosided']:
@@ -282,12 +273,6 @@ class constraints(object):
 
         [U,L] : selection interval
 
-        Notes
-        -----
-        
-        This method assumes that equality constraints
-        have been enforced and direction of interest
-        is in the row space of any equality constraint matrix.
         
         """
 
@@ -658,7 +643,7 @@ def selection_interval(support_directions,
     if UMAU:
         _selection_interval = truncated.UMAU_interval(V, alpha)
     else:
-        _selection_interval = truncated.naive_interval(V, alpha)
+        _selection_interval = truncated.equal_tailed_interval(V, alpha)
     
     return _selection_interval
 

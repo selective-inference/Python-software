@@ -55,14 +55,13 @@ class lasso(object):
     alpha = 0.05
     UMAU = False
 
-    def __init__(self, y, X, frac=0.9, sigma=1):
+    def __init__(self, y, X, lam, sigma=1):
 
         self.y = y
         self.X = X
-        self.frac = frac
         self.sigma = sigma
         n, p = X.shape
-        self.lagrange = frac * np.fabs(np.dot(X.T, y)).max() / n
+        self.lagrange = lam / n
         self._covariance = self.sigma**2 * np.identity(X.shape[0])
 
     def fit(self, sklearn_alpha=None, **lasso_args):

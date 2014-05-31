@@ -493,7 +493,7 @@ class discrete_family(object):
         U = find_root(F, 0.5 * alpha, lb, ub)
         return L, U
 
-    def equal_tailed_test(self, theta0, observed, alpha=0.05, randomize=True, auxVar=None):
+    def equal_tailed_test(self, theta0, observed, alpha=0.05):
         r"""
         Perform UMPU two-sided test.
 
@@ -530,9 +530,8 @@ class discrete_family(object):
         or chosen at random. If randomize=False, we get a conservative test.
         """
 
-        pval = self.cdf(theta, observed, randomize=randomize,
-                        auxVar=auxVar)
-        return min(p, 1-p) < alpha
+        pval = self.cdf(theta0, observed, gamma=0.5)
+        return min(pval, 1-pval) < alpha
 
     def one_sided_acceptance(self, theta, 
                              alpha=0.05, 
@@ -581,7 +580,7 @@ class discrete_family(object):
             raise ValueError("alternative should be one of ['greater', 'less']")
         return acceptance
 
-    def equal_tailed_acceptance(self, theta, alpha=0.05, tol=1e-6):
+    def equal_tailed_acceptance(self, theta0, alpha=0.05):
         r"""
         Compute the acceptance region cutoffs of 
         equal-tailed test (without randomization).
@@ -590,14 +589,11 @@ class discrete_family(object):
         Parameters
         ----------
 
-        theta : float
-             Natural parameter.
+        theta0 : float
+             Natural parameter under null hypothesis.
 
         alpha : float (optional)
              Size of two-sided test.
-
-        tol : float
-             Tolerance for root-finding.
 
         Returns
         -------
@@ -610,7 +606,7 @@ class discrete_family(object):
 
         """
 
-        F = self.cdf(theta, gamma=0.5)
+        F = self.cdf(theta0, gamma=0.5)
         Lcutoff = np.max(self.sufficient_stat[F <= 0.5 * alpha])
         Rcutoff = np.min(self.sufficient_stat[F >= 1 - 0.5*alpha])
         return Lcutoff, Rcutoff

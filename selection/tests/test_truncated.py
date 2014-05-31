@@ -21,7 +21,7 @@ def test_sigma():
 
 def test_equal_tailed_coverage():
 
-    alpha = 0.15
+    alpha = 0.25
     nsim = 1000
     tg = truncated_gaussian([(2.3,np.inf)], sigma=2)
     coverage = 0
@@ -38,7 +38,7 @@ def test_equal_tailed_coverage():
 
 def test_UMAU_coverage():
 
-    alpha = 0.15
+    alpha = 0.25
     nsim = 1000
     tg = truncated_gaussian([(2.3,np.inf)], sigma=2)
     coverage = 0
