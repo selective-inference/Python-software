@@ -655,7 +655,8 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                alternative='twosided',
                UMPU=True,
                sigma_known=False,
-               alpha=0.05):
+               alpha=0.05,
+               use_constraint_directions=False):
     """
     A Monte Carlo significance test for
     a given function of `con.mean`.
@@ -697,6 +698,10 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     alpha : 
         Level for UMPU test.
 
+    use_constraint_directions : bool (optional)
+        Use the directions formed by the constraints as in
+        the Gibbs scheme?
+
     Returns
     -------
 
@@ -730,7 +735,9 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                     how_often=how_often,
                                     ndraw=ndraw,
                                     burnin=burnin,
-                                    white=white)
+                                    white=white,
+                                    use_constraint_directions=\
+                                        use_constraint_directions)
         W = np.ones(Z.shape[0], np.float)
 
     null_statistics = np.dot(Z, eta)
@@ -740,7 +747,8 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     elif alternative == 'less':
         pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
     elif not UMPU:
-        pvalue = (W*(np.fabs(null_statistics) >= np.fabs(observed))).sum() / W.sum()
+        pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
+        pvalue = 2 * min(pvalue, 1 - pvalue)
     else:
         dfam = discrete_family(null_statistics, W)
         decision = dfam.two_sided_test(0, observed, alpha=alpha)
