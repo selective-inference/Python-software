@@ -1,6 +1,6 @@
 import numpy as np
 import itertools
-from selection.covtest import covtest
+from selection.covtest import covtest, reduced_covtest
 
 def test_covtest():
 
@@ -13,5 +13,8 @@ def test_covtest():
                                                [None, np.identity(n)]):
         con, pval, idx, sign = covtest(X, Y, sigma=1.5, exact=exact,
                                        covariance=covariance)
+    for covariance in [None, np.identity(n)]:
+        con, pval, idx, sign = reduced_covtest(X, Y, sigma=1.5,
+                                               covariance=covariance)
 
     return pval
