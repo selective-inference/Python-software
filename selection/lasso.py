@@ -120,8 +120,8 @@ class lasso(object):
         # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
         X_E = self.X[:,self.active]
         X_notE = self.X[:,~self.active]
-        self._XAinv = np.linalg.pinv(X_E)
-        P_E = np.dot(X_E, self._XAinv)
+        self._XEinv = np.linalg.pinv(X_E)
+        P_E = np.dot(X_E, self._XEinv)
         self.R = np.dot(X_notE.T, np.eye(n)-P_E)
 
         # inactive constraints
@@ -187,10 +187,10 @@ class lasso(object):
         if not hasattr(self, "_intervals"):
             self._intervals = []
             C = self.active_constraints
-            XAinv = self._XAinv
-            if XAinv is not None:
-                for i in range(XAinv.shape[0]):
-                    eta = XAinv[i]
+            XEinv = self._XEinv
+            if XEinv is not None:
+                for i in range(XEinv.shape[0]):
+                    eta = XEinv[i]
                     _interval = C.interval(eta, self.y,
                                            alpha=self.alpha,
                                            UMAU=self.UMAU)
@@ -205,10 +205,10 @@ class lasso(object):
         if not hasattr(self, "_pvals"):
             self._pvals = []
             C = self.active_constraints
-            XAinv = self._XAinv
-            if XAinv is not None:
-                for i in range(XAinv.shape[0]):
-                    eta = XAinv[i]
+            XEinv = self._XEinv
+            if XEinv is not None:
+                for i in range(XEinv.shape[0]):
+                    eta = XEinv[i]
                     _pval = C.pivot(eta, self.y)
                     _pval = 2 * min(_pval, 1 - _pval)
                     self._pvals.append((self.active[i], _pval))
@@ -224,11 +224,11 @@ class lasso(object):
             if not hasattr(self, "_constraints"):
                 self.form_constraints()
             self._intervals_unadjusted = []
-            XAinv = self._XAinv
+            XEinv = self._XEinv
             for i in range(self.active.shape[0]):
-                eta = XAinv[i]
+                eta = XEinv[i]
                 center = (eta*self.y).sum()
-                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(self._SigmaA[i,i])
+                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(self._SigmaE[i,i])
                 _interval = [center-width, center+width]
                 self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
@@ -298,7 +298,7 @@ def estimate_sigma(y, X, frac=0.1,
     # now form the constraint for the inactive variables
 
     C = L.inactive_constraints
-    PR = np.identity(n) - L.PA
+    PR = np.identity(n) - L.PE
     try:
         U, D, V = np.linalg.svd(PR)
     except np.linalg.LinAlgError:

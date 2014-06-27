@@ -144,34 +144,6 @@ class forward_stepwise(object):
 
         self.P.append(Pnew)
 
-    def bounds(self, eta, sigma):
-        """
-        Find implied upper and lower limits for a given
-        direction of interest.
-
-        Parameters
-        ==========
-
-        eta : `np.array(n)`
-
-        Returns
-        =======
-
-        Mplus: float
-             Lower bound for $\eta^TY$ for cone determined by `self`.
-
-        V : float
-             The center $\eta^TY$.
-
-        Mminus : float
-             Lower bound for $\eta^TY$ for cone determined by `self`.
-
-        sigma : float
-             $\ell_2$ norm of `eta` (assuming `self.covariance` is $I$)
-        """
-
-        return self.constraints.bounds(eta, self.Y)
-
     @property
     def constraints(self):
         return constraints(self.A, np.zeros(self.A.shape[0]), 
@@ -179,11 +151,78 @@ class forward_stepwise(object):
 
     # pivots we might care about
 
+    def model_intervals(self, which_step, sigma, alpha=0.05, UMAU=False):
+        """
+        Compute selection intervals for
+        a given step of forward stepwise.
+
+        Parameters
+        ----------
+
+        which_step : int
+            Which step of forward stepwise.
+
+        sigma : float
+            Standard deviation of noise.
+
+        alpha : float
+            1 - confidence level for intervals.
+
+        UMAU : bool
+            Use UMAU intervals or equal-tailed intervals?
+
+        Returns
+        -------
+
+        intervals : list
+             List of (variable, LS_direction, LS_estimate, interval)
+             where LS_direction is the vector that computes this variables
+             least square coefficient in the current model, and LS_estimate
+             is sum(LS_estimate * self.Y).
+
+        """
+        C = self.constraints
+        old_cov = C.covariance
+        C.covariance = sigma**2 * np.identity(self.Y.shape[0])
+        intervals = []
+        LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
+        for i in range(LSfunc.shape[0]):
+            eta = LSfunc[i]
+            _interval = C.interval(eta, self.Y,
+                                   alpha=alpha,
+                                   UMAU=UMAU)
+            intervals.append((self.variables[i], eta, 
+                              (eta*self.Y).sum(), 
+                              _interval))
+        C.covariance = old_cov
+        return intervals
+
     def model_pivots(self, which_step, sigma):
+        """
+        Compute two-sided pvalues for each coefficient
+        in a given step of forward stepwise.
+
+        Parameters
+        ----------
+
+        which_step : int
+            Which step of forward stepwise.
+
+        sigma : float
+            Standard deviation of noise.
+
+        Returns
+        -------
+
+        pivots : list
+             List of (variable, pvalue)
+             for selected model.
+
+        """
         pivots = []
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         for i in range(LSfunc.shape[0]):
-            pivots.append(self.bounds(LSfunc[i], sigma))
+            pivots.append((self.variables[i], self.constraints.pivot(LSfunc[i], self.Y, alternative='twosided')))
         return pivots
 
     def model_quadratic(self, which_step, sigma):

@@ -141,7 +141,6 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     sign : int
         Sign of $X^Ty$ for variable achieving $\lambda_1$.
 
-
     """
 
     cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,

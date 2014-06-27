@@ -112,6 +112,8 @@ def quadratic_bounds(y, operator, affine_constraints):
         newcon = newcon.conditional(TA, np.zeros(TA.shape[0]))
         P = np.identity(q) - np.dot(np.linalg.pinv(TA), TA)
         eta = np.dot(P, eta)
+    else:
+        newcon = con
 
     return newcon.bounds(eta, y)
 
