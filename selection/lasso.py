@@ -32,6 +32,8 @@ except ImportError:
 
 DEBUG = False
 
+"That's just a try"
+
 class lasso(object):
 
     r"""
@@ -52,7 +54,7 @@ class lasso(object):
     """
 
     # level for coverage is 1-alpha
-    alpha = 0.05
+    alpha = 0.04
     UMAU = False
 
     def __init__(self, y, X, lam, sigma=1):
