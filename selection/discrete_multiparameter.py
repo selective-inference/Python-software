@@ -57,19 +57,19 @@ class multiparameter_family(object):
 
         self._w = weights / weights.sum()
         self._x = np.asarray(sufficient_stat)
-        self._old_theta = np.nan
+        self._theta = np.ones(self.k) * np.nan
 
     @property
     def theta(self):
         """
         The natural parameter of the family.
         """
-        return self._old_theta
+        return self._theta
 
     @theta.setter
     def theta(self, _theta):
         _theta = np.asarray(_theta)
-        if not np.all(np.equal(_theta, self._old_theta)):
+        if not np.all(np.equal(_theta, self._theta)):
             _thetaX = np.dot(self.sufficient_stat, _theta)
             _largest = _thetaX.max() + 4 # try to avoid over/under flow, 4 seems arbitrary
             _exp_thetaX = np.exp(_thetaX - _largest)
@@ -77,7 +77,7 @@ class multiparameter_family(object):
             self._partition = np.sum(_prod)
             self._pdf = _prod / self._partition
             self._partition *= np.exp(_largest)
-        self._old_theta = _theta
+        self._theta = _theta
 
     @property
     def partition(self):
@@ -211,6 +211,7 @@ class multiparameter_family(object):
         -------
 
         mean : np.float(k)
+             Expected value of sufficient statistic at theta.
 
         """
         pdf = self.pdf(theta)
@@ -232,8 +233,10 @@ class multiparameter_family(object):
         -------
 
         mean : np.float(k)
+             Expected value of sufficient statistic at theta.
 
         information : np.float((k,k))
+             Covariance matrix of sufficient statistic at theta.
         """
         pdf = self.pdf(theta)
         mean = self.mean(theta)
@@ -241,3 +244,78 @@ class multiparameter_family(object):
         information = (outer_prods * pdf[:,None,None]).sum(0) - np.outer(mean, mean)
         return mean, information
 
+    def MLE(self, observed_sufficient,
+            min_iters=3,
+            max_iters=20, 
+            tol=1.e-6,
+            initial=None):
+        r"""
+
+        Compute mean and Fisher information 
+        of family at natural parameter `theta`.
+
+        Parameters
+        ----------
+
+        observed_sufficient : np.float(k)
+            Observed sufficient statistic.
+
+        min_iters : int
+            Minimum number of Newton steps.
+
+        max_iters : int
+            How many Newton steps?
+
+        tol : float
+            Relative tolerance for objective value.
+
+        Returns
+        -------
+
+        theta_hat : np.float(k)
+            Maximum likelihood estimate.
+
+        """
+
+        _old_theta, _old_pdf, _old_partition = (self._theta.copy(), 
+                                                self._pdf.copy(), 
+                                                self._partition)
+
+        if initial is None:
+            if np.all(np.isnan(self.theta)):
+                initial = np.zeros(k)
+            else:
+                initial = self.theta
+        theta = initial
+        value = np.inf
+
+        for i in range(max_iters):
+            mean, hess = self.information(theta)
+            grad = mean - observed_sufficient
+
+            direction = np.linalg.solve(hess, grad)
+            step_size = 1.
+            while True:
+                proposed_theta =  theta - step_size * direction
+                self.theta = proposed_theta
+                proposed_value = np.log(self.partition) - (self.theta * observed_sufficient).sum()
+
+                if proposed_value < value:
+                    break
+                else:
+                    step_size *= 0.9
+
+            # when do we stop?
+            if i > min_iters and np.fabs((value - proposed_value) / value) < tol:
+                break
+ 
+            value = proposed_value
+            theta = proposed_theta
+
+        # reset old values -- should we?
+
+        self._theta, self._pdf, self._partition = (_old_theta,
+                                                   _old_pdf,
+                                                   _old_partition)
+
+        return theta

@@ -34,3 +34,16 @@ def test_multiparameter():
     
     np.testing.assert_allclose(info1, info2)
 
+    mu3 = np.array([family.E(theta, lambda x: x[:,i]) for i in range(2)])
+    np.testing.assert_allclose(mu1, mu3)
+
+    cov01 = np.array(family.Cov(theta, lambda x: x[:,0], lambda x: x[:,1]))
+    np.testing.assert_allclose(cov01, info1[0,1])
+
+    var0 = np.array(family.Var(theta, lambda x: x[:,0]))
+    np.testing.assert_allclose(var0, info1[0,0])
+
+    observed = np.array([4.2,6.3])
+    theta_hat = family.MLE(observed, tol=1.e-12, max_iters=50)
+
+    np.testing.assert_allclose(observed, family.mean(theta_hat))
