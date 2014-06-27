@@ -71,7 +71,6 @@ def test_conditional_simple():
     a1 = Z1[:,0]
     a2 = np.array(new_sample)
     test = np.fabs((a1.mean() - a2.mean()) / (np.std(a1) * np.sqrt(2)) * np.sqrt(10000))
-    print 'test'
     nt.assert_true(test < 5)
 
 def test_stack():
@@ -127,3 +126,17 @@ def test_pivots_intervals():
     con.interval(u, Z, UMAU=True)
     con.interval(u, Z, UMAU=False)
 
+def test_sampling():
+    """
+    See that means and covariances are approximately correct
+    """
+    C = AC.constraints(np.identity(3), np.inf*np.ones(3))
+    C.mean = np.array([3,4,5.2])
+    W = np.random.standard_normal((5,3))
+    S = np.dot(W.T, W) / 30.
+    C.covariance = S
+    V = AC.sample_from_constraints(C, np.zeros(3), ndraw=500000)
+
+    nt.assert_true(np.linalg.norm(V.mean(0)-C.mean) < 0.01)
+    nt.assert_true(np.linalg.norm(np.einsum('ij,ik->ijk', V, V).mean(0) - 
+                                  np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
