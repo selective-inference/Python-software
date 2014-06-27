@@ -1,4 +1,11 @@
-import math
+"""
+
+This module contains a class for discrete 
+1-dimensional exponential families. The main
+uses for this class are exact (post-selection)
+hypothesis tests and confidence intervals.
+
+"""
 import numpy as np
 import warnings
 
@@ -61,6 +68,13 @@ class discrete_family(object):
 
             \Lambda(\theta) = \log \left(\sum_j w_j e^{\theta X_j} \right).
 
+        Parameters
+        ----------
+
+        sufficient_stat : `np.float((n))`
+
+        weights : `np.float(n)`
+
         Notes
         -----
 
@@ -84,7 +98,7 @@ class discrete_family(object):
     def theta(self, _theta):
         if _theta != self._old_theta:
             _thetaX = _theta * self.sufficient_stat
-            _largest = _thetaX.max() + 4 # try to avoid overflow, 4 seems arbitrary
+            _largest = _thetaX.max() + 4 # try to avoid over/under flow, 4 seems arbitrary
             _exp_thetaX = np.exp(_thetaX - _largest)
             _prod = _exp_thetaX * self.weights
             self._partition = np.sum(_prod)
@@ -259,7 +273,7 @@ class discrete_family(object):
         
     def Cov(self, theta, func1, func2):
         r"""
-        Variance of `func1` and `func2` under $P_{\theta}$
+        Covariance of `func1` and `func2` under $P_{\theta}$
 
         Parameters
         ----------
