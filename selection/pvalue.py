@@ -251,8 +251,8 @@ def gauss_poly(lower_bound, upper_bound, curvature, nsim=100):
     proportion = keep.sum() * 1. / nsim
     Z = Z[keep]
     if H != []:
-        HT = np.clip(H + T, 0, np.inf)
-        exponent = np.log(np.add.outer(Z, HT)).sum(1) - T*Z - T**2/2.
+        HT = H + T 
+        exponent = np.log(np.fabs(np.add.outer(Z, HT))).sum(1) - T*Z - T**2/2.
     else:
         exponent = - T*Z - T**2/2.
     C = exponent.max()
