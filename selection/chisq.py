@@ -106,18 +106,20 @@ def quadratic_bounds(y, operator, affine_constraints):
 
     eta, TA = tangent_space(operator, y)
     if TA is not None:
-        newcon = constraints((con.inequality, 
-                              con.inequality_offset),
+        newcon = constraints(con.linear_part,
+                             con.offset,
                              covariance=con.covariance)
         newcon = newcon.conditional(TA, np.zeros(TA.shape[0]))
         P = np.identity(q) - np.dot(np.linalg.pinv(TA), TA)
         eta = np.dot(P, eta)
+    else:
+        newcon = con
 
     return newcon.bounds(eta, y)
 
 def quadratic_test(y, operator, affine_constraints):
     r"""
-    Test the null hypothesis $H_0:A_{p \times q}\mu_{q \times 1} = 0$ based on
+    Test the null hypothesis $$H_0:A_{p \times q}\mu_{q \times 1} = 0$$ based on
     $y \sim N(\mu,\Sigma)$ with $\Sigma$ given by `affine_constraints.covariance`
     where `affine_constraints` represents the set
 

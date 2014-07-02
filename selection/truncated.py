@@ -8,6 +8,7 @@ import numpy as np
 from .pvalue import (norm_pdf, 
                      truncnorm_cdf, 
                      norm_q,
+                     norm_interval,
                      mp)
 
 class truncated_gaussian(object):
@@ -15,8 +16,6 @@ class truncated_gaussian(object):
     """
     A Gaussian distribution, truncated to
     """
-
-    use_R = True
 
     def __init__(self, intervals, mu=0, sigma=1):
         intervals = np.unique(intervals)
@@ -45,13 +44,9 @@ class truncated_gaussian(object):
             self._negated = truncated_gaussian(np.asarray(-self._cutoff_array[::-1]),
                                                mu=-self.mu,
                                                sigma=self.sigma)
-            self._negated.use_R = self.use_R
         return self._negated
     
     # private method to update P and D after a change of parameters
-
-    # WARNING: when switching self.use_R to True after it was False, it is possible P and D
-    # will be mpmath values
 
     def _mu_or_sigma_changed(self):
         
@@ -87,7 +82,7 @@ class truncated_gaussian(object):
 
     @property
     def delta(self):
-        """
+        r"""
         .. math::
  
             \begin{align}
@@ -114,7 +109,7 @@ class truncated_gaussian(object):
                                                       self.mu,
                                                       self.sigma)
     
-    def CDF(self, observed):
+    def cdf(self, observed):
         P, mu, sigma = self.P, self.mu, self.sigma
         z = observed
         k = int(np.floor((self.intervals <= observed).sum() / 2))
@@ -143,15 +138,15 @@ class truncated_gaussian(object):
 
         pnorm_increment = Psum*q - Csum[k]
         if np.mean(self.intervals[k]) < 0:
-            return mu + norm_q(truncnorm_cdf(-np.inf,(self.intervals[k,0]-mu)/sigma, use_R=self.use_R) + pnorm_increment, use_R=self.use_R) * sigma
+            return mu + norm_q(norm_interval(-np.inf,(self.intervals[k,0]-mu)/sigma) + pnorm_increment) * sigma
         else:
-            return mu - norm_q(truncnorm_cdf((self.intervals[k,0]-mu)/sigma, np.inf, use_R=self.use_R) - pnorm_increment, use_R=self.use_R) * sigma
+            return mu - norm_q(norm_interval((self.intervals[k,0]-mu)/sigma, np.inf) - pnorm_increment) * sigma
         
     # make a function for vector version?
     def right_endpoint(self, left_endpoint, alpha):
         c1 = left_endpoint # shorthand from Will's code
         mu, P = self.mu, self.P
-        alpha1 = self.CDF(left_endpoint)
+        alpha1 = self.cdf(left_endpoint)
         if (alpha1 > alpha):
             return np.nan
         alpha2 = np.array(alpha - alpha1)
@@ -165,7 +160,7 @@ class truncated_gaussian(object):
         mu, P, D = self.mu, self.P, self.D
 
         const = np.array(1-alpha)*(np.sum(D[:,0]-D[:,1]) + mu*P.sum())
-        right_endpoint = self.right_endpoint(left_endpoint, alpha)
+        right_endpoint = float(self.right_endpoint(left_endpoint, alpha))
         if np.isnan(right_endpoint):
             return np.inf
         valid_intervals = []
@@ -188,13 +183,13 @@ class truncated_gaussian(object):
                 left_endpoint) * norm_pdf((left_endpoint - self.mu) / 
                                           self.sigma)
     
-    def naive_interval(self, observed, alpha):
+    def equal_tailed_interval(self, observed, alpha):
         old_mu = self.mu
-        lb = self.mu - 20 * self.sigma
-        ub = self.mu + 20 * self.sigma
+        lb = self.mu - 20. * self.sigma
+        ub = self.mu + 20. * self.sigma
         def F(param):
             self.mu = param
-            return self.CDF(observed)
+            return self.cdf(observed)
         L = find_root(F, 1.0 - 0.5 * alpha, lb, ub)
         U = find_root(F, 0.5 * alpha, lb, ub)
         self.mu = old_mu

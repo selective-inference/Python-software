@@ -46,7 +46,7 @@ def norm_q(prob):
     quantile : float
 
     """
-    return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
+    return np.array(mp.erfinv(2*prob-1)*mp.sqrt(2))
 
 
 def norm_pdf(observed):
@@ -185,16 +185,16 @@ def chi_pvalue(observed, lower_bound, upper_bound, sd, df, method='MC', nsim=100
     L, T, U = lower_bound, observed, upper_bound # shorthand
 
     if method == 'cdf':
-        pval = ((chi.cdf(U / sd, k) - chi.cdf(T / sd, k)) / 
-                (chi.cdf(U / sd, k) - chi.cdf(L / sd, k)))
+        pval = ((chi.cdf(U / sd, df) - chi.cdf(T / sd, df)) / 
+                (chi.cdf(U / sd, df) - chi.cdf(L / sd, df)))
     elif method == 'sf':
-        pval = ((chi.sf(U / sd, k) - chi.sf(T / sd, k)) / 
-                (chi.sf(U / sd, k) - chi.sf(L / sd, k)))
+        pval = ((chi.sf(U / sd, df) - chi.sf(T / sd, df)) / 
+                (chi.sf(U / sd, df) - chi.sf(L / sd, df)))
     elif method == 'MC':
-        if k == 1:
+        if df == 1:
             H = []
         else:
-            H = [0]*(k-1)
+            H = [0]*(df-1)
         pval = general_pvalue(T / sd, L / sd, U / sd, H, nsim=nsim)
     else:
         raise ValueError('method should be one of ["cdf", "sf", "MC"]')
@@ -251,8 +251,8 @@ def gauss_poly(lower_bound, upper_bound, curvature, nsim=100):
     proportion = keep.sum() * 1. / nsim
     Z = Z[keep]
     if H != []:
-        HT = np.clip(H + T, 0, np.inf)
-        exponent = np.log(np.add.outer(Z, HT)).sum(1) - T*Z - T**2/2.
+        HT = H + T 
+        exponent = np.log(np.fabs(np.add.outer(Z, HT))).sum(1) - T*Z - T**2/2.
     else:
         exponent = - T*Z - T**2/2.
     C = exponent.max()
@@ -310,3 +310,53 @@ def general_pvalue(observed, lower_bound, upper_bound, curvature, nsim=100):
     exponent_2, C2 = gauss_poly(lower_bound, upper_bound, curvature, nsim=nsim)
 
     return np.exp(C1-C2) * exponent_1 / exponent_2
+
+
+class SelectionInterval(object):
+    """
+    Compute a selection interval for
+    a Gaussian truncated to an interval.
+    """
+
+    def __init__(self, lower_bound, observed, upper_bound, sigma):
+        self.lower_bound, self.observed, self.upper_bound, self.sigma = lower_bound, observed, upper_bound, sigma
+
+
+    def pivot(self, exp):
+        L, obs, U, sd = self.lower_bound, self.observed, self.upper_bound, self.sigma 
+        return truncnorm_cdf((obs-exp)/sd, (L-exp)/sd, (U-exp)/sd)
+
+    def conf_int(self, lb, ub, alpha=0.05):
+        F = lambda exp: self.pivot(exp)         
+        L = _find_root(F, 1.0 - 0.5 * alpha, lb, ub)
+        U = _find_root(F, 0.5 * alpha, L, ub)
+        return L, U
+
+def _find_root(f, y, lb, ub, tol=1e-6):
+    """
+    searches for solution to f(x) = y in (lb, ub), where 
+    f is a monotone decreasing function
+    """       
+    
+    # make sure solution is in range
+    a, b   = lb, ub
+    fa, fb = f(a), f(b)
+    
+    # assume a < b
+    if fa > y and fb > y:
+        while fb > y : 
+            b, fb = b + (b-a), f(b + (b-a))
+    elif fa < y and fb < y:
+        while fa < y : 
+            a, fa = a - (b-a), f(a - (b-a))
+    
+    # determine the necessary number of iterations
+    max_iter = int( np.ceil( ( np.log(tol) - np.log(b-a) ) / np.log(0.5) ) )
+    
+    # bisect (slow but sure) until solution is obtained
+    for _ in xrange(max_iter):
+        c, fc  = (a+b)/2, f((a+b)/2)
+        if fc > y: a = c
+        elif fc < y: b = c
+
+    return c

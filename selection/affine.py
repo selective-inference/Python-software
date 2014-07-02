@@ -12,9 +12,12 @@ and `post selection LASSO`_.
 """
 
 import numpy as np
-from .pvalue import truncnorm_cdf
+from .pvalue import truncnorm_cdf, norm_interval
 from .truncated import truncated_gaussian
-from .sample_truncnorm import sample_truncnorm_white
+from .sample_truncnorm import (sample_truncnorm_white, 
+                               sample_truncnorm_white_ball,
+                               sample_truncnorm_white_sphere)
+from .discrete_family import discrete_family
                         
 from warnings import warn
 
@@ -35,13 +38,21 @@ class constraints(object):
     and the conditional distribution of a Gaussian $N(\mu,\Sigma)$
     restricted to such slices.
 
+    Notes
+    -----
+
+    In this parameterization, the parameter `self.mean` corresponds
+    to the *reference measure* that is being truncated. It is not the
+    mean of the truncated Gaussian.
+
     """
 
     def __init__(self, 
                  linear_part,
                  offset,
                  covariance=None,
-                 mean=None):
+                 mean=None,
+                 translate=None):
         r"""
         Create a new inequality. 
 
@@ -52,9 +63,9 @@ class constraints(object):
             The linear part, $A$ of the affine constraint
             $\{z:Az \leq b\}$. 
 
-        equality: (C,d)
+        offset: np.float(b)
             The offset part, $b$ of the affine constraint
-            $\{z:Cz=d\}$. 
+            $\{z:Az \leq b\}$. 
 
         covariance : np.float
             Covariance matrix of Gaussian distribution to be 
@@ -80,6 +91,7 @@ class constraints(object):
         if mean is None:
             mean = np.zeros(self.dim)
         self.mean = mean
+        self.translate = translate
 
     def _repr_latex_(self):
         return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
@@ -87,18 +99,18 @@ class constraints(object):
     def __call__(self, Y, tol=1.e-3):
         r"""
         Check whether Y satisfies the linear
-        inequality and equality constraints.
+        inequality constraints.
         """
         V1 = np.dot(self.linear_part, Y) - self.offset
         return np.all(V1 < tol * np.fabs(V1).max())
 
     def conditional(self, linear_part, value):
         """
-        Return an equivalent constraint with a
+        Return an equivalent constraint 
         after having conditioned on a linear equality.
         
         Let the inequality constraints be specified by
-        `(A,b)` and the inequality constraints be specified
+        `(A,b)` and the equality constraints be specified
         by `(C,d)`. We form equivalent inequality constraints by 
         considering the residual
 
@@ -116,16 +128,22 @@ class constraints(object):
         if M2.shape:
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_mean = np.dot(M1, np.dot(M2i, d - np.dot(C, self.mean)))
+            delta_offset = np.dot(M1, np.dot(M2i, d))
+            delta_mean = np.dot(M1, np.dot(M2i, np.dot(C, self.mean)))
         else:
             M2i = 1. / M2
             delta_cov = np.multiply.outer(M1, M1) / M2i
-            delta_mean = M1 * (d - np.dot(C, self.mean)) / M2i
+            delta_mean = M1 * d  / M2i
 
+        if self.translate is None:
+            translate = np.zeros(A.shape[1])
+        else:
+            translate = self.translate
         return constraints(self.linear_part,
-                           self.offset,
+                           self.offset - np.dot(self.linear_part, delta_offset),
                            covariance=self.covariance - delta_cov,
-                           mean=self.mean + delta_mean)
+                           mean=self.mean - delta_mean,
+                           translate=translate + delta_offset)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -160,12 +178,6 @@ class constraints(object):
         S : np.float
             Standard deviation of $\eta^TY$.
 
-        Notes
-        -----
-        
-        This method assumes that equality constraints
-        have been enforced and direction of interest
-        is in the row space of any equality constraint matrix.
         
         """
         return interval_constraints(self.linear_part,
@@ -212,9 +224,6 @@ class constraints(object):
         then we return $1-F$; if it is 'less' we return $F$
         and if it is 'twosided' we return $2 \min(F,1-F)$.
 
-        This method assumes that equality constraints
-        have been enforced and direction of interest
-        is in the row space of any equality constraint matrix.
         
         """
         if alternative not in ['greater', 'less', 'twosided']:
@@ -264,12 +273,6 @@ class constraints(object):
 
         [U,L] : selection interval
 
-        Notes
-        -----
-        
-        This method assumes that equality constraints
-        have been enforced and direction of interest
-        is in the row space of any equality constraint matrix.
         
         """
 
@@ -337,17 +340,20 @@ def stack(*cons):
         ineq.append(con.linear_part)
         ineq_off.append(con.offset)
 
-    intersection = constraints((np.vstack(ineq), 
-                                np.hstack(ineq_off)))
+    intersection = constraints(np.vstack(ineq), 
+                               np.hstack(ineq_off))
     return intersection
 
-def simulate_from_constraints(con, 
-                              Y,
-                              ndraw=1000,
-                              burnin=1000,
-                              white=False):
+def sample_from_constraints(con, 
+                            Y,
+                            direction_of_interest=None,
+                            how_often=-1,
+                            ndraw=1000,
+                            burnin=1000,
+                            white=False,
+                            use_constraint_directions=True):
     r"""
-    Use naive acceptance rule to simulate from `con`.
+    Use Gibbs sampler to simulate from `con`.
 
     Parameters
     ----------
@@ -356,6 +362,13 @@ def simulate_from_constraints(con,
 
     Y : np.float
         Point satisfying the constraint.
+
+    direction_of_interest : np.float (optional)
+        Which projection is of most interest?
+
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
 
     ndraw : int (optional)
         Defaults to 1000.
@@ -366,10 +379,26 @@ def simulate_from_constraints(con,
     white : bool (optional)
         Is con.covariance equal to identity?
 
+    use_constraint_directions : bool (optional)
+        Use the directions formed by the constraints as in
+        the Gibbs scheme?
+
+    Returns
+    -------
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
     """
+    if direction_of_interest is None:
+        direction_of_interest = np.random.standard_normal(Y.shape)
+    if how_often < 0:
+        how_often = ndraw + burnin
+
     if not white:
         inverse_map, forward_map, white = con.whiten()
         Y = forward_map(Y)
+        direction_of_interest = forward_map(direction_of_interest)
     else:
         white = con
         inverse_map = lambda V: V
@@ -377,10 +406,87 @@ def simulate_from_constraints(con,
     white_samples = sample_truncnorm_white(white.linear_part,
                                            white.offset,
                                            Y, 
+                                           direction_of_interest,
+                                           how_often=how_often,
                                            ndraw=ndraw, 
                                            burnin=burnin,
-                                           sigma=1.)
-    return inverse_map(white_samples.T).T
+                                           sigma=1.,
+                                           use_A=use_constraint_directions)
+    Z = inverse_map(white_samples.T).T
+    if con.translate is not None:
+        Z += con.translate[None,:]
+    return Z
+
+def sample_from_sphere(con, 
+                       Y,
+                       direction_of_interest=None,
+                       how_often=-1,
+                       ndraw=1000,
+                       burnin=1000,
+                       white=False):
+    r"""
+    Use Gibbs sampler to simulate from `con` 
+    intersected with (whitened) sphere of radius `np.linalg.norm(Y)`.
+
+    Parameters
+    ----------
+
+    con : `selection.affine.constraints`_
+
+    Y : np.float
+        Point satisfying the constraint.
+
+    direction_of_interest : np.float (optional)
+        Which projection is of most interest?
+
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
+
+    ndraw : int (optional)
+        Defaults to 1000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    white : bool (optional)
+        Is con.covariance equal to identity?
+
+    Returns
+    -------
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
+    weights : np.float(ndraw)
+        Importance weights for the sample.
+
+    """
+    if direction_of_interest is None:
+        direction_of_interest = np.random.standard_normal(Y.shape)
+    if how_often < 0:
+        how_often = ndraw + burnin
+
+    if not white:
+        inverse_map, forward_map, white = con.whiten()
+        Y = forward_map(Y)
+        direction_of_interest = forward_map(direction_of_interest)
+    else:
+        white = con
+        inverse_map = lambda V: V
+
+    white_samples, weights = sample_truncnorm_white_sphere(white.linear_part,
+                                                           white.offset,
+                                                           Y, 
+                                                           direction_of_interest,
+                                                           how_often=how_often,
+                                                           ndraw=ndraw, 
+                                                           burnin=burnin)
+
+    Z = inverse_map(white_samples.T).T
+    if con.translate is not None:
+        Z += con.translate[None,:]
+    return Z, weights
 
 def interval_constraints(support_directions, 
                          support_offsets,
@@ -424,6 +530,17 @@ def interval_constraints(support_directions,
     tol : float
          Relative tolerance parameter for deciding 
          sign of $Az-b$.
+
+    Returns
+    -------
+
+    lower_bound : float
+
+    observed : float
+
+    upper_bound : float
+
+    sigma : float
 
     """
 
@@ -505,7 +622,7 @@ def selection_interval(support_directions,
          sign of $Az-b$.
 
     UMAU : bool
-         Use the UMAU interval, or two-sided pivot.
+         Use the UMAU interval, or twosided pivot.
 
     Returns
     -------
@@ -525,8 +642,115 @@ def selection_interval(support_directions,
     truncated = truncated_gaussian([(lower_bound, upper_bound)], sigma=sigma)
     if UMAU:
         _selection_interval = truncated.UMAU_interval(V, alpha)
-
     else:
-        _selection_interval = truncated.naive_interval(V, alpha)
+        _selection_interval = truncated.equal_tailed_interval(V, alpha)
     
     return _selection_interval
+
+def gibbs_test(affine_con, Y, direction_of_interest,
+               how_often=-1,
+               ndraw=5000,
+               burnin=2000,
+               white=False,
+               alternative='twosided',
+               UMPU=True,
+               sigma_known=False,
+               alpha=0.05,
+               use_constraint_directions=False):
+    """
+    A Monte Carlo significance test for
+    a given function of `con.mean`.
+
+    Parameters
+    ----------
+
+    affine_con : `selection.affine.constraints`_
+
+    Y : np.float
+        Point satisfying the constraint.
+
+    direction_of_interest: np.float
+        Which linear function of `con.mean` is of interest?
+        (a.k.a. $\eta$ in many of related papers)
+
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
+
+    ndraw : int (optional)
+        Defaults to 1000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    white : bool (optional)
+        Is con.covariance equal to identity?
+
+    alternative : str
+        One of ['greater', 'less', 'twosided']
+
+    UMPU : bool
+        Perform the UMPU test?
+
+    sigma_known : bool
+        Is $\sigma$ assumed known?
+
+    alpha : 
+        Level for UMPU test.
+
+    use_constraint_directions : bool (optional)
+        Use the directions formed by the constraints as in
+        the Gibbs scheme?
+
+    Returns
+    -------
+
+    pvalue : float
+        P-value (using importance weights) for specified hypothesis test.
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
+    weights : np.float(ndraw)
+        Importance weights for the sample.
+    """
+
+    eta = direction_of_interest # shorthand
+
+    if alternative not in ['greater', 'less', 'twosided']:
+        raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
+
+    if not sigma_known:
+        Z, W = sample_from_sphere(affine_con,
+                                  Y - affine_con.translate,
+                                  eta,
+                                  how_often=how_often,
+                                  ndraw=ndraw,
+                                  burnin=burnin,
+                                  white=white)
+    else:
+        Z = sample_from_constraints(affine_con,
+                                    Y - affine_con.translate,
+                                    eta,
+                                    how_often=how_often,
+                                    ndraw=ndraw,
+                                    burnin=burnin,
+                                    white=white,
+                                    use_constraint_directions=\
+                                        use_constraint_directions)
+        W = np.ones(Z.shape[0], np.float)
+
+    null_statistics = np.dot(Z, eta)
+    observed = (eta*Y).sum()
+    if alternative == 'greater':
+        pvalue = (W*(null_statistics >= observed)).sum() / W.sum()
+    elif alternative == 'less':
+        pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
+    elif not UMPU:
+        pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
+        pvalue = 2 * min(pvalue, 1 - pvalue)
+    else:
+        dfam = discrete_family(null_statistics, W)
+        decision = dfam.two_sided_test(0, observed, alpha=alpha)
+        return decision, Z, W
+    return pvalue, Z, W
