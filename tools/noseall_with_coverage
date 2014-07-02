@@ -2,9 +2,6 @@
 
 import os
 
-codedir = os.path.abspath((os.path.join(os.path.abspath(os.path.dirname(__file__)), '..', 'code')))
-print codedir
 os.system("""
-cd %s; 
 nosetests --with-coverage --cover-package=selection .
-""" % codedir)
+""")

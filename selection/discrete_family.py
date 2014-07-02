@@ -1,4 +1,11 @@
-import math
+"""
+
+This module contains a class for discrete 
+1-dimensional exponential families. The main
+uses for this class are exact (post-selection)
+hypothesis tests and confidence intervals.
+
+"""
 import numpy as np
 import warnings
 
@@ -61,6 +68,13 @@ class discrete_family(object):
 
             \Lambda(\theta) = \log \left(\sum_j w_j e^{\theta X_j} \right).
 
+        Parameters
+        ----------
+
+        sufficient_stat : `np.float((n))`
+
+        weights : `np.float(n)`
+
         Notes
         -----
 
@@ -71,26 +85,26 @@ class discrete_family(object):
         self._w = xw[:,1]
         self._w /= self._w.sum() # make sure they are a pmf
         self.n = len(xw)
-        self._old_theta = np.nan
+        self._theta = np.nan
 
     @property
     def theta(self):
         """
         The natural parameter of the family.
         """
-        return self._old_theta
+        return self._theta
 
     @theta.setter
     def theta(self, _theta):
-        if _theta != self._old_theta:
+        if _theta != self._theta:
             _thetaX = _theta * self.sufficient_stat
-            _largest = _thetaX.max() + 4 # try to avoid overflow, 4 seems arbitrary
+            _largest = _thetaX.max() + 4 # try to avoid over/under flow, 4 seems arbitrary
             _exp_thetaX = np.exp(_thetaX - _largest)
             _prod = _exp_thetaX * self.weights
             self._partition = np.sum(_prod)
             self._pdf = _prod / self._partition
             self._partition *= np.exp(_largest)
-        self._old_theta = _theta
+        self._theta = _theta
 
     @property
     def partition(self):
@@ -259,7 +273,7 @@ class discrete_family(object):
         
     def Cov(self, theta, func1, func2):
         r"""
-        Variance of `func1` and `func2` under $P_{\theta}$
+        Covariance of `func1` and `func2` under $P_{\theta}$
 
         Parameters
         ----------
@@ -307,7 +321,7 @@ class discrete_family(object):
              Boundary and randomization weight for right endpoint.
 
         """
-        if theta != self._old_theta:
+        if theta != self._theta:
             CL = np.max([x for x in self.sufficient_stat if self._critCovFromLeft(theta, (x, 0), alpha) >= 0])
             gammaL = find_root(lambda x: self._critCovFromLeft(theta, (CL, x), alpha), 0., 0., 1., tol)
             CR, gammaR = self._rightCutFromLeft(theta, (CL, gammaL), alpha)
