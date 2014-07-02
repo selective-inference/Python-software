@@ -45,6 +45,19 @@ class constraints(object):
     to the *reference measure* that is being truncated. It is not the
     mean of the truncated Gaussian.
 
+    >>> import numpy as np, selection.affine as affine
+    >>> positive = affine.constraints(-np.identity(2), np.zeros(2))
+    >>> Y = np.array([3,4.4])
+    >>> eta = np.array([1,1])
+    >>> positive.interval(eta, Y)
+    array([  4.6212814 ,  10.17180724])
+    >>> positive.pivot(eta, Y)
+    No
+    >>> positive.bounds(eta, Y)
+    (1.3999999999999988, 7.4000000000000004, inf, 1.4142135623730951)
+    >>> 
+
+
     """
 
     def __init__(self, 
