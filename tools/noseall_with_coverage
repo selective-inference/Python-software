@@ -4,4 +4,4 @@ import os
 
 os.system("""
 nosetests --with-coverage --cover-package=selection .
-""" % codedir)
+""")
