@@ -225,34 +225,15 @@ class lasso(object):
                 self.form_constraints()
             self._intervals_unadjusted = []
             XEinv = self._XEinv
+            SigmaE = self.sigma**2 * np.dot(XEinv, XEinv.T)
             for i in range(self.active.shape[0]):
                 eta = XEinv[i]
                 center = (eta*self.y).sum()
-                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(self._SigmaE[i,i])
+                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(SigmaE[i,i])
                 _interval = [center-width, center+width]
                 self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals_unadjusted
-
-    @property
-    def nominal_pvalues(self):
-        """
-        P-values for OLS parameters of active variables
-        that have not been adjusted for selection.
-        """
-        if not hasattr(self, "_pvalues_unadjusted"):
-            if not hasattr(self, "_constraints"):
-                self.form_constraints()
-            self._values_unadjusted = []
-            XEinv = self._XEinv
-            for i in range(self.active.shape[0]):
-                eta = XEinv[i]
-                Zscore = (eta*self.y).sum() / np.sqrt(self._SigmaE[i,i])
-                _pval = ndist.cdf(Zscore)
-                _pval = 2 * min(_pval, 1-_pval)
-                self._pvalues_unadjusted.append((self.active[i], _pval))
-        return self._pvalues_unadjusted
-
 
 def estimate_sigma(y, X, frac=0.1, 
                    lower=0.5,
