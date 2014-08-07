@@ -19,4 +19,5 @@
 */*.vrb
 */*.pyc
 */*/*.pyc
+*.pyc
 build

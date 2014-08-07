@@ -46,7 +46,7 @@ def norm_q(prob):
     quantile : float
 
     """
-    return np.array(mp.erfinv(2*q-1)*mp.sqrt(2))
+    return np.array(mp.erfinv(2*prob-1)*mp.sqrt(2))
 
 
 def norm_pdf(observed):
@@ -185,16 +185,16 @@ def chi_pvalue(observed, lower_bound, upper_bound, sd, df, method='MC', nsim=100
     L, T, U = lower_bound, observed, upper_bound # shorthand
 
     if method == 'cdf':
-        pval = ((chi.cdf(U / sd, k) - chi.cdf(T / sd, k)) / 
-                (chi.cdf(U / sd, k) - chi.cdf(L / sd, k)))
+        pval = ((chi.cdf(U / sd, df) - chi.cdf(T / sd, df)) / 
+                (chi.cdf(U / sd, df) - chi.cdf(L / sd, df)))
     elif method == 'sf':
-        pval = ((chi.sf(U / sd, k) - chi.sf(T / sd, k)) / 
-                (chi.sf(U / sd, k) - chi.sf(L / sd, k)))
+        pval = ((chi.sf(U / sd, df) - chi.sf(T / sd, df)) / 
+                (chi.sf(U / sd, df) - chi.sf(L / sd, df)))
     elif method == 'MC':
-        if k == 1:
+        if df == 1:
             H = []
         else:
-            H = [0]*(k-1)
+            H = [0]*(df-1)
         pval = general_pvalue(T / sd, L / sd, U / sd, H, nsim=nsim)
     else:
         raise ValueError('method should be one of ["cdf", "sf", "MC"]')
@@ -251,8 +251,8 @@ def gauss_poly(lower_bound, upper_bound, curvature, nsim=100):
     proportion = keep.sum() * 1. / nsim
     Z = Z[keep]
     if H != []:
-        HT = np.clip(H + T, 0, np.inf)
-        exponent = np.log(np.add.outer(Z, HT)).sum(1) - T*Z - T**2/2.
+        HT = H + T 
+        exponent = np.log(np.fabs(np.add.outer(Z, HT))).sum(1) - T*Z - T**2/2.
     else:
         exponent = - T*Z - T**2/2.
     C = exponent.max()

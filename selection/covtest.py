@@ -141,7 +141,6 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     sign : int
         Sign of $X^Ty$ for variable achieving $\lambda_1$.
 
-
     """
 
     cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,
@@ -155,98 +154,3 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
 
     return cone, pvalue, idx, sign
 
-def forward_step(X, Y, sigma=None,
-                 nstep=5,
-                 exact=False,
-                 burnin=1000,
-                 ndraw=5000):
-    """
-    A simple implementation of forward stepwise
-    that uses the `reduced_covtest` iteratively
-    after adjusting fully for the selected variable.
-
-    This implementation is not efficient, in
-    that it computes more SVDs than it really has to.
-
-    Parameters
-    ----------
-
-    X : np.float((n,p))
-
-    Y : np.float(n)
-
-    sigma : float (optional) 
-        Noise level (not needed for reduced).
-
-    nstep : int
-        How many steps of forward stepwise?
-
-    exact : bool
-        Which version of covtest should we use?
-
-    burnin : int
-        How many iterations until we start
-        recording samples?
-
-    ndraw : int
-        How many samples should we return?
-
-    tests : ['reduced_known', 'covtest', 'reduced_unknown']
-        Which test to use? A subset of the above sequence.
-
-    """
-
-    n, p = X.shape
-    FS = forward_stepwise(X, Y)
-
-    covtest_P = []
-    reduced_Pknown = []
-    reduced_Punknown = []
-
-    for i in range(nstep):
-        FS.next()
-
-        # covtest
-        if FS.P[i] is not None:
-            RX = X - FS.P[i](X)
-            RY = Y - FS.P[i](Y)
-            covariance = np.identity(n) - np.dot(FS.P[i].U, FS.P[i].U.T)
-        else:
-            RX = X
-            RY = Y
-            covariance = None
-        RX -= RX.mean(0)[None,:]
-        RX /= RX.std(0)[None,:]
-
-        con, pval, idx, sign = covtest(RX, RY, sigma=sigma,
-                                       covariance=covariance,
-                                       exact=exact)
-        covtest_P.append(pval)
-
-        # reduced
-
-        eta = RX[:,idx] * sign
-        Acon = constraints(FS.A, np.zeros(FS.A.shape[0]))
-        if i > 0:
-            U = FS.P[-2].U.T
-            Uy = np.dot(U, Y)
-            Acon = Acon.conditional(U, Uy)
-        else:
-            Acon = Acon
-        Acon.covariance *= sigma**2
-
-        reduced_pval, _, _ = gibbs_test(Acon, Y, eta,
-                                        ndraw=ndraw,
-                                        burnin=burnin,
-                                        sigma_known=sigma is not None,
-                                        alternative='greater')
-        reduced_Pknown.append(reduced_pval)
-
-        reduced_pval, _, _ = gibbs_test(Acon, Y, eta,
-                                        ndraw=ndraw,
-                                        burnin=burnin,
-                                        sigma_known=False,
-                                        alternative='greater')
-        reduced_Punknown.append(reduced_pval)
-
-    return covtest_P, reduced_Pknown, reduced_Punknown

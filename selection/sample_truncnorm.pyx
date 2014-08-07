@@ -1,7 +1,7 @@
 import numpy as np, cython
 cimport numpy as np
 
-from libc.math cimport pow, sqrt # sin, cos, acos, asin, sqrt, fabs
+from libc.math cimport pow, sqrt, log, exp # sin, cos, acos, asin, sqrt, fabs
 from scipy.special import ndtr, ndtri
 
 cdef double PI = np.pi
@@ -26,6 +26,7 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
                            DTYPE_float_t sigma=1.,
                            DTYPE_int_t burnin=500,
                            DTYPE_int_t ndraw=1000,
+			   int use_A=1
                            ):
     """
     Sample from a truncated normal with covariance
@@ -91,9 +92,15 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     # directions not parallel to coordinate axes
 
+    if use_A:
+        _dirs = [A, 
+                 np.random.standard_normal((int(nvar/5),nvar))]
+    else:
+        _dirs = [np.random.standard_normal((nvar,nvar))]
+
     cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
-        np.vstack([A, 
-                   np.random.standard_normal((int(nvar/5),nvar))])
+        np.vstack(_dirs)
+        
     directions[-1][:] = bias_direction
 
     directions /= np.sqrt((directions**2).sum(1))[:,None]
@@ -181,7 +188,20 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
         lower_bound = lower_bound / sigma
         upper_bound = upper_bound / sigma
 
-        if lower_bound < 0:
+        if lower_bound > upper_bound:
+            raise ValueError('bound violation')
+
+        if upper_bound < -10: # use Exp approximation
+            unif = usample[iter_count] * (1 - exp((
+                        lower_bound - upper_bound) * upper_bound))
+            tnorm = upper_bound - log(1 - unif) / upper_bound 
+        elif lower_bound > 10:
+            unif = usample[iter_count] * (1 - exp(-(
+                        upper_bound - lower_bound) * lower_bound))
+            tnorm = -log(1 - unif) / lower_bound + lower_bound
+            #if tnorm < lower_bound:
+            #    tnorm = lower_bound + 0.001 * (upper_bound - lower_bound)
+        elif lower_bound < 0:
             cdfL = ndtr(lower_bound)
             cdfU = ndtr(upper_bound)
             unif = usample[iter_count] * (cdfU - cdfL) + cdfL
