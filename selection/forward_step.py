@@ -141,33 +141,6 @@ class forward_stepwise(object):
         """
         return np.dot(self.A, self.Y).max() <= 0
 
-    def bounds(self, eta):
-        """
-        Find implied upper and lower limits for a given
-        direction of interest.
-
-        Parameters
-        ==========
-
-        eta : `np.array(n)`
-
-        Returns
-        =======
-
-        Mplus: float
-             Lower bound for $\eta^TY$ for cone determined by `self`.
-
-        V : float
-             The center $\eta^TY$.
-
-        Mminus : float
-             Lower bound for $\eta^TY$ for cone determined by `self`.
-
-        sigma : float
-             $\ell_2$ norm of `eta` (assuming `self.covariance` is $I$)
-        """
-
-        return self.constraints.pivots(eta, self.Y)
 
     @property
     def constraints(self):
@@ -180,8 +153,17 @@ class forward_stepwise(object):
         pivots = []
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         for i in range(LSfunc.shape[0]):
-            pivots.append(self.bounds(LSfunc[i]))
+            pivots.append((self.variables[i],
+                           self.constraints.pivot(LSfunc[i], self.Y)))
         return pivots
+
+    def model_intervals(self, which_step):
+        intervals = []
+        LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
+        for i in range(LSfunc.shape[0]):
+            intervals.append((self.variables[i],) + \
+                tuple(self.constraints.interval(LSfunc[i], self.Y)))
+        return intervals
 
     def model_quadratic(self, which_step):
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
