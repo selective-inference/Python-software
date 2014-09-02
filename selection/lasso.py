@@ -110,35 +110,21 @@ class lasso(object):
         n, p = self.X.shape
         lam = self.lagrange * n
 
-        self.active = (beta != 0)
-        self.z_E = np.sign(beta[self.active])
+        active = (beta != 0)
+        print active, beta
+        self.z_E = np.sign(beta[active])
 
         # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
-        X_E = self.X[:,self.active]
-        X_notE = self.X[:,~self.active]
+        X_E = self.X[:,active]
+        X_notE = self.X[:,~active]
         self._XEinv = np.linalg.pinv(X_E)
         P_E = np.dot(X_E, self._XEinv)
-        self.R = np.dot(X_notE.T, np.eye(n)-P_E)
+        R = np.dot(X_notE.T, np.eye(n)-P_E)
+        self.active = np.nonzero(active)[0]
 
-        # inactive constraints
-        A0 = np.vstack((self.R, -self.R)) / lam
-        b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), self.z_E))
-        b0 = np.concatenate((1.-b_tmp, 1.+b_tmp))
-        self._inactive_constraints = constraints(A0, b0)
-        self._inactive_constraints.covariance *= self.sigma**2
-
-        # active constraints
-        C = np.linalg.inv(np.dot(X_E.T, X_E))
-        A1 = -np.dot(np.diag(self.z_E), np.dot(C, X_E.T))
-        b1 = -lam*np.dot(np.diag(self.z_E), np.dot(C, self.z_E))
-        
-        self._active_constraints = constraints(A1, b1)
-        self._active_constraints.covariance *= self.sigma**2
-
-        self._constraints = stack(self._active_constraints,
-                                  self._inactive_constraints)
-        self._constraints.covariance *= self.sigma**2
-        self.active = np.nonzero(self.active)[0]
+        (self._active_constraints, 
+         self._inactive_constraints, 
+         self._constraints) = _constraint_from_data(X_E, X_notE, self.z_E, lam, self.sigma, R)
 
     @property
     def soln(self):
@@ -231,3 +217,24 @@ class lasso(object):
                                         _interval))
         return self._intervals_unadjusted
 
+def _constraint_from_data(X_E, X_notE, z_E, lam, sigma, R):
+
+    # inactive constraints
+    A0 = np.vstack((R, -R)) / lam
+    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), z_E))
+    b0 = np.concatenate((1.-b_tmp, 1.+b_tmp))
+    _inactive_constraints = constraints(A0, b0)
+    _inactive_constraints.covariance *= sigma**2
+
+    # active constraints
+    C = np.linalg.inv(np.dot(X_E.T, X_E))
+    A1 = -np.dot(np.diag(z_E), np.dot(C, X_E.T))
+    b1 = -lam*np.dot(np.diag(z_E), np.dot(C, z_E))
+
+    _active_constraints = constraints(A1, b1)
+    _active_constraints.covariance *= sigma**2
+
+    _constraints = stack(_active_constraints,
+                         _inactive_constraints)
+    _constraints.covariance *= sigma**2
+    return _active_constraints, _inactive_constraints, _constraints
