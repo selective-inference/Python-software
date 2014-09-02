@@ -42,7 +42,7 @@ def crit_func(test_statistic, left_cut, right_cut):
     """
     CL, gammaL = left_cut
     CR, gammaR = right_cut
-    value = (test_statistic < CL) + (test_statistic > CR) 
+    value = ((test_statistic < CL) + (test_statistic > CR)) * 1.
     if gammaL != 0:
         value += gammaL * (test_statistic == CL)
     if gammaR != 0:
@@ -98,7 +98,7 @@ class discrete_family(object):
     def theta(self, _theta):
         if _theta != self._theta:
             _thetaX = _theta * self.sufficient_stat
-            _largest = _thetaX.max() + 4 # try to avoid over/under flow, 4 seems arbitrary
+            _largest = _thetaX.max() - 5 # try to avoid over/under flow, 5 seems arbitrary
             _exp_thetaX = np.exp(_thetaX - _largest)
             _prod = _exp_thetaX * self.weights
             self._partition = np.sum(_prod)
