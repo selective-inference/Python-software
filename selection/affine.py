@@ -12,11 +12,16 @@ and `post selection LASSO`_.
 """
 
 import numpy as np
+
+import pyximport
+pyximport.install()
+
+
 from .pvalue import truncnorm_cdf, norm_interval
 from .truncated import truncated_gaussian
-from .sample_truncnorm import (sample_truncnorm_white, 
-                               sample_truncnorm_white_ball,
-                               sample_truncnorm_white_sphere)
+from selection.sample_truncnorm import (sample_truncnorm_white, 
+                                        sample_truncnorm_white_ball,
+                                        sample_truncnorm_white_sphere)
 from .discrete_family import discrete_family
                         
 from warnings import warn
@@ -79,6 +84,7 @@ class constraints(object):
 
         self.linear_part, self.offset = \
             np.asarray(linear_part), np.asarray(offset)
+        
         if self.linear_part.ndim == 2:
             self.dim = self.linear_part.shape[1]
         else:
@@ -94,12 +100,27 @@ class constraints(object):
         self.translate = translate
 
     def _repr_latex_(self):
+        """
+        >>> A = np.array([[ 0.32,  0.27,  0.19],
+       [ 0.59,  0.98,  0.71],
+       [ 0.34,  0.15,  0.17 ,  0.25], 
+        >>> B = np.array([ 0.51,  0.74,  0.72 ,  0.82])
+        >>> C = constraints(A, B)
+        >>> C._repr_latex
+        "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
+        """
         return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
 
     def __call__(self, Y, tol=1.e-3):
         r"""
         Check whether Y satisfies the linear
         inequality constraints.
+        >>> A = np.array([[1., -1.], [1., -1.]])
+        >>> B = np.array([1., 1.])
+        >>> con = constraints(A, B)
+        >>> Y = np.array([-1., 1.])
+        >>> con(Y)
+        True
         """
         V1 = np.dot(self.linear_part, Y) - self.offset
         return np.all(V1 < tol * np.fabs(V1).max())
@@ -129,7 +150,11 @@ class constraints(object):
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
             delta_offset = np.dot(M1, np.dot(M2i, d))
-            delta_mean = np.dot(M1, np.dot(M2i, np.dot(C, self.mean)))
+            delta_mean = \
+            np.dot(M1,
+                   np.dot(M2i,
+                          np.dot(C,
+                                 self.mean)))
         else:
             M2i = 1. / M2
             delta_cov = np.multiply.outer(M1, M1) / M2i
@@ -246,7 +271,7 @@ class constraints(object):
         the slice of the inequality constraints in a 
         given direction $\eta$ and test whether 
         $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.
-
+        
         Parameters
         ----------
 
@@ -275,6 +300,7 @@ class constraints(object):
 
         
         """
+        ## THE DOCUMENTATION IS NOT GOOD ! HAS TO BE CHANGED !
 
         return selection_interval( \
             self.linear_part,
@@ -305,7 +331,7 @@ class constraints(object):
         # original matrix is np.dot(U, U.T)
 
         new_A = np.dot(self.linear_part, sqrt_cov)
-        new_b = self.offset - np.dot(self.linear_part, self.mean)
+        new_b = self.offset - np.dot(self.linear_part, self.mean)               
 
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
@@ -754,3 +780,4 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         decision = dfam.two_sided_test(0, observed, alpha=alpha)
         return decision, Z, W
     return pvalue, Z, W
+

@@ -1,26 +1,22 @@
 import numpy as np
-import quadratic_constraints
-quadratic_constraints = reload(quadratic_constraints)
-from quadratic_constraints import quad_constraints
+import random
 
-import truncated_chi
-truncated_chi = reload(truncated_chi)
+from quadratic_constraints import quad_constraints, quad_constraints_vecnorm
+from constraint import constraint, cons_op, noConstraint
 from truncated_chi import truncated_chi
-
-import intervals
-intervals = reload(intervals)
 from intervals import intervals
-
-from time import time
-
 from projection import projection
 
+import warnings
 
-DOCTEST = False
+from tools import timethis
 
-class two_means(object):
+#from time import time
+
+
+class kmeans(object):
     
-    def __init__(self, X):
+    def __init__(self, X, k):
         r"""
         
         Create a new object for computing the 2-means algorithm
@@ -32,43 +28,54 @@ class two_means(object):
         The n lines of X are the vector under study
 
         """
-        self.X = X
+        self._X = X
+        self._K = k
 
-    def _init_algorithm(self):
+    def _init_algorithm(self, init_points):
         r"""
-        Run the first step of the 2-means algorithm
+        Run the first step of the k-means algorithm
         """
-        n, p = self.X.shape
-        i, j = random_couple(n)
-        X = self.X
+        X = self._X
+        n, p = X.shape
+        K = self._K
+            
+        Centroids = np.array([X[k] for k in init_points])
+        
+        Dist = np.array([[np.linalg.norm(X[i] - Centroids[k]) for k in range(K)]
+                         for i in range(n)])
+        #print "Dist init : ", Dist
+        S = np.argmin(Dist, axis=1)
+        #print S
 
-        S = (np.linalg.norm(X - X[i], axis = 1) < 
-             np.linalg.norm(X - X[j], axis = 1))
-        self._origin = (i, j)
-        self._hist = S
-        self._S = S
+        return S
         
         
 
         
-    def iterate(self):
+    def _iterate(self, S):
         r"""
         One iteration of the algorithm, and add the new quadratic               
         constraints
         """
-        n, p = self.X.shape
-        S = self._S
-        X = self.X
-        X_plus = X[S].mean(axis = 0)
-        X_minus = X[~S].mean(axis = 0)
+        X = self._X
+        n, p = X.shape
+        K = self._K
 
-        S = (np.linalg.norm(X - X_plus, axis = 1) <
-             np.linalg.norm(X - X_minus, axis = 1))
-        
-        self._hist = np.vstack((self._hist, S))
-        self._S = S
+        try:
+            Centroids = np.array([X[ S == k ].mean(axis=0) for k in range(K) ])
+        except Warning:
+            raise ValueError("Centroid disapeared")
+        Dist = np.array([[np.linalg.norm(X[i] - Centroids[k]) for k in range(K)]
+                         for i in range(n)])
 
-    def algorithm(self, cond_stop):
+
+        S = np.argmin(Dist, axis = 1)
+
+        #plot(X, S, K)
+        return S
+
+    @timethis
+    def algorithm(self, cond_stop=None, init_points_list=None):
         r"""
         Run the 2-means algorithm
 
@@ -83,27 +90,70 @@ class two_means(object):
         Array of bool, splitting the data points into two clusters
         """
 
-        X = self.X
+        X = self._X
         n, p = X.shape
+        K = self._K
 
-        self._W = X.var(axis = 0).sum()
-        self._init_algorithm()
+        if init_points_list == None:
+            init_points_list = [random_tuple(K, n)]
+        self._init_points_array = np.array(init_points_list)
 
-        n_step = 0
-        while n_step == 0 or cond_stop(n_step, self._W, prev_W):
-            prev_W = self._W
-            
-            self.iterate()
-            S = self._S
-            N_1 = S.sum()
-            self._W = N_1 * X[S].var(axis = 0).sum() + \
-                      (n - N_1) * X[~S].var(axis = 0).sum()
+        hist_array = []
+        w_array = []
+        #plot_X(X)
 
-            n_step += 1
+        for init_points in init_points_list:
+            S = self._init_algorithm(init_points)
+            hist = S
+
+            n_step = 0
+            while n_step < 2 or not np.all(hist[-1] == hist[-2]):
+                #print n_step
+                S = self._iterate(S)
+                hist = np.vstack((hist, S))
+
+                n_step += 1
+
+            hist_array.append(hist)
+            w = self.objective(S)
+            w_array.append(w)
+        #print "w array : ", w_array
+        self._hist = hist_array
+
+        i_min = np.argmin(w_array)
+        S_min = self._hist[i_min][-1]
+
+        #plot(X, S_min, K, limit=0)
+        #plot(X, S_min, K, limit=50)
+
+        self._S = S_min
+        return S_min
+
+
+
+
+    def objective(self, S):
+        X = self._X
+        K = self._K
+
+        # N1, N2 = float(S.sum()), float((~S).sum())
+
+        # X_plus = X[S].mean(axis = 0)
+        # X_minus = X[~S].mean(axis = 0)
+
+        # w = N1 * np.linalg.norm(X[S] - X_plus) \
+        #     + N2 * np.linalg.norm(X[~S] - X_minus)
+
+        Centroids = np.array([X[ S == k ].mean(axis=0) for k in range(K) ])
+
+        w = sum( (S == k).sum() * np.linalg.norm( X[S == k] - Centroids[k] ) \
+                 for k in range(K))
+
+        return w
         
 
-
-    def constraints_path(self):
+    @timethis
+    def _constraints_path(self, path, init_points):
         r"""
         Return the constraints described by the path of the algorithm
 
@@ -115,180 +165,296 @@ class two_means(object):
               equality for the eta
 
         """
-        t = time()
-        n, p = self.X.shape
+        n, p = self._X.shape
+        X = self._X
+        K = self._K
+        X_asvector = X.reshape((n*p,1))
 
         cons = []
         
-        hist = self._hist[1:]
-        neg_hist = ~self._hist[1:]
-        n_step = len(self._hist)
+        n_step = len(path)
 
-        ## The inequalities given by the memberships in the 
-        ## hyperplan after the first step
-        for i in range(1, len(self._hist)):
-            S = self._hist[i]
-            last_S = self._hist[i-1]
+        version = 1
+
+        alpha_array = []
+        beta_array  = []
+        if version == 1:
+            ## The inequalities given by the memberships in the 
+            ## hyperplan after the first step
+            for i in range(1, n_step):
+                S = path[i]
+                last_S = path[i-1]
+            
+                last_N = np.array([(last_S == k).sum() for k in range(K)])
+
+                alpha = np.identity(n)
+                for k in range(K):
+                    alpha -= 1./last_N[k] * np.outer((S==k), (last_S == k))
+                alpha = np.vstack([alpha for k in range(K-1)])
+
+                beta_array = []
+                for l in range(1, K):
+                    beta = np.identity(n)
+                    for k in range(K):
+                        k2 = (k + l)%K 
+                        beta -= 1./last_N[k2] * np.outer((S == k), (last_S == k2))
+                    beta_array.append(beta)
+                beta = np.vstack(beta_array)
 
 
-            last_N1 = last_S.sum()
-            last_N2 = n - last_N1
+                Q_array = np.einsum('ij, ik -> ijk', alpha, alpha) - \
+                          np.einsum('ij, ik -> ijk', beta , beta )
 
-            alpha = np.identity(n) \
-                    - 1./last_N1 * np.outer( S,  last_S) \ 
-                    - 1./last_N2 * np.outer(~S, ~last_S) 
+                Q_tensor = np.einsum('abc, de -> abdce', Q_array, np.identity(p))
+                Q_tensor = Q_tensor.reshape((n*(K-1), n*p, n*p))
+            
+                cons.append( Q_tensor )
 
-            beta = np.identity(n) \
-                   - 1./last_N2 * np.outer( S, ~last_S) \
-                   - 1./last_N1 * np.outer(~S,  last_S)
+
+        
+            arr_cons = np.vstack(cons)
+
+            ## The inequalities given by the first  step
+            S = path[0]
+            E = np.zeros((K, n))
+            #print init_points
+            for k in range(K):
+                E[k, init_points[k]] = 1.
+        
+            alpha = np.identity(n)
+            for k in range(K):
+                alpha -= np.outer( (S == k), E[k] )
+            alpha = np.vstack([alpha for k in range(K-1)])
+
+            beta_array = []
+            for l in range(1, K):
+                beta = np.identity(n)
+                for k in range(K):
+                    k2 = (k+l)%K
+                    beta -= np.outer( (S == k), E[k2])
+                beta_array.append(beta)
+            beta = np.vstack(beta_array)
 
             Q_array = np.einsum('ij, ik -> ijk', alpha, alpha) - \
                       np.einsum('ij, ik -> ijk', beta , beta )
 
             Q_tensor = np.einsum('abc, de -> abdce', Q_array, np.identity(p))
-            Q_tensor = Q_tensor.reshape((n, n*p, n*p))
+            Q_tensor = Q_tensor.reshape((n*(K-1), n*p, n*p))
+
+            arr_cons = np.vstack((arr_cons, Q_tensor))
+
+            ## The linear inequality given by eta is added when
+            ## we choose the direction
+               
             
-            cons.append( Q_tensor )
-        
-        arr_cons = np.vstack(cons)
+            ## End of making constraints
+            constraints = quad_constraints(arr_cons)
 
-        ## The inequalities given by the first  step
-        S = self._hist[0]
-        i, j = self._origin
-        Ei = Ej = np.zeros(n)
-        Ei[i] = Ei[j] = 1.
-        alpha = np.identity(n) - np.outer( S, Ei) - np.outer(~S, Ej)
-        beta  = np.identity(n) - np.outer(~S, Ei) - np.outer( S, Ej)
+        elif version == 2:
+            for i in range(1, n_step):
 
-        Q_array = np.einsum('ij, ik -> ijk', alpha, alpha) - \
-                  np.einsum('ij, ik -> ijk', beta , beta )
-
-        Q_tensor = np.einsum('abc, de -> abdce', Q_array, np.identity(p))
-        Q_tensor = Q_tensor.reshape((n, n*p, n*p))
-
-        arr_cons = np.vstack((arr_cons, Q_tensor))
-
-        
-
-        ## The inequalities given by the objective function which
-        ## is decreasing 
-        hist = self._hist
-
-        P1 = np.einsum('ij, ik -> ijk',  hist,  hist)
-        N1_hist =  (hist.sum(axis=1).reshape((n_step, 1, 1))).astype(np.float)
-        P1 = P1/N1_hist
-
-        P2 = np.einsum('ij, ik -> ijk', ~hist, ~hist)
-        N2_hist = ((~hist).sum(axis=1).reshape((n_step, 1, 1))).astype(np.float)
-        P2 = P2/N2_hist
-
-        P = np.identity(n) - P1 - P2
-
-        Q = np.einsum('akb, akc -> abc', P, P)
-
-        Q_array = Q[1:] - Q[:-1]
-
-        Q_tensor = np.einsum('abc, de -> abdce', Q_array, np.identity(p))
-        Q_tensor = Q_tensor.reshape((n_step - 1, n*p, n*p))
-
-        arr_cons = np.vstack((arr_cons, Q_tensor))
-
-        
-        ## The linear inequality given by eta
-        S = self._S.reshape((1, n))
-
-        u = S/float(S.sum()) - (~S)/float(~S.sum())
-
-        eta = np.dot(u.T, np.dot(u, self.X))
-        eta = eta.reshape(n*p,)
-        eta = eta/np.linalg.norm(eta)
-
-        cons_lin = quad_constraints([np.zeros((n*p, n*p))], np.array([-eta]))
-        
+                S = np.array([(path[i]==k) for k in range(K)])
+                last_S = np.array([(path[i-1]==k) for k in range(K)])
             
-        ## End of making constraints
-        constraints = quad_constraints(arr_cons)
-        constraints = quadratic_constraints.stack((constraints, cons_lin))
+                last_N = last_S.sum(axis=1).reshape((K, 1))
+                last_S = 1./last_N * last_S
+            
+                last_S_rolled = np.array([np.roll(last_S, k, axis=0) \
+                                          for k in range(K)])
+
+                M = np.identity(n) - np.einsum('ab, cad -> cbd', S, last_S_rolled)
+            
+                alpha = np.vstack([M[0] for k in range(K-1)])
+                beta =  np.vstack(M[1:])
+            
+                alpha_array.append(alpha)
+                beta_array.append(beta)
+
+        
+            ## The inequalities given by the first  step
+
+
+            S = np.array([(path[0]==k) for k in range(K)])
+            last_S = np.zeros((K, n))
+            for k in range(K):
+                last_S[k, init_points[k]] = 1.
+            
+            last_S_rolled = np.array([np.roll(last_S, k, axis=0) \
+                                      for k in range(K)])
+
+            M = np.identity(n) - np.einsum('ab, cad -> cbd', S, last_S_rolled)
+            
+            alpha = np.vstack([M[0] for k in range(K-1)])
+            beta =  np.vstack(M[1:])
+            
+            alpha_array.append(alpha)
+            beta_array.append(beta)
+            
+            alpha_cons = np.vstack(alpha_array)
+            beta_cons = np.vstack(beta_array)
+
+            ## The linear inequality given by eta is added when
+            ## we choose the direction
+               
+            
+            ## End of making constraints            
+            constraints = quad_constraints_vecnorm(alpha_cons, beta_cons, (n, p))
         return constraints
 
-    def bounds_test(self):
-        """
-        Gives the intervals selectionned
-
-        """
-        n, p = self.X.shape
-        X_asvector = self.X.reshape((n*p, 1))
-        S = self._S.reshape((1, n))
-
-        u = S/float(S.sum()) - (~S)/float(~S.sum())
-
-        eta = np.dot(u.T, np.dot(u, self.X))
-        eta = eta.reshape(n*p, 1)
-        eta = eta/np.linalg.norm(eta)
-
-        cons = self.constraints_path()
-
-
-        I = cons.bounds(eta, X_asvector)
-       
-        I.offset(float(np.dot(eta.T, X_asvector)))
-        return I
-
-        
-    def p_val(self):
-        n, p = self.X.shape
-        X_asvector = self.X.reshape((n*p,1))
-        S = self._S.reshape((1, n))
-
-        u = S/float(S.sum()) - (~S)/float((~S).sum())
-
-        eta = np.dot(u.T, np.dot(u, self.X))
-        eta = eta.reshape(n*p, 1)
-        eta = eta/np.linalg.norm(eta)
-
-        distr = self.test_distribution()
-
-        x = np.dot(eta.T, X_asvector)
-        p = distr.cdf(x)
-
-        #print x, p
-        return p
-        
-
-    def test_distribution(self, sigma=1):
-        n, p = self.X.shape
-        X_asvector = self.X.reshape((n*p,))
-        S = self._S
-
-        N_1, N_2 = S.sum(), (~S).sum()
-
-        a_s = 1./np.sqrt(n) * ( np.sqrt(N_2/N_1) * S + np.sqrt(N_1/N_2) * (~S) )
-        #M_s is the X_s.T  of the forward stepwise
-        M_s = tensor_reshape(a_s, np.identity(p))
-        P_s = projection(M_s.T)
+    @timethis
+    def _constraints_minset(self):
+        X = self._X
+        n, p = X.shape
+        K = self._K
+        hist = self._hist
+        S_min = self._S
     
-        theta_s = sigma * np.dot(X_asvector, P_s(X_asvector))
-        theta_s /= np.linalg.norm(np.dot(M_s, X_asvector))**2
 
-        I = self.bounds_test()
+        other_S = [h[-1] for h in hist if not equivalent_set(h[-1], S_min, K)]
+        
+        if len(other_S) == 0:
+            return noConstraint()
 
-        tr_chi = truncated_chi(I.intersection(), p, theta_s)
-        #print I.intersection()
+        Q_array = []
+        alpha = np.array([(S_min==k) for k in range(K)])
+        Q_a = - np.einsum('ij, ik -> jk', alpha, alpha)
 
-        return tr_chi
+        N = np.array([(S_min==k) for k in range(K)]).sum(axis=1)
+        D = np.array([N[S_min[i]] for i in range(n)])
+        Q_diag = np.diag(D)
+        Q_a = Q_diag + Q_a
+        
+        for S in other_S:
+            beta = np.array([(S == k) for k in range(K)])
+            Q_b = np.einsum('ij, ik -> jk', beta, beta)
+
+            N = np.array([(S==k) for k in range(K)]).sum(axis=1)
+            D = np.array([N[S[i]] for i in range(n)])
+            Q_diag = np.diag(D)
+            Q_b = Q_diag + Q_b
+
+            Q_array.append((Q_a - Q_b).reshape((1, n,n)))
+        Q_array = np.vstack(Q_array)
+        
+        Q_tensor = np.einsum('abc, de -> abdce', Q_array, np.identity(p))
+        Q_tensor = Q_tensor.reshape((len(other_S), n*p, n*p))
+
+        cons = quad_constraints(Q_tensor)
+        return cons
+
+    def constraints_algo(self):
+        init_points_array = self._init_points_array
+        hist = self._hist
+        cons_gen = [self._constraints_path(hist[i], init_points_array[i]) 
+                    for i in range(len(init_points_array))]
+        
+        cons = cons_op.intersection(*cons_gen)
+
+        cons_minset = self._constraints_minset()
+
+        cons = cons_op.intersection(cons, cons_minset)
+        return cons
 
 
+    @timethis
+    def p_val(self):
+        X = self._X
+        n, p = X.shape
+        X_asvector = X.reshape((n*p,1))
+        S = self._S
+        K = self._K
 
-def random_couple(n):
+        # S1 = (S == 0).reshape((1, n))
+        # S2 = (S == 1).reshape((1, n))
+
+        # N1, N2 = float(S1.sum()), float(S2.sum())
+
+        cons = self.constraints_algo()
+
+        # M_s = (1./N1 * S1 - 1./N2 * S2).T
+        # M_s = M_s / np.linalg.norm(M_s)
+
+        alpha = np.array([(S==k) for k in range(K)])
+        M_s = np.identity(n) - np.einsum('ij, ik -> jk', alpha, alpha)
+
+        
+        M_s = np.einsum('ab, cd -> acbd', M_s, np.identity(p)).reshape((n*p, n*p))
+
+        p = cons.p_value(M_s, X_asvector, 1.)
+        #print "Voici la p-valeur : ", p
+
+        return p
+
+    def p_val_unknownSigma(self):
+        X = self._X
+        n, p = X.shape
+        X_asvector = X.reshape((n*p,1))
+        S = self._S
+        K = self._K
+
+        cons = self.constraints_algo()
+
+        alpha = np.array([(S==k) for k in range(K)])
+        M_s = np.identity(n) - np.einsum('ij, ik -> jk', alpha, alpha)
+        M_s = np.einsum('ab, cd -> acbd', M_s, np.identity(p)).reshape((n*p, n*p))
+
+        p = cons.p_value_unknownSigma(M_s, X_asvector, n, p)
+        #print "Voici la p-valeur : ", p
+
+        return p
+
+    def p_val_sample(self):
+        X = self._X
+        n, p = X.shape
+        X_asvector = X.reshape((n*p,1))
+        S = self._S
+        K = self._K
+
+        cons = self.constraints_algo()
+
+        # cons0 = cons._cons_list[0]
+        # cons1 = cons._cons_list[1]
+        # q1, l1, o1 = cons0.quad_part, cons0.lin_part, cons0.offset
+        # q2, l2, o2 = cons1.quad_part, cons1.lin_part, cons0.offset
+        # q, l, o = np.vstack((q1, q2)), np.vstack((l1, l2)), np.hstack((o1, o2))
+        # cons = quad_constraints(q, l, o)
+
+        alpha = np.array([(S==k) for k in range(K)])
+        M_s = np.identity(n) - np.einsum('ij, ik -> jk', alpha, alpha)
+
+        M_s = np.einsum('ab, cd -> acbd', M_s, np.identity(p)).reshape((n*p, n*p))
+
+        def value_observed(y):
+            return np.linalg.norm(np.dot(M_s, y))
+        
+        p = cons.gen_p_value(X_asvector, value_observed)
+
+        return p
+
+
+def random_tuple(k, n):
     """
-    Return a random couple of integers (i,j) such as i < n and j < n
-    and i not equal to j, uniformaly
+    Return a random tuple of k integers lower than n, all differents, uniformaly              
     """
-    i = np.random.randint(n)
-    j = np.random.randint(n-1)
-    if j >= i:
-        j += 1
-    return i,j
+    t = random.sample([x for x in range(n)], k)
+    return tuple(t)
+
+
+
+@timethis
+def equivalent_set(S1, S2, K):
+    n = len(S1)
+    perm = np.array([-1 for x in range(K)])
+    i = 0
+    b = True
+    while b and i < n:
+        if perm[S2[i]] == -1:
+            perm[S2[i]] = S1[i]
+        else:
+            b = perm[S2[i]] == S1[i]
+        i += 1
+    return b
+
 
 
 def tensor_reshape(a, b):
@@ -310,10 +476,10 @@ def sample_gaussians(n_points, param):
     param: array of (mean, Sigma)
     """
     k = len(param)
-    n_points_by_cluster = np.random.multinomial(n_points, [1./k]*k)
-    
+    #n_points_by_cluster = np.random.multinomial(n_points, [1./k]*k)
+    n_points_by_cluster = [n_points/2, n_points/2]
     t = [np.random.multivariate_normal(mean, cov, size = n_i) 
-         for ((mean, cov), n_i) in zip(param, n_points_by_cluster)]
+         for ((mean, cov), n_i) in zip(param, n_points_by_cluster)]             
 
     sample = np.vstack(t)
 
@@ -323,54 +489,121 @@ def sample_gaussians(n_points, param):
 def cond_stop(n_step, sigma, last_sig):
     return n_step < 150 and sigma != last_sig
 
-p_array = []
-for i in range(50):
-    if i%10 == 0:
-        print i
-    gauss1 = [np.zeros(5), np.identity(5)]
-    # gauss2 = [np.array([4., 0.]), np.identity(2)]
-    # param =  [gauss1, gauss2]
-    
-    sample, t = sample_gaussians(50, [gauss1])
-    X = sample.copy()
-    t_m = two_means(sample)         
-    
-    t_m.algorithm(cond_stop)
-    
-    p = float(t_m.p_val())
+@timethis
+def f(n, p, k, n_initial_points, dist = 0, sample_bool=False):
+    n_sample = 1000
+    p_array = []
+    direction = np.random.multivariate_normal(np.zeros(p), np.identity(p))
+    direction = direction/np.linalg.norm(direction)
+    print "direction : ", direction
+    gauss1 = [ dist * direction/2, np.identity(p)]
+    gauss2 = [ dist *-direction/2, np.identity(p)]
 
-    p_array.append(p)
+    # gauss1[0][0] = float(dist)/2
+    # gauss2[0][0] = - float(dist)/2
 
-p_array = sorted(p_array)
+    param = [gauss1, gauss2]
+    while len(p_array) < n_sample:
+        if len(p_array) % 50 == 0:
+            print len(p_array)
+        sample, t = sample_gaussians(n, param)
+        t_m = kmeans(sample, k)  
 
-import matplotlib.pyplot as plt
+        # X = t_m._X
+        # n, p = X.shape
+        # X_asvector = X.reshape((n*p,1))
 
-x = np.arange(0, 1, 1./len(p_array));
-plt.plot(x, p_array)
+        init_points_list = [random_tuple(k,n) for x in range(n_initial_points)]
+
+        try:
+            t_m.algorithm(init_points_list=init_points_list)
+        except:
+            print "bug"
+            raise
+        unknown = False
+        if not sample_bool and not unknown:
+            p_value = float(t_m.p_val())
+        elif unknown:
+            p_value = float(t_m.p_val_unknownSigma())
+        else:
+            p_value = float(t_m.p_val_sample())
+        print p_value
+        p_array.append(p_value)
+        
+    return p_array
 
 
 
+# p_array = f(50, 5, 0)           
+# print f(4, 5, 10)
+
+# import matplotlib.pyplot as plt
+
+# x = np.arange(0, 1, 1./len(p_array));
+# plt.plot(x, p_array, 'ro')
 
 
-def plot(X1, X2, S):
+def plot_X(X):
     import matplotlib
     import matplotlib.pyplot as plt
 
-    X = np.vstack((X1, X2))
-    fig, ax = plt.subplots()
-        
-    c1 = np.dot(S,  X)/sum( S)
-    c2 = np.dot(~S, X)/sum(~S)
+    #X = np.array([X])
+    plt.xlim(-4, 4)
+    plt.ylim(-4, 4)
+    #plt.ylim(X[:, 1].min() - 0.5, X[:, 1].max() + 0.5)
     
-    bis1, bis2 = bisection(c1, c2)
-    ax.plot(bis1, bis2, 'k--')
+    print "plot_X", X.shape
+
+    plt.scatter(X[:, 0], X[:, 1] , s=30, c='r', marker = 'o', alpha=1.)
+
+    plt.show()
 
 
-    ax.plot(c1[0], c1[1], 'gx')
-    ax.plot(c2[0], c2[1], 'gx')
-    ax.scatter(X1[:,0], X1[:,1], c='r')
-    ax.scatter(X2[:,0], X2[:,1], c='b')
 
+def plot(X, S, K, limit):
+    import matplotlib
+    import matplotlib.pyplot as plt
+
+    colors = ['r', 'g', 'c', 'm', 'y', 'k', 'w']
+
+    #X = np.vstack((X1, X2))
+    Centroids = np.array([X[ S == k ].mean(axis=0) for k in range(K) ])
+
+    #fig, ax = plt.subplots()
+    if limit == 0:
+        X = np.array([X])
+    else:
+        X = np.array([X[:limit], X[limit:]])
+   
+    points = Centroids
+    if points.shape[0] < 3:
+        points = np.vstack((points, np.array([0., 100.])))
+
+    # compute Voronoi tesselation
+    vor = Voronoi(points)
+    
+    # plot
+    regions, vertices = voronoi_finite_polygons_2d(vor)
+    
+    
+    # colorize
+    for region in regions:
+        polygon = vertices[region]
+        plt.fill(*zip(*polygon), alpha=0.2)
+        
+    
+
+    #plt.xlim(X[:, 0].min() - 0.5, X[:, 0].max() + 0.5)
+    plt.xlim(-4, 4)
+    plt.ylim(-4, 4)
+    #plt.ylim(X[:, 1].min() - 0.5, X[:, 1].max() + 0.5)
+    
+
+    for x, c in zip(X, colors):
+        #print "x :", x
+        plt.scatter(x[:, 0], x[:, 1], s=30, c= c, marker='o', alpha=1.)
+
+    plt.scatter(points[:,0], points[:,1], s=40, color='k', marker = 'v')
     plt.show()
 
 def bisection(c1, c2):
@@ -385,12 +618,98 @@ def bisection(c1, c2):
 
 
 
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.spatial import Voronoi
+
+
+## Code found in : http://stackoverflow.com/questions/20515554/colorize-voronoi-diagram
+def voronoi_finite_polygons_2d(vor, radius=None):
+    """
+    Reconstruct infinite voronoi regions in a 2D diagram to finite
+    regions.
+
+    Parameters
+    ----------
+    vor : Voronoi
+        Input diagram
+    radius : float, optional
+        Distance to 'points at infinity'.
+
+    Returns
+    -------
+    regions : list of tuples
+        Indices of vertices in each revised Voronoi regions.
+    vertices : list of tuples
+        Coordinates for revised Voronoi vertices. Same as coordinates
+        of input vertices, with 'points at infinity' appended to the
+        end.
+
+    """
+
+    if vor.points.shape[1] != 2:
+        raise ValueError("Requires 2D input")
+
+    new_regions = []
+    new_vertices = vor.vertices.tolist()
+
+    center = vor.points.mean(axis=0)
+    if radius is None:
+        radius = 10* vor.points.ptp().max()
+
+    # Construct a map containing all ridges for a given point
+    all_ridges = {}
+    for (p1, p2), (v1, v2) in zip(vor.ridge_points, vor.ridge_vertices):
+        all_ridges.setdefault(p1, []).append((p2, v1, v2))
+        all_ridges.setdefault(p2, []).append((p1, v1, v2))
+
+    # Reconstruct infinite regions
+    for p1, region in enumerate(vor.point_region):
+        vertices = vor.regions[region]
+
+        if all(v >= 0 for v in vertices):
+            # finite region
+            new_regions.append(vertices)
+            continue
+
+        # reconstruct a non-finite region
+        ridges = all_ridges[p1]
+        new_region = [v for v in vertices if v >= 0]
+
+        for p2, v1, v2 in ridges:
+            if v2 < 0:
+                v1, v2 = v2, v1
+            if v1 >= 0:
+                # finite ridge: already in the region
+                continue
+
+            # Compute the missing endpoint of an infinite ridge
+
+            t = vor.points[p2] - vor.points[p1] # tangent
+            t /= np.linalg.norm(t)
+            n = np.array([-t[1], t[0]])  # normal
+
+            midpoint = vor.points[[p1, p2]].mean(axis=0)
+            direction = np.sign(np.dot(midpoint - center, n)) * n
+            far_point = vor.vertices[v2] + direction * radius
+
+            new_region.append(len(new_vertices))
+            new_vertices.append(far_point.tolist())
+
+        # sort region counterclockwise
+        vs = np.asarray([new_vertices[v] for v in new_region])
+        c = vs.mean(axis=0)
+        angles = np.arctan2(vs[:,1] - c[1], vs[:,0] - c[0])
+        new_region = np.array(new_region)[np.argsort(angles)]
+
+        # finish
+        new_regions.append(new_region.tolist())
+
+    return new_regions, np.asarray(new_vertices)
 
 
 
-
-
-if DOCTEST:
+if __name__ == "__main__":
     import doctest
     doctest.testmod()
 

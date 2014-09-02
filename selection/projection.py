@@ -47,3 +47,30 @@ class projection(object):
 
 
 
+def full_rank(X):
+    """
+    >>> X = np.array([[1, 1, 1], [1, 1, 0], [1, 1, 1], [1, 1, 2]])
+    >>> y = np.random.multivariate_normal(np.zeros(4), np.identity(4))
+    >>> X2 = full_rank(X)
+    >>> Delta = np.dot(X, X.T) - np.dot(X2, X2.T)
+    >>> np.max(Delta) < 1.e-10
+    True
+    """
+    U, D, V = np.linalg.svd(X)
+    d, = D.shape
+    p = U.shape[0]
+    
+    tol = D.max() * max(D.shape) * np.finfo(D.dtype).eps
+    r = 1 + max(k for k in range(d) if np.fabs(D[k]) > tol )
+
+    D2 = np.zeros(p)
+    D2[:r] = D[:r]
+    D2 = np.diag(D2)[:, :r]
+    #V2 = V[:r, :r]
+
+    return np.dot(U, D2)
+    
+
+ 
+import doctest
+doctest.testmod()
