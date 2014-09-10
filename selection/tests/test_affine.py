@@ -1,3 +1,6 @@
+from __future__ import absolute_import
+
+import nose
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm 
@@ -30,6 +33,7 @@ def test_conditional():
     tol = 0
     
     nt.assert_true(np.linalg.norm(np.dot(Z, C.T) - d[None,:]) < 1.e-7)
+
     Zn = Z - new_con.translate[None,:]
     V = (np.dot(Zn, new_con.linear_part.T) - new_con.offset[None,:]).max(1)
     V2 = (np.dot(Z, con.linear_part.T) - con.offset[None,:]).max(1)
@@ -140,3 +144,5 @@ def test_sampling():
     nt.assert_true(np.linalg.norm(V.mean(0)-C.mean) < 0.01)
     nt.assert_true(np.linalg.norm(np.einsum('ij,ik->ijk', V, V).mean(0) - 
                                   np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
+
+nose.run()
