@@ -6,11 +6,18 @@ from truncated_bis import truncated
 
 def sf_F(d1, d2, scale):
 
-    def sf(a, b=1., dps=15):
+    def sf(a, b=np.inf, dps=15):
         dps_temp = mp.mp.dps
         mp.mp.dps = dps
-        sf = mp.betainc(float(d1)/2, float(d2/2), 
-                        x1=(d1*(a/scale))/(d1*(b/scale) + d2), x2=1, 
+
+        tmp_a = d1*a/d2
+        tmp_b = d1*b/d2
+        beta_a = tmp_a / (1. + tmp_a)
+        beta_b = tmp_b / (1. + tmp_b)
+        if b == np.inf:
+            beta_b = 1.
+        sf = mp.betainc(d1/2., d2/2., 
+                        x1=beta_a, x2=beta_b,
                         regularized=True)
         mp.mp.dps = dps_temp
         return sf
