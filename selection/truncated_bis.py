@@ -6,12 +6,7 @@ restricted to a set of intervals.
 """
 import numpy as np
 from scipy.stats import chi
-from mpmath import *
-
-
-
-
-
+from mpmath import fsum
 
 class truncated(object):
     
@@ -27,8 +22,7 @@ class truncated(object):
                  logcdf=None,
                  logsf=None):
 
-
-        self.intervals = np.array(intervals)
+        self.intervals = np.sort(np.array(intervals), 0)
 
         D = self.intervals[:,1]-self.intervals[:,0]
         I = self.intervals[D != 0]
@@ -42,7 +36,7 @@ class truncated(object):
         self.quantile_R = quantile
 
         if sf == None:
-            sf = lambda x: 1- cdf(x)
+            sf = lambda x: 1 - cdf(x)
         self.sf_R = sf
 
         if logcdf==None:
@@ -97,9 +91,6 @@ class truncated(object):
         self.Q = Q
 
 
-        
-
-
 
     #@staticmethod
     # def twosided(thresh, pdf, cdf):
@@ -111,6 +102,7 @@ class truncated(object):
     def cdf(self, z):
         P = self.P
         N, = P.shape
+
         # Cette ligne est hideusement laide
 
         k = max(k for k in range(N) if self.intervals[k, 0] < z)
@@ -124,7 +116,7 @@ class truncated(object):
 
     def sf(self, z):
         Q = self.Q
-        N =len(Q)
+        N = len(Q)
 
         k = min(k for k in range(N) if self.intervals[k, 1] > z)
         a, b = self.intervals[k]

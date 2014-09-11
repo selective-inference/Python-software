@@ -19,10 +19,11 @@ def sf_T(df):
         if a*b >= 0.:
             a, b = sorted([a**2, b**2])
             tmp_a = d1*a/d2
-            tmp_b = d1*b/d2
             beta_a = tmp_a / (1. + tmp_a)
-            beta_b = tmp_b / (1. + tmp_b)
-            if b == np.inf:
+            if b < np.inf:
+                tmp_b = d1*b/d2
+                beta_b = tmp_b / (1. + tmp_b)
+            else:
                 beta_b = 1.
             sf = mp.betainc(d1/2., d2/2., 
                             x1=beta_a, x2=beta_b,
@@ -31,14 +32,16 @@ def sf_T(df):
 
         else:
             a, b = [a**2, b**2]
-            tmp_a = d1*a/d2
-            tmp_b = d1*b/d2
-            beta_a = tmp_a / (1. + tmp_a)
-            beta_b = tmp_b / (1. + tmp_b)
-            if b == np.inf:
-                beta_b = 1.
-            if a == np.inf:
+            if a < np.inf:
+                tmp_a = d1*a/d2
+                beta_a = tmp_a / (1. + tmp_a)
+            else:
                 beta_a = 1.
+            if b < np.inf:
+                tmp_b = d1*b/d2
+                beta_b = tmp_b / (1. + tmp_b)
+            else:
+                beta_b = 1.
             sf = (mp.betainc(d1/2., d2/2., 
                             x1=0, x2=beta_a, 
                             regularized=True) + 

@@ -13,15 +13,11 @@ and `post selection LASSO`_.
 
 import numpy as np
 
-import pyximport
-pyximport.install()
-
-
 from .pvalue import truncnorm_cdf, norm_interval
 from .truncated import truncated_gaussian
-from selection.sample_truncnorm import (sample_truncnorm_white, 
-                                        sample_truncnorm_white_ball,
-                                        sample_truncnorm_white_sphere)
+from .sample_truncnorm import (sample_truncnorm_white, 
+                               sample_truncnorm_white_ball,
+                               sample_truncnorm_white_sphere)
 from .discrete_family import discrete_family
                         
 from mpmath import mp
