@@ -4,11 +4,17 @@ from selection.affine import constraints_unknown_sigma
 import matplotlib.pyplot as plt
 from statsmodels.distributions import ECDF
 
-def simulate_orth():
+def simulate(theta=0):
 
     n = 22
     p = 4
-    R = residual_projector = np.diag([0]*p+[1.]*(n-p))
+    k = 18
+    R = np.linalg.svd(np.random.standard_normal((n,n-k)), full_matrices=0)[0]
+    R = np.dot(R, R.T)
+    R = 0.1 * R + np.diag([0]*p + [1.] * (n-p))
+    R = np.linalg.svd(R, full_matrices=0)[0]
+    R = R[:,:(n-p)]
+    R = np.dot(R, R.T)
     A = np.diag([1.]*p) + 0.05 * np.random.standard_normal((p,p))
     sel = np.identity(n)[:p]
     A = np.dot(A, sel)
@@ -16,44 +22,27 @@ def simulate_orth():
     n = R.shape[0]
     df = np.diag(R).sum()
 
+    eta = np.random.standard_normal(n) * 3
+    eta = eta - np.dot(R, eta)
+
+    counter = 0
     while True:
-        Z = np.random.standard_normal(n) * 1.5
+        counter += 1
+        Z = np.random.standard_normal(n) * 1.5 + eta * theta / np.linalg.norm(eta)**2
         sigma_hat = np.linalg.norm(np.dot(R, Z)) / np.sqrt(df)
         if np.all(np.dot(A, Z) <= b * sigma_hat):
             break
-    eta = np.random.standard_normal(n)
-    eta[p:] = 0
-    return A, b, R, Z, eta
-
-def simulate():
-
-    n = 22
-    p = 4
-    R = residual_projector = np.diag([0]*(p-2)+[1.]*(n-p+2))
-    A = np.diag([1.]*p) + 0.05 * np.random.standard_normal((p,p))
-    sel = np.identity(n)[:p]
-    A = np.dot(A, sel)
-    b = -np.ones(p)
-    n = R.shape[0]
-    df = np.diag(R).sum()
-
-    while True:
-        Z = np.random.standard_normal(n) * 1.5
-        sigma_hat = np.linalg.norm(np.dot(R, Z)) / np.sqrt(df)
-        if np.all(np.dot(A, Z) <= b * sigma_hat):
-            break
-    eta = np.random.standard_normal(n)
-    eta[(p-2):] = 0.
-    return A, b, R, Z, eta
+    return A, b, R, Z, eta, counter
 
 
-def instance():
+def instance(theta=0):
 
-    A, b, R, Z, eta = simulate_orth()
-
+    A, b, R, Z, eta, counter = simulate(theta=theta)
+    print counter
     from selection.truncated_T import truncated_T
     
-    intervals, obs = constraints_unknown_sigma(A, b, Z, eta, R)
+    intervals, obs = constraints_unknown_sigma(A, b, Z, eta, R,
+                                               value_under_null=theta)
     df = np.diag(R).sum()
     truncT = truncated_T(np.array([(i.lower_value,
                                     i.upper_value) for i in intervals]), df)
@@ -65,5 +54,11 @@ def instance():
 
 if __name__ == "__main__":
     
-    P = [instance() for _ in range(500)]
+    P = []
+    for i in range(2000):
+        P.append(instance(theta=1.))
+        print i, np.mean(P), np.std(P)
+    U = np.linspace(0,1,51)
     plt.plot(U, ECDF(P)(U))
+    plt.plot([0,1],[0,1])
+    plt.show()

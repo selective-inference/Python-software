@@ -887,13 +887,12 @@ def constraints_unknown_sigma( \
     sqrtW = np.sqrt(W)
     alpha = np.dot(A, w)
 
-
     # we also condition on R
 
     R = resid / (sigma_hat * np.sqrt(df))
 
     gamma = theta * alpha + np.dot(A, V)
-    b = b - np.dot(A, R)
+    b = b - np.dot(A, R) * np.sqrt(df)
 
     DEBUG = False
 
@@ -915,8 +914,8 @@ def constraints_unknown_sigma( \
             l = 2*_a*_b
             c = _c**2*df-_b**2
             if l**2-4*q*c > 0:
-                root0 = (-l-mp.sqrt(l**2-4*q*c)) / (2*q)
-                root1 = (-l+mp.sqrt(l**2-4*q*c)) / (2*q) # q*c / root0
+                root0 = (-l-np.sqrt(l**2-4*q*c)) / (2*q)
+                root1 = (-l+np.sqrt(l**2-4*q*c)) / (2*q) # q*c / root0
                 roots = sorted([root0, root1])
                 delta = (roots[1] - roots[0]) / 2
                 if DEBUG:
@@ -930,10 +929,10 @@ def constraints_unknown_sigma( \
                                            [roots[0]-delta,
                                             roots[0]+delta,
                                             roots[1]+delta]):
-                    test = _a * point + _c * mp.sqrt(df+point**2) - _b
+                    test = _a * point + _c * np.sqrt(df+point**2) - _b
                     if DEBUG:
                         def f(pt):
-                            return _a * pt + _c * mp.sqrt(df + pt**2) - _b
+                            return _a * pt + _c * np.sqrt(df + pt**2) - _b
                         print Tobs, f(Tobs)
                         if f(Tobs) > 0:
                             raise ValueError("observed T does not satisfy constraint")
