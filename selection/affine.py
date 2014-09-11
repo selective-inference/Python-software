@@ -8,6 +8,7 @@ and `post selection LASSO`_.
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
+.. _sample carving: http://arxiv.org/abs/????.????
 
 """
 
@@ -802,13 +803,13 @@ def constraints_unknown_sigma( \
     value_under_null=0.,
     tol = 1.e-4):
     r"""
-    Given an "quasi-affine" constraint $\{z:Az\leq \hat{\sigma}b\}$ 
+    Given a second-order constraint $\{z:Az\leq \hat{\sigma}b\}$ 
     (elementwise)
     specified with $A$ as `support_directions` and $b$ as
     `support_offset`, a new direction of interest $\eta$, and
-    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
-    with `covariance` matrix $\Sigma$, this
-    function returns $\eta^TZ$ as well as an interval
+    an `observed_data` is Gaussian vector $Z \sim N(\mu,\sigma^2 I)$ 
+    with $\sigma$ unknown, this
+    function returns $\eta^TZ$ as well as a set
     bounding this value. The value of $\hat{\sigma}$ is taken to be
 
     .. math::
@@ -818,8 +819,9 @@ def constraints_unknown_sigma( \
     where $R$ is `residual_projector`.
 
     The interval constructed is such that the endpoints are 
-    independent of $\eta^TZ$, hence the $p$-value
-    of `Kac Rice`_
+    independent of $\eta^TZ$, hence the 
+    selective $T$ distribution of
+    of `sample carving`_
     can be used to form an exact pivot.
 
     Notes
