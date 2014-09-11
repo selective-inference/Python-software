@@ -4,26 +4,29 @@ from selection.affine import constraints_unknown_sigma
 import matplotlib.pyplot as plt
 from statsmodels.distributions import ECDF
 
-def simulate(theta=0):
+def simulate(A=None, theta=0, R=None, eta=None):
 
     n = 22
     p = 4
     k = 18
-    R = np.linalg.svd(np.random.standard_normal((n,n-k)), full_matrices=0)[0]
-    R = np.dot(R, R.T)
-    R = 0.1 * R + np.diag([0]*p + [1.] * (n-p))
-    R = np.linalg.svd(R, full_matrices=0)[0]
-    R = R[:,:(n-p)]
-    R = np.dot(R, R.T)
-    A = np.diag([1.]*p) + 0.05 * np.random.standard_normal((p,p))
-    sel = np.identity(n)[:p]
-    A = np.dot(A, sel)
+    if R is None:
+        R = np.linalg.svd(np.random.standard_normal((n,n-k)), full_matrices=0)[0]
+        R = np.dot(R, R.T)
+        R = 0.1 * R + np.diag([0]*p + [1.] * (n-p))
+        R = np.linalg.svd(R, full_matrices=0)[0]
+        R = R[:,:(n-p)]
+        R = np.dot(R, R.T)
+    if A is None:
+        A = np.diag([1.]*p) + 0.05 * np.random.standard_normal((p,p))
+        sel = np.identity(n)[:p]
+        A = np.dot(A, sel)
     b = -np.ones(p)
     n = R.shape[0]
     df = np.diag(R).sum()
 
-    eta = np.random.standard_normal(n) * 3
-    eta = eta - np.dot(R, eta)
+    if eta is None:
+        eta = np.random.standard_normal(n) * 3
+        eta = eta - np.dot(R, eta)
 
     counter = 0
     while True:
@@ -31,14 +34,19 @@ def simulate(theta=0):
         Z = np.random.standard_normal(n) * 1.5 + eta * theta / np.linalg.norm(eta)**2
         sigma_hat = np.linalg.norm(np.dot(R, Z)) / np.sqrt(df)
         if np.all(np.dot(A, Z) <= b * sigma_hat):
+            return A, b, R, Z, eta, counter
+        if counter >= 1000:
             break
-    return A, b, R, Z, eta, counter
+    return None
 
 
-def instance(theta=0):
+def instance(theta=0, A=None, R=None, eta=None):
 
-    A, b, R, Z, eta, counter = simulate(theta=theta)
-    print counter
+    result = None
+    while not result:
+        result = simulate(theta=theta, A=A, R=R, eta=eta)
+
+    A, b, R, Z, eta, counter = result
     from selection.truncated_T import truncated_T
     
     intervals, obs = constraints_unknown_sigma(A, b, Z, eta, R,
@@ -55,8 +63,27 @@ def instance(theta=0):
 if __name__ == "__main__":
     
     P = []
-    for i in range(2000):
-        P.append(instance(theta=1.))
+
+    n = 22
+    p = 4
+    k = 18
+
+    A = np.diag([1.]*p) + 0.05 * np.random.standard_normal((p,p))
+    sel = np.identity(n)[:p]
+    A = np.dot(A, sel)
+
+    R = np.linalg.svd(np.random.standard_normal((n,n-k)), full_matrices=0)[0]
+    R = np.dot(R, R.T)
+    R = 0.1 * R + np.diag([0]*p + [1.] * (n-p))
+    R = np.linalg.svd(R, full_matrices=0)[0]
+    R = R[:,:(n-p)]
+    R = np.dot(R, R.T)
+
+    eta = np.random.standard_normal(n) * 3
+    eta = eta - np.dot(R, eta)
+
+    for i in range(1000):
+        P.append(instance(theta=3.,R=R, A=A, eta=eta))
         print i, np.mean(P), np.std(P)
     U = np.linspace(0,1,51)
     plt.plot(U, ECDF(P)(U))
