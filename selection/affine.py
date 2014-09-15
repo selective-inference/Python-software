@@ -8,10 +8,12 @@ and `post selection LASSO`_.
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
+.. _sample carving: http://arxiv.org/abs/????.????
 
 """
 
 import numpy as np
+
 from .pvalue import truncnorm_cdf, norm_interval
 from .truncated import truncated_gaussian
 from .sample_truncnorm import (sample_truncnorm_white, 
@@ -19,6 +21,9 @@ from .sample_truncnorm import (sample_truncnorm_white,
                                sample_truncnorm_white_sphere)
 from .discrete_family import discrete_family
                         
+from mpmath import mp
+import pyinter
+
 from warnings import warn
 
 WARNINGS = False
@@ -92,6 +97,7 @@ class constraints(object):
 
         self.linear_part, self.offset = \
             np.asarray(linear_part), np.asarray(offset)
+        
         if self.linear_part.ndim == 2:
             self.dim = self.linear_part.shape[1]
         else:
@@ -107,12 +113,27 @@ class constraints(object):
         self.translate = translate
 
     def _repr_latex_(self):
+        """
+        >>> A = np.array([[ 0.32,  0.27,  0.19],
+       [ 0.59,  0.98,  0.71],
+       [ 0.34,  0.15,  0.17 ,  0.25], 
+        >>> B = np.array([ 0.51,  0.74,  0.72 ,  0.82])
+        >>> C = constraints(A, B)
+        >>> C._repr_latex
+        "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
+        """
         return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
 
     def __call__(self, Y, tol=1.e-3):
         r"""
         Check whether Y satisfies the linear
         inequality constraints.
+        >>> A = np.array([[1., -1.], [1., -1.]])
+        >>> B = np.array([1., 1.])
+        >>> con = constraints(A, B)
+        >>> Y = np.array([-1., 1.])
+        >>> con(Y)
+        True
         """
         V1 = np.dot(self.linear_part, Y) - self.offset
         return np.all(V1 < tol * np.fabs(V1).max())
@@ -142,7 +163,11 @@ class constraints(object):
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
             delta_offset = np.dot(M1, np.dot(M2i, d))
-            delta_mean = np.dot(M1, np.dot(M2i, np.dot(C, self.mean)))
+            delta_mean = \
+            np.dot(M1,
+                   np.dot(M2i,
+                          np.dot(C,
+                                 self.mean)))
         else:
             M2i = 1. / M2
             delta_cov = np.multiply.outer(M1, M1) / M2i
@@ -259,7 +284,7 @@ class constraints(object):
         the slice of the inequality constraints in a 
         given direction $\eta$ and test whether 
         $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.
-
+        
         Parameters
         ----------
 
@@ -288,6 +313,7 @@ class constraints(object):
 
         
         """
+        ## THE DOCUMENTATION IS NOT GOOD ! HAS TO BE CHANGED !
 
         return selection_interval( \
             self.linear_part,
@@ -318,7 +344,7 @@ class constraints(object):
         # original matrix is np.dot(U, U.T)
 
         new_A = np.dot(self.linear_part, sqrt_cov)
-        new_b = self.offset - np.dot(self.linear_part, self.mean)
+        new_b = self.offset - np.dot(self.linear_part, self.mean)               
 
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
@@ -767,3 +793,204 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         decision = dfam.two_sided_test(0, observed, alpha=alpha)
         return decision, Z, W
     return pvalue, Z, W
+
+def constraints_unknown_sigma( \
+    support_directions, 
+    support_offsets,
+    observed_data, 
+    direction_of_interest,
+    residual_projector,
+    value_under_null=0.,
+    tol = 1.e-4):
+    r"""
+    Given a second-order constraint $\{z:Az\leq \hat{\sigma}b\}$ 
+    (elementwise)
+    specified with $A$ as `support_directions` and $b$ as
+    `support_offset`, a new direction of interest $\eta$, and
+    an `observed_data` is Gaussian vector $Z \sim N(\mu,\sigma^2 I)$ 
+    with $\sigma$ unknown, this
+    function returns $\eta^TZ$ as well as a set
+    bounding this value. The value of $\hat{\sigma}$ is taken to be
+
+    .. math::
+
+         \hat{\sigma}^2(y) = \|Ry\|^2_2 / \text{tr}(R)
+
+    where $R$ is `residual_projector`.
+
+    The interval constructed is such that the endpoints are 
+    independent of $\eta^TZ$, hence the 
+    selective $T$ distribution of
+    of `sample carving`_
+    can be used to form an exact pivot.
+
+    Notes
+    -----
+
+    Covariance is assumed to be an unknown multiple of the identity.
+
+    Parameters
+    ----------
+
+    support_directions : np.float
+         Matrix specifying constraint, $A$.
+
+    support_offset : np.float
+         Offset in constraint, $b$.
+
+    observed_data : np.float
+         Observations.
+
+    direction_of_interest : np.float
+         Direction in which we're interested for the
+         contrast.
+
+    tol : float
+         Relative tolerance parameter for deciding 
+         sign of $Az-b$.
+
+    Returns
+    -------
+
+    lower_bound : float
+
+    observed : float
+
+    upper_bound : float
+
+    sigma : float
+
+    """
+
+    # shorthand
+    A, b, X, w, Pperp, theta = (support_directions,
+                                support_offsets,
+                                observed_data,
+                                direction_of_interest,
+                                residual_projector,
+                                value_under_null)
+
+    # make direction of interest a unit vector
+
+    normw = np.linalg.norm(w)
+    w = w / normw
+    theta = theta / normw
+
+    resid = np.dot(residual_projector, observed_data)
+    df = np.diag(residual_projector).sum()
+    sigma_hat = np.linalg.norm(resid) / np.sqrt(df)
+
+    # compute the sufficient statistics
+
+    U = (w*X).sum() - theta
+    V = X - resid - (X*w).sum() * w
+    W = sigma_hat**2 * df + U**2
+    Tobs = U / np.sqrt((W - U**2) / df)
+    sqrtW = np.sqrt(W)
+    alpha = np.dot(A, w)
+
+    # we also condition on R
+
+    R = resid / (sigma_hat * np.sqrt(df))
+
+    gamma = theta * alpha + np.dot(A, V)
+    b = b - np.dot(A, R) * np.sqrt(df)
+
+    DEBUG = False
+
+    Anorm = np.fabs(A).max()
+
+    intervals = []
+    for _a, _b, _c in zip(alpha, b, gamma):
+        _a = _a * sqrtW
+        _b = _b * sqrtW
+
+        if DEBUG:
+            def fu(U):
+                return (_a / sqrtW) * U + _c - _b * sigma_hat / sqrtW
+            if fu(U) > 0:
+                raise ValueError("observed U does not satisfy constraint")
+
+        if np.fabs(_a) > tol * Anorm:
+            q = _c**2 - _a**2
+            l = 2*_a*_b
+            c = _c**2*df-_b**2
+            if l**2-4*q*c > 0:
+                root0 = (-l-np.sqrt(l**2-4*q*c)) / (2*q)
+                root1 = (-l+np.sqrt(l**2-4*q*c)) / (2*q) # q*c / root0
+                roots = sorted([root0, root1])
+                delta = (roots[1] - roots[0]) / 2
+                if DEBUG:
+                    print roots, 'a nonzero'
+                any_included = False
+                roots = [float(r) for r in roots]
+                cur_intervals = []
+                for interval, point in zip([(-np.inf, roots[0]),
+                                            (roots[0], roots[1]),
+                                            (roots[1], np.inf)],
+                                           [roots[0]-delta,
+                                            roots[0]+delta,
+                                            roots[1]+delta]):
+                    test = _a * point + _c * np.sqrt(df+point**2) - _b
+                    if DEBUG:
+                        def f(pt):
+                            return _a * pt + _c * np.sqrt(df + pt**2) - _b
+                        print Tobs, f(Tobs)
+                        if f(Tobs) > 0:
+                            raise ValueError("observed T does not satisfy constraint")
+                    if test <= 0:
+                        any_included = True
+                        if DEBUG:
+                            print 'including', interval
+                        cur_intervals.append(pyinter.closed(*interval))
+                intervals.append(pyinter.IntervalSet(cur_intervals))
+
+                if not any_included:
+                    if DEBUG:
+                        import matplotlib.pyplot as plt, time
+                        X = np.linspace(roots[0]-3*delta,roots[1]+3*delta, 1001)
+                        plt.clf()
+                        plt.scatter([roots[0], roots[1]], [0, 0])
+                        plt.plot(X, _a*X + _c*np.sqrt(df+X**2) - _b)
+                        plt.plot(X, qf(X)/100., linewidth=4, alpha=0.4)
+                        plt.plot(X, np.array(qf2(X))/100., 'k--')
+                    raise ValueError('none of the intervals satisfy the inequality')
+            else:
+                # there are no roots, but there must be at least
+                # one point, so the set is the whole line
+                if DEBUG:
+                    print 'noroots, must be all of the line'
+                intervals.append(pyinter.IntervalSet([pyinter.closed(-np.inf, np.inf)]))
+        elif np.fabs(_c) > tol * Anorm:
+            if _c < 0 and _b > 0:
+                if DEBUG:
+                    print 'all of the line'
+            elif _c < 0 and _b < 0:
+                if _b / _c > df:
+                    if DEBUG:
+                        print 'two intervals'
+                    intervals.append(pyinter.IntervalSet([pyinter.closed(np.sqrt(_b/_c-df),np.inf),
+                                      pyinter.closed(-np.inf, np.sqrt(_b/_c-df),np.inf)]))
+            elif _c > 0 and _b > 0:
+                if _b / _c > df:
+                    if DEBUG:
+                        print 'bounded interval'
+                    intervals.append(pyinter.IntervalSet([pyinter.closed(-np.sqrt(_b/_c-df),np.sqrt(_b/_c-df))]))
+                else:
+                    raise ValueError('no points in set')
+            elif _c > 0 and _b < 0:
+                raise ValueError('no points in set')
+        else:
+            if _b > 0:
+                pass
+            else:
+                raise ValueError('no points in set')
+
+    
+    if DEBUG:
+        print intervals, 'intervals'
+    truncation_set = intervals[0]
+    for interv in intervals[1:]:
+        truncation_set = truncation_set.intersection(interv)
+
+    return truncation_set, Tobs

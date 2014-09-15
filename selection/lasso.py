@@ -28,6 +28,8 @@ except ImportError:
 
 DEBUG = False
 
+
+
 class lasso(object):
 
     r"""
@@ -52,7 +54,30 @@ class lasso(object):
     UMAU = False
 
     def __init__(self, y, X, lam, sigma=1):
+        r"""
 
+        Create a new post-selection dor the LASSO problem
+
+        Parameters
+        ----------
+
+        y : np.float(y)
+            The target, in the model $y = X\beta$
+
+        X : np.float((n, p))
+            The data, in the model $y = X\beta$
+
+        lam : np.float
+            Coefficient of the L-1 penalty in
+            $\text{minimize}_{\beta} \frac{1}{2} \|y-X\beta\|^2_2 + 
+                \lambda\|\beta\|_1$
+
+        sigma : np.float
+            Standard deviation of the gaussian distribution :
+            The covariance matrix is
+            `sigma**2 * np.identity(X.shape[0])`.
+            Defauts to 1.
+        """
         self.y = y
         self.X = X
         self.sigma = sigma
@@ -81,10 +106,12 @@ class lasso(object):
 
         soln : np.float
              Solution to lasso with `sklearn_alpha=self.lagrange`.
-
+             
+        
         """
 
-        # fit Lasso using scikit-learn 
+        # fit Lasso using scikit-learn
+        
         clf = Lasso(alpha = self.lagrange, fit_intercept = False)
         clf.fit(self.X, self.y)
         self._soln = beta = clf.coef_       
@@ -165,6 +192,8 @@ class lasso(object):
         """
         Intervals for OLS parameters of active variables
         adjusted for selection.
+
+        
         """
         if not hasattr(self, "_intervals"):
             self._intervals = []
