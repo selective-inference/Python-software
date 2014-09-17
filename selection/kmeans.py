@@ -71,7 +71,6 @@ class kmeans(object):
 
         S = np.argmin(Dist, axis = 1)
 
-        #plot(X, S, K)
         return S
 
     @timethis
@@ -117,14 +116,10 @@ class kmeans(object):
             hist_array.append(hist)
             w = self.objective(S)
             w_array.append(w)
-        #print "w array : ", w_array
         self._hist = hist_array
 
         i_min = np.argmin(w_array)
         S_min = self._hist[i_min][-1]
-
-        #plot(X, S_min, K, limit=0)
-        #plot(X, S_min, K, limit=50)
 
         self._S = S_min
         return S_min
@@ -136,14 +131,6 @@ class kmeans(object):
         X = self._X
         K = self._K
 
-        # N1, N2 = float(S.sum()), float((~S).sum())
-
-        # X_plus = X[S].mean(axis = 0)
-        # X_minus = X[~S].mean(axis = 0)
-
-        # w = N1 * np.linalg.norm(X[S] - X_plus) \
-        #     + N2 * np.linalg.norm(X[~S] - X_minus)
-
         Centroids = np.array([X[ S == k ].mean(axis=0) for k in range(K) ])
 
         w = sum( (S == k).sum() * np.linalg.norm( X[S == k] - Centroids[k] ) \
@@ -153,7 +140,7 @@ class kmeans(object):
         
 
     @timethis
-    def _constraints_path(self, path, init_points):
+    def _constraints_path(self, path, init_points, version):
         r"""
         Return the constraints described by the path of the algorithm
 
@@ -174,114 +161,24 @@ class kmeans(object):
         
         n_step = len(path)
 
-        version = 1
+        #version = 1
 
         alpha_array = []
         beta_array  = []
-        if version == 1:
-            ## The inequalities given by the memberships in the 
-            ## hyperplan after the first step
-            for i in range(1, n_step):
-                S = path[i]
-                last_S = path[i-1]
+
+
+
+        for i in range(1, n_step):
             
-                last_N = np.array([(last_S == k).sum() for k in range(K)])
-
-                alpha = np.identity(n)
-                for k in range(K):
-                    alpha -= 1./last_N[k] * np.outer((S==k), (last_S == k))
-                alpha = np.vstack([alpha for k in range(K-1)])
-
-                beta_array = []
-                for l in range(1, K):
-                    beta = np.identity(n)
-                    for k in range(K):
-                        k2 = (k + l)%K 
-                        beta -= 1./last_N[k2] * np.outer((S == k), (last_S == k2))
-                    beta_array.append(beta)
-                beta = np.vstack(beta_array)
-
-
-                Q_array = np.einsum('ij, ik -> ijk', alpha, alpha) - \
-                          np.einsum('ij, ik -> ijk', beta , beta )
-
-                Q_tensor = np.einsum('abc, de -> abdce', Q_array, np.identity(p))
-                Q_tensor = Q_tensor.reshape((n*(K-1), n*p, n*p))
+            S = np.array([(path[i]==k) for k in range(K)])
+            last_S = np.array([(path[i-1]==k) for k in range(K)])
             
-                cons.append( Q_tensor )
-
-
-        
-            arr_cons = np.vstack(cons)
-
-            ## The inequalities given by the first  step
-            S = path[0]
-            E = np.zeros((K, n))
-            #print init_points
-            for k in range(K):
-                E[k, init_points[k]] = 1.
-        
-            alpha = np.identity(n)
-            for k in range(K):
-                alpha -= np.outer( (S == k), E[k] )
-            alpha = np.vstack([alpha for k in range(K-1)])
-
-            beta_array = []
-            for l in range(1, K):
-                beta = np.identity(n)
-                for k in range(K):
-                    k2 = (k+l)%K
-                    beta -= np.outer( (S == k), E[k2])
-                beta_array.append(beta)
-            beta = np.vstack(beta_array)
-
-            Q_array = np.einsum('ij, ik -> ijk', alpha, alpha) - \
-                      np.einsum('ij, ik -> ijk', beta , beta )
-
-            Q_tensor = np.einsum('abc, de -> abdce', Q_array, np.identity(p))
-            Q_tensor = Q_tensor.reshape((n*(K-1), n*p, n*p))
-
-            arr_cons = np.vstack((arr_cons, Q_tensor))
-
-            ## The linear inequality given by eta is added when
-            ## we choose the direction
-               
-            
-            ## End of making constraints
-            constraints = quad_constraints(arr_cons)
-
-        elif version == 2:
-            for i in range(1, n_step):
-
-                S = np.array([(path[i]==k) for k in range(K)])
-                last_S = np.array([(path[i-1]==k) for k in range(K)])
-            
-                last_N = last_S.sum(axis=1).reshape((K, 1))
-                last_S = 1./last_N * last_S
-            
-                last_S_rolled = np.array([np.roll(last_S, k, axis=0) \
-                                          for k in range(K)])
-
-                M = np.identity(n) - np.einsum('ab, cad -> cbd', S, last_S_rolled)
-            
-                alpha = np.vstack([M[0] for k in range(K-1)])
-                beta =  np.vstack(M[1:])
-            
-                alpha_array.append(alpha)
-                beta_array.append(beta)
-
-        
-            ## The inequalities given by the first  step
-
-
-            S = np.array([(path[0]==k) for k in range(K)])
-            last_S = np.zeros((K, n))
-            for k in range(K):
-                last_S[k, init_points[k]] = 1.
+            last_N = last_S.sum(axis=1).reshape((K, 1))
+            last_S = 1./last_N * last_S
             
             last_S_rolled = np.array([np.roll(last_S, k, axis=0) \
                                       for k in range(K)])
-
+            
             M = np.identity(n) - np.einsum('ab, cad -> cbd', S, last_S_rolled)
             
             alpha = np.vstack([M[0] for k in range(K-1)])
@@ -289,16 +186,33 @@ class kmeans(object):
             
             alpha_array.append(alpha)
             beta_array.append(beta)
-            
-            alpha_cons = np.vstack(alpha_array)
-            beta_cons = np.vstack(beta_array)
 
-            ## The linear inequality given by eta is added when
-            ## we choose the direction
-               
+        
+        ## The inequalities given by the first  step
+
+
+        S = np.array([(path[0]==k) for k in range(K)])
+        last_S = np.zeros((K, n))
+        for k in range(K):
+            last_S[k, init_points[k]] = 1.
             
-            ## End of making constraints            
-            constraints = quad_constraints_vecnorm(alpha_cons, beta_cons, (n, p))
+        last_S_rolled = np.array([np.roll(last_S, k, axis=0) \
+                                  for k in range(K)])
+
+        M = np.identity(n) - np.einsum('ab, cad -> cbd', S, last_S_rolled)
+            
+        alpha = np.vstack([M[0] for k in range(K-1)])
+        beta =  np.vstack(M[1:])
+            
+        alpha_array.append(alpha)
+        beta_array.append(beta)
+            
+        alpha_cons = np.vstack(alpha_array)
+        beta_cons = np.vstack(beta_array)
+
+        ## End of making constraints            
+        constraints = quad_constraints_vecnorm(alpha_cons, beta_cons, (n, p))
+        
         return constraints
 
     @timethis
@@ -342,10 +256,10 @@ class kmeans(object):
         cons = quad_constraints(Q_tensor)
         return cons
 
-    def constraints_algo(self):
+    def constraints_algo(self, version):
         init_points_array = self._init_points_array
         hist = self._hist
-        cons_gen = [self._constraints_path(hist[i], init_points_array[i]) 
+        cons_gen = [self._constraints_path(hist[i], init_points_array[i], version) 
                     for i in range(len(init_points_array))]
         
         cons = cons_op.intersection(*cons_gen)
@@ -364,24 +278,15 @@ class kmeans(object):
         S = self._S
         K = self._K
 
-        # S1 = (S == 0).reshape((1, n))
-        # S2 = (S == 1).reshape((1, n))
-
-        # N1, N2 = float(S1.sum()), float(S2.sum())
-
         cons = self.constraints_algo()
 
-        # M_s = (1./N1 * S1 - 1./N2 * S2).T
-        # M_s = M_s / np.linalg.norm(M_s)
 
         alpha = np.array([(S==k) for k in range(K)])
         M_s = np.identity(n) - np.einsum('ij, ik -> jk', alpha, alpha)
 
-        
         M_s = np.einsum('ab, cd -> acbd', M_s, np.identity(p)).reshape((n*p, n*p))
 
         p = cons.p_value(M_s, X_asvector, 1.)
-        #print "Voici la p-valeur : ", p
 
         return p
 
@@ -491,7 +396,7 @@ def cond_stop(n_step, sigma, last_sig):
 
 @timethis
 def f(n, p, k, n_initial_points, dist = 0, sample_bool=False):
-    n_sample = 1000
+    n_sample = 1
     p_array = []
     direction = np.random.multivariate_normal(np.zeros(p), np.identity(p))
     direction = direction/np.linalg.norm(direction)
@@ -520,17 +425,21 @@ def f(n, p, k, n_initial_points, dist = 0, sample_bool=False):
         except:
             print "bug"
             raise
-        unknown = False
-        if not sample_bool and not unknown:
-            p_value = float(t_m.p_val())
-        elif unknown:
-            p_value = float(t_m.p_val_unknownSigma())
-        else:
-            p_value = float(t_m.p_val_sample())
-        print p_value
-        p_array.append(p_value)
+        # unknown = False
+        # if not sample_bool and not unknown:
+        #     p_value = float(t_m.p_val())
+        # elif unknown:
+        #     p_value = float(t_m.p_val_unknownSigma())
+        # else:
+        #     p_value = float(t_m.p_val_sample())
+        # print p_value
+        # p_array.append(p_value)
+        p_array.append(0)
+        c1 = t_m.constraints_algo(1)
+        c2 = t_m.constraints_algo(2)
         
-    return p_array
+    #return p_array
+    return c1, c2, t_m
 
 
 
