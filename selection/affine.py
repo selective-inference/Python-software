@@ -801,7 +801,8 @@ def constraints_unknown_sigma( \
     direction_of_interest,
     residual_projector,
     value_under_null=0.,
-    tol = 1.e-4):
+    tol = 1.e-4,
+    DEBUG=False):
     r"""
     Given a second-order constraint $\{z:Az\leq \hat{\sigma}b\}$ 
     (elementwise)
@@ -896,12 +897,11 @@ def constraints_unknown_sigma( \
     gamma = theta * alpha + np.dot(A, V)
     b = b - np.dot(A, R) * np.sqrt(df)
 
-    DEBUG = False
-
     Anorm = np.fabs(A).max()
 
     intervals = []
     for _a, _b, _c in zip(alpha, b, gamma):
+        _a, _b, _c = mp.mpf(_a), mp.mpf(_b), mp.mpf(_c)
         _a = _a * sqrtW
         _b = _b * sqrtW
 
@@ -911,13 +911,13 @@ def constraints_unknown_sigma( \
             if fu(U) > 0:
                 raise ValueError("observed U does not satisfy constraint")
 
-        if np.fabs(_a) > tol * Anorm:
+        if mp.fabs(_a) > tol * Anorm:
             q = _c**2 - _a**2
             l = 2*_a*_b
             c = _c**2*df-_b**2
             if l**2-4*q*c > 0:
-                root0 = (-l-np.sqrt(l**2-4*q*c)) / (2*q)
-                root1 = (-l+np.sqrt(l**2-4*q*c)) / (2*q) # q*c / root0
+                root0 = (-l-mp.sqrt(l**2-4*q*c)) / (2*q)
+                root1 = (-l+mp.sqrt(l**2-4*q*c)) / (2*q) # q*c / root0
                 roots = sorted([root0, root1])
                 delta = (roots[1] - roots[0]) / 2
                 if DEBUG:
@@ -925,17 +925,16 @@ def constraints_unknown_sigma( \
                 any_included = False
                 roots = [float(r) for r in roots]
                 cur_intervals = []
-                for interval, point in zip([(-np.inf, roots[0]),
+                for interval, point in zip([(-mp.inf, roots[0]),
                                             (roots[0], roots[1]),
-                                            (roots[1], np.inf)],
+                                            (roots[1], mp.inf)],
                                            [roots[0]-delta,
                                             roots[0]+delta,
                                             roots[1]+delta]):
-                    test = _a * point + _c * np.sqrt(df+point**2) - _b
+                    test = _a * point + _c * mp.sqrt(df+point**2) - _b
                     if DEBUG:
                         def f(pt):
-                            return _a * pt + _c * np.sqrt(df + pt**2) - _b
-                        print Tobs, f(Tobs)
+                            return _a * pt + _c * mp.sqrt(df + pt**2) - _b
                         if f(Tobs) > 0:
                             raise ValueError("observed T does not satisfy constraint")
                     if test <= 0:
@@ -944,38 +943,30 @@ def constraints_unknown_sigma( \
                             print 'including', interval
                         cur_intervals.append(pyinter.closed(*interval))
                 intervals.append(pyinter.IntervalSet(cur_intervals))
-
-                if not any_included:
-                    if DEBUG:
-                        import matplotlib.pyplot as plt, time
-                        X = np.linspace(roots[0]-3*delta,roots[1]+3*delta, 1001)
-                        plt.clf()
-                        plt.scatter([roots[0], roots[1]], [0, 0])
-                        plt.plot(X, _a*X + _c*np.sqrt(df+X**2) - _b)
-                        plt.plot(X, qf(X)/100., linewidth=4, alpha=0.4)
-                        plt.plot(X, np.array(qf2(X))/100., 'k--')
-                    raise ValueError('none of the intervals satisfy the inequality')
             else:
                 # there are no roots, but there must be at least
                 # one point, so the set is the whole line
                 if DEBUG:
                     print 'noroots, must be all of the line'
-                intervals.append(pyinter.IntervalSet([pyinter.closed(-np.inf, np.inf)]))
-        elif np.fabs(_c) > tol * Anorm:
+                intervals.append(pyinter.IntervalSet([pyinter.closed(-mp.inf, mp.inf)]))
+        elif mp.fabs(_c) > tol * Anorm:
             if _c < 0 and _b > 0:
                 if DEBUG:
                     print 'all of the line'
+                intervals.append(pyinter.IntervalSet([pyinter.closed(-mp.inf, mp.inf)]))
             elif _c < 0 and _b < 0:
                 if _b / _c > df:
                     if DEBUG:
                         print 'two intervals'
-                    intervals.append(pyinter.IntervalSet([pyinter.closed(np.sqrt(_b/_c-df),np.inf),
-                                      pyinter.closed(-np.inf, np.sqrt(_b/_c-df),np.inf)]))
+                    intervals.append(pyinter.IntervalSet([pyinter.closed(mp.sqrt(_b/_c-df),mp.inf),
+                                      pyinter.closed(-mp.inf, mp.sqrt(_b/_c-df),mp.inf)]))
+                else:
+                    raise ValueError('no points in set')
             elif _c > 0 and _b > 0:
                 if _b / _c > df:
                     if DEBUG:
                         print 'bounded interval'
-                    intervals.append(pyinter.IntervalSet([pyinter.closed(-np.sqrt(_b/_c-df),np.sqrt(_b/_c-df))]))
+                    intervals.append(pyinter.IntervalSet([pyinter.closed(-mp.sqrt(_b/_c-df),mp.sqrt(_b/_c-df))]))
                 else:
                     raise ValueError('no points in set')
             elif _c > 0 and _b < 0:

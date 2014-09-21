@@ -163,42 +163,46 @@ class sqrt_lasso(object):
 
         self.active = (beta != 0)             # E
         nactive = self.active.sum()           # |E|
-        self.z_E = np.sign(beta[self.active]) # z_E
+        if nactive:
+            self.z_E = np.sign(beta[self.active]) # z_E
 
-        # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
+            # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
 
-        X_E = self.X[:,self.active]
-        X_notE = self.X[:,~self.active]
-        self._XEinv = np.linalg.pinv(X_E)
-        self.w_E = np.dot(self._XEinv.T, self.z_E)
-        self.W_E = np.dot(self._XEinv, self.w_E)
-        self.s_E = np.sign(self.z_E * self.W_E)
+            X_E = self.X[:,self.active]
+            X_notE = self.X[:,~self.active]
+            self._XEinv = np.linalg.pinv(X_E)
+            self.w_E = np.dot(self._XEinv.T, self.z_E)
+            self.W_E = np.dot(self._XEinv, self.w_E)
+            self.s_E = np.sign(self.z_E * self.W_E)
 
-        self.df_E = n - nactive
+            self.df_E = n - nactive
 
-        beta_interval = lambda a, b: betainc(0.5, self.df_E*0.5,
-                                             a, b,
-                                             regularized=True)
+            beta_interval = lambda a, b: betainc(0.5, self.df_E*0.5,
+                                                 a, b,
+                                                 regularized=True)
 
-        self.P_E = np.dot(X_E, self._XEinv)
-        self.R_E = np.identity(n) - self.P_E
+            self.P_E = np.dot(X_E, self._XEinv)
+            self.R_E = np.identity(n) - self.P_E
 
-        _denE = np.sqrt(1 - lam**2 * (self.z_E*self.W_E).sum())
-        c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
+            _denE = np.sqrt(1 - lam**2 * (self.z_E*self.W_E).sum())
+            c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
 
-        _covE = np.dot(self._XEinv, self._XEinv.T)
-        _diagE = np.sqrt(np.diag(_covE))
-        _corE = _covE / np.outer(_diagE, _diagE)
-        self.sigma_E = np.linalg.norm((y - np.dot(self.P_E, y))) / np.sqrt(self.df_E)
+            _covE = np.dot(self._XEinv, self._XEinv.T)
+            _diagE = np.sqrt(np.diag(_covE))
+            _corE = _covE / np.outer(_diagE, _diagE)
+            self.sigma_E = np.linalg.norm((y - np.dot(self.P_E, y))) / np.sqrt(self.df_E)
 
-        (self._active_constraints, 
-         self._inactive_constraints, 
-         self._constraints) = _constraint_from_data(X_E,
-                                                    X_notE,
-                                                    self.z_E,
-                                                    c_E * lam,
-                                                    self.sigma_E,
-                                                    np.dot(X_notE.T, self.R_E))
+            (self._active_constraints, 
+             self._inactive_constraints, 
+             self._constraints) = _constraint_from_data(X_E,
+                                                        X_notE,
+                                                        self.z_E,
+                                                        c_E * lam,
+                                                        self.sigma_E,
+                                                        np.dot(X_notE.T, self.R_E))
+        else:
+            self._active_constraints = self._inactive_constraints = self._constraints = None
+
         self.active = np.nonzero(self.active)[0]
 
     @property
@@ -261,25 +265,29 @@ class sqrt_lasso(object):
     def active_pvalues(self, doc="Tests for active variables adjusted " + \
         " for selection."):
         if not hasattr(self, "_pvals"):
-            self._pvals = []
-            C = self.active_constraints
-            XEinv = self._XEinv
-            if XEinv is not None:
-                for i in range(XEinv.shape[0]):
-                    eta = XEinv[i]
-                    (intervals,
-                     Tobs) = constraints_unknown_sigma( \
-                        C.linear_part,
-                        C.offset / self.sigma_E,
-                        self.y,
-                        eta,
-                        self.R_E)
+            self._pvals = None
+            if self.active.shape[0] > 0:
+                self._pvals = []
+                C = self.active_constraints
+                XEinv = self._XEinv
+                if XEinv is not None:
+                    for i in range(XEinv.shape[0]):
+                        eta = XEinv[i]
+                        (intervals,
+                         Tobs) = constraints_unknown_sigma( \
+                            C.linear_part,
+                            C.offset / self.sigma_E,
+                            self.y,
+                            eta,
+                            self.R_E)
+                        truncT = truncated_T(np.array([(interval.lower_value,
+                                                        interval.upper_value) for interval in intervals]), self.df_E)
+                        sf = truncT.sf(Tobs)
+                        if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
+                            raise ValueError('should be truncated')
 
-                    truncT = truncated_T(np.array([(interval.lower_value,
-                                                    interval.upper_value) for interval in intervals]), self.df_E)
-                    sf = truncT.sf(Tobs)
-                    _pval = 2 * min(sf, 1.-sf)
-                    self._pvals.append((self.active[i], _pval))
+                        _pval = float(2 * min(sf, 1.-sf))
+                        self._pvals.append((self.active[i], _pval))
         return self._pvals
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
