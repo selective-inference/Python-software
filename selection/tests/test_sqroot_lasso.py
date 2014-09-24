@@ -29,7 +29,7 @@ def test_class(n=20, p=40, s=2):
 def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     y = np.random.standard_normal(n) * sigma
     beta = np.zeros(p)
-    beta[:s] = 6 # 10 * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
+    beta[:s] = 8 * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
     X /= (X.std(0)[None,:] * np.sqrt(n))
     y += np.dot(X, beta) * sigma
@@ -37,19 +37,22 @@ def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     L = sqrt_lasso(y, X, lam_theor)
     L.fit(tol=1.e-10, min_its=80)
     P = []
-    if L.active.shape[0] > 0:
 
-        np.testing.assert_array_less( \
-            np.dot(L.constraints.linear_part, L.y),
-            L.constraints.offset)
+    return L.sigma_hat / sigma, L.sigma_E / sigma, L.df_E
 
-        if set(range(s)).issubset(L.active):
-            value = L.sigma_hat / sigma, L.sigma_E / sigma, L.df_E
-        else:
-            value = (None,)*3
-    else:
-        value = (None,)*3
-    return value
+#     if L.active.shape[0] > 0:
+
+#         np.testing.assert_array_less( \
+#             np.dot(L.constraints.linear_part, L.y),
+#             L.constraints.offset)
+
+#         if set(range(s)).issubset(L.active):
+#             value = L.sigma_hat / sigma, L.sigma_E / sigma, L.df_E
+#         else:
+#             value = (None,)*3
+#     else:
+#         value = (None,)*3
+#     return value
 
 def test_class_R(n=100, p=20):
     y = np.random.standard_normal(n)
@@ -67,13 +70,13 @@ def test_class_R(n=100, p=20):
     else:
         return None, None, None, None
 
-def main_sigma(nsample=1000, sigma=3):
+def main_sigma(nsample=1000, sigma=3, s=10):
     S = []
     for _ in range(nsample):
         try:
-            s = test_estimate_sigma(sigma=sigma)
-            if s[0] is not None:
-                S.append((s[0],s[1]))
+            v = test_estimate_sigma(sigma=sigma, s=s)
+            if v[0] is not None:
+                S.append((v[0],v[1]))
         except (IndexError, ValueError):
             print 'exception raised'
             

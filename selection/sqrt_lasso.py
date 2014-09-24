@@ -212,6 +212,9 @@ class sqrt_lasso(object):
             self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
 
         else:
+            self.df_E = self.y.shape[0]
+            self.sigma_E = np.linalg.norm(y) / np.sqrt(self.df_E)
+            self.S_trunc_interval = np.inf
             self._active_constraints = self._inactive_constraints = self._constraints = None
 
         self.active = np.nonzero(self.active)[0]
@@ -256,9 +259,12 @@ class sqrt_lasso(object):
         Estimate of noise in selected model.
         """
         if not hasattr(self, "_sigma_hat"):
-            self._sigma_hat = estimate_sigma(self.sigma_E, 
-                                             self.df_E, 
-                                             self.S_trunc_interval)
+            if self.active.shape[0] > 0:
+                self._sigma_hat = estimate_sigma(self.sigma_E, 
+                                                 self.df_E, 
+                                                 self.S_trunc_interval)
+            else:
+                self._sigma_hat = self.sigma_E
         return self._sigma_hat
 
     @property
@@ -391,6 +397,7 @@ def choose_lambda(X, quantile=0.95, ndraw=10000):
 
     n, p = X.shape
     E = np.random.standard_normal((n, ndraw))
-    return np.percentile(np.fabs(np.dot(X.T, E) / np.sqrt(np.sum(E**2, 0))[None,:]).max(0), 100*quantile)
+    E /= np.sqrt(np.sum(E**2, 0))[None,:]
+    return np.percentile(np.fabs(np.dot(X.T, E)).max(0), 100*quantile)
 
 
