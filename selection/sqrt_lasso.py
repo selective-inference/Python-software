@@ -251,6 +251,17 @@ class sqrt_lasso(object):
         return self._constraints
 
     @property
+    def sigma_hat(self):
+        """
+        Estimate of noise in selected model.
+        """
+        if not hasattr(self, "_sigma_hat"):
+            self._sigma_hat = estimate_sigma(self.sigma_E, 
+                                             self.df_E, 
+                                             self.S_trunc_interval)
+        return self._sigma_hat
+
+    @property
     def intervals(self):
         """
         Intervals for OLS parameters of active variables
@@ -302,21 +313,56 @@ class sqrt_lasso(object):
         return self._pvals
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
-    values = np.linspace(1./factor,factor,npts) * observed
+    """
+
+    Produce an estimate of $\sigma$ from a constrained
+    error sum of squares. The relevant distribution is a
+    scaled $\chi^2$ restricted to $[0,U]$ where $U$ is `upper_bound`.
+
+    Parameters
+    ----------
+
+    observed : float
+        The observed sum of squares.
+
+    df : float
+        Degrees of freedom of the sum of squares.
+
+    upper_bound : float
+        Upper limit of truncation interval.
+    
+    factor : float
+        Range of candidate values is 
+        [observed/factor, observed*factor]
+
+    npts : int
+        How many candidate values for interpolator.
+
+    nsample : int
+        How many samples for each expected value
+        of the truncated sum of squares.
+
+    Returns
+    -------
+
+    sigma_hat : np.float
+         Estimate of $\sigma$.
+    
+    """
+
+    values = np.linspace(1./factor, factor, npts) * observed
     expected = 0 * values
     for i, value in enumerate(values):
         P_upper = chidist.cdf(upper_bound * np.sqrt(df) / value, df) 
         U = np.random.sample(nsample)
         sample = chidist.ppf(P_upper * U, df) * value
         expected[i] = np.mean(sample**2) 
+
         if expected[i] >= 1.1 * (observed**2 * df + observed**2 * df**(0.5)):
             break
+
     interpolant = interp1d(values, expected + df**(0.5) * values**2)
     V = np.linspace(1./factor,factor,10*npts) * observed
-    print observed**2, df
-    import matplotlib.pyplot as plt
-    plt.plot(V, interpolant(V))
-    plt.plot([V.min(), V.max()], [observed**2 * df + observed**2 * df**(0.5)]*2)
     sigma_hat = np.min(V[interpolant(V) >= observed**2 * df + observed**2 * df**(0.5)])
     return sigma_hat
 

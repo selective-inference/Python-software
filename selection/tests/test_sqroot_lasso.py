@@ -26,14 +26,15 @@ def test_class(n=20, p=40, s=2):
             P = []
     return P #, I
 
-def test_estimate_sigma(n=100, p=150, s=8, sigma=3.):
+def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     y = np.random.standard_normal(n) * sigma
     beta = np.zeros(p)
-    beta[:s] = 3
+    beta[:s] = 6 # 10 * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
     y += np.dot(X, beta) * sigma
     lam_theor = choose_lambda(X, quantile=0.9)
-    L = sqrt_lasso(y,X,lam_theor)
+    L = sqrt_lasso(y, X, lam_theor)
     L.fit(tol=1.e-10, min_its=80)
     P = []
     if L.active.shape[0] > 0:
@@ -43,10 +44,9 @@ def test_estimate_sigma(n=100, p=150, s=8, sigma=3.):
             L.constraints.offset)
 
         if set(range(s)).issubset(L.active):
-            P = [p[1] for p in L.active_pvalues[s:]]
+            value = L.sigma_hat / sigma, L.sigma_E / sigma, L.df_E
         else:
-            P = []
-        value = estimate_sigma(L.sigma_E, L.df_E, L.S_trunc_interval) / sigma, L.sigma_E / sigma, L.df_E
+            value = (None,)*3
     else:
         value = (None,)*3
     return value
@@ -67,13 +67,24 @@ def test_class_R(n=100, p=20):
     else:
         return None, None, None, None
 
+def main_sigma(nsample=1000, sigma=3):
+    S = []
+    for _ in range(nsample):
+        try:
+            s = test_estimate_sigma(sigma=sigma)
+            if s[0] is not None:
+                S.append((s[0],s[1]))
+        except (IndexError, ValueError):
+            print 'exception raised'
+            
+        print np.mean(S, 0), np.std(S, 0)
+
 def main(nsample=1000):
 
     while True:
         A, b, R, eta = test_class_R(n=10,p=6)
         if A is not None:
             break
-
 
     def sample(A, b, R, eta):
         n = A.shape[1]
