@@ -5,8 +5,7 @@ from intervals import intervals
 from projection import projection, full_rank
 
 
-from truncated_chi import truncated_chi, truncated_chi2
-from truncated_F import truncated_F
+from truncated import truncated_chi, truncated_chi2, truncated_F
 from scipy.stats import norm
 
 from tools import timethis

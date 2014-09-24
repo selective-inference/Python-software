@@ -8,14 +8,12 @@ import numpy as np
 import mpmath as mp
 from scipy.stats import chi, chi2
 
-from intervals import intervals
-from truncated_bis import truncated, find_root
+from .base import truncated, find_root
 
-
-
-class trunc_chi(truncated):
+class truncated_chi(truncated):
 
     """
+    >>> from intervals import intervals
     >>> I = intervals.intersection(intervals((-1, 6)), \
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
@@ -128,9 +126,11 @@ class trunc_chi(truncated):
         
         
 
-class trunc_chi2(truncated):
+class truncated_chi2(truncated):
 
     """
+
+    >>> from intervals import intervals
     >>> I = intervals.intersection(intervals((-1, 6)), \
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))

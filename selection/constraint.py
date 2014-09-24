@@ -7,7 +7,7 @@ from intervals import intervals
 from projection import projection, full_rank
 
 
-from truncated_chi import truncated_chi, truncated_chi2
+from .truncated import truncated_chi, truncated_chi2
 from scipy.stats import norm
 
 import quadratic_constraints

@@ -1,7 +1,7 @@
 import numpy as np
 import mpmath as mp
 
-from truncated_bis import truncated
+from .base import truncated
 
 
 def sf_F(d1, d2, scale):

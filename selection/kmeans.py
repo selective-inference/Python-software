@@ -3,7 +3,7 @@ import random
 
 from quadratic_constraints import quad_constraints, quad_constraints_vecnorm
 from constraint import constraint, cons_op, noConstraint
-from truncated_chi import truncated_chi
+from truncated import truncated_chi
 from intervals import intervals
 from projection import projection
 
