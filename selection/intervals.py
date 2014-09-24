@@ -131,6 +131,10 @@ class intervals(object):
     def __iter__(self):
         return iter(self._U)
 
+    def __getitem__(self,index):
+        return self._U[index]
+
+
         
     @staticmethod
     def union(*interv):
