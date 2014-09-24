@@ -1,10 +1,11 @@
 import numpy as np
-from selection.sqrt_lasso import sqrt_lasso, choose_lambda
+from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
+                                  estimate_sigma)
 from selection.affine import constraints_unknown_sigma
 from selection.truncated_T import truncated_T
 
 def test_class(n=20, p=40, s=2):
-    y = np.random.standard_normal(n)
+    y = np.random.standard_normal(n) * 1.2
     beta = np.zeros(p)
     beta[:s] = 3
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
@@ -25,13 +26,37 @@ def test_class(n=20, p=40, s=2):
             P = []
     return P #, I
 
+def test_estimate_sigma(n=100, p=150, s=8, sigma=3.):
+    y = np.random.standard_normal(n) * sigma
+    beta = np.zeros(p)
+    beta[:s] = 3
+    X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+    y += np.dot(X, beta) * sigma
+    lam_theor = choose_lambda(X, quantile=0.9)
+    L = sqrt_lasso(y,X,lam_theor)
+    L.fit(tol=1.e-10, min_its=80)
+    P = []
+    if L.active.shape[0] > 0:
+
+        np.testing.assert_array_less( \
+            np.dot(L.constraints.linear_part, L.y),
+            L.constraints.offset)
+
+        if set(range(s)).issubset(L.active):
+            P = [p[1] for p in L.active_pvalues[s:]]
+        else:
+            P = []
+        value = estimate_sigma(L.sigma_E, L.df_E, L.S_trunc_interval) / sigma, L.sigma_E / sigma, L.df_E
+    else:
+        value = (None,)*3
+    return value
+
 def test_class_R(n=100, p=20):
     y = np.random.standard_normal(n)
     X = np.random.standard_normal((n,p))
     lam_theor = choose_lambda(X, quantile=0.25)
     L = sqrt_lasso(y,X,lam_theor)
     L.fit(tol=1.e-7)
-
 
     if L.active.shape[0] > 0:
         np.testing.assert_array_less( \

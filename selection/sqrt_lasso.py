@@ -175,6 +175,8 @@ class sqrt_lasso(object):
             self.W_E = np.dot(self._XEinv, self.w_E)
             self.s_E = np.sign(self.z_E * self.W_E)
 
+       
+
             self.df_E = n - nactive
 
             beta_interval = lambda a, b: betainc(0.5, self.df_E*0.5,
@@ -200,6 +202,15 @@ class sqrt_lasso(object):
                                                         c_E * lam,
                                                         self.sigma_E,
                                                         np.dot(X_notE.T, self.R_E))
+
+            self.U_E = np.dot(self._XEinv, y) / _diagE
+            self.T_E = self.U_E / self.sigma_E
+
+            _fracE = lam * np.sqrt(self.df_E) / (_denE * _diagE)
+            RHS = _fracE * np.fabs(self.W_E)
+            self.alpha_E = self.s_E * RHS / np.sqrt(self.df_E)
+            self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
+
         else:
             self._active_constraints = self._inactive_constraints = self._constraints = None
 
