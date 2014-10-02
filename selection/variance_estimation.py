@@ -31,87 +31,9 @@ numpy2ri.activate()
 from mpmath import quad as mpquad, exp as mpexp, log as mplog, mp
 mp.dps = 60
 
-from .chisq import quadratic_constraints
+from .chisq import quadratic_bounds
 
 DEBUG = False
-
-def gibbs_step(direction, Y, C):
-    """
-    Take a Gibbs step in given direction from $Y$
-    where we assume $Y$ is a realization of
-    a Gaussian with covariance `C.covariance`
-    (assumed to be a multiple of the identity)
-    truncated to the inequality constraint specified
-    by `C`.
-
-    Parameters
-    ----------
-
-    direction : `np.float`
-        Direction in which to take the step.
-
-    Y : `np.float`
-        Realization of the random vector. 
-        Should satisfy the constraints of $C$.
-
-    C : `constraints`
-        Constraints which will be satisfied after
-        taking the Gibbs step.
-
-    """
-
-    if not C(Y): # check whether Y is in the cone
-        warn('Y does not satisfy the constraints')
-
-    direction = direction / np.linalg.norm(direction)
-    L, _, U, S = C.bounds(direction, Y)
-    L_std, U_std = L/S, U/S # standardize the endpoints
-    
-    trunc = truncnorm(L_std, U_std)
-    sample = trunc.rvs()  
-    
-    # the sampling sometimes returns np.inf in this case, we use 
-    # an exponential approximation
-    
-    if sample == np.inf:
-        sample = L_std + np.random.exponential(1) / L_std
-    elif sample == -np.inf:
-        sample = U_std - np.random.exponential(1) / U_std
-        
-    # now take the step
-    Y_perp = Y - (Y*direction).sum() / (direction**2).sum() * direction
-    return Y_perp + sample * direction * S # reintroduce the scale 
-
-def draw_truncated(initial, C, ndraw=1000, burnin=1000):
-    """
-    Starting with a point in $C$, simulate by taking `nstep` 
-    Gibbs steps and return the resulting point.
-
-    Parameters
-    ----------
-
-    initial : `np.float`
-        State at which to begin Gibbs steps from.
-
-    C : `constraints`
-        Constraints which will be satisfied after
-        taking the Gibbs step.
-
-    Returns
-    -------
-
-    final : `np.float`
-        State after taking a certain number of Gibbs steps.
-
-    """
-    state = initial.copy()
-    n = state.shape[0]
-    sample = np.zeros((ndraw,n))
-    for i in range(ndraw + burnin):
-      state = gibbs_step(np.random.standard_normal(n), state, C)
-      if i >= burnin:
-          sample[i-burnin] = state.copy()
-    return sample
 
 def expected_norm_squared(initial, C, ndraw=1000, burnin=1000):
     """
@@ -294,7 +216,7 @@ def interpolation_estimate(Z, Z_constraint,
                            estimator='truncated'):
     """
     Estimate the parameter $\sigma$ in $Z \sim N(0, \sigma^2 I) | Z \in C$
-    where $C$ is the convex set encoded by `Z_constraints`
+    where $C$ is the convex set encoded by `Z_constraint`
 
     .. math::
 
@@ -364,11 +286,11 @@ def interpolation_estimate(Z, Z_constraint,
     Evalues = []
 
     n = Z.shape[0]
-    L, V, U, S = quadratic_constraints(Z, np.identity(n), Z_constraint)
+    L, V, U, S = quadratic_bounds(Z, np.identity(n), Z_constraint)
 
     if estimator == 'truncated':
         def _estimator(S, Z, Z_constraint):
-            L, V, U, _ = quadratic_constraints(Z, np.identity(n), Z_constraint)
+            L, V, U, _ = quadratic_bounds(Z, np.identity(n), Z_constraint)
             num = mpquad(lambda x: mpexp(-x**2/(2*S**2) -L*x / S**2 + (n-1) * mplog((x+L)/S) + 2 * mplog(x+L)),
                        [0, U-L])
             den = mpquad(lambda x: mpexp(-x**2/(2*S**2) -L*x / S**2 + (n-1) * mplog((x+L)/S)),
@@ -486,7 +408,7 @@ def truncated_estimate(Z, Z_constraint,
     # with scipy.integrate.quad
     n = Z.shape[0]
     operator = np.identity(n)
-    L, V, U, S = quadratic_constraints(Z, operator, Z_constraint)
+    L, V, U, S = quadratic_bounds(Z, operator, Z_constraint)
 
     for S in Svalues:
         num = quad(lambda x: np.exp(-x**2/(2*S**2) + (n+1) * np.log(x)),
@@ -512,4 +434,5 @@ def truncated_estimate(Z, Z_constraint,
 
 
     print L, V, U, S
+
 

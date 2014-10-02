@@ -1,214 +1,240 @@
-"""
-Provides functions to accurately compute the pivots used in 
-`selection` as well as the capability to invert these pivots.
-
-By default, it uses `mpmath` with 20 decimal places (`mpmath.dps=20`).
-
-"""
-
 import numpy as np
-from mpmath import mp
-from scipy.optimize import bisect
+import warnings
+import operator
 
-DEBUG = False
-DEFAULT_DPS = 20
+from heapq import merge
 
-def _CDF(a, b, dps=DEFAULT_DPS):
-    '''
-    Evaluates
-    $$
-    \int_a^b \frac{e^{-z^2/2}}{\sqrt{2\pi}} \; dz
-    $$
-    using `mpmath` at `dps` decimal places.
+from tools import timethis
 
-    Parameters
-    ----------
+class intervals(object):
 
-    a, b : `float`
-         Limits of integration
+    r"""
+    This class implements methods for intervals or union of two unbounded 
+    intervals, when all these sets have a point in their intersection
 
-    dps : `int`
-         How many decimal places to use in `mpmath`.
-
-    Returns
-    -------
-
-    integral : `float`
-    '''
-    old_dps, mp.dps = mp.dps, dps
-
-    if a > b:
-        b, a = a, b
-        flip = True
-    else:
-        flip = False
-
-    if a > 0:
-        integral = mp.gammainc(0.5, a**2/2., b**2/2.) / (2 * mp.sqrt(mp.pi))
-    elif b > 0:
-        integral = (mp.gammainc(0.5, 0, b**2/2.) / (2 * mp.sqrt(mp.pi)) +
-                    mp.gammainc(0.5, 0, a**2/2.) / (2 * mp.sqrt(mp.pi)))
-    else:
-        integral = -mp.gammainc(0.5, a**2/2., b**2/2.) / (2 * mp.sqrt(mp.pi))
-    if flip:
-        integral *= - 1
-
-    mp.dps = old_dps
-    return integral
-
-def pivot(Vplus, V, Vminus, sigma, delta=0, dps=DEFAULT_DPS):
     """
-    Evaluates
+    def __init__(self, I = None):
+        """
+        Create a intervals object, with some unbounded and bounded intervals
 
-    $$
-    \frac{\Phi\left((V^--\delta)/\sigma) - \Phi\left((V-\delta)/\sigma)}
-    {\Phi\left((V^--\delta)/\sigma) - \Phi\left((V^+-\delta)/\sigma)}
-    $$
+        Parameters
+        ----------
+        I : tuple
+              I is a tuple (inf, sup), the interval created
 
-    Parameters
-    ----------
+        Returns
+        -------
+        interv : intervals
+              The intervals object
 
-    Vplus, V, Vminus : `float`
-         Limits for pivot. Will usually satisfy $V^+ < V < V^-$.
+        Warning : sup has to be larger than inf. If not, it raises a 
+        ValueError exception
+        If sup == inf, it creates an empty interval, and raise a Warning
 
-    sigma : `float`
-         Standard deviation before truncation.
 
-    delta: `float`
-         When forming intervals, this is varied to find the
-         upper and lower limits.
+        >>> I = intervals()
+        >>> I2 = intervals((-1, 1))
+        """
 
-    dps : `int`
-         How many decimal places to use in `mpmath`.
+        if I == None:
+            self._U = []
 
-    Returns
-    -------
-
-    pivot : `float`
-    """
-    A = _CDF((V-delta)/sigma, (Vminus-delta)/sigma, dps=dps) 
-    B = _CDF((Vplus-delta)/sigma, (V-delta)/sigma, dps=dps)
-    A = max(A, 0)
-    B = max(B, 0)
-    if (A+B)==0:
-        if np.fabs(Vminus-V) > np.fabs(V-Vplus) and Vplus > 0:
-            pivot = 0
         else:
-            pivot = 1
-    else:
-        pivot = A/(A+B)
-    return pivot
+            ## Check that the interval is correct
+            (inf, sup) = I
+            if sup < inf:
+                raise ValueError("The given tuple " + \
+                                 "does not represent an interval : " + repr(I))
 
-def solve_for_pivot(Vplus, V, Vminus, sigma, target, dps=DEFAULT_DPS):
-    """
-    Evaluates
+            # elif inf == sup:
+            #     self._U = []
 
-    $$
-    \frac{\Phi\left((V^--\delta)/\sigma) - \Phi\left((V-\delta)/\sigma)}
-    {\Phi\left((V^--\delta)/\sigma) - \Phi\left((V^+-\delta)/\sigma)}
-    $$
+            else:
+                self._U = [I]
 
-    Parameters
-    ----------
 
-    Vplus, V, Vminus : `float`
-         Limits for pivot. Will usually satisfy $V^+ < V < V^-$.
+    def __call__(self, x):
+        """
+        Check if x is in the intersection of the intervals
 
-    sigma : `float`
-         Standard deviation before truncation.
+        Parameters
+        ----------
+        x : float
+              The point you want to know if it is in the intervals
 
-    target : `float`
-         This function tries to Find $\delta$ such that 
-         `pivot(Vplus, V, Vminus, sigma, delta)=target`.
+        Returns
+        -------
+        is_in : bool
+              True if x is in the intersection, False if it's not
 
-    delta: `float`
-         When forming intervals, this is varied to find the
-         upper and lower limits.
+        Examples
+        --------
+        
+        >>> I = intervals()
+        >>> I(2)
+        False
+        >>> I = intervals.intersection(intervals((-1, 6)), \
+                                       intervals(( 0, 7)), \
+                                       ~intervals((1, 4)))
+        >>> x1, x2, x3, x4, x5 = 0.5, 1.5, 5, 6.5, 8
+        >>> I(x1), I(x2), I(x3), I(x4), I(x5)
+        (True, False, True, False, False)
+        """
+        return any( a <= x and x <= b for (a, b) in self )
 
-    dps : `int`
-         How many decimal places to use in `mpmath`.
 
-    Returns
-    -------
+    def __len__(self):
+        """
+        Return the number of connex intervas composing this instance
 
-    soln : `float`
+        >>> I = intervals.intersection(intervals((-1, 6)), \
+                                       intervals(( 0, 7)), \
+                                       ~intervals((1, 4)))
+        
+        >>> len(I)
+        2
+        """
+        return len(self._U)
 
-    """
+    def __invert__(self):
+        """
+        Return the complement of the interval in the reals
 
-    maxits = 80 # stop increasing limit after this many iterations
-    upper_guess = 1
-    lower_guess = -1
+        >>> I = intervals.intersection(intervals((-1, 6)), \
+                                       intervals(( 0, 7)), \
+                                       ~intervals((1, 4)))
+        >>> print ~I
+        [(-inf, 0), (1, 4), (6, inf)]
+        """
 
-    # find an upper bound
-    idx = 0
-    upper_success = False
-    while True:
-        test = pivot(Vplus, V, Vminus, sigma, delta=upper_guess)
-        if test > target:
-            upper_success = True
-            break
-        upper_guess *= 1.5
-        idx += 1
-        if idx > maxits:
-            break
+        if len(self) == 0:
+            return intervals((-np.inf, np.inf))
 
-    # find a lower bound
-    idx = 0 
-    lower_success = False
-    while True:
-        test = pivot(Vplus, V, Vminus, sigma, delta=lower_guess)
-        if test < target:
-            lower_success = True
-            break
-        lower_guess *= 1.5
-        idx += 1
-        if idx > maxits:
-            break
-    
-    anon_func = lambda D: pivot(Vplus, V, Vminus, sigma, delta=D,
-                                dps=dps) - target
-    try:
-        soln = bisect(anon_func, lower_guess, upper_guess)    
-    except ValueError: # TODO figure out the error
-        if not upper_success:
-            soln = np.inf
-        else:
-            soln = -np.inf
-    if DEBUG:
-        print pivot(Vplus, V, Vminus, sigma, delta=soln,
-                    dps=dps), target
-    return soln
+        inverse = intervals()
+        a, _ = self._U[0]
+        if a > -np.inf:
+            inverse._U.append((-np.inf, a))
+            
+        for (a1, b1), (a2, b2) in zip(self._U[:-1], self._U[1:]):
+            inverse._U.append((b1, a2))
+                
+        _, b = self._U[-1]
+        if b < np.inf:
+            inverse._U.append((b, np.inf))
 
-def interval(Vplus, V, Vminus, sigma, upper_target=0.975, lower_target=0.025,
-             dps=DEFAULT_DPS):
-    """
-    Form an interval for the $\eta^T\mu$
-    based on observing $V=\eta^TY$ and the
-    constraints $V^+ \leq V \leq V^-$.
+        return inverse
 
-    Parameters
-    ----------
 
-    Vplus, V, Vminus : `float`
-         Limits for pivot. Will usually satisfy $V^+ < V < V^-$.
+    def __repr__(self):
+        return repr(self._U)
 
-    sigma : `float`
-         Standard deviation before truncation.
+    def __iter__(self):
+        return iter(self._U)
 
-    upper_target, lower_target : `float`
-         Target for equality on each side.
-    
-    dps : `int`
-         How many decimal places to use in `mpmath`.
+        
+    @staticmethod
+    def union(*interv):
+        """
+        Return the union of all the given intervals
 
-    Returns
-    -------
+        Parameters
+        ----------
+        interv1, ... : interv
+              intervals instance
 
-    lower, upper : `float`
+        Returns
+        -------
+        union, a new intervals instance, representing the union of interv1, ...
 
-    """
+        >>> I = intervals.union(intervals((-np.inf, 0)), \
+                                intervals((-1, 1)), \
+                                intervals((3, 6)))
+        >>> print I
+        [(-inf, 1), (3, 6)]
+        """
+        ## Define the union of an empty family as an empty set
+        union = intervals()
+        if len(interv) == 0:
+            return interv
 
-    lower = solve_for_pivot(Vplus, V, Vminus, sigma, lower_target, dps=dps)
-    upper = solve_for_pivot(Vplus, V, Vminus, sigma, upper_target, dps=dps)
-    return lower, upper
+        interv_merged_gen = merge(*interv)
+        try:
+            inf, sup = interv_merged_gen.next()
+        except StopIteration:
+            return intervals()
+        for I in interv_merged_gen:
+            a, b = I
+            if a < sup:
+                sup = max(sup, b)
+            else:
+                union._U.append((inf, sup))
+                inf, sup = a, b
+
+        union._U.append((inf, sup))
+
+        return union
+
+
+    @staticmethod
+    def intersection(*interv):
+        """
+        Return the intersection of all the given intervals
+
+        Parameters
+        ----------
+        interv1, ... : interv
+              intervals instance
+
+        Returns
+        -------
+        intersection, a new intervals instance, representing the intersection
+        of interv1, ...
+
+        >>> I = intervals.intersection(intervals((-1, 6)), \
+                                       intervals(( 0, 7)), \
+                                       ~intervals((1, 4)))
+        >>> print I
+        [(0, 1), (4, 6)]
+        
+        """
+        if len(interv) == 0:
+            I = intervals()
+            return ~I
+        return ~(intervals.union(*(~I for I in interv)))
+
+
+
+    def __add__(self, offset):
+        """
+        Add an offset to the intervals
+
+        Parameters
+        ----------
+        off : float
+              The offset added
+
+        Returns
+        -------
+        interv : intervals
+              a new instance, self + offset
+
+        Examples
+        --------
+        >>> I = intervals.intersection(intervals((-1, 6)), \
+                                       intervals(( 0, 7)), \
+                                       ~intervals((1, 4)))
+        >>> J = I+2
+        >>> print J
+        [(2, 3), (6, 8)]
+
+        """
+        interv = intervals()
+        interv._U = [(a+offset, b+offset) for (a, b) in self._U]
+        return interv 
+
+
+
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
 

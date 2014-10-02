@@ -42,8 +42,11 @@ a fixed lambda test for the LASSO.
 
 # versions
 NUMPY_MIN_VERSION='1.3'
-SCIPY_MIN_VERSION = '0.5'
+SCIPY_MIN_VERSION = '0.7'
 CYTHON_MIN_VERSION = '0.11.1'
+SKLEARN_MIN_VERSION = "0.14.1"
+MPMATH_MIN_VERSION = "0.18"
+PYINTER_MIN_VERSION = "0.1.6"
 
 NAME                = 'selection'
 MAINTAINER          = "Jonathan Taylor"
@@ -65,4 +68,6 @@ VERSION             = __version__
 STATUS              = 'alpha'
 PROVIDES            = ["fixed_lambda"]
 REQUIRES            = ["numpy (>=%s)" % NUMPY_MIN_VERSION,
-                       "scipy (>=%s)" % SCIPY_MIN_VERSION]
+                       "scipy (>=%s)" % SCIPY_MIN_VERSION,
+                       "sklearn (>=%s)" % SKLEARN_MIN_VERSION,
+                       "mpmath (>=%s)" % MPMATH_MIN_VERSION]

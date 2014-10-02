@@ -12,7 +12,7 @@ from scipy.stats import norm as ndist
 
 # local imports 
 
-from .constraints import constraints
+from .affine import constraints
 from .chisq import quadratic_test
 
 DEBUG = False
@@ -24,7 +24,8 @@ class projection(object):
     
     Warning: we do not check if U has orthonormal columns. 
 
-    This can be enforced by calling the `orthogonalize` method.
+    This can be enforced by calling the `orthogonalize` method
+    which returns a new instance.
     
     """
     def __init__(self, U):
@@ -52,18 +53,26 @@ class projection(object):
 
 class forward_stepwise(object):
 
-    def __init__(self, X, Y, sigma=1.,
-                 subset=None):
-        self.sigma = sigma
+    """
+    Centers columns of X!
+    """
+
+    def __init__(self, X, Y, 
+                 subset=None,
+                 covariance=None):
         if subset is None:
             subset = np.ones(Y.shape[0], np.bool)
-        self.X = X[subset]
-        self.Y = Y[subset]
+        self.X = X.copy()[subset]
+        self.X -= self.X.mean(0)[None,:]
+        self.Y = Y.copy()[subset]
+        self.Y -= self.Y.mean()
         self.P = [None] # residual forming projections
         self.A = None
         self.variables = []
         self.signs = []
-        self.covariance = self.sigma**2 * np.identity(self.X.shape[0])
+        if covariance is None:
+            covariance = np.identity(self.X.shape[0])
+        self.covariance = covariance
 
     def __iter__(self):
         return self
@@ -98,7 +107,8 @@ class forward_stepwise(object):
             sign = np.sign(U[idx])
             Unew = X[:,idx] / scale[idx]
             Pnew = projection(Unew.reshape((-1,1)))
-            self.A = canonicalA(X, Y, idx, sign, scale=scale)
+            self.As = [canonicalA(X, Y, idx, sign, scale=scale)]
+            self.A = self.As[0]
             self.variables.append(idx)
             self.signs.append(sign)
         else:
@@ -118,6 +128,7 @@ class forward_stepwise(object):
             Unew = RX[:,idx] / scale[idx]
             Pnew = P.stack(Unew.reshape((-1,1)))
             newA = canonicalA(RX, RY, idx, sign, scale=scale)
+            self.As.append(newA)
             if DEBUG:
                 print np.linalg.norm(np.dot(newA, Y) - np.dot(newA, RY)), 'should be 0'
                 print np.linalg.norm(P(newA.T)), np.linalg.norm(P(RX)), 'newA'
@@ -129,67 +140,98 @@ class forward_stepwise(object):
             print self.variables, 'selected variables'
             print self.signs, 'signs'
             print self.A.shape, 'A shape'
-            print np.dot(self.A, Y).min(), 'should be nonnegative'
+            print np.dot(self.A, Y).max(), 'should be nonpositive'
 
         self.P.append(Pnew)
 
-    def check_constraints(self):
-        """
-        Verify whether or not constraints are consistent with `self.Y`.
-        """
-        return np.dot(self.A, self.Y).min() > 0
-
-    def bounds(self, eta):
-        """
-        Find implied upper and lower limits for a given
-        direction of interest.
-
-        Parameters
-        ==========
-
-        eta : `np.array(n)`
-
-        Returns
-        =======
-
-        Mplus: float
-             Lower bound for $\eta^TY$ for cone determined by `self`.
-
-        V : float
-             The center $\eta^TY$.
-
-        Mminus : float
-             Lower bound for $\eta^TY$ for cone determined by `self`.
-
-        sigma : float
-             $\ell_2$ norm of `eta` (assuming `self.covariance` is $I$)
-        """
-
-        return self.constraints.pivots(eta, self.Y)
-
     @property
     def constraints(self):
-        return constraints((self.A, np.zeros(self.A.shape[0])), None,
+        return constraints(self.A, np.zeros(self.A.shape[0]), 
                            covariance=self.covariance)
 
-    # pivots we might care about
+    def model_intervals(self, which_step, alpha=0.05, UMAU=False):
+        """
+        Compute selection intervals for
+        a given step of forward stepwise.
 
-    def model_pivots(self, which_step):
+        Parameters
+        ----------
+
+        which_step : int
+            Which step of forward stepwise.
+
+        sigma : float
+            Standard deviation of noise.
+
+        alpha : float
+            1 - confidence level for intervals.
+
+        UMAU : bool
+            Use UMAU intervals or equal-tailed intervals?
+
+        Returns
+        -------
+
+        intervals : list
+             List of (variable, LS_direction, LS_estimate, interval)
+             where LS_direction is the vector that computes this variables
+             least square coefficient in the current model, and LS_estimate
+             is sum(LS_estimate * self.Y).
+
+        """
+        C = self.constraints
+        intervals = []
+        LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
+        for i in range(LSfunc.shape[0]):
+            eta = LSfunc[i]
+            _interval = C.interval(eta, self.Y,
+                                   alpha=alpha,
+                                   UMAU=UMAU)
+            intervals.append((self.variables[i], eta, 
+                              (eta*self.Y).sum(), 
+                              _interval))
+        return intervals
+
+    def model_pivots(self, which_step, alternative='greater'):
+        """
+        Compute two-sided pvalues for each coefficient
+        in a given step of forward stepwise.
+
+        Parameters
+        ----------
+
+        which_step : int
+            Which step of forward stepwise.
+
+        sigma : float
+            Standard deviation of noise.
+
+        Returns
+        -------
+
+        pivots : list
+             List of (variable, pvalue)
+             for selected model.
+
+        """
         pivots = []
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         for i in range(LSfunc.shape[0]):
-            pivots.append(self.bounds(LSfunc[i]))
+            pivots.append((self.variables[i],
+                           self.constraints.pivot(LSfunc[i], self.Y,
+                                                  alternative=alternative)))
         return pivots
 
     def model_quadratic(self, which_step):
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
-        return quadratic_test(self.Y / self.sigma, P_LS, self.constraints)
+        return quadratic_test(self.Y, P_LS, self.constraints)
 
 def canonicalA(RX, RY, idx, sign, scale=None):
     """
     The canonical set of inequalities for a step of forward stepwise.
-    These encode that `sign*np.dot(RX.T[idx],RY)=np.fabs(np.dot(RX,RY)).max()` which is
+    These encode that 
+    `sign*np.dot(RX.T[idx],RY)=np.fabs(np.dot(RX,RY)).max()` which is
     $\|RX^TRY\|_{\infty}$.
 
     Parameters
@@ -238,36 +280,5 @@ def canonicalA(RX, RY, idx, sign, scale=None):
     A = A[keep]
 
     V = np.dot(A, RX.T)
-    return V
-
-
-    # shorthand
-    A, b, S, X, w = (support_directions,
-                     support_offsets,
-                     covariance,
-                     observed_data,
-                     direction_of_interest)
-
-    U = np.dot(A, X) + b
-    if not np.all(U > -tol * np.fabs(U).max()):
-        warn('constraints not satisfied: %s' % `U`)
-
-    Sw = np.dot(S, w)
-    sigma = np.sqrt((w*Sw).sum())
-    C = np.dot(A, Sw) / sigma**2
-    V = (w*X).sum()
-    RHS = (-b - np.dot(A, X) + V * C) / C
-    pos_coords = C > tol * np.fabs(C).max()
-    if np.any(pos_coords):
-        lower_bound = RHS[pos_coords].max()
-    else:
-        lower_bound = -np.inf
-    neg_coords = C < -tol * np.fabs(C).max()
-    if np.any(neg_coords):
-        upper_bound = RHS[neg_coords].min()
-    else:
-        upper_bound = np.inf
-
-    return lower_bound, V, upper_bound, sigma
-
+    return -V
 
