@@ -111,32 +111,33 @@ def main(nsample=1000):
             print 'new sample'
             intervals, obs = constraints_unknown_sigma(A, b, Z, eta, R,
                                                        value_under_null=0.,
-                                                       DEBUG=True)
+                                                       DEBUG=False)
             df = np.diag(R).sum()
             truncT = truncated_T(np.array([(interval.lower_value,
                                             interval.upper_value) for interval in intervals]), df)
             sigma_hat = np.linalg.norm(np.dot(R, Z)) / np.sqrt(df)
-            print truncT.intervals, ((eta*Z).sum() / np.linalg.norm(eta)) / sigma_hat, obs, 'observed', intervals
+            #print truncT.intervals, ((eta*Z).sum() / np.linalg.norm(eta)) / sigma_hat, obs, 'observed', intervals
             sf = truncT.sf(obs)
             pval = 2 * min(sf, 1.-sf)
 
             P.append(float(pval))
             IS.append(truncT.intervals)
 
-    return P, IS
+    return P#, IS
     
-def test_intervals(n=100,p=200,s=20):
+def test_pval(n=100,p=200,s=20):
     sigma = 3
     y = np.random.standard_normal(n) * sigma
     beta = np.zeros(p)
-    beta[:s] = 8 * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
+    #beta[:s] = 8 * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
+    beta[:s] = 8 
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
     X /= (X.std(0)[None,:] * np.sqrt(n))
     y += np.dot(X, beta) * sigma
-    lam_theor = choose_lambda(X, quantile=0.9)
+    lam_theor = choose_lambda(X, quantile=0.75)
     L = sqrt_lasso(y, X, lam_theor)
     L.fit(tol=1.e-10, min_its=80)
-    L.active_intervals()
+    return L.active_pvalues, L.active_gaussian_pval
 
 
 

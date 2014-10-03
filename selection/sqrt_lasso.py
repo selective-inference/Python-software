@@ -19,7 +19,7 @@ import regreg.api as rr
 
 from .lasso import _constraint_from_data
 from .truncated_T import truncated_T
-from .affine import constraints_unknown_sigma
+from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
 from .truncated import find_root
 
 class sqlasso_objective(rr.smooth_atom):
@@ -319,36 +319,57 @@ class sqrt_lasso(object):
                         self._pvals.append((self.active[i], _pval))
         return self._pvals
 
-    @property 
-    def active_intervals(self):
-        if not hasattr(self,"_intervals"):
-            self._intervals = None
+#    @property 
+#    def active_intervals(self):
+#        if not hasattr(self,"_intervals"):
+#            self._intervals = None
+#            if self.active.shape[0] > 0:
+#                self._intervals = []
+#                C = self.active_constraints
+#                XEinv = self._XEinv
+#                if XEinv is not None:
+#                    for i in range(XEinv.shape[0]):
+#                        eta = XEinv[i]
+#
+#                        def p_value(theta):
+#                            (intervals, Tobs) = constraints_unknown_sigma( \
+#                                C.linear_part,
+#                                C.offset / self.sigma_E,
+#                                self.y,
+#                                eta,
+#                                self.R_E, value_under_null=theta)
+#                            truncT = truncated_T(np.array([(interval.lower_value,
+#                                                            interval.upper_value) for interval in intervals]), self.df_E)
+#                            if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
+#                                raise ValueError('should be truncated')
+#
+#                            return truncT.cdf(Tobs)
+#
+#                        lower = find_root(p_value, 0.025, -100, 100)
+#                        upper = find_root(p_value, 0.975, -100, 100)
+#                        self._intervals.append((self.active[i], (lower, upper)))
+#        return self._intervals
+
+    @property
+    def active_gaussian_pval(self):
+        if not hasattr(self, "_gaussian_pvals"):
+            self._gaussian_pvals = None
             if self.active.shape[0] > 0:
-                self._intervals = []
+                self._gaussian_pvals = []
                 C = self.active_constraints
                 XEinv = self._XEinv
                 if XEinv is not None:
+                    con = gaussian_constraints(C.linear_part,
+                            C.offset / self.sigma_E) 
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
-
-                        def p_value(theta):
-                            (intervals, Tobs) = constraints_unknown_sigma( \
-                                C.linear_part,
-                                C.offset / self.sigma_E,
-                                self.y,
-                                eta,
-                                self.R_E, value_under_null=theta)
-                            truncT = truncated_T(np.array([(interval.lower_value,
-                                                            interval.upper_value) for interval in intervals]), self.df_E)
-                            if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
-                                raise ValueError('should be truncated')
-
-                            return truncT.cdf(Tobs)
-
-                        lower = find_root(p_value, 0.025, -100, 100)
-                        upper = find_root(p_value, 0.975, -100, 100)
-                        self._intervals.append((self.active[i], (lower, upper)))
-        return self._intervals
+                        _gaussian_pval = con.pivot(eta, self.y / self.sigma_hat, alternative="greater")
+                        if _gaussian_pval < 1e-10:
+                            print self.sigma_hat, con.bounds(eta, self.y) 
+                        #_interval = con.interval(eta, self.y)
+                        self._gaussian_pvals.append((self.active[i], _gaussian_pval))
+        return self._gaussian_pvals
+        
 
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
