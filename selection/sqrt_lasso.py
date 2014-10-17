@@ -212,6 +212,12 @@ class sqrt_lasso(object):
             self.alpha_E = self.s_E * RHS / np.sqrt(self.df_E)
             self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
 
+            cov = np.identity(n) * self.sigma_hat**2 
+            for con in [self._active_constraints,
+                        self._inactive_constraints,
+                        self._constraints]:
+                con.covariance[:] = cov
+
         else:
             self.df_E = self.y.shape[0]
             self.sigma_E = np.linalg.norm(y) / np.sqrt(self.df_E)
@@ -358,18 +364,32 @@ class sqrt_lasso(object):
                 self._gaussian_pvals = []
                 C = self.active_constraints
                 XEinv = self._XEinv
+                n, p = self.X.shape
                 if XEinv is not None:
-                    con = gaussian_constraints(C.linear_part,
-                            C.offset / self.sigma_E) 
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
-                        _gaussian_pval = con.pivot(eta, self.y / self.sigma_hat, alternative="greater")
+                        _gaussian_pval = C.pivot(eta, self.y, alternative="twosided")
                         if _gaussian_pval < 1e-10:
-                            print self.sigma_hat, con.bounds(eta, self.y) 
-                        #_interval = con.interval(eta, self.y)
+                            print self.sigma_hat, C.bounds(eta, self.y) 
+                        _interval = C.interval(eta, self.y)
                         self._gaussian_pvals.append((self.active[i], _gaussian_pval))
         return self._gaussian_pvals
-        
+
+    @property
+    def active_gaussian_intervals(self):
+        if not hasattr(self, "_gaussian_intervals"):
+            self._gaussian_intervals = None
+            if self.active.shape[0] > 0:
+                self._gaussian_intervals = []
+                C = self.active_constraints
+                XEinv = self._XEinv
+                n, p = self.X.shape
+                if XEinv is not None:
+                    for i in range(XEinv.shape[0]):
+                        eta = XEinv[i]
+                        _interval = C.interval(eta, self.y)
+                        self._gaussian_intervals.append((self.active[i], _interval))
+        return self._gaussian_intervals
 
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):

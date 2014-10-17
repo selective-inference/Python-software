@@ -1,3 +1,4 @@
+from __future__ import division
 import numpy as np
 from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
                                   estimate_sigma)
@@ -125,19 +126,61 @@ def main(nsample=1000):
 
     return P#, IS
     
-def test_pval(n=100,p=200,s=20):
+def test_gaussian_approx(n=100,p=200,s=10):
+    """
+    using gaussian approximation for pvalues
+    """
     sigma = 3
     y = np.random.standard_normal(n) * sigma
     beta = np.zeros(p)
     #beta[:s] = 8 * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
-    beta[:s] = 8 
+    beta[:s] = 18 
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
     X /= (X.std(0)[None,:] * np.sqrt(n))
-    y += np.dot(X, beta) * sigma
+    y += np.dot(X, beta)
     lam_theor = choose_lambda(X, quantile=0.75)
     L = sqrt_lasso(y, X, lam_theor)
     L.fit(tol=1.e-10, min_its=80)
-    return L.active_pvalues, L.active_gaussian_pval
+
+    P = []
+    P_gaussian = []
+    intervals = []
+    if L.active.shape[0] > 0:
+
+        np.testing.assert_array_less( \
+            np.dot(L.constraints.linear_part, L.y),
+            L.constraints.offset)
+
+        if set(range(s)).issubset(L.active):
+            P = [p[1] for p in L.active_pvalues[s:]]
+            P_gaussian = [p[1] for p in L.active_gaussian_pval[s:]]
+            intervals = [u for u in L.active_gaussian_intervals if u[0] in range(s)]
+    return P, P_gaussian, intervals, beta
+
+def test_pval_intervals(nsample=100):
+    pvalues = []
+    gaussian_pvalues = []
+    coverage = 0
+    count = 0
+    for _ in range(nsample):
+        try:
+            P, P_gaussian, intervals, beta = test_gaussian_approx()
+        except (IndexError, ValueError):
+            print "Error raised!"
+
+        if P != []:
+            pvalues.extend(P)
+            gaussian_pvalues.extend(P_gaussian)
+            for i, C in intervals:
+                count += 1
+                if beta[i] <= C[1] and beta[i] >= C[0]:
+                    coverage += 1
+                print count, coverage, C, beta[i]
+
+    return pvalues, gaussian_pvalues, coverage/count
+            
+
+
 
 
 
