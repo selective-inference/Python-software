@@ -4,6 +4,7 @@ performs (conditional) UMPU tests for Gaussians
 restricted to a set of intervals.
 
 """
+from __future__ import division
 import numpy as np
 from scipy.stats import chi
 from mpmath import fsum
@@ -193,8 +194,6 @@ def find_root(f, y, lb, ub, tol=1e-6):
     return c
 
 
-
-
 def quantile_R(q, cdf, tol=1e-6):
     l, u = -np.inf, np.inf
 
@@ -235,6 +234,109 @@ def sf_chi(k, scale):
 def quantile_chi(k, scale):
     return lambda q: scale * chi.ppf(q, k)
 
+
+def quadratic_inequality_solver(a, b, c, direction="less than"):
+    '''
+    solves a * x**2 + b * x + c \leq 0, if direction is "less than",
+    solves a * x**2 + b * x + c \geq 0, if direction is "greater than",
+    
+    returns:
+    the truancated interval, may include [-infty, + infty]
+    the returned interval(s) is a list of disjoint intervals indicating the union.
+    when the left endpoint of the interval is equal to the right, return empty list 
+    '''
+    if direction not in ["less than", "greater than"]:
+        raise ValueError("direction should be in ['less than', 'greater than']")
+    
+    if direction == "less than":
+        d = b**2 - 4*a*c
+        if a > 0:
+            if d <= 0:
+                #raise ValueError("No valid solution")
+                return [[]]
+            else:
+                lower = (-b - np.sqrt(d)) / (2*a)
+                upper = (-b + np.sqrt(d)) / (2*a)
+                return [[lower, upper]]
+        elif a < 0:
+            if d <= 0:
+                return [[float("-inf"), float("inf")]]
+            else:
+                lower = (-b + np.sqrt(d)) / (2*a)
+                upper = (-b - np.sqrt(d)) / (2*a)
+                return [[float("-inf"), lower], [upper, float("inf")]]
+        else:
+            if b > 0:
+                return [[float("-inf"), -c/b]]
+            elif b < 0:
+                return [[-c/b, float("inf")]]
+            else:
+                raise ValueError("Both coefficients are equal to zero")
+    else:
+        return quadratic_inequality_solver(-a, -b, -c, direction="less than")
+
+
+def intersection(I1, I2):
+    if (not I1) or (not I2) or min(I1[1], I2[1]) <= max(I1[0], I2[0]):
+        return []
+    else:
+        return [max(I1[0], I2[0]), min(I1[1], I2[1])]
+
+def sqrt_inequality_solver(a, b, c, n):
+    '''
+    find the intervals for t such that,
+    a*t + b*sqrt(n + t**2) \leq c
+
+    returns:
+    should return a single interval
+    '''
+    if b >= 0:
+        intervals = quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2)
+        if a > 0:
+            '''
+            the intervals for c - at \geq 0 is
+            [-inf, c/a]
+            '''
+            return [intersection(I, [float("-inf"), c/a]) for I in intervals]
+        elif a < 0:
+            '''
+            the intervals for c - at \geq 0 is
+            [c/a, inf]
+            '''
+            return [intersection(I, [c/a, float("inf")]) for I in intervals]
+        elif c >= 0:
+            return intervals
+        else:
+            return [[]]
+    else:
+        '''
+        the intervals we will return is {c - at \geq 0} union
+        {c - at \leq 0} \cap {quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2, "greater than")}
+        '''
+        intervals = quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2, "greater than")
+        if a > 0:
+            return [intersection(I, [c/a, float("inf")]) for I in intervals] + [[float("-inf"), c/a]]
+        elif a < 0:
+            return [intersection(I, [float("-inf"), c/a]) for I in intervals] + [[c/a, float("inf")]]
+        elif c >= 0:
+            return [[float("-inf"), float("inf")]]
+        else:
+            return intervals
+
+
+
+
+    #if d < 0:
+    #    if a > 0:
+    #        raise ValueError("No valid solution")
+    #    else:
+    #        raise ValueError("No truncation")
+    #elif d == 0:
+    #    raise ValueError("Trucation point collapse")
+    #else:
+
+
+
         
     
 # def trunc_chi_distr(intervals, k, scale=1.):
@@ -251,3 +353,7 @@ def test_truncated():
     tr = truncated(intervals, pdf_chi(3, 2.), cdf_chi(3, 2.), quantile_chi(3, 2.))
     tr.plt_cdf()
                    
+
+
+
+
