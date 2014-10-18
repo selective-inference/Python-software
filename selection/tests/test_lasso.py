@@ -1,5 +1,6 @@
 import numpy as np
-from selection.lasso import lasso # , _howlong
+import numpy.testing.decorators as dec
+from selection.lasso import lasso, data_carving
 
 def test_class(n=100, p=20, frac=0.5):
     y = np.random.standard_normal(n)
@@ -19,6 +20,42 @@ def test_class(n=100, p=20, frac=0.5):
 
     return L, C, I, P
 
+def test_data_carving_null(n=100, p=70, lam_frac=0.8):
+    y = np.random.standard_normal(n) * 10
+    X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+    P = data_carving(y, X, lam_frac=lam_frac, sigma=10, burnin=20000, ndraw=80000)[1]
+
+    return P
+
+@dec.slow
+def data_carving_coverage(n=100, p=70, lam_frac=1.,
+                          split_frac=0.95):
+    X = np.random.standard_normal((n,p)) + 0. * np.random.standard_normal(n)[:,None]
+    X -= X.mean(0)[None,:]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    sigma = 4
+    beta = np.zeros(p)
+    beta[:5] = 20
+    mu = np.dot(X, beta) * sigma
+    y = np.random.standard_normal(n) * sigma + mu
+    I, L, signs = data_carving(y, X, lam_frac=lam_frac, sigma=sigma, burnin=1000, ndraw=5000,
+                               center=False, scale=False)[2:]
+    Xa = X[:,L.active]
+    truth = np.dot(np.linalg.pinv(Xa), mu) * signs
+    coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(I, truth)]
+    return coverage
+
+def test_data_carving_coverage(n=200):
+    C = []
+    SE = np.sqrt(0.95*0.05 / n)
+
+    while True:
+        C.extend(data_carving_coverage())
+        if len(C) > n:
+            break
+
+    if np.fabs(np.mean(C) - 0.95) > 2 * SE:
+        raise ValueError('coverage not within 2 SE of where it should be')
 
 def sample_lasso(n, p, m, sigma=0.25):
     n_samples, n_features = 50, 200
