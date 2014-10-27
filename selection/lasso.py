@@ -138,7 +138,6 @@ class lasso(object):
         lam = self.lagrange * n
 
         active = (beta != 0)
-        print active, beta
         self.z_E = np.sign(beta[active])
 
         # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)

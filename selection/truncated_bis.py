@@ -4,6 +4,7 @@ performs (conditional) UMPU tests for Gaussians
 restricted to a set of intervals.
 
 """
+from __future__ import division
 import numpy as np
 from scipy.stats import chi
 from mpmath import fsum
@@ -193,8 +194,6 @@ def find_root(f, y, lb, ub, tol=1e-6):
     return c
 
 
-
-
 def quantile_R(q, cdf, tol=1e-6):
     l, u = -np.inf, np.inf
 
@@ -235,6 +234,19 @@ def sf_chi(k, scale):
 def quantile_chi(k, scale):
     return lambda q: scale * chi.ppf(q, k)
 
+
+
+    #if d < 0:
+    #    if a > 0:
+    #        raise ValueError("No valid solution")
+    #    else:
+    #        raise ValueError("No truncation")
+    #elif d == 0:
+    #    raise ValueError("Trucation point collapse")
+    #else:
+
+
+
         
     
 # def trunc_chi_distr(intervals, k, scale=1.):
@@ -251,3 +263,7 @@ def test_truncated():
     tr = truncated(intervals, pdf_chi(3, 2.), cdf_chi(3, 2.), quantile_chi(3, 2.))
     tr.plt_cdf()
                    
+
+
+
+

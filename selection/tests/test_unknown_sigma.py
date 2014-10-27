@@ -1,5 +1,5 @@
 import numpy as np
-import selection.affine; reload(selection.affine)
+import selection.affine
 from selection.affine import constraints_unknown_sigma
 import matplotlib.pyplot as plt
 from statsmodels.distributions import ECDF
@@ -52,8 +52,8 @@ def instance(theta=0, A=None, R=None, eta=None):
     intervals, obs = constraints_unknown_sigma(A, b, Z, eta, R,
                                                value_under_null=theta)
     df = np.diag(R).sum()
-    truncT = truncated_T(np.array([(i.lower_value,
-                                    i.upper_value) for i in intervals]), df)
+    truncT = truncated_T(np.array([(interval.lower_value,
+                                    interval.upper_value) for interval in intervals]), df)
     sf = truncT.sf(obs)
     pval = 2 * min(sf, 1.-sf)
     if pval < 1.e-6:
