@@ -54,14 +54,15 @@ class sqlasso_objective(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-def solve_sqrt_lasso(X, Y, lam=None, **solve_kwargs):
+def solve_sqrt_lasso(X, Y, weights=None, **solve_kwargs):
     """
 
     Solve the square-root LASSO optimization problem:
 
     $$
-    \text{minimize}_{\beta} \|y-X\beta\|_2 + \lambda \|\beta\|_1
+    \text{minimize}_{\beta} \|y-X\beta\|_2 + D |\beta|,
     $$
+    where $D$ is the diagonal matrix with weights on its diagonal.
 
     Parameters
     ----------
@@ -72,9 +73,10 @@ def solve_sqrt_lasso(X, Y, lam=None, **solve_kwargs):
     X : np.float((n, p))
         The data, in the model $y = X\beta$
 
-    lam : np.float
-        Coefficient of the L-1 penalty in
-        optimization problem.
+    weights : np.float
+        Coefficients of the L-1 penalty in
+        optimization problem, note that different
+        coordinates can have different coefficients.
 
     solve_kwargs : dict
         Arguments passed to regreg solver.
@@ -82,10 +84,11 @@ def solve_sqrt_lasso(X, Y, lam=None, **solve_kwargs):
     """
     X = rr.astransform(X)
     n, p = X.output_shape[0], X.input_shape[0]
-    if lam is None:
+    if weights is None:
         lam = choose_lambda(X)
+        weights = lam * np.ones((p,))
     loss = sqlasso_objective(X, Y)
-    penalty = rr.l1norm(p, lagrange=lam)
+    penalty = rr.weighted_l1norm(weights, lagrange=1.)
     problem = rr.simple_problem(loss, penalty)
     soln = problem.solve(**solve_kwargs)
     return soln
@@ -156,10 +159,10 @@ class sqrt_lasso(object):
         """
 
         y, X = self.y, self.X
-        self._soln = solve_sqrt_lasso(X, y, self.lagrange, **solve_kwargs)
+        n, p = self.X.shape
+        self._soln = solve_sqrt_lasso(X, y, self.lagrange*np.ones((p,)), **solve_kwargs)
 
         beta = self._soln
-        n, p = self.X.shape
         lam = self.lagrange
 
         self.active = (beta != 0)             # E

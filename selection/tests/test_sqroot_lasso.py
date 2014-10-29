@@ -8,7 +8,7 @@ from selection.truncated_T import truncated_T
 def test_class(n=20, p=40, s=2):
     y = np.random.standard_normal(n) * 1.2
     beta = np.zeros(p)
-    beta[:s] = 3
+    beta[:s] = 5
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
     y += np.dot(X, beta)
     lam_theor = choose_lambda(X, quantile=0.9)
