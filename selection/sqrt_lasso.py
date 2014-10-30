@@ -7,7 +7,6 @@ post selection for the square root lasso.
 import numpy as np
 from scipy.stats import norm as ndist, chi as chidist
 from scipy.interpolate import interp1d
-import pyinter
 from mpmath import betainc, mp
 mp.dps = 150
 
@@ -178,8 +177,6 @@ class sqrt_lasso(object):
             self.w_E = np.dot(self._XEinv.T, self.z_E)
             self.W_E = np.dot(self._XEinv, self.w_E)
             self.s_E = np.sign(self.z_E * self.W_E)
-
-       
 
             self.df_E = n - nactive
 

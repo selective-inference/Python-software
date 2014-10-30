@@ -20,7 +20,6 @@ from .sample_truncnorm import (sample_truncnorm_white,
                                sample_truncnorm_white_ball,
                                sample_truncnorm_white_sphere)
 from .discrete_family import discrete_family
-                        
 from mpmath import mp
 import pyinter
 
@@ -61,7 +60,6 @@ class constraints(object):
     >>> positive.bounds(eta, Y)
     (1.3999999999999988, 7.4000000000000004, inf, 1.4142135623730951)
     >>> 
-
 
     """
 
@@ -900,88 +898,103 @@ def constraints_unknown_sigma( \
     Anorm = np.fabs(A).max()
 
     intervals = []
+    intervals = []
     for _a, _b, _c in zip(alpha, b, gamma):
-        _a, _b, _c = mp.mpf(_a), mp.mpf(_b), mp.mpf(_c)
-        _a = _a * sqrtW
-        _b = _b * sqrtW
+        cur_intervals = sqrt_inequality_solver(_a, _c, _b, df)
+        intervals.append(pyinter.IntervalSet([pyinter.closed(*i) for i in cur_intervals if i]))
 
-        if DEBUG:
-            def fu(U):
-                return (_a / sqrtW) * U + _c - _b * sigma_hat / sqrtW
-            if fu(U) > 0:
-                raise ValueError("observed U does not satisfy constraint")
-
-        if mp.fabs(_a) > tol * Anorm:
-            q = _c**2 - _a**2
-            l = 2*_a*_b
-            c = _c**2*df-_b**2
-            if l**2-4*q*c > 0:
-                root0 = (-l-mp.sqrt(l**2-4*q*c)) / (2*q)
-                root1 = (-l+mp.sqrt(l**2-4*q*c)) / (2*q) # q*c / root0
-                roots = sorted([root0, root1])
-                delta = (roots[1] - roots[0]) / 2
-                if DEBUG:
-                    print roots, 'a nonzero'
-                any_included = False
-                roots = [float(r) for r in roots]
-                cur_intervals = []
-                for interval, point in zip([(-mp.inf, roots[0]),
-                                            (roots[0], roots[1]),
-                                            (roots[1], mp.inf)],
-                                           [roots[0]-delta,
-                                            roots[0]+delta,
-                                            roots[1]+delta]):
-                    test = _a * point + _c * mp.sqrt(df+point**2) - _b
-                    if DEBUG:
-                        def f(pt):
-                            return _a * pt + _c * mp.sqrt(df + pt**2) - _b
-                        if f(Tobs) > 0:
-                            raise ValueError("observed T does not satisfy constraint")
-                    if test <= 0:
-                        any_included = True
-                        if DEBUG:
-                            print 'including', interval
-                        cur_intervals.append(pyinter.closed(*interval))
-                intervals.append(pyinter.IntervalSet(cur_intervals))
-            else:
-                # there are no roots, but there must be at least
-                # one point, so the set is the whole line
-                if DEBUG:
-                    print 'noroots, must be all of the line'
-                intervals.append(pyinter.IntervalSet([pyinter.closed(-mp.inf, mp.inf)]))
-        elif mp.fabs(_c) > tol * Anorm:
-            if _c < 0 and _b > 0:
-                if DEBUG:
-                    print 'all of the line'
-                intervals.append(pyinter.IntervalSet([pyinter.closed(-mp.inf, mp.inf)]))
-            elif _c < 0 and _b < 0:
-                if _b / _c > df:
-                    if DEBUG:
-                        print 'two intervals'
-                    intervals.append(pyinter.IntervalSet([pyinter.closed(mp.sqrt(_b/_c-df),mp.inf),
-                                      pyinter.closed(-mp.inf, mp.sqrt(_b/_c-df),mp.inf)]))
-                else:
-                    raise ValueError('no points in set')
-            elif _c > 0 and _b > 0:
-                if _b / _c > df:
-                    if DEBUG:
-                        print 'bounded interval'
-                    intervals.append(pyinter.IntervalSet([pyinter.closed(-mp.sqrt(_b/_c-df),mp.sqrt(_b/_c-df))]))
-                else:
-                    raise ValueError('no points in set')
-            elif _c > 0 and _b < 0:
-                raise ValueError('no points in set')
-        else:
-            if _b > 0:
-                pass
-            else:
-                raise ValueError('no points in set')
-
-    
-    if DEBUG:
-        print intervals, 'intervals'
     truncation_set = intervals[0]
     for interv in intervals[1:]:
         truncation_set = truncation_set.intersection(interv)
-
     return truncation_set, Tobs
+
+
+def quadratic_inequality_solver(a, b, c, direction="less than"):
+    '''
+    solves a * x**2 + b * x + c \leq 0, if direction is "less than",
+    solves a * x**2 + b * x + c \geq 0, if direction is "greater than",
+    
+    returns:
+    the truancated interval, may include [-infty, + infty]
+    the returned interval(s) is a list of disjoint intervals indicating the union.
+    when the left endpoint of the interval is equal to the right, return empty list 
+    '''
+    if direction not in ["less than", "greater than"]:
+        raise ValueError("direction should be in ['less than', 'greater than']")
+    
+    if direction == "less than":
+        d = b**2 - 4*a*c
+        if a > 0:
+            if d <= 0:
+                #raise ValueError("No valid solution")
+                return [[]]
+            else:
+                lower = (-b - np.sqrt(d)) / (2*a)
+                upper = (-b + np.sqrt(d)) / (2*a)
+                return [[lower, upper]]
+        elif a < 0:
+            if d <= 0:
+                return [[float("-inf"), float("inf")]]
+            else:
+                lower = (-b + np.sqrt(d)) / (2*a)
+                upper = (-b - np.sqrt(d)) / (2*a)
+                return [[float("-inf"), lower], [upper, float("inf")]]
+        else:
+            if b > 0:
+                return [[float("-inf"), -c/b]]
+            elif b < 0:
+                return [[-c/b, float("inf")]]
+            else:
+                raise ValueError("Both coefficients are equal to zero")
+    else:
+        return quadratic_inequality_solver(-a, -b, -c, direction="less than")
+
+
+def intersection(I1, I2):
+    if (not I1) or (not I2) or min(I1[1], I2[1]) <= max(I1[0], I2[0]):
+        return []
+    else:
+        return [max(I1[0], I2[0]), min(I1[1], I2[1])]
+
+def sqrt_inequality_solver(a, b, c, n):
+    '''
+    find the intervals for t such that,
+    a*t + b*sqrt(n + t**2) \leq c
+
+    returns:
+    should return a single interval
+    '''
+    if b >= 0:
+        intervals = quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2)
+        if a > 0:
+            '''
+            the intervals for c - at \geq 0 is
+            [-inf, c/a]
+            '''
+            return [intersection(I, [float("-inf"), c/a]) for I in intervals]
+        elif a < 0:
+            '''
+            the intervals for c - at \geq 0 is
+            [c/a, inf]
+            '''
+            return [intersection(I, [c/a, float("inf")]) for I in intervals]
+        elif c >= 0:
+            return intervals
+        else:
+            return [[]]
+    else:
+        '''
+        the intervals we will return is {c - at \geq 0} union
+        {c - at \leq 0} \cap {quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2, "greater than")}
+        '''
+        intervals = quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2, "greater than")
+        if a > 0:
+            return [intersection(I, [c/a, float("inf")]) for I in intervals] + [[float("-inf"), c/a]]
+        elif a < 0:
+            return [intersection(I, [float("-inf"), c/a]) for I in intervals] + [[c/a, float("inf")]]
+        elif c >= 0:
+            return [[float("-inf"), float("inf")]]
+        else:
+            return intervals
+
+
