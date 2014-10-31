@@ -900,7 +900,7 @@ def constraints_unknown_sigma( \
     intervals = []
     intervals = []
     for _a, _b, _c in zip(alpha, b, gamma):
-        cur_intervals = sqrt_inequality_solver(_a, _c, _b, df)
+        cur_intervals = sqrt_inequality_solver(_a, _c, -_b, df)
         intervals.append(pyinter.IntervalSet([pyinter.closed(*i) for i in cur_intervals if i]))
 
     truncation_set = intervals[0]
