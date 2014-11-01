@@ -757,9 +757,13 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     if alternative not in ['greater', 'less', 'twosided']:
         raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
 
+    if affine_con.translate is None:
+        Y_translate = Y
+    else:
+        Y_translate = Y - affine_con.translate
     if not sigma_known:
         Z, W = sample_from_sphere(affine_con,
-                                  Y - affine_con.translate,
+                                  Y_translate,
                                   eta,
                                   how_often=how_often,
                                   ndraw=ndraw,
@@ -767,7 +771,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                   white=white)
     else:
         Z = sample_from_constraints(affine_con,
-                                    Y - affine_con.translate,
+                                    Y_translate,
                                     eta,
                                     how_often=how_often,
                                     ndraw=ndraw,
