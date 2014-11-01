@@ -15,7 +15,9 @@ import numpy as np
 from sklearn.linear_model import Lasso
 from .affine import (constraints, selection_interval,
                      interval_constraints,
+                     sample_from_constraints,
                      stack)
+from .discrete_family import discrete_family
 
 from scipy.stats import norm as ndist
 import warnings
@@ -27,7 +29,6 @@ except ImportError:
     pass
 
 DEBUG = False
-
 
 
 class lasso(object):
@@ -245,6 +246,8 @@ class lasso(object):
                                         _interval))
         return self._intervals_unadjusted
 
+
+
 def _constraint_from_data(X_E, X_notE, z_E, lam, sigma, R):
 
     # inactive constraints
@@ -266,3 +269,157 @@ def _constraint_from_data(X_E, X_notE, z_E, lam, sigma, R):
                          _inactive_constraints)
     _constraints.covariance *= sigma**2
     return _active_constraints, _inactive_constraints, _constraints
+
+def standard_lasso(y, X, sigma=1, lam_frac=1.):
+    """
+    Fit a LASSO with a default choice of Lagrange parameter
+    equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
+    with $\epsilon$ IID N(0,1).
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    sigma : np.float
+        Noise variance
+
+    lam_frac : float
+        Multiplier for choice of $\lambda$
+
+    Returns
+    -------
+
+    lasso_selection : `lasso`
+         Instance of `lasso` after fitting. 
+
+    """
+    n, p = X.shape
+
+    lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0))
+
+    lasso_selector = lasso(y, X, lam, sigma=sigma)
+    lasso_selector.fit()
+    return lasso_selector
+
+def data_carving(y, X, sigma=1, lam_frac=1.,
+                 split_frac=0.9,
+                 beta_parameter_sampling=None,
+                 ndraw=80000, burnin=20000):
+
+    """
+    Fit a LASSO with a default choice of Lagrange parameter
+    equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
+    with $\epsilon$ IID N(0,1) on a proportion (`split_frac`) of
+    the data.
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    sigma : np.float
+        Noise variance
+
+    lam_frac : float
+        Multiplier for choice of $\lambda$
+
+    split_frac : float
+        What proportion of the data to use in the first stage?
+
+    burnin : int
+        How many burnin samples for Gibbs hit-and-run sampler.
+
+    ndraw : int
+        How many draws to keep from Gibbs hit-and-run sampler.
+    Returns
+    -------
+
+    full_con : `constraints`
+         Constraints on all data after 
+
+    pvalues : [(variable_id, float)]
+         One sided tests for each selected variable
+         with signs chosen from the LASSO selected sign.
+         
+    intervals : [(variable_id, float, float)]
+         Selection intervals for each selected variable.
+         Intervals are the equal-tailed intervals.
+
+    """
+
+    n, p = X.shape
+    splitn = int(n*split_frac)
+    indices = np.arange(n)
+    np.random.shuffle(indices)
+    stage_one = indices[:splitn]
+    y1, X1 = y[stage_one], X[stage_one]
+    
+    first_stage_selector = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
+    selector = np.identity(n)[stage_one]
+    linear_part = np.dot(first_stage_selector.constraints.linear_part,
+                         selector)
+    full_con = constraints(linear_part, 
+                           first_stage_selector.constraints.offset,
+                           covariance=sigma**2 * np.identity(n))
+
+    active = first_stage_selector.active
+    Xa_inv = np.linalg.pinv(X[:,active])
+
+    full_con.mean = np.dot(X[:, active], np.dot(Xa_inv, y))
+    beta_OLS = np.dot(Xa_inv, full_con.mean)
+    sign_beta = np.sign(np.dot(np.linalg.pinv(X1[:, active]), y1))
+
+    pvalues = []
+    intervals = []
+
+    for i, a in enumerate(active):
+        keep = np.zeros(p, np.bool)
+        keep[active] = 1
+        keep[a] = 0
+
+        eta = Xa_inv[i] * sign_beta[i]
+        natural_parameter_sampling = beta_OLS[i] * sign_beta[i] / (sigma**2 * (eta**2).sum())
+        observed = (y*eta).sum()
+        conditional_con = full_con.conditional(X[:,keep].T, 
+                                               np.dot(X[:,keep].T, y))
+        Z = sample_from_constraints(full_con,
+                                    y,
+                                    eta,
+                                    ndraw=ndraw,
+                                    burnin=burnin)
+        null_statistics = np.dot(Z, eta)
+
+        # these weights
+        # retilt the distribution
+        # back to the null
+
+        logW = -natural_parameter_sampling * null_statistics 
+        logW -= logW.max() - 2.
+        W = np.exp(logW)
+
+        # pvalues and intervals
+        # can be found from a discrete 
+        # exponential family
+
+        family = discrete_family(null_statistics, W)
+        pval = family.ccdf(0, observed)
+        pvalues.append([a,pval])
+        
+        interval = family.equal_tailed_interval(observed)
+        # this is an interval for the natural parameter which is
+        # \eta^T\mu / \|\eta\|^2 \sigma^2
+
+        interval = (interval[0] * (eta**2).sum() * sigma**2,
+                    interval[1] * (eta**2).sum() * sigma**2)
+        intervals.append([a, interval[0], interval[1]])
+
+    return full_con, pvalues, intervals, first_stage_selector, sign_beta
