@@ -175,7 +175,6 @@ def test_pval_intervals(nsample=100):
                 count += 1
                 if beta[i] <= C[1] and beta[i] >= C[0]:
                     coverage += 1
-                print count, coverage, C, beta[i]
 
     return pvalues, gaussian_pvalues, coverage/count
             
