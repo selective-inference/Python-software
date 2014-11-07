@@ -163,10 +163,7 @@ def test_pval_intervals(nsample=100):
     coverage = 0
     count = 0
     for _ in range(nsample):
-        try:
-            P, P_gaussian, intervals, beta = test_gaussian_approx()
-        except (IndexError, ValueError):
-            print "Error raised!"
+        P, P_gaussian, intervals, beta = test_gaussian_approx()
 
         if P != []:
             pvalues.extend(P)

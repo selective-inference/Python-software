@@ -150,7 +150,7 @@ class lasso(object):
 
         (self._active_constraints, 
          self._inactive_constraints, 
-         self._constraints) = _constraint_from_data(X_E, X_notE, self.z_E, lam, self.sigma, R)
+         self._constraints) = _constraint_from_data(X_E, X_notE, self.z_E, active, lam, self.sigma, R)
 
     @property
     def soln(self):
@@ -245,10 +245,14 @@ class lasso(object):
                                         _interval))
         return self._intervals_unadjusted
 
-def _constraint_from_data(X_E, X_notE, z_E, lam, sigma, R):
+def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
+
+    n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
+    if np.array(lam).shape == ():
+        lam = np.ones(p) * lam
 
     # inactive constraints
-    A0 = np.vstack((R, -R)) / lam
+    A0 = np.vstack((R, -R)) / np.hstack([lam[~E],lam[~E]])[:,None]
     b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), z_E))
     b0 = np.concatenate((1.-b_tmp, 1.+b_tmp))
     _inactive_constraints = constraints(A0, b0)
@@ -257,7 +261,7 @@ def _constraint_from_data(X_E, X_notE, z_E, lam, sigma, R):
     # active constraints
     C = np.linalg.inv(np.dot(X_E.T, X_E))
     A1 = -np.dot(np.diag(z_E), np.dot(C, X_E.T))
-    b1 = -lam*np.dot(np.diag(z_E), np.dot(C, z_E))
+    b1 = -np.dot(np.diag(z_E), np.dot(C, z_E))*lam[E]
 
     _active_constraints = constraints(A1, b1)
     _active_constraints.covariance *= sigma**2
