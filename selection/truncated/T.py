@@ -1,8 +1,8 @@
 import numpy as np
 from mpmath import mp
 from scipy.stats import t as tdist
-from truncated_bis import truncated
-from truncated_F import sf_F
+from .base import truncated
+from .F import sf_F
 
 def sf_T(df):
 

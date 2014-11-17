@@ -5,8 +5,7 @@ from intervals import intervals
 from projection import projection, full_rank
 
 
-from truncated_chi import truncated_chi, truncated_chi2
-from truncated_F import truncated_F
+from truncated import truncated_chi, truncated_chi2, truncated_F
 from scipy.stats import norm
 
 from tools import timethis
@@ -403,9 +402,9 @@ class quad_constraints_vecnorm(constraint.constraint):
 
 
         for u1, u2, v1, v2 in zip(U1, U2, V1, V2):
-            a = np.linalg.norm(v1) - np.linalg.norm(v2)
+            a = np.linalg.norm(v1)**2 - np.linalg.norm(v2)**2
             b = 2* float( np.dot(u1, v1.T) - np.dot(u2, v2.T) )
-            c = np.linalg.norm(u1) - np.linalg.norm(u2)
+            c = np.linalg.norm(u1)**2 - np.linalg.norm(u2)**2
             
             if c > 0:
                 raise ValueError("c should be negative : " + repr(c))

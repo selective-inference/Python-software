@@ -5,11 +5,11 @@ restricted to a set of intervals.
 
 """
 import numpy as np
-from .pvalue import (norm_pdf, 
-                     truncnorm_cdf, 
-                     norm_q,
-                     norm_interval,
-                     mp)
+from ..pvalue import (norm_pdf, 
+                      truncnorm_cdf, 
+                      norm_q,
+                      norm_interval,
+                      mp)
 
 class truncated_gaussian(object):
     
