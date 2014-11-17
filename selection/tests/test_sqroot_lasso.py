@@ -3,7 +3,7 @@ import numpy as np
 from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
                                   estimate_sigma)
 from selection.affine import constraints_unknown_sigma
-from selection.truncated_T import truncated_T
+from selection.truncated import T as truncated_T
 
 def test_class(n=20, p=40, s=2):
     y = np.random.standard_normal(n) * 1.2
