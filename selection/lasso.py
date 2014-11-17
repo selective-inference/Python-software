@@ -245,6 +245,7 @@ class lasso(object):
                 self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
                                         _interval))
         return self._intervals_unadjusted
+
 def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
 
     n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
