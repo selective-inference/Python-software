@@ -17,7 +17,7 @@ import regreg.api as rr
 # local
 
 from .lasso import _constraint_from_data
-from .truncated_T import truncated_T
+from .truncated import T as truncated_T
 from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
 from .truncated import find_root
 

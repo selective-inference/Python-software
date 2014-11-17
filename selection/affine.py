@@ -15,7 +15,7 @@ and `post selection LASSO`_.
 import numpy as np
 
 from .pvalue import truncnorm_cdf, norm_interval
-from .truncated import truncated_gaussian
+from .truncated import gaussian as truncated_gaussian
 from .sample_truncnorm import (sample_truncnorm_white, 
                                sample_truncnorm_white_ball,
                                sample_truncnorm_white_sphere)
