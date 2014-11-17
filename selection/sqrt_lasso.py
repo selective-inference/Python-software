@@ -53,14 +53,15 @@ class sqlasso_objective(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-def solve_sqrt_lasso(X, Y, lam=None, **solve_kwargs):
+def solve_sqrt_lasso(X, Y, weights=None, **solve_kwargs):
     """
 
     Solve the square-root LASSO optimization problem:
 
     $$
-    \text{minimize}_{\beta} \|y-X\beta\|_2 + \lambda \|\beta\|_1
+    \text{minimize}_{\beta} \|y-X\beta\|_2 + D |\beta|,
     $$
+    where $D$ is the diagonal matrix with weights on its diagonal.
 
     Parameters
     ----------
@@ -71,9 +72,10 @@ def solve_sqrt_lasso(X, Y, lam=None, **solve_kwargs):
     X : np.float((n, p))
         The data, in the model $y = X\beta$
 
-    lam : np.float
-        Coefficient of the L-1 penalty in
-        optimization problem.
+    weights : np.float
+        Coefficients of the L-1 penalty in
+        optimization problem, note that different
+        coordinates can have different coefficients.
 
     solve_kwargs : dict
         Arguments passed to regreg solver.
@@ -81,10 +83,11 @@ def solve_sqrt_lasso(X, Y, lam=None, **solve_kwargs):
     """
     X = rr.astransform(X)
     n, p = X.output_shape[0], X.input_shape[0]
-    if lam is None:
+    if weights is None:
         lam = choose_lambda(X)
+        weights = lam * np.ones((p,))
     loss = sqlasso_objective(X, Y)
-    penalty = rr.l1norm(p, lagrange=lam)
+    penalty = rr.weighted_l1norm(weights, lagrange=1.)
     problem = rr.simple_problem(loss, penalty)
     soln = problem.solve(**solve_kwargs)
     return soln
@@ -112,7 +115,7 @@ class sqrt_lasso(object):
     alpha = 0.05
     UMAU = False
 
-    def __init__(self, y, X, lam):
+    def __init__(self, y, X, weights):
 
         """
         Parameters
@@ -124,21 +127,26 @@ class sqrt_lasso(object):
         X : np.float((n, p))
             The data, in the model $y = X\beta$
 
-        lam : np.float
-            Coefficient of the L-1 penalty in
-            optimization problem.
+        weights : np.float(p) or float
+            Coefficients in weighted L-1 penalty in
+            optimization problem. If a float,
+            weights are proportional to 1.
 
         """
+        
+        n, p = X.shape
 
+        if np.array(weights).shape == ():
+            weights = weights * np.ones(p)
         self.y = y
         self.X = X
         n, p = X.shape
-        self.lagrange = lam
+        self.weights = weights
 
     def fit(self, **solve_kwargs):
         """
-        Fit the sqaure root LASSO using `regreg`
-        using `lam=self.lagrange`.
+        Fit the square root LASSO using `regreg`
+        using `weights=self.weights.`
 
         Parameters
         ----------
@@ -155,11 +163,10 @@ class sqrt_lasso(object):
         """
 
         y, X = self.y, self.X
-        self._soln = solve_sqrt_lasso(X, y, self.lagrange, **solve_kwargs)
+        n, p = self.X.shape
+        self._soln = solve_sqrt_lasso(X, y, self.weights, **solve_kwargs)
 
         beta = self._soln
-        n, p = self.X.shape
-        lam = self.lagrange
 
         self.active = (beta != 0)             # E
         nactive = self.active.sum()           # |E|
@@ -171,7 +178,7 @@ class sqrt_lasso(object):
             X_E = self.X[:,self.active]
             X_notE = self.X[:,~self.active]
             self._XEinv = np.linalg.pinv(X_E)
-            self.w_E = np.dot(self._XEinv.T, self.z_E)
+            self.w_E = np.dot(self._XEinv.T, self.weights[self.active] * self.z_E)
             self.W_E = np.dot(self._XEinv, self.w_E)
             self.s_E = np.sign(self.z_E * self.W_E)
 
@@ -184,7 +191,7 @@ class sqrt_lasso(object):
             self.P_E = np.dot(X_E, self._XEinv)
             self.R_E = np.identity(n) - self.P_E
 
-            _denE = np.sqrt(1 - lam**2 * (self.z_E*self.W_E).sum())
+            _denE = np.sqrt(1 - np.linalg.norm(self.w_E)**2)
             c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
 
             _covE = np.dot(self._XEinv, self._XEinv.T)
@@ -197,14 +204,15 @@ class sqrt_lasso(object):
              self._constraints) = _constraint_from_data(X_E,
                                                         X_notE,
                                                         self.z_E,
-                                                        c_E * lam,
+                                                        self.active, 
+                                                        c_E * self.weights,
                                                         self.sigma_E,
                                                         np.dot(X_notE.T, self.R_E))
 
             self.U_E = np.dot(self._XEinv, y) / _diagE
             self.T_E = self.U_E / self.sigma_E
 
-            _fracE = lam * np.sqrt(self.df_E) / (_denE * _diagE)
+            _fracE = np.sqrt(self.df_E) / (_denE * _diagE)
             RHS = _fracE * np.fabs(self.W_E)
             self.alpha_E = self.s_E * RHS / np.sqrt(self.df_E)
             self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
