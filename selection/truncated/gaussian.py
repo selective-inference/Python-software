@@ -11,7 +11,120 @@ from ..pvalue import (norm_pdf,
                       norm_interval,
                       mp)
 
-class truncated_gaussian(object):
+from scipy.stats import norm as ndist
+from .base import truncated, find_root
+
+class truncated_gaussian(truncated):
+
+    """
+    >>> from intervals import intervals
+    >>> I = intervals.intersection(intervals((-1, 6)), \
+                                       intervals(( 0, 7)), \
+                                       ~intervals((1, 4)))
+    #### THIS TEST SHOULD BE FIXED
+    >>> distr = trunc_gaussian(I, 3.1, 2.)
+    >>> print distr.cdf(0)
+    0.0
+    >>> z = distr.quantile(distr.cdf(5.))
+    >>> np.abs(z - 5) < 1e-2
+    True
+    """
+
+    def __init__(self, I, mu=0, scale = 1.):
+        """
+        Create a new object for a truncated_gaussian distribution
+
+        Parameters
+        ----------
+        I : intervals
+            The intervals the distribution is truncated to.
+
+        mu : int
+            Mean of Gaussian that is truncated.
+
+        scale : float
+            SD of Gaussian that is truncated.
+
+        """
+
+        self._mu = mu
+        self._mu = mu
+        truncated.__init__(self, I)
+
+    def _cdf_notTruncated(self, a, b, dps):
+        """
+        Compute the probability of being in the interval (a, b)
+        for a variable with a Gaussian distribution (not truncated)
+        
+        Parameters
+        ----------
+        a, b : float
+            Bounds of the interval. Can be infinite.
+
+        dps : int
+            Decimal precision (decimal places). Used in mpmath
+
+        Returns
+        -------
+        p : float
+            The probability of being in the intervals (a, b)
+            P( a < X < b)
+            for a non truncated variable
+
+        """
+        scale = self._scale
+        mu = self._mu
+        dps_temp = mp.mp.dps
+        mp.mp.dps = dps
+
+        val = norm_interval((a-mu)/sigma,
+                      (b-mu)/sigma))
+        mp.mp.dps = dps_temp
+
+        return val
+
+    def _pdf_notTruncated(self, z, dps):
+
+        scale = self._scale
+        mu = self._mu
+        dps_temp = mp.mp.dps
+        mp.mp.dps = dps
+
+        val = norm_pdf(Z)
+        mp.mp.dps = dps_temp
+
+        return val
+
+    def _quantile_notTruncated(self, q, tol=1.e-6):
+        """
+        Compute the quantile for the non truncated distribution
+
+        Parameters
+        ----------
+        q : float
+            quantile you want to compute. Between 0 and 1
+
+        tol : float
+            precision for the output
+
+        Returns
+        -------
+        x : float
+            x such that P(X < x) = q
+
+        """
+
+        scale = self._scale
+        mu = self._mu
+        dps_temp = mp.mp.dps
+        mp.mp.dps = dps
+
+        val = norm_q(q)
+        mp.mp.dps = dps_temp
+
+        return val
+
+class truncated_gaussian_old(object):
     
     """
     A Gaussian distribution, truncated to

@@ -15,7 +15,7 @@ and `post selection LASSO`_.
 import numpy as np
 
 from .pvalue import truncnorm_cdf, norm_interval
-from .truncated import gaussian as truncated_gaussian
+from .truncated.gaussian import truncated_gaussian
 from .sample_truncnorm import (sample_truncnorm_white, 
                                sample_truncnorm_white_ball,
                                sample_truncnorm_white_sphere)
@@ -676,7 +676,7 @@ def selection_interval(support_directions,
         direction_of_interest,
         tol=tol)
 
-    truncated = truncated_gaussian([(lower_bound, upper_bound)], sigma=sigma)
+    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], sigma=sigma)
     if UMAU:
         _selection_interval = truncated.UMAU_interval(V, alpha)
     else:
