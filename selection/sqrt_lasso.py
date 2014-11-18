@@ -280,6 +280,19 @@ class sqrt_lasso(object):
         return self._sigma_hat
 
     @property
+    def scaled_lasso_sigma(self):
+        """
+        Scaled LASSO estimate of sigma
+        """
+        if not hasattr(self, "_scaled_sigma_hat"):
+            if self.active.shape[0] > 0:
+                resid = self.y - np.dot(self.X, self.soln)
+                self._scaled_sigma_hat = np.sqrt(np.linalg.norm(resid)**2 / self.df_E)
+            else:
+                self._scaled_sigma_hat = self.sigma_E
+        return self._scaled_sigma_hat
+
+    @property
     def intervals(self):
         """
         Intervals for OLS parameters of active variables
