@@ -78,7 +78,7 @@ class truncated_gaussian(truncated):
         mp.mp.dps = dps
 
         val = norm_interval((a-mu)/sigma,
-                      (b-mu)/sigma))
+                            (b-mu)/sigma)
         mp.mp.dps = dps_temp
 
         return val
