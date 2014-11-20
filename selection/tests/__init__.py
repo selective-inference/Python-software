@@ -19,4 +19,6 @@ def equicorrelated(n=100, p=200, s=10, snr=7, sigma=5, rho=0.3,
     beta[:s] = snr * (np.random.standard_normal(s) / 5 + (2 * np.random.binomial(1, 0.5, size=(s,)) - 1))
     y = (np.dot(X, beta) + noise(n, df)) * sigma
 
+    true_active = np.zeros(p)
+    true_active[:s] = 1
     return y, X, beta

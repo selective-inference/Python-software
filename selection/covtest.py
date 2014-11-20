@@ -22,8 +22,11 @@ that can use sigma but does not need it.
 """
 
 import numpy as np
+from scipy.special import ndtr, ndtri
+
 from .affine import constraints, sample_from_constraints, gibbs_test
 from .forward_step import forward_stepwise
+from .discrete_family import discrete_family
 
 def covtest(X, Y, sigma=1, exact=True,
             covariance=None):
@@ -146,11 +149,48 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     cone, _, idx, sign = covtest(X, Y, sigma=sigma or 1,
                                  covariance=covariance)
 
-    pvalue, Z, W = gibbs_test(cone, Y, X[:,idx] * sign,
-                              ndraw=ndraw,
-                              burnin=burnin,
-                              sigma_known=sigma is not None,
-                              alternative='greater')
-
+    if sigma is None:
+        pvalue, Z, W = gibbs_test(cone, Y, X[:,idx] * sign,
+                                  ndraw=ndraw,
+                                  burnin=burnin,
+                                  sigma_known=False, 
+                                  alternative='greater')
+    else:
+        val = np.sum((X[:,idx] * Y) * sign)
+        family = _covtest_sampler(cone, X[:,idx] * sign,
+                                  sigma) # , mu = val * X[:,idx] * sign / np.linalg.norm(X[:,idx])**2)
+        pvalue = family.ccdf(0, val) #-val / sigma**2, val)
     return cone, pvalue, idx, sign
 
+def _covtest_sampler(cone, eta, sigma, nsample=1000, mu=None):
+    """
+    Due to special strucutre of covtest cone constraint, sampling
+    is easy with importance weights.
+    """
+    n = eta.shape[0]
+    eta_n = eta / np.linalg.norm(eta)
+
+    results = []
+    weights = []
+
+    if mu is None:
+        mu = np.zeros(n)
+
+    for _ in range(nsample):
+        Y0 = np.random.standard_normal(n) * sigma + mu
+        mu_eta = (mu * eta_n).sum()
+        Y0 -= (Y0 * eta_n).sum() * eta_n
+        L, _, U = cone.bounds(eta_n, Y0)[:3]
+        cdfL = ndtr(-(L - mu_eta) / sigma)
+        cdfU = ndtr(-(U - mu_eta) / sigma)
+        unif = np.random.sample() * (cdfU - cdfL) + cdfL
+        if unif < 0.5:
+            tnorm = ndtri(unif) * sigma
+        else:
+            tnorm = -ndtri(1-unif) * sigma
+        tnorm = -tnorm
+        results.append(np.sum(eta * (Y0 + (tnorm + mu_eta) * eta_n)))
+        weights.append(np.fabs(cdfL - cdfU))
+                           
+    family = discrete_family(results, weights)
+    return family
