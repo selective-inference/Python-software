@@ -16,9 +16,9 @@ def equicorrelated(n=100, p=200, s=10, snr=7, sigma=5, rho=0.3,
     X -= X.mean(0)[None,:]
     X /= (X.std(0)[None,:] * np.sqrt(n))
     beta = np.zeros(p) 
-    beta[:s] = snr * (np.random.standard_normal(s) / 5 + (2 * np.random.binomial(1, 0.5, size=(s,)) - 1))
+    beta[:s] = snr * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
     y = (np.dot(X, beta) + noise(n, df)) * sigma
 
-    true_active = np.zeros(p)
+    true_active = np.zeros(p, np.bool)
     true_active[:s] = 1
-    return y, X, beta
+    return y, X, beta, true_active

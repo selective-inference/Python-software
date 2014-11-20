@@ -72,6 +72,8 @@ def main(**extra_args):
           provides=PROVIDES,
           packages     = ['selection',
                           'selection.utils',
+                          'selection.truncated',
+                          'selection.tests'
                           ],
           ext_modules = EXTS,
           package_data = {},
