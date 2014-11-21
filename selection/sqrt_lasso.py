@@ -461,6 +461,12 @@ def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
 
     interpolant = interp1d(values, expected + df**(0.5) * values**2)
     V = np.linspace(1./factor,factor,10*npts) * observed
+    # this solves for the solution to 
+    # expected(sigma) + sqrt(df) * sigma^2 = observed SS * (1 + sqrt(df))
+    # the usual "MAP" estimator would have RHS just observed SS
+    # but this factor seems to ``correct it''.
+    # it is such that if there were no selection it would be 
+    # the usual unbiased estimate
     sigma_hat = np.min(V[interpolant(V) >= observed**2 * df + observed**2 * df**(0.5)])
     return sigma_hat
 
