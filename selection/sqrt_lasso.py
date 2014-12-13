@@ -53,7 +53,7 @@ class sqlasso_objective(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-def solve_sqrt_lasso(X, Y, weights=None, **solve_kwargs):
+def solve_sqrt_lasso(X, Y, weights=None, initial=None, **solve_kwargs):
     """
 
     Solve the square-root LASSO optimization problem:
@@ -66,7 +66,7 @@ def solve_sqrt_lasso(X, Y, weights=None, **solve_kwargs):
     Parameters
     ----------
 
-    y : np.float(y)
+    y : np.float((n,))
         The target, in the model $y = X\beta$
 
     X : np.float((n, p))
@@ -76,6 +76,9 @@ def solve_sqrt_lasso(X, Y, weights=None, **solve_kwargs):
         Coefficients of the L-1 penalty in
         optimization problem, note that different
         coordinates can have different coefficients.
+
+    initial : np.float(p)
+        Initial point for optimization.
 
     solve_kwargs : dict
         Arguments passed to regreg solver.
@@ -89,6 +92,8 @@ def solve_sqrt_lasso(X, Y, weights=None, **solve_kwargs):
     loss = sqlasso_objective(X, Y)
     penalty = rr.weighted_l1norm(weights, lagrange=1.)
     problem = rr.simple_problem(loss, penalty)
+    if initial is not None:
+        problem.coefs[:] = initial
     soln = problem.solve(**solve_kwargs)
     return soln
 
