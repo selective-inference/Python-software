@@ -16,6 +16,7 @@ from sklearn.linear_model import Lasso
 from .affine import (constraints, selection_interval,
                      interval_constraints,
                      sample_from_constraints,
+                     gibbs_test,
                      stack)
 from .discrete_family import discrete_family
 
@@ -344,7 +345,7 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
 
     results : [(variable_id, pvalue, interval)]
         Identity of active variables with associated
-        selected (two-sided) pvalue and selective interval.
+        selected (twosided) pvalue and selective interval.
 
     """
 
@@ -362,7 +363,8 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
 
     X_E = X[:,L.active]
     X_Ei = np.linalg.pinv(X_E)
-    X_Ei1 = np.linalg.pinv(X_E[stage_one])
+    X_E1 = X1[:,L.active]
+    X_Ei1 = np.linalg.pinv(X_E1)
 
     info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
     info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
@@ -370,33 +372,61 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
 
     s_obs = L.active.shape[0]
     beta_E = np.dot(X_Ei, y)
+    beta_E1 = np.dot(X_Ei1, y[stage_one])
 
     pvalues = []
     intervals = []
 
+    R1 = np.identity(y1.shape[0]) - np.dot(X_E1, X_Ei1)
+
+    print X_Ei1.shape, X_Ei[:,stage_one].T.shape
+    Cov_tmp = np.dot(X_Ei1, X_Ei[:,stage_one].T) * sigma**2
+    print Cov_tmp.shape, info_E.shape, 'bha'
+    print np.linalg.norm(Cov_tmp - info_E), 'cov'
+
+    selector = np.zeros((s_obs, 2*s_obs))
+    selector[:, :s_obs]  = np.identity(s_obs)
+    conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
+
+    linear_part = np.zeros((s_obs, 2*s_obs))
+    linear_part[:, s_obs:] = -np.diag(L.z_E)
+    con = constraints(linear_part, b)
+
+    cov = np.zeros((2*s_obs, 2*s_obs))
+    cov[:s_obs, :s_obs] = info_E
+    cov[s_obs:, :s_obs] = info_E
+    cov[:s_obs, s_obs:] = info_E
+    cov[s_obs:, s_obs:] = info_E1
+
+    con.covariance[:] = cov
+
+    initial = np.hstack([beta_E, beta_E1])
+    print con(initial)
+
     for j in range(X_E.shape[1]):
-        bound_RHS = b[j]
-        center = 0.
-        beta_sample = (np.random.standard_normal((ndraw,)) * 
-                       np.sqrt(info_E[j,j])) + center
 
-        # conditional variance
-        # of \hat{\beta}_{1,j} | \hat{\beta}_j
+        keep = np.ones(s_obs, np.bool)
+        keep[j] = 0
 
-        conditional_var = info_E1[j,j] - info_E[j,j] 
-        conditional_sd = np.sqrt(conditional_var)
+        eta = np.zeros(2*s_obs)
+        eta[j] = 1.
 
-        # conditional mean (depends on sample)
-        conditional_mean = - beta_sample
-
-        if L.z_E[j] == 1:
-            importance_weight = ndist.sf((-bound_RHS - conditional_mean) / conditional_sd)
-        else:
-            importance_weight = ndist.cdf((bound_RHS - conditional_mean) / conditional_sd)
-        family = discrete_family(beta_sample, importance_weight)
-        _pval = family.cdf(-center / info_E[j,j], beta_E[j])
-        pval = 2 * min(_pval, 1 - _pval)
+        print np.dot(linear_part, initial)[s_obs:]
+        conditional_law = con.conditional(conditional_linear[keep], \
+                              np.dot(X_E.T, y)[keep])
+        print np.dot(conditional_linear[keep], initial) - np.dot(X_E.T, y)[keep]
+        pval, Z, W = gibbs_test(conditional_law,
+                                initial,
+                                eta,
+                                UMPU=False,
+                                sigma_known=True,
+                                ndraw=ndraw,
+                                burnin=2000,
+                                how_often=5,
+                                alternative='twosided')
+        print pval
         pvalues.append(pval)
+
 
 #         if L.z_E[j] == 1:
 #             z = (-bound_RHS - center) / conditional_sd
@@ -406,6 +436,7 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
 #             print L.active[j], z, ndist.cdf(z), 'huh'
 
         intervals.append(None)
+
 
     return [(v, p, i, s) for (v, p, i, s) in zip(first_stage_selector.active, pvalues, intervals, L.z_E)]
 
@@ -480,7 +511,7 @@ def test_fast_sampler():
     n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 20, 1., 0.3, 7
     X, y, beta, active, sigma = instance(n, p, s, sigma, rho, 
                                          snr)
-    return data_carving(y, X, lam_frac=2., ndraw=5000,
+    return data_carving(y, X, lam_frac=2., ndraw=30000,
                         sigma=sigma)
 
 print test_fast_sampler()
