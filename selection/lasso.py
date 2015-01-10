@@ -310,8 +310,7 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
 
 def data_carving(y, X, sigma=1, lam_frac=1.,
                  split_frac=0.9,
-                 beta_parameter_sampling=None,
-                 ndraw=80000, burnin=20000):
+                 ndraw=2000):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -337,24 +336,15 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     split_frac : float
         What proportion of the data to use in the first stage?
 
-    burnin : int
-        How many burnin samples for Gibbs hit-and-run sampler.
-
     ndraw : int
         How many draws to keep from Gibbs hit-and-run sampler.
+
     Returns
     -------
 
-    full_con : `constraints`
-         Constraints on all data after 
-
-    pvalues : [(variable_id, float)]
-         One sided tests for each selected variable
-         with signs chosen from the LASSO selected sign.
-         
-    intervals : [(variable_id, float, float)]
-         Selection intervals for each selected variable.
-         Intervals are the equal-tailed intervals.
+    results : [(variable_id, pvalue, interval)]
+        Identity of active variables with associated
+        selected (two-sided) pvalue and selective interval.
 
     """
 
@@ -365,7 +355,7 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     stage_one = indices[:splitn]
     y1, X1 = y[stage_one], X[stage_one]
     
-    first_stage_selector = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
+    first_stage_selector = L = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
     selector = np.identity(n)[stage_one]
     linear_part = np.dot(first_stage_selector.constraints.linear_part,
                          selector)
@@ -373,55 +363,64 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
                            first_stage_selector.constraints.offset,
                            covariance=sigma**2 * np.identity(n))
 
-    active = first_stage_selector.active
-    Xa_inv = np.linalg.pinv(X[:,active])
+    A = first_stage_selector.active_constraints.linear_part
+    b = first_stage_selector.active_constraints.offset
 
-    full_con.mean = np.dot(X[:, active], np.dot(Xa_inv, y))
-    beta_OLS = np.dot(Xa_inv, full_con.mean)
-    sign_beta = np.sign(np.dot(np.linalg.pinv(X1[:, active]), y1))
+    X_E = X[:,L.active]
+    X_Ei = np.linalg.pinv(X_E)
+    X_Ei1 = np.linalg.pinv(X_E[stage_one])
+
+    Cov_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
+    Cov_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
+    pvals = []
+
+    s_obs = L.active.shape[0]
+    beta_E = np.dot(X_Ei, y)
 
     pvalues = []
     intervals = []
 
-    for i, a in enumerate(active):
-        keep = np.zeros(p, np.bool)
-        keep[active] = 1
-        keep[a] = 0
+    for j in range(X_E.shape[1]):
+        keep = np.ones(s_obs, np.bool)
+        keep[j] = 0
+        X_minus = X_E[:,keep]
+        P_minus = np.dot(X_minus, np.linalg.pinv(X_minus))
+        offset_from_conditional_law = u = \
+            (A[j] * np.dot(P_minus, y)[stage_one]).sum()
+        bound_RHS = b[j] - u
 
-        eta = Xa_inv[i] * sign_beta[i]
-        natural_parameter_sampling = beta_OLS[i] * sign_beta[i] / (sigma**2 * (eta**2).sum())
-        observed = (y*eta).sum()
-        conditional_con = full_con.conditional(X[:,keep].T, 
-                                               np.dot(X[:,keep].T, y))
-        Z = sample_from_constraints(full_con,
-                                    y,
-                                    eta,
-                                    ndraw=ndraw,
-                                    burnin=burnin)
-        null_statistics = np.dot(Z, eta)
+        # now we sample from the joint law of 
+        # (\hat{\beta}_j, \hat{\beta}_{1,j}) subject to the 
+        # above lower bound on \hat{\beta}_{1,j} 
+        # under H_0 these both have mean zero.
 
-        # these weights
-        # retilt the distribution
-        # back to the null
+        # TODO allow for testing of different
+        # values from 0
 
-        logW = -natural_parameter_sampling * null_statistics 
-        logW -= logW.max() - 2.
-        W = np.exp(logW)
+        center = 0.
+        nsample = 5000
+        beta_sample = (np.random.standard_normal((nsample,)) * 
+                       np.sqrt(Cov_E[j,j])) + center
 
-        # pvalues and intervals
-        # can be found from a discrete 
-        # exponential family
+        # conditional variance
+        # of \hat{\beta}_{1,j} | \hat{\beta}_j
+        conditional_var = Cov_E1[j,j] - Cov_E[j,j] 
+        conditional_sd = np.sqrt(conditional_var)
 
-        family = discrete_family(null_statistics, W)
-        pval = family.ccdf(0, observed)
-        pvalues.append([a,pval])
-        
-        interval = family.equal_tailed_interval(observed)
-        # this is an interval for the natural parameter which is
-        # \eta^T\mu / \|\eta\|^2 \sigma^2
+        # conditional mean (depends on sample)
+        conditional_mean = - beta_sample
 
-        interval = (interval[0] * (eta**2).sum() * sigma**2,
-                    interval[1] * (eta**2).sum() * sigma**2)
-        intervals.append([a, interval[0], interval[1]])
+        if L.z_E[j] == 1:
+            importance_weight = ndist.sf((-bound_RHS - conditional_mean) / conditional_sd)
+        else:
+            importance_weight = ndist.cdf((bound_RHS - conditional_mean) / conditional_sd)
+        family = discrete_family(beta_sample, importance_weight)
+        _pval = family.cdf(-center / Cov_E[j,j], beta_E[j])
+        pval = 2 * min(_pval, 1 - _pval)
+        pvalues.append(pval)
 
-    return full_con, pvalues, intervals, first_stage_selector, sign_beta
+        print np.mean(np.log(importance_weight))
+        print beta_sample.min(), beta_sample.max(), beta_E[j]
+        intervals.append(None)
+
+    return [(v, p, i, s) for (v, p, i, s) in zip(first_stage_selector.active, pvalues, intervals, L.z_E)]

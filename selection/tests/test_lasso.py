@@ -111,6 +111,20 @@ def test_nominal_intervals():
     las = lasso(y, X, 4.)
     nom_int = las.nominal_intervals
 
+def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7):
+    X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
+        np.sqrt(rho) * np.random.standard_normal(n)[:,None])
+    X -= X.mean(0)[None,:]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    beta = np.zeros(p) 
+    beta[:s] = snr #* (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    active = np.zeros(p, np.bool)
+    active[:s] = True
+    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
+    return X, Y, beta, np.nonzero(active)[0], sigma
 
+def test_fast_sampler():
 
-
+    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 5, 1., 0.3, 7
+    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, snr)
+    return data_carving(y, X, lam_frac=2.)
