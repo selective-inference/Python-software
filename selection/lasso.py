@@ -356,12 +356,6 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     y1, X1 = y[stage_one], X[stage_one]
     
     first_stage_selector = L = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
-    selector = np.identity(n)[stage_one]
-    linear_part = np.dot(first_stage_selector.constraints.linear_part,
-                         selector)
-    full_con = constraints(linear_part, 
-                           first_stage_selector.constraints.offset,
-                           covariance=sigma**2 * np.identity(n))
 
     A = first_stage_selector.active_constraints.linear_part
     b = first_stage_selector.active_constraints.offset
@@ -381,22 +375,7 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     intervals = []
 
     for j in range(X_E.shape[1]):
-        keep = np.ones(s_obs, np.bool)
-        keep[j] = 0
-        X_minus = X_E[:,keep]
-        P_minus = np.dot(X_minus, np.linalg.pinv(X_minus))
-        offset_from_conditional_law = u = \
-            (A[j] * np.dot(P_minus, y)[stage_one]).sum()
-        bound_RHS = b[j] + u
-
-        # now we sample from the joint law of 
-        # (\hat{\beta}_j, \hat{\beta}_{1,j}) subject to the 
-        # above lower bound on \hat{\beta}_{1,j} 
-        # under H_0 these both have mean zero.
-
-        # TODO allow for testing of different
-        # values from 0
-
+        bound_RHS = b[j]
         center = 0.
         beta_sample = (np.random.standard_normal((ndraw,)) * 
                        np.sqrt(info_E[j,j])) + center
@@ -411,9 +390,9 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
         conditional_mean = - beta_sample
 
         if L.z_E[j] == 1:
-            importance_weight = ndist.cdf((-bound_RHS - conditional_mean) / conditional_sd)
+            importance_weight = ndist.sf((-bound_RHS - conditional_mean) / conditional_sd)
         else:
-            importance_weight = ndist.sf((bound_RHS - conditional_mean) / conditional_sd)
+            importance_weight = ndist.cdf((bound_RHS - conditional_mean) / conditional_sd)
         family = discrete_family(beta_sample, importance_weight)
         _pval = family.cdf(-center / info_E[j,j], beta_E[j])
         pval = 2 * min(_pval, 1 - _pval)
@@ -490,7 +469,7 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     beta = np.zeros(p) 
     beta[:s] = snr 
     if random_signs:
-        beta *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+        beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     active = np.zeros(p, np.bool)
     active[:s] = True
     Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
@@ -499,7 +478,8 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
 def test_fast_sampler():
 
     n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 20, 1., 0.3, 7
-    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, snr)
+    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, 
+                                         snr)
     return data_carving(y, X, lam_frac=2., ndraw=5000,
                         sigma=sigma)
 
