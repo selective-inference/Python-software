@@ -45,6 +45,19 @@ def data_carving_coverage(n=100, p=70, lam_frac=1.,
     coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(I, truth)]
     return coverage
 
+def test_data_carving_runs():
+
+    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 20, 1., 0.3, 7
+    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, 
+                                         snr)
+
+    while True:
+        active, pval = data_carving(y, X, lam_frac=2., 
+                                    sigma=sigma)[:2]
+        if set(range(7)).issubset(active):
+            return pval[7:]
+
+
 def test_data_carving_coverage(n=200):
     C = []
     SE = np.sqrt(0.95*0.05 / n)
@@ -123,8 +136,3 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7):
     Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
     return X, Y, beta, np.nonzero(active)[0], sigma
 
-def test_fast_sampler():
-
-    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 5, 1., 0.3, 7
-    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, snr)
-    return data_carving(y, X, lam_frac=2.)

@@ -31,6 +31,70 @@ except ImportError:
 
 DEBUG = False
 
+def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
+             random_signs=False):
+    """
+    A testing instance for the LASSO.
+    Design is equi-correlated in the population,
+    normalized to have columns of norm 1.
+
+    Parameters
+    ----------
+
+    n : int
+        Sample size
+
+    p : int
+        Number of features
+
+    s : int
+        True sparsity
+
+    sigma : float
+        Noise level
+
+    rho : float
+        Equicorrelation value (must be in interval [0,1])
+
+    snr : float
+        Size of each coefficient
+
+    random_signs : bool
+        If true, assign random signs to coefficients.
+        Else they are all positive.
+
+    Returns
+    -------
+
+    X : np.float((n,p))
+        Design matrix.
+
+    y : np.float(n)
+        Response vector.
+
+    beta : np.float(p)
+        True coefficients.
+
+    active : np.int(s)
+        Non-zero pattern.
+
+    sigma : float
+        Noise level.
+
+    """
+
+    X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
+        np.sqrt(rho) * np.random.standard_normal(n)[:,None])
+    X -= X.mean(0)[None,:]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    beta = np.zeros(p) 
+    beta[:s] = snr 
+    if random_signs:
+        beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    active = np.zeros(p, np.bool)
+    active[:s] = True
+    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
+    return X, Y, beta, np.nonzero(active)[0], sigma
 
 class lasso(object):
 
@@ -311,7 +375,8 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
 
 def data_carving(y, X, sigma=1, lam_frac=1.,
                  split_frac=0.9,
-                 ndraw=5000):
+                 ndraw=5000,
+                 burnin=1000):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -358,8 +423,8 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     
     first_stage_selector = L = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
 
-    A = first_stage_selector.active_constraints.linear_part
-    b = first_stage_selector.active_constraints.offset
+    # quantities related to models fit on
+    # stage_one and full dataset
 
     X_E = X[:,L.active]
     X_Ei = np.linalg.pinv(X_E)
@@ -368,150 +433,79 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
 
     info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
     info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
-    pvals = []
 
-    s_obs = L.active.shape[0]
+    s = sparsity = L.active.shape[0]
     beta_E = np.dot(X_Ei, y)
     beta_E1 = np.dot(X_Ei1, y[stage_one])
+
+    # setup the constraint on the 2s Gaussian vector
+
+    linear_part = np.zeros((s, 2*s))
+    linear_part[:, s:] = -np.diag(L.z_E)
+    b = first_stage_selector.active_constraints.offset
+    con = constraints(linear_part, b)
+
+    # specify covariance of 2s Gaussian vector
+
+    cov = np.zeros((2*s, 2*s))
+    cov[:s, :s] = info_E
+    cov[s:, :s] = info_E
+    cov[:s, s:] = info_E
+    cov[s:, s:] = info_E1
+
+    con.covariance[:] = cov
+
+    # how do we sample at the right beta?
+    #con.mean = mu = np.hstack([beta_E, beta_E1])
+    #weight_mu = np.dot(np.linalg.pinv(cov), mu)
+
+    # for the conditional law
+    # we will change the linear function for each coefficient
+
+    selector = np.zeros((s, 2*s))
+    selector[:, :s]  = np.identity(s)
+    conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
+
+    # a valid initial condition
+
+    initial = np.hstack([beta_E, beta_E1])
 
     pvalues = []
     intervals = []
 
-    R1 = np.identity(y1.shape[0]) - np.dot(X_E1, X_Ei1)
-
-    print X_Ei1.shape, X_Ei[:,stage_one].T.shape
-    Cov_tmp = np.dot(X_Ei1, X_Ei[:,stage_one].T) * sigma**2
-    print Cov_tmp.shape, info_E.shape, 'bha'
-    print np.linalg.norm(Cov_tmp - info_E), 'cov'
-
-    selector = np.zeros((s_obs, 2*s_obs))
-    selector[:, :s_obs]  = np.identity(s_obs)
-    conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
-
-    linear_part = np.zeros((s_obs, 2*s_obs))
-    linear_part[:, s_obs:] = -np.diag(L.z_E)
-    con = constraints(linear_part, b)
-
-    cov = np.zeros((2*s_obs, 2*s_obs))
-    cov[:s_obs, :s_obs] = info_E
-    cov[s_obs:, :s_obs] = info_E
-    cov[:s_obs, s_obs:] = info_E
-    cov[s_obs:, s_obs:] = info_E1
-
-    con.covariance[:] = cov
-
-    initial = np.hstack([beta_E, beta_E1])
-    print con(initial)
+    # compute p-values and (TODO: intervals)
 
     for j in range(X_E.shape[1]):
 
-        keep = np.ones(s_obs, np.bool)
+        keep = np.ones(s, np.bool)
         keep[j] = 0
 
-        eta = np.zeros(2*s_obs)
+        eta = np.zeros(2*s)
         eta[j] = 1.
 
-        print np.dot(linear_part, initial)[s_obs:]
         conditional_law = con.conditional(conditional_linear[keep], \
                               np.dot(X_E.T, y)[keep])
-        print np.dot(conditional_linear[keep], initial) - np.dot(X_E.T, y)[keep]
+
         pval, Z, W = gibbs_test(conditional_law,
                                 initial,
                                 eta,
                                 UMPU=False,
                                 sigma_known=True,
                                 ndraw=ndraw,
-                                burnin=2000,
+                                burnin=burnin,
                                 how_often=5,
                                 alternative='twosided')
-        print pval
+
+        #W *= np.exp(-np.dot(Z, weight_mu))
+
         pvalues.append(pval)
 
-
-#         if L.z_E[j] == 1:
-#             z = (-bound_RHS - center) / conditional_sd
-#             print L.active[j], z, ndist.sf(z), 'huh'
-#         else: 
-#             z = (bound_RHS - center) / conditional_sd
-#             print L.active[j], z, ndist.cdf(z), 'huh'
-
+        # intervals are still not implemented yet
         intervals.append(None)
 
+    return (L.active, 
+            pvalues,
+            intervals,
+            L)
 
-    return [(v, p, i, s) for (v, p, i, s) in zip(first_stage_selector.active, pvalues, intervals, L.z_E)]
 
-
-def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
-             random_signs=False):
-    """
-    A testing instance for the LASSO.
-    Design is equi-correlated in the population,
-    normalized to have columns of norm 1.
-
-    Parameters
-    ----------
-
-    n : int
-        Sample size
-
-    p : int
-        Number of features
-
-    s : int
-        True sparsity
-
-    sigma : float
-        Noise level
-
-    rho : float
-        Equicorrelation value (must be in interval [0,1])
-
-    snr : float
-        Size of each coefficient
-
-    random_signs : bool
-        If true, assign random signs to coefficients.
-        Else they are all positive.
-
-    Returns
-    -------
-
-    X : np.float((n,p))
-        Design matrix.
-
-    y : np.float(n)
-        Response vector.
-
-    beta : np.float(p)
-        True coefficients.
-
-    active : np.int(s)
-        Non-zero pattern.
-
-    sigma : float
-        Noise level.
-
-    """
-
-    X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
-        np.sqrt(rho) * np.random.standard_normal(n)[:,None])
-    X -= X.mean(0)[None,:]
-    X /= (X.std(0)[None,:] * np.sqrt(n))
-    beta = np.zeros(p) 
-    beta[:s] = snr 
-    if random_signs:
-        beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
-    active = np.zeros(p, np.bool)
-    active[:s] = True
-    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
-    return X, Y, beta, np.nonzero(active)[0], sigma
-
-def test_fast_sampler():
-
-    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 20, 1., 0.3, 7
-    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, 
-                                         snr)
-    return data_carving(y, X, lam_frac=2., ndraw=30000,
-                        sigma=sigma)
-
-print test_fast_sampler()
