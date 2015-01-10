@@ -373,10 +373,14 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
     lasso_selector.fit()
     return lasso_selector
 
-def data_carving(y, X, sigma=1, lam_frac=1.,
+def data_carving(y, X, 
+                 sigma=1, 
+                 lam_frac=1.,
+                 coverage=0.95, 
                  split_frac=0.9,
                  ndraw=5000,
-                 burnin=1000):
+                 burnin=1000,
+                 splitting=False):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -397,13 +401,24 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
         Noise variance
 
     lam_frac : float
-        Multiplier for choice of $\lambda$
+        Multiplier for choice of $\lambda$. Defaults to 2.
 
-    split_frac : float
+    coverage : float
+        Coverage for selective intervals. Defaults to 0.95.
+
+    split_frac : float (optional)
         What proportion of the data to use in the first stage?
+        Defaults to 0.9.
 
-    ndraw : int
+    ndraw : int (optional)
         How many draws to keep from Gibbs hit-and-run sampler.
+        Defaults to 5000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    splitting : bool (optional)
+        If True, also return splitting pvalues and intervals.
 
     Returns
     -------
@@ -419,8 +434,9 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     indices = np.arange(n)
     np.random.shuffle(indices)
     stage_one = indices[:splitn]
+
     y1, X1 = y[stage_one], X[stage_one]
-    
+
     first_stage_selector = L = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
 
     # quantities related to models fit on
@@ -473,6 +489,19 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     pvalues = []
     intervals = []
 
+    if splitting:
+        stage_two = indices[splitn:]
+        y2, X2 = y[stage_two], X[stage_two]
+        X_E2 = X2[:,L.active]
+        X_Ei2 = np.linalg.pinv(X_E2)
+        beta_E2 = np.dot(X_Ei2, y2)
+        info_E2 = np.dot(X_Ei2, X_Ei2.T) * sigma**2
+
+        splitting_pvalues = []
+        splitting_intervals = []
+
+        split_cutoff = np.fabs(ndist.ppf((1. - coverage) / 2))
+
     # compute p-values and (TODO: intervals)
 
     for j in range(X_E.shape[1]):
@@ -503,9 +532,26 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
         # intervals are still not implemented yet
         intervals.append(None)
 
-    return (L.active, 
-            pvalues,
-            intervals,
-            L)
+        if splitting:
+            split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
+            split_pval = 2 * min(split_pval, 1. - split_pval)
+            splitting_pvalues.append(split_pval)
+
+            splitting_interval = (beta_E2[j] - 
+                                  split_cutoff * np.sqrt(info_E2[j,j]),
+                                  beta_E2[j] + 
+                                  split_cutoff * np.sqrt(info_E2[j,j]))
+            splitting_intervals.append(splitting_interval)
+
+    if not splitting:
+        return zip(L.active, 
+                   pvalues,
+                   intervals), L
+    else:
+        return zip(L.active, 
+                   pvalues,
+                   intervals,
+                   splitting_pvalues,
+                   splitting_intervals), L
 
 

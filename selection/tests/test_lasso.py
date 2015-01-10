@@ -20,13 +20,6 @@ def test_class(n=100, p=20):
 
     return L, C, I, P
 
-def test_data_carving_null(n=100, p=70, lam_frac=0.8):
-    y = np.random.standard_normal(n) * 10
-    X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
-    P = data_carving(y, X, lam_frac=lam_frac, sigma=10, burnin=20000, ndraw=80000)[1]
-
-    return P
-
 @dec.slow
 def data_carving_coverage(n=100, p=70, lam_frac=1.,
                           split_frac=0.95):
@@ -45,17 +38,29 @@ def data_carving_coverage(n=100, p=70, lam_frac=1.,
     coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(I, truth)]
     return coverage
 
-def test_data_carving_runs():
+def test_data_carving(n=100,
+                      p=200,
+                      s=7,
+                      sigma=5,
+                      rho=0.3,
+                      snr=7.,
+                      split_frac=0.9,
+                      lam_frac=2.):
 
-    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 20, 1., 0.3, 7
-    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, 
-                                         snr)
-
+    counter = 0
     while True:
-        active, pval = data_carving(y, X, lam_frac=2., 
-                                    sigma=sigma)[:2]
+        counter += 1
+        X, y, beta, active, sigma = instance(n, p, s, sigma, rho, 
+                                             snr)
+        results, L = data_carving(y, X, lam_frac=lam_frac, 
+                                  sigma=sigma,
+                                  splitting=True,
+                                  split_frac=split_frac)
+        active = [r[0] for r in results]
+        pval = [r[1] for r in results]
+        split = [r[3] for r in results]
         if set(range(7)).issubset(active):
-            return pval[7:]
+            return pval[7:], split[7:]
 
 
 def test_data_carving_coverage(n=200):
