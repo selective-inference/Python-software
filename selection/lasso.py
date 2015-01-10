@@ -310,7 +310,7 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
 
 def data_carving(y, X, sigma=1, lam_frac=1.,
                  split_frac=0.9,
-                 ndraw=2000):
+                 ndraw=5000):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -370,8 +370,8 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     X_Ei = np.linalg.pinv(X_E)
     X_Ei1 = np.linalg.pinv(X_E[stage_one])
 
-    Cov_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
-    Cov_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
+    info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
+    info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
     pvals = []
 
     s_obs = L.active.shape[0]
@@ -387,7 +387,7 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
         P_minus = np.dot(X_minus, np.linalg.pinv(X_minus))
         offset_from_conditional_law = u = \
             (A[j] * np.dot(P_minus, y)[stage_one]).sum()
-        bound_RHS = b[j] - u
+        bound_RHS = b[j] + u
 
         # now we sample from the joint law of 
         # (\hat{\beta}_j, \hat{\beta}_{1,j}) subject to the 
@@ -398,29 +398,34 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
         # values from 0
 
         center = 0.
-        nsample = 5000
-        beta_sample = (np.random.standard_normal((nsample,)) * 
-                       np.sqrt(Cov_E[j,j])) + center
+        beta_sample = (np.random.standard_normal((ndraw,)) * 
+                       np.sqrt(info_E[j,j])) + center
 
         # conditional variance
         # of \hat{\beta}_{1,j} | \hat{\beta}_j
-        conditional_var = Cov_E1[j,j] - Cov_E[j,j] 
+
+        conditional_var = info_E1[j,j] - info_E[j,j] 
         conditional_sd = np.sqrt(conditional_var)
 
         # conditional mean (depends on sample)
         conditional_mean = - beta_sample
 
         if L.z_E[j] == 1:
-            importance_weight = ndist.sf((-bound_RHS - conditional_mean) / conditional_sd)
+            importance_weight = ndist.cdf((-bound_RHS - conditional_mean) / conditional_sd)
         else:
-            importance_weight = ndist.cdf((bound_RHS - conditional_mean) / conditional_sd)
+            importance_weight = ndist.sf((bound_RHS - conditional_mean) / conditional_sd)
         family = discrete_family(beta_sample, importance_weight)
-        _pval = family.cdf(-center / Cov_E[j,j], beta_E[j])
+        _pval = family.cdf(-center / info_E[j,j], beta_E[j])
         pval = 2 * min(_pval, 1 - _pval)
         pvalues.append(pval)
 
-        print np.mean(np.log(importance_weight))
-        print beta_sample.min(), beta_sample.max(), beta_E[j]
+#         if L.z_E[j] == 1:
+#             z = (-bound_RHS - center) / conditional_sd
+#             print L.active[j], z, ndist.sf(z), 'huh'
+#         else: 
+#             z = (bound_RHS - center) / conditional_sd
+#             print L.active[j], z, ndist.cdf(z), 'huh'
+
         intervals.append(None)
 
     return [(v, p, i, s) for (v, p, i, s) in zip(first_stage_selector.active, pvalues, intervals, L.z_E)]
@@ -493,8 +498,9 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
 
 def test_fast_sampler():
 
-    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 5, 1., 0.3, 7
+    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 20, 1., 0.3, 7
     X, y, beta, active, sigma = instance(n, p, s, sigma, rho, snr)
-    return data_carving(y, X, lam_frac=2.)
+    return data_carving(y, X, lam_frac=2., ndraw=5000,
+                        sigma=sigma)
 
-test_fast_sampler()
+print test_fast_sampler()
