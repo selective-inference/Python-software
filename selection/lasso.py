@@ -424,3 +424,77 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
         intervals.append(None)
 
     return [(v, p, i, s) for (v, p, i, s) in zip(first_stage_selector.active, pvalues, intervals, L.z_E)]
+
+
+def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
+             random_signs=False):
+    """
+    A testing instance for the LASSO.
+    Design is equi-correlated in the population,
+    normalized to have columns of norm 1.
+
+    Parameters
+    ----------
+
+    n : int
+        Sample size
+
+    p : int
+        Number of features
+
+    s : int
+        True sparsity
+
+    sigma : float
+        Noise level
+
+    rho : float
+        Equicorrelation value (must be in interval [0,1])
+
+    snr : float
+        Size of each coefficient
+
+    random_signs : bool
+        If true, assign random signs to coefficients.
+        Else they are all positive.
+
+    Returns
+    -------
+
+    X : np.float((n,p))
+        Design matrix.
+
+    y : np.float(n)
+        Response vector.
+
+    beta : np.float(p)
+        True coefficients.
+
+    active : np.int(s)
+        Non-zero pattern.
+
+    sigma : float
+        Noise level.
+
+    """
+
+    X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
+        np.sqrt(rho) * np.random.standard_normal(n)[:,None])
+    X -= X.mean(0)[None,:]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    beta = np.zeros(p) 
+    beta[:s] = snr 
+    if random_signs:
+        beta *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    active = np.zeros(p, np.bool)
+    active[:s] = True
+    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
+    return X, Y, beta, np.nonzero(active)[0], sigma
+
+def test_fast_sampler():
+
+    n, p, s, sigma, gamma, rho, snr = 100, 200, 7, 5, 1., 0.3, 7
+    X, y, beta, active, sigma = instance(n, p, s, sigma, rho, snr)
+    return data_carving(y, X, lam_frac=2.)
+
+test_fast_sampler()
