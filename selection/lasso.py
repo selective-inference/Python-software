@@ -400,7 +400,7 @@ def data_carving(y, X,
     sigma : np.float
         Noise variance
 
-    lam_frac : float
+    lam_frac : float (optional)
         Multiplier for choice of $\lambda$. Defaults to 2.
 
     coverage : float
@@ -423,25 +423,28 @@ def data_carving(y, X,
     Returns
     -------
 
-    results : [(variable_id, pvalue, interval)]
-        Identity of active variables with associated
+    results : [(variable, pvalue, interval)
+        Indices of active variables, 
         selected (twosided) pvalue and selective interval.
+        If splitting, then each entry also includes
+        a (split_pvalue, split_interval) using stage_two
+        for inference.
 
     """
 
     n, p = X.shape
-    splitn = int(n*split_frac)
-    indices = np.arange(n)
-    np.random.shuffle(indices)
-    stage_one = indices[:splitn]
+    first_stage, stage_one, stage_two = split_model(y, X,
+                                                    sigma=sigma,
+                                                    lam_frac=lam_frac,
+                                                    split_frac=split_frac)
+    splitn = stage_one.shape[0]
 
-    y1, X1 = y[stage_one], X[stage_one]
-
-    first_stage_selector = L = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
+    L = first_stage # shorthand
 
     # quantities related to models fit on
     # stage_one and full dataset
 
+    y1, X1 = y[stage_one], X[stage_one]
     X_E = X[:,L.active]
     X_Ei = np.linalg.pinv(X_E)
     X_E1 = X1[:,L.active]
@@ -458,7 +461,7 @@ def data_carving(y, X,
 
     linear_part = np.zeros((s, 2*s))
     linear_part[:, s:] = -np.diag(L.z_E)
-    b = first_stage_selector.active_constraints.offset
+    b = L.active_constraints.offset
     con = constraints(linear_part, b)
 
     # specify covariance of 2s Gaussian vector
@@ -490,7 +493,6 @@ def data_carving(y, X,
     intervals = []
 
     if splitting:
-        stage_two = indices[splitn:]
         y2, X2 = y[stage_two], X[stage_two]
         X_E2 = X2[:,L.active]
         X_Ei2 = np.linalg.pinv(X_E2)
@@ -560,4 +562,58 @@ def data_carving(y, X,
                    splitting_pvalues,
                    splitting_intervals), L
 
+def split_model(y, X, 
+                sigma=1, 
+                lam_frac=1.,
+                split_frac=0.9):
 
+    """
+    Fit a LASSO with a default choice of Lagrange parameter
+    equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
+    with $\epsilon$ IID N(0,1) on a proportion (`split_frac`) of
+    the data.
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    sigma : np.float
+        Noise variance
+
+    lam_frac : float (optional)
+        Multiplier for choice of $\lambda$. Defaults to 2.
+
+    split_frac : float (optional)
+        What proportion of the data to use in the first stage?
+        Defaults to 0.9.
+
+    Returns
+    -------
+
+    first_stage : `lasso`
+        Lasso object from stage one.
+
+    stage_one : np.array(int)
+        Indices used for stage one.
+
+    stage_two : np.array(int)
+        Indices used for stage two.
+
+    """
+
+    n, p = X.shape
+    splitn = int(n*split_frac)
+    indices = np.arange(n)
+    np.random.shuffle(indices)
+    stage_one = indices[:splitn]
+    stage_two = indices[splitn:]
+
+    y1, X1 = y[stage_one], X[stage_one]
+
+    first_stage = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
+    return first_stage, stage_one, stage_two

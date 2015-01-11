@@ -48,6 +48,7 @@ def test_data_carving(n=100,
                       lam_frac=2.):
 
     counter = 0
+
     while True:
         counter += 1
         X, y, beta, active, sigma = instance(n=n, 
@@ -56,15 +57,19 @@ def test_data_carving(n=100,
                                              sigma=sigma, 
                                              rho=rho, 
                                              snr=snr)
-        results, L = data_carving(y, X, lam_frac=lam_frac, 
-                                  sigma=sigma,
-                                  splitting=True,
-                                  split_frac=split_frac)
+        L = split_model(y, X, lam_frac=lam_frac,
+                        sigma=sigma,
+                        split_frac=split_frac)
 
-        carve = [r[1] for r in results]
-        split = [r[3] for r in results]
         if set(range(s)).issubset(L.active):
-            return carve[s:], split[s:], carve[:s], split[:s], counter
+            results, L = data_carving(y, X, lam_frac=lam_frac, 
+                                      sigma=sigma,
+                                      splitting=True,
+                                      split_frac=split_frac)
+
+            carve = [r[1] for r in results]
+            split = [r[3] for r in results]
+                return carve[s:], split[s:], carve[:s], split[:s], counter
 
 def test_data_carving_coverage(n=200):
     C = []
