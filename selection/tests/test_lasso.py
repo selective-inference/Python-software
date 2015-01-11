@@ -69,7 +69,7 @@ def test_data_carving(n=100,
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
-                return carve[s:], split[s:], carve[:s], split[:s], counter
+            return carve[s:], split[s:], carve[:s], split[:s], counter
 
 def test_data_carving_coverage(n=200):
     C = []
