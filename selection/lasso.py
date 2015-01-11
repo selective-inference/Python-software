@@ -374,10 +374,11 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
     return lasso_selector
 
 def data_carving(y, X, 
-                 sigma=1, 
-                 lam_frac=1.,
-                 coverage=0.95, 
+                 lam_frac=2.,
+                 sigma=1., 
+                 stage_one=None,
                  split_frac=0.9,
+                 coverage=0.95, 
                  ndraw=5000,
                  burnin=1000,
                  splitting=False):
@@ -405,6 +406,11 @@ def data_carving(y, X,
 
     coverage : float
         Coverage for selective intervals. Defaults to 0.95.
+
+    stage_one : [np.array(np.int), None] (optional)
+        Index of data points to be used in  first stage.
+        If None, a randomly chosen set of entries is used based on
+        `split_frac`.
 
     split_frac : float (optional)
         What proportion of the data to use in the first stage?
@@ -436,7 +442,8 @@ def data_carving(y, X,
     first_stage, stage_one, stage_two = split_model(y, X,
                                                     sigma=sigma,
                                                     lam_frac=lam_frac,
-                                                    split_frac=split_frac)
+                                                    split_frac=split_frac,
+                                                    stage_one=stage_one)
     splitn = stage_one.shape[0]
 
     L = first_stage # shorthand
@@ -565,7 +572,8 @@ def data_carving(y, X,
 def split_model(y, X, 
                 sigma=1, 
                 lam_frac=1.,
-                split_frac=0.9):
+                split_frac=0.9,
+                stage_one=None):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -592,6 +600,11 @@ def split_model(y, X,
         What proportion of the data to use in the first stage?
         Defaults to 0.9.
 
+    stage_one : [np.array(np.int), None] (optional)
+        Index of data points to be used in  first stage.
+        If None, a randomly chosen set of entries is used based on
+        `split_frac`.
+
     Returns
     -------
 
@@ -607,12 +620,14 @@ def split_model(y, X,
     """
 
     n, p = X.shape
-    splitn = int(n*split_frac)
-    indices = np.arange(n)
-    np.random.shuffle(indices)
-    stage_one = indices[:splitn]
-    stage_two = indices[splitn:]
-
+    if stage_one is None:
+        splitn = int(n*split_frac)
+        indices = np.arange(n)
+        np.random.shuffle(indices)
+        stage_one = indices[:splitn]
+        stage_two = indices[splitn:]
+    else:
+        stage_two = [i for i in np.arange(n) if i not in stage_one]
     y1, X1 = y[stage_one], X[stage_one]
 
     first_stage = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)

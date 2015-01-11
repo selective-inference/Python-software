@@ -57,15 +57,16 @@ def test_data_carving(n=100,
                                              sigma=sigma, 
                                              rho=rho, 
                                              snr=snr)
-        L = split_model(y, X, lam_frac=lam_frac,
+        L, stage_one = split_model(y, X, 
                         sigma=sigma,
-                        split_frac=split_frac)[0]
+                        lam_frac=lam_frac,
+                        split_frac=split_frac)[:2]
 
         if set(range(s)).issubset(L.active):
             results, L = data_carving(y, X, lam_frac=lam_frac, 
                                       sigma=sigma,
-                                      splitting=True,
-                                      split_frac=split_frac)
+                                      stage_one=stage_one,
+                                      splitting=True)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
@@ -130,17 +131,4 @@ def test_nominal_intervals():
     y, X, beta = sample_lasso(100, 50, 10)
     las = lasso(y, X, 4.)
     nom_int = las.nominal_intervals
-
-def _instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7):
-    print 'here'
-    X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
-        np.sqrt(rho) * np.random.standard_normal(n)[:,None])
-    X -= X.mean(0)[None,:]
-    X /= (X.std(0)[None,:] * np.sqrt(n))
-    beta = np.zeros(p) 
-    beta[:s] = snr #* (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
-    active = np.zeros(p, np.bool)
-    active[:s] = True
-    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
-    return X, Y, beta, np.nonzero(active)[0], sigma
 
