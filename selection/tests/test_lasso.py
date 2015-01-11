@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing.decorators as dec
-from selection.lasso import lasso, data_carving, instance
+from selection.lasso import lasso, data_carving, instance, split_model
 
 def test_class(n=100, p=20):
     y = np.random.standard_normal(n)
@@ -59,7 +59,7 @@ def test_data_carving(n=100,
                                              snr=snr)
         L = split_model(y, X, lam_frac=lam_frac,
                         sigma=sigma,
-                        split_frac=split_frac)
+                        split_frac=split_frac)[0]
 
         if set(range(s)).issubset(L.active):
             results, L = data_carving(y, X, lam_frac=lam_frac, 
