@@ -722,7 +722,7 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_truncnorm_white_ball_norma(np.ndarray[DTYPE_float_t, ndim=2] A, 
+def sample_truncnorm_white_ball_normal(np.ndarray[DTYPE_float_t, ndim=2] A, 
                                       np.ndarray[DTYPE_float_t, ndim=1] b, 
                                       np.ndarray[DTYPE_float_t, ndim=1] initial, 
                                       np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
