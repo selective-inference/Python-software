@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing.decorators as dec
-from selection.lasso import lasso, data_carving
+from selection.lasso import lasso, data_carving, instance
 
 def test_class(n=100, p=20):
     y = np.random.standard_normal(n)
@@ -50,18 +50,21 @@ def test_data_carving(n=100,
     counter = 0
     while True:
         counter += 1
-        X, y, beta, active, sigma = instance(n, p, s, sigma, rho, 
-                                             snr)
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr)
         results, L = data_carving(y, X, lam_frac=lam_frac, 
                                   sigma=sigma,
                                   splitting=True,
                                   split_frac=split_frac)
-        active = [r[0] for r in results]
-        pval = [r[1] for r in results]
-        split = [r[3] for r in results]
-        if set(range(7)).issubset(active):
-            return pval[7:], split[7:]
 
+        carve = [r[1] for r in results]
+        split = [r[3] for r in results]
+        if set(range(s)).issubset(L.active):
+            return carve[s:], split[s:], carve[:s], split[:s], counter
 
 def test_data_carving_coverage(n=200):
     C = []
@@ -97,14 +100,11 @@ def test_intervals(n=100, p=20, m=5, n_test = 10):
         intervals = las.intervals
         t.append([(beta[I[0]], I[3]) for I in intervals])
     return t
-        
     
 def test_soln():
     y, X, bet = sample_lasso(100, 50, 10)
     las = lasso(y, X, 4.)
     beta2 = las.soln
-
-
 
 def test_constraints():
     y, X, beta = sample_lasso(100, 50, 10)
@@ -115,21 +115,19 @@ def test_constraints():
     inactive = las.inactive_constraints
     const = las.constraints
 
-
-
 def test_pvalue():
     y, X, beta = sample_lasso(100, 50, 10)
     las = lasso(y, X, 4.)
     las.form_constraints()
     pval = las.active_pvalues
 
-
 def test_nominal_intervals():
     y, X, beta = sample_lasso(100, 50, 10)
     las = lasso(y, X, 4.)
     nom_int = las.nominal_intervals
 
-def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7):
+def _instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7):
+    print 'here'
     X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
         np.sqrt(rho) * np.random.standard_normal(n)[:,None])
     X -= X.mean(0)[None,:]

@@ -530,18 +530,24 @@ def data_carving(y, X,
         pvalues.append(pval)
 
         # intervals are still not implemented yet
-        intervals.append(None)
+        intervals.append((np.nan, np.nan))
 
         if splitting:
-            split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
-            split_pval = 2 * min(split_pval, 1. - split_pval)
-            splitting_pvalues.append(split_pval)
+            if s < n - splitn: # enough data to generically
+                               # test hypotheses. proceed as usual
 
-            splitting_interval = (beta_E2[j] - 
-                                  split_cutoff * np.sqrt(info_E2[j,j]),
-                                  beta_E2[j] + 
-                                  split_cutoff * np.sqrt(info_E2[j,j]))
-            splitting_intervals.append(splitting_interval)
+                split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
+                split_pval = 2 * min(split_pval, 1. - split_pval)
+                splitting_pvalues.append(split_pval)
+
+                splitting_interval = (beta_E2[j] - 
+                                      split_cutoff * np.sqrt(info_E2[j,j]),
+                                      beta_E2[j] + 
+                                      split_cutoff * np.sqrt(info_E2[j,j]))
+                splitting_intervals.append(splitting_interval)
+            else:
+                splitting_pvalues.append(np.random.sample())
+                splitting_intervals.append((np.nan, np.nan))
 
     if not splitting:
         return zip(L.active, 
