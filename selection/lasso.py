@@ -16,6 +16,7 @@ from sklearn.linear_model import Lasso
 from .affine import (constraints, selection_interval,
                      interval_constraints,
                      sample_from_constraints,
+                     gibbs_test,
                      stack)
 from .discrete_family import discrete_family
 
@@ -30,6 +31,70 @@ except ImportError:
 
 DEBUG = False
 
+def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
+             random_signs=False):
+    """
+    A testing instance for the LASSO.
+    Design is equi-correlated in the population,
+    normalized to have columns of norm 1.
+
+    Parameters
+    ----------
+
+    n : int
+        Sample size
+
+    p : int
+        Number of features
+
+    s : int
+        True sparsity
+
+    sigma : float
+        Noise level
+
+    rho : float
+        Equicorrelation value (must be in interval [0,1])
+
+    snr : float
+        Size of each coefficient
+
+    random_signs : bool
+        If true, assign random signs to coefficients.
+        Else they are all positive.
+
+    Returns
+    -------
+
+    X : np.float((n,p))
+        Design matrix.
+
+    y : np.float(n)
+        Response vector.
+
+    beta : np.float(p)
+        True coefficients.
+
+    active : np.int(s)
+        Non-zero pattern.
+
+    sigma : float
+        Noise level.
+
+    """
+
+    X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
+        np.sqrt(rho) * np.random.standard_normal(n)[:,None])
+    X -= X.mean(0)[None,:]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    beta = np.zeros(p) 
+    beta[:s] = snr 
+    if random_signs:
+        beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    active = np.zeros(p, np.bool)
+    active[:s] = True
+    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
+    return X, Y, beta, np.nonzero(active)[0], sigma
 
 class lasso(object):
 
@@ -308,10 +373,15 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
     lasso_selector.fit()
     return lasso_selector
 
-def data_carving(y, X, sigma=1, lam_frac=1.,
+def data_carving(y, X, 
+                 lam_frac=2.,
+                 sigma=1., 
+                 stage_one=None,
                  split_frac=0.9,
-                 beta_parameter_sampling=None,
-                 ndraw=80000, burnin=20000):
+                 coverage=0.95, 
+                 ndraw=5000,
+                 burnin=1000,
+                 splitting=False):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -331,97 +401,234 @@ def data_carving(y, X, sigma=1, lam_frac=1.,
     sigma : np.float
         Noise variance
 
-    lam_frac : float
-        Multiplier for choice of $\lambda$
+    lam_frac : float (optional)
+        Multiplier for choice of $\lambda$. Defaults to 2.
 
-    split_frac : float
+    coverage : float
+        Coverage for selective intervals. Defaults to 0.95.
+
+    stage_one : [np.array(np.int), None] (optional)
+        Index of data points to be used in  first stage.
+        If None, a randomly chosen set of entries is used based on
+        `split_frac`.
+
+    split_frac : float (optional)
         What proportion of the data to use in the first stage?
+        Defaults to 0.9.
 
-    burnin : int
-        How many burnin samples for Gibbs hit-and-run sampler.
-
-    ndraw : int
+    ndraw : int (optional)
         How many draws to keep from Gibbs hit-and-run sampler.
+        Defaults to 5000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    splitting : bool (optional)
+        If True, also return splitting pvalues and intervals.
+
     Returns
     -------
 
-    full_con : `constraints`
-         Constraints on all data after 
-
-    pvalues : [(variable_id, float)]
-         One sided tests for each selected variable
-         with signs chosen from the LASSO selected sign.
-         
-    intervals : [(variable_id, float, float)]
-         Selection intervals for each selected variable.
-         Intervals are the equal-tailed intervals.
+    results : [(variable, pvalue, interval)
+        Indices of active variables, 
+        selected (twosided) pvalue and selective interval.
+        If splitting, then each entry also includes
+        a (split_pvalue, split_interval) using stage_two
+        for inference.
 
     """
 
     n, p = X.shape
-    splitn = int(n*split_frac)
-    indices = np.arange(n)
-    np.random.shuffle(indices)
-    stage_one = indices[:splitn]
+    first_stage, stage_one, stage_two = split_model(y, X,
+                                                    sigma=sigma,
+                                                    lam_frac=lam_frac,
+                                                    split_frac=split_frac,
+                                                    stage_one=stage_one)
+    splitn = stage_one.shape[0]
+
+    L = first_stage # shorthand
+
+    # quantities related to models fit on
+    # stage_one and full dataset
+
     y1, X1 = y[stage_one], X[stage_one]
-    
-    first_stage_selector = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
-    selector = np.identity(n)[stage_one]
-    linear_part = np.dot(first_stage_selector.constraints.linear_part,
-                         selector)
-    full_con = constraints(linear_part, 
-                           first_stage_selector.constraints.offset,
-                           covariance=sigma**2 * np.identity(n))
+    X_E = X[:,L.active]
+    X_Ei = np.linalg.pinv(X_E)
+    X_E1 = X1[:,L.active]
+    X_Ei1 = np.linalg.pinv(X_E1)
 
-    active = first_stage_selector.active
-    Xa_inv = np.linalg.pinv(X[:,active])
+    info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
+    info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
 
-    full_con.mean = np.dot(X[:, active], np.dot(Xa_inv, y))
-    beta_OLS = np.dot(Xa_inv, full_con.mean)
-    sign_beta = np.sign(np.dot(np.linalg.pinv(X1[:, active]), y1))
+    s = sparsity = L.active.shape[0]
+    beta_E = np.dot(X_Ei, y)
+    beta_E1 = np.dot(X_Ei1, y[stage_one])
+
+    # setup the constraint on the 2s Gaussian vector
+
+    linear_part = np.zeros((s, 2*s))
+    linear_part[:, s:] = -np.diag(L.z_E)
+    b = L.active_constraints.offset
+    con = constraints(linear_part, b)
+
+    # specify covariance of 2s Gaussian vector
+
+    cov = np.zeros((2*s, 2*s))
+    cov[:s, :s] = info_E
+    cov[s:, :s] = info_E
+    cov[:s, s:] = info_E
+    cov[s:, s:] = info_E1
+
+    con.covariance[:] = cov
+
+    # how do we sample at the right beta?
+    #con.mean = mu = np.hstack([beta_E, beta_E1])
+    #weight_mu = np.dot(np.linalg.pinv(cov), mu)
+
+    # for the conditional law
+    # we will change the linear function for each coefficient
+
+    selector = np.zeros((s, 2*s))
+    selector[:, :s]  = np.identity(s)
+    conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
+
+    # a valid initial condition
+
+    initial = np.hstack([beta_E, beta_E1])
 
     pvalues = []
     intervals = []
 
-    for i, a in enumerate(active):
-        keep = np.zeros(p, np.bool)
-        keep[active] = 1
-        keep[a] = 0
+    if splitting:
+        y2, X2 = y[stage_two], X[stage_two]
+        X_E2 = X2[:,L.active]
+        X_Ei2 = np.linalg.pinv(X_E2)
+        beta_E2 = np.dot(X_Ei2, y2)
+        info_E2 = np.dot(X_Ei2, X_Ei2.T) * sigma**2
 
-        eta = Xa_inv[i] * sign_beta[i]
-        natural_parameter_sampling = beta_OLS[i] * sign_beta[i] / (sigma**2 * (eta**2).sum())
-        observed = (y*eta).sum()
-        conditional_con = full_con.conditional(X[:,keep].T, 
-                                               np.dot(X[:,keep].T, y))
-        Z = sample_from_constraints(full_con,
-                                    y,
-                                    eta,
-                                    ndraw=ndraw,
-                                    burnin=burnin)
-        null_statistics = np.dot(Z, eta)
+        splitting_pvalues = []
+        splitting_intervals = []
 
-        # these weights
-        # retilt the distribution
-        # back to the null
+        split_cutoff = np.fabs(ndist.ppf((1. - coverage) / 2))
 
-        logW = -natural_parameter_sampling * null_statistics 
-        logW -= logW.max() - 2.
-        W = np.exp(logW)
+    # compute p-values and (TODO: intervals)
 
-        # pvalues and intervals
-        # can be found from a discrete 
-        # exponential family
+    for j in range(X_E.shape[1]):
 
-        family = discrete_family(null_statistics, W)
-        pval = family.ccdf(0, observed)
-        pvalues.append([a,pval])
-        
-        interval = family.equal_tailed_interval(observed)
-        # this is an interval for the natural parameter which is
-        # \eta^T\mu / \|\eta\|^2 \sigma^2
+        keep = np.ones(s, np.bool)
+        keep[j] = 0
 
-        interval = (interval[0] * (eta**2).sum() * sigma**2,
-                    interval[1] * (eta**2).sum() * sigma**2)
-        intervals.append([a, interval[0], interval[1]])
+        eta = np.zeros(2*s)
+        eta[j] = 1.
 
-    return full_con, pvalues, intervals, first_stage_selector, sign_beta
+        conditional_law = con.conditional(conditional_linear[keep], \
+                              np.dot(X_E.T, y)[keep])
+
+        pval, Z, W = gibbs_test(conditional_law,
+                                initial,
+                                eta,
+                                UMPU=False,
+                                sigma_known=True,
+                                ndraw=ndraw,
+                                burnin=burnin,
+                                how_often=5,
+                                alternative='twosided')
+
+        #W *= np.exp(-np.dot(Z, weight_mu))
+
+        pvalues.append(pval)
+
+        # intervals are still not implemented yet
+        intervals.append((np.nan, np.nan))
+
+        if splitting:
+            if s < n - splitn: # enough data to generically
+                               # test hypotheses. proceed as usual
+
+                split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
+                split_pval = 2 * min(split_pval, 1. - split_pval)
+                splitting_pvalues.append(split_pval)
+
+                splitting_interval = (beta_E2[j] - 
+                                      split_cutoff * np.sqrt(info_E2[j,j]),
+                                      beta_E2[j] + 
+                                      split_cutoff * np.sqrt(info_E2[j,j]))
+                splitting_intervals.append(splitting_interval)
+            else:
+                splitting_pvalues.append(np.random.sample())
+                splitting_intervals.append((np.nan, np.nan))
+
+    if not splitting:
+        return zip(L.active, 
+                   pvalues,
+                   intervals), L
+    else:
+        return zip(L.active, 
+                   pvalues,
+                   intervals,
+                   splitting_pvalues,
+                   splitting_intervals), L
+
+def split_model(y, X, 
+                sigma=1, 
+                lam_frac=1.,
+                split_frac=0.9,
+                stage_one=None):
+
+    """
+    Fit a LASSO with a default choice of Lagrange parameter
+    equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
+    with $\epsilon$ IID N(0,1) on a proportion (`split_frac`) of
+    the data.
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    sigma : np.float
+        Noise variance
+
+    lam_frac : float (optional)
+        Multiplier for choice of $\lambda$. Defaults to 2.
+
+    split_frac : float (optional)
+        What proportion of the data to use in the first stage?
+        Defaults to 0.9.
+
+    stage_one : [np.array(np.int), None] (optional)
+        Index of data points to be used in  first stage.
+        If None, a randomly chosen set of entries is used based on
+        `split_frac`.
+
+    Returns
+    -------
+
+    first_stage : `lasso`
+        Lasso object from stage one.
+
+    stage_one : np.array(int)
+        Indices used for stage one.
+
+    stage_two : np.array(int)
+        Indices used for stage two.
+
+    """
+
+    n, p = X.shape
+    if stage_one is None:
+        splitn = int(n*split_frac)
+        indices = np.arange(n)
+        np.random.shuffle(indices)
+        stage_one = indices[:splitn]
+        stage_two = indices[splitn:]
+    else:
+        stage_two = [i for i in np.arange(n) if i not in stage_one]
+    y1, X1 = y[stage_one], X[stage_one]
+
+    first_stage = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
+    return first_stage, stage_one, stage_two

@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing.decorators as dec
-from selection.lasso import lasso, data_carving
+from selection.lasso import lasso, data_carving, instance, split_model
 
 def test_class(n=100, p=20):
     y = np.random.standard_normal(n)
@@ -20,13 +20,6 @@ def test_class(n=100, p=20):
 
     return L, C, I, P
 
-def test_data_carving_null(n=100, p=70, lam_frac=0.8):
-    y = np.random.standard_normal(n) * 10
-    X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
-    P = data_carving(y, X, lam_frac=lam_frac, sigma=10, burnin=20000, ndraw=80000)[1]
-
-    return P
-
 @dec.slow
 def data_carving_coverage(n=100, p=70, lam_frac=1.,
                           split_frac=0.95):
@@ -44,6 +37,40 @@ def data_carving_coverage(n=100, p=70, lam_frac=1.,
     truth = np.dot(np.linalg.pinv(Xa), mu) * signs
     coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(I, truth)]
     return coverage
+
+def test_data_carving(n=100,
+                      p=200,
+                      s=7,
+                      sigma=5,
+                      rho=0.3,
+                      snr=7.,
+                      split_frac=0.9,
+                      lam_frac=2.):
+
+    counter = 0
+
+    while True:
+        counter += 1
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr)
+        L, stage_one = split_model(y, X, 
+                        sigma=sigma,
+                        lam_frac=lam_frac,
+                        split_frac=split_frac)[:2]
+
+        if set(range(s)).issubset(L.active):
+            results, L = data_carving(y, X, lam_frac=lam_frac, 
+                                      sigma=sigma,
+                                      stage_one=stage_one,
+                                      splitting=True)
+
+            carve = [r[1] for r in results]
+            split = [r[3] for r in results]
+            return carve[s:], split[s:], carve[:s], split[:s], counter
 
 def test_data_carving_coverage(n=200):
     C = []
@@ -79,14 +106,11 @@ def test_intervals(n=100, p=20, m=5, n_test = 10):
         intervals = las.intervals
         t.append([(beta[I[0]], I[3]) for I in intervals])
     return t
-        
     
 def test_soln():
     y, X, bet = sample_lasso(100, 50, 10)
     las = lasso(y, X, 4.)
     beta2 = las.soln
-
-
 
 def test_constraints():
     y, X, beta = sample_lasso(100, 50, 10)
@@ -97,20 +121,14 @@ def test_constraints():
     inactive = las.inactive_constraints
     const = las.constraints
 
-
-
 def test_pvalue():
     y, X, beta = sample_lasso(100, 50, 10)
     las = lasso(y, X, 4.)
     las.form_constraints()
     pval = las.active_pvalues
 
-
 def test_nominal_intervals():
     y, X, beta = sample_lasso(100, 50, 10)
     las = lasso(y, X, 4.)
     nom_int = las.nominal_intervals
-
-
-
 

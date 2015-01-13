@@ -69,6 +69,7 @@ class forward_stepwise(object):
         self.P = [None] # residual forming projections
         self.A = None
         self.variables = []
+        self.Z = []
         self.signs = []
         if covariance is None:
             covariance = np.identity(self.X.shape[0])
@@ -103,7 +104,8 @@ class forward_stepwise(object):
         if P is None: # first step
             U = np.dot(X.T, Y)
             scale = np.sqrt((X**2).sum(0))
-            idx = np.argmax(np.fabs(U) / scale)
+            Z = np.fabs(U) / scale
+            idx = np.argmax(Z)
             sign = np.sign(U[idx])
             Unew = X[:,idx] / scale[idx]
             Pnew = projection(Unew.reshape((-1,1)))
@@ -111,6 +113,7 @@ class forward_stepwise(object):
             self.A = self.As[0]
             self.variables.append(idx)
             self.signs.append(sign)
+            self.Z.append(Z[idx])
         else:
             RY = Y-P(Y)
             RX = X-P(X)
@@ -120,11 +123,14 @@ class forward_stepwise(object):
 
             scale = np.sqrt((RX**2).sum(0))
             U = np.dot(RX.T, RY)
-            idx = np.argmax(np.fabs(U) / scale)
+            Z = np.fabs(U) / scale
+            idx = np.argmax(Z)
 
             sign = np.sign(U[idx])
             self.variables.append(np.arange(p)[keep][idx])
             self.signs.append(sign)
+            self.Z.append(Z[idx])
+
             Unew = RX[:,idx] / scale[idx]
             Pnew = P.stack(Unew.reshape((-1,1)))
             newA = canonicalA(RX, RY, idx, sign, scale=scale)
