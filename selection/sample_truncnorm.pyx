@@ -461,49 +461,10 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
                 state[ivar] = state[ivar] * multiplier
             norm_state_sq = 0.999 * norm_state_bound
 
-<<<<<<< HEAD
         norm_state_bound = sample_squared_radius(state)
 
     return trunc_sample
-=======
-        # check constraints
 
-        in_event = 1
-        multiplier = sqrt(norm_state_bound / norm_state_sq)
-        for irow in range(nconstraint):
-            if Astate[irow] * multiplier > b[irow]:
-                in_event = 0
-
-        if in_event == 1:
-            # store the sample
-
-            if sample_count >= burnin:
-                for ivar in range(nvar):
-                    trunc_sample[sample_count-burnin, ivar] = state[ivar] * multiplier
-
-                # now compute the smallest multiple M of state that is in the event
-            
-                min_multiple = 0
-                for irow in range(nconstraint):
-                    if Astate[irow] < 0:
-                        val = b[irow] / Astate[irow] 
-                        if min_multiple <  val:
-                            min_multiple = val
-
-                # the weight for this sample is 1/(1-M^n)
-
-                weight_sample[sample_count-burnin] = 1. / (1 - pow(min_multiple, nvar))
-
-            sample_count = sample_count + 1
-        else:
-            numout = numout + 1
-
-        iter_count = iter_count + 1
-
-        if sample_count >= ndraw + burnin:
-            break
-
-    return trunc_sample, weight_sample
 
 @cython.boundscheck(False)
 @cython.cdivision(True)

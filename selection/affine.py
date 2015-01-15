@@ -18,8 +18,8 @@ from .pvalue import truncnorm_cdf, norm_interval
 from .truncated.gaussian import truncated_gaussian
 from .sample_truncnorm import (sample_truncnorm_white, 
                                sample_truncnorm_white_ball,
-                               sample_truncnorm_white_ball_normal,
-                               sample_truncnorm_white_sphere)
+                               sample_truncnorm_white_ball_normal)
+#                               sample_truncnorm_white_sphere)
 from .discrete_family import discrete_family
 from mpmath import mp
 import pyinter
