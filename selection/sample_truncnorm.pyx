@@ -240,14 +240,15 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] b, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] initial, 
-                                  np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
-                                  DTYPE_int_t how_often=1000,
-                                  DTYPE_int_t burnin=500,
-                                  DTYPE_int_t ndraw=1000,
-                                  ):
+def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A, 
+                                np.ndarray[DTYPE_float_t, ndim=1] b, 
+                                np.ndarray[DTYPE_float_t, ndim=1] initial, 
+                                np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
+                                sample_squared_radius, 
+                                DTYPE_int_t how_often=1000,
+                                DTYPE_int_t burnin=500,
+                                DTYPE_int_t ndraw=1000,
+                                ):
     """
     Sample from a sphere of radius `np.linalg.norm(initial)`
     intersected with a constraint.
@@ -269,7 +270,12 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
         Initial point for Gibbs draws.
         Assumed to satisfy the constraints.
 
-    bias_direction : np.float 
+    sample_squared_radius : callable
+        A callable that takes argument the state and 
+        returns a draw from distribution of the 
+        square of the radius. 
+
+    bias_direction : np.float (optional)
         Which projection is of most interest?
 
     how_often : int (optional)
@@ -304,8 +310,9 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
-    cdef double tval, val, alpha
-    cdef double norm_state_bound = np.linalg.norm(state)**2
+    cdef double cdfL, cdfU, unif, tval, val, alpha
+    cdef double norm_state_bound = sample_squared_radius(state)
+
     cdef double norm_state_sq = norm_state_bound
 
     cdef double tol = 1.e-7
@@ -454,6 +461,11 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                 state[ivar] = state[ivar] * multiplier
             norm_state_sq = 0.999 * norm_state_bound
 
+<<<<<<< HEAD
+        norm_state_bound = sample_squared_radius(state)
+
+    return trunc_sample
+=======
         # check constraints
 
         in_event = 1
