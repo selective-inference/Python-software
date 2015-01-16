@@ -17,7 +17,7 @@ import regreg.api as rr
 # local
 
 from .lasso import _constraint_from_data
-from .truncated import T as truncated_T
+from .truncated.T import truncated_T
 from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
 from .truncated import find_root
 
@@ -394,7 +394,6 @@ class sqrt_lasso(object):
                         _gaussian_pval = C.pivot(eta, self.y, alternative="twosided")
                         if _gaussian_pval < 1e-10:
                             print self.sigma_hat, C.bounds(eta, self.y) 
-                        _interval = C.interval(eta, self.y)
                         self._gaussian_pvals.append((self.active[i], _gaussian_pval))
         return self._gaussian_pvals
 
@@ -410,7 +409,8 @@ class sqrt_lasso(object):
                 if XEinv is not None:
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
-                        _interval = C.interval(eta, self.y)
+                        _interval = C.interval(eta, self.y,
+                                               alpha=self.alpha)
                         self._gaussian_intervals.append((self.active[i], _interval))
         return self._gaussian_intervals
 

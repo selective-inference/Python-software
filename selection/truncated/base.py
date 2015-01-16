@@ -50,7 +50,7 @@ class truncated(object):
     __metaclass__ = ABCMeta
 
     @abstractmethod
-    def __init__(self, I):
+    def __init__(self, intervals):
         """
         Create a new truncated distribution object
         This method is abstract : it has to be overriden
@@ -58,17 +58,17 @@ class truncated(object):
         Parameters
         ----------
         
-        I : intervals
+        intervals : [(float, float)]
             The intervals the distribution is truncated to
 
         """
-        self._I = I
+        self.intervals = intervals
 
         dps = 15
         not_precise = True
         while not_precise:
             dps *= 2.
-            Q = [self._cdf_notTruncated(a, b, dps) for a, b in I]
+            Q = [self._cdf_notTruncated(a, b, dps) for a, b in intervals]
             not_precise = (fsum(Q) == 0.)
 
         self._sumQ = fsum(Q)
@@ -178,15 +178,15 @@ class truncated(object):
         -------
         sf : float
             The survival function of the truncated distribution
-            sf(z) = P( X > z | X is in I )
+            sf(z) = P( X > z | X is in intervals )
         
         """
-        I = self._I
+        intervals = self.intervals
         Q, sumQ = self._Q, self._sumQ
         N = len(Q)
         dps = self._dps
 
-        k, (a, b) = min( (k, (a, b))  for k, (a, b) in enumerate(I) if b > z)
+        k, (a, b) = min( (k, (a, b))  for k, (a, b) in enumerate(intervals) if b > z)
 
         sf = fsum(Q[k+1:]) + self._cdf_notTruncated(max(a, z), b, dps)
         sf /= sumQ
@@ -208,7 +208,7 @@ class truncated(object):
         cdf : float
             function  The cumulative distribution function of the 
             truncated distribution
-            cdf(z) = P( X < z | X is in I )
+            cdf(z) = P( X < z | X is in intervals )
         
         
         WARNING : This method only use the sf method : it is never going to be 
@@ -241,10 +241,10 @@ class truncated(object):
                 pdf method"""
             )
        
-        I = self._I
+        intervals = self.intervals
         dps = self._dps
 
-        if I(z):
+        if intervals(z):
             p = self._pdf_notTruncated(z, dps)
             p /= self._sumQ
         else:
@@ -263,14 +263,14 @@ class truncated(object):
 
         Q = self._Q
         sumQ = self._sumQ
-        I = self._I
+        intervals = self.intervals
         dps = self._dps
         
         cum_sum = np.cumsum( Q )
 
 
         k = min( i for i, c in enumerate(cum_sum) if c > q*sumQ )
-        a, b = I[k]
+        a, b = intervals[k]
 
         
         q_notTruncated = q*sumQ + self._cdf_notTruncated(-np.inf, a, dps)

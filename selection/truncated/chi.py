@@ -124,7 +124,6 @@ class truncated_chi(truncated):
 
         return z 
         
-        
 
 class truncated_chi2(truncated):
 

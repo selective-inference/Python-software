@@ -4,6 +4,9 @@ from scipy.stats import t as tdist
 from .base import truncated
 from .F import sf_F
 
+# quantile = tdist.ppf
+# 
+
 def sf_T(df):
 
     def sf(a, b=np.inf, dps=15):
@@ -54,15 +57,72 @@ def sf_T(df):
     return sf
 
 class truncated_T(truncated):
+
     def __init__(self, intervals, df):
 
         self._T = tdist(df)
         
-        truncated.__init__(self,
-                           intervals,
-                           self._T.pdf,
-                           self._T.cdf,
-                           sf_T(df),
-                           self._T.ppf,
-                           self._T.logcdf,
-                           self._T.logsf)
+        truncated.__init__(self, intervals)
+
+    def _cdf_notTruncated(self, a, b, dps):
+        """
+        Compute the probability of being in the interval (a, b)
+        for a variable with a T distribution (not truncated)
+        
+        Parameters
+        ----------
+        a, b : float
+            Bounds of the interval. Can be infinite.
+
+        dps : int
+            Decimal precision (decimal places). Used in mpmath
+
+        Returns
+        -------
+        p : float
+            The probability of being in the intervals (a, b)
+            P( a < X < b)
+            for a non truncated variable
+
+        """
+
+        return self._T.cdf(b) - self._T.cdf(a)
+
+    def _pdf_notTruncated(self, z, dps):
+        """
+        Compute the density for the non truncated T distribution
+
+        Parameters
+        ----------
+        z : float
+            Value where density is to be calculated.
+
+        Returns
+        -------
+        d : float
+            pdf at z
+
+        """
+
+        return self._T.pdf(z)
+
+    def _quantile_notTruncated(self, q, tol=1.e-6):
+        """
+        Compute the quantile for the non truncated distribution
+
+        Parameters
+        ----------
+        q : float
+            quantile you want to compute. Between 0 and 1
+
+        tol : float
+            precision for the output
+
+        Returns
+        -------
+        x : float
+            x such that P(X < x) = q
+
+        """
+
+        return self._T.ppf(q)
