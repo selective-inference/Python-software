@@ -455,6 +455,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                 state[ivar] = state[ivar] * multiplier
             norm_state_sq = 0.999 * norm_state_bound
 
+<<<<<<< HEAD
         # check constraints
 
         in_event = 1
