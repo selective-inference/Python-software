@@ -448,127 +448,148 @@ def data_carving(y, X,
 
     L = first_stage # shorthand
 
-    # quantities related to models fit on
-    # stage_one and full dataset
+    if splitn < n:
 
-    y1, X1 = y[stage_one], X[stage_one]
-    X_E = X[:,L.active]
-    X_Ei = np.linalg.pinv(X_E)
-    X_E1 = X1[:,L.active]
-    X_Ei1 = np.linalg.pinv(X_E1)
+        # quantities related to models fit on
+        # stage_one and full dataset
 
-    info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
-    info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
+        y1, X1 = y[stage_one], X[stage_one]
+        X_E = X[:,L.active]
+        X_Ei = np.linalg.pinv(X_E)
+        X_E1 = X1[:,L.active]
+        X_Ei1 = np.linalg.pinv(X_E1)
 
-    s = sparsity = L.active.shape[0]
-    beta_E = np.dot(X_Ei, y)
-    beta_E1 = np.dot(X_Ei1, y[stage_one])
+        info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
+        info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
 
-    # setup the constraint on the 2s Gaussian vector
+        s = sparsity = L.active.shape[0]
+        beta_E = np.dot(X_Ei, y)
+        beta_E1 = np.dot(X_Ei1, y[stage_one])
 
-    linear_part = np.zeros((s, 2*s))
-    linear_part[:, s:] = -np.diag(L.z_E)
-    b = L.active_constraints.offset
-    con = constraints(linear_part, b)
+        # setup the constraint on the 2s Gaussian vector
 
-    # specify covariance of 2s Gaussian vector
+        linear_part = np.zeros((s, 2*s))
+        linear_part[:, s:] = -np.diag(L.z_E)
+        b = L.active_constraints.offset
+        con = constraints(linear_part, b)
 
-    cov = np.zeros((2*s, 2*s))
-    cov[:s, :s] = info_E
-    cov[s:, :s] = info_E
-    cov[:s, s:] = info_E
-    cov[s:, s:] = info_E1
+        # specify covariance of 2s Gaussian vector
 
-    con.covariance[:] = cov
+        cov = np.zeros((2*s, 2*s))
+        cov[:s, :s] = info_E
+        cov[s:, :s] = info_E
+        cov[:s, s:] = info_E
+        cov[s:, s:] = info_E1
 
-    # how do we sample at the right beta?
-    #con.mean = mu = np.hstack([beta_E, beta_E1])
-    #weight_mu = np.dot(np.linalg.pinv(cov), mu)
+        con.covariance[:] = cov
 
-    # for the conditional law
-    # we will change the linear function for each coefficient
+        # how do we sample at the right beta?
+        #con.mean = mu = np.hstack([beta_E, beta_E1])
+        #weight_mu = np.dot(np.linalg.pinv(cov), mu)
 
-    selector = np.zeros((s, 2*s))
-    selector[:, :s]  = np.identity(s)
-    conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
+        # for the conditional law
+        # we will change the linear function for each coefficient
 
-    # a valid initial condition
+        selector = np.zeros((s, 2*s))
+        selector[:, :s]  = np.identity(s)
+        conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
 
-    initial = np.hstack([beta_E, beta_E1])
+        # a valid initial condition
 
-    pvalues = []
-    intervals = []
+        initial = np.hstack([beta_E, beta_E1])
 
-    if splitting:
-        y2, X2 = y[stage_two], X[stage_two]
-        X_E2 = X2[:,L.active]
-        X_Ei2 = np.linalg.pinv(X_E2)
-        beta_E2 = np.dot(X_Ei2, y2)
-        info_E2 = np.dot(X_Ei2, X_Ei2.T) * sigma**2
-
-        splitting_pvalues = []
-        splitting_intervals = []
-
-        split_cutoff = np.fabs(ndist.ppf((1. - coverage) / 2))
-
-    # compute p-values and (TODO: intervals)
-
-    for j in range(X_E.shape[1]):
-
-        keep = np.ones(s, np.bool)
-        keep[j] = 0
-
-        eta = np.zeros(2*s)
-        eta[j] = 1.
-
-        conditional_law = con.conditional(conditional_linear[keep], \
-                              np.dot(X_E.T, y)[keep])
-
-        pval, Z, W = gibbs_test(conditional_law,
-                                initial,
-                                eta,
-                                UMPU=False,
-                                sigma_known=True,
-                                ndraw=ndraw,
-                                burnin=burnin,
-                                how_often=5,
-                                alternative='twosided')
-
-        #W *= np.exp(-np.dot(Z, weight_mu))
-
-        pvalues.append(pval)
-
-        # intervals are still not implemented yet
-        intervals.append((np.nan, np.nan))
+        pvalues = []
+        intervals = []
 
         if splitting:
-            if s < n - splitn: # enough data to generically
-                               # test hypotheses. proceed as usual
 
-                split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
-                split_pval = 2 * min(split_pval, 1. - split_pval)
-                splitting_pvalues.append(split_pval)
+            y2, X2 = y[stage_two], X[stage_two]
+            X_E2 = X2[:,L.active]
+            X_Ei2 = np.linalg.pinv(X_E2)
+            beta_E2 = np.dot(X_Ei2, y2)
+            info_E2 = np.dot(X_Ei2, X_Ei2.T) * sigma**2
 
-                splitting_interval = (beta_E2[j] - 
-                                      split_cutoff * np.sqrt(info_E2[j,j]),
-                                      beta_E2[j] + 
-                                      split_cutoff * np.sqrt(info_E2[j,j]))
-                splitting_intervals.append(splitting_interval)
-            else:
-                splitting_pvalues.append(np.random.sample())
-                splitting_intervals.append((np.nan, np.nan))
+            splitting_pvalues = []
+            splitting_intervals = []
 
-    if not splitting:
-        return zip(L.active, 
-                   pvalues,
-                   intervals), L
+            split_cutoff = np.fabs(ndist.ppf((1. - coverage) / 2))
+
+        # compute p-values and (TODO: intervals)
+
+        for j in range(X_E.shape[1]):
+
+            keep = np.ones(s, np.bool)
+            keep[j] = 0
+
+            eta = np.zeros(2*s)
+            eta[j] = 1.
+
+            conditional_law = con.conditional(conditional_linear[keep], \
+                                  np.dot(X_E.T, y)[keep])
+
+            pval, Z, W = gibbs_test(conditional_law,
+                                    initial,
+                                    eta,
+                                    UMPU=False,
+                                    sigma_known=True,
+                                    ndraw=ndraw,
+                                    burnin=burnin,
+                                    how_often=5,
+                                    alternative='twosided')
+
+            #W *= np.exp(-np.dot(Z, weight_mu))
+
+            pvalues.append(pval)
+
+            # intervals are still not implemented yet
+            intervals.append((np.nan, np.nan))
+
+            if splitting:
+
+                if s < n - splitn: # enough data to generically
+                                   # test hypotheses. proceed as usual
+
+                    split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
+                    split_pval = 2 * min(split_pval, 1. - split_pval)
+                    splitting_pvalues.append(split_pval)
+
+                    splitting_interval = (beta_E2[j] - 
+                                          split_cutoff * np.sqrt(info_E2[j,j]),
+                                          beta_E2[j] + 
+                                          split_cutoff * np.sqrt(info_E2[j,j]))
+                    splitting_intervals.append(splitting_interval)
+                else:
+                    splitting_pvalues.append(np.random.sample())
+                    splitting_intervals.append((np.nan, np.nan))
+
+        if not splitting:
+            return zip(L.active, 
+                       pvalues,
+                       intervals), L
+        else:
+            return zip(L.active, 
+                       pvalues,
+                       intervals,
+                       splitting_pvalues,
+                       splitting_intervals), L
     else:
-        return zip(L.active, 
-                   pvalues,
-                   intervals,
-                   splitting_pvalues,
-                   splitting_intervals), L
+        pvalues = [p for _, p in L.active_pvalues]
+        intervals = [o[-1] for o in L.intervals]
+        if splitting:
+            splitting_pvalues = np.random.sample(len(pvalues))
+            splitting_intervals = [(np.nan, np.nan) for _ in 
+                                   range(len(pvalues))]
 
+            return zip(L.active, 
+                       pvalues, 
+                       intervals,
+                       splitting_pvalues,
+                       splitting_intervals), L
+        else:
+            return zip(L.active, 
+                       pvalues,
+                       intervals), L
+            
 def split_model(y, X, 
                 sigma=1, 
                 lam_frac=1.,
