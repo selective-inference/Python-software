@@ -466,35 +466,65 @@ def data_carving(y, X,
 
     # setup the constraint on the 2s Gaussian vector
 
-    linear_part = np.zeros((s, 2*s))
-    linear_part[:, s:] = -np.diag(L.z_E)
-    b = L.active_constraints.offset
-    con = constraints(linear_part, b)
+    if n - splitn > s:
 
-    # specify covariance of 2s Gaussian vector
+        linear_part = np.zeros((s, 2*s))
+        linear_part[:, :s] = -np.diag(L.z_E)
+        b = L.active_constraints.offset
+        con = constraints(linear_part, b)
 
-    cov = np.zeros((2*s, 2*s))
-    cov[:s, :s] = info_E
-    cov[s:, :s] = info_E
-    cov[:s, s:] = info_E
-    cov[s:, s:] = info_E1
+        # specify covariance of 2s Gaussian vector
 
-    con.covariance[:] = cov
+        cov = np.zeros((2*s, 2*s))
+        cov[:s, :s] = info_E
+        cov[s:, :s] = info_E
+        cov[:s, s:] = info_E
+        cov[s:, s:] = info_E1
+
+        con.covariance[:] = cov
+
+        # for the conditional law
+        # we will change the linear function for each coefficient
+
+        selector = np.zeros((s, 2*s))
+        selector[:, :s]  = np.identity(s)
+        conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
+
+        # a valid initial condition
+
+        initial = np.hstack([beta_E, beta_E1])
+        eta = np.zeros(2*s)
+
+    else:
+        
+        linear_part = np.zeros((s, s + n - splitn))
+        linear_part[:, :s] = -np.diag(L.z_E)
+        b = L.active_constraints.offset
+        con = constraints(linear_part, b)
+
+        # specify covariance of Gaussian vector
+
+        cov = np.zeros((s + n - splitn, s + n - splitn))
+        cov[:s, :s] = info_E1
+        cov[s:, :s] = 0
+        cov[:s, s:] = 0
+        cov[s:, s:] = np.identity(n - splitn) * sigma**2
+
+        con.covariance[:] = cov
+
+        conditional_linear = np.zeros((s, s + n - splitn))
+        conditional_linear[:, :s]  = np.linalg.pinv(info_E1) * sigma**2
+        conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
+
+        # a valid initial condition
+
+        initial = np.hstack([beta_E1, y[stage_two]])
+        eta = np.zeros(s + n - splitn)
 
     # how do we sample at the right beta?
     #con.mean = mu = np.hstack([beta_E, beta_E1])
     #weight_mu = np.dot(np.linalg.pinv(cov), mu)
 
-    # for the conditional law
-    # we will change the linear function for each coefficient
-
-    selector = np.zeros((s, 2*s))
-    selector[:, :s]  = np.identity(s)
-    conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
-
-    # a valid initial condition
-
-    initial = np.hstack([beta_E, beta_E1])
 
     pvalues = []
     intervals = []
@@ -518,7 +548,6 @@ def data_carving(y, X,
         keep = np.ones(s, np.bool)
         keep[j] = 0
 
-        eta = np.zeros(2*s)
         eta[j] = 1.
 
         conditional_law = con.conditional(conditional_linear[keep], \

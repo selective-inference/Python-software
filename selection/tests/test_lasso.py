@@ -45,7 +45,9 @@ def test_data_carving(n=100,
                       rho=0.3,
                       snr=7.,
                       split_frac=0.9,
-                      lam_frac=2.):
+                      lam_frac=2.,
+                      ndraw=8000,
+                      burnin=2000):
 
     counter = 0
 
@@ -66,7 +68,9 @@ def test_data_carving(n=100,
             results, L = data_carving(y, X, lam_frac=lam_frac, 
                                       sigma=sigma,
                                       stage_one=stage_one,
-                                      splitting=True)
+                                      splitting=True, 
+                                      ndraw=ndraw,
+                                      burnin=burnin)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
