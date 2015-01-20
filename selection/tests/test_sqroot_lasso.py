@@ -1,7 +1,7 @@
 from __future__ import division
 import numpy as np
 from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
-                                  estimate_sigma, data_carving)
+                                  estimate_sigma, data_carving, split_model)
 from selection.lasso import instance
 from selection.affine import constraints_unknown_sigma
 from selection.truncated import T as truncated_T
@@ -167,6 +167,7 @@ def test_pval_intervals(nsample=100):
 
     return pvalues, gaussian_pvalues, coverage/count
             
+
 def test_data_carving(n=100,
                       p=200,
                       s=7,
@@ -174,7 +175,9 @@ def test_data_carving(n=100,
                       rho=0.3,
                       snr=7.,
                       split_frac=0.9,
-                      lam_frac=2.):
+                      lam_frac=1.,
+                      ndraw=8000,
+                      burnin=2000):
 
     counter = 0
 
@@ -187,21 +190,21 @@ def test_data_carving(n=100,
                                              rho=rho, 
                                              snr=snr)
         L, stage_one = split_model(y, X, 
-                        sigma=sigma,
                         lam_frac=lam_frac,
                         split_frac=split_frac)[:2]
 
+        print counter, L.active
+
         if set(range(s)).issubset(L.active):
             results, L = data_carving(y, X, lam_frac=lam_frac, 
-                                      sigma=sigma,
                                       stage_one=stage_one,
-                                      splitting=True)
+                                      splitting=True, 
+                                      ndraw=ndraw,
+                                      burnin=burnin)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
             return carve[s:], split[s:], carve[:s], split[:s], counter
-
-
 
 
 
