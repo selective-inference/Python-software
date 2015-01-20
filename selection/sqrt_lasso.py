@@ -4,7 +4,7 @@ post selection for the square root lasso.
 
 """
 
-import numpy as np
+import numpy as np, warnings
 from scipy.stats import norm as ndist, chi as chidist
 from scipy.interpolate import interp1d
 from scipy.stats import t as tdist
@@ -19,6 +19,7 @@ from .lasso import _constraint_from_data
 from .truncated.T import truncated_T
 from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
 from .truncated import find_root
+from .sample_truncT import sample_truncated_T
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -208,8 +209,6 @@ class sqrt_lasso(object):
                                                         c_E * self.weights,
                                                         self.sigma_E,
                                                         np.dot(X_notE.T, self.R_E))
-
-            self._multivariate_T_bound = self._active_constraints / self.sigma_E
 
             self.U_E = np.dot(self._XEinv, y) / _diagE
             self.T_E = self.U_E / self.sigma_E
@@ -528,190 +527,208 @@ def data_carving(y, X,
     # quantities related to models fit on
     # stage_one and full dataset
 
-    y1, X1 = y[stage_one], X[stage_one]
-    X_E = X[:,L.active]
-    X_Ei = np.linalg.pinv(X_E)
-    X_E1 = X1[:,L.active]
-    X_Ei1 = np.linalg.pinv(X_E1)
-    R1 = np.identity(splitn) - np.dot(X_E1, X_Ei1)
-    selector1 = np.identity(n)[stage_one]
-    R_stageone = np.dot(selector1.T, np.dot(R1, selector1))
+    if splitn < n:
+        y1, X1 = y[stage_one], X[stage_one]
+        X_E = X[:,L.active]
+        X_Ei = np.linalg.pinv(X_E)
+        X_E1 = X1[:,L.active]
+        X_Ei1 = np.linalg.pinv(X_E1)
+        R1 = np.identity(splitn) - np.dot(X_E1, X_Ei1)
+        selector1 = np.identity(n)[stage_one]
+        R_stageone = np.dot(selector1.T, np.dot(R1, selector1))
 
-    info_E = np.dot(X_Ei, X_Ei.T)
-    info_E1 = np.dot(X_Ei1, X_Ei1.T)
+        info_E = np.dot(X_Ei, X_Ei.T)
+        info_E1 = np.dot(X_Ei1, X_Ei1.T)
 
-    s = sparsity = L.active.shape[0]
-    beta_E = np.dot(X_Ei, y)
-    beta_E1 = np.dot(X_Ei1, y[stage_one])
-    sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
+        s = sparsity = L.active.shape[0]
+        beta_E = np.dot(X_Ei, y)
+        beta_E1 = np.dot(X_Ei1, y[stage_one])
+        sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
+        sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
 
-    radius = np.linalg.norm(y - np.dot(P_minus, y))
+        if n - splitn > s:
 
-    if n - splitn > s:
+            linear_part = np.zeros((s, 2*s))
+            linear_part[:, s:] = -np.diag(L.z_E)
+            b = L.active_constraints.offset
+            con = gaussian_constraints(linear_part, b)
 
-        linear_part = np.zeros((s, 2*s))
-        linear_part[:, :s] = -np.diag(L.z_E)
-        b = L.active_constraints.offset
-        con = constraints(linear_part, b)
+            # specify covariance of 2s Gaussian vector
 
-        # specify covariance of 2s Gaussian vector
+            cov = np.zeros((2*s, 2*s))
+            cov[:s, :s] = info_E 
+            cov[s:, :s] = info_E
+            cov[:s, s:] = info_E
+            cov[s:, s:] = info_E1
 
-        cov = np.zeros((2*s, 2*s))
-        cov[:s, :s] = info_E
-        cov[s:, :s] = info_E
-        cov[:s, s:] = info_E
-        cov[s:, s:] = info_E1
+            con.covariance[:] = cov * sigma_E**2
 
-        con.covariance[:] = cov
+            # for the conditional law
+            # we will change the linear function for each coefficient
 
-        # for the conditional law
-        # we will change the linear function for each coefficient
+            selector = np.zeros((s, 2*s))
+            selector[:, :s]  = np.identity(s)
+            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
 
-        selector = np.zeros((s, 2*s))
-        selector[:, :s]  = np.identity(s)
-        conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
+            # a valid initial condition
 
-        # a valid initial condition
+            initial = np.hstack([beta_E, beta_E1]) 
+            OLS_func = selector
 
-        initial = np.hstack([beta_E, beta_E1]) / radius
-        eta = np.zeros(2*s)
+        else:
 
-    else:
-        
-        linear_part = np.zeros((s, s + n - splitn))
-        linear_part[:, :s] = -np.diag(L.z_E)
-        b = L.active_constraints.offset
-        con = constraints(linear_part, b)
+            linear_part = np.zeros((s, s + n - splitn))
+            linear_part[:, :s] = -np.diag(L.z_E)
+            b = L.active_constraints.offset
+            con = gaussian_constraints(linear_part, b)
 
-        # specify covariance of Gaussian vector
+            # specify covariance of Gaussian vector
 
-        cov = np.zeros((s + n - splitn, s + n - splitn))
-        cov[:s, :s] = info_E1
-        cov[s:, :s] = 0
-        cov[:s, s:] = 0
-        cov[s:, s:] = np.identity(n - splitn) 
+            cov = np.zeros((s + n - splitn, s + n - splitn))
+            cov[:s, :s] = info_E1
+            cov[s:, :s] = 0
+            cov[:s, s:] = 0
+            cov[s:, s:] = np.identity(n - splitn) 
 
-        con.covariance[:] = cov
+            con.covariance[:] = cov * sigma_E**2
 
-        conditional_linear = np.zeros((s, s + n - splitn))
-        conditional_linear[:, :s]  = np.linalg.pinv(info_E1)
-        conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
+            conditional_linear = np.zeros((s, s + n - splitn))
+            conditional_linear[:, :s]  = np.linalg.pinv(info_E1) 
+            conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
 
-        # a valid initial condition
+            selector1 = np.zeros((s, s + n - splitn))
+            selector1[:, :s]  = np.identity(s)
+            selector2 = np.zeros((n - splitn, s + n - splitn))
+            selector2[:, s:]  = np.identity(n - splitn)
 
-        initial = np.hstack([beta_E1, y[stage_two]]) / radius
-        eta = np.zeros(s + n - splitn)
+            # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-    pvalues = []
-    intervals = []
+            OLS_func = np.dot(info_E, conditional_linear)
 
-    if splitting:
-        y2, X2 = y[stage_two], X[stage_two]
-        X_E2 = X2[:,L.active]
-        X_Ei2 = np.linalg.pinv(X_E2)
-        beta_E2 = np.dot(X_Ei2, y2)
-        info_E2 = np.dot(X_Ei2, X_Ei2.T)
+            # a valid initial condition
 
-        splitting_pvalues = []
-        splitting_intervals = []
+            initial = np.hstack([beta_E1, y[stage_two]]) 
 
-        if n - splitn < s:
-            raise ValueError('not enough data for second stage of sample splitting')
-
-        split_cutoff = np.fabs(tdist.ppf((1. - coverage) / 2), n2 - L.active.shape[0])
-
-    # compute p-values and (TODO: intervals)
-
-    for j in range(X_E.shape[1]):
-
-        keep = np.ones(s, np.bool)
-        keep[j] = 0
-
-        eta = np.zeros(2*s)
-        eta[j] = 1.
-
-        conditional_con = con.conditional(conditional_linear,
-                                          np.dot(X_E.T, y)[keep] / radius)
-
-        P_minus = np.dot(X_E[:,:keep], np.linalg.pinv(X_E[:,:keep]))
-        noncentrality = u = np.dot(P_minus, y) / radius
-
-        con = L.active_constraints
-
-        #
-        # before conditioning:
-        #
-        # sigma_E1 has splitn - s degrees of freedom : R_stageone
-        # numerator s + min(n - splitn, s) degrees of freedom
-        #
-        # after conditioning:
-        #
-        # sigma_E1 has splitn - s degrees of freedom : R_stageone
-        # P_minus has s-1 degrees of freedom
-        # numerator min(n - splitn, s) + 1 having lost s-1 to P_minus
-        #
-        # therefore, when n - splitn > s we seem to waste data for
-        # estimating variance?
-
-        numerator_projection = np.identity(n) - P_minus - R_stageone # should have rank n - s + 1 - (splitn - s)
-        _U, _D, _V = np.linalg.svd(numerator_projection)
-        
-        conditional_linear = con.linear_part - np.dot(con.linear_part, P_minus) / radius
-        conditional_offset = con.offset / radius
-
-        multT = np.dot(conditional_linear, y) / (sigma_E1 / radius)
-
-        T = sample_truncated_T(conditional_linear, 
-                               conditional_offset,
-                               multT,
-                               noncentrality,
-                               splitn - s,
-                               eta,
-                               how_often=how_often,
-                               ndraw=ndraw,
-                               burnin=burnin,
-                               use_constraint_directions=\
-                                   use_constraint_directions)
-
-        T_obs = multT[j]
-
-        family = discrete_family(T, np.ones_like(T))
-        pval = 2 * min(family.cdf(0, T_obs))
-
-        pvalues.append(pval)
-
-        # intervals are still not implemented yet
-        intervals.append((np.nan, np.nan))
+        print con(initial), 'working'
+        pvalues = []
+        intervals = []
 
         if splitting:
-            if s < n - splitn: # enough data to generically
-                               # test hypotheses. proceed as usual
-                sigma_E2 = np.linalg.norm(y2[stage_one] - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
+            if n - splitn < s:
+                warnings.warn('not enough data for second stage of sample splitting')
 
-                T = beta_E2[j] / (sigma_E2 * info_E2[j,j])
-                split_pval = tdist.cdf(T, n - splitn - s)
-                split_pval = 2 * min(split_pval, 1. - split_pval)
-                splitting_pvalues.append(split_pval)
+            y2, X2 = y[stage_two], X[stage_two]
+            X_E2 = X2[:,L.active]
+            X_Ei2 = np.linalg.pinv(X_E2)
+            beta_E2 = np.dot(X_Ei2, y2)
+            sigma_E2 = np.linalg.norm(y[stage_two] - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
 
-                splitting_interval = (beta_E2[j] - 
-                                      split_cutoff * np.sqrt(info_E2[j,j]),
-                                      beta_E2[j] + 
-                                      split_cutoff * np.sqrt(info_E2[j,j]))
-                splitting_intervals.append(splitting_interval)
-            else:
-                splitting_pvalues.append(np.random.sample())
-                splitting_intervals.append((np.nan, np.nan))
+            info_E2 = np.dot(X_Ei2, X_Ei2.T) 
 
-    if not splitting:
-        return zip(L.active, 
-                   pvalues,
-                   intervals), L
+            splitting_pvalues = []
+            splitting_intervals = []
+
+            split_cutoff = np.fabs(tdist.ppf((1. - coverage) / 2, n - splitn - s))
+
+        # compute p-values and (TODO: intervals)
+
+        for j in range(X_E.shape[1]):
+
+            keep = np.ones(s, np.bool)
+            keep[j] = 0
+
+            eta = OLS_func[j]
+
+            conditional_con = con.conditional(conditional_linear[keep],
+                                              np.dot(X_E.T, y)[keep])
+
+            noncentral_param = conditional_con.mean.copy()
+            conditional_con.mean *= 0
+
+            #
+            # before conditioning:
+            #
+            # sigma_E1 has splitn - s degrees of freedom : R_stageone
+            # numerator s + min(n - splitn, s) degrees of freedom
+            #
+            # after conditioning:
+            #
+            # sigma_E1 has splitn - s degrees of freedom : R_stageone
+            # P_minus has s-1 degrees of freedom
+            # numerator min(n - splitn, s) + 1 having lost s-1 to P_minus
+            #
+            # therefore, when n - splitn > s we seem to waste data for
+            # estimating variance?
+
+            inverse_map, forward_map, white = conditional_con.whiten()
+            y_f = forward_map(initial)
+            eta_f = forward_map(eta)
+            noncentral_param_f = forward_map(noncentral_param)
+            T_obs = (eta_f * (noncentral_param_f + y_f)).sum()
+
+            white_samples = sample_truncated_T(white.linear_part,
+                                               white.offset,
+                                               y_f, 
+                                               noncentral_param_f,
+                                               splitn - s,
+                                               eta_f,
+                                               how_often=3,
+                                               ndraw=ndraw, 
+                                               burnin=burnin)
+            T_sample = np.dot(white_samples, eta_f)
+            family = discrete_family(T_sample, np.ones_like(T_sample))
+            pval = 2 * min(family.cdf(0, T_obs))
+
+            pvalues.append(pval)
+
+            # intervals are still not implemented yet
+            intervals.append((np.nan, np.nan))
+
+            if splitting:
+                if s < n - splitn: # enough data to generically
+                                   # test hypotheses. proceed as usual
+
+                    T = beta_E2[j] / (sigma_E2 * info_E2[j,j])
+                    split_pval = tdist.cdf(T, n - splitn - s)
+                    split_pval = 2 * min(split_pval, 1. - split_pval)
+                    splitting_pvalues.append(split_pval)
+
+                    splitting_interval = (beta_E2[j] - 
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2,
+                                          beta_E2[j] + 
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2)
+                    splitting_intervals.append(splitting_interval)
+                else:
+                    splitting_pvalues.append(np.random.sample())
+                    splitting_intervals.append((np.nan, np.nan))
+
+        if not splitting:
+            return zip(L.active, 
+                       pvalues,
+                       intervals), L
+        else:
+            return zip(L.active, 
+                       pvalues,
+                       intervals,
+                       splitting_pvalues,
+                       splitting_intervals), L
     else:
-        return zip(L.active, 
-                   pvalues,
-                   intervals,
-                   splitting_pvalues,
-                   splitting_intervals), L
+        pvalues = [p for _, p in L.active_pvalues]
+        intervals = [o[-1] for o in L.active_gaussian_intervals]
+        if splitting:
+            splitting_pvalues = np.random.sample(len(pvalues))
+            splitting_intervals = [(np.nan, np.nan) for _ in 
+                                   range(len(pvalues))]
+
+            return zip(L.active, 
+                       pvalues, 
+                       intervals,
+                       splitting_pvalues,
+                       splitting_intervals), L
+        else:
+            return zip(L.active, 
+                       pvalues,
+                       intervals), L
 
 def split_model(y, X, 
                 lam_frac=1.,
@@ -777,7 +794,7 @@ def split_model(y, X,
     first_stage = standard_sqrt_lasso(y1, X1, lam_frac=lam_frac, quantile=quantile)
     return first_stage, stage_one, stage_two
 
-def standard_sqrt_lasso(y, X, lam_frac=1.):
+def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
     """
     Fit a sqrt-LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|) / \|\epsilon\|_2$
