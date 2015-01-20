@@ -460,8 +460,8 @@ def data_carving(y, X,
         X_E1 = X1[:,L.active]
         X_Ei1 = np.linalg.pinv(X_E1)
 
-        info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
-        info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
+        info_E = np.dot(X_Ei, X_Ei.T)
+        info_E1 =np.dot(X_Ei1, X_Ei1.T)
 
         beta_E = np.dot(X_Ei, y)
         beta_E1 = np.dot(X_Ei1, y[stage_one])
@@ -482,14 +482,14 @@ def data_carving(y, X,
             cov[:s, s:] = info_E
             cov[s:, s:] = info_E1
 
-            con.covariance[:] = cov
+            con.covariance[:] = cov * sigma**2
 
             # for the conditional law
             # we will change the linear function for each coefficient
 
             selector = np.zeros((s, 2*s))
             selector[:, :s]  = np.identity(s)
-            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
+            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
 
             # a valid initial condition
 
@@ -509,12 +509,12 @@ def data_carving(y, X,
             cov[:s, :s] = info_E1
             cov[s:, :s] = 0
             cov[:s, s:] = 0
-            cov[s:, s:] = np.identity(n - splitn) * sigma**2
+            cov[s:, s:] = np.identity(n - splitn) 
 
-            con.covariance[:] = cov
+            con.covariance[:] = cov * sigma**2
 
             conditional_linear = np.zeros((s, s + n - splitn))
-            conditional_linear[:, :s]  = np.linalg.pinv(info_E1) * sigma**2
+            conditional_linear[:, :s]  = np.linalg.pinv(info_E1)
             conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
 
             selector1 = np.zeros((s, s + n - splitn))
@@ -524,7 +524,7 @@ def data_carving(y, X,
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-            OLS_func = np.dot(info_E, conditional_linear) * sigma**2
+            OLS_func = np.dot(info_E, conditional_linear) 
 
             # a valid initial condition
 
@@ -538,7 +538,7 @@ def data_carving(y, X,
             X_E2 = X2[:,L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
             beta_E2 = np.dot(X_Ei2, y2)
-            info_E2 = np.dot(X_Ei2, X_Ei2.T) * sigma**2
+            info_E2 = np.dot(X_Ei2, X_Ei2.T)
 
             splitting_pvalues = []
             splitting_intervals = []
@@ -582,14 +582,14 @@ def data_carving(y, X,
                 if s < n - splitn: # enough data to generically
                                    # test hypotheses. proceed as usual
 
-                    split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
+                    split_pval = ndist.cdf(beta_E2[j] / (np.sqrt(info_E2[j,j]) * sigma))
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
 
                     splitting_interval = (beta_E2[j] - 
-                                          split_cutoff * np.sqrt(info_E2[j,j]),
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma,
                                           beta_E2[j] + 
-                                          split_cutoff * np.sqrt(info_E2[j,j]))
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma)
                     splitting_intervals.append(splitting_interval)
                 else:
                     splitting_pvalues.append(np.random.sample())
