@@ -442,6 +442,8 @@ def sample_from_constraints(con,
     if not white:
         inverse_map, forward_map, white = con.whiten()
         Y = forward_map(Y)
+        # XXX for covariance not a projection, does this work?
+        # it seems we need a dual forward map to preserve inner products?
         direction_of_interest = forward_map(direction_of_interest)
     else:
         white = con
