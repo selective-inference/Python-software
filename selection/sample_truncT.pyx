@@ -92,7 +92,7 @@ def sample_truncated_T(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
-    cdef double cdfL, cdfU, unif, tnorm, val, alpha
+    cdef double cdfL, cdfU, unif, tnorm, val, alpha, truncT
 
     cdef double tol = 1.e-7
 
@@ -234,6 +234,10 @@ def sample_truncated_T(np.ndarray[DTYPE_float_t, ndim=2] A,
             D = multivariate_T_unnorm(X, degrees_of_freedom, noncentrality)
             D /= D.sum()
             
+        rand_idx = int(np.random.multinomial(1, D)[0])
+        print type(rand_idx), X.dtype
+        truncT = X[rand_idx]
+
         if docoord == 1:
             state[idx] = truncT
             truncT = truncT - V
@@ -280,5 +284,6 @@ def multivariate_T_unnorm(X, degrees_of_freedom, noncentrality):
 
     _, n = X.shape
 
-    return (1 + ((X - noncentrality[None, :])**2).sum() / degrees_of_freedom)**((n + degrees_of_freedom) / 2.)
+    return (1 + ((X - noncentrality[None, :])**2).sum(1) / degrees_of_freedom)**((n + degrees_of_freedom) / 2.)
+
 
