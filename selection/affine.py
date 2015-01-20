@@ -18,8 +18,11 @@ from .pvalue import truncnorm_cdf, norm_interval
 from .truncated.gaussian import truncated_gaussian, truncated_gaussian_old
 from .sample_truncnorm import (sample_truncnorm_white, 
                                sample_truncnorm_white_ball,
-                               sample_truncnorm_white_ball_normal)
-#                               sample_truncnorm_white_sphere)
+                               sample_truncnorm_white_ball_normal,
+                               sample_truncnorm_white_sphere)
+from .sample_truncT import sample_truncated_T
+
+
 from .discrete_family import discrete_family
 from mpmath import mp
 import pyinter
@@ -344,11 +347,13 @@ class constraints(object):
 
         new_A = np.dot(self.linear_part, sqrt_cov)
         new_b = self.offset - np.dot(self.linear_part, self.mean)               
+        new_con = constraints(new_A, new_b)
 
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
         forward_map = lambda W: np.dot(sqrt_inv, W - mu)
-        return inverse_map, forward_map, constraints(new_A, new_b)
+
+        return inverse_map, forward_map, new_con
 
 def stack(*cons):
     """
@@ -428,6 +433,7 @@ def sample_from_constraints(con,
         Sample from the sphere intersect the constraints.
         
     """
+
     if direction_of_interest is None:
         direction_of_interest = np.random.standard_normal(Y.shape)
     if how_often < 0:
@@ -454,6 +460,88 @@ def sample_from_constraints(con,
     if con.translate is not None:
         Z += con.translate[None,:]
     return Z
+
+def sample_from_constrainted_T(con, 
+                               Y,
+                               noncentrality,
+                               degrees_of_freedom,
+                               direction_of_interest=None,
+                               how_often=-1,
+                               ndraw=1000,
+                               burnin=1000,
+                               white=False,
+                               use_constraint_directions=True):
+    r"""
+    Use Gibbs sampler to simulate from `con`.
+
+    Parameters
+    ----------
+
+    con : `selection.affine.constraints`_
+
+    Y : np.float
+        Point satisfying the constraint.
+
+    direction_of_interest : np.float (optional)
+        Which projection is of most interest?
+
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
+
+    ndraw : int (optional)
+        Defaults to 1000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    white : bool (optional)
+        Is con.covariance equal to identity?
+
+    use_constraint_directions : bool (optional)
+        Use the directions formed by the constraints as in
+        the Gibbs scheme?
+
+    Returns
+    -------
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
+    """
+
+    if direction_of_interest is None:
+        direction_of_interest = np.random.standard_normal(Y.shape)
+    if how_often < 0:
+        how_often = ndraw + burnin
+
+    # assumes mean of contrast is 0
+
+    if not np.all(con.mean == np.zeros_like(con.mean)):
+        warnings.warn('mean of contrast will be ignored in sampling -- adjust offset to reflect mean')
+
+    if not white:
+        inverse_map, forward_map, white = con.whiten()
+        Y = forward_map(Y)
+        direction_of_interest = forward_map(direction_of_interest)
+    else:
+        white = con
+        inverse_map = lambda V: V
+
+    white_samples = sample_truncated_T(white.linear_part,
+                                       white.offset,
+                                       Y, 
+                                       forward_map(noncentrality),
+                                       degrees_of_freedom,
+                                       direction_of_interest,
+                                       how_often=how_often,
+                                       ndraw=ndraw, 
+                                       burnin=burnin)
+
+    T = inverse_map(white_samples.T).T
+    if con.translate is not None:
+        T += con.translate[None,:]
+    return T
 
 def sample_from_sphere(con, 
                        Y,
