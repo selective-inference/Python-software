@@ -141,6 +141,7 @@ def sample_truncated_T(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef int iperiod = 0
     cdef int ibias = 0
     cdef int dobias = 0
+    cdef int rand_idx = 0
 
     cdef np.ndarray[DTYPE_float_t, ndim=1] _dir = \
         np.zeros_like(state)
@@ -234,9 +235,10 @@ def sample_truncated_T(np.ndarray[DTYPE_float_t, ndim=2] A,
             D = multivariate_T_unnorm(X, degrees_of_freedom, noncentrality)
             D /= D.sum()
             
-        rand_idx = int(np.random.multinomial(1, D)[0])
-        print type(rand_idx), X.dtype
-        truncT = X[rand_idx]
+        # BUG should be a random index of X
+        rand_idx = sample_multi(D)
+        print (rand_idx, upper_bound, lower_bound)
+        truncT = rand_idx * 1. * (upper_bound - lower_bound) / discretization + base
 
         if docoord == 1:
             state[idx] = truncT
@@ -286,4 +288,11 @@ def multivariate_T_unnorm(X, degrees_of_freedom, noncentrality):
 
     return (1 + ((X - noncentrality[None, :])**2).sum(1) / degrees_of_freedom)**((n + degrees_of_freedom) / 2.)
 
-
+def sample_multi(P):
+    U = np.random.sample()
+    SP = np.cumsum(P)
+    counter = 0
+    while True:
+        if U <= SP[counter]:
+            return counter
+        counter += 1

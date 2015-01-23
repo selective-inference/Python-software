@@ -9,8 +9,8 @@ as described in `post selection LASSO`_.
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
 
-
 """
+
 import numpy as np
 from sklearn.linear_model import Lasso
 from .affine import (constraints, selection_interval,
@@ -20,7 +20,7 @@ from .affine import (constraints, selection_interval,
                      stack)
 from .discrete_family import discrete_family
 
-from scipy.stats import norm as ndist
+from scipy.stats import norm as ndist, t as tdist
 import warnings
 
 try:
@@ -32,7 +32,7 @@ except ImportError:
 DEBUG = False
 
 def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
-             random_signs=False):
+             random_signs=False, df=np.inf):
     """
     A testing instance for the LASSO.
     Design is equi-correlated in the population,
@@ -62,6 +62,9 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     random_signs : bool
         If true, assign random signs to coefficients.
         Else they are all positive.
+
+    df : int
+        Degrees of freedom for noise (from T distribution).
 
     Returns
     -------
@@ -93,8 +96,19 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     active = np.zeros(p, np.bool)
     active[:s] = True
-    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
+
+    # noise model
+
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df,size=50000))
+            return tdist.rvs(df, size=n) / sd_t
+
+    Y = (np.dot(X, beta) + _noise(n, df)) * sigma
     return X, Y, beta, np.nonzero(active)[0], sigma
+
 
 class lasso(object):
 

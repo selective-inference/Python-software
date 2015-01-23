@@ -37,7 +37,7 @@ def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     y += np.dot(X, beta) * sigma
     lam_theor = choose_lambda(X, quantile=0.9)
     L = sqrt_lasso(y, X, lam_theor)
-    L.fit(tol=1.e-10, min_its=80)
+    L.fit(tol=1.e-12, min_its=150)
     P = []
 
 

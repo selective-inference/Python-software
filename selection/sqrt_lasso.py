@@ -193,7 +193,7 @@ class sqrt_lasso(object):
             self.R_E = np.identity(n) - self.P_E
 
             _denE = np.sqrt(1 - np.linalg.norm(self.w_E)**2)
-            c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
+            self._c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
 
             _covE = np.dot(self._XEinv, self._XEinv.T)
             _diagE = np.sqrt(np.diag(_covE))
@@ -206,7 +206,7 @@ class sqrt_lasso(object):
                                                         X_notE,
                                                         self.z_E,
                                                         self.active, 
-                                                        c_E * self.weights,
+                                                        self._c_E * self.weights,
                                                         self.sigma_E,
                                                         np.dot(X_notE.T, self.R_E))
 
@@ -572,7 +572,7 @@ def data_carving(y, X,
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E, beta_E1]) 
+            initial = np.hstack([beta_E, beta_E1]) / sigma_E
             OLS_func = selector
 
         else:
@@ -607,9 +607,12 @@ def data_carving(y, X,
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E1, y[stage_two]]) 
+            initial = np.hstack([beta_E1, y[stage_two]]) / sigma_E
 
-        print con(initial), 'working'
+        DEBUG = True
+        if DEBUG:
+            print con(initial * sigma_E), 'working'
+            print L.active_constraints(y[stage_one]), 'huh'
         pvalues = []
         intervals = []
 

@@ -47,7 +47,8 @@ def test_data_carving(n=100,
                       split_frac=0.9,
                       lam_frac=2.,
                       ndraw=8000,
-                      burnin=2000):
+                      burnin=2000, 
+                      df=np.inf):
 
     counter = 0
 
@@ -58,7 +59,8 @@ def test_data_carving(n=100,
                                              s=s, 
                                              sigma=sigma, 
                                              rho=rho, 
-                                             snr=snr)
+                                             snr=snr, 
+                                             df=df)
         L, stage_one = split_model(y, X, 
                         sigma=sigma,
                         lam_frac=lam_frac,
