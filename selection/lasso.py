@@ -341,7 +341,6 @@ def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
     # active constraints
     C = np.linalg.inv(np.dot(X_E.T, X_E))
     A1 = -np.dot(np.diag(z_E), np.dot(C, X_E.T))
-    #b1 = -np.dot(np.diag(z_E), np.dot(C, z_E))*lam[E]
     b1 = -z_E * np.dot(C, z_E*lam[E])
 
     _active_constraints = constraints(A1, b1)
