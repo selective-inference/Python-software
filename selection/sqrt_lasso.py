@@ -4,11 +4,10 @@ post selection for the square root lasso.
 
 """
 
-import numpy as np
+import numpy as np, warnings
 from scipy.stats import norm as ndist, chi as chidist
 from scipy.interpolate import interp1d
-from mpmath import betainc, mp
-mp.dps = 150
+from scipy.stats import t as tdist
 
 # regreg http://github.com/regreg 
 
@@ -20,6 +19,7 @@ from .lasso import _constraint_from_data
 from .truncated.T import truncated_T
 from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
 from .truncated import find_root
+from .sample_truncT import sample_truncated_T
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -189,15 +189,11 @@ class sqrt_lasso(object):
 
             self.df_E = n - nactive
 
-            beta_interval = lambda a, b: betainc(0.5, self.df_E*0.5,
-                                                 a, b,
-                                                 regularized=True)
-
             self.P_E = np.dot(X_E, self._XEinv)
             self.R_E = np.identity(n) - self.P_E
 
             _denE = np.sqrt(1 - np.linalg.norm(self.w_E)**2)
-            c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
+            self._c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
 
             _covE = np.dot(self._XEinv, self._XEinv.T)
             _diagE = np.sqrt(np.diag(_covE))
@@ -210,7 +206,7 @@ class sqrt_lasso(object):
                                                         X_notE,
                                                         self.z_E,
                                                         self.active, 
-                                                        c_E * self.weights,
+                                                        self._c_E * self.weights,
                                                         self.sigma_E,
                                                         np.dot(X_notE.T, self.R_E))
 
@@ -304,20 +300,6 @@ class sqrt_lasso(object):
         adjusted for selection.
         """
         raise NotImplementedError('intervals are coming soon')
-#         if not hasattr(self, "_intervals"):
-#             self._intervals = []
-#             C = self.active_constraints
-#             XAinv = self._XAinv
-#             if XAinv is not None:
-#                 for i in range(XAinv.shape[0]):
-#                     eta = XAinv[i]
-#                     _interval = C.interval(eta, self.y,
-#                                            alpha=self.alpha,
-#                                            UMAU=self.UMAU)
-#                     self._intervals.append((self.active[i], eta, 
-#                                             (eta*self.y).sum(), 
-#                                             _interval))
-        return self._intervals
 
     @property
     def active_pvalues(self, doc="Tests for active variables adjusted " + \
@@ -352,37 +334,6 @@ class sqrt_lasso(object):
                         print "finished computing " + str(i) + "-th pvalue"
         return self._pvals
 
-#    @property 
-#    def active_intervals(self):
-#        if not hasattr(self,"_intervals"):
-#            self._intervals = None
-#            if self.active.shape[0] > 0:
-#                self._intervals = []
-#                C = self.active_constraints
-#                XEinv = self._XEinv
-#                if XEinv is not None:
-#                    for i in range(XEinv.shape[0]):
-#                        eta = XEinv[i]
-#
-#                        def p_value(theta):
-#                            (intervals, Tobs) = constraints_unknown_sigma( \
-#                                C.linear_part,
-#                                C.offset / self.sigma_E,
-#                                self.y,
-#                                eta,
-#                                self.R_E, value_under_null=theta)
-#                            truncT = truncated_T(np.array([(interval.lower_value,
-#                                                            interval.upper_value) for interval in intervals]), self.df_E)
-#                            if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
-#                                raise ValueError('should be truncated')
-#
-#                            return truncT.cdf(Tobs)
-#
-#                        lower = find_root(p_value, 0.025, -100, 100)
-#                        upper = find_root(p_value, 0.975, -100, 100)
-#                        self._intervals.append((self.active[i], (lower, upper)))
-#        return self._intervals
-
     @property
     def active_gaussian_pval(self):
         if not hasattr(self, "_gaussian_pvals"):
@@ -396,8 +347,6 @@ class sqrt_lasso(object):
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
                         _gaussian_pval = C.pivot(eta, self.y, alternative="twosided")
-                        if _gaussian_pval < 1e-10:
-                            print self.sigma_hat, C.bounds(eta, self.y) 
                         self._gaussian_pvals.append((self.active[i], _gaussian_pval))
         return self._gaussian_pvals
 
@@ -507,4 +456,381 @@ def choose_lambda(X, quantile=0.95, ndraw=10000):
     E /= np.sqrt(np.sum(E**2, 0))[None,:]
     return np.percentile(np.fabs(np.dot(X.T, E)).max(0), 100*quantile)
 
+def data_carving(y, X, 
+                 lam_frac=2.,
+                 stage_one=None,
+                 split_frac=0.9,
+                 coverage=0.95, 
+                 ndraw=5000,
+                 burnin=1000,
+                 splitting=False):
 
+    """
+    Fit a LASSO with a default choice of Lagrange parameter
+    equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
+    with $\epsilon$ IID N(0,1) on a proportion (`split_frac`) of
+    the data.
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    lam_frac : float (optional)
+        Multiplier for choice of $\lambda$. Defaults to 2.
+
+    coverage : float
+        Coverage for selective intervals. Defaults to 0.95.
+
+    stage_one : [np.array(np.int), None] (optional)
+        Index of data points to be used in  first stage.
+        If None, a randomly chosen set of entries is used based on
+        `split_frac`.
+
+    split_frac : float (optional)
+        What proportion of the data to use in the first stage?
+        Defaults to 0.9.
+
+    ndraw : int (optional)
+        How many draws to keep from Gibbs hit-and-run sampler.
+        Defaults to 5000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    splitting : bool (optional)
+        If True, also return splitting pvalues and intervals.
+
+    Returns
+    -------
+
+    results : [(variable, pvalue, interval)
+        Indices of active variables, 
+        selected (twosided) pvalue and selective interval.
+        If splitting, then each entry also includes
+        a (split_pvalue, split_interval) using stage_two
+        for inference.
+
+    """
+
+    n, p = X.shape
+    first_stage, stage_one, stage_two = split_model(y, X,
+                                                    lam_frac=lam_frac,
+                                                    split_frac=split_frac,
+                                                    stage_one=stage_one)
+    splitn = stage_one.shape[0]
+
+    L = first_stage # shorthand
+
+    # quantities related to models fit on
+    # stage_one and full dataset
+
+    if splitn < n:
+        y1, X1 = y[stage_one], X[stage_one]
+        X_E = X[:,L.active]
+        X_Ei = np.linalg.pinv(X_E)
+        X_E1 = X1[:,L.active]
+        X_Ei1 = np.linalg.pinv(X_E1)
+        R1 = np.identity(splitn) - np.dot(X_E1, X_Ei1)
+        selector1 = np.identity(n)[stage_one]
+        R_stageone = np.dot(selector1.T, np.dot(R1, selector1))
+
+        info_E = np.dot(X_Ei, X_Ei.T)
+        info_E1 = np.dot(X_Ei1, X_Ei1.T)
+
+        s = sparsity = L.active.shape[0]
+        beta_E = np.dot(X_Ei, y)
+        beta_E1 = np.dot(X_Ei1, y[stage_one])
+        sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
+        sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
+
+        if n - splitn > s:
+
+            linear_part = np.zeros((s, 2*s))
+            linear_part[:, s:] = -np.diag(L.z_E)
+            b = L.active_constraints.offset
+            con = gaussian_constraints(linear_part, b)
+
+            # specify covariance of 2s Gaussian vector
+
+            cov = np.zeros((2*s, 2*s))
+            cov[:s, :s] = info_E 
+            cov[s:, :s] = info_E
+            cov[:s, s:] = info_E
+            cov[s:, s:] = info_E1
+
+            con.covariance[:] = cov * sigma_E**2
+
+            # for the conditional law
+            # we will change the linear function for each coefficient
+
+            selector = np.zeros((s, 2*s))
+            selector[:, :s]  = np.identity(s)
+            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
+
+            # a valid initial condition
+
+            initial = np.hstack([beta_E, beta_E1]) / sigma_E
+            OLS_func = selector
+
+        else:
+
+            linear_part = np.zeros((s, s + n - splitn))
+            linear_part[:, :s] = -np.diag(L.z_E)
+            b = L.active_constraints.offset
+            con = gaussian_constraints(linear_part, b)
+
+            # specify covariance of Gaussian vector
+
+            cov = np.zeros((s + n - splitn, s + n - splitn))
+            cov[:s, :s] = info_E1
+            cov[s:, :s] = 0
+            cov[:s, s:] = 0
+            cov[s:, s:] = np.identity(n - splitn) 
+
+            con.covariance[:] = cov * sigma_E**2
+
+            conditional_linear = np.zeros((s, s + n - splitn))
+            conditional_linear[:, :s]  = np.linalg.pinv(info_E1) 
+            conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
+
+            selector1 = np.zeros((s, s + n - splitn))
+            selector1[:, :s]  = np.identity(s)
+            selector2 = np.zeros((n - splitn, s + n - splitn))
+            selector2[:, s:]  = np.identity(n - splitn)
+
+            # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
+
+            OLS_func = np.dot(info_E, conditional_linear)
+
+            # a valid initial condition
+
+            initial = np.hstack([beta_E1, y[stage_two]]) / sigma_E
+
+        DEBUG = True
+        if DEBUG:
+            print con(initial * sigma_E), 'working'
+            print L.active_constraints(y[stage_one]), 'huh'
+        pvalues = []
+        intervals = []
+
+        if splitting:
+            if n - splitn < s:
+                warnings.warn('not enough data for second stage of sample splitting')
+
+            y2, X2 = y[stage_two], X[stage_two]
+            X_E2 = X2[:,L.active]
+            X_Ei2 = np.linalg.pinv(X_E2)
+            beta_E2 = np.dot(X_Ei2, y2)
+            sigma_E2 = np.linalg.norm(y[stage_two] - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
+
+            info_E2 = np.dot(X_Ei2, X_Ei2.T) 
+
+            splitting_pvalues = []
+            splitting_intervals = []
+
+            split_cutoff = np.fabs(tdist.ppf((1. - coverage) / 2, n - splitn - s))
+
+        # compute p-values and (TODO: intervals)
+
+        for j in range(X_E.shape[1]):
+
+            keep = np.ones(s, np.bool)
+            keep[j] = 0
+
+            eta = OLS_func[j]
+
+            conditional_con = con.conditional(conditional_linear[keep],
+                                              np.dot(X_E.T, y)[keep])
+
+            noncentral_param = conditional_con.mean.copy()
+            conditional_con.mean *= 0
+
+            #
+            # before conditioning:
+            #
+            # sigma_E1 has splitn - s degrees of freedom : R_stageone
+            # numerator s + min(n - splitn, s) degrees of freedom
+            #
+            # after conditioning:
+            #
+            # sigma_E1 has splitn - s degrees of freedom : R_stageone
+            # P_minus has s-1 degrees of freedom
+            # numerator min(n - splitn, s) + 1 having lost s-1 to P_minus
+            #
+            # therefore, when n - splitn > s we seem to waste data for
+            # estimating variance?
+
+            inverse_map, forward_map, white = conditional_con.whiten()
+            y_f = forward_map(initial)
+            eta_f = forward_map(eta)
+            noncentral_param_f = forward_map(noncentral_param)
+            T_obs = (eta_f * (noncentral_param_f + y_f)).sum()
+
+            white_samples = sample_truncated_T(white.linear_part,
+                                               white.offset,
+                                               y_f, 
+                                               noncentral_param_f,
+                                               splitn - s,
+                                               eta_f,
+                                               how_often=3,
+                                               ndraw=ndraw, 
+                                               burnin=burnin)
+            T_sample = np.dot(white_samples, eta_f)
+            family = discrete_family(T_sample, np.ones_like(T_sample))
+            pval = 2 * min(family.cdf(0, T_obs))
+
+            pvalues.append(pval)
+
+            # intervals are still not implemented yet
+            intervals.append((np.nan, np.nan))
+
+            if splitting:
+                if s < n - splitn: # enough data to generically
+                                   # test hypotheses. proceed as usual
+
+                    T = beta_E2[j] / (sigma_E2 * info_E2[j,j])
+                    split_pval = tdist.cdf(T, n - splitn - s)
+                    split_pval = 2 * min(split_pval, 1. - split_pval)
+                    splitting_pvalues.append(split_pval)
+
+                    splitting_interval = (beta_E2[j] - 
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2,
+                                          beta_E2[j] + 
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2)
+                    splitting_intervals.append(splitting_interval)
+                else:
+                    splitting_pvalues.append(np.random.sample())
+                    splitting_intervals.append((np.nan, np.nan))
+
+        if not splitting:
+            return zip(L.active, 
+                       pvalues,
+                       intervals), L
+        else:
+            return zip(L.active, 
+                       pvalues,
+                       intervals,
+                       splitting_pvalues,
+                       splitting_intervals), L
+    else:
+        pvalues = [p for _, p in L.active_pvalues]
+        intervals = [o[-1] for o in L.active_gaussian_intervals]
+        if splitting:
+            splitting_pvalues = np.random.sample(len(pvalues))
+            splitting_intervals = [(np.nan, np.nan) for _ in 
+                                   range(len(pvalues))]
+
+            return zip(L.active, 
+                       pvalues, 
+                       intervals,
+                       splitting_pvalues,
+                       splitting_intervals), L
+        else:
+            return zip(L.active, 
+                       pvalues,
+                       intervals), L
+
+def split_model(y, X, 
+                lam_frac=1.,
+                split_frac=0.9,
+                quantile=0.95,
+                stage_one=None):
+
+    """
+    Fit a LASSO with a default choice of Lagrange parameter
+    equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
+    with $\epsilon$ IID N(0,1) on a proportion (`split_frac`) of
+    the data.
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    lam_frac : float (optional)
+        Multiplier for choice of $\lambda$. Defaults to 2.
+
+    quantile : float (optional)
+        Quantile given to `choose_lambda`
+
+    split_frac : float (optional)
+        What proportion of the data to use in the first stage?
+        Defaults to 0.9.
+
+    stage_one : [np.array(np.int), None] (optional)
+        Index of data points to be used in  first stage.
+        If None, a randomly chosen set of entries is used based on
+        `split_frac`.
+
+    Returns
+    -------
+
+    first_stage : `lasso`
+        Lasso object from stage one.
+
+    stage_one : np.array(int)
+        Indices used for stage one.
+
+    stage_two : np.array(int)
+        Indices used for stage two.
+
+    """
+
+    n, p = X.shape
+    if stage_one is None:
+        splitn = int(n*split_frac)
+        indices = np.arange(n)
+        np.random.shuffle(indices)
+        stage_one = indices[:splitn]
+        stage_two = indices[splitn:]
+    else:
+        stage_two = [i for i in np.arange(n) if i not in stage_one]
+    y1, X1 = y[stage_one], X[stage_one]
+
+    first_stage = standard_sqrt_lasso(y1, X1, lam_frac=lam_frac, quantile=quantile)
+    return first_stage, stage_one, stage_two
+
+def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
+    """
+    Fit a sqrt-LASSO with a default choice of Lagrange parameter
+    equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|) / \|\epsilon\|_2$
+    with $\epsilon$ IID N(0,1).
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    lam_frac : float (optional)
+        Multiplier for choice of $\lambda$
+
+    quantile : float (optional)
+        Quantile given to `choose_lambda`
+
+    Returns
+    -------
+
+    lasso_selection : `lasso`
+         Instance of `lasso` after fitting. 
+
+    """
+    n, p = X.shape
+
+    lam = lam_frac * choose_lambda(X, quantile=quantile)
+
+    sqrtL = sqrt_lasso(y, X, lam)
+    sqrtL.fit()
+    return sqrtL

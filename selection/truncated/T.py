@@ -58,10 +58,13 @@ def sf_T(df):
 
 class truncated_T(truncated):
 
+    dps = 15
+
     def __init__(self, intervals, df):
 
         self._T = tdist(df)
-        
+        self._Tsf = sf_T(df)
+
         truncated.__init__(self, intervals)
 
     def _cdf_notTruncated(self, a, b, dps):
@@ -86,7 +89,7 @@ class truncated_T(truncated):
 
         """
 
-        return self._T.cdf(b) - self._T.cdf(a)
+        return self._Tsf(a, b, dps=self.dps)
 
     def _pdf_notTruncated(self, z, dps):
         """

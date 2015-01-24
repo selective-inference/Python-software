@@ -9,8 +9,8 @@ as described in `post selection LASSO`_.
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
 
-
 """
+
 import numpy as np
 from sklearn.linear_model import Lasso
 from .affine import (constraints, selection_interval,
@@ -20,7 +20,7 @@ from .affine import (constraints, selection_interval,
                      stack)
 from .discrete_family import discrete_family
 
-from scipy.stats import norm as ndist
+from scipy.stats import norm as ndist, t as tdist
 import warnings
 
 try:
@@ -32,7 +32,7 @@ except ImportError:
 DEBUG = False
 
 def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
-             random_signs=False):
+             random_signs=False, df=np.inf):
     """
     A testing instance for the LASSO.
     Design is equi-correlated in the population,
@@ -62,6 +62,9 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     random_signs : bool
         If true, assign random signs to coefficients.
         Else they are all positive.
+
+    df : int
+        Degrees of freedom for noise (from T distribution).
 
     Returns
     -------
@@ -93,8 +96,19 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     active = np.zeros(p, np.bool)
     active[:s] = True
-    Y = (np.dot(X, beta) + np.random.standard_normal(n)) * sigma
+
+    # noise model
+
+    def _noise(n, df=np.inf):
+        if df == np.inf:
+            return np.random.standard_normal(n)
+        else:
+            sd_t = np.std(tdist.rvs(df,size=50000))
+            return tdist.rvs(df, size=n) / sd_t
+
+    Y = (np.dot(X, beta) + _noise(n, df)) * sigma
     return X, Y, beta, np.nonzero(active)[0], sigma
+
 
 class lasso(object):
 
@@ -448,6 +462,7 @@ def data_carving(y, X,
     splitn = stage_one.shape[0]
 
     L = first_stage # shorthand
+    s = sparsity = L.active.shape[0]
 
     if splitn < n:
 
@@ -460,58 +475,91 @@ def data_carving(y, X,
         X_E1 = X1[:,L.active]
         X_Ei1 = np.linalg.pinv(X_E1)
 
-        info_E = sigma**2 * np.dot(X_Ei, X_Ei.T)
-        info_E1 = sigma**2 * np.dot(X_Ei1, X_Ei1.T)
+        info_E = np.dot(X_Ei, X_Ei.T)
+        info_E1 =np.dot(X_Ei1, X_Ei1.T)
 
-        s = sparsity = L.active.shape[0]
         beta_E = np.dot(X_Ei, y)
         beta_E1 = np.dot(X_Ei1, y[stage_one])
 
-        # setup the constraint on the 2s Gaussian vector
 
-        linear_part = np.zeros((s, 2*s))
-        linear_part[:, s:] = -np.diag(L.z_E)
-        b = L.active_constraints.offset
-        con = constraints(linear_part, b)
+        if n - splitn > s:
 
-        # specify covariance of 2s Gaussian vector
+            linear_part = np.zeros((s, 2*s))
+            linear_part[:, s:] = -np.diag(L.z_E)
+            b = L.active_constraints.offset
+            con = constraints(linear_part, b)
 
-        cov = np.zeros((2*s, 2*s))
-        cov[:s, :s] = info_E
-        cov[s:, :s] = info_E
-        cov[:s, s:] = info_E
-        cov[s:, s:] = info_E1
+            # specify covariance of 2s Gaussian vector
 
-        con.covariance[:] = cov
+            cov = np.zeros((2*s, 2*s))
+            cov[:s, :s] = info_E
+            cov[s:, :s] = info_E
+            cov[:s, s:] = info_E
+            cov[s:, s:] = info_E1
 
-        # how do we sample at the right beta?
-        #con.mean = mu = np.hstack([beta_E, beta_E1])
-        #weight_mu = np.dot(np.linalg.pinv(cov), mu)
+            con.covariance[:] = cov * sigma**2
 
-        # for the conditional law
-        # we will change the linear function for each coefficient
+            # for the conditional law
+            # we will change the linear function for each coefficient
 
-        selector = np.zeros((s, 2*s))
-        selector[:, :s]  = np.identity(s)
-        conditional_linear = np.dot(np.linalg.pinv(info_E), selector) * sigma**2
+            selector = np.zeros((s, 2*s))
+            selector[:, :s]  = np.identity(s)
+            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
 
-        # a valid initial condition
+            # a valid initial condition
 
-        initial = np.hstack([beta_E, beta_E1])
+            initial = np.hstack([beta_E, beta_E1]) 
+            OLS_func = selector
 
+        else:
+
+            linear_part = np.zeros((s, s + n - splitn))
+            linear_part[:, :s] = -np.diag(L.z_E)
+            b = L.active_constraints.offset
+            con = constraints(linear_part, b)
+
+            # specify covariance of Gaussian vector
+
+            cov = np.zeros((s + n - splitn, s + n - splitn))
+            cov[:s, :s] = info_E1
+            cov[s:, :s] = 0
+            cov[:s, s:] = 0
+            cov[s:, s:] = np.identity(n - splitn) 
+
+            con.covariance[:] = cov * sigma**2
+
+            conditional_linear = np.zeros((s, s + n - splitn))
+            conditional_linear[:, :s]  = np.linalg.pinv(info_E1)
+            conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
+
+            selector1 = np.zeros((s, s + n - splitn))
+            selector1[:, :s]  = np.identity(s)
+            selector2 = np.zeros((n - splitn, s + n - splitn))
+            selector2[:, s:]  = np.identity(n - splitn)
+
+            # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
+
+            OLS_func = np.dot(info_E, conditional_linear) 
+
+            # a valid initial condition
+
+            initial = np.hstack([beta_E1, y[stage_two]]) 
+            
         pvalues = []
         intervals = []
 
         if splitting:
-
             y2, X2 = y[stage_two], X[stage_two]
             X_E2 = X2[:,L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
             beta_E2 = np.dot(X_Ei2, y2)
-            info_E2 = np.dot(X_Ei2, X_Ei2.T) * sigma**2
+            info_E2 = np.dot(X_Ei2, X_Ei2.T)
 
             splitting_pvalues = []
             splitting_intervals = []
+
+            if n - splitn < s:
+                warnings.warn('not enough data for second stage of sample splitting')
 
             split_cutoff = np.fabs(ndist.ppf((1. - coverage) / 2))
 
@@ -522,8 +570,7 @@ def data_carving(y, X,
             keep = np.ones(s, np.bool)
             keep[j] = 0
 
-            eta = np.zeros(2*s)
-            eta[j] = 1.
+            eta = OLS_func[j]
 
             conditional_law = con.conditional(conditional_linear[keep], \
                                   np.dot(X_E.T, y)[keep])
@@ -550,14 +597,14 @@ def data_carving(y, X,
                 if s < n - splitn: # enough data to generically
                                    # test hypotheses. proceed as usual
 
-                    split_pval = ndist.cdf(beta_E2[j] / np.sqrt(info_E2[j,j]))
+                    split_pval = ndist.cdf(beta_E2[j] / (np.sqrt(info_E2[j,j]) * sigma))
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
 
                     splitting_interval = (beta_E2[j] - 
-                                          split_cutoff * np.sqrt(info_E2[j,j]),
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma,
                                           beta_E2[j] + 
-                                          split_cutoff * np.sqrt(info_E2[j,j]))
+                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma)
                     splitting_intervals.append(splitting_interval)
                 else:
                     splitting_pvalues.append(np.random.sample())
