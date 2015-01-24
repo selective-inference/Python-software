@@ -20,7 +20,7 @@ from .sample_truncnorm import (sample_truncnorm_white,
                                sample_truncnorm_white_ball,
                                sample_truncnorm_white_ball_normal,
                                sample_truncnorm_white_sphere)
-from .sample_truncT import sample_truncated_T
+#from .sample_truncT import sample_truncated_T
 
 
 from .discrete_family import discrete_family

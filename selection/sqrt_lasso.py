@@ -19,7 +19,7 @@ from .lasso import _constraint_from_data
 from .truncated.T import truncated_T
 from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
 from .truncated import find_root
-from .sample_truncT import sample_truncated_T
+#from .sample_truncT import sample_truncated_T
 
 class sqlasso_objective(rr.smooth_atom):
     """
