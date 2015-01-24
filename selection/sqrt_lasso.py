@@ -331,6 +331,7 @@ class sqrt_lasso(object):
                 if XEinv is not None:
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
+                        print i
                         (intervals,
                          Tobs) = constraints_unknown_sigma( \
                             C.linear_part,
@@ -338,6 +339,7 @@ class sqrt_lasso(object):
                             self.y,
                             eta,
                             self.R_E)
+                        print "started trunc_T"
                         truncT = truncated_T(np.array([(interval.lower_value,
                                                         interval.upper_value) for interval in intervals]), self.df_E)
                         sf = truncT.sf(Tobs)
@@ -345,7 +347,9 @@ class sqrt_lasso(object):
                             raise ValueError('should be truncated')
 
                         _pval = float(2 * min(sf, 1.-sf))
+                        print "pval " + str(i), _pval
                         self._pvals.append((self.active[i], _pval))
+                        print "finished computing " + str(i) + "-th pvalue"
         return self._pvals
 
 #    @property 
