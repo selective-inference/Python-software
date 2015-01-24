@@ -343,8 +343,6 @@ class sqrt_lasso(object):
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
                         _gaussian_pval = C.pivot(eta, self.y, alternative="twosided")
-                        if _gaussian_pval < 1e-10:
-                            print self.sigma_hat, C.bounds(eta, self.y) 
                         self._gaussian_pvals.append((self.active[i], _gaussian_pval))
         return self._gaussian_pvals
 
