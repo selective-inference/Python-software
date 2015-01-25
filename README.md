@@ -10,4 +10,3 @@ Some key references:
 * `Post-selection adaptive inference for Least Angle Regression and the Lasso`:  http://arxiv.org/abs/1401.3889
 * `Exact post-selection inference with the lasso`:  http://arxiv.org/abs/1311.6238
 * `Exact Post Model Selection Inference for Marginal Screening`: http://arxiv.org/abs/1402.5596
-
