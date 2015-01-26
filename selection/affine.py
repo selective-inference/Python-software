@@ -1004,7 +1004,6 @@ def constraints_unknown_sigma( \
     for interv in intervals[1:]:
         truncation_set = truncation_set.intersection(interv)
     if not truncation_set:
-        print intervals
         raise ValueError("empty truncation intervals")
     return truncation_set, Tobs
 
