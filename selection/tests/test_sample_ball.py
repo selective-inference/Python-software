@@ -24,3 +24,21 @@ def test_sample_ball():
                                        burnin=1000,
                                        ndraw=1000,
                                        how_often=5)
+
+def test_sample_sphere():
+
+    p = 10
+    A = np.identity(10)[:3]
+    b = np.ones(3)
+    initial = np.zeros(p)
+    eta = np.ones(p)
+
+    bound = 5
+    s = AC.sample_truncnorm_white_sphere(A,
+                                         b, 
+                                         initial,
+                                         eta,
+                                         lambda state: bound,
+                                         burnin=1000,
+                                         ndraw=1000,
+                                         how_often=5)

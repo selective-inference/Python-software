@@ -244,7 +244,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                                   np.ndarray[DTYPE_float_t, ndim=1] b, 
                                   np.ndarray[DTYPE_float_t, ndim=1] initial, 
                                   np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
-                                  sample_squared_radius, 
+                                  sample_radius_squared, 
                                   DTYPE_int_t how_often=1000,
                                   DTYPE_int_t burnin=500,
                                   DTYPE_int_t ndraw=1000,
@@ -306,8 +306,8 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double tval, val, alpha
-    cdef double norm_state_bound = sample_squared_radius(state)
-    cdef double norm_state_sq = norm_state_bound
+    cdef double norm_state_bound_sq = sample_radius_squared(state)
+    cdef double norm_state_sq = norm_state_bound_sq
 
     cdef double tol = 1.e-7
 
@@ -419,7 +419,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         # intersect the line segment with the ball
 
-        discriminant = sqrt(V*V-(norm_state_sq-norm_state_bound*norm_state_bound))
+        discriminant = sqrt(V*V-(norm_state_sq-norm_state_bound_sq))
         if np.isnan(discriminant):
             upper_bound = V
             lower_bound = V
@@ -449,16 +449,16 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
         norm_state_sq = 0
         for ivar in range(nvar):
             norm_state_sq = norm_state_sq + state[ivar]*state[ivar]
-        if norm_state_sq > norm_state_bound:
-            multiplier = np.sqrt(0.999 * norm_state_bound / norm_state_sq)
+        if norm_state_sq > norm_state_bound_sq:
+            multiplier = np.sqrt(0.999 * norm_state_bound_sq / norm_state_sq)
             for ivar in range(nvar):
                 state[ivar] = state[ivar] * multiplier
-            norm_state_sq = 0.999 * norm_state_bound
+            norm_state_sq = 0.999 * norm_state_bound_sq
 
         # check constraints
 
         in_event = 1
-        multiplier = sqrt(norm_state_bound / norm_state_sq)
+        multiplier = sqrt(norm_state_bound_sq / norm_state_sq)
         for irow in range(nconstraint):
             if Astate[irow] * multiplier > b[irow]:
                 in_event = 0
@@ -491,7 +491,11 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         if sample_count >= ndraw + burnin:
             break
-        norm_state_bound = sample_squared_radius(state)
+
+        # update the bound on the radius
+        # this might be done by a sampler
+
+        norm_state_bound_sq = sample_radius_squared(state)
 
     return trunc_sample, weight_sample
 
@@ -501,7 +505,7 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
                                   np.ndarray[DTYPE_float_t, ndim=1] b, 
                                   np.ndarray[DTYPE_float_t, ndim=1] initial, 
                                   np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
-                                  DTYPE_float_t radius,
+                                  sample_radius_squared, 
                                   DTYPE_int_t how_often=1000,
                                   DTYPE_int_t burnin=500,
                                   DTYPE_int_t ndraw=1000,
@@ -560,8 +564,8 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double tval, val, alpha
-    cdef double norm_state_bound = np.linalg.norm(state)**2
-    cdef double norm_state_sq = norm_state_bound
+    cdef double norm_state_bound_sq = sample_radius_squared(state)
+    cdef double norm_state_sq = norm_state_bound_sq
     cdef double discriminant
 
     cdef double tol = 1.e-7
@@ -678,7 +682,7 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         # intersect the line segment with the ball
 
-        discriminant = sqrt(V*V-(norm_state_sq-radius*radius))
+        discriminant = sqrt(V*V-(norm_state_sq-norm_state_bound_sq))
         if np.isnan(discriminant):
             upper_bound = V
             lower_bound = V
@@ -719,6 +723,11 @@ def sample_truncnorm_white_ball(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         if sample_count >= ndraw + burnin:
             break
+
+        # update the bound on the radius
+        # this might be done by a sampler
+
+        norm_state_bound_sq = sample_radius_squared(state)
 
     return trunc_sample
 
