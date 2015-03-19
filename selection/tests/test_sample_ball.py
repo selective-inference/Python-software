@@ -20,7 +20,7 @@ def test_sample_ball():
                                        b, 
                                        initial,
                                        eta,
-                                       lambda state: bound,
+                                       lambda state: bound + 0.01 * np.random.sample() * np.linalg.norm(state)**2,
                                        burnin=1000,
                                        ndraw=1000,
                                        how_often=5)
@@ -38,7 +38,7 @@ def test_sample_sphere():
                                          b, 
                                          initial,
                                          eta,
-                                         lambda state: bound,
+                                         lambda state: bound + 0.01 * np.random.sample() * np.linalg.norm(state)**2,
                                          burnin=1000,
                                          ndraw=1000,
                                          how_often=5)
