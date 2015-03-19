@@ -17,7 +17,9 @@ import regreg.api as rr
 
 from .lasso import _constraint_from_data
 from .truncated.T import truncated_T
-from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
+from .affine import constraints_unknown_sigma, \
+        constraints as gaussian_constraints, \
+        sample_from_sphere
 from .truncated import find_root
 #from .sample_truncT import sample_truncated_T
 
@@ -371,9 +373,25 @@ class sqrt_lasso(object):
         if not hasattr(self, "_goodness_of_fit"):
             self._goodness_of_fit = None
             if self.active.shape[0] > 0:
-                re
-            
+                U_notE = np.dot(self.R_E, self.y) / np.linalg.norm(np.dot(self.R_E, self.y))
+                X_notE = self.X[:,~self.active]
+                A = np.sqrt((1 - np.linalg.norm(self.w_E)**2)) * X_notE.T
+                b1 = self.weights[~self.active] - np.dot(X_notE.T, self.w_E)
+                b2 = self.weights[~self.active] + np.dot(X_notE.T, self.w_E)
+                linear = np.vstack((A, -A))
+                offset = np.hstack((b1, b2))
 
+                con = gaussian_constraints(linear,offset)
+                con = con.conditional(self.P_E, np.zeros(self.y.shape))
+
+                Z, W = sample_from_sphere(con, U_notE)
+
+                null_statistic = np.amax(np.absolute(Z), axis=1)
+                observed = max(np.absolute(U_notE))
+                pvalue = (W*(null_statistics >= observed)).sum() / W.sum()
+        return pvalue
+                
+            
 
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
