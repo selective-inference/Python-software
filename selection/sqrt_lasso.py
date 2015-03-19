@@ -367,6 +367,14 @@ class sqrt_lasso(object):
                         self._gaussian_intervals.append((self.active[i], _interval))
         return self._gaussian_intervals
 
+    def goodness_of_fit(self):
+        if not hasattr(self, "_goodness_of_fit"):
+            self._goodness_of_fit = None
+            if self.active.shape[0] > 0:
+                re
+            
+
+
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
     """
