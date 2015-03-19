@@ -30,8 +30,11 @@ def test_sample_sphere():
 
     p = 10
     A = np.identity(10)[:3]
-    b = np.ones(3)
-    initial = -np.ones(p)
+    b = 2 * np.ones(3)
+    mean = -np.ones(p)
+    noise = np.random.standard_normal(p) * 0.1
+    noise[-3:] = 0.
+    initial = noise + mean
     eta = np.ones(p)
 
     bound = 5
@@ -45,5 +48,8 @@ def test_sample_sphere():
                                          how_often=5)
 
     con = AC.constraints(A, b)
+    con.covariance = np.diag([1]*7 + [0]*3)
+    con.mean[:] = mean
+    print con(initial)
     s2 = AC.sample_from_sphere(con, initial)
     return s1, s2
