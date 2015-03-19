@@ -221,6 +221,7 @@ class lasso(object):
         self.z_E = np.sign(beta[active])
 
         # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
+
         X_E = self.X[:,active]
         X_notE = self.X[:,~active]
         self._XEinv = np.linalg.pinv(X_E)
@@ -327,13 +328,16 @@ class lasso(object):
 
 def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
 
+    # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
+
     n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
     if np.array(lam).shape == ():
         lam = np.ones(p) * lam
 
     # inactive constraints
-    A0 = np.vstack((R, -R)) / np.hstack([lam[~E],lam[~E]])[:,None]
-    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), z_E))
+    den = np.hstack([lam[~E], lam[~E]])[:,None]
+    A0 = np.vstack((R, -R)) / den
+    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), lam[E] * z_E)) / den
     b0 = np.concatenate((1.-b_tmp, 1.+b_tmp))
     _inactive_constraints = constraints(A0, b0)
     _inactive_constraints.covariance *= sigma**2
