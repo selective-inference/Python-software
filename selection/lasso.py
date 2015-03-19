@@ -337,7 +337,7 @@ def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
     # inactive constraints
     den = np.hstack([lam[~E], lam[~E]])[:,None]
     A0 = np.vstack((R, -R)) / den
-    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), lam[E] * z_E)) / den
+    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), lam[E] * z_E)) / lam[~E] 
     b0 = np.concatenate((1.-b_tmp, 1.+b_tmp))
     _inactive_constraints = constraints(A0, b0)
     _inactive_constraints.covariance *= sigma**2

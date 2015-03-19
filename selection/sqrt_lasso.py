@@ -182,7 +182,7 @@ class sqrt_lasso(object):
 
             # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
 
-            X_E = self.X[:,self.active]
+            X_E = self._X_E = self.X[:,self.active]
             X_notE = self.X[:,~self.active]
             self._XEinv = np.linalg.pinv(X_E)
             self.w_E = np.dot(self._XEinv.T, self.weights[self.active] * self.z_E)
@@ -373,21 +373,14 @@ class sqrt_lasso(object):
         if not hasattr(self, "_goodness_of_fit"):
             self._goodness_of_fit = None
             if self.active.shape[0] > 0:
-                U_notE = np.dot(self.R_E, self.y) / np.linalg.norm(np.dot(self.R_E, self.y))
-                X_notE = self.X[:,~self.active]
-                A = np.sqrt((1 - np.linalg.norm(self.w_E)**2)) * X_notE.T
-                b1 = self.weights[~self.active] - np.dot(X_notE.T, self.w_E)
-                b2 = self.weights[~self.active] + np.dot(X_notE.T, self.w_E)
-                linear = np.vstack((A, -A))
-                offset = np.hstack((b1, b2))
+                con = self.inactive_constraints
+                U_notE_obs = np.dot(self.R_E, self.y) / np.linalg.norm(np.dot(self.R_E, self.y))
+                conditional_con = con.conditional(self._X_E.T, np.dot(self._X_E.T, self.y))
 
-                con = gaussian_constraints(linear,offset)
-                con = con.conditional(self.P_E, np.dot(self.P_E, self.y))
-
-                Z, W = sample_from_sphere(con, U_notE)
-                stop 
-                null_statistic = np.amax(np.absolute(Z), axis=1)
-                observed = max(np.absolute(U_notE))
+                Z, W = sample_from_sphere(conditional_con, np.dot(self.R_E, self.y))  
+                U_notE_sample = Z / np.linalg.norm(np.dot(self.R_E, self.y))
+                null_statistic = np.max(np.absolute(U_notE_sample), axis=1)
+                observed = np.max(np.absolute(U_notE_obs))
                 print null_statistic[:100]
                 print observed
                 pvalue = (W*(null_statistic >= observed)).sum() / W.sum()

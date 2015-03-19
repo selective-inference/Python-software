@@ -337,6 +337,7 @@ class constraints(object):
         """
 
         rank = np.linalg.matrix_rank(self.covariance)
+
         D, U = np.linalg.eigh(self.covariance)
         D = np.sqrt(D[-rank:])
         U = U[:,-rank:]
