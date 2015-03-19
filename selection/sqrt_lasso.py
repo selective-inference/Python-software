@@ -388,7 +388,9 @@ class sqrt_lasso(object):
 
                 null_statistic = np.amax(np.absolute(Z), axis=1)
                 observed = max(np.absolute(U_notE))
-                pvalue = (W*(null_statistics >= observed)).sum() / W.sum()
+                print null_statistic[:100]
+                print observed
+                pvalue = (W*(null_statistic >= observed)).sum() / W.sum()
         return pvalue
                 
             
