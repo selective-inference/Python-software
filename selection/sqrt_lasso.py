@@ -382,10 +382,10 @@ class sqrt_lasso(object):
                 offset = np.hstack((b1, b2))
 
                 con = gaussian_constraints(linear,offset)
-                con = con.conditional(self.P_E, np.zeros(self.y.shape))
+                con = con.conditional(self.P_E, np.dot(self.P_E, self.y))
 
                 Z, W = sample_from_sphere(con, U_notE)
-
+                stop 
                 null_statistic = np.amax(np.absolute(Z), axis=1)
                 observed = max(np.absolute(U_notE))
                 print null_statistic[:100]
