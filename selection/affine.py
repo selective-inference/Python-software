@@ -603,10 +603,12 @@ def sample_from_sphere(con,
         white = con
         inverse_map = lambda V: V
 
+    normY_squared = (Y**2).sum()
     white_samples, weights = sample_truncnorm_white_sphere(white.linear_part,
                                                            white.offset,
                                                            Y, 
                                                            direction_of_interest,
+                                                           lambda arg: normY_squared,
                                                            how_often=how_often,
                                                            ndraw=ndraw, 
                                                            burnin=burnin)
@@ -1004,7 +1006,6 @@ def constraints_unknown_sigma( \
     for interv in intervals[1:]:
         truncation_set = truncation_set.intersection(interv)
     if not truncation_set:
-        print intervals
         raise ValueError("empty truncation intervals")
     return truncation_set, Tobs
 
