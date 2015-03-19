@@ -47,6 +47,21 @@ def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     else:
         return (None,) * 3
 
+def test_goodness_of_fit(n=200, p=400, s=10, sigma=3.):
+    y = np.random.standard_normal(n) * sigma
+    beta = np.zeros(p)
+    X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    y += np.dot(X, beta) * sigma
+    lam_theor = 0.6 * choose_lambda(X, quantile=0.9)
+    L = sqrt_lasso(y, X, lam_theor)
+    L.fit(tol=1.e-12, min_its=150)
+    print L.active.shape
+    p = L.goodness_of_fit(lambda x: np.max(np.fabs(x)),
+                          burnin=2000,
+                          ndraw=10000)
+    return p
+
 def test_class_R(n=100, p=20):
     y = np.random.standard_normal(n)
     X = np.random.standard_normal((n,p))
