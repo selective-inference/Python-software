@@ -1,5 +1,7 @@
 from __future__ import division
 import numpy as np
+import numpy.testing.decorators as dec
+
 from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
                                   estimate_sigma, data_carving, split_model)
 from selection.lasso import instance
@@ -47,20 +49,31 @@ def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     else:
         return (None,) * 3
 
-def test_goodness_of_fit(n=200, p=400, s=10, sigma=3.):
-    y = np.random.standard_normal(n) * sigma
-    beta = np.zeros(p)
-    X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
-    X /= (X.std(0)[None,:] * np.sqrt(n))
-    y += np.dot(X, beta) * sigma
-    lam_theor = 0.6 * choose_lambda(X, quantile=0.9)
-    L = sqrt_lasso(y, X, lam_theor)
-    L.fit(tol=1.e-12, min_its=150)
-    print L.active.shape
-    p = L.goodness_of_fit(lambda x: np.max(np.fabs(x)),
-                          burnin=2000,
-                          ndraw=10000)
-    return p
+@dec.slow
+def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
+                         nsample=100):
+    P = []
+    while True:
+        y = np.random.standard_normal(n) * sigma
+        beta = np.zeros(p)
+        X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        y += np.dot(X, beta) * sigma
+        lam_theor = .7 * choose_lambda(X, quantile=0.9)
+        L = sqrt_lasso(y, X, lam_theor)
+        L.fit(tol=1.e-12, min_its=150)
+
+        pval = L.goodness_of_fit(lambda x: np.max(np.fabs(x)),
+                              burnin=2000,
+                              ndraw=10000)
+        P.append(pval)
+        Pa = np.array(P)
+        Pa = Pa[~np.isnan(Pa)]
+        if ~np.isnan(np.array(Pa)).sum() >= nsample:
+            break
+        print np.mean(Pa), np.std(Pa)
+
+    return Pa
 
 def test_class_R(n=100, p=20):
     y = np.random.standard_normal(n)

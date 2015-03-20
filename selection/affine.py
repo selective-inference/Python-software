@@ -442,18 +442,18 @@ def sample_from_constraints(con,
 
     if not white:
         inverse_map, forward_map, white = con.whiten()
-        Y = forward_map(Y)
+        white_Y = forward_map(Y)
         # XXX for covariance not a projection, does this work?
         # it seems we need a dual forward map to preserve inner products?
-        direction_of_interest = forward_map(direction_of_interest)
+        white_direction_of_interest = forward_map(direction_of_interest)
     else:
         white = con
         inverse_map = lambda V: V
 
     white_samples = sample_truncnorm_white(white.linear_part,
                                            white.offset,
-                                           Y, 
-                                           direction_of_interest,
+                                           white_Y, 
+                                           white_direction_of_interest,
                                            how_often=how_often,
                                            ndraw=ndraw, 
                                            burnin=burnin,
@@ -556,6 +556,8 @@ def sample_from_sphere(con,
     r"""
     Use Gibbs sampler to simulate from `con` 
     intersected with (whitened) sphere of radius `np.linalg.norm(Y)`.
+    When `con.covariance` is not $I$, it samples from the
+    ellipse of constant Mahalanobis distance from `con.mean`.
 
     Parameters
     ----------
@@ -598,18 +600,18 @@ def sample_from_sphere(con,
 
     if not white:
         inverse_map, forward_map, white = con.whiten()
-        Y = forward_map(Y)
-        direction_of_interest = forward_map(direction_of_interest)
+        white_Y = forward_map(Y)
+        white_direction_of_interest = forward_map(direction_of_interest)
     else:
         white = con
         inverse_map = lambda V: V
 
-    normY_squared = (Y**2).sum()
+    normY_squared = (white_Y**2).sum()
     white_samples, weights = sample_truncnorm_white_sphere(white.linear_part,
                                                            white.offset,
-                                                           Y, 
-                                                           direction_of_interest,
-                                                           lambda arg: normY_squared,
+                                                           white_Y, 
+                                                           white_direction_of_interest,
+                                                           lambda state: normY_squared,
                                                            how_often=how_often,
                                                            ndraw=ndraw, 
                                                            burnin=burnin)
