@@ -8,6 +8,8 @@ from selection.lasso import instance
 from selection.affine import constraints_unknown_sigma
 from selection.truncated import T as truncated_T
 
+from selection.tests.test_sample_ball import _generate_constraints
+
 def test_class(n=20, p=40, s=2):
     y = np.random.standard_normal(n) * 1.2
     beta = np.zeros(p)
@@ -28,7 +30,7 @@ def test_class(n=20, p=40, s=2):
             P = [p[1] for p in L.active_pvalues[s:]]
         else:
             P = []
-    return P #, I
+    return P
 
 def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     y = np.random.standard_normal(n) * sigma
@@ -41,7 +43,6 @@ def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
     L = sqrt_lasso(y, X, lam_theor)
     L.fit(tol=1.e-12, min_its=150)
     P = []
-
 
     if L.active.shape[0] > 0:
 
@@ -69,7 +70,8 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         P.append(pval)
         Pa = np.array(P)
         Pa = Pa[~np.isnan(Pa)]
-        if ~np.isnan(np.array(Pa)).sum() >= nsample:
+        print (~np.isnan(np.array(Pa))).sum()
+        if (~np.isnan(np.array(Pa))).sum() >= nsample:
             break
         print np.mean(Pa), np.std(Pa)
 

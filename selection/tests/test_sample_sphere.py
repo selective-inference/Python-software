@@ -1,5 +1,6 @@
 from __future__ import absolute_import
 import nose
+import nose.tools as nt
 import numpy as np
 import numpy.testing.decorators as dec
 
@@ -11,6 +12,26 @@ import nose.tools as nt
 import selection.affine as AC
 from selection.sqrt_lasso import sqrt_lasso, choose_lambda
 from selection.discrete_family import discrete_family
+
+# generate a cone from a sqrt_lasso problem
+
+def _generate_constraints(n=15, p=20, sigma=1):
+    while True:
+        y = np.random.standard_normal(n) * sigma
+        beta = np.zeros(p)
+        X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        y += np.dot(X, beta) * sigma
+        lam_theor = 0.3 * choose_lambda(X, quantile=0.9)
+        L = sqrt_lasso(y, X, lam_theor)
+        L.fit(tol=1.e-12, min_its=150)
+
+        con = L.active_constraints
+        if con is not None and L.active.shape[0] >= 3:
+            break
+    con.covariance = np.identity(con.covariance.shape[0])
+    con.mean *= 0
+    return con, y, L
 
 def test_sample_ball():
 
@@ -68,27 +89,7 @@ def test_distribution_sphere(n=15, p=10, sigma=1.,
     # correct distribution
     # by comparing to an accept-reject sampler
 
-    # generate a cone from a sqrt_lasso problem
-
-    def _generate_constraints():
-        while True:
-            y = np.random.standard_normal(n) * sigma
-            beta = np.zeros(p)
-            X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
-            X /= (X.std(0)[None,:] * np.sqrt(n))
-            y += np.dot(X, beta) * sigma
-            lam_theor = 0.3 * choose_lambda(X, quantile=0.9)
-            L = sqrt_lasso(y, X, lam_theor)
-            L.fit(tol=1.e-12, min_its=150)
-
-            con = L.active_constraints
-            if con is not None and L.active.shape[0] >= 3:
-                break
-        con.covariance = np.identity(con.covariance.shape[0])
-        con.mean *= 0
-        return con, y
-
-    con, y = _generate_constraints()
+    con, y = _generate_constraints()[:2]
     accept_reject_sample = []
 
     hit_and_run_sample, W = AC.sample_from_sphere(con, y, 
@@ -119,7 +120,7 @@ def test_distribution_sphere(n=15, p=10, sigma=1.,
                 print np.mean(pvalues), np.std(pvalues)
 
                 if sample_constraints:
-                    con, y = _generate_constraints()
+                    con, y = _generate_constraints()[:2]
 
                 hit_and_run_sample, W = AC.sample_from_sphere(con, y, 
                                                               ndraw=10000,
@@ -134,3 +135,27 @@ def test_distribution_sphere(n=15, p=10, sigma=1.,
     U = np.linspace(0, 1, 101)
     plt.plot(U, sm.distributions.ECDF(pvalues)(U))
     plt.plot([0,1],[0,1])
+
+def test_conditional_sampling(n=20, p=25, sigma=20):
+    """
+    goodness of fit samples from
+    inactive constraints intersect a sphere
+
+    this test verifies the sampler is doing what it should
+    """
+
+    con, y, L = _generate_constraints(n=n, p=p, sigma=sigma)
+    print L.active.shape
+    con = L.inactive_constraints
+    conditional_con = con.conditional(L._X_E.T, np.dot(L._X_E.T, y))
+
+    Z, W = AC.sample_from_sphere(conditional_con, 
+                                 y,
+                                 ndraw=1000,
+                                 burnin=1000)  
+    
+    T1 = np.dot(L._X_E.T, Z.T) - np.dot(L._X_E.T, y)[:,None]
+    nt.assert_true(np.linalg.norm(T1) < 1.e-7)
+
+    T2 = (np.dot(L.R_E, Z.T)**2).sum(0) - np.linalg.norm(np.dot(L.R_E, y))**2
+    nt.assert_true(np.linalg.norm(T2) < 1.e-7)
