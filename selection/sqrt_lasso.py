@@ -417,7 +417,7 @@ class sqrt_lasso(object):
         -------
 
         pvalue : np.float
-             Two-tailed p-value Estimate of $\sigma$.
+             Two-tailed p-value.
 
         """
 
