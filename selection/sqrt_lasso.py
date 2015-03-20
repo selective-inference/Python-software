@@ -426,12 +426,15 @@ class sqrt_lasso(object):
                 con = self.inactive_constraints
                 conditional_con = con.conditional(self._X_E.T, np.dot(self._X_E.T, self.y))
 
-                Z, W = sample_from_sphere(conditional_con, np.dot(self.R_E, self.y),
+                Z, W = sample_from_sphere(conditional_con, 
+                                          self.y,
                                           ndraw=ndraw,
                                           burnin=burnin)  
-                U_notE_sample = Z / np.linalg.norm(np.dot(self.R_E, self.y))
+                U_notE_sample = np.dot(self.R_E, Z.T).T
+                U_notE_sample /= np.sqrt((U_notE_sample**2).sum(1))[:,None]
                 self._goodness_of_fit_sample = multiparameter_family(U_notE_sample, W)
                 self._goodness_of_fit_observed = np.dot(self.R_E, self.y) / np.linalg.norm(np.dot(self.R_E, self.y))
+
             else:
                 # model is null model so U_E is just uniform on a sphere
                 n, p = self.X.shape

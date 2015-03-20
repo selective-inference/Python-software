@@ -64,8 +64,8 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         L.fit(tol=1.e-12, min_its=150)
 
         pval = L.goodness_of_fit(lambda x: np.max(np.fabs(x)),
-                              burnin=2000,
-                              ndraw=10000)
+                                 burnin=10000,
+                                 ndraw=10000)
         P.append(pval)
         Pa = np.array(P)
         Pa = Pa[~np.isnan(Pa)]
