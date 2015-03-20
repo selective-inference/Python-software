@@ -305,7 +305,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef np.ndarray[DTYPE_float_t, ndim=1] state = initial.copy()
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
-    cdef double tval, val, alpha
+    cdef double tval, dval, val, alpha
     cdef double norm_state_bound_sq = sample_radius_squared(state)
     cdef double norm_state_sq = norm_state_bound_sq
 
@@ -380,6 +380,8 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
             ibias = 0
             dobias = 1
         
+        # V is the current value of np.dot(direction, state)
+
         if docoord == 1:
             idx = random_idx_coord[iter_count  % (ndraw + burnin)]
             V = state[idx]
@@ -418,8 +420,14 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
             upper_bound = V + tol 
 
         # intersect the line segment with the ball
+        # 
+        # below, discriminant is the sqaure root of 
+        # the squared overall bound on the length
+        # minus the current norm of P_{\eta}^{\perp}y
+        # where eta is the current direction of movement
 
-        discriminant = sqrt(V*V-(norm_state_sq-norm_state_bound_sq))
+        discriminant = sqrt(norm_state_bound_sq - (norm_state_sq - V*V))
+
         if np.isnan(discriminant):
             upper_bound = V
             lower_bound = V
@@ -433,22 +441,29 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         tval = lower_bound + usample[iter_count % (ndraw + burnin)] * (upper_bound - lower_bound)
             
+        # update the state vector
+
         if docoord == 1:
             state[idx] = tval
-            tval = tval - V
+            dval = tval - V
             for irow in range(nconstraint):
-                Astate[irow] = Astate[irow] + tval * A[irow, idx]
+                Astate[irow] = Astate[irow] + dval * A[irow, idx]
         else:
-            tval = tval - V
+            dval = tval - V
             for ivar in range(nvar):
-                state[ivar] = state[ivar] + tval * directions[idx,ivar]
+                state[ivar] = state[ivar] + dval * directions[idx,ivar]
                 for irow in range(nconstraint):
                     Astate[irow] = (Astate[irow] + A[irow, ivar] * 
-                                    tval * directions[idx,ivar])
+                                    dval * directions[idx,ivar])
+
+        # compute squared norm of current state
 
         norm_state_sq = 0
         for ivar in range(nvar):
             norm_state_sq = norm_state_sq + state[ivar]*state[ivar]
+
+        # if it escapes somehow, pull it back by projection
+
         if norm_state_sq > norm_state_bound_sq:
             multiplier = np.sqrt(0.999 * norm_state_bound_sq / norm_state_sq)
             for ivar in range(nvar):
@@ -472,13 +487,18 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
                 # now compute the smallest multiple M of state that is in the event
             
-                min_multiple = 0
+                min_multiple = 0.
                 for irow in range(nconstraint):
-                    if Astate[irow] < 0:
+
+                    # there are 4 cases in the signs of Astate[irow] and
+                    # b[irow], only this one gives a lower bound in [0,1]
+
+                    if Astate[irow] < 0 and b[irow] < 0:
                         val = b[irow] / Astate[irow] 
                         if min_multiple <  val:
                             min_multiple = val
 
+                # print min_multiple, 'min'
                 # the weight for this sample is 1/(1-M^n)
 
                 weight_sample[sample_count-burnin] = 1. / (1 - pow(min_multiple, nvar))
@@ -851,7 +871,6 @@ def sample_truncnorm_white_ball_normal(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef int dobias = 0
     cdef int sample_count = 0
     cdef int in_event = 0
-    cdef double min_multiple = 0.
 
     iter_count = 0
 
