@@ -486,6 +486,15 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                     trunc_sample[sample_count-burnin, ivar] = state[ivar] * multiplier
 
                 # now compute the smallest multiple M of state that is in the event
+                # this is done by looking at each row of the affine 
+                # inequalities and finding
+
+                # \{c \geq 0: c \cdot A[i]^T state \leq b_i \right\} \cap [0,1]
+                
+                # the upper bound is always one because state is in the
+                # event, so we need only find the lower bound,
+                # which is the smallest non-negative 
+                # multiple of `state` that still is in the event
             
                 min_multiple = 0.
                 for irow in range(nconstraint):
@@ -493,15 +502,19 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                     # there are 4 cases in the signs of Astate[irow] and
                     # b[irow], only this one gives a lower bound in [0,1]
 
-                    if Astate[irow] < 0 and b[irow] < 0:
+                    if Astate[irow] < 0: # and b[irow] < 0: this check is not
+                                         # actually necessary as this
+                                         # is the only case that matters
+
                         val = b[irow] / Astate[irow] 
                         if min_multiple <  val:
                             min_multiple = val
 
+                # XXX check this calculation!!!
                 # print min_multiple, 'min'
-                # the weight for this sample is 1/(1-M^n)
+                # the weight for this sample is (1-M^n)
 
-                weight_sample[sample_count-burnin] = 1. / (1 - pow(min_multiple, nvar))
+                weight_sample[sample_count-burnin] = (1 - pow(min_multiple, nvar))
 
             sample_count = sample_count + 1
         else:
