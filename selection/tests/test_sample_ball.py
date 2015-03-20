@@ -60,8 +60,9 @@ def test_sample_sphere():
     return s1, s2
 
 @dec.slow
-def test_distribution_sphere(n=20, p=25, s=10, sigma=3.,
-                             nsample=2000):
+def test_distribution_sphere(n=15, p=10, sigma=1.,
+                             nsample=2000,
+                             sample_constraints=False):
 
     # see if we really are sampling from 
     # correct distribution
@@ -69,21 +70,25 @@ def test_distribution_sphere(n=20, p=25, s=10, sigma=3.,
 
     # generate a cone from a sqrt_lasso problem
 
-    while True:
-        y = np.random.standard_normal(n) * sigma
-        beta = np.zeros(p)
-        X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
-        X /= (X.std(0)[None,:] * np.sqrt(n))
-        y += np.dot(X, beta) * sigma
-        lam_theor = 0.6 * choose_lambda(X, quantile=0.9)
-        L = sqrt_lasso(y, X, lam_theor)
-        L.fit(tol=1.e-12, min_its=150)
+    def _generate_constraints():
+        while True:
+            y = np.random.standard_normal(n) * sigma
+            beta = np.zeros(p)
+            X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+            X /= (X.std(0)[None,:] * np.sqrt(n))
+            y += np.dot(X, beta) * sigma
+            lam_theor = 0.3 * choose_lambda(X, quantile=0.9)
+            L = sqrt_lasso(y, X, lam_theor)
+            L.fit(tol=1.e-12, min_its=150)
 
-        con = L.constraints
-        
-        if con is not None:
-            break
+            con = L.active_constraints
+            if con is not None and L.active.shape[0] >= 3:
+                break
+        con.covariance = np.identity(con.covariance.shape[0])
+        con.mean *= 0
+        return con, y
 
+    con, y = _generate_constraints()
     accept_reject_sample = []
 
     hit_and_run_sample, W = AC.sample_from_sphere(con, y, 
@@ -91,17 +96,13 @@ def test_distribution_sphere(n=20, p=25, s=10, sigma=3.,
                                                   burnin=10000)
     statistic = lambda x: np.fabs(x).max()
     family = discrete_family([statistic(s) for s in hit_and_run_sample], W)
-    radius = np.linalg.norm(hit_and_run_sample[-1])
+    radius = np.linalg.norm(y)
 
     count = 0
-    while True:
 
-        if (count + 1) % 50 == 0:
-            hit_and_run_sample, W = AC.sample_from_sphere(con, y, 
-                                                          ndraw=25000,
-                                                          burnin=10000)
-            statistic = lambda x: np.fabs(x).max()
-            family = discrete_family([statistic(s) for s in hit_and_run_sample], W)
+    pvalues = []
+
+    while True:
 
         U = np.random.standard_normal(n)
         U /= np.linalg.norm(U)
@@ -110,11 +111,22 @@ def test_distribution_sphere(n=20, p=25, s=10, sigma=3.,
         if con(U):
             accept_reject_sample.append(U)
             count += 1
-            print count
 
             true_sample = np.array([statistic(s) for s in accept_reject_sample])
-            pvalues = [family.cdf(0, t) for t in true_sample]
-            print np.mean(pvalues), np.std(pvalues)
+            if (count + 1) % 100 == 0:
+
+                pvalues.extend([family.cdf(0, t) for t in true_sample])
+                print np.mean(pvalues), np.std(pvalues)
+
+                if sample_constraints:
+                    con, y = _generate_constraints()
+
+                hit_and_run_sample, W = AC.sample_from_sphere(con, y, 
+                                                              ndraw=10000,
+                                                              burnin=10000)
+                family = discrete_family([statistic(s) for s in hit_and_run_sample], W)
+                radius = np.linalg.norm(y)
+                accept_reject_sample = []
 
         if count >= nsample:
             break

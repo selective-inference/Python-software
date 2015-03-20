@@ -510,11 +510,30 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                         if min_multiple <  val:
                             min_multiple = val
 
-                # XXX check this calculation!!!
-                # print min_multiple, 'min'
-                # the weight for this sample is (1-M^n)
+                # the weight for this sample is 1 / (1-M^n)
+                # because if you integrate over the ball
+                # in polar coordinates integrating the radius first,
+                # you get a factor of (1 - M^n) then there is the
+                # integral for the point projected to the 
+                # sphere
 
-                weight_sample[sample_count-burnin] = (1 - pow(min_multiple, nvar))
+                # $$
+                # \begin{aligned}
+                # \int_{B \cap K} (1 - M(p(x))^n)^{-1} f(p(x)) dx &= 
+                # \int_S \int_0^1 1_{\{(u,v): v \cdot u \in K\}}(y, r) 
+                # (1 - M(y))^{-n} r^{n-1} f(y) dy \\		
+                # &= \int_S \int_0^1 1_{\{r \in [M(y),1]\}} 
+                # (1 - M(y)^n)^{-1} r^{n-1} f(y) dy \\		
+                # &= \int_S \int_0^1 1_{\{r \in [M(y),1]\}} 
+                # (1 - M(y)^n)^{-1} r^{n-1} f(y) dy \\		
+                # \end{aligned}
+                # $$
+
+                # where $K$ is the convex set, 
+                # $dy$ is surface measure on the sphere $S$
+                # and $p(x)=x/\|x\|_2$
+
+                weight_sample[sample_count-burnin] = 1 / (1 - pow(min_multiple, nvar))
 
             sample_count = sample_count + 1
         else:
