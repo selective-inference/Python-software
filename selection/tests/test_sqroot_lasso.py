@@ -1,6 +1,8 @@
 from __future__ import division
 import numpy as np
 import numpy.testing.decorators as dec
+import statsmodels as sm
+import matplotlib.pyplot as plt
 
 from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
                                   estimate_sigma, data_carving, split_model)
@@ -8,7 +10,7 @@ from selection.lasso import instance
 from selection.affine import constraints_unknown_sigma
 from selection.truncated import T as truncated_T
 
-from selection.tests.test_sample_ball import _generate_constraints
+from selection.tests.test_sample_sphere import _generate_constraints
 
 def test_class(n=20, p=40, s=2):
     y = np.random.standard_normal(n) * 1.2
@@ -52,7 +54,7 @@ def test_estimate_sigma(n=200, p=400, s=10, sigma=3.):
 
 @dec.slow
 def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
-                         nsample=100):
+                         nsample=1000):
     P = []
     while True:
         y = np.random.standard_normal(n) * sigma
@@ -70,12 +72,17 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         P.append(pval)
         Pa = np.array(P)
         Pa = Pa[~np.isnan(Pa)]
-        print (~np.isnan(np.array(Pa))).sum()
+        #print (~np.isnan(np.array(Pa))).sum()
         if (~np.isnan(np.array(Pa))).sum() >= nsample:
             break
-        print np.mean(Pa), np.std(Pa)
+        #print np.mean(Pa), np.std(Pa)
 
-    return Pa
+    U = np.linspace(0,1,nsample+1)
+    plt.plot(U, sm.distributions.ECDF(Pa)(U))
+    plt.plot([0,1], [0,1])
+    plt.savefig("goodness_of_fit_uniform", format="pdf")
+
+    #return Pa
 
 def test_class_R(n=100, p=20):
     y = np.random.standard_normal(n)
