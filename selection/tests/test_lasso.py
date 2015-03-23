@@ -31,12 +31,14 @@ def data_carving_coverage(n=100, p=70, lam_frac=1.,
     beta[:5] = 20
     mu = np.dot(X, beta) * sigma
     y = np.random.standard_normal(n) * sigma + mu
-    I, L, signs = data_carving(y, X, lam_frac=lam_frac, sigma=sigma, burnin=1000, ndraw=5000,
-                               center=False, scale=False)[2:]
+    _, carveI, _, splitI, L, signs = data_carving(y, X, lam_frac=lam_frac, sigma=sigma, burnin=1000, ndraw=5000,
+                                                  splitting=True)
+
     Xa = X[:,L.active]
     truth = np.dot(np.linalg.pinv(Xa), mu) * signs
-    coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(I, truth)]
-    return coverage
+    split_coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(splitI, truth)]
+    carve_coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(carveI, truth)]
+    return carve_coverage, split_coverage
 
 def test_data_carving(n=100,
                       p=200,

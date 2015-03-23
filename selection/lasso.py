@@ -444,6 +444,7 @@ def data_carving(y, X,
     splitting : bool (optional)
         If True, also return splitting pvalues and intervals.
 
+      
     Returns
     -------
 
@@ -568,6 +569,8 @@ def data_carving(y, X,
 
         # compute p-values and (TODO: intervals)
 
+        cov_inv = np.linalg.pinv(con.covariance)
+
         for j in range(X_E.shape[1]):
 
             keep = np.ones(s, np.bool)
@@ -575,24 +578,44 @@ def data_carving(y, X,
 
             eta = OLS_func[j]
 
-            conditional_law = con.conditional(conditional_linear[keep], \
-                                  np.dot(X_E.T, y)[keep])
+            con_cp = constraints(con.linear_part,
+                                 con.offset,
+                                 covariance=con.covariance)
+            
+            # tilt so that samples are closer to observed values
+            # the multiplier should be the pseudoMLE so that
+            # the observed value is likely 
 
-            pval, Z, W = gibbs_test(conditional_law,
-                                    initial,
-                                    eta,
-                                    UMPU=False,
-                                    sigma_known=True,
-                                    ndraw=ndraw,
-                                    burnin=burnin,
-                                    how_often=5,
-                                    alternative='twosided')
+            multiplier = (eta * initial).sum() / (eta**2).sum()
+            tilt = multiplier * eta  
+            con_cp.mean[:] = tilt
 
-            #W *= np.exp(-np.dot(Z, weight_mu))
+            conditional_law = con_cp.conditional(conditional_linear[keep], \
+                                                     np.dot(X_E.T, y)[keep])
+
+            _, Z, W = gibbs_test(conditional_law,
+                                 initial,
+                                 eta,
+                                 UMPU=False,
+                                 sigma_known=True,
+                                 ndraw=ndraw,
+                                 burnin=burnin,
+                                 how_often=5)
+
+            # undo the tilt
+
+            W_tilt = W * np.exp(-np.dot(Z, np.dot(cov_inv, tilt)))
+
+            null_statistics = np.dot(Z, eta)
+
+            observed = (initial * eta).sum()
+            pval = (W_tilt * (null_statistics <= observed)).sum() / W_tilt.sum()
+            pval = 2 * min(pval, 1 - pval)
 
             pvalues.append(pval)
 
             # intervals are still not implemented yet
+            family = discrete_family(null_statistics - observed, W_tilt)
             intervals.append((np.nan, np.nan))
 
             if splitting:
