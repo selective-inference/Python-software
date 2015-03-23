@@ -220,7 +220,7 @@ def test_data_carving(n=100,
 
     while True:
         counter += 1
-        X, y, beta, active, sigma = instance(n=n, 
+        X, y, _, active, sigma = instance(n=n, 
                                              p=p, 
                                              s=s, 
                                              sigma=sigma, 
