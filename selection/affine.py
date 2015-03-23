@@ -71,8 +71,7 @@ class constraints(object):
                  linear_part,
                  offset,
                  covariance=None,
-                 mean=None,
-                 translate=None):
+                 mean=None):
         r"""
         Create a new inequality. 
 
@@ -112,7 +111,6 @@ class constraints(object):
         if mean is None:
             mean = np.zeros(self.dim)
         self.mean = mean
-        self.translate = translate
 
     def _repr_latex_(self):
         """
@@ -135,8 +133,7 @@ class constraints(object):
         con = constraints(self.linear_part.copy(),
                           self.offset.copy(),
                           mean=copy(self.mean),
-                          covariance=copy(self.covariance),
-                          translate=copy(self.translate))
+                          covariance=copy(self.covariance))
         if hasattr(self, "_sqrt_cov"):
             con._sqrt_cov = self._sqrt_cov.copy()
             con._sqrt_inv = self._sqrt_inv.copy()
@@ -192,15 +189,10 @@ class constraints(object):
             delta_cov = np.multiply.outer(M1, M1) / M2i
             delta_mean = M1 * d  / M2i
 
-        if self.translate is None:
-            translate = np.zeros(A.shape[1])
-        else:
-            translate = self.translate
         return constraints(self.linear_part,
                            self.offset - np.dot(self.linear_part, delta_offset),
                            covariance=self.covariance - delta_cov,
-                           mean=self.mean - delta_mean,
-                           translate=0. * (translate + delta_offset))
+                           mean=self.mean - delta_mean)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -484,8 +476,6 @@ def sample_from_constraints(con,
                                            sigma=1.,
                                            use_A=use_constraint_directions)
     Z = inverse_map(white_samples.T).T
-    if con.translate is not None:
-        Z += con.translate[None,:]
     return Z
 
 def one_parameter_MLE(constraint, 
@@ -724,8 +714,6 @@ def sample_from_constrainted_T(con,
                                        burnin=burnin)
 
     T = inverse_map(white_samples.T).T
-    if con.translate is not None:
-        T += con.translate[None,:]
     return T
 
 def sample_from_sphere(con, 
@@ -799,8 +787,6 @@ def sample_from_sphere(con,
                                                            burnin=burnin)
 
     Z = inverse_map(white_samples.T).T
-    if con.translate is not None:
-        Z += con.translate[None,:]
     return Z, weights
 
 def interval_constraints(support_directions, 
@@ -1035,13 +1021,9 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     if alternative not in ['greater', 'less', 'twosided']:
         raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
 
-    if affine_con.translate is None:
-        Y_translate = Y
-    else:
-        Y_translate = Y - affine_con.translate
     if not sigma_known:
         Z, W = sample_from_sphere(affine_con,
-                                  Y_translate,
+                                  Y,
                                   eta,
                                   how_often=how_often,
                                   ndraw=ndraw,
@@ -1049,7 +1031,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                   white=white)
     else:
         Z = sample_from_constraints(affine_con,
-                                    Y_translate,
+                                    Y,
                                     eta,
                                     how_often=how_often,
                                     ndraw=ndraw,
