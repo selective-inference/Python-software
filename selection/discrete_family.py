@@ -83,6 +83,7 @@ class discrete_family(object):
         xw = np.array(sorted(zip(sufficient_stat, weights)))
         self._x = xw[:,0]
         self._w = xw[:,1]
+        self._lw = np.log(xw[:,1])
         self._w /= self._w.sum() # make sure they are a pmf
         self.n = len(xw)
         self._theta = np.nan
@@ -97,10 +98,10 @@ class discrete_family(object):
     @theta.setter
     def theta(self, _theta):
         if _theta != self._theta:
-            _thetaX = _theta * self.sufficient_stat
+            _thetaX = _theta * self.sufficient_stat + self._lw
             _largest = _thetaX.max() - 5 # try to avoid over/under flow, 5 seems arbitrary
             _exp_thetaX = np.exp(_thetaX - _largest)
-            _prod = _exp_thetaX * self.weights
+            _prod = _exp_thetaX
             self._partition = np.sum(_prod)
             self._pdf = _prod / self._partition
             self._partition *= np.exp(_largest)
