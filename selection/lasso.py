@@ -11,17 +11,20 @@ as described in `post selection LASSO`_.
 
 """
 
+import warnings
+from copy import copy
+
 import numpy as np
 from sklearn.linear_model import Lasso
 from .affine import (constraints, selection_interval,
                      interval_constraints,
                      sample_from_constraints,
+                     one_parameter_MLE,
                      gibbs_test,
                      stack)
 from .discrete_family import discrete_family
 
 from scipy.stats import norm as ndist, t as tdist
-import warnings
 
 try:
     import cvxpy as cvx
@@ -107,7 +110,7 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
             return tdist.rvs(df, size=n) / sd_t
 
     Y = (np.dot(X, beta) + _noise(n, df)) * sigma
-    return X, Y, beta, np.nonzero(active)[0], sigma
+    return X, Y, beta * sigma, np.nonzero(active)[0], sigma
 
 
 class lasso(object):
@@ -273,7 +276,6 @@ class lasso(object):
         Intervals for OLS parameters of active variables
         adjusted for selection.
 
-        
         """
         if not hasattr(self, "_intervals"):
             self._intervals = []
@@ -397,9 +399,10 @@ def data_carving(y, X,
                  stage_one=None,
                  split_frac=0.9,
                  coverage=0.95, 
-                 ndraw=5000,
-                 burnin=1000,
-                 splitting=False):
+                 ndraw=8000,
+                 burnin=2000,
+                 splitting=False,
+                 compute_intervals=True):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -479,12 +482,11 @@ def data_carving(y, X,
         X_E1 = X1[:,L.active]
         X_Ei1 = np.linalg.pinv(X_E1)
 
-        info_E = np.dot(X_Ei, X_Ei.T)
-        info_E1 =np.dot(X_Ei1, X_Ei1.T)
+        inv_info_E = np.dot(X_Ei, X_Ei.T)
+        inv_info_E1 =np.dot(X_Ei1, X_Ei1.T)
 
         beta_E = np.dot(X_Ei, y)
         beta_E1 = np.dot(X_Ei1, y[stage_one])
-
 
         if n - splitn > s:
 
@@ -496,10 +498,10 @@ def data_carving(y, X,
             # specify covariance of 2s Gaussian vector
 
             cov = np.zeros((2*s, 2*s))
-            cov[:s, :s] = info_E
-            cov[s:, :s] = info_E
-            cov[:s, s:] = info_E
-            cov[s:, s:] = info_E1
+            cov[:s, :s] = inv_info_E
+            cov[s:, :s] = inv_info_E
+            cov[:s, s:] = inv_info_E
+            cov[s:, s:] = inv_info_E1
 
             con.covariance[:] = cov * sigma**2
 
@@ -508,7 +510,7 @@ def data_carving(y, X,
 
             selector = np.zeros((s, 2*s))
             selector[:, :s]  = np.identity(s)
-            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
+            conditional_linear = np.dot(np.dot(X_E.T, X_E), selector) 
 
             # a valid initial condition
 
@@ -525,7 +527,7 @@ def data_carving(y, X,
             # specify covariance of Gaussian vector
 
             cov = np.zeros((s + n - splitn, s + n - splitn))
-            cov[:s, :s] = info_E1
+            cov[:s, :s] = inv_info_E1
             cov[s:, :s] = 0
             cov[:s, s:] = 0
             cov[s:, s:] = np.identity(n - splitn) 
@@ -533,7 +535,7 @@ def data_carving(y, X,
             con.covariance[:] = cov * sigma**2
 
             conditional_linear = np.zeros((s, s + n - splitn))
-            conditional_linear[:, :s]  = np.linalg.pinv(info_E1)
+            conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1)
             conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
 
             selector1 = np.zeros((s, s + n - splitn))
@@ -543,7 +545,7 @@ def data_carving(y, X,
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-            OLS_func = np.dot(info_E, conditional_linear) 
+            OLS_func = np.dot(inv_info_E, conditional_linear) 
 
             # a valid initial condition
 
@@ -557,7 +559,7 @@ def data_carving(y, X,
             X_E2 = X2[:,L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
             beta_E2 = np.dot(X_Ei2, y2)
-            info_E2 = np.dot(X_Ei2, X_Ei2.T)
+            inv_info_E2 = np.dot(X_Ei2, X_Ei2.T)
 
             splitting_pvalues = []
             splitting_intervals = []
@@ -578,20 +580,32 @@ def data_carving(y, X,
 
             eta = OLS_func[j]
 
-            con_cp = constraints(con.linear_part,
-                                 con.offset,
-                                 covariance=con.covariance)
+            con_cp = copy(con)
+            conditional_law = con_cp.conditional(conditional_linear[keep], \
+                                                     np.dot(X_E.T, y)[keep])
             
             # tilt so that samples are closer to observed values
             # the multiplier should be the pseudoMLE so that
             # the observed value is likely 
 
-            multiplier = (eta * initial).sum() / (eta**2).sum()
-            tilt = multiplier * eta  
-            con_cp.mean[:] = tilt
+            if compute_intervals: 
+                multiplier = one_parameter_MLE(conditional_law,
+                                               initial,
+                                               eta,
+                                               niter=10,
+                                               burnin=1000,
+                                               ndraw=1000, 
+                                               how_often=5)
+            else:
+                multiplier = (eta * initial).sum() / np.dot(eta, np.dot(conditional_law.covariance, eta))
 
+            # tilt is chosen so that
+            # family is tilted by exp(tilt*Z)
+
+            tilt = multiplier * eta
             conditional_law = con_cp.conditional(conditional_linear[keep], \
                                                      np.dot(X_E.T, y)[keep])
+            conditional_law.mean += np.dot(con_cp.covariance, tilt)
 
             _, Z, W = gibbs_test(conditional_law,
                                  initial,
@@ -604,33 +618,42 @@ def data_carving(y, X,
 
             # undo the tilt
 
-            W_tilt = W * np.exp(-np.dot(Z, np.dot(cov_inv, tilt)))
-
+            logW = -np.dot(Z, tilt)
+            logW -= logW.max() - 5
+            W_tilt = W * np.exp(logW)
             null_statistics = np.dot(Z, eta)
-
             observed = (initial * eta).sum()
-            pval = (W_tilt * (null_statistics <= observed)).sum() / W_tilt.sum()
+            family = discrete_family(null_statistics, W_tilt)
+
+            pval = family.cdf(0, observed)
             pval = 2 * min(pval, 1 - pval)
 
             pvalues.append(pval)
 
-            # intervals are still not implemented yet
-            family = discrete_family(null_statistics - observed, W_tilt)
-            intervals.append((np.nan, np.nan))
+            lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 
+            # in the model we've chosen, the parameter beta is associated
+            # to the natural parameter as below
+            # exercise: justify this!
+
+            lower_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * lower_lim
+            upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
+
+            intervals.append((lower_lim_final, upper_lim_final, observed, family.cdf(upper_lim, observed), family.cdf(lower_lim, observed)))
+            
             if splitting:
 
                 if s < n - splitn: # enough data to generically
                                    # test hypotheses. proceed as usual
 
-                    split_pval = ndist.cdf(beta_E2[j] / (np.sqrt(info_E2[j,j]) * sigma))
+                    split_pval = ndist.cdf(beta_E2[j] / (np.sqrt(inv_info_E2[j,j]) * sigma))
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
 
                     splitting_interval = (beta_E2[j] - 
-                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma,
+                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma,
                                           beta_E2[j] + 
-                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma)
+                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma)
                     splitting_intervals.append(splitting_interval)
                 else:
                     splitting_pvalues.append(np.random.sample())
