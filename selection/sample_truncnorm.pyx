@@ -192,15 +192,28 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
             raise ValueError('bound violation')
 
         if upper_bound < -10: # use Exp approximation
-            unif = usample[iter_count] * (1 - exp((
-                        lower_bound - upper_bound) * upper_bound))
-            tnorm = upper_bound - log(1 - unif) / upper_bound 
+            # the approximation is that
+            # Z | lower_bound < Z < upper_bound
+            # is fabs(upper_bound) * (upper_bound - Z) = E approx Exp(1)
+            # so Z = upper_bound - E / fabs(upper_bound)
+            # and the truncation of the exponential is
+            # E < fabs(upper_bound - lower_bound) * fabs(upper_bound) = D
+
+            # this has distribution function (1 - exp(-x)) / (1 - exp(-D))
+            # so to draw from this distribution
+            # we set E = - log(1 - U * (1 - exp(-D))) where U is Unif(0,1)
+            # and Z (= tnorm below) is as stated
+
+            unif = usample[iter_count] * (1 - exp(-np.fabs(
+                        lower_bound - upper_bound) * np.fabs(upper_bound)))
+            tnorm = upper_bound + log(1 - unif) / np.fabs(upper_bound)
         elif lower_bound > 10:
-            unif = usample[iter_count] * (1 - exp(-(
-                        upper_bound - lower_bound) * lower_bound))
-            tnorm = -log(1 - unif) / lower_bound + lower_bound
-            #if tnorm < lower_bound:
-            #    tnorm = lower_bound + 0.001 * (upper_bound - lower_bound)
+
+            # here Z = lower_bound + E / fabs(lower_bound) (though lower_bound is positive)
+            # and D = fabs((upper_bound - lower_bound) * lower_bound)
+            unif = usample[iter_count] * (1 - exp(-np.fabs(
+                        upper_bound - lower_bound) * np.fabs(lower_bound)))
+            tnorm = lower_bound - log(1 - unif) / lower_bound
         elif lower_bound < 0:
             cdfL = ndtr(lower_bound)
             cdfU = ndtr(upper_bound)
