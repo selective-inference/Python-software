@@ -20,26 +20,6 @@ def test_class(n=100, p=20):
 
     return L, C, I, P
 
-@dec.slow
-def data_carving_coverage(n=100, p=70, lam_frac=1.,
-                          split_frac=0.95):
-    X = np.random.standard_normal((n,p)) + 0. * np.random.standard_normal(n)[:,None]
-    X -= X.mean(0)[None,:]
-    X /= (X.std(0)[None,:] * np.sqrt(n))
-    sigma = 4
-    beta = np.zeros(p)
-    beta[:5] = 20
-    mu = np.dot(X, beta) * sigma
-    y = np.random.standard_normal(n) * sigma + mu
-    _, carveI, _, splitI, L, signs = data_carving(y, X, lam_frac=lam_frac, sigma=sigma, burnin=1000, ndraw=5000,
-                                                  splitting=True)
-
-    Xa = X[:,L.active]
-    truth = np.dot(np.linalg.pinv(Xa), mu) * signs
-    split_coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(splitI, truth)]
-    carve_coverage = [(i[1] < t) * (t < i[2]) for i, t in zip(carveI, truth)]
-    return carve_coverage, split_coverage
-
 def test_data_carving(n=100,
                       p=200,
                       s=7,
@@ -50,7 +30,8 @@ def test_data_carving(n=100,
                       lam_frac=2.,
                       ndraw=8000,
                       burnin=2000, 
-                      df=np.inf):
+                      df=np.inf,
+                      coverage=0.90):
 
     counter = 0
 
@@ -63,6 +44,7 @@ def test_data_carving(n=100,
                                              rho=rho, 
                                              snr=snr, 
                                              df=df)
+        mu = np.dot(X, beta)
         L, stage_one = split_model(y, X, 
                         sigma=sigma,
                         lam_frac=lam_frac,
@@ -74,23 +56,38 @@ def test_data_carving(n=100,
                                       stage_one=stage_one,
                                       splitting=True, 
                                       ndraw=ndraw,
-                                      burnin=burnin)
+                                      burnin=burnin,
+                                      coverage=coverage)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
-            return carve[s:], split[s:], carve[:s], split[:s], counter
 
-def test_data_carving_coverage(n=200):
+            Xa = X[:,L.active]
+            truth = np.dot(np.linalg.pinv(Xa), mu) 
+            print np.dot(np.linalg.pinv(Xa), y)[:s]
+
+            split_coverage = []
+            carve_coverage = []
+            for result, t in zip(results, truth):
+                _, _, ci, _, si = result
+                print si, ci, t
+                carve_coverage.append((ci[0] < t) * (t < ci[1]))
+                split_coverage.append((si[0] < t) * (t < si[1]))
+
+            return carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage
+
+@dec.slow
+def test_data_carving_coverage(n=200, coverage=0.8):
     C = []
-    SE = np.sqrt(0.95*0.05 / n)
+    SE = np.sqrt(coverage * (1 - coverage) / n)
 
     while True:
-        C.extend(data_carving_coverage())
+        C.extend(data_carving_coverage()[-1])
         if len(C) > n:
             break
 
-    if np.fabs(np.mean(C) - 0.95) > 2 * SE:
-        raise ValueError('coverage not within 2 SE of where it should be')
+    if np.fabs(np.mean(C) - coverage) > 3 * SE:
+        raise ValueError('coverage not within 3 SE of where it should be')
 
 def sample_lasso(n, p, m, sigma=0.25):
     n_samples, n_features = 50, 200
