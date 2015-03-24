@@ -79,15 +79,15 @@ class constraints(object):
             The linear part, $A$ of the affine constraint
             $\{z:Az \leq b\}$. 
 
-        offset: np.float(b)
+        offset: np.float(q)
             The offset part, $b$ of the affine constraint
             $\{z:Az \leq b\}$. 
 
-        covariance : np.float
+        covariance : np.float((p,p))
             Covariance matrix of Gaussian distribution to be 
             truncated. Defaults to `np.identity(self.dim)`.
 
-        mean : np.float
+        mean : np.float(p)
             Mean vector of Gaussian distribution to be 
             truncated. Defaults to `np.zeros(self.dim)`.
 
@@ -394,7 +394,6 @@ def stack(*cons):
 
     """
     ineq, ineq_off = [], []
-    eq, eq_off = [], []
     for con in cons:
         ineq.append(con.linear_part)
         ineq_off.append(con.offset)

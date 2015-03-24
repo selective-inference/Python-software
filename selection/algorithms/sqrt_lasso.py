@@ -18,9 +18,9 @@ import regreg.api as rr
 
 from .lasso import _constraint_from_data
 from ..truncated.T import truncated_T
-from ..constraints.affine import (constraints_unknown_sigma, 
-                                 constraints as gaussian_constraints, 
-                                 sample_from_sphere)
+from ..constraints.quasi_affine import (constraints_unknown_sigma, 
+                                        constraints as quasi_affine_constraints)
+from ..constraints.affine import constraints as gaussian_constraints, sample_from_sphere
 from ..truncated import find_root
 from ..distributions.discrete_multiparameter import multiparameter_family
 from ..distributions.discrete_family import discrete_family

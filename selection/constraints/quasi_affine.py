@@ -17,11 +17,7 @@ from copy import copy
 
 import numpy as np
 
-from ..distributions.pvalue import truncnorm_cdf, norm_interval
-from ..truncated.gaussian import truncated_gaussian, truncated_gaussian_old
-from ..sampling.truncnorm import (sample_truncnorm_white, 
-                                  sample_truncnorm_white_sphere)
-
+from ..truncated.T import truncated_T
 from ..distributions.discrete_family import discrete_family
 from mpmath import mp
 import pyinter
@@ -31,17 +27,17 @@ WARNINGS = False
 class constraints(object):
 
     r"""
-    This class is the core object for affine selection procedures.
+    This class is the core object for quasiaffine selection procedures.
     It is meant to describe sets of the form $C$
     where
 
     .. math::
 
-       C = \left\{z: Az\leq b \right \}
+       C = \left\{z: Az + u \leq \|Pz\|_2b \right \}
 
-    Its main purpose is to consider slices through $C$
-    and the conditional distribution of a Gaussian $N(\mu,\Sigma)$
-    restricted to such slices.
+    where $u$ is `LHS_offset`, $b$ is `RHS_offset`, $P$
+    is a projection assumed to satisfy $AP=0$,
+    and $A$ is `linear_part`, some fixed matrix.
 
     Notes
     -----
@@ -50,51 +46,54 @@ class constraints(object):
     to the *reference measure* that is being truncated. It is not the
     mean of the truncated Gaussian.
 
-    >>> import numpy as np, selection.affine as affine
-    >>> positive = affine.constraints(-np.identity(2), np.zeros(2))
-    >>> Y = np.array([3,4.4])
-    >>> eta = np.array([1,1])
-    >>> positive.interval(eta, Y)
-    array([  4.6212814 ,  10.17180724])
-    >>> positive.pivot(eta, Y)
-    No
-    >>> positive.bounds(eta, Y)
-    (1.3999999999999988, 7.4000000000000004, inf, 1.4142135623730951)
-    >>> 
-
     """
 
     def __init__(self, 
                  linear_part,
-                 offset,
+                 LHS_offset,
+                 RHS_offset,
+                 RSS,
                  covariance=None,
                  mean=None):
         r"""
         Create a new inequality. 
-
+        
         Parameters
         ----------
-
+        
         linear_part : np.float((q,p))
-            The linear part, $A$ of the affine constraint
-            $\{z:Az \leq b\}$. 
+            The linear part, $A$ of the quasi-affine constraint
+            $C$.
 
-        offset: np.float(b)
-            The offset part, $b$ of the affine constraint
-            $\{z:Az \leq b\}$. 
+        LHS_offset: np.float(q)
+            The value of $u$ in the quasi-affine constraint
+            C.
 
-        covariance : np.float
+        RHS_offset: np.float(q)
+            The value of $b$ in the quasi-affine constraint
+            C.
+
+        RSS: np.float
+            The value $\|Pz\|_2^2$ in the quasi-affine constraint
+            C.
+
+        covariance : np.float((p,p))
             Covariance matrix of Gaussian distribution to be 
             truncated. Defaults to `np.identity(self.dim)`.
 
-        mean : np.float
+        mean : np.float(p)
             Mean vector of Gaussian distribution to be 
             truncated. Defaults to `np.zeros(self.dim)`.
 
         """
 
-        self.linear_part, self.offset = \
-            np.asarray(linear_part), np.asarray(offset)
+        (self.linear_part, 
+         self.LHS_offset, 
+         self.RHS_offset,
+         self.RSS) = (np.asarray(linear_part), 
+                     np.asarray(LHS_offset),
+                     np.asarray(RHS_offset),
+                     self.RSS)
         
         if self.linear_part.ndim == 2:
             self.dim = self.linear_part.shape[1]
@@ -119,7 +118,7 @@ class constraints(object):
         >>> C._repr_latex
         "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
         """
-        return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
+        return """$$Z \sim N(\mu,\Sigma) | AZ + u \leq \|PZ\|_2 b$$"""
 
     def __copy__(self):
         r"""
@@ -128,7 +127,9 @@ class constraints(object):
         Also copies _sqrt_cov, _sqrt_inv if attributes are present.
         """
         con = constraints(self.linear_part.copy(),
-                          self.offset.copy(),
+                          self.LHS.offset.copy(),
+                          self.RHS.offset.copy(),
+                          copy(self.RSS),
                           mean=copy(self.mean),
                           covariance=copy(self.covariance))
         if hasattr(self, "_sqrt_cov"):
@@ -148,7 +149,7 @@ class constraints(object):
         >>> con(Y)
         True
         """
-        V1 = np.dot(self.linear_part, Y) - self.offset
+        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * np.sqrt(self.RSS)
         return np.all(V1 < tol * np.fabs(V1).max())
 
     def conditional(self, linear_part, value):
@@ -167,6 +168,8 @@ class constraints(object):
 
         """
 
+        # this is the key part
+        # the value becomes part of LHS_offset not sucked into mean
         A, b, S = self.linear_part, self.offset, self.covariance
         C, d = linear_part, value
 
@@ -226,14 +229,12 @@ class constraints(object):
 
         
         """
-        return interval_constraints(self.linear_part,
-                                    self.offset,
-                                    self.covariance,
-                                    Y,
-                                    direction_of_interest)
+        # this should use xiaoying's sqrt
+
+        raise NotImplementedError
 
     def pivot(self, direction_of_interest, Y,
-              alternative='greater'):
+               alternative='greater'):
         r"""
         For a realization $Y$ of the random variable $N(\mu,\Sigma)$
         truncated to $C$ specified by `self.constraints` compute
@@ -283,54 +284,6 @@ class constraints(object):
             return P
         else:
             return 2 * min(P, 1-P)
-
-    def interval(self, direction_of_interest, Y,
-                 alpha=0.05, UMAU=False):
-        r"""
-        For a realization $Y$ of the random variable $N(\mu,\Sigma)$
-        truncated to $C$ specified by `self.constraints` compute
-        the slice of the inequality constraints in a 
-        given direction $\eta$ and test whether 
-        $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.
-        
-        Parameters
-        ----------
-
-        direction_of_interest: np.float
-
-            A direction $\eta$ for which we may want to form 
-            selection intervals or a test.
-
-        Y : np.float
-
-            A realization of $N(0,\Sigma)$ where 
-            $\Sigma$ is `self.covariance`.
-
-        alpha : float
-
-            What level of confidence?
-
-        UMAU : bool
-
-            Use the UMAU intervals?
-
-        Returns
-        -------
-
-        [U,L] : selection interval
-
-        
-        """
-        ## THE DOCUMENTATION IS NOT GOOD ! HAS TO BE CHANGED !
-
-        return selection_interval( \
-            self.linear_part,
-            self.offset,
-            self.covariance,
-            Y,
-            direction_of_interest,
-            alpha=alpha,
-            UMAU=UMAU)
 
     def whiten(self):
         """
@@ -393,14 +346,20 @@ def stack(*cons):
     Resulting constraint will have mean 0 and covariance $I$.
 
     """
-    ineq, ineq_off = [], []
-    eq, eq_off = [], []
+    ineq, ineq_LHS_off, ineq_RHS_off, RSS = [], [], []
     for con in cons:
         ineq.append(con.linear_part)
-        ineq_off.append(con.offset)
+        ineq_LHS_off.append(con.LHS_offset)
+        ineq_RHS_off.append(con.RHS_offset)
+        RSS.append(con.RSS)
 
+    if not np.all(np.equal(RSS, RSS[0])):
+        raise ValueError('residual sums of squares should all be equal!') 
     intersection = constraints(np.vstack(ineq), 
-                               np.hstack(ineq_off))
+                               np.hstack(ineq_LHS_off),
+                               np.hstack(ineq_RHS_off),
+                               RSS,
+                               )
     return intersection
 
 def sample_from_constraints(con, 
@@ -450,6 +409,8 @@ def sample_from_constraints(con,
         
     """
 
+    # this will be different than data carving sqrtlasso
+
     if direction_of_interest is None:
         direction_of_interest = np.random.standard_normal(Y.shape)
     if how_often < 0:
@@ -474,171 +435,6 @@ def sample_from_constraints(con,
                                            use_A=use_constraint_directions)
     Z = inverse_map(white_samples.T).T
     return Z
-
-def one_parameter_MLE(constraint, 
-                      Y,
-                      direction_of_interest,
-                      how_often=-1,
-                      ndraw=500,
-                      burnin=500,
-                      niter=20, 
-                      white=False,
-                      step_size=0.9,
-                      hessian_min=1.,
-                      tol=1.e-5,
-                      startMLE=None):
-    r"""
-    Find one parameter MLE for family
-
-    .. math::
-
-        \frac{dP_{\theta}}{dP_0}(y) \propto \exp(\theta \cdot \eta^Ty)
-
-    where $\eta$ is `direction_of_interest` and $P_0$ is the truncated
-    Gaussian distribution defined by `constraint`.
-
-    Parameters
-    ----------
-
-    constraint : `selection.affine.constraints`_
-
-    Y : np.float
-        Point satisfying the constraint.
-
-    direction_of_interest : np.float
-        Natural parameter whose span determines the one-parameter
-        family.
-
-    how_often : int (optional)
-        How often should the sampler make a move along `direction_of_interest`?
-        If negative, defaults to ndraw+burnin (so it will never be used).
-
-    ndraw : int (optional)
-        Defaults to 500.
-
-    burnin : int (optional)
-        Defaults to 500.
-
-    niter : int (optional)
-        How many Newton steps should we take? Defaults to 10. 
-
-    white : bool (optional)
-        Is con.covariance equal to identity?
-
-    step_size : float
-        What proportion of Newton step should we take?
-
-    min_hessian : float (optional)    
-        Lower bound on Hessian (will help taking too large a step).
-
-    tol : float (optional)    
-        Tolerance for convergance. Iteration stops
-        when sqrt(grad**2 / hessian) < tol
-
-    startMLE : float (optional)
-        Initial condition for iteration. If None,
-        default starting point is unconstrained MLE.
-    Returns
-    -------
-
-    MLE : float
-        Maximum pseudolikelihood estimate.
-        
-    """
-
-    con, eta = constraint, direction_of_interest # shorthand
-    observed = (eta*Y).sum()
-
-    if how_often < 0:
-        how_often = ndraw + burnin
-
-    # we take the unconstrained MLE as starting point
-    # to see this, note that we are changing the mean by \theta * \Sigma \eta
-    # which means the negative log-likelihood is 
-    # \frac{\theta^2}{2} (\eta^T\Sigma\eta) - \theta \eta^Ty
-
-    unconstrained_MLE = observed / np.dot(eta, np.dot(con.covariance, eta))
-    if startMLE is None:
-        MLE = unconstrained_MLE
-    else:
-        MLE = startMLE
-    
-    samples = []
-
-    con_cp = copy(con)
-    for iter_count in range(niter):
-        tilt = MLE * eta
-        con_cp.mean[:] = con.mean + np.dot(con.covariance, tilt)
-
-        if not white:
-            inverse_map, forward_map, white_con = con_cp.whiten()
-            white_Y = forward_map(Y)
-            white_direction_of_interest = forward_map(np.dot(con_cp.covariance, eta))
-        else:
-            white_con = con_cp
-            inverse_map = lambda V: V
-
-        cur_sample = sample_truncnorm_white(white_con.linear_part,
-                                            white_con.offset,
-                                            white_Y, 
-                                            white_direction_of_interest,
-                                            how_often=how_often,
-                                            ndraw=ndraw, 
-                                            burnin=burnin,
-                                            sigma=1.,
-                                            use_A=False)
-
-        Z = inverse_map(cur_sample.T).T
-
-        Zeta = np.dot(Z, eta)
-        samples.append((MLE, Zeta))
-
-        sum_mean = 0.
-        sum_second_moment = 0.
-        sum_weights = 0.
-
-        weight_adjust = -np.inf
-        lag = len(samples)
-
-        for sample in samples[-lag:]:
-
-            # each previous sample is from a different value of
-            # the natural parameter, i.e. exp(param * np.dot(eta, y))
-            # but to evaluate the current meal, we want
-            # exp(MLE * np.dot(eta, y))
-
-            prev_param, prev_sufficient_stat = sample
-            weight_adjust = max(weight_adjust, ((MLE - prev_param) * prev_sufficient_stat).max())
-            
-        weight_adjust -= 4.
-
-        for sample in samples[-lag:]:
-
-            prev_param, prev_sufficient_stat = sample
-            weight_correction = np.exp((MLE - prev_param) * prev_sufficient_stat - weight_adjust)
-
-            sum_mean += weight_correction * prev_sufficient_stat
-            sum_second_moment += weight_correction * prev_sufficient_stat**2
-            sum_weights += weight_correction
-
-        weighted_mean = sum_mean.sum() / sum_weights.sum()
-        weighted_second_moment = sum_second_moment.sum() / sum_weights.sum()
-
-        grad = (weighted_mean - observed)
-        hessian = weighted_second_moment - weighted_mean**2
-
-        step = - step_size * grad / (max(hessian, hessian_min))
-        MLE += step
-
-        if np.sqrt(grad**2 / (max(hessian, hessian_min))) < tol:
-            break
-
-    DEBUG = False
-    if DEBUG:
-        # observed should match weighted_mean
-        print observed, weighted_mean, MLE
-
-    return MLE
 
 def sample_from_sphere(con, 
                        Y,
@@ -687,6 +483,9 @@ def sample_from_sphere(con,
         Importance weights for the sample.
 
     """
+
+    # this is data carving sqrt_lasso
+
     if direction_of_interest is None:
         direction_of_interest = np.random.standard_normal(Y.shape)
     if how_often < 0:
@@ -804,71 +603,6 @@ def interval_constraints(support_directions,
 
     return lower_bound, V, upper_bound, sigma
 
-def selection_interval(support_directions, 
-                       support_offsets,
-                       covariance,
-                       observed_data, 
-                       direction_of_interest,
-                       tol = 1.e-4,
-                       alpha = 0.05,
-                       UMAU=True):
-    """
-    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
-    specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $\eta$, and
-    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
-    with `covariance` matrix $\Sigma$, this
-    function returns a confidence interval
-    for $\eta^T\mu$.
-
-    Parameters
-    ----------
-
-    support_directions : np.float
-         Matrix specifying constraint, $A$.
-
-    support_offset : np.float
-         Offset in constraint, $b$.
-
-    covariance : np.float
-         Covariance matrix of `observed_data`.
-
-    observed_data : np.float
-         Observations.
-
-    direction_of_interest : np.float
-         Direction in which we're interested for the
-         contrast.
-
-    tol : float
-         Relative tolerance parameter for deciding 
-         sign of $Az-b$.
-
-    UMAU : bool
-         Use the UMAU interval, or twosided pivot.
-
-    Returns
-    -------
-
-    selection_interval : (float, float)
-
-    """
-
-    lower_bound, V, upper_bound, sigma = interval_constraints( \
-        support_directions, 
-        support_offsets,
-        covariance,
-        observed_data, 
-        direction_of_interest,
-        tol=tol)
-
-    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], sigma=sigma)
-    if UMAU:
-        _selection_interval = truncated.UMAU_interval(V, alpha)
-    else:
-        _selection_interval = truncated.equal_tailed_interval(V, alpha)
-    
-    return _selection_interval
 
 def gibbs_test(affine_con, Y, direction_of_interest,
                how_often=-1,
