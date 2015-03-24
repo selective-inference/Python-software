@@ -1,6 +1,7 @@
 import numpy as np
-from .affine import (constraints, selection_interval,
-                          interval_constraints)
+from .constraints.affine import (constraints, 
+                                 selection_interval,
+                                 interval_constraints)
 from scipy.sparse import eye as sparse_eye
 
 def _basis_vector(j,n):

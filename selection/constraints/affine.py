@@ -17,12 +17,12 @@ from copy import copy
 
 import numpy as np
 
-from .pvalue import truncnorm_cdf, norm_interval
-from .truncated.gaussian import truncated_gaussian, truncated_gaussian_old
-from .sample_truncnorm import (sample_truncnorm_white, 
-                               sample_truncnorm_white_sphere)
+from ..distributions.pvalue import truncnorm_cdf, norm_interval
+from ..truncated.gaussian import truncated_gaussian, truncated_gaussian_old
+from ..sampling.truncnorm import (sample_truncnorm_white, 
+                                  sample_truncnorm_white_sphere)
 
-from .discrete_family import discrete_family
+from ..distributions.discrete_family import discrete_family
 from mpmath import mp
 import pyinter
 

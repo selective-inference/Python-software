@@ -17,13 +17,13 @@ import regreg.api as rr
 # local
 
 from .lasso import _constraint_from_data
-from .truncated.T import truncated_T
-from .affine import constraints_unknown_sigma, \
-        constraints as gaussian_constraints, \
-        sample_from_sphere
-from .truncated import find_root
-from .discrete_multiparameter import multiparameter_family
-from .discrete_family import discrete_family
+from ..truncated.T import truncated_T
+from ..constraints.affine import (constraints_unknown_sigma, 
+                                 constraints as gaussian_constraints, 
+                                 sample_from_sphere)
+from ..truncated import find_root
+from ..distributions.discrete_multiparameter import multiparameter_family
+from ..distributions.discrete_family import discrete_family
 
 class sqlasso_objective(rr.smooth_atom):
     """

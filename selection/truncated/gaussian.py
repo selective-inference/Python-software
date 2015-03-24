@@ -5,11 +5,11 @@ restricted to a set of intervals.
 
 """
 import numpy as np
-from ..pvalue import (norm_pdf, 
-                      truncnorm_cdf, 
-                      norm_q,
-                      norm_interval,
-                      mp)
+from ..distributions.pvalue import (norm_pdf, 
+                                    truncnorm_cdf, 
+                                    norm_q,
+                                    norm_interval,
+                                    mp)
 
 from scipy.stats import norm as ndist
 from .base import truncated, find_root

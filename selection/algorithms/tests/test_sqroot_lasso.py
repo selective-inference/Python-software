@@ -4,13 +4,13 @@ import numpy.testing.decorators as dec
 import statsmodels as sm
 import matplotlib.pyplot as plt
 
-from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
+from selection.algorithms.sqrt_lasso import (sqrt_lasso, choose_lambda,
                                   estimate_sigma, data_carving, split_model)
-from selection.lasso import instance
-from selection.affine import constraints_unknown_sigma
+from selection.algorithms.lasso import instance
+from selection.constraints.affine import constraints_unknown_sigma
 from selection.truncated import T as truncated_T
 
-from selection.tests.test_sample_sphere import _generate_constraints
+from selection.sampling.tests.test_sample_sphere import _generate_constraints
 
 def test_class(n=20, p=40, s=2):
     y = np.random.standard_normal(n) * 1.2

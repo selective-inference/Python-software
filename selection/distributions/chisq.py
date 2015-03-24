@@ -1,5 +1,5 @@
 import numpy as np
-from .affine import constraints
+from .constraints.affine import constraints
 from .pvalue import chi_pvalue
 
 def tangent_space(operator, y):
