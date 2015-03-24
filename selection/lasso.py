@@ -327,6 +327,8 @@ class lasso(object):
 
 def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
 
+    # R is X_{-E}^T(I-P_E)
+
     n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
     if np.array(lam).shape == ():
         lam = np.ones(p) * lam
