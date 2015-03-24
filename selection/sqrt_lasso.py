@@ -23,7 +23,6 @@ from .affine import constraints_unknown_sigma, \
 from .truncated import find_root
 from .discrete_multiparameter import multiparameter_family
 from .discrete_family import discrete_family
-#from .sample_truncT import sample_truncated_T
 
 class sqlasso_objective(rr.smooth_atom):
     """

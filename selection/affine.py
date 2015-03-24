@@ -8,7 +8,7 @@ and `post selection LASSO`_.
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
-.. _sample carving: http://arxiv.org/abs/????.????
+.. _sample carving: http://arxiv.org/abs/1410.2597
 
 """
 
@@ -20,10 +20,7 @@ import numpy as np
 from .pvalue import truncnorm_cdf, norm_interval
 from .truncated.gaussian import truncated_gaussian, truncated_gaussian_old
 from .sample_truncnorm import (sample_truncnorm_white, 
-                               sample_truncnorm_white_ball,
-                               sample_truncnorm_white_ball_normal,
                                sample_truncnorm_white_sphere)
-#from .sample_truncT import sample_truncated_T
 
 from .discrete_family import discrete_family
 from mpmath import mp
@@ -488,7 +485,8 @@ def one_parameter_MLE(constraint,
                       white=False,
                       step_size=0.9,
                       hessian_min=1.,
-                      tol=1.e-5):
+                      tol=1.e-5,
+                      startMLE=None):
     r"""
     Find one parameter MLE for family
 
@@ -537,11 +535,14 @@ def one_parameter_MLE(constraint,
         Tolerance for convergance. Iteration stops
         when sqrt(grad**2 / hessian) < tol
 
+    startMLE : float (optional)
+        Initial condition for iteration. If None,
+        default starting point is unconstrained MLE.
     Returns
     -------
 
-    Z : np.float((ndraw, n))
-        Sample from the sphere intersect the constraints.
+    MLE : float
+        Maximum pseudolikelihood estimate.
         
     """
 
@@ -556,8 +557,11 @@ def one_parameter_MLE(constraint,
     # which means the negative log-likelihood is 
     # \frac{\theta^2}{2} (\eta^T\Sigma\eta) - \theta \eta^Ty
 
-    MLE = observed / np.dot(eta, np.dot(con.covariance, eta))
-    unconstrained_MLE = MLE
+    unconstrained_MLE = observed / np.dot(eta, np.dot(con.covariance, eta))
+    if startMLE is None:
+        MLE = unconstrained_MLE
+    else:
+        MLE = startMLE
     
     samples = []
 
@@ -635,86 +639,6 @@ def one_parameter_MLE(constraint,
         print observed, weighted_mean, MLE
 
     return MLE
-
-def sample_from_constrainted_T(con, 
-                               Y,
-                               noncentrality,
-                               degrees_of_freedom,
-                               direction_of_interest=None,
-                               how_often=-1,
-                               ndraw=1000,
-                               burnin=1000,
-                               white=False,
-                               use_constraint_directions=True):
-    r"""
-    Use Gibbs sampler to simulate from `con`.
-
-    Parameters
-    ----------
-
-    con : `selection.affine.constraints`_
-
-    Y : np.float
-        Point satisfying the constraint.
-
-    direction_of_interest : np.float (optional)
-        Which projection is of most interest?
-
-    how_often : int (optional)
-        How often should the sampler make a move along `direction_of_interest`?
-        If negative, defaults to ndraw+burnin (so it will never be used).
-
-    ndraw : int (optional)
-        Defaults to 1000.
-
-    burnin : int (optional)
-        Defaults to 1000.
-
-    white : bool (optional)
-        Is con.covariance equal to identity?
-
-    use_constraint_directions : bool (optional)
-        Use the directions formed by the constraints as in
-        the Gibbs scheme?
-
-    Returns
-    -------
-
-    Z : np.float((ndraw, n))
-        Sample from the sphere intersect the constraints.
-        
-    """
-
-    if direction_of_interest is None:
-        direction_of_interest = np.random.standard_normal(Y.shape)
-    if how_often < 0:
-        how_often = ndraw + burnin
-
-    # assumes mean of contrast is 0
-
-    if not np.all(con.mean == np.zeros_like(con.mean)):
-        warnings.warn('mean of contrast will be ignored in sampling -- adjust offset to reflect mean')
-
-    if not white:
-        inverse_map, forward_map, white = con.whiten()
-        Y = forward_map(Y)
-        direction_of_interest = forward_map(direction_of_interest)
-    else:
-        white = con
-        inverse_map = lambda V: V
-
-    white_samples = sample_truncated_T(white.linear_part,
-                                       white.offset,
-                                       Y, 
-                                       forward_map(noncentrality),
-                                       degrees_of_freedom,
-                                       direction_of_interest,
-                                       how_often=how_often,
-                                       ndraw=ndraw, 
-                                       burnin=burnin)
-
-    T = inverse_map(white_samples.T).T
-    return T
 
 def sample_from_sphere(con, 
                        Y,
