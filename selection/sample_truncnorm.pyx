@@ -205,15 +205,15 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
             # and Z (= tnorm below) is as stated
 
             unif = usample[iter_count] * (1 - exp(-np.fabs(
-                        lower_bound - upper_bound) * np.fabs(upper_bound)))
-            tnorm = upper_bound + log(1 - unif) / np.fabs(upper_bound)
+                        lower_bound - upper_bound) * upper_bound))
+            tnorm = (upper_bound + log(1 - unif) / np.fabs(upper_bound)) * sigma
         elif lower_bound > 10:
 
             # here Z = lower_bound + E / fabs(lower_bound) (though lower_bound is positive)
             # and D = fabs((upper_bound - lower_bound) * lower_bound)
             unif = usample[iter_count] * (1 - exp(-np.fabs(
-                        upper_bound - lower_bound) * np.fabs(lower_bound)))
-            tnorm = lower_bound - log(1 - unif) / lower_bound
+                        upper_bound - lower_bound) * lower_bound))
+            tnorm = (lower_bound - log(1 - unif) / lower_bound) * sigma
         elif lower_bound < 0:
             cdfL = ndtr(lower_bound)
             cdfU = ndtr(upper_bound)
@@ -288,9 +288,6 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     how_often : int (optional)
         How often should the sampler make a move along `direction_of_interest`?
         If negative, defaults to ndraw+burnin (so it will never be used).
-
-    sigma : float
-        Variance parameter.
 
     burnin : int
         How many iterations until we start
@@ -433,7 +430,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         # intersect the line segment with the ball
         # 
-        # below, discriminant is the sqaure root of 
+        # below, discriminant is the square root of 
         # the squared overall bound on the length
         # minus the current norm of P_{\eta}^{\perp}y
         # where eta is the current direction of movement

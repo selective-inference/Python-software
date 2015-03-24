@@ -28,6 +28,7 @@ from setup_helpers import package_check
 EXTS = []
 for modulename, other_sources in (
     ('selection.sample_truncnorm', []),
+    ('selection.sample_sqrt_lasso', []),
     ):
     pyx_src = pjoin(*modulename.split('.')) + '.pyx'
     EXTS.append(Extension(modulename,[pyx_src] + other_sources,

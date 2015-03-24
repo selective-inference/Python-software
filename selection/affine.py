@@ -470,7 +470,6 @@ def sample_from_constraints(con,
                                            how_often=how_often,
                                            ndraw=ndraw, 
                                            burnin=burnin,
-                                           sigma=1.,
                                            use_A=use_constraint_directions)
     Z = inverse_map(white_samples.T).T
     return Z

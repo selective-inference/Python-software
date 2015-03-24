@@ -168,9 +168,8 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
     # this one is for RSS_1
     beta_1_rv = beta(df_1*0.5, (df_max - nvar)*0.5)
 
-    # this
-    beta_state_rv = beta(nvar*0.5, (df_max - df_1) * 0.5)
-    norm_rv = ndist(loc=0, scale=1)
+    # this is what we use to sample
+    norm_rv = lambda x: np.exp(-(x**2).sum()/2.)
 
     while True:
 
@@ -326,7 +325,7 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
         # weight has to now be computed
         # based on the normal approximation compared to true distribution            
 
-        weight_sample[sample_count-burnin] = (beta_state_rv.pdf(norm_state_sq / norm_state_bound_sq) / 
+        weight_sample[sample_count-burnin] = (np.pow(1. - norm_state_sq / norm_state_bound_sq, 0.5 * (df_max - df_1)) / 
                                               norm_rv(state / sigma))
 
         # now we sample RSS_1

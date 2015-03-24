@@ -633,8 +633,8 @@ def data_carving(y, X,
         selector1 = np.identity(n)[stage_one]
         R_stageone = np.dot(selector1.T, np.dot(R1, selector1))
 
-        info_E = np.dot(X_Ei, X_Ei.T)
-        info_E1 = np.dot(X_Ei1, X_Ei1.T)
+        inv_info_E = np.dot(X_Ei, X_Ei.T)
+        inv_info_E1 = np.dot(X_Ei1, X_Ei1.T)
 
         s = sparsity = L.active.shape[0]
         beta_E = np.dot(X_Ei, y)
@@ -652,10 +652,10 @@ def data_carving(y, X,
             # specify covariance of 2s Gaussian vector
 
             cov = np.zeros((2*s, 2*s))
-            cov[:s, :s] = info_E 
-            cov[s:, :s] = info_E
-            cov[:s, s:] = info_E
-            cov[s:, s:] = info_E1
+            cov[:s, :s] = inv_info_E 
+            cov[s:, :s] = inv_info_E
+            cov[:s, s:] = inv_info_E
+            cov[s:, s:] = inv_info_E1
 
             con.covariance[:] = cov * sigma_E**2
 
@@ -664,7 +664,7 @@ def data_carving(y, X,
 
             selector = np.zeros((s, 2*s))
             selector[:, :s]  = np.identity(s)
-            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
+            conditional_linear = np.dot(np.linalg.pinv(inv_info_E), selector) 
 
             # a valid initial condition
 
@@ -681,7 +681,7 @@ def data_carving(y, X,
             # specify covariance of Gaussian vector
 
             cov = np.zeros((s + n - splitn, s + n - splitn))
-            cov[:s, :s] = info_E1
+            cov[:s, :s] = inv_info_E1
             cov[s:, :s] = 0
             cov[:s, s:] = 0
             cov[s:, s:] = np.identity(n - splitn) 
@@ -689,7 +689,7 @@ def data_carving(y, X,
             con.covariance[:] = cov * sigma_E**2
 
             conditional_linear = np.zeros((s, s + n - splitn))
-            conditional_linear[:, :s]  = np.linalg.pinv(info_E1) 
+            conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1) 
             conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
 
             selector1 = np.zeros((s, s + n - splitn))
@@ -699,7 +699,7 @@ def data_carving(y, X,
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-            OLS_func = np.dot(info_E, conditional_linear)
+            OLS_func = np.dot(inv_info_E, conditional_linear)
 
             # a valid initial condition
 
@@ -722,7 +722,7 @@ def data_carving(y, X,
             beta_E2 = np.dot(X_Ei2, y2)
             sigma_E2 = np.linalg.norm(y[stage_two] - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
 
-            info_E2 = np.dot(X_Ei2, X_Ei2.T) 
+            inv_info_E2 = np.dot(X_Ei2, X_Ei2.T) 
 
             splitting_pvalues = []
             splitting_intervals = []
@@ -787,15 +787,15 @@ def data_carving(y, X,
                 if s < n - splitn: # enough data to generically
                                    # test hypotheses. proceed as usual
 
-                    T = beta_E2[j] / (sigma_E2 * info_E2[j,j])
+                    T = beta_E2[j] / (sigma_E2 * inv_info_E2[j,j])
                     split_pval = tdist.cdf(T, n - splitn - s)
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
 
                     splitting_interval = (beta_E2[j] - 
-                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2,
+                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma_E2,
                                           beta_E2[j] + 
-                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2)
+                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma_E2)
                     splitting_intervals.append(splitting_interval)
                 else:
                     splitting_pvalues.append(np.random.sample())
