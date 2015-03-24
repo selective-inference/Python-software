@@ -4,21 +4,11 @@ import mpmath as mp
 from intervals import intervals
 from projection import projection, full_rank
 
-
 from truncated import truncated_chi, truncated_chi2, truncated_F
 from scipy.stats import norm
 
 from tools import timethis
-
-import sys
-sys.path.insert(0, 'src_C')
-
-from sampler import quad_sampler
-import constraint
-#from constraint import constraint
-
-
-#from time import time
+import .constraint
 
 class quad_constraints(constraint.constraint):
 
