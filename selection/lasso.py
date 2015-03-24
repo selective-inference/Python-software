@@ -8,6 +8,7 @@ as described in `post selection LASSO`_.
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
+.. _sample carving: http://arxiv.org/abs/1410.2597
 
 """
 
