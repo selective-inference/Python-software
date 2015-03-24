@@ -8,26 +8,23 @@ and `post selection LASSO`_.
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
-.. _sample carving: http://arxiv.org/abs/????.????
+.. _sample carving: http://arxiv.org/abs/1410.2597
 
 """
+
+from warnings import warn
+from copy import copy
 
 import numpy as np
 
 from .pvalue import truncnorm_cdf, norm_interval
 from .truncated.gaussian import truncated_gaussian, truncated_gaussian_old
 from .sample_truncnorm import (sample_truncnorm_white, 
-                               sample_truncnorm_white_ball,
-                               sample_truncnorm_white_ball_normal,
                                sample_truncnorm_white_sphere)
-from .sample_truncT import sample_truncated_T
-
 
 from .discrete_family import discrete_family
 from mpmath import mp
 import pyinter
-
-from warnings import warn
 
 WARNINGS = False
 
@@ -71,8 +68,7 @@ class constraints(object):
                  linear_part,
                  offset,
                  covariance=None,
-                 mean=None,
-                 translate=None):
+                 mean=None):
         r"""
         Create a new inequality. 
 
@@ -112,7 +108,6 @@ class constraints(object):
         if mean is None:
             mean = np.zeros(self.dim)
         self.mean = mean
-        self.translate = translate
 
     def _repr_latex_(self):
         """
@@ -125,6 +120,22 @@ class constraints(object):
         "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
         """
         return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
+
+    def __copy__(self):
+        r"""
+        A copy of the constraints.
+
+        Also copies _sqrt_cov, _sqrt_inv if attributes are present.
+        """
+        con = constraints(self.linear_part.copy(),
+                          self.offset.copy(),
+                          mean=copy(self.mean),
+                          covariance=copy(self.covariance))
+        if hasattr(self, "_sqrt_cov"):
+            con._sqrt_cov = self._sqrt_cov.copy()
+            con._sqrt_inv = self._sqrt_inv.copy()
+                          
+        return con
 
     def __call__(self, Y, tol=1.e-3):
         r"""
@@ -164,26 +175,21 @@ class constraints(object):
         if M2.shape:
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_offset = np.dot(M1, np.dot(M2i, d))
+            delta_offset = 0 * np.dot(M1, np.dot(M2i, d))
             delta_mean = \
             np.dot(M1,
                    np.dot(M2i,
                           np.dot(C,
-                                 self.mean)))
+                                 self.mean) - d))
         else:
             M2i = 1. / M2
             delta_cov = np.multiply.outer(M1, M1) / M2i
             delta_mean = M1 * d  / M2i
 
-        if self.translate is None:
-            translate = np.zeros(A.shape[1])
-        else:
-            translate = self.translate
         return constraints(self.linear_part,
                            self.offset - np.dot(self.linear_part, delta_offset),
                            covariance=self.covariance - delta_cov,
-                           mean=self.mean - delta_mean,
-                           translate=translate + delta_offset)
+                           mean=self.mean - delta_mean)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -328,6 +334,9 @@ class constraints(object):
 
     def whiten(self):
         """
+        Parameters
+        ----------
+
         Return a whitened version of constraints in a different
         basis, and a change of basis matrix.
 
@@ -336,18 +345,25 @@ class constraints(object):
 
         """
 
-        rank = np.linalg.matrix_rank(self.covariance)
-        D, U = np.linalg.eigh(self.covariance)
-        D = np.sqrt(D[-rank:])
-        U = U[:,-rank:]
+        if not hasattr(self, "_sqrt_cov"):
+            rank = np.linalg.matrix_rank(self.covariance)
+
+            D, U = np.linalg.eigh(self.covariance)
+            D = np.sqrt(D[-rank:])
+            U = U[:,-rank:]
         
-        sqrt_cov = U * D[None,:]
-        sqrt_inv = (U / D[None,:]).T
+            self._sqrt_cov = U * D[None,:]
+            self._sqrt_inv = (U / D[None,:]).T
+
+        sqrt_cov = self._sqrt_cov
+        sqrt_inv = self._sqrt_inv
+
         # original matrix is np.dot(U, U.T)
 
         new_A = np.dot(self.linear_part, sqrt_cov)
-        new_b = self.offset - np.dot(self.linear_part, self.mean)               
-        new_con = constraints(new_A, new_b)
+        den = np.sqrt((new_A**2).sum(1))
+        new_b = self.offset - np.dot(self.linear_part, self.mean)
+        new_con = constraints(new_A / den[:,None], new_b / den)
 
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
@@ -440,110 +456,189 @@ def sample_from_constraints(con,
         how_often = ndraw + burnin
 
     if not white:
-        inverse_map, forward_map, white = con.whiten()
-        Y = forward_map(Y)
-        # XXX for covariance not a projection, does this work?
-        # it seems we need a dual forward map to preserve inner products?
-        direction_of_interest = forward_map(direction_of_interest)
+        inverse_map, forward_map, white_con = con.whiten()
+        white_Y = forward_map(Y)
+        white_direction_of_interest = forward_map(np.dot(con.covariance, direction_of_interest))
     else:
-        white = con
+        white_con = con
         inverse_map = lambda V: V
 
-    white_samples = sample_truncnorm_white(white.linear_part,
-                                           white.offset,
-                                           Y, 
-                                           direction_of_interest,
+    white_samples = sample_truncnorm_white(white_con.linear_part,
+                                           white_con.offset,
+                                           white_Y, 
+                                           white_direction_of_interest,
                                            how_often=how_often,
                                            ndraw=ndraw, 
                                            burnin=burnin,
                                            sigma=1.,
                                            use_A=use_constraint_directions)
     Z = inverse_map(white_samples.T).T
-    if con.translate is not None:
-        Z += con.translate[None,:]
     return Z
 
-def sample_from_constrainted_T(con, 
-                               Y,
-                               noncentrality,
-                               degrees_of_freedom,
-                               direction_of_interest=None,
-                               how_often=-1,
-                               ndraw=1000,
-                               burnin=1000,
-                               white=False,
-                               use_constraint_directions=True):
+def one_parameter_MLE(constraint, 
+                      Y,
+                      direction_of_interest,
+                      how_often=-1,
+                      ndraw=500,
+                      burnin=500,
+                      niter=20, 
+                      white=False,
+                      step_size=0.9,
+                      hessian_min=1.,
+                      tol=1.e-5,
+                      startMLE=None):
     r"""
-    Use Gibbs sampler to simulate from `con`.
+    Find one parameter MLE for family
+
+    .. math::
+
+        \frac{dP_{\theta}}{dP_0}(y) \propto \exp(\theta \cdot \eta^Ty)
+
+    where $\eta$ is `direction_of_interest` and $P_0$ is the truncated
+    Gaussian distribution defined by `constraint`.
 
     Parameters
     ----------
 
-    con : `selection.affine.constraints`_
+    constraint : `selection.affine.constraints`_
 
     Y : np.float
         Point satisfying the constraint.
 
-    direction_of_interest : np.float (optional)
-        Which projection is of most interest?
+    direction_of_interest : np.float
+        Natural parameter whose span determines the one-parameter
+        family.
 
     how_often : int (optional)
         How often should the sampler make a move along `direction_of_interest`?
         If negative, defaults to ndraw+burnin (so it will never be used).
 
     ndraw : int (optional)
-        Defaults to 1000.
+        Defaults to 500.
 
     burnin : int (optional)
-        Defaults to 1000.
+        Defaults to 500.
+
+    niter : int (optional)
+        How many Newton steps should we take? Defaults to 10. 
 
     white : bool (optional)
         Is con.covariance equal to identity?
 
-    use_constraint_directions : bool (optional)
-        Use the directions formed by the constraints as in
-        the Gibbs scheme?
+    step_size : float
+        What proportion of Newton step should we take?
 
+    min_hessian : float (optional)    
+        Lower bound on Hessian (will help taking too large a step).
+
+    tol : float (optional)    
+        Tolerance for convergance. Iteration stops
+        when sqrt(grad**2 / hessian) < tol
+
+    startMLE : float (optional)
+        Initial condition for iteration. If None,
+        default starting point is unconstrained MLE.
     Returns
     -------
 
-    Z : np.float((ndraw, n))
-        Sample from the sphere intersect the constraints.
+    MLE : float
+        Maximum pseudolikelihood estimate.
         
     """
 
-    if direction_of_interest is None:
-        direction_of_interest = np.random.standard_normal(Y.shape)
+    con, eta = constraint, direction_of_interest # shorthand
+    observed = (eta*Y).sum()
+
     if how_often < 0:
         how_often = ndraw + burnin
 
-    # assumes mean of contrast is 0
+    # we take the unconstrained MLE as starting point
+    # to see this, note that we are changing the mean by \theta * \Sigma \eta
+    # which means the negative log-likelihood is 
+    # \frac{\theta^2}{2} (\eta^T\Sigma\eta) - \theta \eta^Ty
 
-    if not np.all(con.mean == np.zeros_like(con.mean)):
-        warnings.warn('mean of contrast will be ignored in sampling -- adjust offset to reflect mean')
-
-    if not white:
-        inverse_map, forward_map, white = con.whiten()
-        Y = forward_map(Y)
-        direction_of_interest = forward_map(direction_of_interest)
+    unconstrained_MLE = observed / np.dot(eta, np.dot(con.covariance, eta))
+    if startMLE is None:
+        MLE = unconstrained_MLE
     else:
-        white = con
-        inverse_map = lambda V: V
+        MLE = startMLE
+    
+    samples = []
 
-    white_samples = sample_truncated_T(white.linear_part,
-                                       white.offset,
-                                       Y, 
-                                       forward_map(noncentrality),
-                                       degrees_of_freedom,
-                                       direction_of_interest,
-                                       how_often=how_often,
-                                       ndraw=ndraw, 
-                                       burnin=burnin)
+    con_cp = copy(con)
+    for iter_count in range(niter):
+        tilt = MLE * eta
+        con_cp.mean[:] = con.mean + np.dot(con.covariance, tilt)
 
-    T = inverse_map(white_samples.T).T
-    if con.translate is not None:
-        T += con.translate[None,:]
-    return T
+        if not white:
+            inverse_map, forward_map, white_con = con_cp.whiten()
+            white_Y = forward_map(Y)
+            white_direction_of_interest = forward_map(np.dot(con_cp.covariance, eta))
+        else:
+            white_con = con_cp
+            inverse_map = lambda V: V
+
+        cur_sample = sample_truncnorm_white(white_con.linear_part,
+                                            white_con.offset,
+                                            white_Y, 
+                                            white_direction_of_interest,
+                                            how_often=how_often,
+                                            ndraw=ndraw, 
+                                            burnin=burnin,
+                                            sigma=1.,
+                                            use_A=False)
+
+        Z = inverse_map(cur_sample.T).T
+
+        Zeta = np.dot(Z, eta)
+        samples.append((MLE, Zeta))
+
+        sum_mean = 0.
+        sum_second_moment = 0.
+        sum_weights = 0.
+
+        weight_adjust = -np.inf
+        lag = len(samples)
+
+        for sample in samples[-lag:]:
+
+            # each previous sample is from a different value of
+            # the natural parameter, i.e. exp(param * np.dot(eta, y))
+            # but to evaluate the current meal, we want
+            # exp(MLE * np.dot(eta, y))
+
+            prev_param, prev_sufficient_stat = sample
+            weight_adjust = max(weight_adjust, ((MLE - prev_param) * prev_sufficient_stat).max())
+            
+        weight_adjust -= 4.
+
+        for sample in samples[-lag:]:
+
+            prev_param, prev_sufficient_stat = sample
+            weight_correction = np.exp((MLE - prev_param) * prev_sufficient_stat - weight_adjust)
+
+            sum_mean += weight_correction * prev_sufficient_stat
+            sum_second_moment += weight_correction * prev_sufficient_stat**2
+            sum_weights += weight_correction
+
+        weighted_mean = sum_mean.sum() / sum_weights.sum()
+        weighted_second_moment = sum_second_moment.sum() / sum_weights.sum()
+
+        grad = (weighted_mean - observed)
+        hessian = weighted_second_moment - weighted_mean**2
+
+        step = - step_size * grad / (max(hessian, hessian_min))
+        MLE += step
+
+        if np.sqrt(grad**2 / (max(hessian, hessian_min))) < tol:
+            break
+
+    DEBUG = False
+    if DEBUG:
+        # observed should match weighted_mean
+        print observed, weighted_mean, MLE
+
+    return MLE
 
 def sample_from_sphere(con, 
                        Y,
@@ -555,6 +650,8 @@ def sample_from_sphere(con,
     r"""
     Use Gibbs sampler to simulate from `con` 
     intersected with (whitened) sphere of radius `np.linalg.norm(Y)`.
+    When `con.covariance` is not $I$, it samples from the
+    ellipse of constant Mahalanobis distance from `con.mean`.
 
     Parameters
     ----------
@@ -597,23 +694,21 @@ def sample_from_sphere(con,
 
     if not white:
         inverse_map, forward_map, white = con.whiten()
-        Y = forward_map(Y)
-        direction_of_interest = forward_map(direction_of_interest)
+        white_Y = forward_map(Y)
+        white_direction_of_interest = forward_map(direction_of_interest)
     else:
         white = con
         inverse_map = lambda V: V
 
     white_samples, weights = sample_truncnorm_white_sphere(white.linear_part,
                                                            white.offset,
-                                                           Y, 
-                                                           direction_of_interest,
+                                                           white_Y, 
+                                                           white_direction_of_interest,
                                                            how_often=how_often,
                                                            ndraw=ndraw, 
                                                            burnin=burnin)
 
     Z = inverse_map(white_samples.T).T
-    if con.translate is not None:
-        Z += con.translate[None,:]
     return Z, weights
 
 def interval_constraints(support_directions, 
@@ -848,13 +943,9 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     if alternative not in ['greater', 'less', 'twosided']:
         raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
 
-    if affine_con.translate is None:
-        Y_translate = Y
-    else:
-        Y_translate = Y - affine_con.translate
     if not sigma_known:
         Z, W = sample_from_sphere(affine_con,
-                                  Y_translate,
+                                  Y,
                                   eta,
                                   how_often=how_often,
                                   ndraw=ndraw,
@@ -862,7 +953,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                   white=white)
     else:
         Z = sample_from_constraints(affine_con,
-                                    Y_translate,
+                                    Y,
                                     eta,
                                     how_often=how_often,
                                     ndraw=ndraw,
@@ -1004,7 +1095,6 @@ def constraints_unknown_sigma( \
     for interv in intervals[1:]:
         truncation_set = truncation_set.intersection(interv)
     if not truncation_set:
-        print intervals
         raise ValueError("empty truncation intervals")
     return truncation_set, Tobs
 

@@ -58,7 +58,7 @@ def sf_T(df):
 
 class truncated_T(truncated):
 
-    dps = 15
+    dps = 20
 
     def __init__(self, intervals, df):
 

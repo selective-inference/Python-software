@@ -18,9 +18,12 @@ import regreg.api as rr
 
 from .lasso import _constraint_from_data
 from .truncated.T import truncated_T
-from .affine import constraints_unknown_sigma, constraints as gaussian_constraints
+from .affine import constraints_unknown_sigma, \
+        constraints as gaussian_constraints, \
+        sample_from_sphere
 from .truncated import find_root
-from .sample_truncT import sample_truncated_T
+from .discrete_multiparameter import multiparameter_family
+from .discrete_family import discrete_family
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -181,7 +184,7 @@ class sqrt_lasso(object):
 
             # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
 
-            X_E = self.X[:,self.active]
+            X_E = self._X_E = self.X[:,self.active]
             X_notE = self.X[:,~self.active]
             self._XEinv = np.linalg.pinv(X_E)
             self.w_E = np.dot(self._XEinv.T, self.weights[self.active] * self.z_E)
@@ -364,6 +367,97 @@ class sqrt_lasso(object):
                                                alpha=self.alpha)
                         self._gaussian_intervals.append((self.active[i], _interval))
         return self._gaussian_intervals
+
+    def goodness_of_fit(self, statistic, 
+                        force=False,
+                        alternative='twosided', 
+                        ndraw=5000,
+                        burnin=2000,
+                        ):
+
+        """
+
+        Compute a goodness of fit test based on a given
+        statistic applied to 
+
+        .. math::
+
+             U_{-E}(y) = (I-P_E)y / \|(I-P_E)y\|_2
+
+        which is ancillary for the selected model.
+
+        Parameters
+        ----------
+
+        statistic : callable
+            Statistic to compute on observed $U_{-E}$ as well
+            as sample from null distribution.
+
+        alternative : str
+            One of ['greater', 'less', 'twosided']. Determines
+            how pvalue is computed, based on upper tail, lower tail
+            or equal tail.
+
+        force : bool
+            Resample from $U_{-E}$ under the null even if
+            the instance already has a null sample.
+
+        ndraw : int (optional)
+            If a null sample is to be drawn, how large a sample?
+            Defaults to 1000.
+
+        burnin : int (optional)
+            If a null sample is to be drawn, how long a burnin?
+            Defaults to 1000.
+
+        Returns
+        -------
+
+        pvalue : np.float
+             Two-tailed p-value.
+
+        """
+
+        if not hasattr(self, "_goodness_of_fit_sample") or force:
+            if self.active.shape[0] > 0:
+                con = self.inactive_constraints
+                conditional_con = con.conditional(self._X_E.T, np.dot(self._X_E.T, self.y))
+
+                Z, W = sample_from_sphere(conditional_con, 
+                                          self.y,
+                                          ndraw=ndraw,
+                                          burnin=burnin)  
+                U_notE_sample = np.dot(self.R_E, Z.T).T
+                U_notE_sample /= np.sqrt((U_notE_sample**2).sum(1))[:,None]
+                self._goodness_of_fit_sample = multiparameter_family(U_notE_sample, W)
+                self._goodness_of_fit_observed = np.dot(self.R_E, self.y) / np.linalg.norm(np.dot(self.R_E, self.y))
+
+            else:
+                # model is null model so U_E is just uniform on a sphere
+                n, p = self.X.shape
+                U_sample = np.random.standard_normal((ndraw, n))
+                U_sample /= np.sqrt((U_sample**2).sum(1))[:, None]
+                self._goodness_of_fit_sample = multiparameter_family(U_sample, np.ones(U_sample.shape[0]))
+                self._goodness_of_fit_observed = self.y / np.linalg.norm(self.y)
+
+        null_sample = self._goodness_of_fit_sample.sufficient_stat
+        importance_weights = self._goodness_of_fit_sample.weights
+        null_statistic = np.array([statistic(u) for u in null_sample])
+        observed = statistic(self._goodness_of_fit_observed)
+        family = discrete_family(null_statistic, importance_weights)
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
+
+        if alternative == 'less':
+            pvalue = family.cdf(0, observed)
+        elif alternative == 'greater':
+            pvalue = family.ccdf(0, observed)
+        else:
+            pvalue = family.cdf(0, observed)
+            pvalue = 2 * min(pvalue, 1. - pvalue)
+
+        return pvalue
 
 def nominal_intervals(sqrtL):
     """

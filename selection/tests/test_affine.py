@@ -34,8 +34,7 @@ def test_conditional():
     
     nt.assert_true(np.linalg.norm(np.dot(Z, C.T) - d[None,:]) < 1.e-7)
 
-    Zn = Z - new_con.translate[None,:]
-    V = (np.dot(Zn, new_con.linear_part.T) - new_con.offset[None,:]).max(1)
+    V = (np.dot(Z, new_con.linear_part.T) - new_con.offset[None,:]).max(1)
     V2 = (np.dot(Z, con.linear_part.T) - con.offset[None,:]).max(1)
     print ('failing:', 
            (V>tol).sum(), 
@@ -145,4 +144,4 @@ def test_sampling():
     nt.assert_true(np.linalg.norm(np.einsum('ij,ik->ijk', V, V).mean(0) - 
                                   np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
 
-nose.run()
+# nose.run()
