@@ -700,12 +700,10 @@ def sample_from_sphere(con,
         white = con
         inverse_map = lambda V: V
 
-    normY_squared = (white_Y**2).sum()
     white_samples, weights = sample_truncnorm_white_sphere(white.linear_part,
                                                            white.offset,
                                                            white_Y, 
                                                            white_direction_of_interest,
-                                                           lambda state: normY_squared,
                                                            how_often=how_often,
                                                            ndraw=ndraw, 
                                                            burnin=burnin)
