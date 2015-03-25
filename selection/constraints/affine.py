@@ -163,7 +163,22 @@ class constraints(object):
 
         .. math::
            
-           AY - E(AY|CZ=d)
+           AY - E(AY|CY=d)
+
+        Parameters
+        ----------
+
+        linear_part : np.float((k,q))
+             Linear part of equality constraint, `C` above.
+
+        value : np.float(k)
+             Value of equality constraint, `b` above.
+
+        Returns
+        -------
+
+        conditional_con : `constraints`
+             Affine constraints having applied equality constraint.
 
         """
 
@@ -175,7 +190,6 @@ class constraints(object):
         if M2.shape:
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_offset = 0 * np.dot(M1, np.dot(M2i, d))
             delta_mean = \
             np.dot(M1,
                    np.dot(M2i,
@@ -187,7 +201,7 @@ class constraints(object):
             delta_mean = M1 * d  / M2i
 
         return constraints(self.linear_part,
-                           self.offset - np.dot(self.linear_part, delta_offset),
+                           self.offset,
                            covariance=self.covariance - delta_cov,
                            mean=self.mean - delta_mean)
 
@@ -409,7 +423,7 @@ def interval_constraints(support_directions,
                          direction_of_interest,
                          tol = 1.e-4):
     r"""
-    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
+    Given an affine constraint $\{z:Az \leq b \leq \}$ (elementwise)
     specified with $A$ as `support_directions` and $b$ as
     `support_offset`, a new direction of interest $\eta$, and
     an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
@@ -428,7 +442,7 @@ def interval_constraints(support_directions,
     support_directions : np.float
          Matrix specifying constraint, $A$.
 
-    support_offset : np.float
+    support_offsets : np.float
          Offset in constraint, $b$.
 
     covariance : np.float

@@ -1,6 +1,7 @@
 from __future__ import division
 import numpy as np
 import numpy.testing.decorators as dec
+import nose.tools as nt
 import statsmodels as sm
 import matplotlib.pyplot as plt
 
@@ -27,6 +28,9 @@ def test_class(n=20, p=40, s=2):
         np.testing.assert_array_less( \
             np.dot(L.constraints.linear_part, L.y),
             L.constraints.offset)
+
+        nt.assert_true(L.constraints(y))
+        nt.assert_true(L.quasi_affine_constraints(y))
 
         if set(range(s)).issubset(L.active):
             P = [p[1] for p in L.active_pvalues[s:]]

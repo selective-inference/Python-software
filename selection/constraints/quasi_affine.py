@@ -24,7 +24,7 @@ import pyinter
 
 WARNINGS = False
 
-class constraints(object):
+class orthogonal(object):
 
     r"""
     This class is the core object for quasiaffine selection procedures.
@@ -39,6 +39,8 @@ class constraints(object):
     is a projection assumed to satisfy $AP=0$,
     and $A$ is `linear_part`, some fixed matrix.
 
+    The condition $AP=0$ is why this class is called `orthogonal`.
+
     Notes
     -----
 
@@ -52,7 +54,7 @@ class constraints(object):
                  linear_part,
                  LHS_offset,
                  RHS_offset,
-                 RSS,
+                 residual_projector,
                  covariance=None,
                  mean=None):
         r"""
@@ -73,9 +75,10 @@ class constraints(object):
             The value of $b$ in the quasi-affine constraint
             C.
 
-        RSS: np.float
-            The value $\|Pz\|_2^2$ in the quasi-affine constraint
-            C.
+        residual_projector: np.float((p,p))
+            The matrix $P$ above.
+            C. If `covariance` is not identity, then $\|Pz\|_2$
+            should be interpreted as a Mahalanobis distance.
 
         covariance : np.float((p,p))
             Covariance matrix of Gaussian distribution to be 
@@ -87,13 +90,17 @@ class constraints(object):
 
         """
 
+        # maybe should we take the 
+        # projection as the argument 
+        # instead of just the RSS?
+
         (self.linear_part, 
          self.LHS_offset, 
          self.RHS_offset,
-         self.RSS) = (np.asarray(linear_part), 
-                     np.asarray(LHS_offset),
-                     np.asarray(RHS_offset),
-                     self.RSS)
+         self.residual_projector) = (np.asarray(linear_part), 
+                                     np.asarray(LHS_offset),
+                                     np.asarray(RHS_offset),
+                                     residual_projector)
         
         if self.linear_part.ndim == 2:
             self.dim = self.linear_part.shape[1]
@@ -103,6 +110,8 @@ class constraints(object):
         if covariance is None:
             covariance = np.identity(self.dim)
         self.covariance = covariance
+
+        self.RSS_df = np.diag(self.residual_projector).sum()
 
         if mean is None:
             mean = np.zeros(self.dim)
@@ -129,7 +138,7 @@ class constraints(object):
         con = constraints(self.linear_part.copy(),
                           self.LHS.offset.copy(),
                           self.RHS.offset.copy(),
-                          copy(self.RSS),
+                          self.residual_projector.copy(),
                           mean=copy(self.mean),
                           covariance=copy(self.covariance))
         if hasattr(self, "_sqrt_cov"):
@@ -149,7 +158,8 @@ class constraints(object):
         >>> con(Y)
         True
         """
-        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * np.sqrt(self.RSS)
+        RSS = np.linalg.norm(np.dot(self.residual_projector, Y))
+        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * RSS
         return np.all(V1 < tol * np.fabs(V1).max())
 
     def conditional(self, linear_part, value):
@@ -162,15 +172,34 @@ class constraints(object):
         by `(C,d)`. We form equivalent inequality constraints by 
         considering the residual
 
+        Parameters
+        ----------
+
+        linear_part : np.float((k,q))
+             Linear part of equality constraint, `C` above.
+
+        value : np.float(k)
+             Value of equality constraint, `b` above.
+
         .. math::
            
-           AY - E(AY|CZ=d)
+           AZ - E(AZ|CZ=d)
+
+        Returns
+        -------
+
+        conditional_con : `orthogonal`
+             Quasi-affine constraints having applied equality constraint.
+
+        Notes
+        -----
+
+        It is assumed that $PZ$ is independent of $PZ$.
 
         """
 
-        # this is the key part
-        # the value becomes part of LHS_offset not sucked into mean
-        A, b, S = self.linear_part, self.offset, self.covariance
+        A, S = (self.linear_part, 
+                self.covariance)
         C, d = linear_part, value
 
         M1 = np.dot(S, C.T)
@@ -178,7 +207,6 @@ class constraints(object):
         if M2.shape:
             M2i = np.linalg.pinv(M2)
             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_offset = 0 * np.dot(M1, np.dot(M2i, d))
             delta_mean = \
             np.dot(M1,
                    np.dot(M2i,
@@ -189,10 +217,12 @@ class constraints(object):
             delta_cov = np.multiply.outer(M1, M1) / M2i
             delta_mean = M1 * d  / M2i
 
-        return constraints(self.linear_part,
-                           self.offset - np.dot(self.linear_part, delta_offset),
-                           covariance=self.covariance - delta_cov,
-                           mean=self.mean - delta_mean)
+        return orthogonal(self.linear_part,
+                          self.LHS_offset, 
+                          self.RHS_offset,
+                          self.residual_projector,
+                          covariance=self.covariance - delta_cov,
+                          mean=self.mean - delta_mean)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -215,26 +245,25 @@ class constraints(object):
         Returns
         -------
 
-        L : np.float
-            Lower truncation bound.
+        intervals : []
+            Set of truncation intervals for the $T$ statistic.
 
-        Z : np.float
-            The observed $\eta^TY$
-
-        U : np.float
-            Upper truncation bound.
-
-        S : np.float
-            Standard deviation of $\eta^TY$.
-
-        
+        Tobs : np.float
+            The observed $T$ statistic.
+       
         """
-        # this should use xiaoying's sqrt
 
-        raise NotImplementedError
+        intervals, Tobs = constraints_unknown_sigma( \
+            self.linear_part,
+            self.RHS_offset * np.sqrt(self.RSS_df),
+            self.LHS_offset, 
+            Y,
+            direction_of_interest,
+            self.residual_projector)
+        return intervals, Tobs
 
     def pivot(self, direction_of_interest, Y,
-               alternative='greater'):
+              alternative='greater'):
         r"""
         For a realization $Y$ of the random variable $N(\mu,\Sigma)$
         truncated to $C$ specified by `self.constraints` compute
@@ -266,22 +295,27 @@ class constraints(object):
         -----
 
         All of the tests are based on the exact pivot $F$ given
-        by the truncated Gaussian distribution for the
+        by the truncated T distribution for the
         given direction $\eta$. If the alternative is 'greater'
         then we return $1-F$; if it is 'less' we return $F$
         and if it is 'twosided' we return $2 \min(F,1-F)$.
-
         
         """
+
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
-        L, Z, U, S = self.bounds(direction_of_interest, Y)
-        meanZ = (direction_of_interest * self.mean).sum()
-        P = truncnorm_cdf((Z-meanZ)/S, (L-meanZ)/S, (U-meanZ)/S)
+
+        intervals, Tobs = self.bounds(direction_of_interest, Y)
+        truncT = truncated_T(np.array([(interval.lower_value,
+                                        interval.upper_value) for interval in intervals]), self.RSS_df)
+        P = float(truncT.sf(Tobs))
+        if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
+            raise ValueError('should be truncated')
+
         if alternative == 'greater':
-            return 1 - P
-        elif alternative == 'less':
             return P
+        elif alternative == 'less':
+            return 1 - P
         else:
             return 2 * min(P, 1-P)
 
@@ -313,10 +347,13 @@ class constraints(object):
 
         # original matrix is np.dot(U, U.T)
 
+        # NEEDS FIX residual projector should also be whitened!!
+
         new_A = np.dot(self.linear_part, sqrt_cov)
-        den = np.sqrt((new_A**2).sum(1))
-        new_b = self.offset - np.dot(self.linear_part, self.mean)
-        new_con = constraints(new_A / den[:,None], new_b / den)
+        new_con = orthogonal(new_A, 
+                             self.LHS_offset,
+                             self.RHS_offset,
+                             self.residual_projector)
 
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
@@ -344,21 +381,19 @@ def stack(*cons):
     -----
 
     Resulting constraint will have mean 0 and covariance $I$.
-
+    Quietly assumes that all residual projectors
+    are the same, so it uses the first residual projector
+    in the stack.
     """
-    ineq, ineq_LHS_off, ineq_RHS_off, RSS = [], [], []
+    ineq, ineq_LHS_off, ineq_RHS_off
     for con in cons:
         ineq.append(con.linear_part)
         ineq_LHS_off.append(con.LHS_offset)
         ineq_RHS_off.append(con.RHS_offset)
-        RSS.append(con.RSS)
-
-    if not np.all(np.equal(RSS, RSS[0])):
-        raise ValueError('residual sums of squares should all be equal!') 
     intersection = constraints(np.vstack(ineq), 
                                np.hstack(ineq_LHS_off),
                                np.hstack(ineq_RHS_off),
-                               RSS,
+                               cons[0].residual_projector
                                )
     return intersection
 
@@ -408,6 +443,8 @@ def sample_from_constraints(con,
         Sample from the sphere intersect the constraints.
         
     """
+
+    raise NotImplementedError("first get the sphere sampler working.")
 
     # this will be different than data carving sqrtlasso
 
@@ -492,119 +529,34 @@ def sample_from_sphere(con,
         how_often = ndraw + burnin
 
     if not white:
-        inverse_map, forward_map, white = con.whiten()
+        inverse_map, forward_map, white_con = con.whiten()
         white_Y = forward_map(Y)
         white_direction_of_interest = forward_map(direction_of_interest)
     else:
-        white = con
+        white_con = con
         inverse_map = lambda V: V
 
-    white_samples, weights = sample_truncnorm_white_sphere(white.linear_part,
-                                                           white.offset,
-                                                           white_Y, 
-                                                           white_direction_of_interest,
-                                                           how_often=how_often,
-                                                           ndraw=ndraw, 
-                                                           burnin=burnin)
+    RSS = np.linalg.norm(np.dot(white_con.residual_projector, white_Y))
+
+    white_samples, weights = sample_quasi_white_sphere(white_con.linear_part,
+                                                       white_con.RHS_offset,
+                                                       white_con.LHS_offset,
+                                                       white_Y, 
+                                                       white_direction_of_interest,
+                                                       np.linalg.norm(white_Y)**2,
+                                                       white_con.dim,
+                                                       RSS,
+                                                       white_con.RSS_df,
+                                                       how_often=how_often,
+                                                       ndraw=ndraw, 
+                                                       burnin=burnin)
 
     Z = inverse_map(white_samples.T).T
     return Z, weights
 
-def interval_constraints(support_directions, 
-                         support_offsets,
-                         covariance,
-                         observed_data, 
-                         direction_of_interest,
-                         tol = 1.e-4):
-    r"""
-    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
-    specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $\eta$, and
-    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
-    with `covariance` matrix $\Sigma$, this
-    function returns $\eta^TZ$ as well as an interval
-    bounding this value. 
-
-    The interval constructed is such that the endpoints are 
-    independent of $\eta^TZ$, hence the $p$-value
-    of `Kac Rice`_
-    can be used to form an exact pivot.
-
-    Parameters
-    ----------
-
-    support_directions : np.float
-         Matrix specifying constraint, $A$.
-
-    support_offset : np.float
-         Offset in constraint, $b$.
-
-    covariance : np.float
-         Covariance matrix of `observed_data`.
-
-    observed_data : np.float
-         Observations.
-
-    direction_of_interest : np.float
-         Direction in which we're interested for the
-         contrast.
-
-    tol : float
-         Relative tolerance parameter for deciding 
-         sign of $Az-b$.
-
-    Returns
-    -------
-
-    lower_bound : float
-
-    observed : float
-
-    upper_bound : float
-
-    sigma : float
-
-    """
-
-    # shorthand
-    A, b, S, X, w = (support_directions,
-                     support_offsets,
-                     covariance,
-                     observed_data,
-                     direction_of_interest)
-
-    U = np.dot(A, X) - b
-    if not np.all(U  < tol * np.fabs(U).max()) and WARNINGS:
-        warn('constraints not satisfied: %s' % `U`)
-
-    Sw = np.dot(S, w)
-    sigma = np.sqrt((w*Sw).sum())
-    alpha = np.dot(A, Sw) / sigma**2
-    V = (w*X).sum() # \eta^TZ
-
-    # adding the zero_coords in the denominator ensures that
-    # there are no divide-by-zero errors in RHS
-    # these coords are never used in upper_bound or lower_bound
-
-    zero_coords = alpha == 0
-    RHS = (-U + V * alpha) / (alpha + zero_coords)
-    RHS[zero_coords] = np.nan
-
-    pos_coords = alpha > tol * np.fabs(alpha).max()
-    if np.any(pos_coords):
-        upper_bound = RHS[pos_coords].min()
-    else:
-        upper_bound = np.inf
-    neg_coords = alpha < -tol * np.fabs(alpha).max()
-    if np.any(neg_coords):
-        lower_bound = RHS[neg_coords].max()
-    else:
-        lower_bound = -np.inf
-
-    return lower_bound, V, upper_bound, sigma
-
-
-def gibbs_test(affine_con, Y, direction_of_interest,
+def gibbs_test(quasi_affine_con, 
+               Y, 
+               direction_of_interest,
                how_often=-1,
                ndraw=5000,
                burnin=2000,
@@ -621,7 +573,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     Parameters
     ----------
 
-    affine_con : `selection.affine.constraints`_
+    quasi_affine_con : `orthogonal`
 
     Y : np.float
         Point satisfying the constraint.
@@ -715,6 +667,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
 def constraints_unknown_sigma( \
     support_directions, 
     support_offsets,
+    LHS_offsets,
     observed_data, 
     direction_of_interest,
     residual_projector,
@@ -722,7 +675,7 @@ def constraints_unknown_sigma( \
     tol = 1.e-4,
     DEBUG=False):
     r"""
-    Given a second-order constraint $\{z:Az\leq \hat{\sigma}b\}$ 
+    Given a quasi-affine constraint $\{z:Az+u \leq \hat{\sigma}b\}$ 
     (elementwise)
     specified with $A$ as `support_directions` and $b$ as
     `support_offset`, a new direction of interest $\eta$, and
@@ -754,8 +707,11 @@ def constraints_unknown_sigma( \
     support_directions : np.float
          Matrix specifying constraint, $A$.
 
-    support_offset : np.float
+    support_offsets : np.float
          Offset in constraint, $b$.
+
+    LHS_offsets : np.float
+         Offset in LHS of constraint, $u$.
 
     observed_data : np.float
          Observations.
@@ -763,6 +719,9 @@ def constraints_unknown_sigma( \
     direction_of_interest : np.float
          Direction in which we're interested for the
          contrast.
+
+    residual_projector : np.float
+         Residual projection matrix.
 
     tol : float
          Relative tolerance parameter for deciding 
