@@ -19,7 +19,7 @@ def test_class(n=20, p=40, s=2):
     beta[:s] = 5
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
     y += np.dot(X, beta)
-    lam_theor = choose_lambda(X, quantile=0.9)
+    lam_theor = 0.7 * choose_lambda(X, quantile=0.9)
     L = sqrt_lasso(y,X,lam_theor)
     L.fit(tol=1.e-10, min_its=80)
     P = []
@@ -68,7 +68,7 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         y += np.dot(X, beta) * sigma
         lam_theor = .7 * choose_lambda(X, quantile=0.9)
         L = sqrt_lasso(y, X, lam_theor)
-        L.fit(tol=1.e-12, min_its=150)
+        L.fit(tol=1.e-12, min_its=150, max_its=200)
 
         pval = L.goodness_of_fit(lambda x: np.max(np.fabs(x)),
                                  burnin=10000,

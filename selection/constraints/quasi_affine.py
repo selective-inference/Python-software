@@ -24,7 +24,7 @@ import pyinter
 
 WARNINGS = False
 
-class orthogonal(object):
+class constraints(object):
 
     r"""
     This class is the core object for quasiaffine selection procedures.
@@ -38,8 +38,6 @@ class orthogonal(object):
     where $u$ is `LHS_offset`, $b$ is `RHS_offset`, $P$
     is a projection assumed to satisfy $AP=0$,
     and $A$ is `linear_part`, some fixed matrix.
-
-    The condition $AP=0$ is why this class is called `orthogonal`.
 
     Notes
     -----
@@ -90,9 +88,7 @@ class orthogonal(object):
 
         """
 
-        # maybe should we take the 
-        # projection as the argument 
-        # instead of just the RSS?
+        raise NotImplementedError('need to take into account nonidentity covariance for residual projector')
 
         (self.linear_part, 
          self.LHS_offset, 
@@ -127,6 +123,8 @@ class orthogonal(object):
         >>> C._repr_latex
         "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
         """
+        raise NotImplementedError('class is incomplete')
+
         return """$$Z \sim N(\mu,\Sigma) | AZ + u \leq \|PZ\|_2 b$$"""
 
     def __copy__(self):
@@ -135,6 +133,8 @@ class orthogonal(object):
 
         Also copies _sqrt_cov, _sqrt_inv if attributes are present.
         """
+        raise NotImplementedError('class is incomplete')
+
         con = constraints(self.linear_part.copy(),
                           self.LHS.offset.copy(),
                           self.RHS.offset.copy(),
@@ -158,8 +158,353 @@ class orthogonal(object):
         >>> con(Y)
         True
         """
-        RSS = np.linalg.norm(np.dot(self.residual_projector, Y))
-        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * RSS
+        raise NotImplementedError('class is incomplete')
+
+        sqrt_RSS = np.linalg.norm(np.dot(self.residual_projector, Y))
+        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * sqrt_RSS
+        return np.all(V1 < tol * np.fabs(V1).max())
+
+    def conditional(self, linear_part, value):
+        """
+        Return an equivalent constraint 
+        after having conditioned on a linear equality.
+        
+        Let the inequality constraints be specified by
+        `(A,b)` and the equality constraints be specified
+        by `(C,d)`. We form equivalent inequality constraints by 
+        considering the residual
+
+        Parameters
+        ----------
+
+        linear_part : np.float((k,q))
+             Linear part of equality constraint, `C` above.
+
+        value : np.float(k)
+             Value of equality constraint, `b` above.
+
+        .. math::
+           
+           AZ - E(AZ|CZ=d)
+
+        Returns
+        -------
+
+        conditional_con : `constraints`
+             Quasi-affine constraints having applied equality constraint.
+
+        """
+
+        raise NotImplementedError('class is incomplete -- calculation should not assume that PZ is independent of CZ')
+
+        A, S = (self.linear_part, 
+                self.covariance)
+        C, d = linear_part, value
+
+        M1 = np.dot(S, C.T)
+        M2 = np.dot(C, M1)
+        if M2.shape:
+            M2i = np.linalg.pinv(M2)
+            delta_cov = np.dot(M1, np.dot(M2i, M1.T))
+            delta_mean = \
+            np.dot(M1,
+                   np.dot(M2i,
+                          np.dot(C,
+                                 self.mean) - d))
+        else:
+            M2i = 1. / M2
+            delta_cov = np.multiply.outer(M1, M1) / M2i
+            delta_mean = M1 * d  / M2i
+
+        return constraints(self.linear_part,
+                           self.LHS_offset, 
+                           self.RHS_offset,
+                           self.residual_projector,
+                           covariance=self.covariance - delta_cov,
+                           mean=self.mean - delta_mean)
+
+    def bounds(self, direction_of_interest, Y):
+        r"""
+        For a realization $Y$ of the random variable $N(\mu,\Sigma)$
+        truncated to $C$ specified by `self.constraints` compute
+        the slice of the inequality constraints in a 
+        given direction $\eta$.
+
+        Parameters
+        ----------
+
+        direction_of_interest: np.float
+            A direction $\eta$ for which we may want to form 
+            selection intervals or a test.
+
+        Y : np.float
+            A realization of $N(\mu,\Sigma)$ where 
+            $\Sigma$ is `self.covariance`.
+
+        Returns
+        -------
+
+        intervals : []
+            Set of truncation intervals for the $T$ statistic.
+
+        Tobs : np.float
+            The observed $T$ statistic.
+       
+        """
+
+        raise NotImplementedError('class is incomplete')
+
+        intervals, Tobs = constraints_unknown_sigma( \
+            self.linear_part,
+            self.RHS_offset * np.sqrt(self.RSS_df),
+            self.LHS_offset, 
+            Y,
+            direction_of_interest,
+            self.residual_projector)
+        return intervals, Tobs
+
+    def pivot(self, direction_of_interest, Y,
+              alternative='greater'):
+        r"""
+        For a realization $Y$ of the random variable $N(\mu,\Sigma)$
+        truncated to $C$ specified by `self.constraints` compute
+        the slice of the inequality constraints in a 
+        given direction $\eta$ and test whether 
+        $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.
+
+        Parameters
+        ----------
+
+        direction_of_interest: np.float
+            A direction $\eta$ for which we may want to form 
+            selection intervals or a test.
+
+        Y : np.float
+            A realization of $N(0,\Sigma)$ where 
+            $\Sigma$ is `self.covariance`.
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+
+        P : np.float
+            $p$-value of corresponding test.
+
+        Notes
+        -----
+
+        All of the tests are based on the exact pivot $F$ given
+        by the truncated T distribution for the
+        given direction $\eta$. If the alternative is 'greater'
+        then we return $1-F$; if it is 'less' we return $F$
+        and if it is 'twosided' we return $2 \min(F,1-F)$.
+        
+        """
+
+        raise NotImplementedError('class is incomplete')
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        intervals, Tobs = self.bounds(direction_of_interest, Y)
+        truncT = truncated_T(np.array([(interval.lower_value,
+                                        interval.upper_value) for interval in intervals]), self.RSS_df)
+        P = float(truncT.sf(Tobs))
+        if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
+            raise ValueError('should be truncated')
+
+        if alternative == 'greater':
+            return P
+        elif alternative == 'less':
+            return 1 - P
+        else:
+            return 2 * min(P, 1-P)
+
+    def whiten(self):
+        """
+        Parameters
+        ----------
+
+        Return a whitened version of constraints in a different
+        basis, and a change of basis matrix.
+
+        If `self.covariance` is rank deficient, the change-of
+        basis matrix will not be square.
+
+        """
+
+        raise NotImplementedError('class is incomplete')
+
+        if not hasattr(self, "_sqrt_cov"):
+            rank = np.linalg.matrix_rank(self.covariance)
+
+            D, U = np.linalg.eigh(self.covariance)
+            D = np.sqrt(D[-rank:])
+            U = U[:,-rank:]
+        
+            self._sqrt_cov = U * D[None,:]
+            self._sqrt_inv = (U / D[None,:]).T
+
+        sqrt_cov = self._sqrt_cov
+        sqrt_inv = self._sqrt_inv
+
+        # original matrix is np.dot(U, U.T)
+
+        # NEEDS FIX residual projector should also be whitened!!
+
+        new_A = np.dot(self.linear_part, sqrt_cov)
+        new_con = constraints(new_A, 
+                              self.LHS_offset,
+                              self.RHS_offset,
+                              self.residual_projector)
+
+        mu = self.mean.copy()
+        inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
+        forward_map = lambda W: np.dot(sqrt_inv, W - mu)
+
+        return inverse_map, forward_map, new_con
+
+class orthogonal(constraints):
+
+    r"""
+    This class is the core object for quasiaffine selection procedures.
+    It is meant to describe sets of the form $C$
+    where
+
+    .. math::
+
+       C = \left\{z: Az + u \leq \|Pz\|_2b \right \}
+
+    where $u$ is `LHS_offset`, $b$ is `RHS_offset`, $P$
+    is a projection assumed to satisfy $AP=0$,
+    and $A$ is `linear_part`, some fixed matrix.
+
+    The condition $AP=0$ is why this class is called `orthogonal`.
+
+    Notes
+    -----
+
+    In this parameterization, the parameter `self.mean` corresponds
+    to the *reference measure* that is being truncated. It is not the
+    mean of the truncated Gaussian.
+
+    """
+
+    def __init__(self, 
+                 linear_part,
+                 LHS_offset,
+                 RHS_offset,
+                 RSS,
+                 RSS_df,
+                 covariance=None,
+                 mean=None):
+        r"""
+        Create a new inequality. 
+        
+        Parameters
+        ----------
+        
+        linear_part : np.float((q,p))
+            The linear part, $A$ of the quasi-affine constraint
+            $C$.
+
+        LHS_offset: np.float(q)
+            The value of $u$ in the quasi-affine constraint
+            C.
+
+        RHS_offset: np.float(q)
+            The value of $b$ in the quasi-affine constraint
+            C.
+
+        RSS : float
+            The value of $\|Pz\|_2$ above.
+            If `covariance` is not identity, then $\|Pz\|_2$
+            should be interpreted as a Mahalanobis distance
+            relative to `self.covariance`.
+
+        RSS_df : int
+            Degrees of freedom in $\|Pz\|_2$,
+            when `covariance` is a multiple of identity, then this
+            should be trace(P).
+
+        covariance : np.float((p,p))
+            Covariance matrix of Gaussian distribution to be 
+            truncated. Defaults to `np.identity(self.dim)`.
+
+        mean : np.float(p)
+            Mean vector of Gaussian distribution to be 
+            truncated. Defaults to `np.zeros(self.dim)`.
+
+        """
+
+        (self.linear_part, 
+         self.LHS_offset, 
+         self.RHS_offset,
+         self.RSS,
+         self.RSS_df) = (np.asarray(linear_part), 
+                         np.asarray(LHS_offset),
+                         np.asarray(RHS_offset),
+                         RSS,
+                         RSS_df)
+        
+        if self.linear_part.ndim == 2:
+            self.dim = self.linear_part.shape[1]
+        else:
+            self.dim = self.linear_part.shape[0]
+
+        if covariance is None:
+            covariance = np.identity(self.dim)
+        self.covariance = covariance
+
+        if mean is None:
+            mean = np.zeros(self.dim)
+        self.mean = mean
+
+    def _repr_latex_(self):
+        """
+        >>> A = np.array([[ 0.32,  0.27,  0.19],
+       [ 0.59,  0.98,  0.71],
+       [ 0.34,  0.15,  0.17 ,  0.25], 
+        >>> B = np.array([ 0.51,  0.74,  0.72 ,  0.82])
+        >>> C = constraints(A, B)
+        >>> C._repr_latex
+        "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
+        """
+        return """$$Z \sim N(\mu,\Sigma) | AZ + u \leq \|PZ\|_2 b$$"""
+
+    def __copy__(self):
+        r"""
+        A copy of the constraints.
+
+        Also copies _sqrt_cov, _sqrt_inv if attributes are present.
+        """
+        con = orthogonal(self.linear_part.copy(),
+                         self.LHS.offset.copy(),
+                         self.RHS.offset.copy(),
+                         copy(self.RSS),
+                         copy(self.RSS_df),
+                         mean=copy(self.mean),
+                         covariance=copy(self.covariance))
+        if hasattr(self, "_sqrt_cov"):
+            con._sqrt_cov = self._sqrt_cov.copy()
+            con._sqrt_inv = self._sqrt_inv.copy()
+                          
+        return con
+
+    def __call__(self, Y, tol=1.e-3):
+        r"""
+        Check whether Y satisfies the linear
+        inequality constraints.
+        >>> A = np.array([[1., -1.], [1., -1.]])
+        >>> B = np.array([1., 1.])
+        >>> con = constraints(A, B)
+        >>> Y = np.array([-1., 1.])
+        >>> con(Y)
+        True
+        """
+        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * np.sqrt(self.RSS)
         return np.all(V1 < tol * np.fabs(V1).max())
 
     def conditional(self, linear_part, value):
@@ -194,7 +539,7 @@ class orthogonal(object):
         Notes
         -----
 
-        It is assumed that $PZ$ is independent of $PZ$.
+        The calculations here assume that $CZ$ is independent of $PZ$.
 
         """
 
@@ -220,7 +565,8 @@ class orthogonal(object):
         return orthogonal(self.linear_part,
                           self.LHS_offset, 
                           self.RHS_offset,
-                          self.residual_projector,
+                          self.RSS,
+                          self.RSS_df,
                           covariance=self.covariance - delta_cov,
                           mean=self.mean - delta_mean)
 
@@ -259,7 +605,8 @@ class orthogonal(object):
             self.LHS_offset, 
             Y,
             direction_of_interest,
-            self.residual_projector)
+            self.RSS,
+            self.RSS_df)
         return intervals, Tobs
 
     def pivot(self, direction_of_interest, Y,
@@ -347,8 +694,6 @@ class orthogonal(object):
 
         # original matrix is np.dot(U, U.T)
 
-        # NEEDS FIX residual projector should also be whitened!!
-
         new_A = np.dot(self.linear_part, sqrt_cov)
         new_con = orthogonal(new_A, 
                              self.LHS_offset,
@@ -375,26 +720,44 @@ def stack(*cons):
     Returns
     -------
 
-    intersection : `selection.affine.constraints`_
+    intersection : `selection.quasi_affine.constraints`_
 
     Notes
     -----
 
     Resulting constraint will have mean 0 and covariance $I$.
-    Quietly assumes that all residual projectors
+    If each is of type `constraints`, then quietly assumes that all residual projectors
     are the same, so it uses the first residual projector
-    in the stack.
+    in the stack. If they are of type `orthogonal` then quietly
+    assumes that all RSS and RSS_df are the same.
+
+    If they are of mixed type, raises an exception.
     """
-    ineq, ineq_LHS_off, ineq_RHS_off
-    for con in cons:
-        ineq.append(con.linear_part)
-        ineq_LHS_off.append(con.LHS_offset)
-        ineq_RHS_off.append(con.RHS_offset)
-    intersection = constraints(np.vstack(ineq), 
-                               np.hstack(ineq_LHS_off),
-                               np.hstack(ineq_RHS_off),
-                               cons[0].residual_projector
-                               )
+    ineq, ineq_LHS_off, ineq_RHS_off = [], [], []
+
+    if np.all([isinstance(con, constraints) for con in cons]):
+        for con in cons:
+            ineq.append(con.linear_part)
+            ineq_LHS_off.append(con.LHS_offset)
+            ineq_RHS_off.append(con.RHS_offset)
+        intersection = constraints(np.vstack(ineq), 
+                                   np.hstack(ineq_LHS_off),
+                                   np.hstack(ineq_RHS_off),
+                                   cons[0].residual_projector
+                                   )
+    elif np.all([isinstance(con, orthogonal) for con in cons]):
+        for con in cons:
+            ineq.append(con.linear_part)
+            ineq_LHS_off.append(con.LHS_offset)
+            ineq_RHS_off.append(con.RHS_offset)
+        intersection = constraints(np.vstack(ineq), 
+                                   np.hstack(ineq_LHS_off),
+                                   np.hstack(ineq_RHS_off),
+                                   cons[0].RSS,
+                                   cons[0].RSS_df
+                                   )
+    else:
+        raise ValueError('all constraints must of same type')
     return intersection
 
 def sample_from_constraints(con, 
@@ -666,11 +1029,12 @@ def gibbs_test(quasi_affine_con,
 
 def constraints_unknown_sigma( \
     support_directions, 
-    support_offsets,
+    RHS_offsets,
     LHS_offsets,
     observed_data, 
     direction_of_interest,
-    residual_projector,
+    RSS,
+    RSS_df,
     value_under_null=0.,
     tol = 1.e-4,
     DEBUG=False):
@@ -683,12 +1047,7 @@ def constraints_unknown_sigma( \
     with $\sigma$ unknown, this
     function returns $\eta^TZ$ as well as a set
     bounding this value. The value of $\hat{\sigma}$ is taken to be
-
-    .. math::
-
-         \hat{\sigma}^2(y) = \|Ry\|^2_2 / \text{tr}(R)
-
-    where $R$ is `residual_projector`.
+    sqrt(RSS/RSS_df)
 
     The interval constructed is such that the endpoints are 
     independent of $\eta^TZ$, hence the 
@@ -707,7 +1066,7 @@ def constraints_unknown_sigma( \
     support_directions : np.float
          Matrix specifying constraint, $A$.
 
-    support_offsets : np.float
+    RHS : np.float
          Offset in constraint, $b$.
 
     LHS_offsets : np.float
@@ -720,8 +1079,11 @@ def constraints_unknown_sigma( \
          Direction in which we're interested for the
          contrast.
 
-    residual_projector : np.float
-         Residual projection matrix.
+    RSS : float
+        Residual sum of squares.
+
+    RSS_df : int
+        Degrees of freedom of RSS.
 
     tol : float
          Relative tolerance parameter for deciding 
@@ -741,12 +1103,12 @@ def constraints_unknown_sigma( \
     """
 
     # shorthand
-    A, b, X, w, Pperp, theta = (support_directions,
-                                support_offsets,
-                                observed_data,
-                                direction_of_interest,
-                                residual_projector,
-                                value_under_null)
+    A, b, L, X, w, theta = (support_directions,
+                            RHS_offsets,
+                            LHS_offsets,
+                            observed_data,
+                            direction_of_interest,
+                            value_under_null)
 
     # make direction of interest a unit vector
 
@@ -754,25 +1116,18 @@ def constraints_unknown_sigma( \
     w = w / normw
     theta = theta / normw
 
-    resid = np.dot(residual_projector, observed_data)
-    df = np.diag(residual_projector).sum()
-    sigma_hat = np.linalg.norm(resid) / np.sqrt(df)
+    sigma_hat = np.sqrt(RSS / RSS_df)
 
     # compute the sufficient statistics
 
     U = (w*X).sum() - theta
-    V = X - resid - (X*w).sum() * w
-    W = sigma_hat**2 * df + U**2
-    Tobs = U / np.sqrt((W - U**2) / df)
+    V = X - (X*w).sum() * w
+    W = sigma_hat**2 * RSS_df + U**2
+    Tobs = U / np.sqrt((W - U**2) / RSS_df)
     sqrtW = np.sqrt(W)
     alpha = np.dot(A, w)
 
-    # we also condition on R
-
-    R = resid / (sigma_hat * np.sqrt(df))
-
-    gamma = theta * alpha + np.dot(A, V)
-    b = b - np.dot(A, R) * np.sqrt(df)
+    gamma = theta * alpha + np.dot(A, V) + L
 
     Anorm = np.fabs(A).max()
 
@@ -781,7 +1136,7 @@ def constraints_unknown_sigma( \
     for _a, _b, _c in zip(alpha, b, gamma):
         _a = _a * sqrtW
         _b = _b * sqrtW
-        cur_intervals = sqrt_inequality_solver(_a, _c, _b, df)
+        cur_intervals = sqrt_inequality_solver(_a, _c, _b, RSS_df)
         intervals.append(pyinter.IntervalSet([pyinter.closed(*i) for i in cur_intervals if i]))
 
     truncation_set = intervals[0]

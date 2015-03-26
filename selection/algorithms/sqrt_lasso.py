@@ -225,7 +225,8 @@ class sqrt_lasso(object):
             self._quasi_affine_constraints = orthogonal_QA(self._active_constraints.linear_part,
                                                            np.zeros(self._active_constraints.linear_part.shape[0]),
                                                            self._active_constraints.offset / (self.sigma_E * np.sqrt(self.df_E)),
-                                                           self.R_E)
+                                                           (self.sigma_E * np.sqrt(self.df_E))**2,
+                                                           self.df_E)
 
             cov = np.identity(n) * self.sigma_hat**2 
             for con in [self._active_constraints,
