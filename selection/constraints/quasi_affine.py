@@ -698,7 +698,8 @@ class orthogonal(constraints):
         new_con = orthogonal(new_A, 
                              self.LHS_offset,
                              self.RHS_offset,
-                             self.residual_projector)
+                             self.RSS,
+                             self.RSS_df)
 
         mu = self.mean.copy()
         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
@@ -1055,6 +1056,10 @@ def constraints_unknown_sigma( \
     of `sample carving`_
     can be used to form an exact pivot.
 
+    To construct the interval, we are in effect conditioning
+    on all randomness perpendicular to the direction of interest,
+    i.e. $P_{\eta}^{\perp}X$ where $X$ is the Gaussian data vector.
+
     Notes
     -----
 
@@ -1145,7 +1150,6 @@ def constraints_unknown_sigma( \
     if not truncation_set:
         raise ValueError("empty truncation intervals")
     return truncation_set, Tobs
-
 
 def quadratic_inequality_solver(a, b, c, direction="less than"):
     '''

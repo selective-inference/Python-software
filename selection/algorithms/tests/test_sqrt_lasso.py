@@ -209,46 +209,59 @@ def test_pval_intervals(nsample=100):
     return pvalues, gaussian_pvalues, coverage/count
             
 
+
 def test_data_carving(n=100,
                       p=200,
                       s=7,
-                      sigma=5,
                       rho=0.3,
                       snr=7.,
                       split_frac=0.9,
-                      lam_frac=1.,
+                      lam_frac=0.7,
                       ndraw=8000,
-                      burnin=2000):
+                      burnin=2000, 
+                      df=np.inf,
+                      coverage=0.90,
+                      sigma=3):
 
     counter = 0
 
     while True:
         counter += 1
-        X, y, _, active, sigma = instance(n=n, 
+        X, y, beta, active, sigma = instance(n=n, 
                                              p=p, 
                                              s=s, 
                                              sigma=sigma, 
                                              rho=rho, 
-                                             snr=snr)
+                                             snr=snr, 
+                                             df=df)
+        mu = np.dot(X, beta)
         L, stage_one = split_model(y, X, 
                         lam_frac=lam_frac,
                         split_frac=split_frac)[:2]
 
-        print counter, L.active
-
+        print L.active
         if set(range(s)).issubset(L.active):
             results, L = data_carving(y, X, lam_frac=lam_frac, 
                                       stage_one=stage_one,
                                       splitting=True, 
                                       ndraw=ndraw,
-                                      burnin=burnin)
+                                      burnin=burnin,
+                                      coverage=coverage)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
-            return carve[s:], split[s:], carve[:s], split[:s], counter
 
+            Xa = X[:,L.active]
+            truth = np.dot(np.linalg.pinv(Xa), mu) 
+            print np.dot(np.linalg.pinv(Xa), y)[:s]
 
+            split_coverage = []
+            carve_coverage = []
+            for result, t in zip(results, truth):
+                _, _, ci, _, si = result
+                print si, ci, t
+                carve_coverage.append((ci[0] < t) * (t < ci[1]))
+                split_coverage.append((si[0] < t) * (t < si[1]))
 
-if __name__ == "__main__":
-    #P, IS = main()
-    pass
+            return carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage
+

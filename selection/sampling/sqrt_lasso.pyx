@@ -325,7 +325,7 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
         # weight has to now be computed
         # based on the normal approximation compared to true distribution            
 
-        weight_sample[sample_count-burnin] = (np.pow(1. - norm_state_sq / norm_state_bound_sq, 0.5 * (df_max - df_1)) / 
+        weight_sample[sample_count-burnin] = (np.power(1. - norm_state_sq / norm_state_bound_sq, 0.5 * (df_max - df_1)) / 
                                               norm_rv(state / sigma))
 
         # now we sample RSS_1
@@ -369,5 +369,5 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         norm_state_bound_sq = RSS_max - RSS_1
 
-    return trunc_sample
+    return trunc_sample[:,:-1], weight_sample
 

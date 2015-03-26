@@ -23,6 +23,7 @@ from ..constraints.affine import constraints as gaussian_constraints, sample_fro
 from ..truncated import find_root
 from ..distributions.discrete_multiparameter import multiparameter_family
 from ..distributions.discrete_family import discrete_family
+from ..sampling.sqrt_lasso import sample_sqrt_lasso
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -693,8 +694,13 @@ def data_carving(y, X,
 
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
-            con = gaussian_constraints(linear_part, b)
+
+            L_QA = L.quasi_affine_constraints
+            con = orthogonal_QA(linear_part, 
+                                L_QA.LHS_offset,
+                                L_QA.RHS_offset,
+                                L_QA.RSS,
+                                L_QA.RSS_df)
 
             # specify covariance of 2s Gaussian vector
 
@@ -703,6 +709,8 @@ def data_carving(y, X,
             cov[s:, :s] = inv_info_E
             cov[:s, s:] = inv_info_E
             cov[s:, s:] = inv_info_E1
+
+            # does this sigma_E matter for sampling? Hmm...
 
             con.covariance[:] = cov * sigma_E**2
 
@@ -722,8 +730,13 @@ def data_carving(y, X,
 
             linear_part = np.zeros((s, s + n - splitn))
             linear_part[:, :s] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
-            con = gaussian_constraints(linear_part, b)
+
+            L_QA = L.quasi_affine_constraints
+            con = orthogonal_QA(linear_part, L_QA.RHS_offset,
+                                L_QA.LHS_offset,
+                                L_QA.RSS,
+                                L_QA.RSS_df)
+
 
             # specify covariance of Gaussian vector
 
@@ -754,8 +767,8 @@ def data_carving(y, X,
 
         DEBUG = True
         if DEBUG:
-            print con(initial * sigma_E), 'working'
-            print L.active_constraints(y[stage_one]), 'huh'
+            print L.quasi_affine_constraints(y[stage_one]), 'huh'
+
         pvalues = []
         intervals = []
 
@@ -778,6 +791,8 @@ def data_carving(y, X,
 
         # compute p-values and (TODO: intervals)
 
+        full_RSS = np.linalg.norm(y - np.dot(X_E, np.dot(X_Ei, y)))**2 
+
         for j in range(X_E.shape[1]):
 
             keep = np.ones(s, np.bool)
@@ -788,24 +803,29 @@ def data_carving(y, X,
             conditional_con = con.conditional(conditional_linear[keep],
                                               np.dot(X_E.T, y)[keep])
 
-            inverse_map, forward_map, white = conditional_con.whiten()
-            y_f = forward_map(initial)
-            eta_f = forward_map(eta)
-            noncentral_param_f = forward_map(noncentral_param)
-            T_obs = (eta_f * (noncentral_param_f + y_f)).sum()
+            inverse_map, forward_map, white_con = conditional_con.whiten()
+            white_Y = forward_map(initial)
+            white_eta = forward_map(np.dot(con.covariance, eta))
+            observed = (eta * initial).sum()
+            print observed, (white_Y*white_eta).sum(), 'huh????'
 
-            white_samples = sample_truncated_T(white.linear_part,
-                                               white.offset,
-                                               y_f, 
-                                               noncentral_param_f,
-                                               splitn - s,
-                                               eta_f,
-                                               how_often=3,
-                                               ndraw=ndraw, 
-                                               burnin=burnin)
-            T_sample = np.dot(white_samples, eta_f)
-            family = discrete_family(T_sample, np.ones_like(T_sample))
-            pval = 2 * min(family.cdf(0, T_obs))
+            white_samples, W = sample_sqrt_lasso(white_con.linear_part,
+                                                 white_con.RHS_offset,
+                                                 white_con.LHS_offset,
+                                                 white_Y,
+                                                 white_eta,
+                                                 full_RSS + observed**2 / (eta**2).sum(),
+                                                 n - s + 1,
+                                                 L.quasi_affine_constraints.RSS,
+                                                 L.quasi_affine_constraints.RSS_df,
+                                                 ndraw=ndraw,
+                                                 burnin=burnin)
+
+            Z = inverse_map(white_samples.T).T
+            null_sample = np.dot(Z, eta)
+            family = discrete_family(null_sample, W)
+            pval = family.cdf(0, observed)
+            pval = min(pval, 1 - pval)
 
             pvalues.append(pval)
 
