@@ -20,8 +20,8 @@ ctypedef np.int_t DTYPE_int_t
 @cython.boundscheck(False)
 @cython.cdivision(True)
 def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A, 
-                      np.ndarray[DTYPE_float_t, ndim=1] b, 
-                      np.ndarray[DTYPE_float_t, ndim=1] offset, 
+                      np.ndarray[DTYPE_float_t, ndim=1] LHS_offset, 
+                      np.ndarray[DTYPE_float_t, ndim=1] RHS_offset, 
                       np.ndarray[DTYPE_float_t, ndim=1] initial, 
                       np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
                       DTYPE_float_t RSS_max, 
@@ -56,11 +56,11 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
     A : np.float((q,n))
         Linear part of affine constraints.
 
-    b : np.float(q)
-        Offset part on RHS of affine constraints (is multiplied by RSS_1)
-
-    offset : np.float(q)
+    LHS_offset : np.float(q)
         Offset part on LHS of affine constraints.
+
+    RHS_offset : np.float(q)
+        Offset part on RHS of affine constraints (is multiplied by sqrt(RSS_1))
 
     initial : np.float(n)
         Initial point for Gibbs draws.
@@ -108,7 +108,7 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef double norm_state_bound_sq = RSS_max - RSS_1
     cdef double norm_state_sq = norm_state_bound_sq
     cdef np.ndarray[DTYPE_float_t, ndim=1] effective_offset = \
-            (-offset + sqrt(RSS_1) * b)
+            (-LHS_offset + sqrt(RSS_1) * RHS_offset)
 
     # we are looking at projection of uniform on sphere
     # in dimension df_max onto nvar coordinates
@@ -328,46 +328,51 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
         weight_sample[sample_count-burnin] = (np.power(1. - norm_state_sq / norm_state_bound_sq, 0.5 * (df_max - df_1)) / 
                                               norm_rv(state / sigma))
 
-        # now we sample RSS_1
+        if iter_count % 30 == 0:
+            # now we sample RSS_1
 
-        lower_bound_RSS = -np.inf
-        upper_bound_RSS = np.inf
+            lower_bound_RSS = 0.
+            upper_bound_RSS = np.inf
 
-        for irow in range(nconstraint):
-            if b[irow] > 0:
-                RSS_bound_lhs = (Astate[irow] + offset[irow]) / b[irow]
-                if RSS_bound_lhs > lower_bound_RSS:
-                    lower_bound_RSS = RSS_bound_lhs
-            else:
-                RSS_bound_lhs = -(Astate[irow] + offset[irow]) / b[irow]
-                if RSS_bound_lhs < upper_bound_RSS:
-                    upper_bound_RSS = RSS_bound_lhs
+            for irow in range(nconstraint):
+                if RHS_offset[irow] > 0:
+                    RSS_bound_lhs = (Astate[irow] + LHS_offset[irow]) / RHS_offset[irow]
+                    if RSS_bound_lhs > lower_bound_RSS:
+                        lower_bound_RSS = RSS_bound_lhs
+                elif RHS_offset[irow] < 0:
+                    RSS_bound_lhs = (Astate[irow] + LHS_offset[irow]) / RHS_offset[irow]
+                    if RSS_bound_lhs < upper_bound_RSS:
+                        upper_bound_RSS = RSS_bound_lhs
 
-        lower_bound = max(lower_bound, 0)
-        upper_bound = min(upper_bound, RSS_max - norm_state_sq)
+            if lower_bound_RSS > upper_bound_RSS:
+                raise ValueError('RSS inequalities not satisfied')
 
-        # with the squared length of state at norm_state_sq
-        # RSS_1 is between 0 and RSS_max - norm_state_sq
-        # 
-        # we therefore draw from beta(df_1/2, (df_max-nvar)/2)
-        # truncated to [lower_bound, upper_bound]
+            lower_bound_RSS = lower_bound_RSS**2
+            upper_bound_RSS = min(upper_bound_RSS**2, RSS_max - norm_state_sq)
 
-        lower_bound = lower_bound / (RSS_max - norm_state_sq)
-        upper_bound = upper_bound / (RSS_max - norm_state_sq)
+            # with the squared length of state at norm_state_sq
+            # RSS_1 is between 0 and RSS_max - norm_state_sq
+            # 
+            # we therefore draw from beta(df_1/2, (df_max-nvar)/2)
+            # truncated to [lower_bound_RSS, upper_bound_RSS]
+
+            lower_bound_RSS = lower_bound_RSS / (RSS_max - norm_state_sq)
+            upper_bound_RSS = upper_bound_RSS / (RSS_max - norm_state_sq)
+
+            cdfL = beta_1_rv.cdf(lower_bound_RSS)
+            cdfU = beta_1_rv.cdf(upper_bound_RSS)
+            unif = usample[iter_count] * (cdfU - cdfL) + cdfL
+            RSS_1 = beta_1_rv.ppf(unif) * (RSS_max - norm_state_sq)
+
+            norm_state_bound_sq = RSS_max - RSS_1
 
         # check to see if we've drawn enough samples
-
-        cdfL = beta_1_rv.cdf(lower_bound)
-        cdfU = beta_1_rv.cdf(upper_bound)
-        unif = usample[iter_count] * (cdfU - cdfL) + cdfL
-        RSS_1 = beta_1_rv.ppf(unif) * (RSS_max - norm_state_sq)
 
         sample_count = sample_count + 1
         iter_count = iter_count + 1
         if sample_count >= ndraw + burnin:
             break
 
-        norm_state_bound_sq = RSS_max - RSS_1
 
-    return trunc_sample[:,:-1], weight_sample
+    return trunc_sample, weight_sample
 

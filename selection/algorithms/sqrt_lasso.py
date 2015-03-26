@@ -605,7 +605,8 @@ def data_carving(y, X,
                  coverage=0.95, 
                  ndraw=5000,
                  burnin=1000,
-                 splitting=False):
+                 splitting=False,
+                 fit_args={}):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -647,6 +648,9 @@ def data_carving(y, X,
     splitting : bool (optional)
         If True, also return splitting pvalues and intervals.
 
+    fit_args : dict (optional)
+        Arguments passed to `sqrt_lasso.fit`
+
     Returns
     -------
 
@@ -663,7 +667,8 @@ def data_carving(y, X,
     first_stage, stage_one, stage_two = split_model(y, X,
                                                     lam_frac=lam_frac,
                                                     split_frac=split_frac,
-                                                    stage_one=stage_one)
+                                                    stage_one=stage_one,
+                                                    fit_args=fit_args)
     splitn = stage_one.shape[0]
 
     L = first_stage # shorthand
@@ -710,9 +715,9 @@ def data_carving(y, X,
             cov[:s, s:] = inv_info_E
             cov[s:, s:] = inv_info_E1
 
-            # does this sigma_E matter for sampling? Hmm...
+            # does this sigma_E matter for sampling? 
 
-            con.covariance[:] = cov * sigma_E**2
+            con.covariance[:] = cov # * sigma_E**2
 
             # for the conditional law
             # we will change the linear function for each coefficient
@@ -723,7 +728,7 @@ def data_carving(y, X,
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E, beta_E1]) / sigma_E
+            initial = np.hstack([beta_E, beta_E1]) 
             OLS_func = selector
 
         else:
@@ -732,8 +737,9 @@ def data_carving(y, X,
             linear_part[:, :s] = -np.diag(L.z_E)
 
             L_QA = L.quasi_affine_constraints
-            con = orthogonal_QA(linear_part, L_QA.RHS_offset,
+            con = orthogonal_QA(linear_part, 
                                 L_QA.LHS_offset,
+                                L_QA.RHS_offset,
                                 L_QA.RSS,
                                 L_QA.RSS_df)
 
@@ -746,7 +752,7 @@ def data_carving(y, X,
             cov[:s, s:] = 0
             cov[s:, s:] = np.identity(n - splitn) 
 
-            con.covariance[:] = cov * sigma_E**2
+            con.covariance[:] = cov # * sigma_E**2
 
             conditional_linear = np.zeros((s, s + n - splitn))
             conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1) 
@@ -763,11 +769,7 @@ def data_carving(y, X,
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E1, y[stage_two]]) / sigma_E
-
-        DEBUG = True
-        if DEBUG:
-            print L.quasi_affine_constraints(y[stage_one]), 'huh'
+            initial = np.hstack([beta_E1, y[stage_two]]) 
 
         pvalues = []
         intervals = []
@@ -804,28 +806,30 @@ def data_carving(y, X,
                                               np.dot(X_E.T, y)[keep])
 
             inverse_map, forward_map, white_con = conditional_con.whiten()
-            white_Y = forward_map(initial)
+            white_initial = forward_map(initial)
             white_eta = forward_map(np.dot(con.covariance, eta))
             observed = (eta * initial).sum()
-            print observed, (white_Y*white_eta).sum(), 'huh????'
 
             white_samples, W = sample_sqrt_lasso(white_con.linear_part,
-                                                 white_con.RHS_offset,
                                                  white_con.LHS_offset,
-                                                 white_Y,
+                                                 white_con.RHS_offset,
+                                                 white_initial,
                                                  white_eta,
                                                  full_RSS + observed**2 / (eta**2).sum(),
                                                  n - s + 1,
-                                                 L.quasi_affine_constraints.RSS,
-                                                 L.quasi_affine_constraints.RSS_df,
+                                                 white_con.RSS,
+                                                 white_con.RSS_df,
                                                  ndraw=ndraw,
                                                  burnin=burnin)
 
-            Z = inverse_map(white_samples.T).T
+            RSS_sample = white_samples[:,-1]
+
+            Z = inverse_map(white_samples[:,:-1].T).T
             null_sample = np.dot(Z, eta)
+
             family = discrete_family(null_sample, W)
             pval = family.cdf(0, observed)
-            pval = min(pval, 1 - pval)
+            pval = 2 * min(pval, 1 - pval)
 
             pvalues.append(pval)
 
@@ -836,7 +840,7 @@ def data_carving(y, X,
                 if s < n - splitn: # enough data to generically
                                    # test hypotheses. proceed as usual
 
-                    T = beta_E2[j] / (sigma_E2 * inv_info_E2[j,j])
+                    T = beta_E2[j] / (sigma_E2 * np.sqrt(inv_info_E2[j,j]))
                     split_pval = tdist.cdf(T, n - splitn - s)
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
@@ -983,4 +987,6 @@ def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95, fit_args={}):
 
     sqrtL = sqrt_lasso(y, X, lam)
     sqrtL.fit(**fit_args)
+    if not sqrtL.active_constraints(y):
+        raise ValueError('y does not satisfy KKT conditions -- try increasing min_its or tol in fit_args')
     return sqrtL
