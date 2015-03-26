@@ -17,9 +17,8 @@ import regreg.api as rr
 # local
 
 from .lasso import _constraint_from_data
-from ..truncated.T import truncated_T
 from ..constraints.quasi_affine import (constraints_unknown_sigma, 
-                                        constraints as quasi_affine_constraints)
+                                        orthogonal as orthogonal_QA)
 from ..constraints.affine import constraints as gaussian_constraints, sample_from_sphere
 from ..truncated import find_root
 from ..distributions.discrete_multiparameter import multiparameter_family
@@ -223,10 +222,16 @@ class sqrt_lasso(object):
             # TODO -- truncation interval could have a lower bound!
             self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
 
+            self._quasi_affine_constraints = orthogonal_QA(self._active_constraints.linear_part,
+                                                           np.zeros(self._active_constraints.linear_part.shape[0]),
+                                                           self._active_constraints.offset / (self.sigma_E * np.sqrt(self.df_E)),
+                                                           self.R_E)
+
             cov = np.identity(n) * self.sigma_hat**2 
             for con in [self._active_constraints,
                         self._inactive_constraints,
-                        self._constraints]:
+                        self._constraints,
+                        self._quasi_affine_constraints]:
                 con.covariance[:] = cov
 
         else:
@@ -253,6 +258,14 @@ class sqrt_lasso(object):
         active variables by the KKT conditions.
         """
         return self._active_constraints
+
+    @property
+    def quasi_affine_constraints(self):
+        """
+        Quasi-affine constraints imposed on the
+        active variables by the KKT conditions.
+        """
+        return self._quasi_affine_constraints
 
     @property
     def inactive_constraints(self):
@@ -318,20 +331,8 @@ class sqrt_lasso(object):
                 if XEinv is not None:
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
-                        (intervals,
-                         Tobs) = constraints_unknown_sigma( \
-                            C.linear_part,
-                            C.offset / self.sigma_E,
-                            self.y,
-                            eta,
-                            self.R_E)
-                        truncT = truncated_T(np.array([(interval.lower_value,
-                                                        interval.upper_value) for interval in intervals]), self.df_E)
-                        sf = truncT.sf(Tobs)
-                        if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
-                            raise ValueError('should be truncated')
-
-                        _pval = float(2 * min(sf, 1.-sf))
+                        _pval = self.quasi_affine_constraints.pivot(eta, self.y,
+                                                                    alternative='twosided')
                         self._pvals.append((self.active[i], _pval))
         return self._pvals
 
@@ -596,7 +597,7 @@ def choose_lambda(X, quantile=0.95, ndraw=10000):
     return np.percentile(np.fabs(np.dot(X.T, E)).max(0), 100*quantile)
 
 def data_carving(y, X, 
-                 lam_frac=2.,
+                 lam_frac=1.,
                  stage_one=None,
                  split_frac=0.9,
                  coverage=0.95, 
@@ -785,24 +786,6 @@ def data_carving(y, X,
 
             conditional_con = con.conditional(conditional_linear[keep],
                                               np.dot(X_E.T, y)[keep])
-
-            noncentral_param = conditional_con.mean.copy()
-            conditional_con.mean *= 0
-
-            #
-            # before conditioning:
-            #
-            # sigma_E1 has splitn - s degrees of freedom : R_stageone
-            # numerator s + min(n - splitn, s) degrees of freedom
-            #
-            # after conditioning:
-            #
-            # sigma_E1 has splitn - s degrees of freedom : R_stageone
-            # P_minus has s-1 degrees of freedom
-            # numerator min(n - splitn, s) + 1 having lost s-1 to P_minus
-            #
-            # therefore, when n - splitn > s we seem to waste data for
-            # estimating variance?
 
             inverse_map, forward_map, white = conditional_con.whiten()
             y_f = forward_map(initial)
