@@ -161,7 +161,7 @@ class constraints(object):
         raise NotImplementedError('class is incomplete')
 
         sqrt_RSS = np.linalg.norm(np.dot(self.residual_projector, Y))
-        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * sqrt_RSS
+        V1 = np.dot(self.linear_part, Y) + self.LHS_offset - self.RHS_offset * sqrt_RSS
         return np.all(V1 < tol * np.fabs(V1).max())
 
     def conditional(self, linear_part, value):
@@ -504,7 +504,7 @@ class orthogonal(constraints):
         >>> con(Y)
         True
         """
-        V1 = np.dot(self.linear_part, Y) - self.LHS_offset - self.RHS_offset * np.sqrt(self.RSS)
+        V1 = np.dot(self.linear_part, Y) + self.LHS_offset - self.RHS_offset * np.sqrt(self.RSS)
         return np.all(V1 < tol * np.fabs(V1).max())
 
     def conditional(self, linear_part, value):
@@ -694,9 +694,9 @@ class orthogonal(constraints):
 
         # original matrix is np.dot(U, U.T)
 
-        new_A = np.dot(self.linear_part, sqrt_cov)
-        new_con = orthogonal(new_A, 
-                             self.LHS_offset,
+        new_linear = np.dot(self.linear_part, sqrt_cov)
+        new_con = orthogonal(new_linear, 
+                             self.LHS_offset + np.dot(self.linear_part, self.mean),
                              self.RHS_offset,
                              self.RSS,
                              self.RSS_df)
