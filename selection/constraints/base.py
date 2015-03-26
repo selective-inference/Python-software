@@ -4,15 +4,13 @@ import mpmath as mp
 from abc import ABCMeta, abstractmethod
 
 from intervals import intervals
-from projection import projection, full_rank
+from ..algorithms.projection import projection, full_rank
 
 
-from .truncated import truncated_chi, truncated_chi2
+from ..truncated import truncated_chi, truncated_chi2
 from scipy.stats import norm
 
-import quadratic_constraints
-
-from tools import timethis
+import quadratic
 
 class constraint(object):
     ## Means that constraint is a Meta Class
@@ -32,7 +30,6 @@ class constraint(object):
         inverse = cons_op.cons_op.complement(self)
         return inverse
     
-    @timethis
     def distr_norm(self, X_s, y, sigma = 1.):
         """
         Return the value of the norm of X_s.T*y and an instance of truncated : 
@@ -79,7 +76,7 @@ class constraint(object):
                                + np.linalg.norm(nu)**2 * z_norm) \
                     ])
 
-        cons_eta = quadratic_constraints.quad_constraints(q, lin, off)
+        cons_eta = quadratic.quad_constraints(q, lin, off)
 
         cons_inter = cons_op.intersection(self, cons_eta)
 
@@ -97,7 +94,6 @@ class constraint(object):
 
         return distr
 
-    @timethis
     def p_value(self, X_s, y, sigma=1.):
         """
 
@@ -166,11 +162,11 @@ class cons_op(constraint):
             raise TypeError("Not a constraint : "+ repr(t))
 
         cons = [c for c in cons if not isinstance(c, noConstraint)]
-        if all(isinstance(c, quadratic_constraints.quad_constraints) for c in cons):
+        if all(isinstance(c, quadratic.quad_constraints) for c in cons):
             q = np.vstack([c.quad_part for c in cons])
             l = np.vstack([c.lin_part  for c in cons])
             o = np.hstack([c.offset    for c in cons])
-            intersection = quadratic_constraints.quad_constraints(q, l, o)
+            intersection = quadratic.quad_constraints(q, l, o)
             return intersection
         intersection = cons_op()
         intersection._cons_list = list(cons)

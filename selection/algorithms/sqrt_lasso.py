@@ -8,6 +8,7 @@ import numpy as np, warnings
 from scipy.stats import norm as ndist, chi as chidist
 from scipy.interpolate import interp1d
 from scipy.stats import t as tdist
+from statsmodels.api import OLS
 
 # regreg http://github.com/regreg 
 
@@ -16,13 +17,13 @@ import regreg.api as rr
 # local
 
 from .lasso import _constraint_from_data
-from .truncated.T import truncated_T
-from .affine import constraints_unknown_sigma, \
-        constraints as gaussian_constraints, \
-        sample_from_sphere
-from .truncated import find_root
-from .discrete_multiparameter import multiparameter_family
-from .discrete_family import discrete_family
+from ..truncated.T import truncated_T
+from ..constraints.quasi_affine import (constraints_unknown_sigma, 
+                                        constraints as quasi_affine_constraints)
+from ..constraints.affine import constraints as gaussian_constraints, sample_from_sphere
+from ..truncated import find_root
+from ..distributions.discrete_multiparameter import multiparameter_family
+from ..distributions.discrete_family import discrete_family
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -219,6 +220,7 @@ class sqrt_lasso(object):
             _fracE = np.sqrt(self.df_E) / (_denE * _diagE)
             RHS = _fracE * np.fabs(self.W_E)
             self.alpha_E = self.s_E * RHS / np.sqrt(self.df_E)
+            # TODO -- truncation interval could have a lower bound!
             self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
 
             cov = np.identity(n) * self.sigma_hat**2 
@@ -316,7 +318,6 @@ class sqrt_lasso(object):
                 if XEinv is not None:
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
-                        print i
                         (intervals,
                          Tobs) = constraints_unknown_sigma( \
                             C.linear_part,
@@ -324,7 +325,6 @@ class sqrt_lasso(object):
                             self.y,
                             eta,
                             self.R_E)
-                        print "started trunc_T"
                         truncT = truncated_T(np.array([(interval.lower_value,
                                                         interval.upper_value) for interval in intervals]), self.df_E)
                         sf = truncT.sf(Tobs)
@@ -332,9 +332,7 @@ class sqrt_lasso(object):
                             raise ValueError('should be truncated')
 
                         _pval = float(2 * min(sf, 1.-sf))
-                        print "pval " + str(i), _pval
                         self._pvals.append((self.active[i], _pval))
-                        print "finished computing " + str(i) + "-th pvalue"
         return self._pvals
 
     @property
@@ -461,6 +459,53 @@ class sqrt_lasso(object):
 
         return pvalue
 
+def nominal_intervals(sqrtL):
+    """
+    Intervals for OLS parameters of active variables
+    that have not been adjusted for selection.
+
+    Notes
+    -----
+
+    These intervals do not have any coverage guarantees.
+    """
+    if not hasattr(sqrtL, "_constraints"):
+        sqrtL.form_constraints()
+    _intervals_unadjusted = []
+    XEinv = sqrtL._XEinv
+    SigmaE = sqrtL.sigma_hat**2 * np.dot(XEinv, XEinv.T)
+    for i in range(sqrtL.active.shape[0]):
+        eta = XEinv[i]
+        center = (eta*sqrtL.y).sum()
+        width = tdist.ppf(1-sqrtL.alpha/2., sqrtL.df_E) * np.sqrt(SigmaE[i,i])
+        _interval = [center-width, center+width]
+        _intervals_unadjusted.append((sqrtL.active[i], eta, (eta*sqrtL.y).sum(), 
+                                _interval))
+    return _intervals_unadjusted
+
+def nominal_pvalues(sqrtL):
+    """
+    P-values for OLS parameters of active variables
+    that have not been adjusted for selection.
+
+    Notes
+    -----
+
+    These p-values do not have any selective Type I error control.
+    """
+    if not hasattr(sqrtL, "_constraints"):
+        sqrtL.form_constraints()
+    _pvalues_unadjusted = []
+    XEinv = sqrtL._XEinv
+    SigmaE = sqrtL.sigma_hat**2 * np.dot(XEinv, XEinv.T)
+    for i in range(sqrtL.active.shape[0]):
+        eta = XEinv[i]
+        center = (eta*sqrtL.y).sum()
+        T = center / np.sqrt(SigmaE[i,i])
+        _pval = tdist.cdf(T, sqrtL.df_E)
+        _pval = 2 * min(_pval, 1 - _pval)
+        _pvalues_unadjusted.append((sqrtL.active[i], T, _pval))
+    return _pvalues_unadjusted
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
     """
@@ -833,7 +878,8 @@ def split_model(y, X,
                 lam_frac=1.,
                 split_frac=0.9,
                 quantile=0.95,
-                stage_one=None):
+                stage_one=None,
+                fit_args={}):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -865,6 +911,9 @@ def split_model(y, X,
         If None, a randomly chosen set of entries is used based on
         `split_frac`.
 
+    fit_args : dict (optional)
+        Arguments passed to `sqrt_lasso.fit`
+
     Returns
     -------
 
@@ -890,10 +939,10 @@ def split_model(y, X,
         stage_two = [i for i in np.arange(n) if i not in stage_one]
     y1, X1 = y[stage_one], X[stage_one]
 
-    first_stage = standard_sqrt_lasso(y1, X1, lam_frac=lam_frac, quantile=quantile)
+    first_stage = standard_sqrt_lasso(y1, X1, lam_frac=lam_frac, quantile=quantile, fit_args=fit_args)
     return first_stage, stage_one, stage_two
 
-def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
+def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95, fit_args={}):
     """
     Fit a sqrt-LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|) / \|\epsilon\|_2$
@@ -914,6 +963,9 @@ def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
     quantile : float (optional)
         Quantile given to `choose_lambda`
 
+    fit_args : dict (optional)
+        Arguments passed to `sqrt_lasso.fit`
+
     Returns
     -------
 
@@ -926,5 +978,5 @@ def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
     lam = lam_frac * choose_lambda(X, quantile=quantile)
 
     sqrtL = sqrt_lasso(y, X, lam)
-    sqrtL.fit()
+    sqrtL.fit(**fit_args)
     return sqrtL

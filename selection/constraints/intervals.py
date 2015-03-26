@@ -4,8 +4,6 @@ import operator
 
 from heapq import merge
 
-from tools import timethis
-
 class intervals(object):
 
     r"""

@@ -1,6 +1,6 @@
 import numpy as np
 import numpy.testing.decorators as dec
-from selection.lasso import lasso, data_carving, instance, split_model
+from selection.algorithms.lasso import lasso, data_carving, instance, split_model
 
 def test_class(n=100, p=20):
     y = np.random.standard_normal(n)

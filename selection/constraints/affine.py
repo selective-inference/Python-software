@@ -17,12 +17,12 @@ from copy import copy
 
 import numpy as np
 
-from .pvalue import truncnorm_cdf, norm_interval
-from .truncated.gaussian import truncated_gaussian, truncated_gaussian_old
-from .sample_truncnorm import (sample_truncnorm_white, 
-                               sample_truncnorm_white_sphere)
+from ..distributions.pvalue import truncnorm_cdf, norm_interval
+from ..truncated.gaussian import truncated_gaussian, truncated_gaussian_old
+from ..sampling.truncnorm import (sample_truncnorm_white, 
+                                  sample_truncnorm_white_sphere)
 
-from .discrete_family import discrete_family
+from ..distributions.discrete_family import discrete_family
 from mpmath import mp
 import pyinter
 
@@ -79,15 +79,15 @@ class constraints(object):
             The linear part, $A$ of the affine constraint
             $\{z:Az \leq b\}$. 
 
-        offset: np.float(b)
+        offset: np.float(q)
             The offset part, $b$ of the affine constraint
             $\{z:Az \leq b\}$. 
 
-        covariance : np.float
+        covariance : np.float((p,p))
             Covariance matrix of Gaussian distribution to be 
             truncated. Defaults to `np.identity(self.dim)`.
 
-        mean : np.float
+        mean : np.float(p)
             Mean vector of Gaussian distribution to be 
             truncated. Defaults to `np.zeros(self.dim)`.
 
@@ -394,7 +394,6 @@ def stack(*cons):
 
     """
     ineq, ineq_off = [], []
-    eq, eq_off = [], []
     for con in cons:
         ineq.append(con.linear_part)
         ineq_off.append(con.offset)
@@ -403,76 +402,164 @@ def stack(*cons):
                                np.hstack(ineq_off))
     return intersection
 
-def sample_from_constraints(con, 
-                            Y,
-                            direction_of_interest=None,
-                            how_often=-1,
-                            ndraw=1000,
-                            burnin=1000,
-                            white=False,
-                            use_constraint_directions=True):
+def interval_constraints(support_directions, 
+                         support_offsets,
+                         covariance,
+                         observed_data, 
+                         direction_of_interest,
+                         tol = 1.e-4):
     r"""
-    Use Gibbs sampler to simulate from `con`.
+    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
+    specified with $A$ as `support_directions` and $b$ as
+    `support_offset`, a new direction of interest $\eta$, and
+    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
+    with `covariance` matrix $\Sigma$, this
+    function returns $\eta^TZ$ as well as an interval
+    bounding this value. 
+
+    The interval constructed is such that the endpoints are 
+    independent of $\eta^TZ$, hence the $p$-value
+    of `Kac Rice`_
+    can be used to form an exact pivot.
 
     Parameters
     ----------
 
-    con : `selection.affine.constraints`_
+    support_directions : np.float
+         Matrix specifying constraint, $A$.
 
-    Y : np.float
-        Point satisfying the constraint.
+    support_offset : np.float
+         Offset in constraint, $b$.
 
-    direction_of_interest : np.float (optional)
-        Which projection is of most interest?
+    covariance : np.float
+         Covariance matrix of `observed_data`.
 
-    how_often : int (optional)
-        How often should the sampler make a move along `direction_of_interest`?
-        If negative, defaults to ndraw+burnin (so it will never be used).
+    observed_data : np.float
+         Observations.
 
-    ndraw : int (optional)
-        Defaults to 1000.
+    direction_of_interest : np.float
+         Direction in which we're interested for the
+         contrast.
 
-    burnin : int (optional)
-        Defaults to 1000.
-
-    white : bool (optional)
-        Is con.covariance equal to identity?
-
-    use_constraint_directions : bool (optional)
-        Use the directions formed by the constraints as in
-        the Gibbs scheme?
+    tol : float
+         Relative tolerance parameter for deciding 
+         sign of $Az-b$.
 
     Returns
     -------
 
-    Z : np.float((ndraw, n))
-        Sample from the sphere intersect the constraints.
-        
+    lower_bound : float
+
+    observed : float
+
+    upper_bound : float
+
+    sigma : float
+
     """
 
-    if direction_of_interest is None:
-        direction_of_interest = np.random.standard_normal(Y.shape)
-    if how_often < 0:
-        how_often = ndraw + burnin
+    # shorthand
+    A, b, S, X, w = (support_directions,
+                     support_offsets,
+                     covariance,
+                     observed_data,
+                     direction_of_interest)
 
-    if not white:
-        inverse_map, forward_map, white_con = con.whiten()
-        white_Y = forward_map(Y)
-        white_direction_of_interest = forward_map(np.dot(con.covariance, direction_of_interest))
+    U = np.dot(A, X) - b
+    if not np.all(U  < tol * np.fabs(U).max()) and WARNINGS:
+        warn('constraints not satisfied: %s' % `U`)
+
+    Sw = np.dot(S, w)
+    sigma = np.sqrt((w*Sw).sum())
+    alpha = np.dot(A, Sw) / sigma**2
+    V = (w*X).sum() # \eta^TZ
+
+    # adding the zero_coords in the denominator ensures that
+    # there are no divide-by-zero errors in RHS
+    # these coords are never used in upper_bound or lower_bound
+
+    zero_coords = alpha == 0
+    RHS = (-U + V * alpha) / (alpha + zero_coords)
+    RHS[zero_coords] = np.nan
+
+    pos_coords = alpha > tol * np.fabs(alpha).max()
+    if np.any(pos_coords):
+        upper_bound = RHS[pos_coords].min()
     else:
-        white_con = con
-        inverse_map = lambda V: V
+        upper_bound = np.inf
+    neg_coords = alpha < -tol * np.fabs(alpha).max()
+    if np.any(neg_coords):
+        lower_bound = RHS[neg_coords].max()
+    else:
+        lower_bound = -np.inf
 
-    white_samples = sample_truncnorm_white(white_con.linear_part,
-                                           white_con.offset,
-                                           white_Y, 
-                                           white_direction_of_interest,
-                                           how_often=how_often,
-                                           ndraw=ndraw, 
-                                           burnin=burnin,
-                                           use_A=use_constraint_directions)
-    Z = inverse_map(white_samples.T).T
-    return Z
+    return lower_bound, V, upper_bound, sigma
+
+def selection_interval(support_directions, 
+                       support_offsets,
+                       covariance,
+                       observed_data, 
+                       direction_of_interest,
+                       tol = 1.e-4,
+                       alpha = 0.05,
+                       UMAU=True):
+    """
+    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
+    specified with $A$ as `support_directions` and $b$ as
+    `support_offset`, a new direction of interest $\eta$, and
+    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
+    with `covariance` matrix $\Sigma$, this
+    function returns a confidence interval
+    for $\eta^T\mu$.
+
+    Parameters
+    ----------
+
+    support_directions : np.float
+         Matrix specifying constraint, $A$.
+
+    support_offset : np.float
+         Offset in constraint, $b$.
+
+    covariance : np.float
+         Covariance matrix of `observed_data`.
+
+    observed_data : np.float
+         Observations.
+
+    direction_of_interest : np.float
+         Direction in which we're interested for the
+         contrast.
+
+    tol : float
+         Relative tolerance parameter for deciding 
+         sign of $Az-b$.
+
+    UMAU : bool
+         Use the UMAU interval, or twosided pivot.
+
+    Returns
+    -------
+
+    selection_interval : (float, float)
+
+    """
+
+    lower_bound, V, upper_bound, sigma = interval_constraints( \
+        support_directions, 
+        support_offsets,
+        covariance,
+        observed_data, 
+        direction_of_interest,
+        tol=tol)
+
+    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], sigma=sigma)
+    if UMAU:
+        _selection_interval = truncated.UMAU_interval(V, alpha)
+    else:
+        _selection_interval = truncated.equal_tailed_interval(V, alpha)
+    
+    return _selection_interval
 
 def one_parameter_MLE(constraint, 
                       Y,
@@ -639,6 +726,78 @@ def one_parameter_MLE(constraint,
 
     return MLE
 
+def sample_from_constraints(con, 
+                            Y,
+                            direction_of_interest=None,
+                            how_often=-1,
+                            ndraw=1000,
+                            burnin=1000,
+                            white=False,
+                            use_constraint_directions=True):
+    r"""
+    Use Gibbs sampler to simulate from `con`.
+
+    Parameters
+    ----------
+
+    con : `selection.affine.constraints`_
+
+    Y : np.float
+        Point satisfying the constraint.
+
+    direction_of_interest : np.float (optional)
+        Which projection is of most interest?
+
+    how_often : int (optional)
+        How often should the sampler make a move along `direction_of_interest`?
+        If negative, defaults to ndraw+burnin (so it will never be used).
+
+    ndraw : int (optional)
+        Defaults to 1000.
+
+    burnin : int (optional)
+        Defaults to 1000.
+
+    white : bool (optional)
+        Is con.covariance equal to identity?
+
+    use_constraint_directions : bool (optional)
+        Use the directions formed by the constraints as in
+        the Gibbs scheme?
+
+    Returns
+    -------
+
+    Z : np.float((ndraw, n))
+        Sample from the sphere intersect the constraints.
+        
+    """
+
+    if direction_of_interest is None:
+        direction_of_interest = np.random.standard_normal(Y.shape)
+    if how_often < 0:
+        how_often = ndraw + burnin
+
+    if not white:
+        inverse_map, forward_map, white_con = con.whiten()
+        white_Y = forward_map(Y)
+        white_direction_of_interest = forward_map(np.dot(con.covariance, direction_of_interest))
+    else:
+        white_con = con
+        inverse_map = lambda V: V
+
+    white_samples = sample_truncnorm_white(white_con.linear_part,
+                                           white_con.offset,
+                                           white_Y, 
+                                           white_direction_of_interest,
+                                           how_often=how_often,
+                                           ndraw=ndraw, 
+                                           burnin=burnin,
+                                           sigma=1.,
+                                           use_A=use_constraint_directions)
+    Z = inverse_map(white_samples.T).T
+    return Z
+
 def sample_from_sphere(con, 
                        Y,
                        direction_of_interest=None,
@@ -709,165 +868,6 @@ def sample_from_sphere(con,
 
     Z = inverse_map(white_samples.T).T
     return Z, weights
-
-def interval_constraints(support_directions, 
-                         support_offsets,
-                         covariance,
-                         observed_data, 
-                         direction_of_interest,
-                         tol = 1.e-4):
-    r"""
-    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
-    specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $\eta$, and
-    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
-    with `covariance` matrix $\Sigma$, this
-    function returns $\eta^TZ$ as well as an interval
-    bounding this value. 
-
-    The interval constructed is such that the endpoints are 
-    independent of $\eta^TZ$, hence the $p$-value
-    of `Kac Rice`_
-    can be used to form an exact pivot.
-
-    Parameters
-    ----------
-
-    support_directions : np.float
-         Matrix specifying constraint, $A$.
-
-    support_offset : np.float
-         Offset in constraint, $b$.
-
-    covariance : np.float
-         Covariance matrix of `observed_data`.
-
-    observed_data : np.float
-         Observations.
-
-    direction_of_interest : np.float
-         Direction in which we're interested for the
-         contrast.
-
-    tol : float
-         Relative tolerance parameter for deciding 
-         sign of $Az-b$.
-
-    Returns
-    -------
-
-    lower_bound : float
-
-    observed : float
-
-    upper_bound : float
-
-    sigma : float
-
-    """
-
-    # shorthand
-    A, b, S, X, w = (support_directions,
-                     support_offsets,
-                     covariance,
-                     observed_data,
-                     direction_of_interest)
-
-    U = np.dot(A, X) - b
-    if not np.all(U  < tol * np.fabs(U).max()) and WARNINGS:
-        warn('constraints not satisfied: %s' % `U`)
-
-    Sw = np.dot(S, w)
-    sigma = np.sqrt((w*Sw).sum())
-    alpha = np.dot(A, Sw) / sigma**2
-    V = (w*X).sum() # \eta^TZ
-
-    # adding the zero_coords in the denominator ensures that
-    # there are no divide-by-zero errors in RHS
-    # these coords are never used in upper_bound or lower_bound
-
-    zero_coords = alpha == 0
-    RHS = (-U + V * alpha) / (alpha + zero_coords)
-    RHS[zero_coords] = np.nan
-
-    pos_coords = alpha > tol * np.fabs(alpha).max()
-    if np.any(pos_coords):
-        upper_bound = RHS[pos_coords].min()
-    else:
-        upper_bound = np.inf
-    neg_coords = alpha < -tol * np.fabs(alpha).max()
-    if np.any(neg_coords):
-        lower_bound = RHS[neg_coords].max()
-    else:
-        lower_bound = -np.inf
-
-    return lower_bound, V, upper_bound, sigma
-
-def selection_interval(support_directions, 
-                       support_offsets,
-                       covariance,
-                       observed_data, 
-                       direction_of_interest,
-                       tol = 1.e-4,
-                       alpha = 0.05,
-                       UMAU=True):
-    """
-    Given an affine in cone constraint $\{z:Az+b \leq 0\}$ (elementwise)
-    specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $\eta$, and
-    an `observed_data` is Gaussian vector $Z \sim N(\mu,\Sigma)$ 
-    with `covariance` matrix $\Sigma$, this
-    function returns a confidence interval
-    for $\eta^T\mu$.
-
-    Parameters
-    ----------
-
-    support_directions : np.float
-         Matrix specifying constraint, $A$.
-
-    support_offset : np.float
-         Offset in constraint, $b$.
-
-    covariance : np.float
-         Covariance matrix of `observed_data`.
-
-    observed_data : np.float
-         Observations.
-
-    direction_of_interest : np.float
-         Direction in which we're interested for the
-         contrast.
-
-    tol : float
-         Relative tolerance parameter for deciding 
-         sign of $Az-b$.
-
-    UMAU : bool
-         Use the UMAU interval, or twosided pivot.
-
-    Returns
-    -------
-
-    selection_interval : (float, float)
-
-    """
-
-    lower_bound, V, upper_bound, sigma = interval_constraints( \
-        support_directions, 
-        support_offsets,
-        covariance,
-        observed_data, 
-        direction_of_interest,
-        tol=tol)
-
-    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], sigma=sigma)
-    if UMAU:
-        _selection_interval = truncated.UMAU_interval(V, alpha)
-    else:
-        _selection_interval = truncated.equal_tailed_interval(V, alpha)
-    
-    return _selection_interval
 
 def gibbs_test(affine_con, Y, direction_of_interest,
                how_often=-1,
@@ -976,214 +976,4 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         decision = dfam.two_sided_test(0, observed, alpha=alpha)
         return decision, Z, W
     return pvalue, Z, W
-
-def constraints_unknown_sigma( \
-    support_directions, 
-    support_offsets,
-    observed_data, 
-    direction_of_interest,
-    residual_projector,
-    value_under_null=0.,
-    tol = 1.e-4,
-    DEBUG=False):
-    r"""
-    Given a second-order constraint $\{z:Az\leq \hat{\sigma}b\}$ 
-    (elementwise)
-    specified with $A$ as `support_directions` and $b$ as
-    `support_offset`, a new direction of interest $\eta$, and
-    an `observed_data` is Gaussian vector $Z \sim N(\mu,\sigma^2 I)$ 
-    with $\sigma$ unknown, this
-    function returns $\eta^TZ$ as well as a set
-    bounding this value. The value of $\hat{\sigma}$ is taken to be
-
-    .. math::
-
-         \hat{\sigma}^2(y) = \|Ry\|^2_2 / \text{tr}(R)
-
-    where $R$ is `residual_projector`.
-
-    The interval constructed is such that the endpoints are 
-    independent of $\eta^TZ$, hence the 
-    selective $T$ distribution of
-    of `sample carving`_
-    can be used to form an exact pivot.
-
-    Notes
-    -----
-
-    Covariance is assumed to be an unknown multiple of the identity.
-
-    Parameters
-    ----------
-
-    support_directions : np.float
-         Matrix specifying constraint, $A$.
-
-    support_offset : np.float
-         Offset in constraint, $b$.
-
-    observed_data : np.float
-         Observations.
-
-    direction_of_interest : np.float
-         Direction in which we're interested for the
-         contrast.
-
-    tol : float
-         Relative tolerance parameter for deciding 
-         sign of $Az-b$.
-
-    Returns
-    -------
-
-    lower_bound : float
-
-    observed : float
-
-    upper_bound : float
-
-    sigma : float
-
-    """
-
-    # shorthand
-    A, b, X, w, Pperp, theta = (support_directions,
-                                support_offsets,
-                                observed_data,
-                                direction_of_interest,
-                                residual_projector,
-                                value_under_null)
-
-    # make direction of interest a unit vector
-
-    normw = np.linalg.norm(w)
-    w = w / normw
-    theta = theta / normw
-
-    resid = np.dot(residual_projector, observed_data)
-    df = np.diag(residual_projector).sum()
-    sigma_hat = np.linalg.norm(resid) / np.sqrt(df)
-
-    # compute the sufficient statistics
-
-    U = (w*X).sum() - theta
-    V = X - resid - (X*w).sum() * w
-    W = sigma_hat**2 * df + U**2
-    Tobs = U / np.sqrt((W - U**2) / df)
-    sqrtW = np.sqrt(W)
-    alpha = np.dot(A, w)
-
-    # we also condition on R
-
-    R = resid / (sigma_hat * np.sqrt(df))
-
-    gamma = theta * alpha + np.dot(A, V)
-    b = b - np.dot(A, R) * np.sqrt(df)
-
-    Anorm = np.fabs(A).max()
-
-    intervals = []
-    intervals = []
-    for _a, _b, _c in zip(alpha, b, gamma):
-        _a = _a * sqrtW
-        _b = _b * sqrtW
-        cur_intervals = sqrt_inequality_solver(_a, _c, _b, df)
-        intervals.append(pyinter.IntervalSet([pyinter.closed(*i) for i in cur_intervals if i]))
-
-    truncation_set = intervals[0]
-    for interv in intervals[1:]:
-        truncation_set = truncation_set.intersection(interv)
-    if not truncation_set:
-        raise ValueError("empty truncation intervals")
-    return truncation_set, Tobs
-
-
-def quadratic_inequality_solver(a, b, c, direction="less than"):
-    '''
-    solves a * x**2 + b * x + c \leq 0, if direction is "less than",
-    solves a * x**2 + b * x + c \geq 0, if direction is "greater than",
-    
-    returns:
-    the truancated interval, may include [-infty, + infty]
-    the returned interval(s) is a list of disjoint intervals indicating the union.
-    when the left endpoint of the interval is equal to the right, return empty list 
-    '''
-    if direction not in ["less than", "greater than"]:
-        raise ValueError("direction should be in ['less than', 'greater than']")
-    
-    if direction == "less than":
-        d = b**2 - 4*a*c
-        if a > 0:
-            if d <= 0:
-                #raise ValueError("No valid solution")
-                return [[]]
-            else:
-                lower = (-b - np.sqrt(d)) / (2*a)
-                upper = (-b + np.sqrt(d)) / (2*a)
-                return [[lower, upper]]
-        elif a < 0:
-            if d <= 0:
-                return [[float("-inf"), float("inf")]]
-            else:
-                lower = (-b + np.sqrt(d)) / (2*a)
-                upper = (-b - np.sqrt(d)) / (2*a)
-                return [[float("-inf"), lower], [upper, float("inf")]]
-        else:
-            if b > 0:
-                return [[float("-inf"), -c/b]]
-            elif b < 0:
-                return [[-c/b, float("inf")]]
-            else:
-                raise ValueError("Both coefficients are equal to zero")
-    else:
-        return quadratic_inequality_solver(-a, -b, -c, direction="less than")
-
-
-def intersection(I1, I2):
-    if (not I1) or (not I2) or min(I1[1], I2[1]) <= max(I1[0], I2[0]):
-        return []
-    else:
-        return [max(I1[0], I2[0]), min(I1[1], I2[1])]
-
-def sqrt_inequality_solver(a, b, c, n):
-    '''
-    find the intervals for t such that,
-    a*t + b*sqrt(n + t**2) \leq c
-
-    returns:
-    should return a single interval
-    '''
-    if b >= 0:
-        intervals = quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2)
-        if a > 0:
-            '''
-            the intervals for c - at \geq 0 is
-            [-inf, c/a]
-            '''
-            return [intersection(I, [float("-inf"), c/a]) for I in intervals]
-        elif a < 0:
-            '''
-            the intervals for c - at \geq 0 is
-            [c/a, inf]
-            '''
-            return [intersection(I, [c/a, float("inf")]) for I in intervals]
-        elif c >= 0:
-            return intervals
-        else:
-            return [[]]
-    else:
-        '''
-        the intervals we will return is {c - at \geq 0} union
-        {c - at \leq 0} \cap {quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2, "greater than")}
-        '''
-        intervals = quadratic_inequality_solver(b**2 - a**2, 2*a*c, b**2 * n - c**2, "greater than")
-        if a > 0:
-            return [intersection(I, [c/a, float("inf")]) for I in intervals] + [[float("-inf"), c/a]]
-        elif a < 0:
-            return [intersection(I, [float("-inf"), c/a]) for I in intervals] + [[c/a, float("inf")]]
-        elif c >= 0:
-            return [[float("-inf"), float("inf")]]
-        else:
-            return intervals
-
 

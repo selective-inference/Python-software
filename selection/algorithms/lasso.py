@@ -17,13 +17,13 @@ from copy import copy
 
 import numpy as np
 from sklearn.linear_model import Lasso
-from .affine import (constraints, selection_interval,
-                     interval_constraints,
-                     sample_from_constraints,
-                     one_parameter_MLE,
-                     gibbs_test,
-                     stack)
-from .discrete_family import discrete_family
+from ..constraints.affine import (constraints, selection_interval,
+                                 interval_constraints,
+                                 sample_from_constraints,
+                                 one_parameter_MLE,
+                                 gibbs_test,
+                                 stack)
+from ..distributions.discrete_family import discrete_family
 
 from scipy.stats import norm as ndist, t as tdist
 
