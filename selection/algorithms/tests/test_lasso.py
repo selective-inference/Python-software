@@ -64,13 +64,11 @@ def test_data_carving(n=100,
 
             Xa = X[:,L.active]
             truth = np.dot(np.linalg.pinv(Xa), mu) 
-            print np.dot(np.linalg.pinv(Xa), y)[:s]
 
             split_coverage = []
             carve_coverage = []
             for result, t in zip(results, truth):
                 _, _, ci, _, si = result
-                print si, ci, t
                 carve_coverage.append((ci[0] < t) * (t < ci[1]))
                 split_coverage.append((si[0] < t) * (t < si[1]))
 
