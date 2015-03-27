@@ -81,6 +81,7 @@ def main(**extra_args):
                           'selection.distributions.tests',
                           'selection.algorithms',
                           'selection.algorithms.tests',
+                          'selection.sampling',
                           'selection.sampling.tests',
                           'selection.tests'
                           ],
