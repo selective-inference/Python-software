@@ -1,16 +1,13 @@
 import numpy as np
 import mpmath as mp
-
-from intervals import intervals
-from ..algorithms.projection import projection, full_rank
-
-
-from ..truncated import truncated_chi, truncated_chi2, truncated_F
 from scipy.stats import norm
 
-import base as constraint
+from ..algorithms.projection import projection, full_rank
+from ..truncated import truncated_chi, truncated_chi2, truncated_F
+from .intervals import intervals
+from base import constraint
 
-class quad_constraints(constraint.constraint):
+class quad_constraints(constraint):
 
     r"""
 
@@ -363,7 +360,7 @@ class quad_constraints(constraint.constraint):
 
 
 
-class quad_constraints_vecnorm(constraint.constraint):
+class quad_constraints_vecnorm(constraint):
     def __init__(self, alpha, beta, dim):
         self._alpha = alpha
         self._beta  = beta
