@@ -782,7 +782,7 @@ def data_carving(y, X,
             X_E2 = X2[:,L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
             beta_E2 = np.dot(X_Ei2, y2)
-            sigma_E2 = np.linalg.norm(y[stage_two] - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
+            sigma_E2 = np.linalg.norm(y2 - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
 
             inv_info_E2 = np.dot(X_Ei2, X_Ei2.T) 
 
@@ -987,6 +987,6 @@ def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95, fit_args={}):
 
     sqrtL = sqrt_lasso(y, X, lam)
     sqrtL.fit(**fit_args)
-    if not sqrtL.active_constraints(y):
-        raise ValueError('y does not satisfy KKT conditions -- try increasing min_its or tol in fit_args')
+    if sqrtL.active_constraints is not None and not sqrtL.active_constraints(y):
+        raise ValueError('y does not satisfy KKT conditions determined by variables and signs-- try increasing min_its or tol in fit_args')
     return sqrtL

@@ -31,7 +31,8 @@ def test_data_carving(n=100,
                       ndraw=8000,
                       burnin=2000, 
                       df=np.inf,
-                      coverage=0.90):
+                      coverage=0.90,
+                      compute_intervals=False):
 
     counter = 0
 
@@ -72,7 +73,7 @@ def test_data_carving(n=100,
                 carve_coverage.append((ci[0] < t) * (t < ci[1]))
                 split_coverage.append((si[0] < t) * (t < si[1]))
 
-            return carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage
+            return carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage
 
 @dec.slow
 def test_data_carving_coverage(n=200, coverage=0.8):

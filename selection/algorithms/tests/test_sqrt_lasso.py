@@ -265,5 +265,5 @@ def test_data_carving(n=100,
                 carve_coverage.append((ci[0] < t) * (t < ci[1]))
                 split_coverage.append((si[0] < t) * (t < si[1]))
 
-            return carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage
+            return carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage
 
