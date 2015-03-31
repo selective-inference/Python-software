@@ -23,7 +23,8 @@ from ..constraints.affine import constraints as gaussian_constraints, sample_fro
 from ..truncated import find_root
 from ..distributions.discrete_multiparameter import multiparameter_family
 from ..distributions.discrete_family import discrete_family
-from ..sampling.sqrt_lasso import sample_sqrt_lasso
+from ..sampling.sqrt_lasso import (sample_sqrt_lasso,
+                                   sample_sqrt_lasso_segment)
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -697,7 +698,7 @@ def data_carving(y, X,
         sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
         sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
 
-        if n2 > s:
+        if False: # n2 > s:
 
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
@@ -823,8 +824,7 @@ def data_carving(y, X,
                                                  white_con.RSS_df,
                                                  np.sqrt(full_RSS / (n - s)),
                                                  ndraw=ndraw,
-                                                 burnin=burnin,
-                                                 how_often=10)
+                                                 burnin=burnin)
 
             RSS_sample = white_samples[:,-1]
 
