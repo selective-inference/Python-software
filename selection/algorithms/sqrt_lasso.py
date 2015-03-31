@@ -333,7 +333,8 @@ class sqrt_lasso(object):
                 if XEinv is not None:
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
-                        _pval = self.quasi_affine_constraints.pivot(eta, self.y,
+                        _pval = self.quasi_affine_constraints.pivot(eta, 
+                                                                    self.y,
                                                                     alternative='twosided')
                         self._pvals.append((self.active[i], _pval))
         return self._pvals
@@ -669,20 +670,21 @@ def data_carving(y, X,
                                                     split_frac=split_frac,
                                                     stage_one=stage_one,
                                                     fit_args=fit_args)
-    splitn = stage_one.shape[0]
+    n1 = splitn = stage_one.shape[0]
+    n2 = n - n1
 
     L = first_stage # shorthand
 
     # quantities related to models fit on
     # stage_one and full dataset
 
-    if splitn < n:
+    if n1 < n:
         y1, X1 = y[stage_one], X[stage_one]
         X_E = X[:,L.active]
         X_Ei = np.linalg.pinv(X_E)
         X_E1 = X1[:,L.active]
         X_Ei1 = np.linalg.pinv(X_E1)
-        R1 = np.identity(splitn) - np.dot(X_E1, X_Ei1)
+        R1 = np.identity(n1) - np.dot(X_E1, X_Ei1)
         selector1 = np.identity(n)[stage_one]
         R_stageone = np.dot(selector1.T, np.dot(R1, selector1))
 
@@ -695,7 +697,7 @@ def data_carving(y, X,
         sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
         sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
 
-        if n - splitn > s:
+        if n2 > s:
 
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
@@ -733,7 +735,7 @@ def data_carving(y, X,
 
         else:
 
-            linear_part = np.zeros((s, s + n - splitn))
+            linear_part = np.zeros((s, s + n2))
             linear_part[:, :s] = -np.diag(L.z_E)
 
             L_QA = L.quasi_affine_constraints
@@ -746,22 +748,22 @@ def data_carving(y, X,
 
             # specify covariance of Gaussian vector
 
-            cov = np.zeros((s + n - splitn, s + n - splitn))
+            cov = np.zeros((s + n2, s + n2))
             cov[:s, :s] = inv_info_E1
             cov[s:, :s] = 0
             cov[:s, s:] = 0
-            cov[s:, s:] = np.identity(n - splitn) 
+            cov[s:, s:] = np.identity(n2) 
 
             con.covariance[:] = cov # * sigma_E**2
 
-            conditional_linear = np.zeros((s, s + n - splitn))
+            conditional_linear = np.zeros((s, s + n2))
             conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1) 
             conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
 
-            selector1 = np.zeros((s, s + n - splitn))
+            selector1 = np.zeros((s, s + n2))
             selector1[:, :s]  = np.identity(s)
-            selector2 = np.zeros((n - splitn, s + n - splitn))
-            selector2[:, s:]  = np.identity(n - splitn)
+            selector2 = np.zeros((n2, s + n2))
+            selector2[:, s:]  = np.identity(n2)
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
@@ -775,21 +777,21 @@ def data_carving(y, X,
         intervals = []
 
         if splitting:
-            if n - splitn < s:
+            if n2 < s:
                 warnings.warn('not enough data for second stage of sample splitting')
 
             y2, X2 = y[stage_two], X[stage_two]
             X_E2 = X2[:,L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
             beta_E2 = np.dot(X_Ei2, y2)
-            sigma_E2 = np.linalg.norm(y2 - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
+            sigma_E2 = np.linalg.norm(y2 - np.dot(X_E2, beta_E2)) / np.sqrt(n2 - s)
 
             inv_info_E2 = np.dot(X_Ei2, X_Ei2.T) 
 
             splitting_pvalues = []
             splitting_intervals = []
 
-            split_cutoff = np.fabs(tdist.ppf((1. - coverage) / 2, n - splitn - s))
+            split_cutoff = np.fabs(tdist.ppf((1. - coverage) / 2, n2 - s))
 
         # compute p-values and (TODO: intervals)
 
@@ -819,8 +821,10 @@ def data_carving(y, X,
                                                  n - s + 1,
                                                  white_con.RSS,
                                                  white_con.RSS_df,
+                                                 np.sqrt(full_RSS / (n - s)),
                                                  ndraw=ndraw,
-                                                 burnin=burnin)
+                                                 burnin=burnin,
+                                                 how_often=10)
 
             RSS_sample = white_samples[:,-1]
 
@@ -837,11 +841,11 @@ def data_carving(y, X,
             intervals.append((np.nan, np.nan))
 
             if splitting:
-                if s < n - splitn: # enough data to generically
+                if s < n2: # enough data to generically
                                    # test hypotheses. proceed as usual
 
                     T = beta_E2[j] / (sigma_E2 * np.sqrt(inv_info_E2[j,j]))
-                    split_pval = tdist.cdf(T, n - splitn - s)
+                    split_pval = tdist.cdf(T, n2 - s)
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
 

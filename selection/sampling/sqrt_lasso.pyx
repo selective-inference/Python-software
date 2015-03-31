@@ -28,6 +28,7 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
                       DTYPE_int_t df_max, 
                       DTYPE_float_t RSS_1, 
                       DTYPE_int_t df_1, 
+                      DTYPE_float_t sigma,
                       DTYPE_int_t how_often=1000,
                       DTYPE_int_t burnin=500,
                       DTYPE_int_t ndraw=1000,
@@ -161,7 +162,7 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef double discriminant, multiplier
     cdef int sample_count = 0
     cdef int numout = 0
-    cdef double lower_bound_RSS, upper_bound_RSS, sigma, RSS_bound_lhs
+    cdef double lower_bound_RSS, upper_bound_RSS, RSS_bound_lhs
 
     iter_count = 0
 
@@ -249,7 +250,7 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
         # Poincare's limit scaling says that these coordinates
         # are approx independent normals with variance 1/df_max
 
-        sigma = sqrt(norm_state_bound_sq / (df_max - df_1))
+        # sigma = sqrt(norm_state_bound_sq / (df_max - df_1))
 
         lower_bound = lower_bound / sigma
         upper_bound = upper_bound / sigma
