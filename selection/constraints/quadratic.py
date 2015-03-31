@@ -1,16 +1,13 @@
 import numpy as np
 import mpmath as mp
-
-from intervals import intervals
-from projection import projection, full_rank
-
-from truncated import truncated_chi, truncated_chi2, truncated_F
 from scipy.stats import norm
 
-from tools import timethis
-import .constraint
+from ..algorithms.projection import projection, full_rank
+from ..truncated import truncated_chi, truncated_chi2, truncated_F
+from .intervals import intervals
+from base import constraint
 
-class quad_constraints(constraint.constraint):
+class quad_constraints(constraint):
 
     r"""
 
@@ -154,7 +151,6 @@ class quad_constraints(constraint.constraint):
 
 
         
-    #@timethis
     def bounds(self, nu, y):
         """
         Return the intervals of the slice in a direction nu, which 
@@ -295,6 +291,7 @@ class quad_constraints(constraint.constraint):
         lin = np.array([]).reshape((0,0))
         offset_lin = np.array([])
 
+        # this import does not exist
         samples = quad_sampler(n_sample,
                                initial_point,
                                quad,
@@ -363,7 +360,7 @@ class quad_constraints(constraint.constraint):
 
 
 
-class quad_constraints_vecnorm(constraint.constraint):
+class quad_constraints_vecnorm(constraint):
     def __init__(self, alpha, beta, dim):
         self._alpha = alpha
         self._beta  = beta
@@ -376,7 +373,6 @@ class quad_constraints_vecnorm(constraint.constraint):
         V1 = np.linalg.norm(A, axis = 1) - np.linalg.norm(B, axis = 1)
         return np.all(V1 < tol * np.linalg.norm(V1, ord = np.inf))
 
-    @timethis
     def bounds(self, nu, y):
         if not self(y):
             raise ValueError('y does not respect the constraints')

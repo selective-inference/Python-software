@@ -24,7 +24,7 @@ that can use sigma but does not need it.
 import numpy as np
 from scipy.special import ndtr, ndtri
 
-from .affine import constraints, sample_from_constraints, gibbs_test
+from .constraints.affine import constraints, sample_from_constraints, gibbs_test
 from .forward_step import forward_stepwise
 from .discrete_family import discrete_family
 
@@ -158,11 +158,13 @@ def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
     else:
         val = np.sum((X[:,idx] * Y) * sign)
         family = _covtest_sampler(cone, X[:,idx] * sign,
-                                  sigma) # , mu = val * X[:,idx] * sign / np.linalg.norm(X[:,idx])**2)
-        pvalue = family.ccdf(0, val) #-val / sigma**2, val)
+                                  sigma, ndraw=ndraw, 
+                                  mu = val * X[:,idx] * sign 
+                                  / np.linalg.norm(X[:,idx])**2)
+        pvalue = family.ccdf(-val / sigma**2, val)
     return cone, pvalue, idx, sign
 
-def _covtest_sampler(cone, eta, sigma, nsample=1000, mu=None):
+def _covtest_sampler(cone, eta, sigma, ndraw=1000, mu=None):
     """
     Due to special strucutre of covtest cone constraint, sampling
     is easy with importance weights.
@@ -176,7 +178,7 @@ def _covtest_sampler(cone, eta, sigma, nsample=1000, mu=None):
     if mu is None:
         mu = np.zeros(n)
 
-    for _ in range(nsample):
+    for _ in range(ndraw):
         Y0 = np.random.standard_normal(n) * sigma + mu
         mu_eta = (mu * eta_n).sum()
         Y0 -= (Y0 * eta_n).sum() * eta_n

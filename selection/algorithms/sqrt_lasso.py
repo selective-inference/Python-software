@@ -8,6 +8,7 @@ import numpy as np, warnings
 from scipy.stats import norm as ndist, chi as chidist
 from scipy.interpolate import interp1d
 from scipy.stats import t as tdist
+from statsmodels.api import OLS
 
 # regreg http://github.com/regreg 
 
@@ -16,14 +17,13 @@ import regreg.api as rr
 # local
 
 from .lasso import _constraint_from_data
-from .truncated.T import truncated_T
-from .affine import constraints_unknown_sigma, \
-        constraints as gaussian_constraints, \
-        sample_from_sphere
-from .truncated import find_root
-from .discrete_multiparameter import multiparameter_family
-from .discrete_family import discrete_family
-#from .sample_truncT import sample_truncated_T
+from ..constraints.quasi_affine import (constraints_unknown_sigma, 
+                                        orthogonal as orthogonal_QA)
+from ..constraints.affine import constraints as gaussian_constraints, sample_from_sphere
+from ..truncated import find_root
+from ..distributions.discrete_multiparameter import multiparameter_family
+from ..distributions.discrete_family import discrete_family
+from ..sampling.sqrt_lasso import sample_sqrt_lasso
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -220,12 +220,20 @@ class sqrt_lasso(object):
             _fracE = np.sqrt(self.df_E) / (_denE * _diagE)
             RHS = _fracE * np.fabs(self.W_E)
             self.alpha_E = self.s_E * RHS / np.sqrt(self.df_E)
+            # TODO -- truncation interval could have a lower bound!
             self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
+
+            self._quasi_affine_constraints = orthogonal_QA(self._active_constraints.linear_part,
+                                                           np.zeros(self._active_constraints.linear_part.shape[0]),
+                                                           self._active_constraints.offset / (self.sigma_E * np.sqrt(self.df_E)),
+                                                           (self.sigma_E * np.sqrt(self.df_E))**2,
+                                                           self.df_E)
 
             cov = np.identity(n) * self.sigma_hat**2 
             for con in [self._active_constraints,
                         self._inactive_constraints,
-                        self._constraints]:
+                        self._constraints,
+                        self._quasi_affine_constraints]:
                 con.covariance[:] = cov
 
         else:
@@ -252,6 +260,14 @@ class sqrt_lasso(object):
         active variables by the KKT conditions.
         """
         return self._active_constraints
+
+    @property
+    def quasi_affine_constraints(self):
+        """
+        Quasi-affine constraints imposed on the
+        active variables by the KKT conditions.
+        """
+        return self._quasi_affine_constraints
 
     @property
     def inactive_constraints(self):
@@ -317,25 +333,9 @@ class sqrt_lasso(object):
                 if XEinv is not None:
                     for i in range(XEinv.shape[0]):
                         eta = XEinv[i]
-                        print i
-                        (intervals,
-                         Tobs) = constraints_unknown_sigma( \
-                            C.linear_part,
-                            C.offset / self.sigma_E,
-                            self.y,
-                            eta,
-                            self.R_E)
-                        print "started trunc_T"
-                        truncT = truncated_T(np.array([(interval.lower_value,
-                                                        interval.upper_value) for interval in intervals]), self.df_E)
-                        sf = truncT.sf(Tobs)
-                        if (truncT.intervals.shape == ((1,2)) and np.all(truncT.intervals == [[-np.inf, np.inf]])):
-                            raise ValueError('should be truncated')
-
-                        _pval = float(2 * min(sf, 1.-sf))
-                        print "pval " + str(i), _pval
+                        _pval = self.quasi_affine_constraints.pivot(eta, self.y,
+                                                                    alternative='twosided')
                         self._pvals.append((self.active[i], _pval))
-                        print "finished computing " + str(i) + "-th pvalue"
         return self._pvals
 
     @property
@@ -462,6 +462,53 @@ class sqrt_lasso(object):
 
         return pvalue
 
+def nominal_intervals(sqrtL):
+    """
+    Intervals for OLS parameters of active variables
+    that have not been adjusted for selection.
+
+    Notes
+    -----
+
+    These intervals do not have any coverage guarantees.
+    """
+    if not hasattr(sqrtL, "_constraints"):
+        sqrtL.form_constraints()
+    _intervals_unadjusted = []
+    XEinv = sqrtL._XEinv
+    SigmaE = sqrtL.sigma_hat**2 * np.dot(XEinv, XEinv.T)
+    for i in range(sqrtL.active.shape[0]):
+        eta = XEinv[i]
+        center = (eta*sqrtL.y).sum()
+        width = tdist.ppf(1-sqrtL.alpha/2., sqrtL.df_E) * np.sqrt(SigmaE[i,i])
+        _interval = [center-width, center+width]
+        _intervals_unadjusted.append((sqrtL.active[i], eta, (eta*sqrtL.y).sum(), 
+                                _interval))
+    return _intervals_unadjusted
+
+def nominal_pvalues(sqrtL):
+    """
+    P-values for OLS parameters of active variables
+    that have not been adjusted for selection.
+
+    Notes
+    -----
+
+    These p-values do not have any selective Type I error control.
+    """
+    if not hasattr(sqrtL, "_constraints"):
+        sqrtL.form_constraints()
+    _pvalues_unadjusted = []
+    XEinv = sqrtL._XEinv
+    SigmaE = sqrtL.sigma_hat**2 * np.dot(XEinv, XEinv.T)
+    for i in range(sqrtL.active.shape[0]):
+        eta = XEinv[i]
+        center = (eta*sqrtL.y).sum()
+        T = center / np.sqrt(SigmaE[i,i])
+        _pval = tdist.cdf(T, sqrtL.df_E)
+        _pval = 2 * min(_pval, 1 - _pval)
+        _pvalues_unadjusted.append((sqrtL.active[i], T, _pval))
+    return _pvalues_unadjusted
 
 def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
     """
@@ -552,13 +599,14 @@ def choose_lambda(X, quantile=0.95, ndraw=10000):
     return np.percentile(np.fabs(np.dot(X.T, E)).max(0), 100*quantile)
 
 def data_carving(y, X, 
-                 lam_frac=2.,
+                 lam_frac=1.,
                  stage_one=None,
                  split_frac=0.9,
                  coverage=0.95, 
                  ndraw=5000,
                  burnin=1000,
-                 splitting=False):
+                 splitting=False,
+                 fit_args={}):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -600,6 +648,9 @@ def data_carving(y, X,
     splitting : bool (optional)
         If True, also return splitting pvalues and intervals.
 
+    fit_args : dict (optional)
+        Arguments passed to `sqrt_lasso.fit`
+
     Returns
     -------
 
@@ -616,7 +667,8 @@ def data_carving(y, X,
     first_stage, stage_one, stage_two = split_model(y, X,
                                                     lam_frac=lam_frac,
                                                     split_frac=split_frac,
-                                                    stage_one=stage_one)
+                                                    stage_one=stage_one,
+                                                    fit_args=fit_args)
     splitn = stage_one.shape[0]
 
     L = first_stage # shorthand
@@ -634,8 +686,8 @@ def data_carving(y, X,
         selector1 = np.identity(n)[stage_one]
         R_stageone = np.dot(selector1.T, np.dot(R1, selector1))
 
-        info_E = np.dot(X_Ei, X_Ei.T)
-        info_E1 = np.dot(X_Ei1, X_Ei1.T)
+        inv_info_E = np.dot(X_Ei, X_Ei.T)
+        inv_info_E1 = np.dot(X_Ei1, X_Ei1.T)
 
         s = sparsity = L.active.shape[0]
         beta_E = np.dot(X_Ei, y)
@@ -647,50 +699,63 @@ def data_carving(y, X,
 
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
-            con = gaussian_constraints(linear_part, b)
+
+            L_QA = L.quasi_affine_constraints
+            con = orthogonal_QA(linear_part, 
+                                L_QA.LHS_offset,
+                                L_QA.RHS_offset,
+                                L_QA.RSS,
+                                L_QA.RSS_df)
 
             # specify covariance of 2s Gaussian vector
 
             cov = np.zeros((2*s, 2*s))
-            cov[:s, :s] = info_E 
-            cov[s:, :s] = info_E
-            cov[:s, s:] = info_E
-            cov[s:, s:] = info_E1
+            cov[:s, :s] = inv_info_E 
+            cov[s:, :s] = inv_info_E
+            cov[:s, s:] = inv_info_E
+            cov[s:, s:] = inv_info_E1
 
-            con.covariance[:] = cov * sigma_E**2
+            # does this sigma_E matter for sampling? 
+
+            con.covariance[:] = cov # * sigma_E**2
 
             # for the conditional law
             # we will change the linear function for each coefficient
 
             selector = np.zeros((s, 2*s))
             selector[:, :s]  = np.identity(s)
-            conditional_linear = np.dot(np.linalg.pinv(info_E), selector) 
+            conditional_linear = np.dot(np.linalg.pinv(inv_info_E), selector) 
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E, beta_E1]) / sigma_E
+            initial = np.hstack([beta_E, beta_E1]) 
             OLS_func = selector
 
         else:
 
             linear_part = np.zeros((s, s + n - splitn))
             linear_part[:, :s] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
-            con = gaussian_constraints(linear_part, b)
+
+            L_QA = L.quasi_affine_constraints
+            con = orthogonal_QA(linear_part, 
+                                L_QA.LHS_offset,
+                                L_QA.RHS_offset,
+                                L_QA.RSS,
+                                L_QA.RSS_df)
+
 
             # specify covariance of Gaussian vector
 
             cov = np.zeros((s + n - splitn, s + n - splitn))
-            cov[:s, :s] = info_E1
+            cov[:s, :s] = inv_info_E1
             cov[s:, :s] = 0
             cov[:s, s:] = 0
             cov[s:, s:] = np.identity(n - splitn) 
 
-            con.covariance[:] = cov * sigma_E**2
+            con.covariance[:] = cov # * sigma_E**2
 
             conditional_linear = np.zeros((s, s + n - splitn))
-            conditional_linear[:, :s]  = np.linalg.pinv(info_E1) 
+            conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1) 
             conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
 
             selector1 = np.zeros((s, s + n - splitn))
@@ -700,16 +765,12 @@ def data_carving(y, X,
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-            OLS_func = np.dot(info_E, conditional_linear)
+            OLS_func = np.dot(inv_info_E, conditional_linear)
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E1, y[stage_two]]) / sigma_E
+            initial = np.hstack([beta_E1, y[stage_two]]) 
 
-        DEBUG = True
-        if DEBUG:
-            print con(initial * sigma_E), 'working'
-            print L.active_constraints(y[stage_one]), 'huh'
         pvalues = []
         intervals = []
 
@@ -721,9 +782,9 @@ def data_carving(y, X,
             X_E2 = X2[:,L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
             beta_E2 = np.dot(X_Ei2, y2)
-            sigma_E2 = np.linalg.norm(y[stage_two] - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
+            sigma_E2 = np.linalg.norm(y2 - np.dot(X_E2, beta_E2)) / np.sqrt(n - splitn - s)
 
-            info_E2 = np.dot(X_Ei2, X_Ei2.T) 
+            inv_info_E2 = np.dot(X_Ei2, X_Ei2.T) 
 
             splitting_pvalues = []
             splitting_intervals = []
@@ -731,6 +792,8 @@ def data_carving(y, X,
             split_cutoff = np.fabs(tdist.ppf((1. - coverage) / 2, n - splitn - s))
 
         # compute p-values and (TODO: intervals)
+
+        full_RSS = np.linalg.norm(y - np.dot(X_E, np.dot(X_Ei, y)))**2 
 
         for j in range(X_E.shape[1]):
 
@@ -742,42 +805,31 @@ def data_carving(y, X,
             conditional_con = con.conditional(conditional_linear[keep],
                                               np.dot(X_E.T, y)[keep])
 
-            noncentral_param = conditional_con.mean.copy()
-            conditional_con.mean *= 0
+            inverse_map, forward_map, white_con = conditional_con.whiten()
+            white_initial = forward_map(initial)
+            white_eta = forward_map(np.dot(con.covariance, eta))
+            observed = (eta * initial).sum()
 
-            #
-            # before conditioning:
-            #
-            # sigma_E1 has splitn - s degrees of freedom : R_stageone
-            # numerator s + min(n - splitn, s) degrees of freedom
-            #
-            # after conditioning:
-            #
-            # sigma_E1 has splitn - s degrees of freedom : R_stageone
-            # P_minus has s-1 degrees of freedom
-            # numerator min(n - splitn, s) + 1 having lost s-1 to P_minus
-            #
-            # therefore, when n - splitn > s we seem to waste data for
-            # estimating variance?
+            white_samples, W = sample_sqrt_lasso(white_con.linear_part,
+                                                 white_con.LHS_offset,
+                                                 white_con.RHS_offset,
+                                                 white_initial,
+                                                 white_eta,
+                                                 full_RSS + observed**2 / (eta**2).sum(),
+                                                 n - s + 1,
+                                                 white_con.RSS,
+                                                 white_con.RSS_df,
+                                                 ndraw=ndraw,
+                                                 burnin=burnin)
 
-            inverse_map, forward_map, white = conditional_con.whiten()
-            y_f = forward_map(initial)
-            eta_f = forward_map(eta)
-            noncentral_param_f = forward_map(noncentral_param)
-            T_obs = (eta_f * (noncentral_param_f + y_f)).sum()
+            RSS_sample = white_samples[:,-1]
 
-            white_samples = sample_truncated_T(white.linear_part,
-                                               white.offset,
-                                               y_f, 
-                                               noncentral_param_f,
-                                               splitn - s,
-                                               eta_f,
-                                               how_often=3,
-                                               ndraw=ndraw, 
-                                               burnin=burnin)
-            T_sample = np.dot(white_samples, eta_f)
-            family = discrete_family(T_sample, np.ones_like(T_sample))
-            pval = 2 * min(family.cdf(0, T_obs))
+            Z = inverse_map(white_samples[:,:-1].T).T
+            null_sample = np.dot(Z, eta)
+
+            family = discrete_family(null_sample, W)
+            pval = family.cdf(0, observed)
+            pval = 2 * min(pval, 1 - pval)
 
             pvalues.append(pval)
 
@@ -788,15 +840,15 @@ def data_carving(y, X,
                 if s < n - splitn: # enough data to generically
                                    # test hypotheses. proceed as usual
 
-                    T = beta_E2[j] / (sigma_E2 * info_E2[j,j])
+                    T = beta_E2[j] / (sigma_E2 * np.sqrt(inv_info_E2[j,j]))
                     split_pval = tdist.cdf(T, n - splitn - s)
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
 
                     splitting_interval = (beta_E2[j] - 
-                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2,
+                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma_E2,
                                           beta_E2[j] + 
-                                          split_cutoff * np.sqrt(info_E2[j,j]) * sigma_E2)
+                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma_E2)
                     splitting_intervals.append(splitting_interval)
                 else:
                     splitting_pvalues.append(np.random.sample())
@@ -834,7 +886,8 @@ def split_model(y, X,
                 lam_frac=1.,
                 split_frac=0.9,
                 quantile=0.95,
-                stage_one=None):
+                stage_one=None,
+                fit_args={}):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -866,6 +919,9 @@ def split_model(y, X,
         If None, a randomly chosen set of entries is used based on
         `split_frac`.
 
+    fit_args : dict (optional)
+        Arguments passed to `sqrt_lasso.fit`
+
     Returns
     -------
 
@@ -891,10 +947,10 @@ def split_model(y, X,
         stage_two = [i for i in np.arange(n) if i not in stage_one]
     y1, X1 = y[stage_one], X[stage_one]
 
-    first_stage = standard_sqrt_lasso(y1, X1, lam_frac=lam_frac, quantile=quantile)
+    first_stage = standard_sqrt_lasso(y1, X1, lam_frac=lam_frac, quantile=quantile, fit_args=fit_args)
     return first_stage, stage_one, stage_two
 
-def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
+def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95, fit_args={}):
     """
     Fit a sqrt-LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|) / \|\epsilon\|_2$
@@ -915,6 +971,9 @@ def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
     quantile : float (optional)
         Quantile given to `choose_lambda`
 
+    fit_args : dict (optional)
+        Arguments passed to `sqrt_lasso.fit`
+
     Returns
     -------
 
@@ -927,5 +986,7 @@ def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95):
     lam = lam_frac * choose_lambda(X, quantile=quantile)
 
     sqrtL = sqrt_lasso(y, X, lam)
-    sqrtL.fit()
+    sqrtL.fit(**fit_args)
+    if sqrtL.active_constraints is not None and not sqrtL.active_constraints(y):
+        raise ValueError('y does not satisfy KKT conditions determined by variables and signs-- try increasing min_its or tol in fit_args')
     return sqrtL

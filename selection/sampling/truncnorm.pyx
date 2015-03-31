@@ -205,15 +205,15 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
             # and Z (= tnorm below) is as stated
 
             unif = usample[iter_count] * (1 - exp(-np.fabs(
-                        lower_bound - upper_bound) * np.fabs(upper_bound)))
-            tnorm = upper_bound + log(1 - unif) / np.fabs(upper_bound)
+                        lower_bound - upper_bound) * upper_bound))
+            tnorm = (upper_bound + log(1 - unif) / np.fabs(upper_bound)) * sigma
         elif lower_bound > 10:
 
             # here Z = lower_bound + E / fabs(lower_bound) (though lower_bound is positive)
             # and D = fabs((upper_bound - lower_bound) * lower_bound)
             unif = usample[iter_count] * (1 - exp(-np.fabs(
-                        upper_bound - lower_bound) * np.fabs(lower_bound)))
-            tnorm = lower_bound - log(1 - unif) / lower_bound
+                        upper_bound - lower_bound) * lower_bound))
+            tnorm = (lower_bound - log(1 - unif) / lower_bound) * sigma
         elif lower_bound < 0:
             cdfL = ndtr(lower_bound)
             cdfU = ndtr(upper_bound)
@@ -257,7 +257,6 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                                   np.ndarray[DTYPE_float_t, ndim=1] b, 
                                   np.ndarray[DTYPE_float_t, ndim=1] initial, 
                                   np.ndarray[DTYPE_float_t, ndim=1] bias_direction, 
-                                  sample_radius_squared, 
                                   DTYPE_int_t how_often=1000,
                                   DTYPE_int_t burnin=500,
                                   DTYPE_int_t ndraw=1000,
@@ -290,9 +289,6 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
         How often should the sampler make a move along `direction_of_interest`?
         If negative, defaults to ndraw+burnin (so it will never be used).
 
-    sigma : float
-        Variance parameter.
-
     burnin : int
         How many iterations until we start
         recording samples?
@@ -319,7 +315,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef int idx, iter_count, irow, ivar
     cdef double lower_bound, upper_bound, V
     cdef double tval, dval, val, alpha
-    cdef double norm_state_bound_sq = sample_radius_squared(state)
+    cdef double norm_state_bound_sq = np.linalg.norm(state)**2
     cdef double norm_state_sq = norm_state_bound_sq
 
     cdef double tol = 1.e-7
@@ -434,7 +430,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         # intersect the line segment with the ball
         # 
-        # below, discriminant is the sqaure root of 
+        # below, discriminant is the square root of 
         # the squared overall bound on the length
         # minus the current norm of P_{\eta}^{\perp}y
         # where eta is the current direction of movement
@@ -560,7 +556,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
         # update the bound on the radius
         # this might be done by a sampler
 
-        norm_state_bound_sq = sample_radius_squared(state)
+        # norm_state_bound_sq = sample_radius_squared(state)
 
     return trunc_sample, weight_sample
 

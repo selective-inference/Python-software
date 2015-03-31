@@ -9,9 +9,9 @@ import statsmodels.api as sm
 
 from scipy.stats import chi
 import nose.tools as nt
-import selection.affine as AC
-from selection.sqrt_lasso import sqrt_lasso, choose_lambda
-from selection.discrete_family import discrete_family
+import selection.constraints.affine as AC
+from selection.algorithms.sqrt_lasso import sqrt_lasso, choose_lambda
+from selection.distributions.discrete_family import discrete_family
 
 # generate a cone from a sqrt_lasso problem
 

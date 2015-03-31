@@ -27,8 +27,8 @@ from setup_helpers import package_check
 # Define extensions
 EXTS = []
 for modulename, other_sources in (
-    ('selection.sample_truncnorm', []),
-    ('selection.sample_truncT', []),
+    ('selection.sampling.truncnorm', []),
+    ('selection.sampling.sqrt_lasso', []),
     ):
     pyx_src = pjoin(*modulename.split('.')) + '.pyx'
     EXTS.append(Extension(modulename,[pyx_src] + other_sources,
@@ -74,6 +74,15 @@ def main(**extra_args):
           packages     = ['selection',
                           'selection.utils',
                           'selection.truncated',
+                          'selection.truncated.tests',
+                          'selection.constraints',
+                          'selection.constraints.tests',
+                          'selection.distributions',
+                          'selection.distributions.tests',
+                          'selection.algorithms',
+                          'selection.algorithms.tests',
+                          'selection.sampling',
+                          'selection.sampling.tests',
                           'selection.tests'
                           ],
           ext_modules = EXTS,

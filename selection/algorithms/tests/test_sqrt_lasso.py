@@ -1,16 +1,17 @@
 from __future__ import division
 import numpy as np
 import numpy.testing.decorators as dec
+import nose.tools as nt
 import statsmodels as sm
 import matplotlib.pyplot as plt
 
-from selection.sqrt_lasso import (sqrt_lasso, choose_lambda,
+from selection.algorithms.sqrt_lasso import (sqrt_lasso, choose_lambda,
                                   estimate_sigma, data_carving, split_model)
-from selection.lasso import instance
-from selection.affine import constraints_unknown_sigma
+from selection.algorithms.lasso import instance
+from selection.constraints.quasi_affine import constraints_unknown_sigma
 from selection.truncated import T as truncated_T
 
-from selection.tests.test_sample_sphere import _generate_constraints
+from selection.sampling.tests.test_sample_sphere import _generate_constraints
 
 def test_class(n=20, p=40, s=2):
     y = np.random.standard_normal(n) * 1.2
@@ -18,7 +19,7 @@ def test_class(n=20, p=40, s=2):
     beta[:s] = 5
     X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
     y += np.dot(X, beta)
-    lam_theor = choose_lambda(X, quantile=0.9)
+    lam_theor = 0.7 * choose_lambda(X, quantile=0.9)
     L = sqrt_lasso(y,X,lam_theor)
     L.fit(tol=1.e-10, min_its=80)
     P = []
@@ -27,6 +28,9 @@ def test_class(n=20, p=40, s=2):
         np.testing.assert_array_less( \
             np.dot(L.constraints.linear_part, L.y),
             L.constraints.offset)
+
+        nt.assert_true(L.constraints(y))
+        nt.assert_true(L.quasi_affine_constraints(y))
 
         if set(range(s)).issubset(L.active):
             P = [p[1] for p in L.active_pvalues[s:]]
@@ -64,7 +68,7 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         y += np.dot(X, beta) * sigma
         lam_theor = .7 * choose_lambda(X, quantile=0.9)
         L = sqrt_lasso(y, X, lam_theor)
-        L.fit(tol=1.e-12, min_its=150)
+        L.fit(tol=1.e-12, min_its=150, max_its=200)
 
         pval = L.goodness_of_fit(lambda x: np.max(np.fabs(x)),
                                  burnin=10000,
@@ -205,46 +209,61 @@ def test_pval_intervals(nsample=100):
     return pvalues, gaussian_pvalues, coverage/count
             
 
+
 def test_data_carving(n=100,
                       p=200,
                       s=7,
-                      sigma=5,
                       rho=0.3,
                       snr=7.,
-                      split_frac=0.9,
+                      split_frac=0.8,
                       lam_frac=1.,
                       ndraw=8000,
-                      burnin=2000):
+                      burnin=2000, 
+                      df=np.inf,
+                      coverage=0.90,
+                      sigma=3,
+                      fit_args={'min_its':120, 'tol':1.e-12}):
 
     counter = 0
 
     while True:
         counter += 1
-        X, y, _, active, sigma = instance(n=n, 
+        X, y, beta, active, sigma = instance(n=n, 
                                              p=p, 
                                              s=s, 
                                              sigma=sigma, 
                                              rho=rho, 
-                                             snr=snr)
-        L, stage_one = split_model(y, X, 
-                        lam_frac=lam_frac,
-                        split_frac=split_frac)[:2]
+                                             snr=snr, 
+                                             df=df)
+        mu = np.dot(X, beta)
+        L, stage_one = split_model(y, 
+                                   X, 
+                                   lam_frac=lam_frac,
+                                   split_frac=split_frac,
+                                   fit_args=fit_args)[:2]
 
-        print counter, L.active
-
+        print L.active
         if set(range(s)).issubset(L.active):
             results, L = data_carving(y, X, lam_frac=lam_frac, 
                                       stage_one=stage_one,
                                       splitting=True, 
                                       ndraw=ndraw,
-                                      burnin=burnin)
+                                      burnin=burnin,
+                                      coverage=coverage,
+                                      fit_args=fit_args)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
-            return carve[s:], split[s:], carve[:s], split[:s], counter
 
+            Xa = X[:,L.active]
+            truth = np.dot(np.linalg.pinv(Xa), mu) 
 
+            split_coverage = []
+            carve_coverage = []
+            for result, t in zip(results, truth):
+                _, _, ci, _, si = result
+                carve_coverage.append((ci[0] < t) * (t < ci[1]))
+                split_coverage.append((si[0] < t) * (t < si[1]))
 
-if __name__ == "__main__":
-    #P, IS = main()
-    pass
+            return carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage
+

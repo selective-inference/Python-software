@@ -70,4 +70,5 @@ PROVIDES            = ["fixed_lambda"]
 REQUIRES            = ["numpy (>=%s)" % NUMPY_MIN_VERSION,
                        "scipy (>=%s)" % SCIPY_MIN_VERSION,
                        "sklearn (>=%s)" % SKLEARN_MIN_VERSION,
-                       "mpmath (>=%s)" % MPMATH_MIN_VERSION]
+                       "mpmath (>=%s)" % MPMATH_MIN_VERSION,
+                       "pyinter"]
