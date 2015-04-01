@@ -20,7 +20,7 @@ from sklearn.linear_model import Lasso
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
-                                 one_parameter_MLE,
+                                 MLE_family,
                                  gibbs_test,
                                  stack)
 from ..distributions.discrete_family import discrete_family
@@ -440,10 +440,10 @@ def data_carving(y, X,
 
     ndraw : int (optional)
         How many draws to keep from Gibbs hit-and-run sampler.
-        Defaults to 5000.
+        Defaults to 8000.
 
     burnin : int (optional)
-        Defaults to 1000.
+        Defaults to 2000.
 
     splitting : bool (optional)
         If True, also return splitting pvalues and intervals.
@@ -570,7 +570,7 @@ def data_carving(y, X,
 
             split_cutoff = np.fabs(ndist.ppf((1. - coverage) / 2))
 
-        # compute p-values and (TODO: intervals)
+        # compute p-values intervals
 
         cov_inv = np.linalg.pinv(con.covariance)
 
@@ -589,59 +589,44 @@ def data_carving(y, X,
             # the multiplier should be the pseudoMLE so that
             # the observed value is likely 
 
-            if compute_intervals: 
-                multiplier = one_parameter_MLE(conditional_law,
-                                               initial,
-                                               eta,
-                                               niter=10,
-                                               burnin=1000,
-                                               ndraw=1000, 
-                                               how_often=5)
-            else:
-                multiplier = (eta * initial).sum() / np.dot(eta, np.dot(conditional_law.covariance, eta))
-
-            # tilt is chosen so that
-            # family is tilted by exp(tilt*Z)
-
-            tilt = multiplier * eta
-            conditional_law = con_cp.conditional(conditional_linear[keep], \
-                                                     np.dot(X_E.T, y)[keep])
-            conditional_law.mean += np.dot(con_cp.covariance, tilt)
-
-            _, Z, W = gibbs_test(conditional_law,
-                                 initial,
-                                 eta,
-                                 UMPU=False,
-                                 sigma_known=True,
-                                 ndraw=ndraw,
-                                 burnin=burnin,
-                                 how_often=5)
-
-            # undo the tilt
-
-            logW = -np.dot(Z, tilt)
-            logW -= logW.max() - 5
-            W_tilt = W * np.exp(logW)
-            null_statistics = np.dot(Z, eta)
             observed = (initial * eta).sum()
-            family = discrete_family(null_statistics, W_tilt)
+            if compute_intervals: 
+                family = MLE_family(conditional_law,
+                                         initial,
+                                         eta,
+                                         burnin=burnin,
+                                         ndraw=ndraw,
+                                         how_often=10,
+                                         white=False)
+
+                lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
+
+                # in the model we've chosen, the parameter beta is associated
+                # to the natural parameter as below
+                # exercise: justify this!
+
+                lower_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * lower_lim
+                upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
+
+                intervals.append((lower_lim_final, upper_lim_final))
+
+            else:
+                _, _, _, family = gibbs_test(conditional_law,
+                                             initial, 
+                                             eta,
+                                             sigma_known=True,
+                                             white=False,
+                                             ndraw=ndraw,
+                                             burnin=burnin,
+                                             how_often=10)
+
+                intervals.append((np.nan, np.nan))
 
             pval = family.cdf(0, observed)
             pval = 2 * min(pval, 1 - pval)
 
             pvalues.append(pval)
 
-            lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
-
-            # in the model we've chosen, the parameter beta is associated
-            # to the natural parameter as below
-            # exercise: justify this!
-
-            lower_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * lower_lim
-            upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
-
-            intervals.append((lower_lim_final, upper_lim_final, observed, family.cdf(upper_lim, observed), family.cdf(lower_lim, observed)))
-            
             if splitting:
 
                 if s < n - splitn: # enough data to generically

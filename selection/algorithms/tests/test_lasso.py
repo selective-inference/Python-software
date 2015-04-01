@@ -32,7 +32,7 @@ def test_data_carving(n=100,
                       burnin=2000, 
                       df=np.inf,
                       coverage=0.90,
-                      compute_intervals=False):
+                      compute_intervals=True):
 
     counter = 0
 
@@ -58,7 +58,8 @@ def test_data_carving(n=100,
                                       splitting=True, 
                                       ndraw=ndraw,
                                       burnin=burnin,
-                                      coverage=coverage)
+                                      coverage=coverage,
+                                      compute_intervals=compute_intervals)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
