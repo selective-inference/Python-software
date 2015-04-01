@@ -6,50 +6,17 @@ $y$ after $K$ steps.
 
 """
 
+from copy import copy
+
 import numpy as np
-import scipy.sparse
-from scipy.stats import norm as ndist
 
 # local imports 
 
-from .constraints.affine import constraints
-from .chisq import quadratic_test
+from ..constraints.affine import constraints, gibbs_test, stack
+from ..distributions.chisq import quadratic_test
+from .projection import projection
 
 DEBUG = False
-
-class projection(object):
-
-    """
-    A projection matrix, U an orthonormal basis of the column space.
-    
-    Warning: we do not check if U has orthonormal columns. 
-
-    This can be enforced by calling the `orthogonalize` method
-    which returns a new instance.
-    
-    """
-    def __init__(self, U):
-        self.U = U
-
-    def __call__(self, Z, rank=None):
-        if rank is None:
-            return np.dot(self.U, np.dot(self.U.T, Z))
-        else:
-            return np.dot(self.U[:,:rank], np.dot(self.U.T[:rank], Z))
-
-    def stack(self, Unew):
-        """
-        Form a new projection matrix by hstack.
-
-        Warning: no check is mode to ensure U has orthonormal columns.
-        """
-        return projection(np.hstack([self.U, Unew]))
-
-    def orthogonalize(self):
-        """
-        Force columns to be orthonormal.
-        """
-        return projection(np.linalg.svd(self.U, full_matrices=False)[0])
 
 class forward_stepwise(object):
 
@@ -58,21 +25,25 @@ class forward_stepwise(object):
     """
 
     def __init__(self, X, Y, 
-                 subset=None,
+                 subset=[],
                  covariance=None):
-        if subset is None:
-            subset = np.ones(Y.shape[0], np.bool)
-        self.X = X.copy()[subset]
-        self.X -= self.X.mean(0)[None,:]
-        self.Y = Y.copy()[subset]
-        self.Y -= self.Y.mean()
+        self.subset = subset
+        self.X, self.Y = X, Y
+        if subset != []:
+            self.Xsub = X.copy()[subset]
+            self.Xsub -= self.Xsub.mean(0)[None,:]
+            self.Ysub = Y.copy()[subset]
+            self.Ysub -= self.Ysub.mean()
+            self.subset_selector = np.identity(self.X.shape[0])[subset]
+        else:
+            self.Xsub = X.copy()
+            self.Ysub = Y.copy()
         self.P = [None] # residual forming projections
         self.A = None
         self.variables = []
         self.Z = []
+        self.Zfunc = []
         self.signs = []
-        if covariance is None:
-            covariance = np.identity(self.X.shape[0])
         self.covariance = covariance
 
     def __iter__(self):
@@ -98,8 +69,8 @@ class forward_stepwise(object):
         """
         P = self.P[-1]
         
-        X, Y = self.X, self.Y
-        n, p = self.X.shape
+        X, Y = self.Xsub, self.Ysub
+        n, p = self.Xsub.shape
 
         if P is None: # first step
             U = np.dot(X.T, Y)
@@ -114,6 +85,7 @@ class forward_stepwise(object):
             self.variables.append(idx)
             self.signs.append(sign)
             self.Z.append(Z[idx])
+            self.Zfunc.append(Unew * sign)
         else:
             RY = Y-P(Y)
             RX = X-P(X)
@@ -130,7 +102,7 @@ class forward_stepwise(object):
             self.variables.append(np.arange(p)[keep][idx])
             self.signs.append(sign)
             self.Z.append(Z[idx])
-
+            self.Zfunc.append((RX.T[idx] / scale[idx]) * sign)
             Unew = RX[:,idx] / scale[idx]
             Pnew = P.stack(Unew.reshape((-1,1)))
             newA = canonicalA(RX, RY, idx, sign, scale=scale)
@@ -152,22 +124,27 @@ class forward_stepwise(object):
 
     @property
     def constraints(self):
-        return constraints(self.A, np.zeros(self.A.shape[0]), 
-                           covariance=self.covariance)
+        if not hasattr(self, "_constraints"):
+            if self.subset == []:
+                self._constraints = constraints(self.A, np.zeros(self.A.shape[0]), 
+                                                covariance=self.covariance)
+            else:
+                self._constraints = constraints(np.dot(self.A, self.subset_selector),
+                                                np.zeros(self.A.shape[0]), 
+                                                covariance=self.covariance)
+        return self._constraints
 
     def model_intervals(self, which_step, alpha=0.05, UMAU=False):
         """
         Compute selection intervals for
-        a given step of forward stepwise.
+        a given step of forward stepwise 
+        using saturated model.
 
         Parameters
         ----------
 
         which_step : int
             Which step of forward stepwise.
-
-        sigma : float
-            Standard deviation of noise.
 
         alpha : float
             1 - confidence level for intervals.
@@ -198,7 +175,11 @@ class forward_stepwise(object):
                               _interval))
         return intervals
 
-    def model_pivots(self, which_step, alternative='greater'):
+    def model_pivots(self, which_step, alternative='greater',
+                     saturated=True,
+                     ndraw=5000,
+                     burnin=2000,
+                     which_var=[]):
         """
         Compute two-sided pvalues for each coefficient
         in a given step of forward stepwise.
@@ -209,8 +190,21 @@ class forward_stepwise(object):
         which_step : int
             Which step of forward stepwise.
 
-        sigma : float
-            Standard deviation of noise.
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        saturated : bool
+            Use saturated model or selected model?
+
+        ndraw : int (optional)
+            Defaults to 5000.
+
+        burnin : int (optional)
+            Defaults to 2000.
+
+        which_var : []
+            Compute pivots for which variables? If empty,
+            return a pivot for all selected variable at stage `which_step`.
 
         Returns
         -------
@@ -220,12 +214,53 @@ class forward_stepwise(object):
              for selected model.
 
         """
+
+        if which_step == 0:
+            return []
+
+        if self.covariance is None and saturated:
+            raise ValueError('need a covariance matrix to compute pivots for saturated model')
+
+        con = copy(self.constraints)
+        if self.covariance is not None:
+            con.covariance[:] = self.covariance 
+
+        linear_part = self.X[:,self.variables[:which_step]]
+        observed = np.dot(linear_part.T, self.Y)
+        LSfunc = np.linalg.pinv(linear_part)
+
+        if which_var == []:
+            which_var = self.variables[:which_step]
+
         pivots = []
-        LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
-        for i in range(LSfunc.shape[0]):
-            pivots.append((self.variables[i],
-                           self.constraints.pivot(LSfunc[i], self.Y,
-                                                  alternative=alternative)))
+        if saturated:
+            for i in range(LSfunc.shape[0]):
+                if self.variables[i] in which_var:
+                    pivots.append((self.variables[i],
+                                   con.pivot(LSfunc[i], self.Y,
+                                             alternative=alternative)))
+        else:
+            sigma_known = self.covariance is not None
+            for i in range(LSfunc.shape[0]):
+                if self.variables[i] in which_var:
+                    keep = np.ones(LSfunc.shape[0], np.bool)
+                    keep[i] = False
+
+                    if which_step > 1:
+                        conditional_con = con.conditional(linear_part.T[keep],
+                                                          observed[keep])
+                    else:
+                        conditional_con = con
+                    pval = gibbs_test(conditional_con,
+                                      self.Y,
+                                      LSfunc[i],
+                                      alternative=alternative,
+                                      sigma_known=sigma_known,
+                                      burnin=burnin,
+                                      ndraw=ndraw,
+                                      how_often=50)[0]
+                    pivots.append((self.variables[i], 
+                                   pval))
         return pivots
 
     def model_quadratic(self, which_step):
@@ -241,7 +276,7 @@ def canonicalA(RX, RY, idx, sign, scale=None):
     $\|RX^TRY\|_{\infty}$.
 
     Parameters
-    ==========
+    ----------
 
     RX : `np.array((n,p))`
 
@@ -287,4 +322,125 @@ def canonicalA(RX, RY, idx, sign, scale=None):
 
     V = np.dot(A, RX.T)
     return -V
+
+def info_crit_stop(X, Y, sigma, cost=2):
+    """
+    Fit model using forward stepwise,
+    stopping using a rule like AIC or BIC.
+    
+    The error variance must be supplied, in which
+    case AIC is essentially Mallow's C_p.
+
+    Parameters
+    ----------
+
+    X : np.float
+        Design matrix
+
+    Y : np.float
+        Response vector
+
+    sigma : float (optional)
+        Error variance.
+
+    cost : float
+        Cost per parameter. For BIC use cost=log(X.shape[0])
+
+    Returns
+    -------
+
+    FS : `forward_stepwise`
+        Instance of forward stepwise stopped at the
+        corresponding step. Constraints of FS
+        will reflect the minimum Z score requirement.
+
+    """
+    n, p = X.shape
+    FS = forward_stepwise(X, Y, covariance=sigma**2 * np.identity(n))
+    while True:
+        FS.next()
+
+        if FS.Z[-1] < sigma * np.sqrt(cost):
+            break
+
+    new_linear_part = -np.array(FS.Zfunc)
+    new_linear_part[-1] *= -1
+    new_offset = -sigma * np.sqrt(cost) * np.ones(new_linear_part.shape[0])
+    new_offset[-1] *= -1
+
+    new_con = stack(FS.constraints, constraints(new_linear_part, 
+                                                new_offset))
+    new_con.covariance[:] = sigma**2 * np.identity(n)
+    if DEBUG:
+        print FS.constraints.linear_part.shape, 'before'
+    FS._constraints = new_con
+    if DEBUG:
+        print FS.constraints.linear_part.shape, 'should have added number of steps constraints'
+    return FS
+
+def sequential(X, Y, sigma=None, nstep=10,
+               saturated=False,
+               ndraw=5000,
+               burnin=2000,
+               subset=[]):
+    """
+    Fit model using forward stepwise,
+    stopping using a rule like AIC or BIC.
+    
+    The error variance must be supplied, in which
+    case AIC is essentially Mallow's C_p.
+
+    Parameters
+    ----------
+
+    X : np.float
+        Design matrix
+
+    Y : np.float
+        Response vector
+
+    sigma : float (optional)
+        Error variance.
+
+    nstep : int
+        How many steps should we take?
+
+    saturated : bool
+        Should we compute saturated or selected model pivots?
+
+    ndraw : int (optional)
+        Defaults to 5000.
+
+    burnin : int (optional)
+        Defaults to 2000.
+
+    subset : []
+        Subset of cases to use for selection, defaults to [].
+
+    Returns
+    -------
+
+    FS : `forward_stepwise`
+        Instance of forward stepwise after `nstep` steps.
+
+    pvalues : []
+        P-values computed at each step.
+
+    """
+
+    n, p = X.shape
+    if sigma is not None:
+        FS = forward_stepwise(X, Y, covariance=sigma**2 * np.identity(n),
+                              subset=subset)
+    else:
+        FS = forward_stepwise(X, Y)
+
+    pvalues = []
+    for i in range(nstep):
+        FS.next()
+        pvalues.extend(FS.model_pivots(i+1, which_var=[FS.variables[-1]],
+                                       saturated=saturated,
+                                       ndraw=ndraw,
+                                       burnin=burnin))
+    return FS, pvalues
 

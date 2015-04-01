@@ -698,7 +698,7 @@ def data_carving(y, X,
         sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
         sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
 
-        if False: # n2 > s:
+        if n2 > s:
 
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
