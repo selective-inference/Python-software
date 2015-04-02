@@ -51,7 +51,7 @@ def crit_func(test_statistic, left_cut, right_cut):
 
 class discrete_family(object):
 
-    def __init__(self, sufficient_stat, weights):
+    def __init__(self, sufficient_stat, weights, theta=0.):
         r"""
         A  discrete 1-dimensional
         exponential family with reference measure $\sum_j w_j \delta_{X_j}$
@@ -87,6 +87,7 @@ class discrete_family(object):
         self._w /= self._w.sum() # make sure they are a pmf
         self.n = len(xw)
         self._theta = np.nan
+        self.theta = theta
 
     @property
     def theta(self):
