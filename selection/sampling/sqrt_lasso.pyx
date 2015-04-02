@@ -321,7 +321,7 @@ def sample_sqrt_lasso(np.ndarray[DTYPE_float_t, ndim=2] A,
         # weight has to now be computed
         # based on the normal approximation compared to true distribution            
 
-        weight_sample[sample_count-burnin] = (pow(1. - norm_state_sq / norm_state_bound_sq, 0.5 * (df_max - df_1)) / 
+        weight_sample[sample_count-burnin] = (pow(1. - norm_state_sq / norm_state_bound_sq, 0.5 * (df_max - df_1) - 1) / 
                                               exp(-norm_state_sq / (2 * sigma**2)))
 
         if iter_count % 30 == 0:
@@ -600,7 +600,7 @@ def sample_sqrt_lasso_segment(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         # intersect the line segment with the ball
         # 
-        # below, discriminant is the sqaure root of 
+        # below, discriminant is the square root of 
         # the squared overall bound on the length
         # minus the current norm of P_{\eta}^{\perp}y
         # where eta is the current direction of movement
@@ -622,7 +622,7 @@ def sample_sqrt_lasso_segment(np.ndarray[DTYPE_float_t, ndim=2] A,
         norm_perp_proj_sq = norm_state_sq - V * V
         norm_along_segment_sq = (norm_perp_proj_sq + np.power(lower_bound + grid * 
                                  (upper_bound - lower_bound), 2))
-        density_along_segment = np.power(1. - norm_along_segment_sq / norm_state_bound_sq, 0.5 * (df_max - df_1))
+        density_along_segment = np.power(1. - norm_along_segment_sq / norm_state_bound_sq, 0.5 * (df_max - df_1) - 1)
         sum_density = 0
 
         for igrid in range(ngrid):
@@ -633,12 +633,12 @@ def sample_sqrt_lasso_segment(np.ndarray[DTYPE_float_t, ndim=2] A,
 
         for igrid in range(ngrid):
             if sum_density > unif:
-                tval = (lower_bound + igrid * 
-                        (upper_bound - lower_bound) / ngrid)
+                tval = (lower_bound + (igrid - np.random.sample()) / ngrid * 
+                        (upper_bound - lower_bound))
                 break
             sum_density = sum_density + density_along_segment[igrid]
             if igrid == ngrid-1:
-                tval = upper_bound
+                tval = upper_bound - np.random.sample() * (upper_bound - lower_bound) / ngrid
 
         # update the state vector
 
