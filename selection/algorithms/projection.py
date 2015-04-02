@@ -45,8 +45,6 @@ class projection(object):
         U = U[:, np.fabs(D) > tol ]
         return projection(U)
 
-
-
 def full_rank(X):
     """
     >>> X = np.array([[1, 1, 1], [1, 1, 0], [1, 1, 1], [1, 1, 2]])
@@ -66,7 +64,6 @@ def full_rank(X):
     D2 = np.zeros(p)
     D2[:r] = D[:r]
     D2 = np.diag(D2)[:, :r]
-    #V2 = V[:r, :r]
 
     return np.dot(U, D2)
     

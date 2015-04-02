@@ -592,12 +592,12 @@ def data_carving(y, X,
             observed = (initial * eta).sum()
             if compute_intervals: 
                 family = MLE_family(conditional_law,
-                                         initial,
-                                         eta,
-                                         burnin=burnin,
-                                         ndraw=ndraw,
-                                         how_often=10,
-                                         white=False)
+                                    initial,
+                                    eta,
+                                    burnin=burnin,
+                                    ndraw=ndraw,
+                                    how_often=10,
+                                    white=False)
 
                 lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 

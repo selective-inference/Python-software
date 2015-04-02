@@ -1,8 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
-
-from selection.algorithms.forward_step import forward_stepwise, info_crit_stop, sequential
+from selection.algorithms.lasso import instance
+from selection.algorithms.forward_step import forward_stepwise, info_crit_stop, sequential, data_carving_IC
 
 def test_FS(k=10):
 
@@ -81,7 +81,7 @@ def test_BIC(k=10, do_sample=True):
     
     Y = np.random.standard_normal(100) * 0.5
     
-    FS = info_crit_stop(X, Y, 0.5, cost=np.log(n))
+    FS = info_crit_stop(Y, X, 0.5, cost=np.log(n))
     final_model = len(FS.variables) - 1
 
     if do_sample:
@@ -140,3 +140,64 @@ def test_ecdf(nsim=1000, BIC=False):
     plt.clf()
     plt.plot(ecdf.x, ecdf.y, linewidth=4, color='black')
     plt.show()
+
+def test_data_carving_IC(n=100,
+                         p=200,
+                         s=7,
+                         sigma=5,
+                         rho=0.3,
+                         snr=7.,
+                         split_frac=0.9,
+                         ndraw=5000,
+                         burnin=1000, 
+                         df=np.inf,
+                         coverage=0.90,
+                         compute_intervals=False):
+
+    counter = 0
+
+    while True:
+        counter += 1
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr, 
+                                             df=df)
+        mu = np.dot(X, beta)
+        splitn = int(n*split_frac)
+        indices = np.arange(n)
+        np.random.shuffle(indices)
+        stage_one = indices[:splitn]
+
+        FS = info_crit_stop(y, X, sigma, cost=np.log(n), subset=stage_one)
+
+        if set(range(s)).issubset(FS.active):
+            results, FS = data_carving_IC(y, X, sigma,
+                                          stage_one=stage_one,
+                                          splitting=True, 
+                                          ndraw=ndraw,
+                                          burnin=burnin,
+                                          coverage=coverage,
+                                          compute_intervals=compute_intervals,
+                                          cost=np.log(n))
+
+            carve = [r[1] for r in results]
+            split = [r[3] for r in results]
+
+            Xa = X[:,FS.variables[:-1]]
+            truth = np.dot(np.linalg.pinv(Xa), mu) 
+
+            split_coverage = []
+            carve_coverage = []
+            for result, t in zip(results, truth):
+                _, _, ci, _, si = result
+                carve_coverage.append((ci[0] < t) * (t < ci[1]))
+                split_coverage.append((si[0] < t) * (t < si[1]))
+
+            return ([carve[j] for j, i in enumerate(FS.active) if i >= s], 
+                    [split[j] for j, i in enumerate(FS.active) if i >= s], 
+                    [carve[j] for j, i in enumerate(FS.active) if i < s], 
+                    [split[j] for j, i in enumerate(FS.active) if i < s], 
+                    counter, carve_coverage, split_coverage)
