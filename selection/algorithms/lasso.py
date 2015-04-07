@@ -288,9 +288,12 @@ class lasso(object):
                     _interval = C.interval(eta, self.y,
                                            alpha=self.alpha,
                                            UMAU=self.UMAU)
-                    self._intervals.append((self.active[i], eta, 
-                                            (eta*self.y).sum(), 
-                                            _interval))
+                    self._intervals.append((self.active[i],
+                                            _interval[0], _interval[1]))
+            self._intervals = np.array(self._intervals, 
+                                       np.dtype([('index', np.int),
+                                                 ('lower', np.float),
+                                                 ('upper', np.float)]))
         return self._intervals
 
     @property
