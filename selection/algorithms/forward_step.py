@@ -367,8 +367,11 @@ def info_crit_stop(Y, X, sigma, cost=2,
     new_offset = -sigma * np.sqrt(cost) * np.ones(new_linear_part.shape[0])
     new_offset[-1] *= -1
 
-    new_con = stack(FS.constraints, constraints(np.dot(new_linear_part, FS.subset_selector),
-                                                new_offset))
+    if subset != []:
+        new_con = stack(FS.constraints, constraints(np.dot(new_linear_part, FS.subset_selector),
+                                                    new_offset))
+    else:
+        new_con = stack(FS.constraints, constraints(new_linear_part,new_offset))
     new_con.covariance[:] = sigma**2 * np.identity(n)
     if DEBUG:
         print FS.constraints.linear_part.shape, 'before'
