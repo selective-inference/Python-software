@@ -660,7 +660,7 @@ def data_carving(y, X,
                        splitting_intervals), L
     else:
         pvalues = [p for _, p in L.active_pvalues]
-        intervals = [o[-1] for o in L.intervals]
+        intervals = np.array([L.intervals['lower'], L.intervals['upper']]).T
         if splitting:
             splitting_pvalues = np.random.sample(len(pvalues))
             splitting_intervals = [(np.nan, np.nan) for _ in 
