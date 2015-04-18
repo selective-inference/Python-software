@@ -18,6 +18,7 @@ import regreg.api as rr
 
 from .lasso import _constraint_from_data
 from ..constraints.quasi_affine import (constraints_unknown_sigma, 
+                                        constraints as quasi_affine,
                                         orthogonal as orthogonal_QA)
 from ..constraints.affine import constraints as gaussian_constraints, sample_from_sphere
 from ..truncated import find_root
@@ -229,6 +230,13 @@ class sqrt_lasso(object):
                                                            self._active_constraints.offset / (self.sigma_E * np.sqrt(self.df_E)),
                                                            (self.sigma_E * np.sqrt(self.df_E))**2,
                                                            self.df_E)
+
+            # for metropolis hastings data carving sampler
+
+            self.full_quasi = quasi_affine(self.constraints.linear_part,
+                                           np.zeros(self.constraints.linear_part.shape[0]),
+                                           self.constraints.offset / (self.sigma_E * np.sqrt(self.df_E)),
+                                           self.R_E)
 
             cov = np.identity(n) * self.sigma_hat**2 
             for con in [self._active_constraints,
@@ -656,13 +664,16 @@ def data_carving(y, X,
     Returns
     -------
 
-    results : [(variable, pvalue, interval)
+    results : [(variable, pvalue, interval)]
         Indices of active variables, 
         selected (twosided) pvalue and selective interval.
         If splitting, then each entry also includes
         a (split_pvalue, split_interval) using stage_two
         for inference.
 
+    L : sqrt_lasso
+        Instance of class `sqrt_lasso` that was fit
+        to first stage data.
     """
 
     n, p = X.shape
@@ -798,43 +809,52 @@ def data_carving(y, X,
 
         full_RSS = np.linalg.norm(y - np.dot(X_E, np.dot(X_Ei, y)))**2 
 
+        do_MH = True
         for j in range(X_E.shape[1]):
+            
+            if not do_MH: # do Gibbs instead
+                keep = np.ones(s, np.bool)
+                keep[j] = 0
 
-            keep = np.ones(s, np.bool)
-            keep[j] = 0
+                eta = OLS_func[j]
 
-            eta = OLS_func[j]
+                conditional_con = con.conditional(conditional_linear[keep],
+                                                  np.dot(X_E.T, y)[keep])
 
-            conditional_con = con.conditional(conditional_linear[keep],
-                                              np.dot(X_E.T, y)[keep])
+                inverse_map, forward_map, white_con = conditional_con.whiten()
+                white_initial = forward_map(initial)
+                white_eta = forward_map(np.dot(con.covariance, eta))
+                observed = (eta * initial).sum()
 
-            inverse_map, forward_map, white_con = conditional_con.whiten()
-            white_initial = forward_map(initial)
-            white_eta = forward_map(np.dot(con.covariance, eta))
-            observed = (eta * initial).sum()
+                white_samples, W = sample_sqrt_lasso(white_con.linear_part,
+                                                     white_con.LHS_offset,
+                                                     white_con.RHS_offset,
+                                                     white_initial,
+                                                     white_eta,
+                                                     full_RSS + observed**2 / (eta**2).sum(),
+                                                     n - s + 1,
+                                                     white_con.RSS,
+                                                     white_con.RSS_df,
+                                                     np.sqrt(full_RSS / (n - s)),
+                                                     ndraw=ndraw,
+                                                     burnin=burnin)
 
-            white_samples, W = sample_sqrt_lasso(white_con.linear_part,
-                                                 white_con.LHS_offset,
-                                                 white_con.RHS_offset,
-                                                 white_initial,
-                                                 white_eta,
-                                                 full_RSS + observed**2 / (eta**2).sum(),
-                                                 n - s + 1,
-                                                 white_con.RSS,
-                                                 white_con.RSS_df,
-                                                 np.sqrt(full_RSS / (n - s)),
-                                                 ndraw=ndraw,
-                                                 burnin=burnin)
+                RSS_sample = white_samples[:,-1]
 
-            RSS_sample = white_samples[:,-1]
+                Z = inverse_map(white_samples[:,:-1].T).T
+                null_sample = np.dot(Z, eta)
 
-            Z = inverse_map(white_samples[:,:-1].T).T
-            null_sample = np.dot(Z, eta)
+                family = discrete_family(null_sample, W)
+                pval = family.cdf(0, observed)
+                pval = 2 * min(pval, 1 - pval)
 
-            family = discrete_family(null_sample, W)
-            pval = family.cdf(0, observed)
-            pval = 2 * min(pval, 1 - pval)
-
+            else:
+                pval = _MH_sample_data_carve(y, X,
+                                             stage_one,
+                                             L,
+                                             j,
+                                             ndraw=ndraw,
+                                             burnin=burnin)
             pvalues.append(pval)
 
             # intervals are still not implemented yet
@@ -994,3 +1014,67 @@ def standard_sqrt_lasso(y, X, lam_frac=1., quantile=0.95, fit_args={}):
     if sqrtL.active_constraints is not None and not sqrtL.active_constraints(y):
         raise ValueError('y does not satisfy KKT conditions determined by variables and signs-- try increasing min_its or tol in fit_args')
     return sqrtL
+
+def _MH_sample_data_carve(y, X,
+                          stage_one,
+                          stage_one_L,
+                          which_var,
+                          ndraw=10000,
+                          burnin=1000):
+
+    print 'doing MH'
+
+    L, j = stage_one_L, which_var # shorthand
+
+    quasi_constraints = L.full_quasi
+    active = np.zeros(X.shape[1], np.bool)
+    active[L.active] = True
+    active[j] = False
+
+    # find appropriate residual projector
+    # could be done a little more efficiently
+    # if all variables done at once?
+
+    X_Ej = X[:,active]
+    _XEinv = np.linalg.pinv(X_Ej)
+    P_Ej = np.dot(X_Ej, _XEinv)
+    n = y.shape[0]
+    R_Ej = np.identity(n) - P_Ej
+    eta = np.dot(R_Ej, X[:,j])
+    P_Ej_y = np.dot(P_Ej, y)
+
+    norm_RE_y = np.linalg.norm(np.dot(R_Ej, y))
+
+    def _proposal_step(y_null):
+        Z = np.random.standard_normal(y_null.shape)
+        R_y = np.dot(R_Ej, y_null)
+        Z0 = np.dot(R_Ej, Z)
+        direction = Z0 - (Z0*R_y).sum() / (R_y**2).sum() * R_y
+        direction /= np.linalg.norm(direction)
+        n = y_null.shape[0]
+        angle = np.random.beta(1, n/4) * np.pi 
+        jump = False
+        if np.random.sample() < 0.1:
+            jump = True
+            angle = np.random.sample() * np.pi * 2
+        proposal = np.cos(angle) * R_y + np.sin(angle) * direction * norm_RE_y + P_Ej_y
+        test = quasi_constraints(proposal[stage_one])
+        if test:
+            return True, proposal.copy()
+        else:
+            return False, y_null.copy()
+
+    eta_sample = []
+    y_null = np.dot(R_Ej, y) + P_Ej_y
+
+    acceptance = []
+    for i in range(ndraw + burnin):
+        accept, y_null = _proposal_step(y_null)
+        acceptance.append(accept)
+        if i >= burnin:
+            eta_sample.append(np.dot(eta, y_null))
+    family = discrete_family(eta_sample, np.ones_like(eta_sample))
+    pval = family.cdf(0, (eta*y).sum())
+    pval = 2 * min(pval, 1 - pval)
+    print (eta*y).sum(), np.mean(eta_sample), np.std(eta_sample), pval
+    return pval

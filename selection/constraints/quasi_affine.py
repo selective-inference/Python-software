@@ -88,8 +88,6 @@ class constraints(object):
 
         """
 
-        raise NotImplementedError('need to take into account nonidentity covariance for residual projector')
-
         (self.linear_part, 
          self.LHS_offset, 
          self.RHS_offset,
@@ -105,6 +103,9 @@ class constraints(object):
 
         if covariance is None:
             covariance = np.identity(self.dim)
+        else:
+            raise NotImplementedError('need to take into account nonidentity covariance for residual projector')
+
         self.covariance = covariance
 
         self.RSS_df = np.diag(self.residual_projector).sum()
@@ -123,8 +124,6 @@ class constraints(object):
         >>> C._repr_latex
         "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
         """
-        raise NotImplementedError('class is incomplete')
-
         return """$$Z \sim N(\mu,\Sigma) | AZ + u \leq \|PZ\|_2 b$$"""
 
     def __copy__(self):
@@ -133,8 +132,6 @@ class constraints(object):
 
         Also copies _sqrt_cov, _sqrt_inv if attributes are present.
         """
-        raise NotImplementedError('class is incomplete')
-
         con = constraints(self.linear_part.copy(),
                           self.LHS.offset.copy(),
                           self.RHS.offset.copy(),
@@ -147,6 +144,11 @@ class constraints(object):
                           
         return con
 
+    def _value(self, Y):
+        sqrt_RSS = np.linalg.norm(np.dot(self.residual_projector, Y))
+        V1 = np.dot(self.linear_part, Y) + self.LHS_offset - self.RHS_offset * sqrt_RSS
+        return V1
+
     def __call__(self, Y, tol=1.e-3):
         r"""
         Check whether Y satisfies the linear
@@ -158,8 +160,6 @@ class constraints(object):
         >>> con(Y)
         True
         """
-        raise NotImplementedError('class is incomplete')
-
         sqrt_RSS = np.linalg.norm(np.dot(self.residual_projector, Y))
         V1 = np.dot(self.linear_part, Y) + self.LHS_offset - self.RHS_offset * sqrt_RSS
         return np.all(V1 < tol * np.fabs(V1).max())
@@ -195,33 +195,33 @@ class constraints(object):
 
         """
 
-        raise NotImplementedError('class is incomplete -- calculation should not assume that PZ is independent of CZ')
+        raise NotImplementedError('class is incomplete; calculation should not assume that PZ is independent of CZ')
 
-        A, S = (self.linear_part, 
-                self.covariance)
-        C, d = linear_part, value
+#         A, S = (self.linear_part, 
+#                 self.covariance)
+#         C, d = linear_part, value
 
-        M1 = np.dot(S, C.T)
-        M2 = np.dot(C, M1)
-        if M2.shape:
-            M2i = np.linalg.pinv(M2)
-            delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_mean = \
-            np.dot(M1,
-                   np.dot(M2i,
-                          np.dot(C,
-                                 self.mean) - d))
-        else:
-            M2i = 1. / M2
-            delta_cov = np.multiply.outer(M1, M1) / M2i
-            delta_mean = M1 * d  / M2i
+#         M1 = np.dot(S, C.T)
+#         M2 = np.dot(C, M1)
+#         if M2.shape:
+#             M2i = np.linalg.pinv(M2)
+#             delta_cov = np.dot(M1, np.dot(M2i, M1.T))
+#             delta_mean = \
+#             np.dot(M1,
+#                    np.dot(M2i,
+#                           np.dot(C,
+#                                  self.mean) - d))
+#         else:
+#             M2i = 1. / M2
+#             delta_cov = np.multiply.outer(M1, M1) / M2i
+#             delta_mean = M1 * d  / M2i
 
-        return constraints(self.linear_part,
-                           self.LHS_offset, 
-                           self.RHS_offset,
-                           self.residual_projector,
-                           covariance=self.covariance - delta_cov,
-                           mean=self.mean - delta_mean)
+#         return constraints(self.linear_part,
+#                            self.LHS_offset, 
+#                            self.RHS_offset,
+#                            self.residual_projector,
+#                            covariance=self.covariance - delta_cov,
+#                            mean=self.mean - delta_mean)
 
     def bounds(self, direction_of_interest, Y):
         r"""
@@ -272,6 +272,11 @@ class constraints(object):
         given direction $\eta$ and test whether 
         $\eta^T\mu$ is greater then 0, less than 0 or equal to 0.
 
+        Note
+        ----
+
+        Conditions on some direction vector!
+
         Parameters
         ----------
 
@@ -303,8 +308,6 @@ class constraints(object):
         
         """
 
-        raise NotImplementedError('class is incomplete')
-
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
@@ -335,36 +338,36 @@ class constraints(object):
 
         """
 
-        raise NotImplementedError('class is incomplete')
+        raise NotImplementedError('class is only defined for multiple of identity covariance')
 
-        if not hasattr(self, "_sqrt_cov"):
-            rank = np.linalg.matrix_rank(self.covariance)
+#         if not hasattr(self, "_sqrt_cov"):
+#             rank = np.linalg.matrix_rank(self.covariance)
 
-            D, U = np.linalg.eigh(self.covariance)
-            D = np.sqrt(D[-rank:])
-            U = U[:,-rank:]
+#             D, U = np.linalg.eigh(self.covariance)
+#             D = np.sqrt(D[-rank:])
+#             U = U[:,-rank:]
         
-            self._sqrt_cov = U * D[None,:]
-            self._sqrt_inv = (U / D[None,:]).T
+#             self._sqrt_cov = U * D[None,:]
+#             self._sqrt_inv = (U / D[None,:]).T
 
-        sqrt_cov = self._sqrt_cov
-        sqrt_inv = self._sqrt_inv
+#         sqrt_cov = self._sqrt_cov
+#         sqrt_inv = self._sqrt_inv
 
-        # original matrix is np.dot(U, U.T)
+#         # original matrix is np.dot(U, U.T)
 
-        # NEEDS FIX residual projector should also be whitened!!
+#         # NEEDS FIX residual projector should also be whitened!!
 
-        new_A = np.dot(self.linear_part, sqrt_cov)
-        new_con = constraints(new_A, 
-                              self.LHS_offset,
-                              self.RHS_offset,
-                              self.residual_projector)
+#         new_A = np.dot(self.linear_part, sqrt_cov)
+#         new_con = constraints(new_A, 
+#                               self.LHS_offset,
+#                               self.RHS_offset,
+#                               self.residual_projector)
 
-        mu = self.mean.copy()
-        inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
-        forward_map = lambda W: np.dot(sqrt_inv, W - mu)
+#         mu = self.mean.copy()
+#         inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
+#         forward_map = lambda W: np.dot(sqrt_inv, W - mu)
 
-        return inverse_map, forward_map, new_con
+#         return inverse_map, forward_map, new_con
 
 class orthogonal(constraints):
 
