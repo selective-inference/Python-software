@@ -4,6 +4,8 @@ post selection for the square root lasso.
 
 """
 
+from copy import copy
+
 import numpy as np, warnings
 from scipy.stats import norm as ndist, chi as chidist
 from scipy.interpolate import interp1d
@@ -20,7 +22,9 @@ from .lasso import _constraint_from_data
 from ..constraints.quasi_affine import (constraints_unknown_sigma, 
                                         constraints as quasi_affine,
                                         orthogonal as orthogonal_QA)
-from ..constraints.affine import constraints as gaussian_constraints, sample_from_sphere
+from ..constraints.affine import (constraints as affine_constraints, 
+                                  gibbs_test,
+                                  sample_from_sphere)
 from ..truncated import find_root
 from ..distributions.discrete_multiparameter import multiparameter_family
 from ..distributions.discrete_family import discrete_family
@@ -520,7 +524,7 @@ def nominal_pvalues(sqrtL):
         _pvalues_unadjusted.append((sqrtL.active[i], T, _pval))
     return _pvalues_unadjusted
 
-def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
+def estimate_sigma(observed, truncated_df, upper_bound, untruncated_df=0, factor=3, npts=50, nsample=2000):
     """
 
     Produce an estimate of $\sigma$ from a constrained
@@ -533,12 +537,17 @@ def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
     observed : float
         The observed sum of squares.
 
-    df : float
-        Degrees of freedom of the sum of squares.
+    truncated_df : float
+        Degrees of freedom of the truncated $\chi^2$ in the sum of squares.
+        The observed sum is assumed to be the sum
+        of an independent untruncated $\chi^2$ and the truncated one.
 
     upper_bound : float
         Upper limit of truncation interval.
     
+    untruncated_df : float
+        Degrees of freedom of the untruncated $\chi^2$ in the sum of squares.
+
     factor : float
         Range of candidate values is 
         [observed/factor, observed*factor]
@@ -558,26 +567,39 @@ def estimate_sigma(observed, df, upper_bound, factor=3, npts=50, nsample=2000):
     
     """
 
+    if untruncated_df < 5:
+        linear_term = truncated_df**(0.5)
+    else:
+        linear_term = 0
+
+    total_df = untruncated_df + truncated_df
+
     values = np.linspace(1./factor, factor, npts) * observed
     expected = 0 * values
     for i, value in enumerate(values):
-        P_upper = chidist.cdf(upper_bound * np.sqrt(df) / value, df) 
+        P_upper = chidist.cdf(upper_bound * np.sqrt(truncated_df) / value, truncated_df) 
         U = np.random.sample(nsample)
-        sample = chidist.ppf(P_upper * U, df) * value
-        expected[i] = np.mean(sample**2) 
+        if untruncated_df > 0:
+            sample = (chidist.ppf(P_upper * U, truncated_df)**2 + chidist.rvs(untruncated_df, size=nsample)**2) * value**2
+        else:
+            sample = (chidist.ppf(P_upper * U, truncated_df) * value)**2
+        expected[i] = np.mean(sample) 
 
-        if expected[i] >= 1.1 * (observed**2 * df + observed**2 * df**(0.5)):
+        if expected[i] >= 1.1 * (observed**2 * total_df + observed**2 * linear_term):
             break
 
-    interpolant = interp1d(values, expected + df**(0.5) * values**2)
+    interpolant = interp1d(values, expected + values**2 * linear_term)
     V = np.linspace(1./factor,factor,10*npts) * observed
+
     # this solves for the solution to 
     # expected(sigma) + sqrt(df) * sigma^2 = observed SS * (1 + sqrt(df))
     # the usual "MAP" estimator would have RHS just observed SS
     # but this factor seems to ``correct it''.
     # it is such that if there were no selection it would be 
     # the usual unbiased estimate
-    sigma_hat = np.min(V[interpolant(V) >= observed**2 * df + observed**2 * df**(0.5)])
+
+    sigma_hat = np.min(V[interpolant(V) >= observed**2 * total_df + observed**2 * linear_term])
+    print 'sigma_hat', sigma_hat
     return sigma_hat
 
 def choose_lambda(X, quantile=0.95, ndraw=10000):
@@ -616,6 +638,7 @@ def data_carving(y, X,
                  ndraw=5000,
                  burnin=1000,
                  splitting=False,
+                 compute_intervals=False,
                  fit_args={}):
 
     """
@@ -709,36 +732,31 @@ def data_carving(y, X,
         sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
         sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
 
+        sigma_hat = estimate_sigma(sigma_E, n1 - L.active.shape[0], L.S_trunc_interval, untruncated_df=n2)
+
         if n2 > s:
 
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
-
-            L_QA = L.quasi_affine_constraints
-            con = orthogonal_QA(linear_part, 
-                                L_QA.LHS_offset,
-                                L_QA.RHS_offset,
-                                L_QA.RSS,
-                                L_QA.RSS_df)
+            b = L.active_constraints.offset
+            con = affine_constraints(linear_part, b)
 
             # specify covariance of 2s Gaussian vector
 
             cov = np.zeros((2*s, 2*s))
-            cov[:s, :s] = inv_info_E 
+            cov[:s, :s] = inv_info_E
             cov[s:, :s] = inv_info_E
             cov[:s, s:] = inv_info_E
             cov[s:, s:] = inv_info_E1
 
-            # does this sigma_E matter for sampling? 
-
-            con.covariance[:] = cov # * sigma_E**2
+            con.covariance[:] = cov * sigma_hat**2
 
             # for the conditional law
             # we will change the linear function for each coefficient
 
             selector = np.zeros((s, 2*s))
             selector[:, :s]  = np.identity(s)
-            conditional_linear = np.dot(np.linalg.pinv(inv_info_E), selector) 
+            conditional_linear = np.dot(np.dot(X_E.T, X_E), selector) 
 
             # a valid initial condition
 
@@ -747,39 +765,33 @@ def data_carving(y, X,
 
         else:
 
-            linear_part = np.zeros((s, s + n2))
+            linear_part = np.zeros((s, s + n - splitn))
             linear_part[:, :s] = -np.diag(L.z_E)
-
-            L_QA = L.quasi_affine_constraints
-            con = orthogonal_QA(linear_part, 
-                                L_QA.LHS_offset,
-                                L_QA.RHS_offset,
-                                L_QA.RSS,
-                                L_QA.RSS_df)
-
+            b = L.active_constraints.offset
+            con = affine_constraints(linear_part, b)
 
             # specify covariance of Gaussian vector
 
-            cov = np.zeros((s + n2, s + n2))
+            cov = np.zeros((s + n - splitn, s + n - splitn))
             cov[:s, :s] = inv_info_E1
             cov[s:, :s] = 0
             cov[:s, s:] = 0
-            cov[s:, s:] = np.identity(n2) 
+            cov[s:, s:] = np.identity(n - splitn) 
 
-            con.covariance[:] = cov # * sigma_E**2
+            con.covariance[:] = cov * sigma_hat**2
 
-            conditional_linear = np.zeros((s, s + n2))
-            conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1) 
+            conditional_linear = np.zeros((s, s + n - splitn))
+            conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1)
             conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
 
-            selector1 = np.zeros((s, s + n2))
+            selector1 = np.zeros((s, s + n - splitn))
             selector1[:, :s]  = np.identity(s)
-            selector2 = np.zeros((n2, s + n2))
-            selector2[:, s:]  = np.identity(n2)
+            selector2 = np.zeros((n - splitn, s + n - splitn))
+            selector2[:, s:]  = np.identity(n - splitn)
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-            OLS_func = np.dot(inv_info_E, conditional_linear)
+            OLS_func = np.dot(inv_info_E, conditional_linear) 
 
             # a valid initial condition
 
@@ -807,46 +819,61 @@ def data_carving(y, X,
 
         # compute p-values and (TODO: intervals)
 
-        full_RSS = np.linalg.norm(y - np.dot(X_E, np.dot(X_Ei, y)))**2 
+        full_RSS = sigma_E**2 * (n - s)
 
-        do_MH = True
+        do_MH = False
         for j in range(X_E.shape[1]):
             
             if not do_MH: # do Gibbs instead
+
                 keep = np.ones(s, np.bool)
                 keep[j] = 0
 
                 eta = OLS_func[j]
 
-                conditional_con = con.conditional(conditional_linear[keep],
-                                                  np.dot(X_E.T, y)[keep])
+                con_cp = copy(con)
+                conditional_law = con_cp.conditional(conditional_linear[keep], \
+                                                         np.dot(X_E.T, y)[keep])
 
-                inverse_map, forward_map, white_con = conditional_con.whiten()
-                white_initial = forward_map(initial)
-                white_eta = forward_map(np.dot(con.covariance, eta))
-                observed = (eta * initial).sum()
+                # tilt so that samples are closer to observed values
+                # the multiplier should be the pseudoMLE so that
+                # the observed value is likely 
 
-                white_samples, W = sample_sqrt_lasso(white_con.linear_part,
-                                                     white_con.LHS_offset,
-                                                     white_con.RHS_offset,
-                                                     white_initial,
-                                                     white_eta,
-                                                     full_RSS + observed**2 / (eta**2).sum(),
-                                                     n - s + 1,
-                                                     white_con.RSS,
-                                                     white_con.RSS_df,
-                                                     np.sqrt(full_RSS / (n - s)),
-                                                     ndraw=ndraw,
-                                                     burnin=burnin)
+                observed = (initial * eta).sum()
+                if compute_intervals: 
+                    family = MLE_family(conditional_law,
+                                        initial,
+                                        eta,
+                                        burnin=burnin,
+                                        ndraw=ndraw,
+                                        how_often=10,
+                                        white=False)
 
-                RSS_sample = white_samples[:,-1]
+                    lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 
-                Z = inverse_map(white_samples[:,:-1].T).T
-                null_sample = np.dot(Z, eta)
+                    # in the model we've chosen, the parameter beta is associated
+                    # to the natural parameter as below
 
-                family = discrete_family(null_sample, W)
+                    lower_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * lower_lim
+                    upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
+
+                    intervals.append((lower_lim_final, upper_lim_final))
+
+                else:
+                    _, _, _, family = gibbs_test(conditional_law,
+                                                 initial, 
+                                                 eta,
+                                                 sigma_known=True,
+                                                 white=False,
+                                                 ndraw=ndraw,
+                                                 burnin=burnin,
+                                                 how_often=10)
+
+                    intervals.append((np.nan, np.nan))
+
                 pval = family.cdf(0, observed)
                 pval = 2 * min(pval, 1 - pval)
+                pvalues.append(pval)
 
             else:
                 pval = _MH_sample_data_carve(y, X,
@@ -855,10 +882,9 @@ def data_carving(y, X,
                                              j,
                                              ndraw=ndraw,
                                              burnin=burnin)
-            pvalues.append(pval)
-
-            # intervals are still not implemented yet
-            intervals.append((np.nan, np.nan))
+                pvalues.append(pval)
+                # intervals are not implemented yet
+                intervals.append((np.nan, np.nan))
 
             if splitting:
                 if s < n2: # enough data to generically
