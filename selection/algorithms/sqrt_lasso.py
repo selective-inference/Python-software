@@ -732,10 +732,17 @@ def data_carving(y, X,
         sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
         sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
 
-        sigma_hat = estimate_sigma(sigma_E, n1 - L.active.shape[0], L.S_trunc_interval, untruncated_df=n2)
+        sigma_hat = L.sigma_hat # estimate_sigma(sigma_E, n1 - L.active.shape[0], L.S_trunc_interval, untruncated_df=n2)
+
+        if n2 > s or splitting:
+
+            y2, X2 = y[stage_two], X[stage_two]
+            X_E2 = X2[:,L.active]
+            X_Ei2 = np.linalg.pinv(X_E2)
 
         if n2 > s:
-
+            RSS_2 = np.linalg.norm(y2 - np.dot(X_E2, np.dot(X_Ei2, y2)))**2
+            sigma_hat = np.sqrt(((n1-s)*sigma_hat**2 + RSS_2) / (n1 + n2 - 2*s))
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
             b = L.active_constraints.offset
