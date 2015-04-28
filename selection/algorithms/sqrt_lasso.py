@@ -24,6 +24,7 @@ from ..constraints.quasi_affine import (constraints_unknown_sigma,
                                         orthogonal as orthogonal_QA)
 from ..constraints.affine import (constraints as affine_constraints, 
                                   gibbs_test,
+                                  MLE_family,
                                   sample_from_sphere)
 from ..truncated import find_root
 from ..distributions.discrete_multiparameter import multiparameter_family
@@ -349,6 +350,7 @@ class sqrt_lasso(object):
                         _pval = self.quasi_affine_constraints.pivot(eta, 
                                                                     self.y,
                                                                     alternative='twosided')
+                        print _pval
                         self._pvals.append((self.active[i], _pval))
         return self._pvals
 
@@ -599,7 +601,6 @@ def estimate_sigma(observed, truncated_df, upper_bound, untruncated_df=0, factor
     # the usual unbiased estimate
 
     sigma_hat = np.min(V[interpolant(V) >= observed**2 * total_df + observed**2 * linear_term])
-    print 'sigma_hat', sigma_hat
     return sigma_hat
 
 def choose_lambda(X, quantile=0.95, ndraw=10000):
@@ -1055,7 +1056,6 @@ def _MH_sample_data_carve(y, X,
                           ndraw=10000,
                           burnin=1000):
 
-    print 'doing MH'
 
     L, j = stage_one_L, which_var # shorthand
 
@@ -1109,5 +1109,5 @@ def _MH_sample_data_carve(y, X,
     family = discrete_family(eta_sample, np.ones_like(eta_sample))
     pval = family.cdf(0, (eta*y).sum())
     pval = 2 * min(pval, 1 - pval)
-    print (eta*y).sum(), np.mean(eta_sample), np.std(eta_sample), pval
+
     return pval
