@@ -36,6 +36,7 @@ def test_data_carving(n=100,
 
     counter = 0
 
+    return_value = []
     while True:
         counter += 1
         X, y, beta, active, sigma = instance(n=n, 
@@ -50,6 +51,7 @@ def test_data_carving(n=100,
                         sigma=sigma,
                         lam_frac=lam_frac,
                         split_frac=split_frac)[:2]
+
 
         if set(range(s)).issubset(L.active):
             results, L = data_carving(y, X, lam_frac=lam_frac, 
@@ -74,7 +76,17 @@ def test_data_carving(n=100,
                 carve_coverage.append((ci[0] < t) * (t < ci[1]))
                 split_coverage.append((si[0] < t) * (t < si[1]))
 
-            return carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage
+            TP = s
+            FP = L.active.shape[0] - TP
+            v = (carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage, TP, FP)
+            return_value.append(v)
+            break
+        else:
+            TP = len(set(L.active).intersection(range(s)))
+            FP = L.active.shape[0] - TP
+            v = (None, None, None, None, counter, np.nan, np.nan, TP, FP)
+            return_value.append(v)
+    return return_value
 
 @dec.slow
 def test_data_carving_coverage(n=200, coverage=0.8):
