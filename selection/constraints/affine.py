@@ -148,8 +148,14 @@ class constraints(object):
         >>> con(Y)
         True
         """
-        V1 = np.dot(self.linear_part, Y) - self.offset
-        return np.all(V1 < tol * np.fabs(V1).max())
+        V1 = self.value(Y)
+        return np.all(V1 < tol * np.fabs(V1).max(0))
+
+    def value(self, Y):
+        r"""
+        Compute $\max(Ay-b)$.
+        """
+        return (np.dot(self.linear_part, Y) - self.offset)
 
     def conditional(self, linear_part, value):
         """
