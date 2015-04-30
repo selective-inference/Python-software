@@ -296,7 +296,7 @@ class constraints(object):
         elif alternative == 'less':
             return P
         else:
-            return 2 * min(P, 1-P)
+            return max(2 * min(P, 1-P), 0)
 
     def interval(self, direction_of_interest, Y,
                  alpha=0.05, UMAU=False):
@@ -686,7 +686,7 @@ def one_parameter_MLE(constraint,
                                             ndraw=ndraw, 
                                             burnin=burnin,
                                             sigma=1.,
-                                            use_A=False)
+                                            use_constraint_directions=False)
 
         Z = inverse_map(cur_sample.T).T
 
@@ -846,7 +846,8 @@ def sample_from_constraints(con,
                             ndraw=1000,
                             burnin=1000,
                             white=False,
-                            use_constraint_directions=True):
+                            use_constraint_directions=True,
+                            use_random_directions=True):
     r"""
     Use Gibbs sampler to simulate from `con`.
 
@@ -878,6 +879,10 @@ def sample_from_constraints(con,
         Use the directions formed by the constraints as in
         the Gibbs scheme?
 
+    use_random_directions : bool (optional)
+        Use additional random directions in
+        the Gibbs scheme?
+
     Returns
     -------
 
@@ -907,7 +912,8 @@ def sample_from_constraints(con,
                                            ndraw=ndraw, 
                                            burnin=burnin,
                                            sigma=1.,
-                                           use_A=use_constraint_directions)
+                                           use_constraint_directions=use_constraint_directions,
+                                           use_random_directions=use_random_directions)
     Z = inverse_map(white_samples.T).T
     return Z
 
@@ -991,7 +997,9 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                UMPU=True,
                sigma_known=False,
                alpha=0.05,
-               use_constraint_directions=False):
+               pvalue=True, 
+               use_constraint_directions=False,
+               use_random_directions=True):
     """
     A Monte Carlo significance test for
     a given function of `con.mean`.
@@ -1033,8 +1041,15 @@ def gibbs_test(affine_con, Y, direction_of_interest,
     alpha : 
         Level for UMPU test.
 
+    pvalue : 
+        Return a pvalue or just the decision.
+
     use_constraint_directions : bool (optional)
         Use the directions formed by the constraints as in
+        the Gibbs scheme?
+
+    use_random_directions : bool (optional)
+        Use additional random directions in
         the Gibbs scheme?
 
     Returns
@@ -1072,7 +1087,9 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                     burnin=burnin,
                                     white=white,
                                     use_constraint_directions=\
-                                        use_constraint_directions)
+                                        use_constraint_directions,
+                                    use_random_directions=\
+                                        use_random_directions)
         W = np.ones(Z.shape[0], np.float)
 
     null_statistics = np.dot(Z, eta)
@@ -1084,9 +1101,8 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
     elif not UMPU:
         pvalue = (W*(null_statistics <= observed)).sum() / W.sum()
-        pvalue = 2 * min(pvalue, 1 - pvalue)
+        pvalue = max(2 * min(pvalue, 1 - pvalue), 0)
     else:
         decision = dfam.two_sided_test(0, observed, alpha=alpha)
         return decision, Z, W, dfam
     return pvalue, Z, W, dfam
-

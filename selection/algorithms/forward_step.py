@@ -86,8 +86,8 @@ class forward_stepwise(object):
             self.A = self.As[0]
             self.variables.append(idx)
             self.signs.append(sign)
-            self.Z.append(Z[idx])
             self.Zfunc.append(Unew * sign)
+            self.Z.append(Z[idx] / np.sqrt(np.dot(self.Zfunc[-1], np.dot(self.covariance, self.Zfunc[-1]))))
         else:
             RY = Y-P(Y)
             RX = X-P(X)
@@ -103,8 +103,8 @@ class forward_stepwise(object):
             sign = np.sign(U[idx])
             self.variables.append(np.arange(p)[keep][idx])
             self.signs.append(sign)
-            self.Z.append(Z[idx])
             self.Zfunc.append((RX.T[idx] / scale[idx]) * sign)
+            self.Z.append(Z[idx] / np.sqrt(np.dot(self.Zfunc[-1], np.dot(self.covariance, self.Zfunc[-1]))))
             Unew = RX[:,idx] / scale[idx]
             Pnew = P.stack(Unew.reshape((-1,1)))
             newA = canonicalA(RX, RY, idx, sign, scale=scale)
@@ -124,17 +124,13 @@ class forward_stepwise(object):
 
         self.P.append(Pnew)
 
-    @property
     def constraints(self):
-        if not hasattr(self, "_constraints"):
-            if self.subset == []:
-                self._constraints = constraints(self.A, np.zeros(self.A.shape[0]), 
-                                                covariance=self.covariance)
-            else:
-                self._constraints = constraints(np.dot(self.A, self.subset_selector),
-                                                np.zeros(self.A.shape[0]), 
-                                                covariance=self.covariance)
-        return self._constraints
+        if self.subset == []:
+            return constraints(self.A, np.zeros(self.A.shape[0]), 
+                               covariance=self.covariance)
+        return constraints(np.dot(self.A, self.subset_selector),
+                           np.zeros(self.A.shape[0]), 
+                           covariance=self.covariance)
 
     def model_pivots(self, which_step, alternative='greater',
                      saturated=True,
@@ -142,6 +138,7 @@ class forward_stepwise(object):
                      burnin=2000,
                      which_var=[], 
                      compute_intervals=False,
+                     nominal=False,
                      coverage=0.95):
         """
         Compute two-sided pvalues for each coefficient
@@ -190,7 +187,8 @@ class forward_stepwise(object):
         if self.covariance is None and saturated:
             raise ValueError('need a covariance matrix to compute pivots for saturated model')
 
-        con = copy(self.constraints)
+        con = copy(self.constraints())
+
         if self.covariance is not None:
             con.covariance[:] = self.covariance 
 
@@ -214,6 +212,7 @@ class forward_stepwise(object):
                     pivots.append((self.variables[i],
                                    con.pivot(LSfunc[i], self.Y,
                                              alternative=alternative)))
+                  
         else:
             sigma_known = self.covariance is not None
             for i in range(LSfunc.shape[0]):
@@ -253,9 +252,13 @@ class forward_stepwise(object):
                                           sigma_known=sigma_known,
                                           burnin=burnin,
                                           ndraw=ndraw,
-                                          how_often=-1)[0]
+                                          UMPU=False,
+                                          how_often=-1,
+                                          use_random_directions=False,
+                                          use_constraint_directions=False)[0]
                     pivots.append((self.variables[i], 
                                    pval))
+
         return pivots
 
     def model_quadratic(self, which_step):

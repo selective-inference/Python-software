@@ -26,7 +26,8 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
                            DTYPE_float_t sigma=1.,
                            DTYPE_int_t burnin=500,
                            DTYPE_int_t ndraw=1000,
-					   int use_A=1
+                           int use_constraint_directions=1,
+                           int use_random_directions=0,
                            ):
     """
     Sample from a truncated normal with covariance
@@ -67,6 +68,14 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
     ndraw : int
         How many samples should we return?
 
+    use_constraint_directions : bool (optional)
+        Use the directions formed by the constraints as in
+        the Gibbs scheme?
+
+    use_random_directions : bool (optional)
+        Use additional random directions in
+        the Gibbs scheme?
+
     Returns
     -------
 
@@ -92,17 +101,17 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     # directions not parallel to coordinate axes
 
-    if use_A:
-        _dirs = [A, 
-                 np.random.standard_normal((int(nvar/5),nvar))]
+    if use_constraint_directions:
+        _dirs = [A] 
     else:
-        _dirs = [np.random.standard_normal((nvar,nvar))]
+        _dirs = []
+    if use_random_directions:
+        _dirs.append(np.random.standard_normal((int(nvar/5),nvar)))
+    _dirs.append(bias_direction.reshape((-1, nvar)))
 
     cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
         np.vstack(_dirs)
         
-    directions[-1][:] = bias_direction
-
     directions /= np.sqrt((directions**2).sum(1))[:,None]
 
     cdef int ndir = directions.shape[0]

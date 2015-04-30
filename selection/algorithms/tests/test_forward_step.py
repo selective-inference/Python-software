@@ -201,3 +201,36 @@ def test_data_carving_IC(n=100,
                     [carve[j] for j, i in enumerate(FS.active) if i < s], 
                     [split[j] for j, i in enumerate(FS.active) if i < s], 
                     counter, carve_coverage, split_coverage)
+
+
+def test_full_pvals(n=100, p=40, rho=0.3, snr=4):
+
+    X, y, beta, active, sigma = instance(n=n, p=p, snr=snr, rho=rho)
+    FS = forward_stepwise(X, y, covariance=sigma**2 * np.identity(n))
+
+    from scipy.stats import norm as ndist
+    pval = []
+    completed_yet = False
+    for i in range(min(n, p)):
+        FS.next()
+        var_select, pval_select = FS.model_pivots(i+1, alternative='twosided',
+                                                  which_var=[FS.variables[-1]],
+                                                  saturated=False,
+                                                  burnin=2000,
+                                                  ndraw=8000)[0]
+        pval_saturated = FS.model_pivots(i+1, alternative='twosided',
+                                         which_var=[FS.variables[-1]],
+                                         saturated=True)[0][1]
+
+        # now, nominal ones
+
+        LSfunc = np.linalg.pinv(FS.X[:,FS.variables])
+        Z = np.dot(LSfunc[-1], FS.Y) / (np.linalg.norm(LSfunc[-1]) * sigma)
+        pval_nominal = 2 * ndist.sf(np.fabs(Z))
+        pval.append((var_select, pval_select, pval_saturated, pval_nominal))
+            
+        if set(active).issubset(np.array(pval)[:,0]) and not completed_yet:
+            completed_yet = True
+            completion_index = i + 1
+
+    return X, y, beta, active, sigma, np.array(pval), completion_index
