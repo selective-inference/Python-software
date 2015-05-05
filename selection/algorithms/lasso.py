@@ -145,7 +145,7 @@ class lasso(object):
         Parameters
         ----------
 
-        y : np.float(y)
+        y : np.float(n)
             The target, in the model $y = X\beta$
 
         X : np.float((n, p))
