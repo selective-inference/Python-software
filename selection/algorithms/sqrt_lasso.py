@@ -368,6 +368,9 @@ class sqrt_lasso(object):
                         eta = XEinv[i]
                         _gaussian_pval = C.pivot(eta, self.y, alternative="twosided")
                         self._gaussian_pvals.append((self.active[i], _gaussian_pval))
+                self._gaussian_pvals = np.array(self._gaussian_pvals,
+                                                np.dtype([('variable', np.int),
+                                                          ('pvalue', np.float)]))
         return self._gaussian_pvals
 
     @property
@@ -384,7 +387,11 @@ class sqrt_lasso(object):
                         eta = XEinv[i]
                         _interval = C.interval(eta, self.y,
                                                alpha=self.alpha)
-                        self._gaussian_intervals.append((self.active[i], _interval))
+                        self._gaussian_intervals.append((self.active[i], _interval[0], _interval[1]))
+                self._gaussian_intervals = np.array(self._gaussian_pvals,
+                                                    np.dtype([('variable', np.int),
+                                                              ('lower', np.float),
+                                                              ('upper', np.float)]))
         return self._gaussian_intervals
 
     def goodness_of_fit(self, statistic, 
