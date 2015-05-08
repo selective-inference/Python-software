@@ -12,7 +12,7 @@ class projection(object):
     
     """
     def __init__(self, U):
-        self.U = U
+        self.U = np.linalg.svd(U)[0][:, :np.linalg.matrix_rank(U)]
 
     def __call__(self, Z, rank=None):
         if rank is None:
