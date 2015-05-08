@@ -349,7 +349,6 @@ class sqrt_lasso(object):
                         _pval = self.quasi_affine_constraints.pivot(eta, 
                                                                     self.y,
                                                                     alternative='twosided')
-                        print _pval
                         self._pvals.append((self.active[i], _pval))
         return self._pvals
 
@@ -387,7 +386,7 @@ class sqrt_lasso(object):
                         _interval = C.interval(eta, self.y,
                                                alpha=self.alpha)
                         self._gaussian_intervals.append((self.active[i], _interval[0], _interval[1]))
-                self._gaussian_intervals = np.array(self._gaussian_pvals,
+                self._gaussian_intervals = np.array(self._gaussian_intervals,
                                                     np.dtype([('variable', np.int),
                                                               ('lower', np.float),
                                                               ('upper', np.float)]))
