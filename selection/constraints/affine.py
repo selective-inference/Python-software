@@ -198,7 +198,7 @@ class constraints(object):
         else:
             M2i = 1. / M2
             delta_cov = np.multiply.outer(M1, M1) / M2i
-            delta_mean = M1 * d  / M2i
+            delta_mean = M1 * (np.dot(C, self.mean) - d)  / M2i
 
         return constraints(self.linear_part,
                            self.offset,
