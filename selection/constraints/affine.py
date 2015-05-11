@@ -904,16 +904,42 @@ def sample_from_constraints(con,
         white_con = con
         inverse_map = lambda V: V
 
-    white_samples = sample_truncnorm_white(white_con.linear_part,
-                                           white_con.offset,
-                                           white_Y, 
-                                           white_direction_of_interest,
-                                           how_often=how_often,
-                                           ndraw=ndraw, 
-                                           burnin=burnin,
-                                           sigma=1.,
-                                           use_constraint_directions=use_constraint_directions,
-                                           use_random_directions=use_random_directions)
+    # try 100 draws of accept reject
+    # if we get more than 50 good draws, then just return a smaller sample
+    # of size (burnin+ndraw)/5
+
+
+    def _accept_reject(sample_size, linear_part, offset):
+        Z_sample = np.random.standard_normal((100, linear_part.shape[1]))
+        constraint_satisfied = (np.dot(Z_sample, linear_part.T) - 
+                                offset[None,:]).max(1) < 0
+        return Z_sample[constraint_satisfied]
+
+    Z_sample = _accept_reject(100, 
+                              white_con.linear_part,
+                              white_con.offset)
+    if Z_sample.shape[0] > 50:
+        new_sample_size = (ndraw + burnin) / 5
+        while True:
+            Z_sample = np.vstack([Z_sample,
+                                  _accept_reject(new_sample_size / 5,
+                                                 white_con.linear_part,
+                                                 white_con.offset)])
+            if Z_sample.shape[0] > new_sample_size:
+                break
+        white_samples = Z_sample
+    else:
+        white_samples = sample_truncnorm_white(  
+            white_con.linear_part,
+            white_con.offset,
+            white_Y, 
+            white_direction_of_interest,
+            how_often=how_often,
+            ndraw=ndraw, 
+            burnin=burnin,
+            sigma=1.,
+            use_constraint_directions=use_constraint_directions,
+            use_random_directions=use_random_directions)
     Z = inverse_map(white_samples.T).T
     return Z
 
