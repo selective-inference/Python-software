@@ -372,7 +372,7 @@ class constraints(object):
         sqrt_cov = self._sqrt_cov
         sqrt_inv = self._sqrt_inv
 
-        # original matrix is np.dot(U, U.T)
+        # original matrix is np.dot(U, (D**2 * U).T)
 
         new_A = np.dot(self.linear_part, sqrt_cov)
         den = np.sqrt((new_A**2).sum(1))
@@ -848,7 +848,8 @@ def sample_from_constraints(con,
                             white=False,
                             use_constraint_directions=True,
                             use_random_directions=True,
-                            accept_reject_params=()):
+                            accept_reject_params=(),
+                            do_tilt=True):
     r"""
     Use Gibbs sampler to simulate from `con`.
 
@@ -894,19 +895,24 @@ def sample_from_constraints(con,
     -------
 
     Z : np.float((ndraw, n))
-        Sample from the Gaussian distribtion intersect the constraints.
+        Sample from the Gaussian distribution conditioned on the constraints.
         
     """
 
     if direction_of_interest is None:
+        if do_tilt:
+            raise ValueError('to tilt, there should a one-dimensional family of interest')
         direction_of_interest = np.random.standard_normal(Y.shape)
     if how_often < 0:
         how_often = ndraw + burnin
 
+    DEBUG = False
     if not white:
         inverse_map, forward_map, white_con = con.whiten()
         white_Y = forward_map(Y)
         white_direction_of_interest = forward_map(np.dot(con.covariance, direction_of_interest))
+        if DEBUG:
+            print (white_direction_of_interest * white_Y).sum(), (Y * direction_of_interest).sum(), 'white'
     else:
         white_con = con
         inverse_map = lambda V: V
@@ -1123,12 +1129,26 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         if not sigma_known:
             raise ValueError('need to know variance for tilting')
         affine_con = copy(affine_con)
-        tilt_direction = np.dot(np.linalg.pinv(affine_con.covariance),
-                                eta)
-        observed_value = (Y*eta).sum()
-        tilt_magnitude = (observed_value - (eta * affine_con.mean).sum()) / (eta**2).sum()
-        prev = np.dot(affine_con.mean, eta)
-        affine_con.mean = affine_con.mean + np.dot(affine_con.covariance, tilt_magnitude * tilt_direction)
+
+        # somewhat computationally inefficient
+
+        U_sigma, D_sigma = np.linalg.svd(affine_con.covariance)[:2]
+        rank = np.linalg.matrix_rank(affine_con.covariance)
+        U_sigma = U_sigma[:,:rank] 
+        D_sigma = D_sigma[:rank]
+        P_sigma = np.dot(U_sigma, U_sigma.T)
+
+        Peta = np.dot(P_sigma, eta)
+        tilt_direction = np.dot(U_sigma, np.dot(np.diag(1. / D_sigma), np.dot(U_sigma.T, Peta)))
+        observed_value = (Y * np.dot(P_sigma, eta)).sum()
+        tilt_magnitude = (observed_value - (Peta * affine_con.mean).sum()) / (Peta**2).sum()
+        affine_con.mean = affine_con.mean + tilt_magnitude * Peta # np.dot(affine_con.covariance, tilt_magnitude * tilt_direction)
+
+        DEBUG = False
+        if DEBUG:
+            print np.linalg.norm(np.dot(affine_con.covariance, tilt_direction) - Peta) / np.linalg.norm(Peta), 'norm'
+            print np.linalg.norm(np.dot(P_sigma, affine_con.covariance) - affine_con.covariance), 'test proj'
+            print np.dot(affine_con.mean, Peta), observed_value, 'match?'
 
     if alternative not in ['greater', 'less', 'twosided']:
         raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")

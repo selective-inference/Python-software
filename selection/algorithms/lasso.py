@@ -413,7 +413,8 @@ def data_carving(y, X,
                  ndraw=8000,
                  burnin=2000,
                  splitting=False,
-                 compute_intervals=True):
+                 compute_intervals=True,
+                 UMPU=False):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -458,6 +459,11 @@ def data_carving(y, X,
     splitting : bool (optional)
         If True, also return splitting pvalues and intervals.
 
+    compute_intervals : bool (optional)
+        Compute selective intervals?
+
+    UMPU : bool (optional)
+        Perform the UMPU test?
       
     Returns
     -------
@@ -593,7 +599,7 @@ def data_carving(y, X,
 
             con_cp = copy(con)
             conditional_law = con_cp.conditional(conditional_linear[keep], \
-                                                     np.dot(X_E.T, y)[keep])
+                                                 np.dot(X_E.T, y)[keep])
             
             # tilt so that samples are closer to observed values
             # the multiplier should be the pseudoMLE so that
@@ -628,7 +634,8 @@ def data_carving(y, X,
                                              white=False,
                                              ndraw=ndraw,
                                              burnin=burnin,
-                                             how_often=10)
+                                             how_often=10,
+                                             UMPU=UMPU)
 
                 intervals.append((np.nan, np.nan))
 
