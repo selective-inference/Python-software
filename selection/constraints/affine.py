@@ -847,7 +847,8 @@ def sample_from_constraints(con,
                             burnin=1000,
                             white=False,
                             use_constraint_directions=True,
-                            use_random_directions=True):
+                            use_random_directions=True,
+                            accept_reject_params=()):
     r"""
     Use Gibbs sampler to simulate from `con`.
 
@@ -883,11 +884,17 @@ def sample_from_constraints(con,
         Use additional random directions in
         the Gibbs scheme?
 
+    accept_reject_params : tuple
+        If not () should be a tuple (num_trial, min_accept, num_draw).
+        In this case, we first try num_trial accept-reject samples,
+        if at least min_accept of them succeed, we just draw num_draw
+        accept_reject samples.
+
     Returns
     -------
 
     Z : np.float((ndraw, n))
-        Sample from the sphere intersect the constraints.
+        Sample from the Gaussian distribtion intersect the constraints.
         
     """
 
@@ -908,27 +915,34 @@ def sample_from_constraints(con,
     # if we get more than 50 good draws, then just return a smaller sample
     # of size (burnin+ndraw)/5
 
+    if accept_reject_params: 
+        use_hit_and_run = False
+        num_trial, min_accept, num_draw = accept_reject_params
 
-    def _accept_reject(sample_size, linear_part, offset):
-        Z_sample = np.random.standard_normal((100, linear_part.shape[1]))
-        constraint_satisfied = (np.dot(Z_sample, linear_part.T) - 
-                                offset[None,:]).max(1) < 0
-        return Z_sample[constraint_satisfied]
+        def _accept_reject(sample_size, linear_part, offset):
+            Z_sample = np.random.standard_normal((100, linear_part.shape[1]))
+            constraint_satisfied = (np.dot(Z_sample, linear_part.T) - 
+                                    offset[None,:]).max(1) < 0
+            return Z_sample[constraint_satisfied]
 
-    Z_sample = _accept_reject(100, 
-                              white_con.linear_part,
-                              white_con.offset)
-    if Z_sample.shape[0] > 50:
-        new_sample_size = (ndraw + burnin) / 5
-        while True:
-            Z_sample = np.vstack([Z_sample,
-                                  _accept_reject(new_sample_size / 5,
-                                                 white_con.linear_part,
-                                                 white_con.offset)])
-            if Z_sample.shape[0] > new_sample_size:
-                break
-        white_samples = Z_sample
+        Z_sample = _accept_reject(100, 
+                                  white_con.linear_part,
+                                  white_con.offset)
+        if Z_sample.shape[0] >= min_accept:
+            while True:
+                Z_sample = np.vstack([Z_sample,
+                                      _accept_reject(num_draw / 5,
+                                                     white_con.linear_part,
+                                                     white_con.offset)])
+                if Z_sample.shape[0] > num_draw:
+                    break
+            white_samples = Z_sample
+        else:
+            use_hit_and_run = True
     else:
+        use_hit_and_run = True
+
+    if use_hit_and_run:
         white_samples = sample_truncnorm_white(  
             white_con.linear_part,
             white_con.offset,
@@ -940,6 +954,7 @@ def sample_from_constraints(con,
             sigma=1.,
             use_constraint_directions=use_constraint_directions,
             use_random_directions=use_random_directions)
+
     Z = inverse_map(white_samples.T).T
     return Z
 
@@ -1025,7 +1040,9 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                alpha=0.05,
                pvalue=True, 
                use_constraint_directions=False,
-               use_random_directions=True):
+               use_random_directions=True,
+               do_tilt=True,
+               ):
     """
     A Monte Carlo significance test for
     a given function of `con.mean`.
@@ -1078,6 +1095,10 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         Use additional random directions in
         the Gibbs scheme?
 
+    do_tilt : bool
+        If True, try tilting the distribution by adding a multiple
+        of the direction of interest.
+
     Returns
     -------
 
@@ -1089,9 +1110,25 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         
     weights : np.float(ndraw)
         Importance weights for the sample.
+
+    dfam : discrete_family
+        Discrete exponential family with above sufficient
+        statistics Z and weights.
+
     """
 
     eta = direction_of_interest # shorthand
+
+    if do_tilt:
+        if not sigma_known:
+            raise ValueError('need to know variance for tilting')
+        affine_con = copy(affine_con)
+        tilt_direction = np.dot(np.linalg.pinv(affine_con.covariance),
+                                eta)
+        observed_value = (Y*eta).sum()
+        tilt_magnitude = (observed_value - (eta * affine_con.mean).sum()) / (eta**2).sum()
+        prev = np.dot(affine_con.mean, eta)
+        affine_con.mean = affine_con.mean + np.dot(affine_con.covariance, tilt_magnitude * tilt_direction)
 
     if alternative not in ['greater', 'less', 'twosided']:
         raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
@@ -1116,7 +1153,11 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                         use_constraint_directions,
                                     use_random_directions=\
                                         use_random_directions)
-        W = np.ones(Z.shape[0], np.float)
+        if not do_tilt:
+            W = np.ones(Z.shape[0], np.float)
+        else:
+            # now reweight 
+            W = np.exp(-np.dot(Z, tilt_direction * tilt_magnitude)) 
 
     null_statistics = np.dot(Z, eta)
     observed = (eta*Y).sum()

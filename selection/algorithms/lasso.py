@@ -42,6 +42,10 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     Design is equi-correlated in the population,
     normalized to have columns of norm 1.
 
+    For the default settings, a $\lambda$ of around 13.5
+    corresponds to the theoretical $E(\|X^T\epsilon\|_{\infty})$
+    with $\epsilon \sim N(0, \sigma^2 I)$.
+
     Parameters
     ----------
 
