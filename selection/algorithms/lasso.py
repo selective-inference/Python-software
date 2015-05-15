@@ -20,7 +20,6 @@ from sklearn.linear_model import Lasso
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
-                                 MLE_family,
                                  gibbs_test,
                                  stack)
 from ..distributions.discrete_family import discrete_family
@@ -41,6 +40,10 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     A testing instance for the LASSO.
     Design is equi-correlated in the population,
     normalized to have columns of norm 1.
+
+    For the default settings, a $\lambda$ of around 13.5
+    corresponds to the theoretical $E(\|X^T\epsilon\|_{\infty})$
+    with $\epsilon \sim N(0, \sigma^2 I)$.
 
     Parameters
     ----------
@@ -409,7 +412,8 @@ def data_carving(y, X,
                  ndraw=8000,
                  burnin=2000,
                  splitting=False,
-                 compute_intervals=True):
+                 compute_intervals=True,
+                 UMPU=False):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -454,6 +458,11 @@ def data_carving(y, X,
     splitting : bool (optional)
         If True, also return splitting pvalues and intervals.
 
+    compute_intervals : bool (optional)
+        Compute selective intervals?
+
+    UMPU : bool (optional)
+        Perform the UMPU test?
       
     Returns
     -------
@@ -589,21 +598,26 @@ def data_carving(y, X,
 
             con_cp = copy(con)
             conditional_law = con_cp.conditional(conditional_linear[keep], \
-                                                     np.dot(X_E.T, y)[keep])
+                                                 np.dot(X_E.T, y)[keep])
             
             # tilt so that samples are closer to observed values
             # the multiplier should be the pseudoMLE so that
             # the observed value is likely 
 
             observed = (initial * eta).sum()
-            if compute_intervals: 
-                family = MLE_family(conditional_law,
-                                    initial,
-                                    eta,
-                                    burnin=burnin,
-                                    ndraw=ndraw,
-                                    how_often=10,
-                                    white=False)
+
+            if compute_intervals:
+                _, _, _, family = gibbs_test(conditional_law,
+                                             initial, 
+                                             eta,
+                                             sigma_known=True,
+                                             white=False,
+                                             ndraw=ndraw,
+                                             burnin=burnin,
+                                             how_often=10,
+                                             UMPU=UMPU,
+                                             tilt=np.dot(conditional_law.covariance, 
+                                                         eta))
 
                 lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 
@@ -615,8 +629,7 @@ def data_carving(y, X,
                 upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
 
                 intervals.append((lower_lim_final, upper_lim_final))
-
-            else:
+            else: # we do not really need to tilt just for p-values
                 _, _, _, family = gibbs_test(conditional_law,
                                              initial, 
                                              eta,
@@ -624,8 +637,8 @@ def data_carving(y, X,
                                              white=False,
                                              ndraw=ndraw,
                                              burnin=burnin,
-                                             how_often=10)
-
+                                             how_often=10,
+                                             UMPU=UMPU)
                 intervals.append((np.nan, np.nan))
 
             pval = family.cdf(0, observed)

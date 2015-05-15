@@ -8,6 +8,7 @@ from scipy.stats import chi
 import nose.tools as nt
 
 import selection.affine as AC
+from selection.optimal_tilt import optimal_tilt
 
 def test_conditional():
 
@@ -143,5 +144,30 @@ def test_sampling():
     nt.assert_true(np.linalg.norm(V.mean(0)-C.mean) < 0.01)
     nt.assert_true(np.linalg.norm(np.einsum('ij,ik->ijk', V, V).mean(0) - 
                                   np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
+
+def test_optimal_tilt():
+
+    A = np.vstack(-np.identity(4))
+    b = -np.array([1,2,3,4.])
+    con = constraints(A, b, covariance=2 * np.identity(4),
+                     mean=np.array([3,-4.3,-2.2,1.2]))
+    eta = np.array([1,0,0,0.])
+
+    tilt = optimal_tilt(con, eta)
+    print tilt.smooth_objective(np.zeros(5), mode='both')
+    opt_tilt = tilt.fit(max_its=20)
+    print con.mean + opt_tilt
+
+    A = np.vstack([-np.identity(4),
+                    np.identity(4)])
+    b = np.array([-1,-2,-3,-4.,3,4,5,11])
+    con = constraints(A, b, covariance=2 * np.identity(4),
+                     mean=np.array([3,-4.3,12.2,20.2]))
+    eta = np.array([1,0,0,0.])
+
+    tilt = optimal_tilt(con, eta)
+    print tilt.smooth_objective(np.zeros(5), mode='both')
+    opt_tilt = tilt.fit(max_its=20)
+    print con.mean + opt_tilt
 
 # nose.run()

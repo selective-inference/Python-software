@@ -222,7 +222,8 @@ def test_data_carving(n=100,
                       df=np.inf,
                       coverage=0.90,
                       sigma=3,
-                      fit_args={'min_its':120, 'tol':1.e-12}):
+                      fit_args={'min_its':120, 'tol':1.e-12},
+                      compute_intervals=True):
 
     counter = 0
 
@@ -250,7 +251,8 @@ def test_data_carving(n=100,
                                       ndraw=ndraw,
                                       burnin=burnin,
                                       coverage=coverage,
-                                      fit_args=fit_args)
+                                      fit_args=fit_args,
+                                      compute_intervals=compute_intervals)
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]

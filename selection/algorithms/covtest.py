@@ -11,7 +11,7 @@ The covariance test itself is asymptotically exponential
 Both tests mentioned above require knowledge 
 (or a good estimate) of sigma, the noise variance.
 
-This module also includes a second exact test called `reduced_covtest`_
+This module also includes a second exact test called `selected_covtest`_
 that can use sigma but does not need it.
 
 .. _covTest: http://arxiv.org/abs/1301.7161
@@ -24,9 +24,9 @@ that can use sigma but does not need it.
 import numpy as np
 from scipy.special import ndtr, ndtri
 
-from .constraints.affine import constraints, sample_from_constraints, gibbs_test
+from ..constraints.affine import constraints, sample_from_constraints, gibbs_test
 from .forward_step import forward_stepwise
-from .discrete_family import discrete_family
+from ..distributions.discrete_family import discrete_family
 
 def covtest(X, Y, sigma=1, exact=True,
             covariance=None):
@@ -54,6 +54,9 @@ def covtest(X, Y, sigma=1, exact=True,
         If True, use the first spacings test, else use
         the exponential approximation.
 
+    covariance : np.array (optional)
+        If None, defaults to identity.
+
     Returns
     -------
 
@@ -72,6 +75,9 @@ def covtest(X, Y, sigma=1, exact=True,
 
     """
     n, p = X.shape
+
+    if covariance is None:
+        covariance = np.identity(n)
 
     Z = np.dot(X.T, Y)
     idx = np.argsort(np.fabs(Z))[-1]
@@ -93,7 +99,7 @@ def covtest(X, Y, sigma=1, exact=True,
         exp_pvalue = np.exp(-L1 * (L1-L2) / S**2) # upper bound is ignored
         return con, exp_pvalue, idx, sign
 
-def reduced_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
+def selected_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
                     covariance=None):
     """
     An exact test that is more

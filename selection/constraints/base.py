@@ -140,14 +140,6 @@ class constraint(object):
         x = np.linalg.norm(np.dot(X_s.T, y))
         return distr.sf(x)
 
-    
-
-
-
-
-
-
-
 class cons_op(constraint):
 
     def __init__(self):
