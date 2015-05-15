@@ -799,10 +799,10 @@ def one_parameter_MLE(constraint,
         if np.sqrt(grad**2 / (max(hessian, hessian_min))) < tol:
             break
 
-    DEBUG = False
-    if DEBUG:
-        # observed should match weighted_mean
-        print observed, weighted_mean, MLE
+        DEBUG = False
+        if DEBUG:
+            # observed should match weighted_mean
+            print observed, weighted_mean, MLE
 
     return MLE
 
@@ -1019,7 +1019,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                          'ndraw':500, 
                          'how_often':5, 
                          'niter':15,
-                         'step_size':0.9,
+                         'step_size':0.3,
                          'hessian_min':1.,
                          'tol':1.e-6,
                          'startMLE':None}
