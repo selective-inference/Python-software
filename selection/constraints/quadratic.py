@@ -5,9 +5,9 @@ from scipy.stats import norm
 from ..algorithms.projection import projection, full_rank
 from ..truncated import truncated_chi, truncated_chi2, truncated_F
 from .intervals import intervals
-from base import constraint
+from .base import constraint as base_constraint
 
-class quad_constraints(constraint):
+class constraint(base_constraint):
 
     r"""
 
@@ -18,10 +18,12 @@ class quad_constraints(constraint):
     
           \forall i, y^T Q_i y + a_i^t < b_i
 
-
     """
     
-    def __init__(self, quad_part, lin_part=None, offset=None):
+    def __init__(self, quad_part, lin_part=None, offset=None,
+                 covariance=None,
+                 mean=None,
+                 rank=None):
         r"""
 
         Create a new object for quadratic constraints
@@ -40,6 +42,19 @@ class quad_constraints(constraint):
               The offsets of all inequalities
               Defaults to np.zeros(l)
 
+        covariance : np.float((p,p))
+            Covariance matrix of Gaussian distribution to be 
+            truncated. Defaults to `np.identity(self.dim)`.
+
+        mean : np.float(p)
+            Mean vector of Gaussian distribution to be 
+            truncated. Defaults to `np.zeros(self.dim)`.
+
+        rank : int
+            If not None, this should specify
+            the rank of the covariance matrix. Defaults
+            to self.dim.
+
         WARNING : The shapes of the three parameters must fit
         """
               
@@ -52,7 +67,6 @@ class quad_constraints(constraint):
 
         if offset == None:
             offset = np.zeros(l)
-
         
         if len(lin_part) != l or len(offset) != l:
             raise ValueError(
@@ -68,6 +82,18 @@ class quad_constraints(constraint):
         
         self.offset = offset
 
+        if rank is None:
+            self.rank = self.dim
+        else:
+            self.rank = rank
+
+        if covariance is None:
+            covariance = np.identity(self.dim)
+        self.covariance = covariance
+
+        if mean is None:
+            mean = np.zeros(self.dim)
+        self.mean = mean
 
     def __call__(self, y, tol=1.e-10):
         """
@@ -99,9 +125,9 @@ class quad_constraints(constraint):
         >>> q1, lin1, off1 = np.identity(2), np.array([2., 0.]), 3.
         >>> q2, lin2, off2 = np.array([[10., 0], [0, -10.]]), np.zeros(2), -1.
         >>> q3, lin3, off3 = np.identity(2), np.array([-2., 0.]), 3.
-        >>> cons = quad_constraints(np.array([q1, q2, q3]), \
-                                    np.array([lin1, lin2, lin3]), \
-                                    np.array([off1, off2, off3]))
+        >>> cons = constraint(np.array([q1, q2, q3]), \
+                              np.array([lin1, lin2, lin3]), \
+                              np.array([off1, off2, off3]))
 
         >>> y1 = np.array([[0. , 1. ]]).T
         >>> y2 = np.array([[0. , -1.]]).T
@@ -181,9 +207,9 @@ class quad_constraints(constraint):
         >>> q1, lin1, off1 = np.identity(2), np.array([2., 0.]), 3.
         >>> q2, lin2, off2 = np.array([[10., 0], [0, -10.]]), np.zeros(2), -1.
         >>> q3, lin3, off3 = np.identity(2), np.array([-2., 0.]), 3.
-        >>> cons = quad_constraints(np.array([q1, q2, q3]), \
-                                    np.array([lin1, lin2, lin3]), \
-                                    np.array([off1, off2, off3]))
+        >>> cons = constraint(np.array([q1, q2, q3]), \
+                              np.array([lin1, lin2, lin3]), \
+                              np.array([off1, off2, off3]))
 
         >>> y = np.array([[0., -1.]]).T
 
@@ -421,9 +447,9 @@ def stack(quad_cons):
     lin =  [con.lin_part  for con in quad_cons]
     off =  [con.offset    for con in quad_cons]
                       
-    intersection = quad_constraints(np.vstack(quad), 
-                                    np.vstack(lin),
-                                    np.hstack(off))
+    intersection = constraint(np.vstack(quad), 
+                              np.vstack(lin),
+                              np.hstack(off))
 
     return intersection
 
