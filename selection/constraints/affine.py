@@ -998,6 +998,7 @@ def sample_from_constraints(con,
         Z_sample = _accept_reject(100, 
                                   white_con.linear_part,
                                   white_con.offset)
+
         if Z_sample.shape[0] >= min_accept:
             while True:
                 Z_sample = np.vstack([Z_sample,
@@ -1112,6 +1113,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                use_constraint_directions=False,
                use_random_directions=True,
                tilt=None,
+               accept_reject_params=(100, 15, 2000),
                MLE_opts={'burnin':1000, 
                          'ndraw':500, 
                          'how_often':5, 
@@ -1178,6 +1180,12 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         to tilt. The likelihood ratio is effectively multiplied
         by $y^TP\eta$ where $\eta$ is `tilt`, and $P$ is 
         projection onto the rowspace of `affine_con`.
+
+    accept_reject_params : tuple
+        If not () should be a tuple (num_trial, min_accept, num_draw).
+        In this case, we first try num_trial accept-reject samples,
+        if at least min_accept of them succeed, we just draw num_draw
+        accept_reject samples.
 
     MLE_opts : {}
         Arguments passed to `one_parameter_MLE` if `tilt` is not None.
@@ -1262,7 +1270,8 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                                     use_constraint_directions=\
                                         use_constraint_directions,
                                     use_random_directions=\
-                                        use_random_directions)
+                                        use_random_directions,
+                                    accept_reject_params=accept_reject_params)
         if tilt is None:
             W = np.ones(Z.shape[0], np.float)
         else:
