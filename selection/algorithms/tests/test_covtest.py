@@ -40,13 +40,14 @@ def test_tilting(nsim=100):
         # null pvalues and intervals
 
         cone, pvalue, idx, sign = selected_covtest(X, Y0, sigma=sigma)
-        p1, _, _, fam = gibbs_test(cone, Y0, X[:,idx] * sign,
-                                   ndraw=15000,
+        eta = X[:,idx] * sign
+        p1, _, _, fam = gibbs_test(cone, Y0, eta, 
+                                   ndraw=50000,
                                    burnin=10000,
                                    alternative='greater',
-                                   sigma_known=True)
+                                   sigma_known=True,
+                                   tilt=eta)
 
-        eta = X[:,idx] * sign
         observed_value = (Y0 * eta).sum()
         lower_lim, upper_lim = fam.equal_tailed_interval(observed_value)
         lower_lim_final = np.dot(eta, np.dot(cone.covariance, eta)) * lower_lim
@@ -57,11 +58,11 @@ def test_tilting(nsim=100):
         # compare to no tilting
 
         p2 = gibbs_test(cone, Y0, X[:,idx] * sign,
-                        ndraw=15000,
+                        ndraw=50000,
                         burnin=10000,
                         alternative='greater',
                         sigma_known=True,
-                        do_tilt=False)[0]
+                        tilt=None)[0]
         P.append((p1, p2))
         Pa = np.array(P)
 
@@ -80,10 +81,11 @@ def test_tilting(nsim=100):
 
         cone, pvalue, idx, sign = selected_covtest(X, YA, sigma=sigma)
         _, _, _, fam = gibbs_test(cone, YA, X[:,idx] * sign,
-                                   ndraw=15000,
-                                   burnin=10000,
-                                   alternative='greater',
-                                   sigma_known=True)
+                                  ndraw=15000,
+                                  burnin=10000,
+                                  alternative='greater',
+                                  sigma_known=True,
+                                  tilt=eta)
 
         if idx == 0:
             screen += 1

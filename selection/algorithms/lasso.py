@@ -20,7 +20,6 @@ from sklearn.linear_model import Lasso
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
-                                 MLE_family,
                                  gibbs_test,
                                  stack)
 from ..distributions.discrete_family import discrete_family
@@ -606,14 +605,19 @@ def data_carving(y, X,
             # the observed value is likely 
 
             observed = (initial * eta).sum()
-            if compute_intervals: 
-                family = MLE_family(conditional_law,
-                                    initial,
-                                    eta,
-                                    burnin=burnin,
-                                    ndraw=ndraw,
-                                    how_often=10,
-                                    white=False)
+
+            if compute_intervals:
+                _, _, _, family = gibbs_test(conditional_law,
+                                             initial, 
+                                             eta,
+                                             sigma_known=True,
+                                             white=False,
+                                             ndraw=ndraw,
+                                             burnin=burnin,
+                                             how_often=10,
+                                             UMPU=UMPU,
+                                             tilt=np.dot(conditional_law.covariance, 
+                                                         eta))
 
                 lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 
@@ -625,8 +629,7 @@ def data_carving(y, X,
                 upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
 
                 intervals.append((lower_lim_final, upper_lim_final))
-
-            else:
+            else: # we do not really need to tilt just for p-values
                 _, _, _, family = gibbs_test(conditional_law,
                                              initial, 
                                              eta,
@@ -636,8 +639,6 @@ def data_carving(y, X,
                                              burnin=burnin,
                                              how_often=10,
                                              UMPU=UMPU)
-
-                intervals.append((np.nan, np.nan))
 
             pval = family.cdf(0, observed)
             pval = 2 * min(pval, 1 - pval)
