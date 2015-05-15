@@ -14,7 +14,7 @@ from scipy.stats import norm as ndist
 
 # local imports 
 
-from ..constraints.affine import constraints, gibbs_test, stack, MLE_family
+from ..constraints.affine import constraints, gibbs_test, stack
 from ..distributions.chisq import quadratic_test
 from .projection import projection
 
@@ -221,41 +221,50 @@ class forward_stepwise(object):
                     keep[i] = False
 
                     if which_step > 1:
-                        conditional_con = con.conditional(linear_part.T[keep],
+                        conditional_law = con.conditional(linear_part.T[keep],
                                                           observed[keep])
                     else:
-                        conditional_con = con
+                        conditional_law = con
 
+                    eta = LSfunc[i]
+                    observed = (eta*self.Y).sum()
                     if compute_intervals:
-                        family = MLE_family(conditional_con,
-                                            self.Y,
-                                            LSfunc[i],
-                                            burnin=burnin,
-                                            ndraw=ndraw,
-                                            how_often=50,
-                                            white=False)
+                        _, _, _, family = gibbs_test(conditional_law,
+                                                     self.Y,
+                                                     eta,
+                                                     sigma_known=True,
+                                                     white=False,
+                                                     ndraw=ndraw,
+                                                     burnin=burnin,
+                                                     how_often=10,
+                                                     UMPU=False,
+                                                     tilt=np.dot(conditional_law.covariance, 
+                                                                 eta))
 
-                        obs = (LSfunc[i] * self.Y).sum()
-                        lower_lim, upper_lim = family.equal_tailed_interval(obs, 1 - coverage)
+                        lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 
-                        lower_lim_final = np.dot(LSfunc[i], np.dot(conditional_con.covariance, LSfunc[i])) * lower_lim
-                        upper_lim_final = np.dot(LSfunc[i], np.dot(conditional_con.covariance, LSfunc[i])) * upper_lim
+                        # in the model we've chosen, the parameter beta is associated
+                        # to the natural parameter as below
+                        # exercise: justify this!
+
+                        lower_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * lower_lim
+                        upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
 
                         intervals.append((self.variables[i], (lower_lim_final, upper_lim_final)))
-                        pval = family.cdf(0, obs)
-                        pval = 2 * min(pval, 1 - pval)
-                    else:
-                        pval = gibbs_test(conditional_con,
-                                          self.Y,
-                                          LSfunc[i],
-                                          alternative=alternative,
-                                          sigma_known=sigma_known,
-                                          burnin=burnin,
-                                          ndraw=ndraw,
-                                          UMPU=False,
-                                          how_often=-1,
-                                          use_random_directions=False,
-                                          use_constraint_directions=False)[0]
+                    else: # we do not really need to tilt just for p-values
+                        _, _, _, family = gibbs_test(conditional_law,
+                                                     self.Y,
+                                                     eta,
+                                                     sigma_known=True,
+                                                     white=False,
+                                                     ndraw=ndraw,
+                                                     burnin=burnin,
+                                                     how_often=10,
+                                                     UMPU=False)
+
+                    pval = family.cdf(0, observed)
+                    pval = 2 * min(pval, 1 - pval)
+
                     pivots.append((self.variables[i], 
                                    pval))
 

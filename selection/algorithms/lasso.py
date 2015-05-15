@@ -639,6 +639,7 @@ def data_carving(y, X,
                                              burnin=burnin,
                                              how_often=10,
                                              UMPU=UMPU)
+                intervals.append((np.nan, np.nan))
 
             pval = family.cdf(0, observed)
             pval = 2 * min(pval, 1 - pval)
