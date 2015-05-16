@@ -723,12 +723,7 @@ def one_parameter_MLE(constraint,
     tilt_inv = con.solve(tilt)
     observed = (tilt_inv*Y).sum()
 
-#     if startMLE is None:
-#         MLE = unconstrained_MLE
-#     else:
-#         MLE = startMLE
-    MLE = 0.
-
+    MLE = startMLE or 0.
     samples = []
 
     con_cp = copy(con)
@@ -1018,8 +1013,8 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                MLE_opts={'burnin':1000, 
                          'ndraw':500, 
                          'how_often':5, 
-                         'niter':15,
-                         'step_size':0.3,
+                         'niter':10,
+                         'step_size':0.2,
                          'hessian_min':1.,
                          'tol':1.e-6,
                          'startMLE':None}
