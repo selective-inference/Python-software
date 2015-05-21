@@ -35,7 +35,8 @@ except ImportError:
 DEBUG = False
 
 def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
-             random_signs=False, df=np.inf):
+             random_signs=False, df=np.inf,
+             scale=True, center=True):
     """
     A testing instance for the LASSO.
     Design is equi-correlated in the population,
@@ -95,8 +96,10 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
 
     X = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
         np.sqrt(rho) * np.random.standard_normal(n)[:,None])
-    X -= X.mean(0)[None,:]
-    X /= (X.std(0)[None,:] * np.sqrt(n))
+    if center:
+        X -= X.mean(0)[None,:]
+    if scale:
+        X /= (X.std(0)[None,:] * np.sqrt(n))
     beta = np.zeros(p) 
     beta[:s] = snr 
     if random_signs:
@@ -200,7 +203,7 @@ class lasso(object):
         # fit Lasso using scikit-learn
         
         clf = Lasso(alpha = self.lagrange, fit_intercept = False)
-        clf.fit(self.X, self.y)
+        clf.fit(self.X, self.y, **lasso_args)
         self._soln = beta = clf.coef_       
         if not np.all(beta == 0):
             self.form_constraints()
