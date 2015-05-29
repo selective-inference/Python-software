@@ -1,6 +1,8 @@
 import numpy as np
 import numpy.testing.decorators as dec
 from selection.constraints.affine import constraints
+from selection.sampling.sequential import sample
+from scipy.stats import norm as ndist
 import statsmodels.api as sm
 
 #@dec.slow()
