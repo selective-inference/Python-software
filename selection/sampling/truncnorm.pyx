@@ -269,6 +269,8 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                                   DTYPE_int_t how_often=1000,
                                   DTYPE_int_t burnin=500,
                                   DTYPE_int_t ndraw=1000,
+                                  int use_constraint_directions=1,
+                                  int use_random_directions=0,
                                   ):
     """
     Sample from a sphere of radius `np.linalg.norm(initial)`
@@ -336,10 +338,16 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
 
     # directions not parallel to coordinate axes
 
+    if use_constraint_directions:
+        _dirs = [A] 
+    else:
+        _dirs = []
+    if use_random_directions:
+        _dirs.append(np.random.standard_normal((int(nvar/5),nvar)))
+    _dirs.append(bias_direction.reshape((-1, nvar)))
+
     cdef np.ndarray[DTYPE_float_t, ndim=2] directions = \
-        np.vstack([A, 
-                   np.random.standard_normal((int(nvar/5),nvar))])
-    directions[-1][:] = bias_direction
+        np.vstack(_dirs)
 
     directions /= np.sqrt((directions**2).sum(1))[:,None]
 

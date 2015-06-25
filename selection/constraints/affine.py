@@ -931,6 +931,8 @@ def sample_from_sphere(con,
                        how_often=-1,
                        ndraw=1000,
                        burnin=1000,
+                       use_constraint_directions=True,
+                       use_random_directions=True,
                        white=False):
     r"""
     Use Gibbs sampler to simulate from `con` 
@@ -991,7 +993,9 @@ def sample_from_sphere(con,
                                                            white_direction_of_interest,
                                                            how_often=how_often,
                                                            ndraw=ndraw, 
-                                                           burnin=burnin)
+                                                           burnin=burnin,
+                                                           use_constraint_directions=use_constraint_directions,
+                                                           use_random_directions=use_random_directions)
 
     Z = inverse_map(white_samples.T).T
     return Z, weights
