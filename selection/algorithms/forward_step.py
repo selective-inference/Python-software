@@ -41,7 +41,6 @@ class forward_stepwise(object):
             self.Xsub = X.copy()
             self.Ysub = Y.copy()
         self.P = [None] # residual forming projections
-        self.A = None
         self.variables = []
         self.Z = []
         self.Zfunc = []
@@ -83,7 +82,6 @@ class forward_stepwise(object):
             Unew = X[:,idx] / scale[idx]
             Pnew = projection(Unew.reshape((-1,1)))
             self.As = [canonicalA(X, Y, idx, sign, scale=scale)]
-            self.A = self.As[0]
             self.variables.append(idx)
             self.signs.append(sign)
             self.Zfunc.append(Unew * sign)
@@ -112,7 +110,6 @@ class forward_stepwise(object):
             if DEBUG:
                 print np.linalg.norm(np.dot(newA, Y) - np.dot(newA, RY)), 'should be 0'
                 print np.linalg.norm(P(newA.T)), np.linalg.norm(P(RX)), 'newA'
-            self.A = np.vstack([self.A, newA])
 
         if DEBUG:
             Pother = np.linalg.svd(X[:,self.variables], full_matrices=0)[0]
@@ -124,12 +121,42 @@ class forward_stepwise(object):
 
         self.P.append(Pnew)
 
-    def constraints(self):
+    def constraints(self, step=np.inf, identify_last_variable=True):
+        default_step = len(self.variables)
+        if default_step > 0 and not identify_last_variable:
+            default_step -= 1
+        step = min(step, default_step)
+        A = np.vstack(self.As[:default_step])
+
         if self.subset == []:
-            return constraints(self.A, np.zeros(self.A.shape[0]), 
+            return constraints(A, 
+                               np.zeros(A.shape[0]), 
                                covariance=self.covariance)
-        return constraints(np.dot(self.A, self.subset_selector),
-                           np.zeros(self.A.shape[0]), 
+        return constraints(np.dot(A, 
+                                  self.subset_selector),
+                           np.zeros(A.shape[0]), 
+                           covariance=self.covariance)
+
+    def new_constraints(self, step=np.inf, identify_last_variable=True):
+        default_step = len(self.variables)
+        if default_step > 0 and not identify_last_variable:
+            default_step -= 1
+        step = min(step, default_step)
+
+        linear_part, offset = _inequalities(self.X, 
+                                            self.Y, 
+                                            self.variables[:step])
+
+#         if identify_last_variable:
+#             linear_part = np.vstack([linear_part,
+#                                      self.As[-1]])
+#             offset = np.hstack([offset,
+#                                 np.ones(self.As[-1].shape[0])])
+
+        if self.subset != []:
+            linear_part = np.dot(linear_part, self.subset_selector)
+        return constraints(linear_part,
+                           offset,
                            covariance=self.covariance)
 
     def model_pivots(self, which_step, alternative='greater',
@@ -139,7 +166,8 @@ class forward_stepwise(object):
                      which_var=[], 
                      compute_intervals=False,
                      nominal=False,
-                     coverage=0.95):
+                     coverage=0.95,
+                     use_new=True):
         """
         Compute two-sided pvalues for each coefficient
         in a given step of forward stepwise.
@@ -187,7 +215,10 @@ class forward_stepwise(object):
         if self.covariance is None and saturated:
             raise ValueError('need a covariance matrix to compute pivots for saturated model')
 
-        con = copy(self.constraints())
+        if not use_new:
+            con = copy(self.constraints())
+        else:
+            con = copy(self.new_constraints())
 
         if self.covariance is not None:
             con.covariance[:] = self.covariance 
@@ -329,6 +360,57 @@ def canonicalA(RX, RY, idx, sign, scale=None):
 
     V = np.dot(A, RX.T)
     return -V
+
+def _inequalities(X, y, ordered_vars):
+    """
+
+    """
+
+    # this could be done incrementally in the class...
+
+    n, p = X.shape
+
+    # up to now inactive
+    inactive = sorted(set(range(p)).difference(ordered_vars)) 
+    XI = X[:,inactive]
+
+    # each variable added implies some upper and lower limits 
+    # for each up to now inactive variable
+
+    upper_lims = np.ones(len(inactive)) * np.inf
+    lower_lims = -np.ones(len(inactive)) * np.inf
+
+    adjustedX = X.copy()
+
+    linear_part = []
+    offset = []
+    for i, var in enumerate(ordered_vars):
+        if i > 0:
+            XA = X[:,ordered_vars[:i]]
+            mean_vector = np.dot(XA, np.dot(np.linalg.pinv(XA), y))
+        else:
+            mean_vector = np.zeros(n)
+
+        adjusted_scale = np.sqrt((adjustedX**2).sum(0))
+
+        realized_Z = (np.fabs((adjustedX[:,var] * y).sum()) / 
+                      adjusted_scale[var])
+        realized_Z_adjusted = realized_Z * adjusted_scale[inactive]
+        offset_shift = np.dot(XI.T, mean_vector)
+        offset.append([realized_Z_adjusted + offset_shift,
+                       realized_Z_adjusted - offset_shift])
+
+        # orthogonalize out the next variable
+        adjustedX -= (np.multiply.outer(adjustedX[:,var], \
+                      np.dot(adjustedX[:,var], adjustedX)) / 
+                      (adjustedX[:,var]**2).sum())
+
+    linear_part = np.vstack([XI.T, -XI.T])
+    offset = np.array(offset)
+    offset_pos = np.max(offset[:,0], 0)
+    offset_neg = np.max(offset[:,1], 0)
+    offset = np.hstack([offset_pos, offset_neg])
+    return linear_part, offset
 
 def info_crit_stop(Y, X, sigma, cost=2,
                    subset=[]):
