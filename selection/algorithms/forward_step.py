@@ -41,6 +41,7 @@ class forward_step(object):
         else:
             self.adjusted_X = X.copy()
             self.subset_Y = Y.copy()
+            self.subset_X = X.copy()
 
         self.P = [None] # residual forming projections
         self.variables = []
@@ -60,7 +61,8 @@ class forward_step(object):
     def next(self, compute_pval=False,
              use_identity=False,
              burnin=2000,
-             ndraw=8000):
+             ndraw=8000,
+             sigma_known=True):
         """
         """
         
@@ -135,7 +137,7 @@ class forward_step(object):
             pval = gibbs_test(self.sequential_con,
                               Y,
                               eta,
-                              sigma_known=True,
+                              sigma_known=sigma_known,
                               white=False,
                               ndraw=ndraw,
                               burnin=burnin,
