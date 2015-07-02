@@ -22,6 +22,8 @@ def test_covtest():
         con, pval, idx, sign = selected_covtest(X, Y, sigma=1.5,
                                                 covariance=covariance)
 
+    con, pval, idx, sign = selected_covtest(X, Y)
+
     return pval
 
 @dec.slow
@@ -44,9 +46,10 @@ def test_tilting(nsim=100):
         p1, _, _, fam = gibbs_test(cone, Y0, eta, 
                                    ndraw=50000,
                                    burnin=10000,
-                                   alternative='greater',
+                                   alternative='twosided',
                                    sigma_known=True,
-                                   tilt=eta)
+                                   tilt=eta,
+                                   UMPU=False)
 
         observed_value = (Y0 * eta).sum()
         lower_lim, upper_lim = fam.equal_tailed_interval(observed_value)
@@ -60,9 +63,11 @@ def test_tilting(nsim=100):
         p2 = gibbs_test(cone, Y0, X[:,idx] * sign,
                         ndraw=50000,
                         burnin=10000,
-                        alternative='greater',
+                        alternative='twosided',
                         sigma_known=True,
-                        tilt=None)[0]
+                        tilt=None,
+                        UMPU=False)[0]
+        print p2, 'huh'
         P.append((p1, p2))
         Pa = np.array(P)
 
