@@ -110,7 +110,7 @@ def test_sequential(k=10):
                      subset=subset)[1]
     print sequential(X, Y, saturated=False, ndraw=5000, burnin=5000, subset=subset)[1]
     
-def simulate_null():
+def simulate_null(saturated=True):
 
     n, p = 100, 40
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -123,14 +123,16 @@ def simulate_null():
     for i in range(5):
         FS.next()
 
-    return [p[-1] for p in FS.model_pivots(3)]
+    return [p[-1] for p in FS.model_pivots(3, saturated=saturated,
+                                           use_new=False)]
 
-def test_ecdf(nsim=1000, BIC=False):
+def test_ecdf(nsim=1000, BIC=False,
+              saturated=True):
     
     P = []
     for _ in range(nsim):
         if not BIC:
-            P.extend(simulate_null())
+            P.extend(simulate_null(saturated=saturated))
         else:
             P.extend(test_BIC(do_sample=True))
     P = np.array(P)
