@@ -32,9 +32,11 @@ class forward_step(object):
                  covariance=None):
         self.subset = subset
         self.X, self.Y = X, Y
+
         if subset != []:
             self.adjusted_X = X.copy()[subset]
-            self.subset_subset = Y.copy()[subset]
+            self.subset_X = X.copy()[subset]
+            self.subset_Y = Y.copy()[subset]
             self.subset_selector = np.identity(self.X.shape[0])[subset]
         else:
             self.adjusted_X = X.copy()
@@ -93,6 +95,10 @@ class forward_step(object):
                                       next_sign * adjusted_X[:,next_var] / scale[next_var],
                                       -next_sign * adjusted_X[:,next_var].reshape((1,-1))])
 
+        if self.subset != []:
+            identity_linpart = np.dot(identity_linpart, 
+                                      self.subset_selector)
+
         identity_con = constraints(identity_linpart,
                                    np.zeros(identity_linpart.shape[0]))
 
@@ -102,7 +108,7 @@ class forward_step(object):
 
         if compute_pval:
 
-            XI = self.X[:,inactive]
+            XI = self.subset_X[:,inactive]
             linear_part = np.vstack([XI.T, -XI.T])
             offset = np.array(self.offset)
             offset = offset[:,:,inactive]
@@ -116,7 +122,7 @@ class forward_step(object):
                 con = stack(con, identity_con)
                 con.covariance = self.covariance
             if self.variables:
-                XA = self.X[:,self.variables]
+                XA = self.subset_X[:,self.variables]
                 self.sequential_con = con.conditional(XA.T,
                                                       np.dot(XA.T, Y))
             else:
@@ -147,7 +153,7 @@ class forward_step(object):
         self.variables.append(next_var); self.signs.append(next_sign)
 
         realized_Z_adjusted = np.fabs(realized_Z) * scale
-        offset_shift = np.dot(self.X.T, Y - resid_vector)
+        offset_shift = np.dot(self.subset_X.T, Y - resid_vector)
         self.offset.append([realized_Z_adjusted + offset_shift,
                             realized_Z_adjusted - offset_shift])
 
