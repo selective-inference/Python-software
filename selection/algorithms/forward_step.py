@@ -21,7 +21,7 @@ from .projection import projection
 
 DEBUG = False
 
-class forward_stepwise(object):
+class forward_step(object):
 
     """
     Centers columns of X!
@@ -49,86 +49,122 @@ class forward_stepwise(object):
         self._resid_vector = self.subset_Y.copy() 
 
     def __iter__(self):
+        n, p = self.X.shape
+        self.identity_cone = []
+        self.inactive = range(p)
+        self.offset = [[np.ones(p) * np.inf, np.ones(p) * np.inf]]
         return self
 
-    def next(self):
+    def next(self, compute_pval=False,
+             use_identity=False,
+             burnin=2000,
+             ndraw=8000):
         """
-        Take one step of forward stepwise.
-        Internally, this has the effect of: 
-
-        * adding a new (lowrank) projection to `self.P`, 
+        """
         
-        * adding a new variable to `self.variables`
+        adjusted_X, Y, inactive = self.adjusted_X, self.subset_Y, self.inactive
+        resid_vector = self._resid_vector
+        n, p = adjusted_X.shape
 
-        * adding a certain number of rows to `self.A`
+        # up to now inactive
+        inactive = sorted(set(range(p)).difference(self.variables))
+        scale = np.sqrt(np.sum(adjusted_X**2, 0))
+        
+        linear_part = []
 
-        * signs are also tracked (unnecessarily for the moment) in `self.signs`
+        Zstat = np.dot(adjusted_X.T[inactive], Y) / scale[inactive]
+        idx = np.argmax(np.fabs(Zstat))
+        next_var = inactive[idx]
+        next_sign = np.sign(Zstat[idx])
 
-        The multiplication `np.dot(self.A, eta)` can be made more 
-        efficient because the projections are just a list of 
-        Gram-Schmidt orthogonalized vectors.
+        realized_Z = Zstat[idx]
 
-        """
+        # keep track of identity for testing
+        # variables other than the last one added
 
-        X, Y = self.adjusted_X, self.subset_Y
-        n, p = X.shape
-        P = self.P[-1]
+        keep = np.zeros(p, np.bool)
+        keep[inactive] = True
+        keep[next_var] = False
+        identity_linpart = np.vstack([adjusted_X[:,keep].T 
+                                      / scale[keep,None] -
+                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
+                                      -adjusted_X[:,keep].T 
+                                      / scale[keep,None] -
+                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
+                                      -next_sign * adjusted_X[:,next_var].reshape((1,-1))])
 
-        if P is None: # first step
-            U = np.dot(X.T, Y)
-            scale = np.sqrt((X**2).sum(0))
-            Z = np.fabs(U) / scale
-            idx = np.argmax(Z)
-            sign = np.sign(U[idx])
-            Unew = X[:,idx] / scale[idx]
-            Pnew = projection(Unew.reshape((-1,1)))
-            self.As = [canonicalA(X, Y, idx, sign, scale=scale)]
-            self.variables.append(idx)
-            self.signs.append(sign)
-            self.Zfunc.append(Unew * sign)
-            self.Z.append(Z[idx] / np.sqrt(np.dot(self.Zfunc[-1], np.dot(self.covariance, self.Zfunc[-1]))))
-        else:
-            RY = Y-P(Y)
-            RX = X-P(X)
-            keep = np.ones(p, np.bool)
-            keep[self.variables] = 0
-            RX = RX[:,keep]
+        identity_con = constraints(identity_linpart,
+                                   np.zeros(identity_linpart.shape[0]))
 
-            scale = np.sqrt((RX**2).sum(0))
-            RX /= scale[None, :]
-            U = np.dot(RX.T, RY)
-            Z = np.fabs(U) 
-            idx = np.argmax(Z)
+        self.identity_cone.append(identity_linpart)
 
-            sign = np.sign(U[idx])
-            self.variables.append(np.arange(p)[keep][idx])
-            self.signs.append(sign)
-            self.Zfunc.append(RX.T[idx] * sign)
-            self.Z.append(Z[idx] / np.sqrt(np.dot(self.Zfunc[-1], np.dot(self.covariance, self.Zfunc[-1]))))
-            Unew = RX[:,idx]
-            Pnew = P.stack(Unew.reshape((-1,1)))
-            newA = canonicalA(RX, RY, idx, sign)
-            self.As.append(newA)
-            if DEBUG:
-                print np.linalg.norm(np.dot(newA, Y) - np.dot(newA, RY)), 'should be 0'
-                print np.linalg.norm(P(newA.T)), np.linalg.norm(P(RX)), 'newA'
+        eta = adjusted_X[:,next_var]
 
-        if DEBUG:
-            Pother = np.linalg.svd(X[:,self.variables], full_matrices=0)[0]
-            print np.linalg.norm(Pother - Pnew(Pother)), 'Pnorm'
-            print self.variables, 'selected variables'
-            print self.signs, 'signs'
-            print self.A.shape, 'A shape'
-            print np.dot(self.A, Y).max(), 'should be nonpositive'
+        if compute_pval:
 
-        self.P.append(Pnew)
+            XI = self.X[:,inactive]
+            linear_part = np.vstack([XI.T, -XI.T])
+            offset = np.array(self.offset)
+            offset = offset[:,:,inactive]
+            offset_pos = np.min(offset[:,0], 0)
+            offset_neg = np.min(offset[:,1], 0)
+            offset = np.hstack([offset_pos, offset_neg])
+            con = constraints(linear_part, offset,
+                              covariance=self.covariance)
+
+            if use_identity:
+                con = stack(con, identity_con)
+                con.covariance = self.covariance
+            if self.variables:
+                XA = self.X[:,self.variables]
+                self.sequential_con = con.conditional(XA.T,
+                                                      np.dot(XA.T, Y))
+            else:
+                self.sequential_con = con
+
+            def maxT(Z, L=adjusted_X[:,inactive], S=scale[inactive]):
+                Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
+                return Tstat
+
+            pval = gibbs_test(self.sequential_con,
+                              Y,
+                              eta,
+                              sigma_known=True,
+                              white=False,
+                              ndraw=ndraw,
+                              burnin=burnin,
+                              how_often=-1,
+                              UMPU=False,
+                              use_random_directions=False,
+                              tilt=None,
+                              alternative='greater',
+                              test_statistic=maxT,
+                              )[0]
+
+        # now update state for next step
+
+        inactive.pop(idx)
+        self.variables.append(next_var); self.signs.append(next_sign)
+
+        realized_Z_adjusted = np.fabs(realized_Z) * scale
+        offset_shift = np.dot(self.X.T, Y - resid_vector)
+        self.offset.append([realized_Z_adjusted + offset_shift,
+                            realized_Z_adjusted - offset_shift])
+
+        resid_vector -= realized_Z * adjusted_X[:,next_var] / scale[next_var]
+        adjusted_X -= (np.multiply.outer(eta, 
+                                         np.dot(eta,
+                                                adjusted_X)) / 
+                       (eta**2).sum())
+        if compute_pval:
+            return pval
 
     def constraints(self, step=np.inf, identify_last_variable=True):
         default_step = len(self.variables)
         if default_step > 0 and not identify_last_variable:
             default_step -= 1
         step = min(step, default_step)
-        A = np.vstack(self.As[:step])
+        A = np.vstack(self.identity_cone[:step])
 
         if self.subset == []:
             return constraints(A, 
@@ -286,224 +322,6 @@ class forward_stepwise(object):
         P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
         return quadratic_test(self.Y, P_LS, self.constraints)
 
-class sequential(forward_stepwise):
-
-    def __iter__(self):
-        n, p = self.X.shape
-        self.identity_cone = []
-        self.inactive = range(p)
-        self.offset = [[np.ones(p) * np.inf, np.ones(p) * np.inf]]
-        return self
-
-    def next(self, compute_pval=False,
-             use_identity=False,
-             burnin=2000,
-             ndraw=8000):
-        """
-        """
-        
-        adjusted_X, Y, inactive = self.adjusted_X, self.subset_Y, self.inactive
-        resid_vector = self._resid_vector
-        n, p = adjusted_X.shape
-
-        # up to now inactive
-        inactive = sorted(set(range(p)).difference(self.variables))
-        scale = np.sqrt(np.sum(adjusted_X**2, 0))
-        
-        linear_part = []
-
-        Zstat = np.dot(adjusted_X.T[inactive], Y) / scale[inactive]
-        idx = np.argmax(np.fabs(Zstat))
-        next_var = inactive[idx]
-        next_sign = np.sign(Zstat[idx])
-
-        realized_Z = Zstat[idx]
-
-        # keep track of identity for testing
-        # variables other than the last one added
-
-        keep = np.zeros(p, np.bool)
-        keep[inactive] = True
-        keep[next_var] = False
-        identity_linpart = np.vstack([adjusted_X[:,keep].T 
-                                      / scale[keep,None] -
-                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
-                                      -adjusted_X[:,keep].T 
-                                      / scale[keep,None] -
-                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
-                                      -next_sign * adjusted_X[:,next_var].reshape((1,-1))])
-
-        identity_con = constraints(identity_linpart,
-                                   np.zeros(identity_linpart.shape[0]))
-
-        self.identity_cone.append(identity_linpart)
-
-        eta = adjusted_X[:,next_var]
-
-        if compute_pval:
-
-            XI = self.X[:,inactive]
-            linear_part = np.vstack([XI.T, -XI.T])
-            offset = np.array(self.offset)
-            offset = offset[:,:,inactive]
-            offset_pos = np.min(offset[:,0], 0)
-            offset_neg = np.min(offset[:,1], 0)
-            offset = np.hstack([offset_pos, offset_neg])
-            con = constraints(linear_part, offset,
-                              covariance=self.covariance)
-
-            if use_identity:
-                con = stack(con, identity_con)
-                con.covariance = self.covariance
-            if self.variables:
-                XA = self.X[:,self.variables]
-                self.sequential_con = con.conditional(XA.T,
-                                                      np.dot(XA.T, Y))
-            else:
-                self.sequential_con = con
-
-            def maxT(Z, L=adjusted_X[:,inactive], S=scale[inactive]):
-                Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
-                return Tstat
-
-            pval = gibbs_test(self.sequential_con,
-                              Y,
-                              eta,
-                              sigma_known=True,
-                              white=False,
-                              ndraw=ndraw,
-                              burnin=burnin,
-                              how_often=-1,
-                              UMPU=False,
-                              use_random_directions=False,
-                              tilt=None,
-                              alternative='greater',
-                              test_statistic=maxT,
-                              )[0]
-
-        # now update state for next step
-
-        inactive.pop(idx)
-        self.variables.append(next_var); self.signs.append(next_sign)
-
-        realized_Z_adjusted = np.fabs(realized_Z) * scale
-        offset_shift = np.dot(self.X.T, Y - resid_vector)
-        self.offset.append([realized_Z_adjusted + offset_shift,
-                            realized_Z_adjusted - offset_shift])
-
-        resid_vector -= realized_Z * adjusted_X[:,next_var] / scale[next_var]
-        adjusted_X -= (np.multiply.outer(eta, 
-                                         np.dot(eta,
-                                                adjusted_X)) / 
-                       (eta**2).sum())
-        if compute_pval:
-            return pval
-
-
-
-def canonicalA(RX, RY, idx, sign, scale=None):
-    """
-    The canonical set of inequalities for a step of forward stepwise.
-    These encode that 
-    `sign*np.dot(RX.T[idx],RY)=np.fabs(np.dot(RX,RY)).max()` which is
-    $\|RX^TRY\|_{\infty}$.
-
-    Parameters
-    ----------
-
-    RX : `np.array((n,p))`
-
-    RY : `np.array(n)`
-
-    idx : `int`
-        Maximizing index of normalized `np.fabs(np.dot(RX.T,RY))` where normalization
-        is left multiplication by a diagonal matrix
-        represented  by `scale` and is generally such that each row of `RX.T` has $\ell_2$
-        norm of 1. 
-
-    sign : `[-1,1]`
-
-    scale : `np.array(p)`
-        A diagonal matrix to apply before computing the $\ell_{\infty}$ norm.
-
-    """
-
-    n, p = RX.shape
-
-    if scale is None:
-        scale = np.ones(p)
-
-    A0 = np.vstack([np.diag(1./scale), np.diag(-1./scale)])
-    v = np.zeros(p)
-    v[idx] = sign/scale[idx]
-    A = v[None,:] - A0
-
-    U = np.dot(A0, np.dot(RX.T, RY))
-    if DEBUG:
-        if sign > 0:
-            print np.fabs(U).max(), U[idx], 'should match'
-        else:
-            print np.fabs(U).max(), U[idx+p], 'should match'
-
-    keep = np.ones(2*p, np.bool)
-    if sign > 0:
-        keep[idx] = 0
-    else:
-        keep[idx+p] = 0
-
-    A = A[keep]
-
-    V = np.dot(A, RX.T)
-    return -V
-
-def _inequalities(X, y, ordered_vars):
-    """
-
-    """
-
-    # this could be done incrementally in the class...
-
-    n, p = X.shape
-
-    # up to now inactive
-    inactive = sorted(set(range(p)).difference(ordered_vars)) 
-    XI = X[:,inactive]
-
-    # each variable added implies some upper and lower limits 
-    # for each up to now inactive variable
-
-    adjustedX = X.copy()
-
-    linear_part = []
-    offset = []
-    for i, var in enumerate(ordered_vars):
-        if i > 0:
-            XA = X[:,ordered_vars[:i]]
-            mean_vector = np.dot(XA, np.dot(np.linalg.pinv(XA), y))
-        else:
-            mean_vector = np.zeros(n)
-
-        adjusted_scale = np.sqrt((adjustedX**2).sum(0))
-
-        realized_Z = (np.fabs((adjustedX[:,var] * y).sum()) / 
-                      adjusted_scale[var])
-        realized_Z_adjusted = realized_Z * adjusted_scale[inactive]
-        offset_shift = np.dot(XI.T, mean_vector)
-        offset.append([realized_Z_adjusted + offset_shift,
-                       realized_Z_adjusted - offset_shift])
-
-        # orthogonalize out the next variable
-        adjustedX -= (np.multiply.outer(adjustedX[:,var], \
-                      np.dot(adjustedX[:,var], adjustedX)) / 
-                      (adjustedX[:,var]**2).sum())
-
-    linear_part = np.vstack([XI.T, -XI.T])
-    offset = np.array(offset)
-    offset_pos = np.max(offset[:,0], 0)
-    offset_neg = np.max(offset[:,1], 0)
-    offset = np.hstack([offset_pos, offset_neg])
-    return linear_part, offset
-
 def info_crit_stop(Y, X, sigma, cost=2,
                    subset=[]):
     """
@@ -566,72 +384,6 @@ def info_crit_stop(Y, X, sigma, cost=2,
         print FS.constraints.linear_part.shape, 'should have added number of steps constraints'
     FS.active = FS.variables[:-1]
     return FS
-
-def sequential_old(X, Y, sigma=None, nstep=10,
-               saturated=False,
-               ndraw=5000,
-               burnin=2000,
-               subset=[]):
-    """
-    Fit model using forward stepwise,
-    stopping using a rule like AIC or BIC.
-    
-    The error variance must be supplied, in which
-    case AIC is essentially Mallow's C_p.
-
-    Parameters
-    ----------
-
-    X : np.float
-        Design matrix
-
-    Y : np.float
-        Response vector
-
-    sigma : float (optional)
-        Error variance.
-
-    nstep : int
-        How many steps should we take?
-
-    saturated : bool
-        Should we compute saturated or selected model pivots?
-
-    ndraw : int (optional)
-        Defaults to 5000.
-
-    burnin : int (optional)
-        Defaults to 2000.
-
-    subset : []
-        Subset of cases to use for selection, defaults to [].
-
-    Returns
-    -------
-
-    FS : `forward_stepwise`
-        Instance of forward stepwise after `nstep` steps.
-
-    pvalues : []
-        P-values computed at each step.
-
-    """
-
-    n, p = X.shape
-    if sigma is not None:
-        FS = forward_stepwise(X, Y, covariance=sigma**2 * np.identity(n),
-                              subset=subset)
-    else:
-        FS = forward_stepwise(X, Y)
-
-    pvalues = []
-    for i in range(nstep):
-        FS.next()
-        pvalues.extend(FS.model_pivots(i+1, which_var=[FS.variables[-1]],
-                                       saturated=saturated,
-                                       ndraw=ndraw,
-                                       burnin=burnin))
-    return FS, pvalues
 
 def data_carving_IC(y, X, sigma,
                     cost=2.,
@@ -776,58 +528,3 @@ def data_carving_IC(y, X, sigma,
                    splitting_pvalues,
                    splitting_intervals), FS
 
-def maxT(FS, sigma=1, burnin=2000, ndraw=8000,
-         accept_reject_params=(100,15,2000)):
-    """
-    Sample from constraints, reporting largest
-    inner product with T.
-
-    Parameters
-    ----------
-
-    FS : selection.algorithms.forward_step.forward_stepwise
-
-    """
-    n, p = FS.X.shape
-
-    projection = P = FS.P[-1]
-
-    # recomputing this is a little wasteful
-
-    if P is not None:
-        RX = FS.X-P(FS.X)
-    else:
-        RX = FS.X
-    scale = np.sqrt((FS.X**2).sum(0))
-
-    if len(FS.variables) >= 1:
-        con = copy(FS.constraints())
-        linear_part = FS.X[:,FS.variables]
-        observed = np.dot(linear_part.T, FS.Y)
-        LSfunc = np.linalg.pinv(linear_part)
-        conditional_con = con.conditional(linear_part.T,
-                                          observed)
-
-        _, Z, W, _ = gibbs_test(conditional_con,
-                                FS.Y,
-                                LSfunc[-1],
-                                alternative='twosided',
-                                sigma_known=True,
-                                burnin=burnin,
-                                ndraw=ndraw,
-                                UMPU=False,
-                                how_often=-1,
-                                use_random_directions=False,
-                                use_constraint_directions=False,
-                                accept_reject_params=accept_reject_params)
-
-    else: # first step
-
-        Z = np.random.standard_normal((ndraw, n)) * sigma
-        W = np.ones(ndraw)
-
-    null_statistics = np.fabs(np.dot(Z, RX) / scale[None,:]).max(1)
-    dfam = discrete_family(null_statistics, W)
-    observed = np.fabs(np.dot(RX.T, FS.Y) / scale).max()
-    pvalue = dfam.ccdf(0, observed)
-    return pvalue
