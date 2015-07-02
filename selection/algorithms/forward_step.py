@@ -167,8 +167,7 @@ class forward_stepwise(object):
                      which_var=[], 
                      compute_intervals=False,
                      nominal=False,
-                     coverage=0.95,
-                     use_new=True):
+                     coverage=0.95):
         """
         Compute two-sided pvalues for each coefficient
         in a given step of forward stepwise.
@@ -216,12 +215,8 @@ class forward_stepwise(object):
         if self.covariance is None and saturated:
             raise ValueError('need a covariance matrix to compute pivots for saturated model')
 
-        if not use_new:
-            con = copy(self.constraints())
-        else:
-            con = copy(self.new_constraints())
+        con = copy(self.constraints())
 
-        print con.linear_part.shape, use_new
         if self.covariance is not None:
             con.covariance[:] = self.covariance 
 
