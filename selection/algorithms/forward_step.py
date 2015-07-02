@@ -32,20 +32,20 @@ class forward_stepwise(object):
         self.subset = subset
         self.X, self.Y = X, Y
         if subset != []:
-            self.Xsub = X.copy()[subset]
-            self.Xsub -= self.Xsub.mean(0)[None,:]
-            self.Ysub = Y.copy()[subset]
-            self.Ysub -= self.Ysub.mean()
+            self.adjusted_X = X.copy()[subset]
+            self.subset_subset = Y.copy()[subset]
             self.subset_selector = np.identity(self.X.shape[0])[subset]
         else:
-            self.Xsub = X.copy()
-            self.Ysub = Y.copy()
+            self.adjusted_X = X.copy()
+            self.subset_Y = Y.copy()
+
         self.P = [None] # residual forming projections
         self.variables = []
         self.Z = []
         self.Zfunc = []
         self.signs = []
         self.covariance = covariance
+        self._resid_vector = self.subset_Y.copy() 
 
     def __iter__(self):
         return self
@@ -68,10 +68,10 @@ class forward_stepwise(object):
         Gram-Schmidt orthogonalized vectors.
 
         """
+
+        X, Y = self.adjusted_X, self.subset_Y
+        n, p = X.shape
         P = self.P[-1]
-        
-        X, Y = self.Xsub, self.Ysub
-        n, p = self.Xsub.shape
 
         if P is None: # first step
             U = np.dot(X.T, Y)
@@ -94,18 +94,19 @@ class forward_stepwise(object):
             RX = RX[:,keep]
 
             scale = np.sqrt((RX**2).sum(0))
+            RX /= scale[None, :]
             U = np.dot(RX.T, RY)
-            Z = np.fabs(U) / scale
+            Z = np.fabs(U) 
             idx = np.argmax(Z)
 
             sign = np.sign(U[idx])
             self.variables.append(np.arange(p)[keep][idx])
             self.signs.append(sign)
-            self.Zfunc.append((RX.T[idx] / scale[idx]) * sign)
+            self.Zfunc.append(RX.T[idx] * sign)
             self.Z.append(Z[idx] / np.sqrt(np.dot(self.Zfunc[-1], np.dot(self.covariance, self.Zfunc[-1]))))
-            Unew = RX[:,idx] / scale[idx]
+            Unew = RX[:,idx]
             Pnew = P.stack(Unew.reshape((-1,1)))
-            newA = canonicalA(RX, RY, idx, sign, scale=scale)
+            newA = canonicalA(RX, RY, idx, sign)
             self.As.append(newA)
             if DEBUG:
                 print np.linalg.norm(np.dot(newA, Y) - np.dot(newA, RY)), 'should be 0'
@@ -126,7 +127,7 @@ class forward_stepwise(object):
         if default_step > 0 and not identify_last_variable:
             default_step -= 1
         step = min(step, default_step)
-        A = np.vstack(self.As[:default_step])
+        A = np.vstack(self.As[:step])
 
         if self.subset == []:
             return constraints(A, 
@@ -147,11 +148,11 @@ class forward_stepwise(object):
                                             self.Y, 
                                             self.variables[:step])
 
-#         if identify_last_variable:
-#             linear_part = np.vstack([linear_part,
-#                                      self.As[-1]])
-#             offset = np.hstack([offset,
-#                                 np.ones(self.As[-1].shape[0])])
+        if identify_last_variable:
+            linear_part = np.vstack([linear_part,
+                                     self.As[-1]])
+            offset = np.hstack([offset,
+                                np.zeros(self.As[-1].shape[0])])
 
         if self.subset != []:
             linear_part = np.dot(linear_part, self.subset_selector)
@@ -220,6 +221,7 @@ class forward_stepwise(object):
         else:
             con = copy(self.new_constraints())
 
+        print con.linear_part.shape, use_new
         if self.covariance is not None:
             con.covariance[:] = self.covariance 
 
@@ -258,7 +260,7 @@ class forward_stepwise(object):
                         conditional_law = con
 
                     eta = LSfunc[i]
-                    observed = (eta*self.Y).sum()
+                    observed_func = (eta*self.Y).sum()
                     if compute_intervals:
                         _, _, _, family = gibbs_test(conditional_law,
                                                      self.Y,
@@ -269,10 +271,11 @@ class forward_stepwise(object):
                                                      burnin=burnin,
                                                      how_often=10,
                                                      UMPU=False,
+                                                     use_random_directions=False,
                                                      tilt=np.dot(conditional_law.covariance, 
                                                                  eta))
 
-                        lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
+                        lower_lim, upper_lim = family.equal_tailed_interval(observed_func, 1 - coverage)
 
                         # in the model we've chosen, the parameter beta is associated
                         # to the natural parameter as below
@@ -283,17 +286,18 @@ class forward_stepwise(object):
 
                         intervals.append((self.variables[i], (lower_lim_final, upper_lim_final)))
                     else: # we do not really need to tilt just for p-values
-                        _, _, _, family = gibbs_test(conditional_law,
-                                                     self.Y,
-                                                     eta,
-                                                     sigma_known=True,
-                                                     white=False,
-                                                     ndraw=ndraw,
-                                                     burnin=burnin,
-                                                     how_often=10,
-                                                     UMPU=False)
+                        _ , _, _, family = gibbs_test(conditional_law,
+                                                      self.Y,
+                                                      eta,
+                                                      sigma_known=True,
+                                                      white=False,
+                                                      ndraw=ndraw,
+                                                      burnin=burnin,
+                                                      how_often=10,
+                                                      use_random_directions=False,                                                     UMPU=False,
+                                                      alternative=alternative)
 
-                    pval = family.cdf(0, observed)
+                    pval = family.cdf(0, observed_func)
                     pval = 2 * min(pval, 1 - pval)
 
                     pivots.append((self.variables[i], 
@@ -305,6 +309,86 @@ class forward_stepwise(object):
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
         return quadratic_test(self.Y, P_LS, self.constraints)
+
+class sequential(forward_stepwise):
+
+    def __iter__(self):
+        self.offset = []
+        return self
+
+    def next(self, compute_pval=False):
+        """
+        """
+        
+        adjusted_X, Y = self.adjusted_X, self.subset_Y
+        resid_vector = self._resid_vector
+        n, p = adjusted_X.shape
+
+        # up to now inactive
+        inactive = sorted(set(range(p)).difference(self.variables))
+        scale = np.sqrt(np.sum(adjusted_X**2, 0))
+        
+        linear_part = []
+
+        Tstat = np.dot(adjusted_X.T[inactive], Y) / scale[inactive]
+        idx = np.argmax(np.fabs(Tstat))
+        next_var = inactive[idx]
+        self.variables.append(next_var)
+        next_sign = np.sign(Tstat[idx])
+
+        realized_T = Tstat[idx]
+        inactive.pop(idx)
+        realized_Z_adjusted = np.fabs(realized_T) * scale
+
+        offset_shift = np.dot(self.X.T, Y - resid_vector)
+        self.offset.append([realized_Z_adjusted + offset_shift,
+                            realized_Z_adjusted - offset_shift])
+
+        eta = adjusted_X[:,next_var]
+        resid_vector -= realized_T * adjusted_X[:,next_var] / scale[next_var]
+        adjusted_X -= (np.multiply.outer(eta, 
+                                         np.dot(eta,
+                                                adjusted_X)) / 
+                       (eta**2).sum())
+
+        XI = self.X[:,inactive]
+        linear_part = np.vstack([XI.T, -XI.T])
+        offset = np.array(self.offset)
+        offset = offset[:,:,inactive]
+        offset_pos = np.min(offset[:,0], 0)
+        offset_neg = np.min(offset[:,1], 0)
+        offset = np.hstack([offset_pos, offset_neg])
+        con = constraints(linear_part, offset,
+                          covariance=self.covariance)
+
+        XA = self.X[:,self.variables]
+        self.conditional_law = con.conditional(XA.T,
+                                               np.dot(XA.T, Y))
+
+        if compute_pval:
+
+            scale = np.sqrt((adjusted_X**2).sum(0))
+            def maxT(Z, L=adjusted_X[:,inactive], S=scale[inactive]):
+                Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
+                return Tstat
+
+            pval = gibbs_test(self.conditional_law,
+                              Y,
+                              eta,
+                              sigma_known=True,
+                              white=False,
+                              ndraw=8000,
+                              burnin=2000,
+                              how_often=-1,
+                              UMPU=False,
+                              use_random_directions=False,
+                              tilt=None,
+                              alternative='greater',
+                              test_statistic=maxT,
+                              )[0]
+            return pval
+
+
 
 def canonicalA(RX, RY, idx, sign, scale=None):
     """
@@ -376,9 +460,6 @@ def _inequalities(X, y, ordered_vars):
 
     # each variable added implies some upper and lower limits 
     # for each up to now inactive variable
-
-    upper_lims = np.ones(len(inactive)) * np.inf
-    lower_lims = -np.ones(len(inactive)) * np.inf
 
     adjustedX = X.copy()
 
@@ -475,7 +556,7 @@ def info_crit_stop(Y, X, sigma, cost=2,
     FS.active = FS.variables[:-1]
     return FS
 
-def sequential(X, Y, sigma=None, nstep=10,
+def sequential_old(X, Y, sigma=None, nstep=10,
                saturated=False,
                ndraw=5000,
                burnin=2000,
