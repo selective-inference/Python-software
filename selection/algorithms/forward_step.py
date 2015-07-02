@@ -16,6 +16,7 @@ from scipy.stats import norm as ndist
 
 from ..constraints.affine import constraints, gibbs_test, stack
 from ..distributions.chisq import quadratic_test
+from ..distributions.discrete_family import discrete_family
 from .projection import projection
 
 DEBUG = False
@@ -138,28 +139,6 @@ class forward_stepwise(object):
                            np.zeros(A.shape[0]), 
                            covariance=self.covariance)
 
-    def new_constraints(self, step=np.inf, identify_last_variable=True):
-        default_step = len(self.variables)
-        if default_step > 0 and not identify_last_variable:
-            default_step -= 1
-        step = min(step, default_step)
-
-        linear_part, offset = _inequalities(self.X, 
-                                            self.Y, 
-                                            self.variables[:step])
-
-        if identify_last_variable:
-            linear_part = np.vstack([linear_part,
-                                     self.As[-1]])
-            offset = np.hstack([offset,
-                                np.zeros(self.As[-1].shape[0])])
-
-        if self.subset != []:
-            linear_part = np.dot(linear_part, self.subset_selector)
-        return constraints(linear_part,
-                           offset,
-                           covariance=self.covariance)
-
     def model_pivots(self, which_step, alternative='greater',
                      saturated=True,
                      ndraw=5000,
@@ -254,7 +233,7 @@ class forward_stepwise(object):
                     else:
                         conditional_law = con
 
-                    eta = LSfunc[i]
+                    eta = LSfunc[i] * self.signs[i]
                     observed_func = (eta*self.Y).sum()
                     if compute_intervals:
                         _, _, _, family = gibbs_test(conditional_law,
@@ -293,8 +272,10 @@ class forward_stepwise(object):
                                                       alternative=alternative)
 
                     pval = family.cdf(0, observed_func)
-                    pval = 2 * min(pval, 1 - pval)
-
+                    if alternative == 'twosided':
+                        pval = 2 * min(pval, 1 - pval)
+                    elif alternative == 'greater':
+                        pval = 1 - pval
                     pivots.append((self.variables[i], 
                                    pval))
 
@@ -308,14 +289,20 @@ class forward_stepwise(object):
 class sequential(forward_stepwise):
 
     def __iter__(self):
-        self.offset = []
+        n, p = self.X.shape
+        self.identity_cone = []
+        self.inactive = range(p)
+        self.offset = [[np.ones(p) * np.inf, np.ones(p) * np.inf]]
         return self
 
-    def next(self, compute_pval=False):
+    def next(self, compute_pval=False,
+             use_identity=False,
+             burnin=2000,
+             ndraw=8000):
         """
         """
         
-        adjusted_X, Y = self.adjusted_X, self.subset_Y
+        adjusted_X, Y, inactive = self.adjusted_X, self.subset_Y, self.inactive
         resid_vector = self._resid_vector
         n, p = adjusted_X.shape
 
@@ -325,55 +312,67 @@ class sequential(forward_stepwise):
         
         linear_part = []
 
-        Tstat = np.dot(adjusted_X.T[inactive], Y) / scale[inactive]
-        idx = np.argmax(np.fabs(Tstat))
+        Zstat = np.dot(adjusted_X.T[inactive], Y) / scale[inactive]
+        idx = np.argmax(np.fabs(Zstat))
         next_var = inactive[idx]
-        self.variables.append(next_var)
-        next_sign = np.sign(Tstat[idx])
+        next_sign = np.sign(Zstat[idx])
 
-        realized_T = Tstat[idx]
-        inactive.pop(idx)
-        realized_Z_adjusted = np.fabs(realized_T) * scale
+        realized_Z = Zstat[idx]
 
-        offset_shift = np.dot(self.X.T, Y - resid_vector)
-        self.offset.append([realized_Z_adjusted + offset_shift,
-                            realized_Z_adjusted - offset_shift])
+        # keep track of identity for testing
+        # variables other than the last one added
+
+        keep = np.zeros(p, np.bool)
+        keep[inactive] = True
+        keep[next_var] = False
+        identity_linpart = np.vstack([adjusted_X[:,keep].T 
+                                      / scale[keep,None] -
+                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
+                                      -adjusted_X[:,keep].T 
+                                      / scale[keep,None] -
+                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
+                                      -next_sign * adjusted_X[:,next_var].reshape((1,-1))])
+
+        identity_con = constraints(identity_linpart,
+                                   np.zeros(identity_linpart.shape[0]))
+
+        self.identity_cone.append(identity_linpart)
 
         eta = adjusted_X[:,next_var]
-        resid_vector -= realized_T * adjusted_X[:,next_var] / scale[next_var]
-        adjusted_X -= (np.multiply.outer(eta, 
-                                         np.dot(eta,
-                                                adjusted_X)) / 
-                       (eta**2).sum())
-
-        XI = self.X[:,inactive]
-        linear_part = np.vstack([XI.T, -XI.T])
-        offset = np.array(self.offset)
-        offset = offset[:,:,inactive]
-        offset_pos = np.min(offset[:,0], 0)
-        offset_neg = np.min(offset[:,1], 0)
-        offset = np.hstack([offset_pos, offset_neg])
-        con = constraints(linear_part, offset,
-                          covariance=self.covariance)
-
-        XA = self.X[:,self.variables]
-        self.conditional_law = con.conditional(XA.T,
-                                               np.dot(XA.T, Y))
 
         if compute_pval:
 
-            scale = np.sqrt((adjusted_X**2).sum(0))
+            XI = self.X[:,inactive]
+            linear_part = np.vstack([XI.T, -XI.T])
+            offset = np.array(self.offset)
+            offset = offset[:,:,inactive]
+            offset_pos = np.min(offset[:,0], 0)
+            offset_neg = np.min(offset[:,1], 0)
+            offset = np.hstack([offset_pos, offset_neg])
+            con = constraints(linear_part, offset,
+                              covariance=self.covariance)
+
+            if use_identity:
+                con = stack(con, identity_con)
+                con.covariance = self.covariance
+            if self.variables:
+                XA = self.X[:,self.variables]
+                self.sequential_con = con.conditional(XA.T,
+                                                      np.dot(XA.T, Y))
+            else:
+                self.sequential_con = con
+
             def maxT(Z, L=adjusted_X[:,inactive], S=scale[inactive]):
                 Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
                 return Tstat
 
-            pval = gibbs_test(self.conditional_law,
+            pval = gibbs_test(self.sequential_con,
                               Y,
                               eta,
                               sigma_known=True,
                               white=False,
-                              ndraw=8000,
-                              burnin=2000,
+                              ndraw=ndraw,
+                              burnin=burnin,
                               how_often=-1,
                               UMPU=False,
                               use_random_directions=False,
@@ -381,6 +380,23 @@ class sequential(forward_stepwise):
                               alternative='greater',
                               test_statistic=maxT,
                               )[0]
+
+        # now update state for next step
+
+        inactive.pop(idx)
+        self.variables.append(next_var); self.signs.append(next_sign)
+
+        realized_Z_adjusted = np.fabs(realized_Z) * scale
+        offset_shift = np.dot(self.X.T, Y - resid_vector)
+        self.offset.append([realized_Z_adjusted + offset_shift,
+                            realized_Z_adjusted - offset_shift])
+
+        resid_vector -= realized_Z * adjusted_X[:,next_var] / scale[next_var]
+        adjusted_X -= (np.multiply.outer(eta, 
+                                         np.dot(eta,
+                                                adjusted_X)) / 
+                       (eta**2).sum())
+        if compute_pval:
             return pval
 
 
@@ -759,3 +775,59 @@ def data_carving_IC(y, X, sigma,
                    intervals,
                    splitting_pvalues,
                    splitting_intervals), FS
+
+def maxT(FS, sigma=1, burnin=2000, ndraw=8000,
+         accept_reject_params=(100,15,2000)):
+    """
+    Sample from constraints, reporting largest
+    inner product with T.
+
+    Parameters
+    ----------
+
+    FS : selection.algorithms.forward_step.forward_stepwise
+
+    """
+    n, p = FS.X.shape
+
+    projection = P = FS.P[-1]
+
+    # recomputing this is a little wasteful
+
+    if P is not None:
+        RX = FS.X-P(FS.X)
+    else:
+        RX = FS.X
+    scale = np.sqrt((FS.X**2).sum(0))
+
+    if len(FS.variables) >= 1:
+        con = copy(FS.constraints())
+        linear_part = FS.X[:,FS.variables]
+        observed = np.dot(linear_part.T, FS.Y)
+        LSfunc = np.linalg.pinv(linear_part)
+        conditional_con = con.conditional(linear_part.T,
+                                          observed)
+
+        _, Z, W, _ = gibbs_test(conditional_con,
+                                FS.Y,
+                                LSfunc[-1],
+                                alternative='twosided',
+                                sigma_known=True,
+                                burnin=burnin,
+                                ndraw=ndraw,
+                                UMPU=False,
+                                how_often=-1,
+                                use_random_directions=False,
+                                use_constraint_directions=False,
+                                accept_reject_params=accept_reject_params)
+
+    else: # first step
+
+        Z = np.random.standard_normal((ndraw, n)) * sigma
+        W = np.ones(ndraw)
+
+    null_statistics = np.fabs(np.dot(Z, RX) / scale[None,:]).max(1)
+    dfam = discrete_family(null_statistics, W)
+    observed = np.fabs(np.dot(RX.T, FS.Y) / scale).max()
+    pvalue = dfam.ccdf(0, observed)
+    return pvalue
