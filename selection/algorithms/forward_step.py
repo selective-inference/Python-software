@@ -17,7 +17,6 @@ from scipy.stats import norm as ndist
 from ..constraints.affine import constraints, gibbs_test, stack
 from ..distributions.chisq import quadratic_test
 from ..distributions.discrete_family import discrete_family
-from .projection import projection
 
 DEBUG = False
 
@@ -29,9 +28,31 @@ class forward_step(object):
 
     def __init__(self, X, Y, 
                  subset=[],
+                 fixed_regressors=[],
+                 intercept=True,
                  covariance=None):
         self.subset = subset
         self.X, self.Y = X, Y
+
+        if intercept:
+            fixed_regressors = fixed_regressors + [np.ones(X.shape[0])]
+        if fixed_regressors != []:
+            self.fixed_regressors = np.hstack(fixed_regressors)
+            if self.fixed_regressors.ndim == 1:
+                self.fixed_regressors = self.fixed_regressors.reshape((-1,1))
+
+            # regress out the fixed regressors
+            # TODO should be fixed for subset
+
+            self.fixed_pinv = np.linalg.pinv(self.fixed_regressors)
+            self.Y = self.Y - np.dot(self.fixed_regressors, 
+                                     np.dot(self.fixed_pinv, self.Y))
+            self.X = self.X - np.dot(self.fixed_regressors, 
+                                     np.dot(self.fixed_pinv, self.X))
+        else:
+            self.fixed_regressors = []
+
+
 
         if subset != []:
             self.adjusted_X = X.copy()[subset]
@@ -43,7 +64,6 @@ class forward_step(object):
             self.subset_Y = Y.copy()
             self.subset_X = X.copy()
 
-        self.P = [None] # residual forming projections
         self.variables = []
         self.Z = []
         self.Zfunc = []
@@ -62,7 +82,8 @@ class forward_step(object):
              use_identity=False,
              burnin=2000,
              ndraw=8000,
-             sigma_known=True):
+             sigma_known=True,
+             accept_reject_params=(100, 15, 2000)):
         """
         """
         
@@ -123,8 +144,10 @@ class forward_step(object):
             if use_identity:
                 con = stack(con, identity_con)
                 con.covariance = self.covariance
-            if self.variables:
+            if self.variables or (self.fixed_regressors != []):
                 XA = self.subset_X[:,self.variables]
+                # TODO allow other regressors here
+                XA = np.hstack([self.fixed_regressors, XA])
                 self.sequential_con = con.conditional(XA.T,
                                                       np.dot(XA.T, Y))
             else:
@@ -147,6 +170,7 @@ class forward_step(object):
                               tilt=None,
                               alternative='greater',
                               test_statistic=maxT,
+                              accept_reject_params=accept_reject_params
                               )[0]
 
         # now update state for next step
