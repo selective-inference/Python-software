@@ -4,6 +4,9 @@ cimport numpy as np
 from libc.math cimport pow, sqrt, log, exp # sin, cos, acos, asin, sqrt, fabs
 from scipy.special import ndtr, ndtri
 
+class BoundViolation(ValueError):
+    pass
+
 cdef double PI = np.pi
 
 """
@@ -198,7 +201,7 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
         upper_bound = upper_bound / sigma
 
         if lower_bound > upper_bound:
-            raise ValueError('bound violation')
+            raise BoundViolation
 
         if upper_bound < -10: # use Exp approximation
             # the approximation is that
@@ -462,6 +465,9 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                 upper_bound = discriminant
             if lower_bound < - discriminant:
                 lower_bound = - discriminant
+
+        if lower_bound > upper_bound:
+            raise BoundViolation
 
         # sample from the line segment
 
