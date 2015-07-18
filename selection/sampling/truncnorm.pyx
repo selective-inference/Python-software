@@ -1,3 +1,4 @@
+import warnings
 import numpy as np, cython
 cimport numpy as np
 
@@ -31,6 +32,7 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
                            DTYPE_int_t ndraw=1000,
                            int use_constraint_directions=1,
                            int use_random_directions=0,
+                           int ignore_bound_violations=1,
                            ):
     """
     Sample from a truncated normal with covariance
@@ -146,8 +148,12 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
     cdef int iperiod = 0
     cdef int ibias = 0
     cdef int dobias = 0
+    cdef int make_no_move = 0
+    cdef int restart_idx = 0
 
     for iter_count in range(ndraw + burnin):
+
+        make_no_move = 0
 
         docoord = 1
         iperiod = iperiod + 1
@@ -201,7 +207,18 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
         upper_bound = upper_bound / sigma
 
         if lower_bound > upper_bound:
-            raise BoundViolation
+            warnings.warn('bound violation')
+            if not ignore_bound_violations:
+                raise BoundViolation
+            else:
+                make_no_move = 1
+            if iter_count - burnin > 0:
+                restart_idx = iter_count - burnin / 2
+                for ivar in range(nvar):
+                    state[ivar] = trunc_sample[restart_idx, ivar] 
+            else:
+                for ivar in range(nvar):
+                    state[ivar] = initial[ivar]
 
         if upper_bound < -10: # use Exp approximation
             # the approximation is that
@@ -256,7 +273,7 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
                     U[irow] = (U[irow] + A[irow, ivar] * 
                                tnorm * directions[idx,ivar])
 
-        if iter_count >= burnin:
+        if iter_count >= burnin and not make_no_move:
             for ivar in range(nvar):
                 trunc_sample[iter_count - burnin, ivar] = state[ivar]
         
@@ -274,6 +291,7 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                                   DTYPE_int_t ndraw=1000,
                                   int use_constraint_directions=1,
                                   int use_random_directions=0,
+                                  int ignore_bound_violations=1,
                                   ):
     """
     Sample from a sphere of radius `np.linalg.norm(initial)`
