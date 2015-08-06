@@ -52,6 +52,10 @@ Must Have
     pyinter is a lightweight package to manipulate
     subsets of the real line.
 
+  regreg 
+    regreg is a package to solve convex problems in composite form 
+    using proximal gradient methods (http://github.com/regreg/regreg)
+
 Strong Recommendations
 ^^^^^^^^^^^^^^^^^^^^^^
 

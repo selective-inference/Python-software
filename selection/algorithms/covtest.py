@@ -160,7 +160,7 @@ def selected_covtest(X, Y, ndraw=5000, burnin=2000, sigma=None,
                                   ndraw=ndraw,
                                   burnin=burnin,
                                   sigma_known=False, 
-                                  alternative='greater')
+                                  alternative='greater')[:3]
     else:
         val = np.sum((X[:,idx] * Y) * sign)
         family = _covtest_sampler(cone, X[:,idx] * sign,

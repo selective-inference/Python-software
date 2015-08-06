@@ -931,6 +931,8 @@ def sample_from_sphere(con,
                        how_often=-1,
                        ndraw=1000,
                        burnin=1000,
+                       use_constraint_directions=True,
+                       use_random_directions=True,
                        white=False):
     r"""
     Use Gibbs sampler to simulate from `con` 
@@ -991,7 +993,9 @@ def sample_from_sphere(con,
                                                            white_direction_of_interest,
                                                            how_often=how_often,
                                                            ndraw=ndraw, 
-                                                           burnin=burnin)
+                                                           burnin=burnin,
+                                                           use_constraint_directions=use_constraint_directions,
+                                                           use_random_directions=use_random_directions)
 
     Z = inverse_map(white_samples.T).T
     return Z, weights
@@ -1009,6 +1013,7 @@ def gibbs_test(affine_con, Y, direction_of_interest,
                use_constraint_directions=False,
                use_random_directions=True,
                tilt=None,
+               test_statistic=None,
                accept_reject_params=(100, 15, 2000),
                MLE_opts={'burnin':1000, 
                          'ndraw':500, 
@@ -1176,21 +1181,29 @@ def gibbs_test(affine_con, Y, direction_of_interest,
             logW -= logW.max() + 4.
             W = np.exp(logW)
 
-    suff_statistics = np.dot(Z, eta)
-    observed = (eta*Y).sum()
+    if test_statistic is None:
+        suff_statistics = np.dot(Z, eta)
+        observed = (eta*Y).sum()
+    else:
+        suff_statistics = test_statistic(Z)
+        observed = test_statistic(Y)
 
-    # adjust Z sample so some points fall on either side, this requires
-    # reweighting
+    adjust = False
+    # this adjustment seems to not work
+    if adjust:
 
-    median_suff = np.median(suff_statistics)
-    tilt_med = (observed - median_suff) * eta / (eta**2).sum()
-    tilt_reweight = affine_con.solve(tilt_med)
-    logW_med = -np.dot(Z, tilt_reweight)
-    logW_med -= logW_med.max() - 4
-    W *= np.exp(logW_med)
+        # adjust Z sample so some points fall on either side, this requires
+        # reweighting
 
-    Z += tilt_med[None,:]
-    suff_statistics += observed - median_suff
+        median_suff = np.median(suff_statistics)
+        tilt_med = (observed - median_suff) * eta / (eta**2).sum()
+        tilt_reweight = affine_con.solve(tilt_med)
+        logW_med = -np.dot(Z, tilt_reweight)
+        logW_med -= logW_med.max() - 4
+        W *= np.exp(logW_med)
+        Z += tilt_med[None,:]
+        suff_statistics += observed - median_suff
+
     dfam = discrete_family(suff_statistics, W)
 
     if alternative == 'greater':
