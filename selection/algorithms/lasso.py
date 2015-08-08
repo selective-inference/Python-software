@@ -477,6 +477,9 @@ def data_carving(y, X,
         a (split_pvalue, split_interval) using stage_two
         for inference.
 
+    stage_one : `lasso`
+        Results of fitting LASSO to stage one data.
+
     """
 
     n, p = X.shape
@@ -689,11 +692,11 @@ def data_carving(y, X,
                        pvalues, 
                        intervals,
                        splitting_pvalues,
-                       splitting_intervals), L
+                       splitting_intervals), stage_one
         else:
             return zip(L.active, 
                        pvalues,
-                       intervals), L
+                       intervals), stage_one
             
 def split_model(y, X, 
                 sigma=1, 
@@ -758,3 +761,164 @@ def split_model(y, X,
 
     first_stage = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
     return first_stage, stage_one, stage_two
+
+def additive_noise(y, 
+                   X, 
+                   sigma, 
+                   lam_frac=1.,
+                   perturb_frac=0.2, 
+                   coverage=0.95,
+                   ndraw=8000, 
+                   compute_intervals=True,
+                   burnin=2000):
+
+
+    """
+    
+    Additive noise LASSO.
+
+    Parameters
+    ----------
+
+    y : np.float
+        Response vector
+
+    X : np.float
+        Design matrix
+
+    sigma : np.float
+        Noise variance
+
+    lam_frac : float (optional)
+        Multiplier for choice of $\lambda$. Defaults to 2.
+
+    perturb_frac : float (optional)
+        How much noise to add? Noise added has variance
+        proportional to existing variance.
+
+    coverage : float
+        Coverage for selective intervals. Defaults to 0.95.
+
+    ndraw : int (optional)
+        How many draws to keep from Gibbs hit-and-run sampler.
+        Defaults to 8000.
+
+    burnin : int (optional)
+        Defaults to 2000.
+
+    compute_intervals : bool (optional)
+        Compute selective intervals?
+      
+    Returns
+    -------
+
+    results : [(variable, pvalue, interval)
+        Indices of active variables, 
+        selected (twosided) pvalue and selective interval.
+        If splitting, then each entry also includes
+        a (split_pvalue, split_interval) using stage_two
+        for inference.
+
+    randomized_lasso : `lasso`
+        Results of fitting LASSO to randomized data.
+
+    """
+
+    n, p = X.shape
+
+    # Add some noise to y and fit the LASSO at a fixed lambda
+
+    gamma = np.sqrt(perturb_frac) * sigma 
+    sigma_star = np.sqrt(sigma**2 + gamma**2)
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 5000)))).max(0)) * sigma_star
+    y_star = y + np.random.standard_normal(n) * gamma
+
+    L = randomized_lasso = lasso(y_star, X, lam, sigma=sigma_star)
+    L.fit()
+
+    # Form the constraint matrix on (y,y^*)
+    X_E = X[:,L.active]
+    X_Ei = np.linalg.pinv(X_E)
+    Cov_E = np.dot(X_Ei, X_Ei.T)
+    W_E = np.dot(Cov_E, L.z_E)
+
+    pvalues = []
+    intervals = []
+
+    beta_E = np.dot(X_Ei, y)
+
+    # compute each pvalue
+    for j in range(X_E.shape[1]):
+        s_obs = L.active.shape[0]
+        keep = np.ones(s_obs, np.bool)
+        keep[j] = 0
+
+        # form the 2s Gaussian vector we will condition on
+
+        X_minus_j = X_E[:,keep]
+        P_minus_j = np.dot(X_minus_j, np.linalg.pinv(X_minus_j))
+        R_minus_j = np.identity(n) - P_minus_j
+
+        theta_E = L.z_E * (np.dot(X_Ei, np.dot(P_minus_j, y)) - lam * W_E)
+        scale = np.sqrt(Cov_E[j,j])
+        kappa = 1. / scale**2
+        alpha_E = kappa * L.z_E * Cov_E[j]
+        A = np.hstack([-alpha_E.reshape((s_obs,1)), np.identity(s_obs)])
+        con = constraints(A, theta_E)
+        cov = np.zeros((s_obs+1, s_obs+1))
+        cov[0,0] = scale**2 * sigma**2
+        cov[1:,1:] = Cov_E * gamma**2 * np.outer(L.z_E, L.z_E)
+        con.covariance[:] = cov
+        initial = np.zeros(s_obs+1)
+        initial[0] = beta_E[j]
+        initial[1:] = -np.dot(X_Ei, y_star-y)
+        eta = np.zeros(s_obs+1)
+        eta[0] = 1.
+
+        observed = (initial * eta).sum()
+
+        if compute_intervals:
+            _, _, _, family = gibbs_test(con,
+                                         initial,
+                                         eta,
+                                         UMPU=False,
+                                         sigma_known=True,
+                                         ndraw=ndraw,
+                                         burnin=burnin,
+                                         how_often=5,
+                                         tilt=np.dot(con.covariance, 
+                                                     eta))
+
+            lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
+
+            # in the model we've chosen, the parameter beta is associated
+            # to the natural parameter as below
+            # exercise: justify this!
+
+            lower_lim_final = np.dot(eta, np.dot(con.covariance, eta)) * lower_lim
+            upper_lim_final = np.dot(eta, np.dot(con.covariance, eta)) * upper_lim
+
+            intervals.append((lower_lim_final, upper_lim_final))
+
+        else:
+            _, _, _, family = gibbs_test(con,
+                                         initial,
+                                         eta,
+                                         UMPU=False,
+                                         sigma_known=True,
+                                         ndraw=ndraw,
+                                         burnin=burnin,
+                                         how_often=5,
+                                         tilt=np.dot(con.covariance, 
+                                                     eta))
+
+            intervals.append((np.nan, np.nan))
+
+        pval = family.cdf(0, observed)
+        pval = 2 * min(pval, 1 - pval)
+        pvalues.append(pval)
+
+    return zip(L.active, 
+               pvalues,
+               intervals), randomized_lasso
+
