@@ -767,6 +767,7 @@ def additive_noise(y,
                    sigma, 
                    lam_frac=1.,
                    perturb_frac=0.2, 
+                   y_star=None,
                    coverage=0.95,
                    ndraw=8000, 
                    compute_intervals=True,
@@ -833,7 +834,7 @@ def additive_noise(y,
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 5000)))).max(0)) * sigma_star
     y_star = y + np.random.standard_normal(n) * gamma
 
-    L = randomized_lasso = lasso(y_star, X, lam, sigma=sigma_star)
+    L = standard_lasso(y_star, X, sigma=sigma_star, lam_frac=lam_frac)
     L.fit()
 
     # Form the constraint matrix on (y,y^*)
