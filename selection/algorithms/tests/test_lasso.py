@@ -37,6 +37,7 @@ def test_data_carving(n=100,
     counter = 0
 
     return_value = []
+
     while True:
         counter += 1
         X, y, beta, active, sigma = instance(n=n, 
@@ -52,16 +53,20 @@ def test_data_carving(n=100,
                         lam_frac=lam_frac,
                         split_frac=split_frac)[:2]
 
-
         if set(range(s)).issubset(L.active):
-            results, L = data_carving(y, X, lam_frac=lam_frac, 
-                                      sigma=sigma,
-                                      stage_one=stage_one,
-                                      splitting=True, 
-                                      ndraw=ndraw,
-                                      burnin=burnin,
-                                      coverage=coverage,
-                                      compute_intervals=compute_intervals)
+            while True:
+                results, L = data_carving(y, X, lam_frac=lam_frac, 
+                                          sigma=sigma,
+                                          stage_one=stage_one,
+                                          splitting=True, 
+                                          ndraw=ndraw,
+                                          burnin=burnin,
+                                          coverage=coverage,
+                                          compute_intervals=compute_intervals)
+                if set(range(s)).issubset(L.active):
+                    print "succeed"
+                    break
+                print "failed at least once"
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]

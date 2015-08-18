@@ -692,11 +692,11 @@ def data_carving(y, X,
                        pvalues, 
                        intervals,
                        splitting_pvalues,
-                       splitting_intervals), stage_one
+                       splitting_intervals), L
         else:
             return zip(L.active, 
                        pvalues,
-                       intervals), stage_one
+                       intervals), L
             
 def split_model(y, X, 
                 sigma=1, 
