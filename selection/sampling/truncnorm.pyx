@@ -234,14 +234,14 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
             # and Z (= tnorm below) is as stated
 
             unif = usample[iter_count] * (1 - exp(-np.fabs(
-                        lower_bound - upper_bound) * upper_bound))
+                        (lower_bound - upper_bound) * upper_bound)))
             tnorm = (upper_bound + log(1 - unif) / np.fabs(upper_bound)) * sigma
         elif lower_bound > 10:
 
             # here Z = lower_bound + E / fabs(lower_bound) (though lower_bound is positive)
             # and D = fabs((upper_bound - lower_bound) * lower_bound)
             unif = usample[iter_count] * (1 - exp(-np.fabs(
-                        upper_bound - lower_bound) * lower_bound))
+                        (upper_bound - lower_bound) * lower_bound)))
             tnorm = (lower_bound - log(1 - unif) / lower_bound) * sigma
         elif lower_bound < 0:
             cdfL = ndtr(lower_bound)
@@ -260,6 +260,8 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
             else:
                 tnorm = ndtri(1-unif) * sigma
             
+        print lower_bound, upper_bound, tnorm, np.sum(state), sigma, unif, 'hwer'
+
         if docoord == 1:
             state[idx] = tnorm
             tnorm = tnorm - V

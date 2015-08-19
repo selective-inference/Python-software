@@ -4,8 +4,6 @@ import mpmath as mp
 from abc import ABCMeta, abstractmethod
 
 from intervals import intervals
-from ..algorithms.projection import projection, full_rank
-
 
 from ..truncated import truncated_chi, truncated_chi2
 from scipy.stats import norm
