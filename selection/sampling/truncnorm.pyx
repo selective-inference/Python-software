@@ -260,8 +260,6 @@ def sample_truncnorm_white(np.ndarray[DTYPE_float_t, ndim=2] A,
             else:
                 tnorm = ndtri(1-unif) * sigma
             
-        print lower_bound, upper_bound, tnorm, np.sum(state), sigma, unif, 'hwer'
-
         if docoord == 1:
             state[idx] = tnorm
             tnorm = tnorm - V
