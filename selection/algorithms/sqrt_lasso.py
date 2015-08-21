@@ -256,8 +256,10 @@ class sqrt_lasso(object):
         denominator = self._S_trunc_denominator
         s_E = np.sign(self.z_E * denominator)
         S_upper = np.min((numerator / denominator)[denominator > 0])
-        S_lower = max(np.max((numerator / denominator)[denominator < 0]), 0)
-        
+        if np.any(denominator < 0):
+            S_lower = max(np.max((numerator / denominator)[denominator < 0]), 0)
+        else:
+            S_lower = 0.
         if not (self.sigma_E > S_lower and self.sigma_E < S_upper):
             raise ValueError('obseved sigma_hat not in expected truncation interval')
         return [S_lower, S_upper]

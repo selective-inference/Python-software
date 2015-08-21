@@ -872,7 +872,7 @@ def additive_noise(y,
         con.covariance[:] = cov
         initial = np.zeros(s_obs+1)
         initial[0] = beta_E[j]
-        initial[1:] = -np.dot(X_Ei, y_star-y)
+        initial[1:] = -np.dot(X_Ei, y_star-y) * L.z_E
         eta = np.zeros(s_obs+1)
         eta[0] = 1.
 
