@@ -129,13 +129,9 @@ class lasso(object):
     .. math::
 
         \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
-            f \lambda_{\max} \|\beta\|_1
+            \lambda \|\beta\|_1
 
-    where $f$ is `frac` and 
-
-    .. math::
-
-       \lambda_{\max} = \frac{1}{n} \|X^Ty\|_{\infty}
+    where $\lambda$ is `lam`.
 
     """
 
@@ -180,7 +176,7 @@ class lasso(object):
         Fit the lasso using `Lasso` from `sklearn`.
         This sets the attribute `soln` and
         forms the constraints necessary for post-selection inference
-        by caling `form_constraints()`.
+        by calling `form_constraints()`.
 
         Parameters
         ----------
@@ -209,6 +205,7 @@ class lasso(object):
             self.form_constraints()
         else:
             self.active = []
+        return self._soln
 
     def form_constraints(self):
         """
@@ -342,8 +339,6 @@ class lasso(object):
         return self._intervals_unadjusted
 
 def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
-
-    # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
 
     n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
     if np.array(lam).shape == ():
