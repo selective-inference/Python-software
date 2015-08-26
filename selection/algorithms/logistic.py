@@ -9,7 +9,7 @@ from copy import copy
 
 import numpy as np
 
-from regreg.api import logistic_loss, l1norm, simple_problem, identity_quadratic
+from regreg.api import logistic_loss, weighted_l1norm, simple_problem, identity_quadratic
 
 from selection.constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
@@ -39,9 +39,9 @@ class lasso(OLS_lasso):
     alpha = 0.05
     UMAU = False
 
-    randomization_sd = 0.001
+    randomization_sd = 0.1
 
-    def __init__(self, y, X, lam,
+    def __init__(self, y, X, weights,
                  trials=None,
                  randomization_covariance=None):
         r"""
@@ -59,10 +59,10 @@ class lasso(OLS_lasso):
         X : np.float((n, p))
             The data, in the model $y = X\beta$
 
-        lam : np.float
-            Coefficient of the L-1 penalty in
-            $\text{minimize}_{\beta} \frac{1}{2} \|y-X\beta\|^2_2 + 
-                \lambda\|\beta\|_1$
+        weights : np.float(p) or float
+            Coefficients in weighted L-1 penalty in
+            optimization problem. If a float,
+            weights are proportional to 1.
 
         trials : np.int(n) (optional)
             Number of trials for each of the proportions.
@@ -71,12 +71,16 @@ class lasso(OLS_lasso):
         """
         self.y, self.X = y, X
         n, p = X.shape
+
+        if np.array(weights).shape == ():
+            weights = weights * np.ones(p)
+        self.weights = weights
+
         if trials is None:
             trials = np.ones_like(y)
         self.trials = trials
         self._successes = self.trials * self.y
         n, p = X.shape
-        self.lagrange = lam
 
         if randomization_covariance is None:
             randomization_covariance = np.identity(p) * self.randomization_sd**2
@@ -85,7 +89,7 @@ class lasso(OLS_lasso):
         self.random_linear_term = np.dot(self.randomization_chol,
                                          np.random.standard_normal(p))
 
-    def fit(self, solve_args={'min_its':50, 'tol':1.e-10}):
+    def fit(self, solve_args={'min_its':200, 'tol':1.e-10}):
         """
         Fit the lasso using `regreg`.
         This sets the attribute `soln` and
@@ -107,16 +111,17 @@ class lasso(OLS_lasso):
         """
 
         n, p = self.X.shape
-        loss = logistic_loss(self.X, self.y * self.trials, trials=self.trials)
-        penalty = l1norm(p, lagrange=self.lagrange)
-        penalty.quadratic = identity_quadratic(0, 0, self.random_linear_term, 0)
-        problem = simple_problem(loss, penalty)
+        self.loss = logistic_loss(self.X, self.y * self.trials, trials=self.trials,
+                                  coef=n/2.)
+        self.penalty = weighted_l1norm(self.weights, lagrange=1.)
+        self.penalty.quadratic = identity_quadratic(0, 0, self.random_linear_term, 0)
+        problem = simple_problem(self.loss, self.penalty)
         soln = problem.solve(**solve_args)
 
         self._soln = soln
         if not np.all(soln == 0):
             self.active = np.nonzero(soln)[0]
-            self.inactive = sorted(set(xrange(p)).difference(self.active))
+            self.inactive = np.array(sorted(set(xrange(p)).difference(self.active)))
             X_E = self.X[:,self.active]
             loss_E = logistic_loss(X_E, self.y * self.trials, trials=self.trials)
             self._beta_unpenalized = loss_E.solve(**solve_args)
@@ -144,38 +149,85 @@ class lasso(OLS_lasso):
         beta = self.soln
         n, p = X.shape
         sparsity = s = self.active.shape[0]
-        lam = self.lagrange 
 
         self.z_E = np.sign(beta[self.active])
         X_E = self.X[:,self.active]
 
         self._linpred_unpenalized = np.dot(X_E, self._beta_unpenalized)
         self._fitted_unpenalized = p_unpen = np.exp(self._linpred_unpenalized) / (1. + np.exp(self._linpred_unpenalized))
+        self._resid_unpenalized = self.y - self._fitted_unpenalized
         self._weight_unpenalized = p_unpen * (1 - p_unpen)
 
-        active_selector = np.identity(p)[self.active]
-        active_linear = -self.quadratic_form
-        active_offset = - lam * self.z_E
-        self._active_constraints = constraints(np.dot(active_linear, active_selector),
-                                               active_offset,
-                                               covariance=self.covariance)
-                                               
-        inactive_linear = np.zeros((p-s, p))
-        inactive_linear[:,self.inactive] = np.identity(p-s)
-        inactive_linear[:,self.active] = -self._irrepresentable
-        inactive_offset = np.ones(2*(p-s)) * lam
-        inactive_offset[:(p-s)] += -lam * np.dot(self._irrepresentable, self.z_E)
-        inactive_offset[:(p-s)] += lam * np.dot(self._irrepresentable, self.z_E)
-        self._inactive_constraints = constraints(np.vstack([inactive_linear,
-                                                            -inactive_linear]),
-                                                 inactive_offset,
-                                                 covariance=self.covariance)
-                                               
-        self._constraints = stack(self._active_constraints,
-                                  self._inactive_constraints)
+        # estimate covariance of (\bar{\beta}_E, X_{-E}^T(y-\pi_E(\bar{\beta}_E))
+        # \approx (\bar{\beta}_E, X_{-E}^T(y-\pi_E(\beta_E^*)) - C_E(\beta_E^*) (\bar{\beta}_E - \beta_E^*)
+        # \approx (\beta_E^* + Q_E(\beta^*_E)^{-1} X_E^T(y - \pi_E(\beta^*_E), X_{-E}^T(y-\pi_E(\beta_E^*)) - I_E(\beta_E^*) X_E^T(y - \pi_E(\beta^*_E))
 
-        # NOTE: our actual Gaussian will typically not satisfy these constraints
-        print self._constraints(np.dot(self.X.T, self.y - self._fitted_unpenalized))
+        Q_Ei = self.quadratic_form_inv # plugin estimate of Q_E(\beta_E^*)^{-1}
+        I_E = self._irrepresentable # plugin estimate of C_E(\beta_E^*) Q_E(\beta_E^*)^{-1}
+
+        transform = np.zeros((p, p))
+        transform[:s,self.active] = Q_Ei
+        transform[s:,self.inactive] = np.identity(p-s)
+        transform[s:,self.active] = -I_E
+
+        # this is the covariance used in the constraint
+
+        cov_asymp = np.zeros((2*p, 2*p))
+        cov_asymp[:p,:p] = np.dot(transform, np.dot(self.covariance, transform.T))
+        cov_asymp[p:,p:] = np.dot(self.randomization_chol,
+                                  self.randomization_chol.T)
+
+        linear_part = np.zeros((s + 2*(p-s), 2*p))
+        linear_part[:s,:s] = -np.diag(self.z_E) 
+        linear_part[:s,p+self.active] = self.z_E[:,None] * Q_Ei
+
+        linear_part[s:p,s:p] = np.identity(p-s)
+        linear_part[s:p,p+self.active] = I_E
+        linear_part[s:p,p+self.inactive] = -np.identity(p-s)
+
+        linear_part[p:] = -linear_part[s:p]
+
+        offset = np.hstack([-self.z_E * np.dot(Q_Ei, self.z_E * self.weights[self.active]),
+                             self.weights[self.inactive] - np.dot(I_E, self.z_E * self.weights[self.active]),
+                             self.weights[self.inactive] + np.dot(I_E, self.z_E * self.weights[self.active])])
+
+        self._constraints = constraints(linear_part,
+                                        offset,
+                                        covariance=cov_asymp)
+
+        DEBUG = False
+        if DEBUG: 
+            # check KKT
+
+            # compare to our linearized estimate of inactive gradient
+
+            grad = self.loss.smooth_objective(self.soln, mode='grad') + self.random_linear_term
+            print grad[self.active] + self.z_E * self.weights[self.active] , 'should be about 0'
+            print np.fabs(grad[self.inactive] / self.weights[self.inactive]).max(), 'should be less than 1'
+
+            approx_grad = (- np.dot(self.X[:,self.inactive].T, self._resid_unpenalized) + self.random_linear_term[self.inactive] 
+                           - np.dot(I_E, self.z_E * self.weights[self.active] + self.random_linear_term[self.active]))
+
+            import matplotlib.pyplot as plt
+            plt.clf()
+            plt.scatter(grad[self.inactive], approx_grad)
+            print (np.linalg.norm(grad[self.inactive] - approx_grad) / np.linalg.norm(grad[self.inactive]))
+
+           # not always feasible! 
+            print np.linalg.norm(self._feasible[p+self.active] - self.random_linear_term[self.active]) / np.linalg.norm(self.random_linear_term[self.active])
+
+            print (np.dot(self._constraints.linear_part[:s], self._feasible) - (-self.z_E * (self._beta_unpenalized - np.dot(Q_Ei , self.random_linear_term[self.active])))), 'check1'
+            print (np.dot(self._constraints.linear_part[:s], self._feasible) - offset[:s]).max(), 'check2'
+            print (np.dot(self._constraints.linear_part[s:p], self._feasible) - offset[s:p]), 'check3'
+            #print (-np.dot(self._constraints.linear_part, self._feasible)[s:p] + self._constraints.offset[s:p] + approx_grad)
+
+        self._feasible = np.hstack([self._beta_unpenalized,
+                                    np.dot(self.X[:,self.inactive].T, self._resid_unpenalized),
+                                    self.random_linear_term])
+
+        if not self._constraints(self._feasible):
+            warnings.warn('initial point not feasible for constraints')
+        print np.linalg.norm(cov_asymp[:s,:s] - Q_Ei) / np.linalg.norm(Q_Ei)
 
     @property
     def covariance(self, doc="Covariance of sufficient statistic $X^Ty$."):
@@ -206,7 +258,7 @@ class lasso(OLS_lasso):
             X_notE = self.X[:,self.inactive]
             self._quad_form = np.dot(X_E.T * self._weight_unpenalized[None, :], X_E)
             self._quad_form_inv = np.linalg.pinv(self._quad_form)
-            self._irrepresentable = np.dot(X_notE.T, np.dot(X_E, self._quad_form_inv))
+            self._irrepresentable = np.dot(X_notE.T, self._weight_unpenalized[:, None] * np.dot(X_E, self._quad_form_inv))
         return self._quad_form
 
     @property
@@ -214,17 +266,6 @@ class lasso(OLS_lasso):
         if not hasattr(self, "_quad_form_inv"):
             self.quadratic_form
         return self._quad_form_inv
-
-    @property
-    def sampling_covariance(self, doc="Covariance of $X^Ty$ and its randomized version."):
-        if not hasattr(self, "_sampling_cov"):
-            n, p = self.X.shape
-            cov = np.zeros((2*p, 2*p))
-            cov[:p,:p] = self.covariance
-            cov[:p,p:] = cov[p:,:p] = self.covariance
-            cov[p:,p:] = self.covariance + self.randomization_covariance
-            self._sampling_cov = cov
-        return self._sampling_cov
 
     @property
     def soln(self):
@@ -236,22 +277,6 @@ class lasso(OLS_lasso):
         return self._soln
 
     @property
-    def active_constraints(self):
-        """
-        Affine constraints imposed on the
-        active variables by the KKT conditions.
-        """
-        return self._active_constraints
-
-    @property
-    def inactive_constraints(self):
-        """
-        Affine constraints imposed on the
-        inactive subgradient by the KKT conditions.
-        """
-        return self._inactive_constraints
-
-    @property
     def constraints(self):
         """
         Affine constraints for this LASSO problem.
@@ -260,30 +285,31 @@ class lasso(OLS_lasso):
         """
         return self._constraints
 
-    @property
+    #@property
     def intervals(self):
         """
         Intervals for OLS parameters of active variables
         adjusted for selection.
 
         """
-        if not hasattr(self, "_intervals"):
-            self._intervals = []
-            C = self.active_constraints
-            XEinv = self._XEinv
-            if XEinv is not None:
-                for i in range(XEinv.shape[0]):
-                    eta = XEinv[i]
-                    _interval = C.interval(eta, self.y,
-                                           alpha=self.alpha,
-                                           UMAU=self.UMAU)
-                    self._intervals.append((self.active[i],
-                                            _interval[0], _interval[1]))
-            self._intervals = np.array(self._intervals, 
-                                       np.dtype([('index', np.int),
-                                                 ('lower', np.float),
-                                                 ('upper', np.float)]))
-        return self._intervals
+        raise NotImplementedError
+#         if not hasattr(self, "_intervals"):
+#             self._intervals = []
+#             C = self.active_constraints
+#             XEinv = self._XEinv
+#             if XEinv is not None:
+#                 for i in range(XEinv.shape[0]):
+#                     eta = XEinv[i]
+#                     _interval = C.interval(eta, self.y,
+#                                            alpha=self.alpha,
+#                                            UMAU=self.UMAU)
+#                     self._intervals.append((self.active[i],
+#                                             _interval[0], _interval[1]))
+#             self._intervals = np.array(self._intervals, 
+#                                        np.dtype([('index', np.int),
+#                                                  ('lower', np.float),
+#                                                  ('upper', np.float)]))
+#         return self._intervals
 
     @property
     def active_pvalues(self, doc="Tests for active variables adjusted " + \
@@ -300,32 +326,14 @@ class lasso(OLS_lasso):
                     self._pvals.append((self.active[i], _pval))
         return self._pvals
 
-    @property
-    def nominal_intervals(self):
-        """
-        Intervals for OLS parameters of active variables
-        that have not been adjusted for selection.
-        """
-        if not hasattr(self, "_intervals_unadjusted"):
-            if not hasattr(self, "_constraints"):
-                self.form_constraints()
-            self._intervals_unadjusted = []
-            XEinv = self._XEinv
-            SigmaE = self.sigma**2 * np.dot(XEinv, XEinv.T)
-            for i in range(self.active.shape[0]):
-                eta = XEinv[i]
-                center = (eta*self.y).sum()
-                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(SigmaE[i,i])
-                _interval = [center-width, center+width]
-                self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
-                                        _interval))
-        return self._intervals_unadjusted
-
 if __name__ == "__main__":
     from selection.algorithms.lasso import instance
-    X, y = instance(n=2000)[:2]
-    X = X[:,:50]
+    n, p = 2000, 40
+    X, y = instance(n=n,p=p)[:2]
     n, p = X.shape
+    print n, p
     ybin = np.random.binomial(1, 0.5, size=(n,))
-    L = lasso(ybin, X, 0.001)
+    # lasso.randomization_sd = 1.e-6
+    L = lasso(ybin, X, 0.007 * np.sqrt(n))
+    print 'lagrange', 0.005 * np.sqrt(n)
     L.fit()

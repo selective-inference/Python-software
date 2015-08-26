@@ -153,11 +153,12 @@ class sqrt_lasso(object):
         
         n, p = X.shape
 
-        if np.array(weights).shape == ():
-            weights = weights * np.ones(p)
         self.y = y
         self.X = X
         n, p = X.shape
+
+        if np.array(weights).shape == ():
+            weights = weights * np.ones(p)
         self.weights = weights
 
     def fit(self, **solve_kwargs):
