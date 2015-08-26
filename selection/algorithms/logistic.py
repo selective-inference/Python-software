@@ -39,7 +39,7 @@ class lasso(OLS_lasso):
     alpha = 0.05
     UMAU = False
 
-    randomization_sd = 0.1
+    randomization_sd = 0.3
 
     def __init__(self, y, X, weights,
                  trials=None,
@@ -89,7 +89,7 @@ class lasso(OLS_lasso):
         self.random_linear_term = np.dot(self.randomization_chol,
                                          np.random.standard_normal(p))
 
-    def fit(self, solve_args={'min_its':200, 'tol':1.e-10}):
+    def fit(self, solve_args={'min_its':50, 'tol':1.e-10}):
         """
         Fit the lasso using `regreg`.
         This sets the attribute `soln` and
@@ -219,15 +219,19 @@ class lasso(OLS_lasso):
             print (np.dot(self._constraints.linear_part[:s], self._feasible) - (-self.z_E * (self._beta_unpenalized - np.dot(Q_Ei , self.random_linear_term[self.active])))), 'check1'
             print (np.dot(self._constraints.linear_part[:s], self._feasible) - offset[:s]).max(), 'check2'
             print (np.dot(self._constraints.linear_part[s:p], self._feasible) - offset[s:p]), 'check3'
-            #print (-np.dot(self._constraints.linear_part, self._feasible)[s:p] + self._constraints.offset[s:p] + approx_grad)
 
-        self._feasible = np.hstack([self._beta_unpenalized,
-                                    np.dot(self.X[:,self.inactive].T, self._resid_unpenalized),
-                                    self.random_linear_term])
+        self.statistical_func = np.hstack([self._beta_unpenalized,
+                                           np.dot(self.X[:,self.inactive].T, self._resid_unpenalized),
+                                           self.random_linear_term])
 
-        if not self._constraints(self._feasible):
+        self.feasible = np.zeros(2*p)
+        self.feasible[p+self.active] = - self.z_E * self.weights[self.active]
+        self.feasible[:s] = np.fabs(self._beta_unpenalized) * self.z_E
+        self.feasible[s:p] = np.dot(self.X[:,self.inactive].T, self._resid_unpenalized)
+        self.feasible[p+self.inactive] = self.feasible[s:p] + (np.random.sample(self.inactive.shape) * 2 * self.weights[self.inactive] - self.weights[self.inactive])
+
+        if not self._constraints(self.feasible):
             warnings.warn('initial point not feasible for constraints')
-        print np.linalg.norm(cov_asymp[:s,:s] - Q_Ei) / np.linalg.norm(Q_Ei)
 
     @property
     def covariance(self, doc="Covariance of sufficient statistic $X^Ty$."):
@@ -236,18 +240,26 @@ class lasso(OLS_lasso):
             # nonparametric bootstrap for covariance of X^Ty
 
             X, y = self.X, self. y
+            n, p = X.shape
             nsample = 2000
 
-            boot_pop_mean = np.dot(X.T, y)
+            def pi(X):
+                w = np.exp(np.dot(X[:,self.active], self._beta_unpenalized))
+                return w / (1 + w)
+
+            _mean_cum = 0
             self._cov = np.zeros((p, p))
+            
             for _ in range(nsample):
                 indices = np.random.choice(n, size=(n,), replace=True)
                 y_star = y[indices]
                 X_star = X[indices]
-                Z_star = np.dot(X_star.T, y_star)
+                Z_star = np.dot(X_star.T, y_star - pi(X_star))
+                _mean_cum += Z_star
                 self._cov += np.multiply.outer(Z_star, Z_star)
             self._cov /= nsample
-            self._cov -= np.multiply.outer(boot_pop_mean, boot_pop_mean)
+            _mean = _mean_cum / nsample
+            self._cov -= np.multiply.outer(_mean, _mean)
         return self._cov
 
     @property
@@ -311,29 +323,113 @@ class lasso(OLS_lasso):
 #                                                  ('upper', np.float)]))
 #         return self._intervals
 
-    @property
-    def active_pvalues(self, doc="Tests for active variables adjusted " + \
-        " for selection."):
-        if not hasattr(self, "_pvals"):
-            self._pvals = []
-            C = self.active_constraints
-            XEinv = self._XEinv
-            if XEinv is not None:
-                for i in range(XEinv.shape[0]):
-                    eta = XEinv[i]
-                    _pval = C.pivot(eta, self.y)
-                    _pval = 2 * min(_pval, 1 - _pval)
-                    self._pvals.append((self.active[i], _pval))
-        return self._pvals
+    def hypothesis_test(self, linear_func, null_value=0,
+                        alternative='twosided',
+                        saturated=True,
+                        ndraw=8000,
+                        burnin=2000):
+        """
+        Test a null hypothesis of the form
+
+        .. math::
+
+             H_0: \eta^T\beta_E = 0
+
+        in the selected model.
+
+        Parameters
+        ----------
+
+        linear_func : np.float(*)
+              Linear functional of shape self.active.shape
+
+        null_value : float
+              Specified value under null hypothesis
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        saturated : bool
+            Should we assume that expected value
+            of inactive gradient is 0 or not? If True,
+            the test conditions on the asymptotically
+            Gaussian $X_{-E}^T(y - \pi_E(\bar{\beta}_E))$.
+            One "selected" model assumes this has mean 0.
+            The saturated model does not make this assumption.
+
+        ndraw : int (optional)
+            Defaults to 8000.
+
+        burnin : int (optional)
+            Defaults to 2000.
+
+        Returns
+        -------
+
+        pvalue : np.float
+              P-value based on specified alternative.
+
+        """
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        n, p = self.X.shape
+        sparsity = s = self.active.shape[0]
+        null_basis = np.random.standard_normal((s-1,s))
+        normsq_linear_func = (linear_func**2).sum()
+        for j in range(s-1):
+            null_basis[j] -= (null_basis[j] * linear_func) * linear_func / normsq_linear_func
+
+        if saturated:
+            conditioning_func = np.zeros((p-1, 2*p))
+            conditioning_func[:s-1,:s] = null_basis
+            conditioning_func[(s-1):,s:p] = np.identity(p-s)
+        else:
+            conditioning_func = np.zeros((s-1, 2*p))
+            conditioning_func[:s-1,:s] = null_basis
+
+        expanded_linear_func = np.zeros(2*p)
+        expanded_linear_func[:s] = linear_func
+
+        conditioning_func = np.dot(conditioning_func, np.linalg.pinv(self.constraints.covariance))
+
+        conditional_con = self.constraints.conditional(conditioning_func,
+                                                       np.dot(conditioning_func, self.statistical_func))
+        if not self.constraints(self.feasible):
+            raise ValueError('need a feasible point for sampling')
+
+        _, _, _, family = gibbs_test(conditional_con,
+                                     self.feasible,
+                                     expanded_linear_func,
+                                     UMPU=False,
+                                     sigma_known=True,
+                                     ndraw=ndraw,
+                                     burnin=burnin,
+                                     alternative=alternative)
+
+        observed = (expanded_linear_func * self.statistical_func).sum()
+        if alternative == 'greater':
+            pval = family.ccdf(0, observed)
+        elif alternative == 'less':
+            pval = family.cdf(0, observed)
+        else:
+            pval = family.cdf(0, observed)
+            pval = 2 * min(pval, 1 - pval)
+        return pval
 
 if __name__ == "__main__":
     from selection.algorithms.lasso import instance
-    n, p = 2000, 40
-    X, y = instance(n=n,p=p)[:2]
-    n, p = X.shape
-    print n, p
-    ybin = np.random.binomial(1, 0.5, size=(n,))
-    # lasso.randomization_sd = 1.e-6
-    L = lasso(ybin, X, 0.007 * np.sqrt(n))
-    print 'lagrange', 0.005 * np.sqrt(n)
-    L.fit()
+
+    def simulate(n=100, p=20):
+
+        X, y = instance(n=n,p=p)[:2]
+        n, p = X.shape
+
+        ybin = np.random.binomial(1, 0.5, size=(n,))
+        L = lasso(ybin, X, 0.03 * np.sqrt(n), 
+                  randomization_covariance = 0.2 * np.dot(X.T, X) / 4.)
+        L.fit()
+        print L.active.shape
+        v = np.ones_like(L.active)
+        return L.hypothesis_test(v), L
