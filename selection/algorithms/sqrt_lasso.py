@@ -2,6 +2,8 @@
 This module contains a class `sqrt_lasso`_ that implements
 post selection for the square root lasso.
 
+Code based on algorithms described in http://arxiv.org/abs/1504.08031.
+
 """
 
 from copy import copy
@@ -151,11 +153,12 @@ class sqrt_lasso(object):
         
         n, p = X.shape
 
-        if np.array(weights).shape == ():
-            weights = weights * np.ones(p)
         self.y = y
         self.X = X
         n, p = X.shape
+
+        if np.array(weights).shape == ():
+            weights = weights * np.ones(p)
         self.weights = weights
 
     def fit(self, **solve_kwargs):
@@ -193,21 +196,14 @@ class sqrt_lasso(object):
             X_E = self._X_E = self.X[:,self.active]
             X_notE = self.X[:,~self.active]
             self._XEinv = np.linalg.pinv(X_E)
-            self.w_E = np.dot(self._XEinv.T, self.weights[self.active] * self.z_E)
-            self.W_E = np.dot(self._XEinv, self.w_E)
-            self.s_E = np.sign(self.z_E * self.W_E)
 
             self.df_E = n - nactive
 
             self.P_E = np.dot(X_E, self._XEinv)
             self.R_E = np.identity(n) - self.P_E
 
-            _denE = np.sqrt(1 - np.linalg.norm(self.w_E)**2)
-            self._c_E = np.linalg.norm(y - np.dot(self.P_E, y)) / _denE
-
-            _covE = np.dot(self._XEinv, self._XEinv.T)
-            _diagE = np.sqrt(np.diag(_covE))
-            _corE = _covE / np.outer(_diagE, _diagE)
+            w_E = np.dot(self._XEinv.T, self.weights[self.active] * self.z_E)
+            sigma_multiplier = np.sqrt(self.df_E / (1 - np.linalg.norm(w_E)**2))
             self.sigma_E = np.linalg.norm((y - np.dot(self.P_E, y))) / np.sqrt(self.df_E)
 
             (self._active_constraints, 
@@ -216,18 +212,17 @@ class sqrt_lasso(object):
                                                         X_notE,
                                                         self.z_E,
                                                         self.active, 
-                                                        self._c_E * self.weights,
+                                                        sigma_multiplier * self.sigma_E * self.weights,
                                                         self.sigma_E,
                                                         np.dot(X_notE.T, self.R_E))
 
-            self.U_E = np.dot(self._XEinv, y) / _diagE
-            self.T_E = self.U_E / self.sigma_E
+            W_E = np.dot(self._XEinv, w_E)
+            s_E = np.sign(self.z_E * W_E)
+            self._S_trunc_denominator = denominator = sigma_multiplier * W_E * self.z_E
 
-            _fracE = np.sqrt(self.df_E) / (_denE * _diagE)
-            RHS = _fracE * np.fabs(self.W_E)
-            self.alpha_E = self.s_E * RHS / np.sqrt(self.df_E)
-            # TODO -- truncation interval could have a lower bound!
-            self.S_trunc_interval = np.min((np.fabs(self.U_E) / RHS)[self.s_E == 1])
+            self.S_trunc_interval = self.compute_sigma_truncation_interval(np.dot(self._XEinv, y))
+            # HACK to make things more stable?
+            self.S_trunc_interval[0] = 0
 
             self._quasi_affine_constraints = orthogonal_QA(self._active_constraints.linear_part,
                                                            np.zeros(self._active_constraints.linear_part.shape[0]),
@@ -252,10 +247,23 @@ class sqrt_lasso(object):
         else:
             self.df_E = self.y.shape[0]
             self.sigma_E = np.linalg.norm(y) / np.sqrt(self.df_E)
-            self.S_trunc_interval = np.inf
+            self.S_trunc_interval = [0, np.inf]
             self._active_constraints = self._inactive_constraints = self._constraints = None
 
         self.active = np.nonzero(self.active)[0]
+
+    def compute_sigma_truncation_interval(self, coef):
+        numerator = coef * self.z_E
+        denominator = self._S_trunc_denominator
+        s_E = np.sign(self.z_E * denominator)
+        S_upper = np.min((numerator / denominator)[denominator > 0])
+        if np.any(denominator < 0):
+            S_lower = max(np.max((numerator / denominator)[denominator < 0]), 0)
+        else:
+            S_lower = 0.
+        if not (self.sigma_E > S_lower and self.sigma_E < S_upper):
+            raise ValueError('obseved sigma_hat not in expected truncation interval')
+        return [S_lower, S_upper]
 
     @property
     def soln(self):
@@ -308,7 +316,8 @@ class sqrt_lasso(object):
             if self.active.shape[0] > 0:
                 self._sigma_hat = estimate_sigma(self.sigma_E, 
                                                  self.df_E, 
-                                                 self.S_trunc_interval)
+                                                 self.S_trunc_interval[0],
+                                                 self.S_trunc_interval[1])
             else:
                 self._sigma_hat = self.sigma_E
         return self._sigma_hat
@@ -457,7 +466,6 @@ class sqrt_lasso(object):
                 self._goodness_of_fit_observed = np.dot(self.R_E, self.y) / np.linalg.norm(np.dot(self.R_E, self.y))
 
             else:
-                # model is null model so U_E is just uniform on a sphere
                 n, p = self.X.shape
                 U_sample = np.random.standard_normal((ndraw, n))
                 U_sample /= np.sqrt((U_sample**2).sum(1))[:, None]
@@ -531,7 +539,7 @@ def nominal_pvalues(sqrtL):
         _pvalues_unadjusted.append((sqrtL.active[i], T, _pval))
     return _pvalues_unadjusted
 
-def estimate_sigma(observed, truncated_df, upper_bound, untruncated_df=0, factor=3, npts=50, nsample=2000):
+def estimate_sigma(observed, truncated_df, lower_bound, upper_bound, untruncated_df=0, factor=3, npts=50, nsample=2000):
     """
 
     Produce an estimate of $\sigma$ from a constrained
@@ -549,6 +557,9 @@ def estimate_sigma(observed, truncated_df, upper_bound, untruncated_df=0, factor
         The observed sum is assumed to be the sum
         of an independent untruncated $\chi^2$ and the truncated one.
 
+    lower_bound : float
+        Lower limit of truncation interval.
+    
     upper_bound : float
         Upper limit of truncation interval.
     
@@ -585,14 +596,15 @@ def estimate_sigma(observed, truncated_df, upper_bound, untruncated_df=0, factor
     expected = 0 * values
     for i, value in enumerate(values):
         P_upper = chidist.cdf(upper_bound * np.sqrt(truncated_df) / value, truncated_df) 
+        P_lower = chidist.cdf(lower_bound * np.sqrt(truncated_df) / value, truncated_df) 
         U = np.random.sample(nsample)
         if untruncated_df > 0:
-            sample = (chidist.ppf(P_upper * U, truncated_df)**2 + chidist.rvs(untruncated_df, size=nsample)**2) * value**2
+            sample = (chidist.ppf((P_upper - P_lower) * U + P_lower, truncated_df)**2 + chidist.rvs(untruncated_df, size=nsample)**2) * value**2
         else:
-            sample = (chidist.ppf(P_upper * U, truncated_df) * value)**2
+            sample = (chidist.ppf((P_upper - P_lower) * U + P_lower, truncated_df) * value)**2
         expected[i] = np.mean(sample) 
 
-        if expected[i] >= 1.1 * (observed**2 * total_df + observed**2 * linear_term):
+        if expected[i] >= 1.5 * (observed**2 * total_df + observed**2 * linear_term):
             break
 
     interpolant = interp1d(values, expected + values**2 * linear_term)
@@ -606,6 +618,7 @@ def estimate_sigma(observed, truncated_df, upper_bound, untruncated_df=0, factor
     # the usual unbiased estimate
 
     sigma_hat = np.min(V[interpolant(V) >= observed**2 * total_df + observed**2 * linear_term])
+
     return sigma_hat
 
 def choose_lambda(X, quantile=0.95, ndraw=10000):
@@ -738,7 +751,7 @@ def data_carving(y, X,
         sigma_E1 = np.linalg.norm(y[stage_one] - np.dot(X_E1, beta_E1)) / np.sqrt(stage_one.sum() - L.active.shape[0])
         sigma_E = np.linalg.norm(y - np.dot(X_E, beta_E)) / np.sqrt(n - L.active.shape[0])
 
-        sigma_hat = L.sigma_hat # estimate_sigma(sigma_E, n1 - L.active.shape[0], L.S_trunc_interval, untruncated_df=n2)
+        sigma_hat = L.sigma_hat 
 
         if n2 > s or splitting:
 

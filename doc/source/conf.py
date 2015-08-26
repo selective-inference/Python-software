@@ -37,8 +37,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.doctest',
               'sphinx.ext.mathjax',
-              'sphinx.ext.graphviz',
-              'sphinx.ext.inheritance_diagram',
+              #'sphinx.ext.graphviz',
+              #'sphinx.ext.inheritance_diagram',
               'numpydoc.numpydoc',
               'math_dollar'
               ]

@@ -810,8 +810,7 @@ def sample_from_constraints(con,
                             white=False,
                             use_constraint_directions=True,
                             use_random_directions=True,
-                            accept_reject_params=(),
-                            do_tilt=True):
+                            accept_reject_params=()):
     r"""
     Use Gibbs sampler to simulate from `con`.
 
