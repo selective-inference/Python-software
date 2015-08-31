@@ -71,3 +71,42 @@ def test_gaussian(n=200, p=30, burnin=2000, ndraw=8000,
                                   compute_interval=compute_interval)
 
         return P0, PA, L
+
+def compare_sandwich():
+    import matplotlib.pyplot as plt
+
+    P0 = {}
+    PA = {}
+
+    def nonnan(v):
+        v = np.asarray(v)
+        return (~np.isnan(v)).sum()
+
+    for i in range(2000):
+        for sandwich in [True,False]:
+            P0.setdefault(sandwich, [])
+            PA.setdefault(sandwich, [])
+            R = test_logistic(burnin=5000, ndraw=10000, sandwich=sandwich)
+            if R is not None:
+                P0[sandwich].append(R[0])
+                PA[sandwich].append(R[1])
+        if ((nonnan(P0[True]) > 200)
+            and (nonnan(P0[False]) > 200)
+            and (nonnan(PA[False]) > 200)
+            and (nonnan(PA[True]) > 200)):
+            break
+        print nonnan(P0[True]), nonnan(P0[False]), nonnan(PA[True]), nonnan(PA[False])
+
+    def nanclean(v):
+        v = np.array(v)
+        return v[~np.isnan(v)]
+
+    plt.clf()
+    U = np.linspace(0,1, 101)
+
+    plt.plot(U, sm.distributions.ECDF(nanclean(PA[False]))(U), 'r--', label='Parametric', linewidth=3)
+    plt.plot(U, sm.distributions.ECDF(nanclean(PA[True]))(U), 'r:', label='Sandwich', linewidth=3)
+    plt.plot(U, sm.distributions.ECDF(nanclean(P0[False]))(U), 'k--', linewidth=3)
+    plt.plot(U, sm.distributions.ECDF(nanclean(P0[True]))(U), 'k:', linewidth=3)
+    plt.legend(loc='lower right')
+    plt.savefig('compare.pdf')
