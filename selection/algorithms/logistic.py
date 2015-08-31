@@ -15,13 +15,13 @@ from regreg.api import (logistic_loss,
                         identity_quadratic, 
                         squared_error)
 
-from selection.constraints.affine import (constraints, selection_interval,
+from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
                                  gibbs_test,
                                  stack)
-from selection.distributions.discrete_family import discrete_family
-from selection.algorithms.lasso import lasso as OLS_lasso, _constraint_from_data
+from ..distributions.discrete_family import discrete_family
+from .lasso import lasso as OLS_lasso, _constraint_from_data
 
 class randomized_lasso(object):
 
