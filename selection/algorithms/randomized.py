@@ -46,7 +46,8 @@ class randomized_lasso(object):
     def __init__(self, y, X, weights, 
                  randomization,
                  dispersion=1.,
-                 sandwich=True):
+                 sandwich=True,
+                 selected=False):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -81,6 +82,11 @@ class randomized_lasso(object):
             If True, use a sandwich estimator of covariance
             rather than parametric.
 
+        selected : bool
+            If True, use a selected model that implies
+            the final coordinates of `self.statistical_func`
+            have expectation 0. If p >= n, selected is assumed True.
+
         """
         (self.y, 
          self.X, 
@@ -108,6 +114,8 @@ class randomized_lasso(object):
 
         self.random_linear_term = np.dot(self.randomization_sqrt,
                                          np.random.standard_normal(self.randomization_sqrt.shape[1]))
+
+        self.selected = selected or (p >= n)
 
     def fit(self, solve_args={'min_its':30, 'tol':1.e-8, 'max_its':300}):
         """
@@ -376,7 +384,6 @@ class randomized_lasso(object):
 
     def hypothesis_test(self, linear_func, null_value=0,
                         alternative='twosided',
-                        saturated=True,
                         compute_interval=True,
                         ndraw=8000,
                         burnin=2000):
@@ -400,14 +407,6 @@ class randomized_lasso(object):
 
         alternative : ['greater', 'less', 'twosided']
             What alternative to use.
-
-        saturated : bool
-            Should we assume that expected value
-            of inactive gradient is 0 or not? If True,
-            the test conditions on the asymptotically
-            Gaussian $X_{-E}^T(y - \pi_E(\bar{\beta}_E))$.
-            One "selected" model assumes this has mean 0.
-            The saturated model does not make this assumption.
 
         compute_interval : bool
              Compute a selective interval?
@@ -441,7 +440,7 @@ class randomized_lasso(object):
         for j in range(s-1):
             null_basis[j] -= (null_basis[j] * linear_func) * linear_func / normsq_linear_func
 
-        if saturated:
+        if not self.selected:
             conditioning_func = np.zeros((p-1, 2*p))
             conditioning_func[:s-1,:s] = null_basis
             conditioning_func[(s-1):,s:p] = np.identity(p-s)
@@ -502,7 +501,8 @@ class randomized_logistic(randomized_lasso):
 
     def __init__(self, y, X, weights, randomization,
                  trials=None,
-                 sandwich=True):
+                 sandwich=True,
+                 selected=False):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -538,10 +538,16 @@ class randomized_logistic(randomized_lasso):
             If True, use a sandwich estimator of covariance
             rather than parametric.
 
+        selected : bool
+            If True, use a selected model that implies
+            the final coordinates of `self.statistical_func`
+            have expectation 0. If p >= n, selected is assumed True.
         """
 
         randomized_lasso.__init__(self, y, X, weights,
                                   randomization=randomization,
+                                  sandwich=sandwich,
+                                  selected=selected,
                                   dispersion=1.)
         if trials is None:
             trials = np.ones_like(y)
