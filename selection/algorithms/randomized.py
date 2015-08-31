@@ -43,11 +43,10 @@ class randomized_lasso(object):
     alpha = 0.05
     UMAU = False
 
-    randomization_sd = 0.3
-
     def __init__(self, y, X, weights, 
                  randomization,
-                 sigma=1.):
+                 dispersion=1.,
+                 sandwich=True):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -75,11 +74,21 @@ class randomized_lasso(object):
             it is treated as the covariance and a matrix square-root
             is computed.
 
-        sigma : float
-            Noise variance.
+        dispersion : float
+            Dispersion parameter
+
+        sandwich : bool
+            If True, use a sandwich estimator of covariance
+            rather than parametric.
 
         """
-        self.y, self.X, self.sigma = y, X, sigma
+        (self.y, 
+         self.X, 
+         self.dispersion, 
+         self.sandwich) = (y, 
+                           X, 
+                           dispersion,
+                           sandwich)
 
         n, p = X.shape
 
@@ -89,8 +98,6 @@ class randomized_lasso(object):
 
         n, p = X.shape
 
-        if randomization is None:
-            randomization = (True, np.identity(p) * self.randomization_sd)
         is_sqrt, transform = randomization
         if is_sqrt:
             self.randomization_sqrt = transform
@@ -250,8 +257,8 @@ class randomized_lasso(object):
             X, y = self.X, self. y
             n, p = X.shape
 
-            use_parametric = False
-            if not use_parametric:
+            use_parametric = True
+            if self.sandwich:
                 nsample = 4000
                 _mean_cum = 0
                 _cov_boot = np.zeros((p, p))
@@ -270,8 +277,7 @@ class randomized_lasso(object):
                 _cov_boot -= np.multiply.outer(_mean, _mean)
                 cov_XtY = _cov_boot
             else:
-                # sigma**2 is the dispersion parameter
-                cov_XtY = np.dot(X.T, self._weight_unpenalized[:, None] * X) * self.sigma**2
+                cov_XtY = np.dot(X.T, self._weight_unpenalized[:, None] * X) * self.dispersion
 
             self._cov_XtY = cov_XtY
             # the noisier unbiased estimate
@@ -488,14 +494,15 @@ class randomized_lasso(object):
             pval = 2 * min(pval, 1 - pval)
         return pval, interval
 
-class logistic(randomized_lasso):
+class randomized_logistic(randomized_lasso):
 
     """
     Randomized logistic LASSO regression.
     """
 
     def __init__(self, y, X, weights, randomization,
-                 trials=None):
+                 trials=None,
+                 sandwich=True):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -527,11 +534,15 @@ class logistic(randomized_lasso):
             Number of trials for each of the proportions.
             If not specified, defaults to np.ones(n)
 
+        sandwich : bool
+            If True, use a sandwich estimator of covariance
+            rather than parametric.
+
         """
 
         randomized_lasso.__init__(self, y, X, weights,
                                   randomization=randomization,
-                                  sigma=1.)
+                                  dispersion=1.)
         if trials is None:
             trials = np.ones_like(y)
         self.trials = trials
@@ -549,9 +560,9 @@ class logistic(randomized_lasso):
         return pi * (1 - pi)
 
 
-def instance(n=100, p=200, s=7, rho=0.3, snr=7,
-             random_signs=False, df=np.inf,
-             scale=True, center=True):
+def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=7,
+                      random_signs=False, df=np.inf,
+                      scale=True, center=True):
     """
     A testing instance for the LASSO.
     Design is equi-correlated in the population,
@@ -629,39 +640,3 @@ def instance(n=100, p=200, s=7, rho=0.3, snr=7,
     return X, Y, beta, np.nonzero(active)[0]
 
 
-if __name__ == "__main__":
-    from selection.algorithms.lasso import instance as lasso_instance
-
-    def simulate(n=200, p=30, burnin=2000, ndraw=8000,
-                 compute_interval=False,
-                 s=6):
-
-        X, y, beta, lasso_active = instance(n=n, p=p, snr=10, s=s, scale=False, center=False,
-                                            rho=0.1)
-        n, p = X.shape
-
-        sigma = 1
-        lam = 0.6 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0)) / 2
-        
-        # L = randomized_lasso(y, X, lam, (True, sigma * np.diag(np.sqrt(np.diag(np.dot(X.T, X))))),
-        #              sigma=sigma)
-        L = logistic(y, X, lam, (True, 0.4 * sigma * np.diag(np.sqrt(np.diag(np.dot(X.T, X))))))
-        L.fit()
-        if (set(range(s)).issubset(L.active) and 
-            L.active.shape[0] > s):
-            L.constraints.mean[:p] = 0 * L.unbiased_estimate
-            
-            v = np.zeros_like(L.active)
-            v[s] = 1.
-            P0, interval = L.hypothesis_test(v, burnin=burnin, ndraw=ndraw,
-                                             compute_interval=compute_interval)
-            target = (beta[L.active]*v).sum()
-            estimate = (L.unbiased_estimate[:L.active.shape[0]]*v).sum()
-            low, hi = interval
-
-            v = np.zeros_like(L.active)
-            v[0] = 1.
-            PA, _ = L.hypothesis_test(v, burnin=burnin, ndraw=ndraw,
-                                      compute_interval=compute_interval)
-
-            return P0, PA, L
