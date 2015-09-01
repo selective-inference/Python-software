@@ -101,9 +101,120 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, **solve_kwargs):
     if weights is None:
         lam = choose_lambda(X)
         weights = lam * np.ones((p,))
+
     loss = sqlasso_objective(X, Y)
     penalty = rr.weighted_l1norm(weights, lagrange=1.)
     problem = rr.simple_problem(loss, penalty)
+    if initial is not None:
+        problem.coefs[:] = initial
+    soln = problem.solve(**solve_kwargs)
+    return soln
+
+class sqlasso_objective_alt(rr.smooth_atom):
+    """
+
+    The square-root LASSO objective on larger parameter space:
+
+    .. math::
+
+         (\beta, \sigma) \mapsto \frac{\|y-X\beta\|_2^2}{\sigma} + \sigma
+
+    """
+
+    def __init__(self, X, Y):
+
+        self.X = rr.astransform(X)
+        n, p = self.X.output_shape[0], self.X.input_shape[0]
+
+        self.Y = Y
+        if n > p:
+            self._quadratic_term = np.dot(X.T, X)
+            self._linear_term = -2 * np.dot(X.T, Y)
+            self._constant_term = (Y**2).sum()
+        self._sqerror = rr.squared_error(X, Y)
+
+    def smooth_objective(self, x, mode='both', check_feasibility=False):
+
+        n, p = self.X.output_shape[0], self.X.input_shape[0]
+
+        beta, sigma = x[:p], x[p]
+
+        if n > p:
+            if mode in ['grad', 'both']:
+                g = np.zeros(p+1)
+                g0 = np.dot(self._quadratic_term, beta) 
+                f1 = self._constant_term + (self._linear_term * beta).sum() + (g0 * beta).sum()
+                g1 = 2 * g0 + self._linear_term
+            else:
+                g1 = np.dot(self._quadratic_term, beta)
+                f1 = self._constant_term + (self._linear_term * beta).sum() + (g1 * beta).sum()
+        else:
+            if mode in ['grad', 'both']:
+                g = np.zeros(p+1)
+                f1, g1 = self._sqerror.smooth_objective(beta, 'both')
+                f1 *= 2; g1 *= 2
+            else:
+                f1 = self._sqerror.smooth_objective(beta, 'func')
+                f1 *= 2
+
+        f = f1 / sigma + sigma
+
+        if mode == 'both':
+            g[:p] = g1 / sigma
+            g[p] = -f1 / sigma**2 + 1.
+            return f, g
+        elif mode == 'grad':
+            g[:p] = g1 / sigma
+            g[p] = -f1 / sigma**2 + 1.
+            return g
+        elif mode == 'func':
+            return f
+        else:
+            raise ValueError("mode incorrectly specified")
+
+def solve_sqrt_lasso_alt(X, Y, weights=None, initial=None, **solve_kwargs):
+    """
+
+    Solve the square-root LASSO optimization problem:
+
+    $$
+    \text{minimize}_{\beta} \|y-X\beta\|_2 + D |\beta|,
+    $$
+    where $D$ is the diagonal matrix with weights on its diagonal.
+
+    Parameters
+    ----------
+
+    y : np.float((n,))
+        The target, in the model $y = X\beta$
+
+    X : np.float((n, p))
+        The data, in the model $y = X\beta$
+
+    weights : np.float
+        Coefficients of the L-1 penalty in
+        optimization problem, note that different
+        coordinates can have different coefficients.
+
+    initial : np.float(p)
+        Initial point for optimization.
+
+    solve_kwargs : dict
+        Arguments passed to regreg solver.
+
+    """
+    n, p = X.shape
+    if weights is None:
+        lam = choose_lambda(X)
+        weights = lam * np.ones((p,))
+    weight_dict = dict(zip(np.arange(p),
+                           2 * weights))
+    penalty = rr.mixed_lasso(range(p) + [rr.NONNEGATIVE], lagrange=1.,
+                             weights=weight_dict)
+
+    loss = sqlasso_objective_alt(X, Y)
+    problem = rr.simple_problem(loss, penalty)
+    problem.coefs[-1] = np.linalg.norm(Y)
     if initial is not None:
         problem.coefs[:] = initial
     soln = problem.solve(**solve_kwargs)
@@ -644,10 +755,11 @@ def choose_lambda(X, quantile=0.95, ndraw=10000):
 
     """
 
-    n, p = X.shape
+    X = rr.astransform(X)
+    n, p = X.output_shape[0], X.input_shape[0]
     E = np.random.standard_normal((n, ndraw))
     E /= np.sqrt(np.sum(E**2, 0))[None,:]
-    return np.percentile(np.fabs(np.dot(X.T, E)).max(0), 100*quantile)
+    return np.percentile(np.fabs(X.adjoint_map(E)).max(0), 100*quantile)
 
 def data_carving(y, X, 
                  lam_frac=1.,
