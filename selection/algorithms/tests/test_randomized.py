@@ -7,9 +7,10 @@ def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
                   compute_interval=False,
                   sandwich=True,
                   selected=False,
-                  s=6):
+                  s=6,
+                  snr=10):
 
-    X, y, beta, lasso_active = logistic_instance(n=n, p=p, snr=10, s=s, scale=False, center=False,
+    X, y, beta, lasso_active = logistic_instance(n=n, p=p, snr=snr, s=s, scale=False, center=False,
                                                  rho=0.1)
     n, p = X.shape
 
@@ -75,7 +76,11 @@ def test_gaussian(n=200, p=30, burnin=2000, ndraw=8000,
 
         return P0, PA, L
 
-def compare_sandwich(selected=False):
+def compare_sandwich(selected=False, min_sim=500,
+                     n=500,
+                     p=50,
+                     s=7,
+                     snr=10):
     import matplotlib.pyplot as plt
 
     P0 = {}
@@ -93,31 +98,36 @@ def compare_sandwich(selected=False):
         for sandwich in [True,False]:
             P0.setdefault(sandwich, [])
             PA.setdefault(sandwich, [])
-            R = test_logistic(burnin=5000, ndraw=10000, sandwich=sandwich, selected=selected)
-            if R is not None:
-                P0[sandwich].append(R[0])
-                PA[sandwich].append(R[1])
-        if ((nonnan(P0[True]) > 200)
-            and (nonnan(P0[False]) > 200)
-            and (nonnan(PA[False]) > 200)
-            and (nonnan(PA[True]) > 200)):
+            try:
+                R = test_logistic(burnin=5000, ndraw=10000, sandwich=sandwich, selected=selected,
+                                  n=n, p=p, s=s, snr=snr)
+                if R is not None:
+                    P0[sandwich].append(R[0])
+                    PA[sandwich].append(R[1])
+            except LinAlgError:
+                pass
+        if ((nonnan(P0[True]) > min_sim)
+            and (nonnan(P0[False]) > min_sim)
+            and (nonnan(PA[False]) > min_sim)
+            and (nonnan(PA[True]) > min_sim)):
             break
         print nonnan(P0[True]), nonnan(P0[False]), nonnan(PA[True]), nonnan(PA[False])
         print np.mean(nanclean(P0[True])), np.std(nanclean(P0[True]))
         print np.mean(nanclean(P0[False])), np.std(nanclean(P0[False]))
 
-    plt.clf()
-    U = np.linspace(0,1, 101)
+        if i % 50 == 0 and i > 25:
+            plt.clf()
+            U = np.linspace(0,1, 101)
 
-    plt.plot(U, sm.distributions.ECDF(nanclean(PA[False]))(U), 'r--', label='Parametric', linewidth=3)
-    plt.plot(U, sm.distributions.ECDF(nanclean(PA[True]))(U), 'r:', label='Sandwich', linewidth=3)
-    plt.plot(U, sm.distributions.ECDF(nanclean(P0[False]))(U), 'k--', linewidth=3)
-    plt.plot(U, sm.distributions.ECDF(nanclean(P0[True]))(U), 'k:', linewidth=3)
-    plt.legend(loc='lower right')
-    if selected:
-        plt.savefig('compare_selected.pdf')
-    else:
-        plt.savefig('compare_saturated.pdf')
+            plt.plot(U, sm.distributions.ECDF(nanclean(PA[False]))(U), 'r--', label='Parametric', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(nanclean(PA[True]))(U), 'r:', label='Sandwich', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(nanclean(P0[False]))(U), 'k--', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(nanclean(P0[True]))(U), 'k:', linewidth=3)
+            plt.legend(loc='lower right')
+            if selected:
+                plt.savefig('compare_selected.pdf')
+            else:
+                plt.savefig('compare_saturated.pdf')
 
 
     
