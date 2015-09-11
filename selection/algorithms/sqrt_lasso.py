@@ -98,6 +98,44 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, **solve_kwargs):
     """
     X = rr.astransform(X)
     n, p = X.output_shape[0], X.input_shape[0]
+    if n < p:
+        return solve_sqrt_lasso_alt(X, Y, weights=weights, initial=initial, **solve_kwargs)
+    else:
+        return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, **solve_kwargs)
+
+def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, **solve_kwargs):
+    """
+
+    Solve the square-root LASSO optimization problem:
+
+    $$
+    \text{minimize}_{\beta} \|y-X\beta\|_2 + D |\beta|,
+    $$
+    where $D$ is the diagonal matrix with weights on its diagonal.
+
+    Parameters
+    ----------
+
+    y : np.float((n,))
+        The target, in the model $y = X\beta$
+
+    X : np.float((n, p))
+        The data, in the model $y = X\beta$
+
+    weights : np.float
+        Coefficients of the L-1 penalty in
+        optimization problem, note that different
+        coordinates can have different coefficients.
+
+    initial : np.float(p)
+        Initial point for optimization.
+
+    solve_kwargs : dict
+        Arguments passed to regreg solver.
+
+    """
+    X = rr.astransform(X)
+    n, p = X.output_shape[0], X.input_shape[0]
     if weights is None:
         lam = choose_lambda(X)
         weights = lam * np.ones((p,))
@@ -216,9 +254,9 @@ def solve_sqrt_lasso_alt(X, Y, weights=None, initial=None, **solve_kwargs):
     problem = rr.simple_problem(loss, penalty)
     problem.coefs[-1] = np.linalg.norm(Y)
     if initial is not None:
-        problem.coefs[:] = initial
+        problem.coefs[:-1] = initial
     soln = problem.solve(**solve_kwargs)
-    return soln
+    return soln[:-1]
 
 class sqrt_lasso(object):
 
@@ -293,7 +331,10 @@ class sqrt_lasso(object):
 
         y, X = self.y, self.X
         n, p = self.X.shape
-        self._soln = solve_sqrt_lasso(X, y, self.weights, **solve_kwargs)
+        if n < p:
+            self._soln = solve_sqrt_lasso_alt(X, y, self.weights, **solve_kwargs)
+        else:
+            self._soln = solve_sqrt_lasso(X, y, self.weights, **solve_kwargs)
 
         beta = self._soln
 
@@ -332,6 +373,7 @@ class sqrt_lasso(object):
             self._S_trunc_denominator = denominator = sigma_multiplier * W_E * self.z_E
 
             self.S_trunc_interval = self.compute_sigma_truncation_interval(np.dot(self._XEinv, y))
+
             # HACK to make things more stable?
             self.S_trunc_interval[0] = 0
 
