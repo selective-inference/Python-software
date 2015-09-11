@@ -1,6 +1,6 @@
 import numpy as np
 from selection.algorithms.lasso import instance as lasso_instance
-from selection.algorithms.randomized import logistic_instance, randomized_lasso, randomized_logistic
+from selection.algorithms.randomized2 import logistic_instance, randomized_lasso, randomized_logistic
 import statsmodels.api as sm
 
 def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
@@ -8,7 +8,8 @@ def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
                   sandwich=True,
                   selected=False,
                   s=6,
-                  snr=10):
+                  snr=10,
+                  condition_on_more=False):
 
     X, y, beta, lasso_active = logistic_instance(n=n, p=p, snr=snr, s=s, scale=False, center=False,
                                                  rho=0.1)
@@ -23,12 +24,14 @@ def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
 
     if (set(range(s)).issubset(L.active) and 
         L.active.shape[0] > s):
+        L.unbiased_estimate = np.zeros(p)
         L.constraints.mean[:p] = 0 * L.unbiased_estimate
 
         v = np.zeros_like(L.active)
         v[s] = 1.
         P0, interval = L.hypothesis_test(v, burnin=burnin, ndraw=ndraw,
-                                         compute_interval=compute_interval)
+                                         compute_interval=compute_interval,
+                                         condition_on_more=condition_on_more)
         target = (beta[L.active]*v).sum()
         estimate = (L.unbiased_estimate[:L.active.shape[0]]*v).sum()
         low, hi = interval
@@ -36,35 +39,44 @@ def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
         v = np.zeros_like(L.active)
         v[0] = 1.
         PA, _ = L.hypothesis_test(v, burnin=burnin, ndraw=ndraw,
-                                  compute_interval=compute_interval)
+                                  compute_interval=compute_interval,
+                                  condition_on_more=condition_on_more)
 
         return P0, PA, L
 
 def test_gaussian(n=200, p=30, burnin=2000, ndraw=8000,
                   compute_interval=False,
-                  s=6):
+                  sandwich=True,
+                  selected=False,
+                  s=6,
+                  snr=7,
+                  condition_on_more=False):
 
     X, y, beta, lasso_active, sigma = lasso_instance(n=n, 
-                                                     p=p)
+                                                     p=p,
+                                                     snr=snr,
+                                                     s=s,
+                                                     rho=0.1)
     n, p = X.shape
 
-    lam = sigma * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
+    lam = 2. * sigma * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
-    L = randomized_lasso(y, X, lam, (True, 0.4 * np.diag(np.sqrt(np.diag(np.dot(X.T, X))))),
-                         sandwich=False)
-    L.fit()
+    L = randomized_lasso(y, X, lam, (True, 0.8 * sigma * np.diag(np.sqrt(np.diag(np.dot(X.T, X))))),
+                         sandwich=sandwich,
+                         selected=selected,
+                         dispersion=sigma**2)
 
-    L = randomized_lasso(y, X, lam, (True, 0.4 * np.diag(np.sqrt(np.diag(np.dot(X.T, X))))),
-                         sandwich=True)
     L.fit()
     if (set(range(s)).issubset(L.active) and 
         L.active.shape[0] > s):
+        L.unbiased_estimate = np.zeros(p)
         L.constraints.mean[:p] = 0 * L.unbiased_estimate
 
         v = np.zeros_like(L.active)
         v[s] = 1.
         P0, interval = L.hypothesis_test(v, burnin=burnin, ndraw=ndraw,
-                                         compute_interval=compute_interval)
+                                         compute_interval=compute_interval,
+                                         condition_on_more=condition_on_more)
         target = (beta[L.active]*v).sum()
         estimate = (L.unbiased_estimate[:L.active.shape[0]]*v).sum()
         low, hi = interval
@@ -72,39 +84,55 @@ def test_gaussian(n=200, p=30, burnin=2000, ndraw=8000,
         v = np.zeros_like(L.active)
         v[0] = 1.
         PA, _ = L.hypothesis_test(v, burnin=burnin, ndraw=ndraw,
-                                  compute_interval=compute_interval)
+                                  compute_interval=compute_interval,
+                                  condition_on_more=condition_on_more)
 
         return P0, PA, L
 
 def compare_sandwich(selected=False, min_sim=500,
                      n=500,
                      p=50,
-                     s=7,
-                     snr=10):
+                     s=5,
+                     snr=10,
+                     logistic=True,
+                     condition_on_more=False):
     import matplotlib.pyplot as plt
 
     P0 = {}
     PA = {}
 
-    def nanclean(v):
+    def nanclean(v, remove_zeros=False):
         v = np.asarray(v)
-        return v[~np.isnan(v)]
+        v = v[~np.isnan(v)]
+        if remove_zeros:
+            return v[v>1.e-6]
+        return v
 
     def nonnan(v):
         v = np.asarray(v)
         return (~np.isnan(v)).sum()
 
+    counter = 0
+    no_except = 0
     for i in range(2000):
         for sandwich in [True,False]:
             P0.setdefault(sandwich, [])
             PA.setdefault(sandwich, [])
+            print selected, 'selected'
             try:
-                R = test_logistic(burnin=5000, ndraw=10000, sandwich=sandwich, selected=selected,
-                                  n=n, p=p, s=s, snr=snr)
+                if logistic:
+                    R = test_logistic(burnin=2000, ndraw=8000, sandwich=sandwich, selected=selected,
+                                      n=n, p=p, s=s, snr=snr, condition_on_more=condition_on_more)
+                else:
+                    R = test_gaussian(burnin=2000, ndraw=8000, sandwich=sandwich, selected=selected,
+                                      n=n, p=p, s=s, snr=snr, condition_on_more=condition_on_more)
+                no_except += 1
                 if R is not None:
                     P0[sandwich].append(R[0])
                     PA[sandwich].append(R[1])
-            except LinAlgError:
+                    counter += 1
+                    print counter * 1. / no_except, 'screen'
+            except np.linalg.LinAlgError:
                 pass
         if ((nonnan(P0[True]) > min_sim)
             and (nonnan(P0[False]) > min_sim)
@@ -112,17 +140,17 @@ def compare_sandwich(selected=False, min_sim=500,
             and (nonnan(PA[True]) > min_sim)):
             break
         print nonnan(P0[True]), nonnan(P0[False]), nonnan(PA[True]), nonnan(PA[False])
-        print np.mean(nanclean(P0[True])), np.std(nanclean(P0[True]))
-        print np.mean(nanclean(P0[False])), np.std(nanclean(P0[False]))
+        print np.mean(nanclean(P0[True], remove_zeros=True)), np.std(nanclean(P0[True], remove_zeros=True)), 'sandwich'
+        print np.mean(nanclean(P0[False], remove_zeros=True)), np.std(nanclean(P0[False], remove_zeros=True)), 'parametric'
 
-        if i % 50 == 0 and i > 25:
+        if i % 25 == 0 and i > 20:
             plt.clf()
             U = np.linspace(0,1, 101)
 
             plt.plot(U, sm.distributions.ECDF(nanclean(PA[False]))(U), 'r--', label='Parametric', linewidth=3)
             plt.plot(U, sm.distributions.ECDF(nanclean(PA[True]))(U), 'r:', label='Sandwich', linewidth=3)
-            plt.plot(U, sm.distributions.ECDF(nanclean(P0[False]))(U), 'k--', linewidth=3)
-            plt.plot(U, sm.distributions.ECDF(nanclean(P0[True]))(U), 'k:', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(nanclean(P0[False], remove_zeros=True))(U), 'k--', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(nanclean(P0[True], remove_zeros=True))(U), 'k:', linewidth=3)
             plt.legend(loc='lower right')
             if selected:
                 plt.savefig('compare_selected.pdf')
