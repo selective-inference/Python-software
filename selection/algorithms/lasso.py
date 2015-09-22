@@ -317,26 +317,24 @@ class lasso(object):
                     self._pvals.append((self.active[i], _pval))
         return self._pvals
 
-    @property
-    def nominal_intervals(self):
-        """
-        Intervals for OLS parameters of active variables
-        that have not been adjusted for selection.
-        """
-        if not hasattr(self, "_intervals_unadjusted"):
-            if not hasattr(self, "_constraints"):
-                self.form_constraints()
-            self._intervals_unadjusted = []
-            XEinv = self._XEinv
-            SigmaE = self.sigma**2 * np.dot(XEinv, XEinv.T)
-            for i in range(self.active.shape[0]):
-                eta = XEinv[i]
-                center = (eta*self.y).sum()
-                width = ndist.ppf(1-self.alpha/2.) * np.sqrt(SigmaE[i,i])
-                _interval = [center-width, center+width]
-                self._intervals_unadjusted.append((self.active[i], eta, (eta*self.y).sum(), 
-                                        _interval))
-        return self._intervals_unadjusted
+def nominal_intervals(lasso_obj):
+    """
+    Intervals for OLS parameters of active variables
+    that have not been adjusted for selection.
+    """
+    unadjusted_intervals = []
+    if not hasattr(lasso_obj, "_constraints"):
+        lasso_obj.form_constraints()
+    XEinv = lasso_obj._XEinv
+    SigmaE = lasso_obj.sigma**2 * np.dot(XEinv, XEinv.T)
+    for i in range(lasso_obj.active.shape[0]):
+        eta = XEinv[i]
+        center = (eta*lasso_obj.y).sum()
+        width = ndist.ppf(1-lasso_obj.alpha/2.) * np.sqrt(SigmaE[i,i])
+        _interval = [center-width, center+width]
+        unadjusted_intervals.append((lasso_obj.active[i], eta, (eta*lasso_obj.y).sum(), 
+                                     _interval))
+    return unadjusted_intervals
 
 def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
 

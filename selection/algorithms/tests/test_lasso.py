@@ -1,13 +1,21 @@
 import numpy as np
 import numpy.testing.decorators as dec
-from selection.algorithms.lasso import lasso, data_carving, instance, split_model
+
+from selection.algorithms.lasso import (lasso, 
+                                        data_carving, 
+                                        instance, 
+                                        split_model, 
+                                        instance, 
+                                        nominal_intervals)
+
+from selection.tests.decorators import set_sampling_params_iftrue
 
 def test_class(n=100, p=20):
     y = np.random.standard_normal(n)
     X = np.random.standard_normal((n,p))
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
     L = lasso(y,X,lam=0.5*lam_theor)
-    L.fit(tol=1.e-7)
+    L.fit()
     L.form_constraints()
     C = L.constraints
 
@@ -20,6 +28,7 @@ def test_class(n=100, p=20):
 
     return L, C, I, P
 
+@set_sampling_params_iftrue(True)
 def test_data_carving(n=100,
                       p=200,
                       s=7,
@@ -32,7 +41,8 @@ def test_data_carving(n=100,
                       burnin=2000, 
                       df=np.inf,
                       coverage=0.90,
-                      compute_intervals=True):
+                      compute_intervals=True,
+                      nsim=None):
 
     counter = 0
 
@@ -93,64 +103,41 @@ def test_data_carving(n=100,
             return_value.append(v)
     return return_value
 
-@dec.slow
-def test_data_carving_coverage(n=200, coverage=0.8):
+@set_sampling_params_iftrue(True)
+@dec.skipif(True, "needs a data_carving_coverage function to be defined")
+def test_data_carving_coverage(nsim=200, 
+                               coverage=0.8,
+                               ndraw=8000,
+                               burnin=2000):
     C = []
-    SE = np.sqrt(coverage * (1 - coverage) / n)
+    SE = np.sqrt(coverage * (1 - coverage) / nsim)
 
     while True:
-        C.extend(data_carving_coverage()[-1])
-        if len(C) > n:
+        C.extend(data_carving_coverage(ndraw=ndraw, burnin=burnin)[-1])
+        if len(C) > nsim:
             break
 
     if np.fabs(np.mean(C) - coverage) > 3 * SE:
         raise ValueError('coverage not within 3 SE of where it should be')
 
-def sample_lasso(n, p, m, sigma=0.25):
-    n_samples, n_features = 50, 200
-    X = np.random.randn(n, p)
-    beta = np.zeros(p)
-    beta[:m].fill(5)
-    y = np.dot(X, beta)
+    return C
 
-    # add noise
-    y += 0.01 * np.random.normal(scale = sigma, size = (n,))              
-
-    return y, X, beta
-
-def test_intervals(n=100, p=20, m=5, n_test = 10):
+def test_intervals(n=100, p=20, s=5):
     t = []
-    for i in range(n_test):
-        y, X, beta = sample_lasso(n, p, m)
-        las = lasso(y, X, 4., sigma = .25)
-        las.fit()
-        las.form_constraints()
-        intervals = las.intervals
-        t.append([(beta[I[0]], I[3]) for I in intervals])
-    return t
-    
-def test_soln():
-    y, X, bet = sample_lasso(100, 50, 10)
-    las = lasso(y, X, 4.)
-    beta2 = las.soln
-
-def test_constraints():
-    y, X, beta = sample_lasso(100, 50, 10)
-    las = lasso(y, X, 4.)
+    X, y, beta = instance(n=n, p=p, s=s)[:3]
+    las = lasso(y, X, 4., sigma = .25)
     las.fit()
     las.form_constraints()
-    active = las.active_constraints
-    inactive = las.inactive_constraints
-    const = las.constraints
 
-def test_pvalue():
-    y, X, beta = sample_lasso(100, 50, 10)
-    las = lasso(y, X, 4.)
-    las.form_constraints()
-    pval = las.active_pvalues
+    # smoke test
 
-def test_nominal_intervals():
-    y, X, beta = sample_lasso(100, 50, 10)
-    las = lasso(y, X, 4.)
-    nom_int = las.nominal_intervals
-
+    las.soln
+    las.active_constraints
+    las.inactive_constraints
+    las.constraints
+    las.active_pvalues
+    intervals = las.intervals
+    nominal_intervals(las)
+    t.append([(beta[I], L, U) for I, L, U in intervals])
+    return t
+    
