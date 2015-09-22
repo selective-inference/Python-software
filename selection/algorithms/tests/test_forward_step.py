@@ -1,10 +1,16 @@
 import numpy as np
+
+from matplotlib import use
+use('Agg')
+
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 from selection.algorithms.lasso import instance
-from selection.algorithms.forward_step import forward_stepwise, info_crit_stop, sequential, data_carving_IC
+from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
+from selection.tests.decorators import set_sampling_params_iftrue
 
-def test_FS(k=10):
+@set_sampling_params_iftrue(True)
+def test_FS(k=10, ndraw=5000, burnin=5000, nsim=None):
 
     n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -12,7 +18,7 @@ def test_FS(k=10):
     
     Y = np.random.standard_normal(100) * 0.5
     
-    FS = forward_stepwise(X, Y, covariance=0.5**2 * np.identity(n))
+    FS = forward_step(X, Y, covariance=0.5**2 * np.identity(n))
 
     for i in range(k):
         FS.next()
@@ -22,10 +28,11 @@ def test_FS(k=10):
     print 'pivots for 3rd selected model knowing that we performed %d steps of forward stepwise' % k
 
     print FS.model_pivots(3)
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=5000, ndraw=5000)
+    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
     print FS.model_quadratic(3)
 
-def test_FS_unknown(k=10):
+@set_sampling_params_iftrue(True)
+def test_FS_unknown(k=10, ndraw=5000, burnin=5000, nsim=None):
 
     n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -33,7 +40,7 @@ def test_FS_unknown(k=10):
     
     Y = np.random.standard_normal(100) * 0.5
     
-    FS = forward_stepwise(X, Y)
+    FS = forward_step(X, Y)
 
     for i in range(k):
         FS.next()
@@ -42,9 +49,10 @@ def test_FS_unknown(k=10):
 
     print 'pivots for last variable of 3rd selected model knowing that we performed %d steps of forward stepwise' % k
 
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=5000, ndraw=5000)
+    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
 
-def test_subset(k=10):
+@set_sampling_params_iftrue(True)
+def test_subset(k=10, ndraw=5000, burnin=5000, nsim=None):
 
     n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -54,7 +62,7 @@ def test_subset(k=10):
     
     subset = np.ones(n, np.bool)
     subset[-10:] = 0
-    FS = forward_stepwise(X, Y, subset=subset,
+    FS = forward_step(X, Y, subset=subset,
                           covariance=0.5**2 * np.identity(n))
 
     for i in range(k):
@@ -65,15 +73,16 @@ def test_subset(k=10):
     print 'pivots for last variable of 3rd selected model knowing that we performed %d steps of forward stepwise' % k
 
     print FS.model_pivots(3, saturated=True)
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=5000, ndraw=5000)
+    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
 
-    FS = forward_stepwise(X, Y, subset=subset)
+    FS = forward_step(X, Y, subset=subset)
 
     for i in range(k):
         FS.next()
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=5000, ndraw=5000)
+    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
 
-def test_BIC(k=10, do_sample=True):
+@set_sampling_params_iftrue(True)
+def test_BIC(k=10, do_sample=True, ndraw=8000, burnin=2000, nsim=None):
 
     n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -85,32 +94,13 @@ def test_BIC(k=10, do_sample=True):
     final_model = len(FS.variables) - 1
 
     if do_sample:
-        return [p[-1] for p in FS.model_pivots(final_model, saturated=False, burnin=5000, ndraw=5000)]
+        return [p[-1] for p in FS.model_pivots(final_model, saturated=False, burnin=burnin, ndraw=ndraw)]
     else:
         saturated_pivots = FS.model_pivots(final_model)
         return [p[-1] for p in saturated_pivots]
 
-def test_sequential(k=10):
-
-    n, p = 100, 200
-    X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
-    X /= (X.std(0)[None,:] * np.sqrt(n))
-    
-    Y = np.random.standard_normal(100) * 0.5
-    
-    print sequential(X, Y, sigma=0.5, saturated=True)[1]
-    print sequential(X, Y, sigma=0.5, saturated=False, ndraw=5000, burnin=5000)[1]
-    print sequential(X, Y, saturated=False, ndraw=5000, burnin=5000)[1]
-    
-    # now use a subset of cases
-
-    subset = np.ones(n, np.bool)
-    subset[-10:] = 0
-    print sequential(X, Y, sigma=0.5, saturated=False, ndraw=5000, burnin=5000,
-                     subset=subset)[1]
-    print sequential(X, Y, saturated=False, ndraw=5000, burnin=5000, subset=subset)[1]
-    
-def simulate_null(saturated=True):
+   
+def simulate_null(saturated=True, ndraw=8000, burnin=2000):
 
     n, p = 100, 40
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -118,23 +108,25 @@ def simulate_null(saturated=True):
     
     Y = np.random.standard_normal(100) * 0.5
     
-    FS = forward_stepwise(X, Y, covariance=0.5**2 * np.identity(n))
+    FS = forward_step(X, Y, covariance=0.5**2 * np.identity(n))
     
     for i in range(5):
         FS.next()
 
-    return [p[-1] for p in FS.model_pivots(3, saturated=saturated,
-                                           use_new=False)]
+    return [p[-1] for p in FS.model_pivots(3, saturated=saturated, ndraw=ndraw, burnin=burnin)]
 
+@set_sampling_params_iftrue(True)
 def test_ecdf(nsim=1000, BIC=False,
-              saturated=True):
+              saturated=True,
+              burnin=2000,
+              ndraw=8000):
     
     P = []
     for _ in range(nsim):
         if not BIC:
-            P.extend(simulate_null(saturated=saturated))
+            P.extend(simulate_null(saturated=saturated, ndraw=ndraw, burnin=burnin))
         else:
-            P.extend(test_BIC(do_sample=True))
+            P.extend(test_BIC(do_sample=True, ndraw=ndraw, burnin=burnin))
     P = np.array(P)
 
     ecdf = sm.distributions.ECDF(P)
@@ -143,7 +135,9 @@ def test_ecdf(nsim=1000, BIC=False,
     plt.plot(ecdf.x, ecdf.y, linewidth=4, color='black')
     plt.show()
 
-def test_data_carving_IC(n=100,
+@set_sampling_params_iftrue(True)
+def test_data_carving_IC(nsim=500,
+                         n=100,
                          p=200,
                          s=7,
                          sigma=5,
@@ -158,7 +152,7 @@ def test_data_carving_IC(n=100,
 
     counter = 0
 
-    while True:
+    while counter < nsim:
         counter += 1
         X, y, beta, active, sigma = instance(n=n, 
                                              p=p, 
@@ -205,10 +199,12 @@ def test_data_carving_IC(n=100,
                     counter, carve_coverage, split_coverage)
 
 
-def test_full_pvals(n=100, p=40, rho=0.3, snr=4):
+@set_sampling_params_iftrue(True)
+def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000,
+                    nsim=None):
 
     X, y, beta, active, sigma = instance(n=n, p=p, snr=snr, rho=rho)
-    FS = forward_stepwise(X, y, covariance=sigma**2 * np.identity(n))
+    FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     from scipy.stats import norm as ndist
     pval = []
@@ -218,8 +214,8 @@ def test_full_pvals(n=100, p=40, rho=0.3, snr=4):
         var_select, pval_select = FS.model_pivots(i+1, alternative='twosided',
                                                   which_var=[FS.variables[-1]],
                                                   saturated=False,
-                                                  burnin=2000,
-                                                  ndraw=8000)[0]
+                                                  burnin=burnin,
+                                                  ndraw=ndraw)[0]
         pval_saturated = FS.model_pivots(i+1, alternative='twosided',
                                          which_var=[FS.variables[-1]],
                                          saturated=True)[0][1]

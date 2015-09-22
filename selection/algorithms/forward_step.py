@@ -71,6 +71,10 @@ class forward_step(object):
         self.covariance = covariance
         self._resid_vector = self.subset_Y.copy() 
 
+        # setup for iteration
+
+        iter(self)
+
     def __iter__(self):
         n, p = self.X.shape
         self.identity_cone = []
@@ -97,12 +101,18 @@ class forward_step(object):
         
         linear_part = []
 
-        Zstat = np.dot(adjusted_X.T[inactive], Y) / scale[inactive]
+        Zfunc = adjusted_X.T[inactive] / scale[inactive][:,None]
+        Zstat = np.dot(Zfunc, Y)
         idx = np.argmax(np.fabs(Zstat))
         next_var = inactive[idx]
         next_sign = np.sign(Zstat[idx])
 
         realized_Z = Zstat[idx]
+        self.Z.append(realized_Z)
+        if self.subset != []:
+            self.Zfunc.append(np.dot(Zfunc[idx], self.subset_selector) * next_sign)
+        else:
+            self.Zfunc.append(Zfunc[idx] * next_sign)
 
         # keep track of identity for testing
         # variables other than the last one added
@@ -198,14 +208,10 @@ class forward_step(object):
         step = min(step, default_step)
         A = np.vstack(self.identity_cone[:step])
 
-        if self.subset == []:
-            return constraints(A, 
-                               np.zeros(A.shape[0]), 
-                               covariance=self.covariance)
-        return constraints(np.dot(A, 
-                                  self.subset_selector),
-                           np.zeros(A.shape[0]), 
-                           covariance=self.covariance)
+        con = constraints(A, 
+                          np.zeros(A.shape[0]), 
+                          covariance=self.covariance)
+        return con
 
     def model_pivots(self, which_step, alternative='greater',
                      saturated=True,
@@ -352,7 +358,7 @@ class forward_step(object):
     def model_quadratic(self, which_step):
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
-        return quadratic_test(self.Y, P_LS, self.constraints)
+        return quadratic_test(self.Y, P_LS, self.constraints(step=which_step))
 
 def info_crit_stop(Y, X, sigma, cost=2,
                    subset=[]):
@@ -384,14 +390,15 @@ def info_crit_stop(Y, X, sigma, cost=2,
     Returns
     -------
 
-    FS : `forward_stepwise`
+    FS : `forward_step`
         Instance of forward stepwise stopped at the
         corresponding step. Constraints of FS
         will reflect the minimum Z score requirement.
 
     """
     n, p = X.shape
-    FS = forward_stepwise(X, Y, covariance=sigma**2 * np.identity(n), subset=subset)
+    FS = forward_step(X, Y, covariance=sigma**2 * np.identity(n), subset=subset)
+
     while True:
         FS.next()
 
@@ -403,11 +410,8 @@ def info_crit_stop(Y, X, sigma, cost=2,
     new_offset = -sigma * np.sqrt(cost) * np.ones(new_linear_part.shape[0])
     new_offset[-1] *= -1
 
-    if subset != []:
-        new_con = stack(FS.constraints, constraints(np.dot(new_linear_part, FS.subset_selector),
-                                                    new_offset))
-    else:
-        new_con = stack(FS.constraints, constraints(new_linear_part,new_offset))
+    new_con = stack(FS.constraints(), constraints(new_linear_part,
+                                                  new_offset))
     new_con.covariance[:] = sigma**2 * np.identity(n)
     if DEBUG:
         print FS.constraints.linear_part.shape, 'before'
