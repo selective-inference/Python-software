@@ -1,10 +1,15 @@
 import numpy as np
 
+# make any plots not use display
+
 from matplotlib import use
 use('Agg')
-
 import matplotlib.pyplot as plt
+
+# used for ECDF
+
 import statsmodels.api as sm
+
 from selection.algorithms.lasso import instance
 from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
 from selection.tests.decorators import set_sampling_params_iftrue
