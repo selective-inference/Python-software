@@ -1,13 +1,25 @@
-import numpy as np
 import itertools
+
+import numpy as np
 import numpy.testing.decorators as dec
-from matplotlib import pyplot as plt
+
+# make any plots not use display
+
+from matplotlib import use
+use('Agg')
+import matplotlib.pyplot as plt
+
+# used for ECDF
+
+import statsmodels.api as sm
 
 from selection.algorithms.lasso import instance, lasso
 from selection.algorithms.covtest import covtest, selected_covtest
 from selection.constraints.affine import gibbs_test
+from selection.tests.decorators import set_sampling_params_iftrue
 
-def test_covtest():
+@set_sampling_params_iftrue(True)
+def test_covtest(nsim=None, ndraw=8000, burnin=2000):
 
     n, p = 30, 50
     X = np.random.standard_normal((n,p)) + np.random.standard_normal(n)[:,None]
@@ -20,14 +32,17 @@ def test_covtest():
                                        covariance=covariance)
     for covariance in [None, np.identity(n)]:
         con, pval, idx, sign = selected_covtest(X, Y, sigma=1.5,
-                                                covariance=covariance)
+                                                covariance=covariance,
+                                                ndraw=ndraw,
+                                                burnin=burnin)
 
     con, pval, idx, sign = selected_covtest(X, Y)
 
     return pval
 
+@set_sampling_params_iftrue(True)
 @dec.slow
-def test_tilting(nsim=100):
+def test_tilting(nsim=100, ndraw=50000, burnin=10000):
 
     P = []
     covered0 = 0
@@ -44,8 +59,8 @@ def test_tilting(nsim=100):
         cone, pvalue, idx, sign = selected_covtest(X, Y0, sigma=sigma)
         eta = X[:,idx] * sign
         p1, _, _, fam = gibbs_test(cone, Y0, eta, 
-                                   ndraw=50000,
-                                   burnin=10000,
+                                   ndraw=ndraw,
+                                   burnin=burnin,
                                    alternative='twosided',
                                    sigma_known=True,
                                    tilt=eta,
@@ -61,8 +76,8 @@ def test_tilting(nsim=100):
         # compare to no tilting
 
         p2 = gibbs_test(cone, Y0, X[:,idx] * sign,
-                        ndraw=50000,
-                        burnin=10000,
+                        ndraw=ndraw,
+                        burnin=burnin,
                         alternative='twosided',
                         sigma_known=True,
                         tilt=None,
@@ -86,8 +101,8 @@ def test_tilting(nsim=100):
 
         cone, pvalue, idx, sign = selected_covtest(X, YA, sigma=sigma)
         _, _, _, fam = gibbs_test(cone, YA, X[:,idx] * sign,
-                                  ndraw=15000,
-                                  burnin=10000,
+                                  ndraw=ndraw,
+                                  burnin=burnin,
                                   alternative='greater',
                                   sigma_known=True,
                                   tilt=eta)
