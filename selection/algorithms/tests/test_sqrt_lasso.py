@@ -16,11 +16,12 @@ import statsmodels.api as sm
 
 from selection.algorithms.sqrt_lasso import (sqrt_lasso, choose_lambda,
                                   estimate_sigma, data_carving, split_model)
+import selection.algorithms.sqrt_lasso as SQ
 from selection.algorithms.lasso import instance
 from selection.constraints.quasi_affine import constraints_unknown_sigma
 from selection.truncated import T as truncated_T
 from selection.sampling.tests.test_sample_sphere import _generate_constraints
-from selection.tests.decorators import set_sampling_params_iftrue
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
 
 def test_class(n=20, p=40, s=2):
     y = np.random.standard_normal(n) * 1.2
@@ -281,3 +282,26 @@ def main(nsample=1000):
 
     return P#, IS
     
+@set_seed_for_test()
+def test_skinny_fat():
+
+    X, Y = instance()[:2]
+    n, p = X.shape
+    lam = SQ.choose_lambda(X)
+    obj1 = SQ.sqlasso_objective(X, Y)
+    obj2 = SQ.sqlasso_objective_skinny(X, Y)
+    soln1 = SQ.solve_sqrt_lasso_fat(X, Y, min_its=500, weights=np.ones(p) * lam)
+    soln2 = SQ.solve_sqrt_lasso_skinny(X, Y, min_its=500, weights=np.ones(p) * lam)
+
+    np.testing.assert_almost_equal(soln1, soln2)
+
+    X, Y = instance(p=50)[:2]
+    n, p = X.shape
+    lam = SQ.choose_lambda(X)
+    obj1 = SQ.sqlasso_objective(X, Y)
+    obj2 = SQ.sqlasso_objective_skinny(X, Y)
+    soln1 = SQ.solve_sqrt_lasso_fat(X, Y, min_its=500, weights=np.ones(p) * lam)
+    soln2 = SQ.solve_sqrt_lasso_skinny(X, Y, min_its=500, weights=np.ones(p) * lam)
+
+    np.testing.assert_almost_equal(soln1, soln2)
+

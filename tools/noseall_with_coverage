@@ -3,5 +3,5 @@
 import os
 
 os.system("""
-nosetests --with-coverage --cover-package=selection .
+nosetests --with-coverage --cover-package=selection --verbose selection
 """)
