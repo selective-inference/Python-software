@@ -1,15 +1,29 @@
 import numpy as np
-from selection.algorithms.lasso import instance as lasso_instance
-from selection.algorithms.randomized2 import logistic_instance, randomized_lasso, randomized_logistic
+
+# make any plots not use display
+
+from matplotlib import use
+use('Agg')
+import matplotlib.pyplot as plt
+
+# used for ECDF
+
 import statsmodels.api as sm
 
+from selection.algorithms.lasso import instance as lasso_instance
+from selection.algorithms.randomized2 import logistic_instance, randomized_lasso, randomized_logistic
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
+
+@set_seed_for_test()
+@set_sampling_params_iftrue(True)
 def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
                   compute_interval=False,
                   sandwich=True,
                   selected=False,
                   s=6,
                   snr=10,
-                  condition_on_more=False):
+                  condition_on_more=False,
+                  nsim=None):
 
     X, y, beta, lasso_active = logistic_instance(n=n, p=p, snr=snr, s=s, scale=False, center=False,
                                                  rho=0.1)
@@ -44,13 +58,15 @@ def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
 
         return P0, PA, L
 
+@set_sampling_params_iftrue(True)
 def test_gaussian(n=200, p=30, burnin=2000, ndraw=8000,
                   compute_interval=False,
                   sandwich=True,
                   selected=False,
                   s=6,
                   snr=7,
-                  condition_on_more=False):
+                  condition_on_more=False,
+                  nsim=None):
 
     X, y, beta, lasso_active, sigma = lasso_instance(n=n, 
                                                      p=p,
@@ -96,7 +112,6 @@ def compare_sandwich(selected=False, min_sim=500,
                      snr=10,
                      logistic=True,
                      condition_on_more=False):
-    import matplotlib.pyplot as plt
 
     P0 = {}
     PA = {}

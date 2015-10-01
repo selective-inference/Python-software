@@ -20,7 +20,8 @@ import numpy as np
 from ..distributions.pvalue import truncnorm_cdf, norm_interval
 from ..truncated.gaussian import truncated_gaussian, truncated_gaussian_old
 from ..sampling.truncnorm import (sample_truncnorm_white, 
-                                  sample_truncnorm_white_sphere)
+                                  sample_truncnorm_white_sphere,
+                                  sample_truncnorm_white_ball)
 
 from .optimal_tilt import optimal_tilt
 
@@ -629,7 +630,7 @@ def selection_interval(support_directions,
         direction_of_interest,
         tol=tol)
 
-    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], sigma=sigma)
+    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], scale=sigma)
     if UMAU:
         _selection_interval = truncated.UMAU_interval(V, alpha)
     else:
@@ -1217,4 +1218,5 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         return decision, Z, W, dfam
     return pvalue, Z, W, dfam
 
-
+# make sure nose does not try to test this function
+gibbs_test.__test__ = False

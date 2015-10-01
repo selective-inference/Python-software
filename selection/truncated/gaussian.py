@@ -48,7 +48,7 @@ class truncated_gaussian(truncated):
         """
 
         self._mu = mu
-        self._mu = mu
+        self._scale = scale
         truncated.__init__(self, I)
 
     def _cdf_notTruncated(self, a, b, dps):
@@ -74,12 +74,12 @@ class truncated_gaussian(truncated):
         """
         scale = self._scale
         mu = self._mu
-        dps_temp = mp.mp.dps
-        mp.mp.dps = dps
+        dps_temp = mp.dps
+        mp.dps = dps
 
-        val = norm_interval((a-mu)/sigma,
-                            (b-mu)/sigma)
-        mp.mp.dps = dps_temp
+        val = norm_interval((a-mu)/scale,
+                            (b-mu)/scale)
+        mp.dps = dps_temp
 
         return val
 
@@ -87,11 +87,11 @@ class truncated_gaussian(truncated):
 
         scale = self._scale
         mu = self._mu
-        dps_temp = mp.mp.dps
-        mp.mp.dps = dps
+        dps_temp = mp.dps
+        mp.dps = dps
 
         val = norm_pdf(Z)
-        mp.mp.dps = dps_temp
+        mp.dps = dps_temp
 
         return val
 
@@ -116,11 +116,11 @@ class truncated_gaussian(truncated):
 
         scale = self._scale
         mu = self._mu
-        dps_temp = mp.mp.dps
-        mp.mp.dps = dps
+        dps_temp = mp.dps
+        mp.dps = dps
 
         val = norm_q(q)
-        mp.mp.dps = dps_temp
+        mp.dps = dps_temp
 
         return val
 
@@ -130,7 +130,7 @@ class truncated_gaussian_old(object):
     A Gaussian distribution, truncated to
     """
 
-    def __init__(self, intervals, mu=0, sigma=1):
+    def __init__(self, intervals, mu=0, scale=1):
         intervals = np.unique(intervals)
         intervals = np.asarray(intervals).reshape(-1)
         # makes assumption intervals are disjoint
@@ -141,8 +141,8 @@ class truncated_gaussian_old(object):
         I = self.intervals[D != 0]
         self._cutoff_array = I.reshape(-1)
         self._mu = mu
-        self._sigma = sigma
-        self._mu_or_sigma_changed()
+        self._scale = scale
+        self._mu_or_scale_changed()
 
     def __array__(self):
         return self.intervals
@@ -154,44 +154,45 @@ class truncated_gaussian_old(object):
     @property
     def negated(self):
         if not hasattr(self,"_negated"):
-            self._negated = truncated_gaussian(np.asarray(-self._cutoff_array[::-1]),
-                                               mu=-self.mu,
-                                               sigma=self.sigma)
+            klass = type(self)
+            self._negated = klass(np.asarray(-self._cutoff_array[::-1]),
+                                  mu=-self.mu,
+                                  scale=self.scale)
         return self._negated
     
     # private method to update P and D after a change of parameters
 
-    def _mu_or_sigma_changed(self):
+    def _mu_or_scale_changed(self):
         
-        mu, sigma = self.mu, self.sigma
-        self.P = np.array([norm_interval((a-mu)/sigma,
-                                         (b-mu)/sigma) 
+        mu, scale = self.mu, self.scale
+        self.P = np.array([norm_interval((a-mu)/scale,
+                                         (b-mu)/scale) 
                            for a, b in self.intervals])
-        self.D = np.array([(norm_pdf((a-mu)/sigma), 
-                            norm_pdf((b-mu)/sigma)) 
+        self.D = np.array([(norm_pdf((a-mu)/scale), 
+                            norm_pdf((b-mu)/scale)) 
                            for a, b in self.intervals])
 
     # mean parameter : mu
 
     def set_mu(self, mu):
         self._mu = mu
-        self._mu_or_sigma_changed()
+        self._mu_or_scale_changed()
 
     def get_mu(self):
         return self._mu
 
     mu = property(get_mu, set_mu)
 
-    # variance parameter : sigma
+    # variance parameter : scale
 
-    def set_sigma(self, sigma):
-        self._sigma = sigma
-        self._mu_or_sigma_changed()
+    def set_scale(self, scale):
+        self._scale = scale
+        self._mu_or_scale_changed()
 
-    def get_sigma(self):
-        return self._sigma
+    def get_scale(self):
+        return self._scale
 
-    sigma = property(get_sigma, set_sigma)
+    scale = property(get_scale, set_scale)
 
     @property
     def delta(self):
@@ -211,26 +212,26 @@ class truncated_gaussian_old(object):
     # End of properties
 
     @staticmethod
-    def twosided(thresh, mu=0, sigma=1):
+    def twosided(thresh, mu=0, scale=1):
         thresh = np.fabs(thresh)
         return truncated_gaussian([(-np.inf,-thresh),(thresh,np.inf)],
-                                  mu=mu, sigma=sigma)
+                                  mu=mu, scale=scale)
     
     def __repr__(self):
-        return '''%s(%s, mu=%0.3e, sigma=%0.3e)''' % (self.__class__.__name__,
+        return '''%s(%s, mu=%0.3e, scale=%0.3e)''' % (self.__class__.__name__,
                                                       self.intervals,
                                                       self.mu,
-                                                      self.sigma)
+                                                      self.scale)
     
     def cdf(self, observed):
-        P, mu, sigma = self.P, self.mu, self.sigma
+        P, mu, scale = self.P, self.mu, self.scale
         z = observed
         k = int(np.floor((self.intervals <= observed).sum() / 2))
         if k < self.intervals.shape[0]:
             if observed > self.intervals[k,0]:
                 return (P[:k].sum() + 
-                        (norm_interval((self.intervals[k,0] - mu) / sigma,
-                                       (observed - mu) / sigma))
+                        (norm_interval((self.intervals[k,0] - mu) / scale,
+                                       (observed - mu) / scale))
                         ) / P.sum()
             else:
                 return P[:k].sum() / P.sum()
@@ -238,7 +239,7 @@ class truncated_gaussian_old(object):
             return 1.
 
     def quantile(self, q):
-        P, mu, sigma = self.P, self.mu, self.sigma
+        P, mu, scale = self.P, self.mu, self.scale
         Psum = P.sum()
         Csum = np.cumsum(np.array([0]+list(P)))
         k = max(np.nonzero(Csum < Psum*q)[0])
@@ -251,9 +252,9 @@ class truncated_gaussian_old(object):
 
         pnorm_increment = Psum*q - Csum[k]
         if np.mean(self.intervals[k]) < 0:
-            return mu + norm_q(norm_interval(-np.inf,(self.intervals[k,0]-mu)/sigma) + pnorm_increment) * sigma
+            return mu + norm_q(norm_interval(-np.inf,(self.intervals[k,0]-mu)/scale) + pnorm_increment) * scale
         else:
-            return mu - norm_q(norm_interval((self.intervals[k,0]-mu)/sigma, np.inf) - pnorm_increment) * sigma
+            return mu - norm_q(norm_interval((self.intervals[k,0]-mu)/scale, np.inf) - pnorm_increment) * scale
         
     # make a function for vector version?
     def right_endpoint(self, left_endpoint, alpha):
@@ -269,6 +270,7 @@ class truncated_gaussian_old(object):
         """
         $g_{\mu}$ from Will's code
         """
+        klass = self.__class__
         c1 = left_endpoint # shorthand from Will's code
         mu, P, D = self.mu, self.P, self.D
 
@@ -283,7 +285,7 @@ class truncated_gaussian_old(object):
             if intersection[1] > intersection[0]:
                 valid_intervals.append(intersection)
         if valid_intervals:
-            return truncated_gaussian(valid_intervals, mu=self.mu, sigma=self.sigma).delta.sum() - const
+            return klass(valid_intervals, mu=self.mu, scale=self.scale).delta.sum() - const
         return 0
 
     def dG(self, left_endpoint, alpha):
@@ -294,12 +296,12 @@ class truncated_gaussian_old(object):
         D = self.D
         return (self.right_endpoint(left_endpoint, alpha) - 
                 left_endpoint) * norm_pdf((left_endpoint - self.mu) / 
-                                          self.sigma)
+                                          self.scale)
     
     def equal_tailed_interval(self, observed, alpha):
         old_mu = self.mu
-        lb = self.mu - 20. * self.sigma
-        ub = self.mu + 20. * self.sigma
+        lb = self.mu - 20. * self.scale
+        ub = self.mu + 20. * self.scale
         def F(param):
             self.mu = param
             return self.cdf(observed)
@@ -342,7 +344,7 @@ def G(left_endpoints, mus, alpha, tg):
     Compute the $G$ function of `tg(intervals)` over 
     `zip(left_endpoints, mus)`.
 
-    A copy is made of `tg` and its $(\mu,\sigma)$ are not modified.
+    A copy is made of `tg` and its $(\mu,\scale)$ are not modified.
     """
     tg = truncated_gaussian(tg.intervals)
     results = []
@@ -356,7 +358,7 @@ def dG(left_endpoints, mus, alpha, tg):
     Compute the $G$ function of `tg(intervals)` over 
     `zip(left_endpoints, mus)`.
 
-    A copy is made of `tg` and its $(\mu,\sigma)$ are not modified.
+    A copy is made of `tg` and its $(\mu,\scale)$ are not modified.
     """
     tg = truncated_gaussian(tg.intervals)
     results = []
@@ -373,7 +375,8 @@ def _UMAU(observed, alpha, tg,
          mu_hi=None,
          tol=1.e-8):
 
-    tg = truncated_gaussian(tg.intervals, sigma=tg.sigma)
+    klass = type(tg)
+    tg = klass(tg.intervals, scale=tg.scale)
 
     X = observed # shorthand
     if mu_lo is None:
