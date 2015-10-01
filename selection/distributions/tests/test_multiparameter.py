@@ -1,7 +1,5 @@
 import numpy as np
-import selection.discrete_multiparameter
-reload(selection.discrete_multiparameter)
-from selection.discrete_multiparameter import multiparameter_family
+from selection.distributions.discrete_multiparameter import multiparameter_family
 
 def test_multiparameter():
 
