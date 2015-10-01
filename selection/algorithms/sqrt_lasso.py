@@ -333,7 +333,7 @@ class sqrt_lasso(object):
         if n < p:
             self._soln = solve_sqrt_lasso_skinny(X, y, self.weights, **solve_kwargs)
         else:
-            self._soln = solve_sqrt_lasso_fit(X, y, self.weights, **solve_kwargs)
+            self._soln = solve_sqrt_lasso_fat(X, y, self.weights, **solve_kwargs)
 
         beta = self._soln
 
