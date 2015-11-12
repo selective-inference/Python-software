@@ -168,6 +168,9 @@ class lasso(object):
         self.X = X
         self.sigma = sigma
         n, p = X.shape
+
+        if self.y.shape != (n,):
+            raise ValueError('shapes of (y, X) do not match: %s. X.ndim should be 2 and y.ndim should be 1.' % `(y.shape, X.shape)`)
         self.lagrange = lam / n
         self._covariance = self.sigma**2 * np.identity(X.shape[0])
 

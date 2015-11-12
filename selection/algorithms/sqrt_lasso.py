@@ -404,7 +404,7 @@ class sqrt_lasso(object):
 
         self.active = np.nonzero(self.active)[0]
 
-    def compute_sigma_truncation_interval(self, coef):
+    def compute_sigma_truncation_interval(self, coef, raise_if_outside=False):
         numerator = coef * self.z_E
         denominator = self._S_trunc_denominator
         s_E = np.sign(self.z_E * denominator)
@@ -413,7 +413,7 @@ class sqrt_lasso(object):
             S_lower = max(np.max((numerator / denominator)[denominator < 0]), 0)
         else:
             S_lower = 0.
-        if not (self.sigma_E > S_lower and self.sigma_E < S_upper):
+        if not (self.sigma_E > S_lower and self.sigma_E < S_upper) and raise_if_outside:
             raise ValueError('obseved sigma_hat not in expected truncation interval')
         return [S_lower, S_upper]
 
