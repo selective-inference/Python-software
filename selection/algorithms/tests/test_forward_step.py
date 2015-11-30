@@ -87,24 +87,25 @@ def test_subset(k=10, ndraw=5000, burnin=5000, nsim=None):
     print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
 
 @set_sampling_params_iftrue(True)
-def test_BIC(k=10, do_sample=True, ndraw=8000, burnin=2000, nsim=None):
+def test_BIC(do_sample=True, ndraw=8000, burnin=2000, nsim=None,
+             force=False):
 
-    n, p = 100, 200
-    X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
-    X /= (X.std(0)[None,:] * np.sqrt(n))
-    
-    Y = np.random.standard_normal(100) * 0.5
-    
-    FS = info_crit_stop(Y, X, 0.5, cost=np.log(n))
-    final_model = len(FS.variables) - 1
+    X, Y, beta, active, sigma = instance()
+    n, p = X.shape
+    FS = info_crit_stop(Y, X, sigma, cost=np.log(n))
+    final_model = len(FS.variables) 
 
-    if do_sample:
-        return [p[-1] for p in FS.model_pivots(final_model, saturated=False, burnin=burnin, ndraw=ndraw)]
-    else:
-        saturated_pivots = FS.model_pivots(final_model)
-        return [p[-1] for p in saturated_pivots]
+    active = set(list(active))
+    if active.issubset(FS.variables) or force:
+        which_var = [v for v in FS.variables if v not in active]
 
-   
+        if do_sample:
+            return [pval[-1] for pval in FS.model_pivots(final_model, saturated=False, burnin=burnin, ndraw=ndraw, which_var=which_var)]
+        else:
+            saturated_pivots = FS.model_pivots(final_model, which_var=which_var)
+            return [pval[-1] for pval in saturated_pivots]
+    return []
+
 def simulate_null(saturated=True, ndraw=8000, burnin=2000):
 
     n, p = 100, 40

@@ -99,16 +99,15 @@ class forward_step(object):
         inactive = sorted(set(range(p)).difference(self.variables))
         scale = np.sqrt(np.sum(adjusted_X**2, 0))
         
-        linear_part = []
-
         Zfunc = adjusted_X.T[inactive] / scale[inactive][:,None]
         Zstat = np.dot(Zfunc, Y)
         idx = np.argmax(np.fabs(Zstat))
         next_var = inactive[idx]
         next_sign = np.sign(Zstat[idx])
 
-        realized_Z = Zstat[idx]
-        self.Z.append(realized_Z)
+        realized_Z_max = Zstat[idx]
+        self.Z.append(realized_Z_max)
+
         if self.subset != []:
             self.Zfunc.append(np.dot(Zfunc[idx], self.subset_selector) * next_sign)
         else:
@@ -188,12 +187,12 @@ class forward_step(object):
         inactive.pop(idx)
         self.variables.append(next_var); self.signs.append(next_sign)
 
-        realized_Z_adjusted = np.fabs(realized_Z) * scale
+        realized_Z_adjusted = np.fabs(realized_Z_max) * scale
         offset_shift = np.dot(self.subset_X.T, Y - resid_vector)
         self.offset.append([realized_Z_adjusted + offset_shift,
                             realized_Z_adjusted - offset_shift])
 
-        resid_vector -= realized_Z * adjusted_X[:,next_var] / scale[next_var]
+        resid_vector -= realized_Z_max * adjusted_X[:,next_var] / scale[next_var]
         adjusted_X -= (np.multiply.outer(eta, 
                                          np.dot(eta,
                                                 adjusted_X)) / 
