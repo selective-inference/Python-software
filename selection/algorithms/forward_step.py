@@ -43,6 +43,7 @@ class forward_step(object):
 
             # regress out the fixed regressors
             # TODO should be fixed for subset
+            # should we adjust within the subset or not?
 
             self.fixed_pinv = np.linalg.pinv(self.fixed_regressors)
             self.Y = self.Y - np.dot(self.fixed_regressors, 
@@ -52,17 +53,15 @@ class forward_step(object):
         else:
             self.fixed_regressors = []
 
-
-
         if subset != []:
-            self.adjusted_X = X.copy()[subset]
-            self.subset_X = X.copy()[subset]
-            self.subset_Y = Y.copy()[subset]
+            self.adjusted_X = self.X.copy()[subset]
+            self.subset_X = self.X.copy()[subset]
+            self.subset_Y = self.Y.copy()[subset]
             self.subset_selector = np.identity(self.X.shape[0])[subset]
         else:
-            self.adjusted_X = X.copy()
-            self.subset_Y = Y.copy()
-            self.subset_X = X.copy()
+            self.adjusted_X = self.X.copy()
+            self.subset_Y = self.Y.copy()
+            self.subset_X = self.X.copy()
 
         self.variables = []
         self.Z = []
@@ -91,12 +90,12 @@ class forward_step(object):
         """
         """
         
-        adjusted_X, Y, inactive = self.adjusted_X, self.subset_Y, self.inactive
+        adjusted_X, Y = self.adjusted_X, self.subset_Y
         resid_vector = self._resid_vector
         n, p = adjusted_X.shape
 
         # up to now inactive
-        inactive = sorted(set(range(p)).difference(self.variables))
+        inactive = self.inactive = sorted(set(range(p)).difference(self.variables))
         scale = np.sqrt(np.sum(adjusted_X**2, 0))
         
         Zfunc = adjusted_X.T[inactive] / scale[inactive][:,None]
@@ -166,6 +165,25 @@ class forward_step(object):
                 Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
                 return Tstat
 
+            DEBUG = False
+            if DEBUG:
+                print scale[inactive], 'scale used', inactive
+                aX = adjusted_X[:,inactive]
+                print np.sqrt((aX**2).sum(0)), 'adjusted_X'
+
+                print self.sequential_con.offset , 'seq_offset'
+                print self.sequential_con.mean[:10] , 'seq_mean'
+            B = self.sequential_con.offset
+            d = B.shape[0]/2
+            pos, neg = B[:d], B[d:]
+            pos -= XI.T.dot(self.sequential_con.mean)
+            neg += XI.T.dot(self.sequential_con.mean)
+
+            if DEBUG:
+                print pos, 'pos'
+                print neg, 'neg'
+                print XI.T.dot(self.sequential_con.mean), 'cur_offset'
+
             pval = gibbs_test(self.sequential_con,
                               Y,
                               eta,
@@ -185,7 +203,15 @@ class forward_step(object):
         # now update state for next step
 
         inactive.pop(idx)
+        self.inactive = inactive # unnecessary?
         self.variables.append(next_var); self.signs.append(next_sign)
+
+        DEBUG = False
+        if DEBUG:
+            print 'zmax', realized_Z_max
+            print 'scale', scale[self.inactive], scale.shape
+            print 'resid', resid_vector[:5]
+            print 'Y', Y[:5]
 
         realized_Z_adjusted = np.fabs(realized_Z_max) * scale
         offset_shift = np.dot(self.subset_X.T, Y - resid_vector)
