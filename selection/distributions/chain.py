@@ -63,24 +63,26 @@ def parallel_test(reversible_chain, null_state, test_statistic, ndraw=20):
         A test statistic to compute on each state
         of the chain. The overall
         test statistic is the ranking of
-        `test_statistic(state)` in a sample
+        `test_statistic(null_state)` in a sample
         of `ndraw` steps of the chain.
         
     ndraw : int
         How many total draws of the chain should be made?
-        Includes `state` as one of these draws.
+        Includes `null_state` as one of these draws.
 
     Returns
     -------
 
     rank : int
         How many of the draws had a test statistic
-        less than the observed value?
+        less than the observed value? 
+        Ties are handled by randomization.
 
     Notes
     -----
 
-    This does not handle ties in any clever way at the moment.
+    The attribute `chain.state` is reset to its initial value
+    after running.
 
     """
 
@@ -107,12 +109,16 @@ def parallel_test(reversible_chain, null_state, test_statistic, ndraw=20):
     results = sorted(results)
 
     rank = np.sum([observed < r for r in results]) 
+    ties = np.sum([observed == r for r in results]) 
     
+    possible_ranks = range(rank, rank + ties + 1)
+    final_rank = np.random.choice(possible_ranks)
+
     # reset the chain's state to previous value
 
     chain.state = old_state
 
-    return rank
+    return final_rank
 
 # make sure nose does not try to test this function
 parallel_test.__test__ = False
@@ -138,12 +144,13 @@ def serial_test(reversible_chain, null_state, test_statistic, ndraw=20):
         A test statistic to compute on each state
         of the chain. The overall
         test statistic is the ranking of
-        `test_statistic(state)` in a sample
+        `test_statistic(null_state)` in a sample
         of `ndraw` steps of the chain.
         
     ndraw : int
         How many total draws of the chain should be made?
-        Includes `state` as one of these draws.
+        Includes `null_state` as one of these draws.
+        Ties are handled by randomization.
 
     Returns
     -------
@@ -155,7 +162,8 @@ def serial_test(reversible_chain, null_state, test_statistic, ndraw=20):
     Notes
     -----
 
-    This does not handle ties in any clever way at the moment.
+    The attribute `chain.state` is reset to its initial value
+    after running.
 
     """
 
@@ -192,8 +200,16 @@ def serial_test(reversible_chain, null_state, test_statistic, ndraw=20):
     results = sorted(results)
 
     rank = np.sum([observed < r for r in results]) 
+    ties = np.sum([observed == r for r in results]) 
+
+    possible_ranks = range(rank, rank + ties + 1)
+    final_rank = np.random.choice(possible_ranks)
     
-    return rank
+    # reset the chain's state to previous value
+
+    chain.state = old_state
+
+    return final_rank
 
 # make sure nose does not try to test this function
 serial_test.__test__ = False
