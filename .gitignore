@@ -1,6 +1,7 @@
 */*pyc
 */*~
 */*/*~
+*/*/*/*~
 */*.out
 */*.aux
 */*.bbl
@@ -23,3 +24,5 @@
 selection/*.so
 selection/*.c
 build
+*ipynb_checkpoints
+*/*ipynb_checkpoints
