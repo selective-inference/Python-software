@@ -1,22 +1,33 @@
+"""
+A simple implementation of Besag and Clifford's generalized
+Monte Carlo Significance Tests.
+
+.. _besag_clifford: http://www.jstor.org/stable/pdf/2336623.pdf
+
+"""
+
 import numpy as np
 
 class markov_chain(object):
 
+    """
+    Abstract implementation of a Markov chain.
+
+    
+    """
+
     # API
 
-    # A Markov chain is iterable
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        return self.forward_step()
+    # A Markov chain knows how to step forward
 
     def forward_step(self):
         raise NotImplementedError('abstract method')
 
+    # Some Markov chains can run in time-reversed direction.
+    # Not all subclasses need this method implemented
+
     def backward_step(self):
-        raise NotImplementedError('abstract method - not all chains will implement this')
+        raise NotImplementedError('abstract method')
 
     # A Markov chain has a state
 
@@ -28,7 +39,22 @@ class markov_chain(object):
 
     state = property(get_state, set_state)
 
+    # A Markov chain is iterable
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self.forward_step()
+
+
 class reversible_markov_chain(markov_chain):
+
+    """
+    An abstract representation of a Markov chain that
+    is reversible with respect to some stationary
+    distribution.
+    """
 
     # For reversible chains forward_step
     # and backward_step are the same
@@ -37,9 +63,15 @@ class reversible_markov_chain(markov_chain):
         return NotImplementedError('abstract method')
 
     def forward_step(self):
+        """
+        For a reversible chain, a forward_step is just a step.
+        """
         return self.step()
 
     def backward_step(self):
+        """
+        For a reversible chain, a backward_step is just a step.
+        """
         return self.step()
 
 def parallel_test(reversible_chain, null_state, test_statistic, ndraw=20):
@@ -97,6 +129,7 @@ def parallel_test(reversible_chain, null_state, test_statistic, ndraw=20):
     intermed_state = chain.backward_step()
     
     for _ in range(ndraw-1):
+
         # take a step from intermediate state
         chain.forward_step()
 
@@ -108,7 +141,7 @@ def parallel_test(reversible_chain, null_state, test_statistic, ndraw=20):
 
     results = sorted(results)
 
-    rank = np.sum([observed < r for r in results]) 
+    rank = np.sum([r < observed for r in results]) 
     ties = np.sum([observed == r for r in results]) 
     
     possible_ranks = range(rank, rank + ties + 1)
@@ -180,6 +213,7 @@ def serial_test(reversible_chain, null_state, test_statistic, ndraw=20):
     # go forward from null_state
 
     for _ in range(random_idx):
+
         chain.forward_step()
 
         # compute the test statistic
@@ -199,7 +233,7 @@ def serial_test(reversible_chain, null_state, test_statistic, ndraw=20):
 
     results = sorted(results)
 
-    rank = np.sum([observed < r for r in results]) 
+    rank = np.sum([r < observed for r in results]) 
     ties = np.sum([observed == r for r in results]) 
 
     possible_ranks = range(rank, rank + ties + 1)

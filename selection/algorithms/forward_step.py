@@ -14,7 +14,11 @@ from scipy.stats import norm as ndist
 
 # local imports 
 
-from ..constraints.affine import constraints, gibbs_test, stack
+from ..constraints.affine import (constraints, 
+                                  gibbs_test, 
+                                  stack,
+                                  gaussian_hit_and_run)
+from ..distributions.chain import parallel_test, serial_test
 from ..distributions.chisq import quadratic_test
 from ..distributions.discrete_family import discrete_family
 
@@ -237,6 +241,58 @@ class forward_step(object):
                           np.zeros(A.shape[0]), 
                           covariance=self.covariance)
         return con
+
+    def mcmc_test(self, step, variable=None,
+                  nstep=100,
+                  ndraw=20,
+                  method='parallel', 
+                  burnin=1000,):
+
+        if method not in ['parallel', 'serial']:
+            raise ValueError("method must be in ['parallel', 'serial']")
+
+        X, Y = self.subset_X, self.subset_Y
+
+        variables = self.variables[:step]
+
+        if variable is None:
+            variable = variables[-1]
+
+        if variable not in variables:
+            raise ValueError('variable not included at given step')
+
+        A = np.vstack(self.identity_cone[:step])
+        con = constraints(A, 
+                          np.zeros(A.shape[0]), 
+                          covariance=self.covariance)
+
+        XA = X[:,variables]
+        con_final = con.conditional(XA.T, XA.T.dot(Y))
+        
+        chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
+        chain_final.step()
+        new_state = chain_final.state
+
+        keep = np.ones(XA.shape[1], np.bool)
+        keep[list(variables).index(variable)] = 0
+        nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
+        XA_0 = X[:,nuisance_variables]
+
+        con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
+        chain_test = gaussian_hit_and_run(con_test, Y, nstep=nstep)
+
+        test_stat = lambda y: -np.fabs(X[:,variable].dot(y))
+
+        if method == 'parallel':
+            rank = parallel_test(chain_test,
+                                 Y,
+                                 test_stat)
+        else:
+            rank = serial_test(chain_test,
+                               Y,
+                               test_stat)
+            
+        return rank
 
     def model_pivots(self, which_step, alternative='greater',
                      saturated=True,
