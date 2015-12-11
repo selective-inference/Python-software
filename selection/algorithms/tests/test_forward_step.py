@@ -239,7 +239,7 @@ def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000,
 
     return X, y, beta, active, sigma, np.array(pval), completion_index
 
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(False)
 def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
                     nsim=None,
                     nstep=200,
@@ -259,15 +259,48 @@ def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
             null_rank = FS.mcmc_test(i+1, variable=FS.variables[i-2], 
                                      nstep=nstep,
                                      burnin=burnin,
-                                     method=method)
+                                     method="serial")
             alt_rank = FS.mcmc_test(i+1, variable=FS.variables[0], 
                                     burnin=burnin,
                                     nstep=nstep, 
-                                    method=method)
+                                    method="parallel")
             break
 
         if set(active).issubset(FS.variables):
             extra_steps -= 1
 
     return null_rank, alt_rank
+
+@set_sampling_params_iftrue(False)
+def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, snr=5, 
+                                ndraw=None, burnin=2000,
+                                nsim=None,
+                                nstep=200,
+                                method='serial'):
+
+    X, y, beta, active, sigma = instance(n=n, p=p, snr=snr, rho=rho, s=s)
+    FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
+
+    extra_steps = 4
+    completed = False
+
+    null_ranks = []
+    for i in range(min(n, p)):
+        FS.next()
+
+        if completed and extra_steps > 0:
+            null_rank = FS.mcmc_test(i+1, variable=FS.variables[-1], 
+                                     nstep=nstep,
+                                     burnin=burnin,
+                                     method="serial")
+            null_ranks.append(int(null_rank))
+
+        if extra_steps <= 0:
+            break
+
+        if set(active).issubset(FS.variables):
+            extra_steps -= 1
+            completed = True
+
+    return tuple(null_ranks)
 

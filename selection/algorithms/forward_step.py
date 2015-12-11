@@ -271,25 +271,28 @@ class forward_step(object):
         
         chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
         chain_final.step()
-        new_state = chain_final.state
+        new_Y = chain_final.state
 
         keep = np.ones(XA.shape[1], np.bool)
         keep[list(variables).index(variable)] = 0
         nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
         XA_0 = X[:,nuisance_variables]
 
+        P0 = XA_0.dot(np.linalg.pinv(XA_0))
+        adjusted_direction = X[:,variable] - np.dot(P0, X[:,variable])
+
         con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
         chain_test = gaussian_hit_and_run(con_test, Y, nstep=nstep)
 
-        test_stat = lambda y: -np.fabs(X[:,variable].dot(y))
+        test_stat = lambda y: -np.fabs(adjusted_direction.dot(y))
 
         if method == 'parallel':
             rank = parallel_test(chain_test,
-                                 Y,
+                                 new_Y,
                                  test_stat)
         else:
             rank = serial_test(chain_test,
-                               Y,
+                               new_Y,
                                test_stat)
             
         return rank
