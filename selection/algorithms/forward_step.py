@@ -269,9 +269,12 @@ class forward_step(object):
         XA = X[:,variables]
         con_final = con.conditional(XA.T, XA.T.dot(Y))
         
-        chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
-        chain_final.step()
-        new_Y = chain_final.state
+        if burnin > 0:
+            chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
+            chain_final.step()
+            new_Y = chain_final.state
+        else:
+            new_Y = Y
 
         keep = np.ones(XA.shape[1], np.bool)
         keep[list(variables).index(variable)] = 0
@@ -282,7 +285,7 @@ class forward_step(object):
         adjusted_direction = X[:,variable] - np.dot(P0, X[:,variable])
 
         con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
-        chain_test = gaussian_hit_and_run(con_test, Y, nstep=nstep)
+        chain_test = gaussian_hit_and_run(con_test, new_Y, nstep=nstep)
 
         test_stat = lambda y: -np.fabs(adjusted_direction.dot(y))
 
