@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import f as fdist, t as tdist
-from selection.truncated_F import sf_F
-from selection.truncated_T import sf_T
+from selection.truncated.F import sf_F
+from selection.truncated.T import sf_T
 
 def test_F():
 

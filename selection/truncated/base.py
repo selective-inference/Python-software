@@ -329,14 +329,23 @@ def find_root(f, y, lb, ub, tol=1e-6):
     
     
     # determine the necessary number of iterations
-    max_iter = int( np.ceil( ( np.log(tol) - np.log(b-a) ) / np.log(0.5) ) )
+    try:
+        max_iter = int( np.ceil( ( np.log(tol) - np.log(b-a) ) / np.log(0.5) ) )
+    except OverflowError:
+        warnings.warn('root finding failed, returning np.nan')
+        return np.nan
+        
 
     # bisect (slow but sure) until solution is obtained
     for _ in xrange(max_iter):
-        c, fc  = (a+b)/2, f((a+b)/2)
-        if fc > y: a = c
-        elif fc < y: b = c
-    
+        try:
+            c, fc  = (a+b)/2, f((a+b)/2)
+            if fc > y: a = c
+            elif fc < y: b = c
+        except OverflowError:
+            warnings.warn('root finding failed, returning np.nan')
+            return np.nan
+
     return c
         
 

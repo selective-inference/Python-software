@@ -7,9 +7,11 @@ import statsmodels.api as sm
 from scipy.stats import chi
 import nose.tools as nt
 
-import selection.affine as AC
-from selection.optimal_tilt import optimal_tilt
+import selection.constraints.affine as AC
+from selection.constraints.optimal_tilt import optimal_tilt
+from selection.tests.decorators import set_seed_for_test
 
+@set_seed_for_test()
 def test_conditional():
 
     p = 200
@@ -43,7 +45,7 @@ def test_conditional():
            np.linalg.norm(np.dot(C, W) - d))
     nt.assert_true(np.sum(V > tol) < 0.001*V.shape[0])
 
-
+@set_seed_for_test()
 def test_conditional_simple():
 
     A = np.ones((1,2))
@@ -90,7 +92,7 @@ def test_stack():
 
     return AC.stack(con1, con2)
 
-
+@set_seed_for_test()
 def test_simulate_nonwhitened():
     n, p = 50, 200
 
@@ -130,6 +132,7 @@ def test_pivots_intervals():
     con.interval(u, Z, UMAU=True)
     con.interval(u, Z, UMAU=False)
 
+@set_seed_for_test()
 def test_sampling():
     """
     See that means and covariances are approximately correct
@@ -145,11 +148,12 @@ def test_sampling():
     nt.assert_true(np.linalg.norm(np.einsum('ij,ik->ijk', V, V).mean(0) - 
                                   np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
 
+@set_seed_for_test()
 def test_optimal_tilt():
 
     A = np.vstack(-np.identity(4))
     b = -np.array([1,2,3,4.])
-    con = constraints(A, b, covariance=2 * np.identity(4),
+    con = AC.constraints(A, b, covariance=2 * np.identity(4),
                      mean=np.array([3,-4.3,-2.2,1.2]))
     eta = np.array([1,0,0,0.])
 
@@ -161,7 +165,7 @@ def test_optimal_tilt():
     A = np.vstack([-np.identity(4),
                     np.identity(4)])
     b = np.array([-1,-2,-3,-4.,3,4,5,11])
-    con = constraints(A, b, covariance=2 * np.identity(4),
+    con = AC.constraints(A, b, covariance=2 * np.identity(4),
                      mean=np.array([3,-4.3,12.2,20.2]))
     eta = np.array([1,0,0,0.])
 
@@ -170,4 +174,3 @@ def test_optimal_tilt():
     opt_tilt = tilt.fit(max_its=20)
     print con.mean + opt_tilt
 
-# nose.run()

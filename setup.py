@@ -28,6 +28,7 @@ from setup_helpers import package_check
 EXTS = []
 for modulename, other_sources in (
     ('selection.sampling.truncnorm', []),
+    ('selection.sampling.truncnorm_quadratic', []),
     ('selection.sampling.sqrt_lasso', []),
     ):
     pyx_src = pjoin(*modulename.split('.')) + '.pyx'
@@ -83,6 +84,10 @@ def main(**extra_args):
                           'selection.algorithms.tests',
                           'selection.sampling',
                           'selection.sampling.tests',
+                          'selection.sampling.randomized',
+                          'selection.sampling.randomized.norms',
+                          'selection.sampling.randomized.losses',
+                          'selection.sampling.randomized.tests',
                           'selection.tests'
                           ],
           ext_modules = EXTS,

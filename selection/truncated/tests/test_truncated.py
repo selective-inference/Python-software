@@ -1,6 +1,9 @@
 import nose.tools as nt
 import numpy as np
-from selection.truncated import truncated_gaussian
+
+from selection.truncated.gaussian import truncated_gaussian, truncated_gaussian_old
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
+
 
 intervals = [(-np.inf,-4.),(3.,np.inf)]
 
@@ -10,8 +13,8 @@ X = np.linspace(-5,5,101)
 F = [tg.cdf(x) for x in X]
 
 def test_sigma():
-    tg2 = truncated_gaussian(intervals, sigma=2.)
-    tg1 = truncated_gaussian(np.array(intervals)/2., sigma=1.)
+    tg2 = truncated_gaussian_old(intervals, scale=2.)
+    tg1 = truncated_gaussian_old(np.array(intervals)/2., scale=1.)
 
     Z = 3.5
     nt.assert_equal(np.around(float(tg1.cdf(Z/2.)), 3),
@@ -19,11 +22,14 @@ def test_sigma():
     np.testing.assert_equal(np.around(np.array(2 * tg1.equal_tailed_interval(Z/2,0.05)), 4),
                             np.around(np.array(tg2.equal_tailed_interval(Z,0.05)), 4))
 
-def test_equal_tailed_coverage():
+@set_seed_for_test()
+@set_sampling_params_iftrue(True)
+def test_equal_tailed_coverage(burnin=None, 
+                               ndraw=None,
+                               nsim=1000):
 
     alpha = 0.25
-    nsim = 1000
-    tg = truncated_gaussian([(2.3,np.inf)], sigma=2)
+    tg = truncated_gaussian_old([(2.3,np.inf)], scale=2)
     coverage = 0
     for i in range(nsim):
         while True:
@@ -36,11 +42,14 @@ def test_equal_tailed_coverage():
     print coverage
     nt.assert_true(np.fabs(coverage - (1-alpha)*nsim) < 2*SE)
 
-def test_UMAU_coverage():
+@set_seed_for_test()
+@set_sampling_params_iftrue(True)
+def test_UMAU_coverage(burnin=None, 
+                       ndraw=None,
+                       nsim=1000):
 
     alpha = 0.25
-    nsim = 1000
-    tg = truncated_gaussian([(2.3,np.inf)], sigma=2)
+    tg = truncated_gaussian_old([(2.3,np.inf)], scale=2)
     coverage = 0
     for i in range(nsim):
         while True:

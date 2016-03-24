@@ -96,10 +96,9 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, **solve_kwargs):
         Arguments passed to regreg solver.
 
     """
-    X = rr.astransform(X)
-    n, p = X.output_shape[0], X.input_shape[0]
+    n, p = X.shape
     if n < p:
-        return solve_sqrt_lasso_alt(X, Y, weights=weights, initial=initial, **solve_kwargs)
+        return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, **solve_kwargs)
     else:
         return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, **solve_kwargs)
 
@@ -148,7 +147,7 @@ def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, **solve_kwargs):
     soln = problem.solve(**solve_kwargs)
     return soln
 
-class sqlasso_objective_alt(rr.smooth_atom):
+class sqlasso_objective_skinny(rr.smooth_atom):
     """
 
     The square-root LASSO objective on larger parameter space:
@@ -210,7 +209,7 @@ class sqlasso_objective_alt(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-def solve_sqrt_lasso_alt(X, Y, weights=None, initial=None, **solve_kwargs):
+def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, **solve_kwargs):
     """
 
     Solve the square-root LASSO optimization problem:
@@ -250,7 +249,7 @@ def solve_sqrt_lasso_alt(X, Y, weights=None, initial=None, **solve_kwargs):
     penalty = rr.mixed_lasso(range(p) + [rr.NONNEGATIVE], lagrange=1.,
                              weights=weight_dict)
 
-    loss = sqlasso_objective_alt(X, Y)
+    loss = sqlasso_objective_skinny(X, Y)
     problem = rr.simple_problem(loss, penalty)
     problem.coefs[-1] = np.linalg.norm(Y)
     if initial is not None:
@@ -332,9 +331,9 @@ class sqrt_lasso(object):
         y, X = self.y, self.X
         n, p = self.X.shape
         if n < p:
-            self._soln = solve_sqrt_lasso_alt(X, y, self.weights, **solve_kwargs)
+            self._soln = solve_sqrt_lasso_skinny(X, y, self.weights, **solve_kwargs)
         else:
-            self._soln = solve_sqrt_lasso(X, y, self.weights, **solve_kwargs)
+            self._soln = solve_sqrt_lasso_fat(X, y, self.weights, **solve_kwargs)
 
         beta = self._soln
 
@@ -405,7 +404,7 @@ class sqrt_lasso(object):
 
         self.active = np.nonzero(self.active)[0]
 
-    def compute_sigma_truncation_interval(self, coef):
+    def compute_sigma_truncation_interval(self, coef, raise_if_outside=False):
         numerator = coef * self.z_E
         denominator = self._S_trunc_denominator
         s_E = np.sign(self.z_E * denominator)
@@ -414,7 +413,7 @@ class sqrt_lasso(object):
             S_lower = max(np.max((numerator / denominator)[denominator < 0]), 0)
         else:
             S_lower = 0.
-        if not (self.sigma_E > S_lower and self.sigma_E < S_upper):
+        if not (self.sigma_E > S_lower and self.sigma_E < S_upper) and raise_if_outside:
             raise ValueError('obseved sigma_hat not in expected truncation interval')
         return [S_lower, S_upper]
 

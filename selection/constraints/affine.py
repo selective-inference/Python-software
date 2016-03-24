@@ -20,7 +20,11 @@ import numpy as np
 from ..distributions.pvalue import truncnorm_cdf, norm_interval
 from ..truncated.gaussian import truncated_gaussian, truncated_gaussian_old
 from ..sampling.truncnorm import (sample_truncnorm_white, 
-                                  sample_truncnorm_white_sphere)
+                                  sample_truncnorm_white_sphere,
+                                  sample_truncnorm_white_ball)
+from ..distributions.chain import (reversible_markov_chain,
+                                   parallel_test,
+                                   serial_test)
 
 from .optimal_tilt import optimal_tilt
 
@@ -426,7 +430,13 @@ class constraints(object):
         new_con = constraints(new_A / den[:,None], new_b / den)
 
         mu = self.mean.copy()
-        inverse_map = lambda Z: np.dot(sqrt_cov, Z) + mu[:,None]
+
+        def inverse_map(Z): 
+            if Z.ndim == 2:
+                return np.dot(sqrt_cov, Z) + mu[:,None]
+            else:
+                return np.dot(sqrt_cov, Z) + mu
+
         forward_map = lambda W: np.dot(sqrt_inv, W - mu)
 
         return inverse_map, forward_map, new_con
@@ -629,7 +639,7 @@ def selection_interval(support_directions,
         direction_of_interest,
         tol=tol)
 
-    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], sigma=sigma)
+    truncated = truncated_gaussian_old([(lower_bound, upper_bound)], scale=sigma)
     if UMAU:
         _selection_interval = truncated.UMAU_interval(V, alpha)
     else:
@@ -1217,4 +1227,50 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         return decision, Z, W, dfam
     return pvalue, Z, W, dfam
 
+# make sure nose does not try to test this function
+gibbs_test.__test__ = False
 
+class gaussian_hit_and_run(reversible_markov_chain):
+
+    def __init__(self, constraints, state, nstep=1):
+
+        if not constraints(state):
+            raise ValueError("state does not satisfy constraints")
+
+        (self._inverse_map, 
+         self._forward_map, 
+         self._white_con) = constraints.whiten()
+
+        self._white_state = self._forward_map(state)
+        self._state = state
+
+        # how many steps of hit and run constitute
+        # a step of the chain?
+
+        self.nstep = nstep
+
+        # unused in code but needs to be specified
+        # for `sample_truncnorm_white`
+
+        self._bias_direction = np.ones_like(self._white_state)
+
+    def step(self):
+
+        white_con = self._white_con
+
+        white_samples = sample_truncnorm_white(  
+            white_con.linear_part,
+            white_con.offset,
+            self._white_state, 
+            self._bias_direction,
+            how_often=-1,
+            ndraw=self.nstep, 
+            burnin=0,
+            sigma=1.,
+            use_constraint_directions=True,
+            use_random_directions=False)
+
+        self._white_state = white_samples[-1]
+
+        self._state = self._inverse_map(self._white_state)
+        return self._state

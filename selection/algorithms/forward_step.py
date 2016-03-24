@@ -14,7 +14,11 @@ from scipy.stats import norm as ndist
 
 # local imports 
 
-from ..constraints.affine import constraints, gibbs_test, stack
+from ..constraints.affine import (constraints, 
+                                  gibbs_test, 
+                                  stack,
+                                  gaussian_hit_and_run)
+from ..distributions.chain import parallel_test, serial_test
 from ..distributions.chisq import quadratic_test
 from ..distributions.discrete_family import discrete_family
 
@@ -43,6 +47,7 @@ class forward_step(object):
 
             # regress out the fixed regressors
             # TODO should be fixed for subset
+            # should we adjust within the subset or not?
 
             self.fixed_pinv = np.linalg.pinv(self.fixed_regressors)
             self.Y = self.Y - np.dot(self.fixed_regressors, 
@@ -52,17 +57,15 @@ class forward_step(object):
         else:
             self.fixed_regressors = []
 
-
-
         if subset != []:
-            self.adjusted_X = X.copy()[subset]
-            self.subset_X = X.copy()[subset]
-            self.subset_Y = Y.copy()[subset]
+            self.adjusted_X = self.X.copy()[subset]
+            self.subset_X = self.X.copy()[subset]
+            self.subset_Y = self.Y.copy()[subset]
             self.subset_selector = np.identity(self.X.shape[0])[subset]
         else:
-            self.adjusted_X = X.copy()
-            self.subset_Y = Y.copy()
-            self.subset_X = X.copy()
+            self.adjusted_X = self.X.copy()
+            self.subset_Y = self.Y.copy()
+            self.subset_X = self.X.copy()
 
         self.variables = []
         self.Z = []
@@ -70,6 +73,10 @@ class forward_step(object):
         self.signs = []
         self.covariance = covariance
         self._resid_vector = self.subset_Y.copy() 
+
+        # setup for iteration
+
+        iter(self)
 
     def __iter__(self):
         n, p = self.X.shape
@@ -87,22 +94,27 @@ class forward_step(object):
         """
         """
         
-        adjusted_X, Y, inactive = self.adjusted_X, self.subset_Y, self.inactive
+        adjusted_X, Y = self.adjusted_X, self.subset_Y
         resid_vector = self._resid_vector
         n, p = adjusted_X.shape
 
         # up to now inactive
-        inactive = sorted(set(range(p)).difference(self.variables))
+        inactive = self.inactive = sorted(set(range(p)).difference(self.variables))
         scale = np.sqrt(np.sum(adjusted_X**2, 0))
         
-        linear_part = []
-
-        Zstat = np.dot(adjusted_X.T[inactive], Y) / scale[inactive]
+        Zfunc = adjusted_X.T[inactive] / scale[inactive][:,None]
+        Zstat = np.dot(Zfunc, Y)
         idx = np.argmax(np.fabs(Zstat))
         next_var = inactive[idx]
         next_sign = np.sign(Zstat[idx])
 
-        realized_Z = Zstat[idx]
+        realized_Z_max = Zstat[idx]
+        self.Z.append(realized_Z_max)
+
+        if self.subset != []:
+            self.Zfunc.append(np.dot(Zfunc[idx], self.subset_selector) * next_sign)
+        else:
+            self.Zfunc.append(Zfunc[idx] * next_sign)
 
         # keep track of identity for testing
         # variables other than the last one added
@@ -157,6 +169,25 @@ class forward_step(object):
                 Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
                 return Tstat
 
+            DEBUG = False
+            if DEBUG:
+                print scale[inactive], 'scale used', inactive
+                aX = adjusted_X[:,inactive]
+                print np.sqrt((aX**2).sum(0)), 'adjusted_X'
+
+                print self.sequential_con.offset , 'seq_offset'
+                print self.sequential_con.mean[:10] , 'seq_mean'
+            B = self.sequential_con.offset
+            d = B.shape[0]/2
+            pos, neg = B[:d], B[d:]
+            pos -= XI.T.dot(self.sequential_con.mean)
+            neg += XI.T.dot(self.sequential_con.mean)
+
+            if DEBUG:
+                print pos, 'pos'
+                print neg, 'neg'
+                print XI.T.dot(self.sequential_con.mean), 'cur_offset'
+
             pval = gibbs_test(self.sequential_con,
                               Y,
                               eta,
@@ -176,14 +207,22 @@ class forward_step(object):
         # now update state for next step
 
         inactive.pop(idx)
+        self.inactive = inactive # unnecessary?
         self.variables.append(next_var); self.signs.append(next_sign)
 
-        realized_Z_adjusted = np.fabs(realized_Z) * scale
+        DEBUG = False
+        if DEBUG:
+            print 'zmax', realized_Z_max
+            print 'scale', scale[self.inactive], scale.shape
+            print 'resid', resid_vector[:5]
+            print 'Y', Y[:5]
+
+        realized_Z_adjusted = np.fabs(realized_Z_max) * scale
         offset_shift = np.dot(self.subset_X.T, Y - resid_vector)
         self.offset.append([realized_Z_adjusted + offset_shift,
                             realized_Z_adjusted - offset_shift])
 
-        resid_vector -= realized_Z * adjusted_X[:,next_var] / scale[next_var]
+        resid_vector -= realized_Z_max * adjusted_X[:,next_var] / scale[next_var]
         adjusted_X -= (np.multiply.outer(eta, 
                                          np.dot(eta,
                                                 adjusted_X)) / 
@@ -198,14 +237,62 @@ class forward_step(object):
         step = min(step, default_step)
         A = np.vstack(self.identity_cone[:step])
 
-        if self.subset == []:
-            return constraints(A, 
-                               np.zeros(A.shape[0]), 
-                               covariance=self.covariance)
-        return constraints(np.dot(A, 
-                                  self.subset_selector),
-                           np.zeros(A.shape[0]), 
-                           covariance=self.covariance)
+        con = constraints(A, 
+                          np.zeros(A.shape[0]), 
+                          covariance=self.covariance)
+        return con
+
+    def mcmc_test(self, step, variable=None,
+                  nstep=100,
+                  ndraw=20,
+                  method='parallel', 
+                  burnin=1000,):
+
+        if method not in ['parallel', 'serial']:
+            raise ValueError("method must be in ['parallel', 'serial']")
+
+        X, Y = self.subset_X, self.subset_Y
+
+        variables = self.variables[:step]
+
+        if variable is None:
+            variable = variables[-1]
+
+        if variable not in variables:
+            raise ValueError('variable not included at given step')
+
+        A = np.vstack(self.identity_cone[:step])
+        con = constraints(A, 
+                          np.zeros(A.shape[0]), 
+                          covariance=self.covariance)
+
+        XA = X[:,variables]
+        con_final = con.conditional(XA.T, XA.T.dot(Y))
+        
+        chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
+        chain_final.step()
+        new_state = chain_final.state
+
+        keep = np.ones(XA.shape[1], np.bool)
+        keep[list(variables).index(variable)] = 0
+        nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
+        XA_0 = X[:,nuisance_variables]
+
+        con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
+        chain_test = gaussian_hit_and_run(con_test, Y, nstep=nstep)
+
+        test_stat = lambda y: -np.fabs(X[:,variable].dot(y))
+
+        if method == 'parallel':
+            rank = parallel_test(chain_test,
+                                 Y,
+                                 test_stat)
+        else:
+            rank = serial_test(chain_test,
+                               Y,
+                               test_stat)
+            
+        return rank
 
     def model_pivots(self, which_step, alternative='greater',
                      saturated=True,
@@ -352,7 +439,7 @@ class forward_step(object):
     def model_quadratic(self, which_step):
         LSfunc = np.linalg.pinv(self.X[:,self.variables[:which_step]])
         P_LS = np.linalg.svd(LSfunc, full_matrices=False)[2]
-        return quadratic_test(self.Y, P_LS, self.constraints)
+        return quadratic_test(self.Y, P_LS, self.constraints(step=which_step))
 
 def info_crit_stop(Y, X, sigma, cost=2,
                    subset=[]):
@@ -384,14 +471,15 @@ def info_crit_stop(Y, X, sigma, cost=2,
     Returns
     -------
 
-    FS : `forward_stepwise`
+    FS : `forward_step`
         Instance of forward stepwise stopped at the
         corresponding step. Constraints of FS
         will reflect the minimum Z score requirement.
 
     """
     n, p = X.shape
-    FS = forward_stepwise(X, Y, covariance=sigma**2 * np.identity(n), subset=subset)
+    FS = forward_step(X, Y, covariance=sigma**2 * np.identity(n), subset=subset)
+
     while True:
         FS.next()
 
@@ -403,11 +491,8 @@ def info_crit_stop(Y, X, sigma, cost=2,
     new_offset = -sigma * np.sqrt(cost) * np.ones(new_linear_part.shape[0])
     new_offset[-1] *= -1
 
-    if subset != []:
-        new_con = stack(FS.constraints, constraints(np.dot(new_linear_part, FS.subset_selector),
-                                                    new_offset))
-    else:
-        new_con = stack(FS.constraints, constraints(new_linear_part,new_offset))
+    new_con = stack(FS.constraints(), constraints(new_linear_part,
+                                                  new_offset))
     new_con.covariance[:] = sigma**2 * np.identity(n)
     if DEBUG:
         print FS.constraints.linear_part.shape, 'before'

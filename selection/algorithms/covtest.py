@@ -25,7 +25,6 @@ import numpy as np
 from scipy.special import ndtr, ndtri
 
 from ..constraints.affine import constraints, sample_from_constraints, gibbs_test
-from .forward_step import forward_stepwise
 from ..distributions.discrete_family import discrete_family
 
 def covtest(X, Y, sigma=1, exact=True,
