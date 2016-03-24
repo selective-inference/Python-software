@@ -12,6 +12,11 @@ from ..constraints.affine import (constraints,
                                   sample_from_constraints)
 from ..distributions.discrete_family import discrete_family
 
+# These next few functions should be generalized to not
+# be just sqrt_lasso
+
+### begin -- generalize from sqrt_lasso to smooth losses with \ell_1 penalty
+
 def solve_grid(Y, 
                X, 
                L, 
@@ -265,6 +270,12 @@ def select_vars_signs(Y,
     SL = sqrt_lasso(Y, X, L * np.ones(p))
     SL.fit(**solve_args)
     return SL.active, SL.z_E, SL
+
+### end -- generalize from sqrt_lasso to smooth losses with \ell_1 penalty
+
+
+## this class should be closer to examples in `selection.sampling.randomized` so
+## we can reuse that code
 
 class sqrt_lasso_tuned(object):
 
