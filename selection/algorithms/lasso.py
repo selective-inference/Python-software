@@ -16,7 +16,10 @@ import warnings
 from copy import copy
 
 import numpy as np
-from sklearn.linear_model import Lasso
+from scipy.stats import norm as ndist, t as tdist
+
+from regreg.api import glm
+
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
@@ -24,13 +27,6 @@ from ..constraints.affine import (constraints, selection_interval,
                                  stack)
 from ..distributions.discrete_family import discrete_family
 
-from scipy.stats import norm as ndist, t as tdist
-
-try:
-    import cvxpy as cvx
-except ImportError:
-    warnings.warn('cvx not available')
-    pass
 
 DEBUG = False
 
@@ -139,7 +135,7 @@ class lasso(object):
     alpha = 0.05
     UMAU = False
 
-    def __init__(self, y, X, lam, sigma=1):
+    def __init__(self, loglike, lam):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -147,112 +143,62 @@ class lasso(object):
         Parameters
         ----------
 
-        y : np.float(n)
-            The target, in the model $y = X\beta$
+        loglike : `regreg.smooth.glm.glm`
+            A log-likelihood as implemented in `regreg`.
 
-        X : np.float((n, p))
-            The data, in the model $y = X\beta$
+        feature_weights : np.ndarray
+            Feature weights for L-1 penalty. If a float,
+            it is brodcast to all features.
 
-        lam : np.float
-            Coefficient of the L-1 penalty in
-            $\text{minimize}_{\beta} \frac{1}{2} \|y-X\beta\|^2_2 + 
-                \lambda\|\beta\|_1$
-
-        sigma : np.float
-            Standard deviation of the gaussian distribution :
-            The covariance matrix is
-            `sigma**2 * np.identity(X.shape[0])`.
-            Defauts to 1.
         """
-        self.y = y
-        self.X = X
-        self.sigma = sigma
-        n, p = X.shape
 
-        if self.y.shape != (n,):
-            raise ValueError('shapes of (y, X) do not match: %s. X.ndim should be 2 and y.ndim should be 1.' % `(y.shape, X.shape)`)
-        self.lagrange = lam / n
-        self._covariance = self.sigma**2 * np.identity(X.shape[0])
+        self.loglike = loglike
+        if type(feature_weights) == type(0.):
+            feature_weights = np.ones(loglike.shape) * feature_weights
+        self.feature_weights = feature_weights
 
-    def fit(self, sklearn_alpha=None, **lasso_args):
+    def fit(self, **solve_args):
         """
-        Fit the lasso using `Lasso` from `sklearn`.
-        This sets the attribute `soln` and
+        Fit the lasso using `regreg`.
+        This sets the attributes `soln`, `onestep` and
         forms the constraints necessary for post-selection inference
         by calling `form_constraints()`.
 
         Parameters
         ----------
 
-        sklearn_alpha : float
-            Lagrange parameter, in the normalization set by `sklearn`.
-
-        lasso_args : keyword args
-             Passed to `sklearn.linear_model.Lasso`_
+        solve_args : keyword args
+             Passed to `regreg.problems.simple_problem.solve`.
 
         Returns
         -------
 
         soln : np.float
-             Solution to lasso with `sklearn_alpha=self.lagrange`.
+             Solution to lasso.
              
-        
         """
 
         # fit Lasso using scikit-learn
         
-        clf = Lasso(alpha = self.lagrange, fit_intercept = False)
-        clf.fit(self.X, self.y, **lasso_args)
-        self._soln = beta = clf.coef_       
+        penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
+        problem = rr.simple_problem(self.loglike, penalty)
+        _soln = problem.solve(**solve_args)
+        self._soln = _soln
         if not np.all(beta == 0):
-            self.form_constraints()
+            self.active_set = (_soln != 0)
+            self.active_signs = np.sign(_soln[self.active_set])
+            self._active_soln = _soln[self.active_set]
+            H = self.loglike.hessian(self._soln)[self.active_set][:,self.active_set]
+            Hinv = np.linalg.inv(H)
+            G = self.loglike.gradient(self._soln)[self.active_set]
+            delta = Hinv.dot(G)
+            self._onestep = self._soln - delta
+            self._constraints = constraints(-np.diag(self.active_signs),
+                                             self.active_signs * delta,
+                                             cov=-H)
         else:
             self.active = []
         return self._soln
-
-    def form_constraints(self):
-        """
-        After having fit lasso, form the constraints
-        necessary for inference.
-
-        This sets the attributes: `active_constraints`,
-        `inactive_constraints`, `active`.
-
-        Returns
-        -------
-
-        None
-
-        """
-
-        # determine equicorrelation set and signs
-        beta = self.soln
-        n, p = self.X.shape
-        lam = self.lagrange * n
-
-        active = (beta != 0)
-        self.z_E = np.sign(beta[active])
-
-        # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
-
-        X_E = self.X[:,active]
-        X_notE = self.X[:,~active]
-        self._XEinv = np.linalg.pinv(X_E)
-        P_E = np.dot(X_E, self._XEinv)
-        R = np.dot(X_notE.T, np.eye(n)-P_E)
-        self.active = np.nonzero(active)[0]
-
-        self._one_step = self._XEinv.dot(self.y)
-
-        (C,
-         _,
-         self._full_constraints) = _constraint_from_data(X_E, X_notE, self.z_E, active, lam, self.sigma, R)
-        self._constraints = constraints(- np.diag(self.z_E),
-                                        - C.offset,
-                                        covariance = self.sigma**2 * (self._XEinv.dot(self._XEinv.T)))
-#         (self._active_constraints,
-#          self._inactive_constraints, 
-#          self._constraints) = 
 
     @property
     def soln(self):
@@ -262,14 +208,6 @@ class lasso(object):
         if not hasattr(self, "_soln"):
             self.fit()
         return self._soln
-
-    @property
-    def full_constraints(self):
-        """
-        Full constraints imposed on the
-        data by the KKT conditions.
-        """
-        return self._full_constraints
 
     @property
     def constraints(self):
@@ -290,12 +228,10 @@ class lasso(object):
         if not hasattr(self, "_intervals"):
             self._intervals = []
             C = self.constraints
-            XEinv = self._XEinv
-            one_step = self._one_step
-            sparsity = XEinv.shape[0]
-            if XEinv is not None:
-                for i in range(sparsity):
-                    eta = np.zeros(sparsity)
+            if C is not None:
+                one_step = self._one_step
+                for i in range(one_step.shape[0]):
+                    eta = np.zeros_like(one_step)
                     eta[i] = 1.
                     _interval = C.interval(eta, one_step,
                                            alpha=self.alpha,
@@ -314,13 +250,10 @@ class lasso(object):
         if not hasattr(self, "_pvals"):
             self._pvals = []
             C = self.constraints
-            XEinv = self._XEinv
-            one_step = self._one_step
-            sparsity = XEinv.shape[0]
-            XEinv = self._XEinv
-            if XEinv is not None:
-                for i in range(XEinv.shape[0]):
-                    eta = np.zeros(sparsity)
+            if C is not None:
+                one_step = self._one_step
+                for i in range(one_step.shape[0]):
+                    eta = np.zeros_like(one_step)
                     eta[i] = 1.
                     _pval = C.pivot(eta, one_step)
                     _pval = 2 * min(_pval, 1 - _pval)
