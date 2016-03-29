@@ -242,9 +242,17 @@ class lasso(object):
         R = np.dot(X_notE.T, np.eye(n)-P_E)
         self.active = np.nonzero(active)[0]
 
-        (self._active_constraints, 
-         self._inactive_constraints, 
-         self._constraints) = _constraint_from_data(X_E, X_notE, self.z_E, active, lam, self.sigma, R)
+        self._one_step = self._XEinv.dot(self.y)
+
+        (C,
+         _,
+         self._full_constraints) = _constraint_from_data(X_E, X_notE, self.z_E, active, lam, self.sigma, R)
+        self._constraints = constraints(- np.diag(self.z_E),
+                                        - C.offset,
+                                        covariance = self.sigma**2 * (self._XEinv.dot(self._XEinv.T)))
+#         (self._active_constraints,
+#          self._inactive_constraints, 
+#          self._constraints) = 
 
     @property
     def soln(self):
@@ -256,27 +264,19 @@ class lasso(object):
         return self._soln
 
     @property
-    def active_constraints(self):
+    def full_constraints(self):
         """
-        Affine constraints imposed on the
-        active variables by the KKT conditions.
+        Full constraints imposed on the
+        data by the KKT conditions.
         """
-        return self._active_constraints
-
-    @property
-    def inactive_constraints(self):
-        """
-        Affine constraints imposed on the
-        inactive subgradient by the KKT conditions.
-        """
-        return self._inactive_constraints
+        return self._full_constraints
 
     @property
     def constraints(self):
         """
         Affine constraints for this LASSO problem.
-        This is `self.active_constraints` stacked with
-        `self.inactive_constraints`.
+        These are the constraints determined only
+        by the active block.
         """
         return self._constraints
 
@@ -289,12 +289,15 @@ class lasso(object):
         """
         if not hasattr(self, "_intervals"):
             self._intervals = []
-            C = self.active_constraints
+            C = self.constraints
             XEinv = self._XEinv
+            one_step = self._one_step
+            sparsity = XEinv.shape[0]
             if XEinv is not None:
-                for i in range(XEinv.shape[0]):
-                    eta = XEinv[i]
-                    _interval = C.interval(eta, self.y,
+                for i in range(sparsity):
+                    eta = np.zeros(sparsity)
+                    eta[i] = 1.
+                    _interval = C.interval(eta, one_step,
                                            alpha=self.alpha,
                                            UMAU=self.UMAU)
                     self._intervals.append((self.active[i],
@@ -310,12 +313,16 @@ class lasso(object):
         " for selection."):
         if not hasattr(self, "_pvals"):
             self._pvals = []
-            C = self.active_constraints
+            C = self.constraints
+            XEinv = self._XEinv
+            one_step = self._one_step
+            sparsity = XEinv.shape[0]
             XEinv = self._XEinv
             if XEinv is not None:
                 for i in range(XEinv.shape[0]):
-                    eta = XEinv[i]
-                    _pval = C.pivot(eta, self.y)
+                    eta = np.zeros(sparsity)
+                    eta[i] = 1.
+                    _pval = C.pivot(eta, one_step)
                     _pval = 2 * min(_pval, 1 - _pval)
                     self._pvals.append((self.active[i], _pval))
         return self._pvals
@@ -510,7 +517,7 @@ def data_carving(y, X,
 
             linear_part = np.zeros((s, 2*s))
             linear_part[:, s:] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
+            b = L.constraints.offset
             con = constraints(linear_part, b)
 
             # specify covariance of 2s Gaussian vector
@@ -539,7 +546,7 @@ def data_carving(y, X,
 
             linear_part = np.zeros((s, s + n - splitn))
             linear_part[:, :s] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
+            b = L.constraints.offset
             con = constraints(linear_part, b)
 
             # specify covariance of Gaussian vector

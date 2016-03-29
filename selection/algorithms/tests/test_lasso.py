@@ -20,7 +20,7 @@ def test_class(n=100, p=20):
     C = L.constraints
 
     np.testing.assert_array_less( \
-        np.dot(L.constraints.linear_part, L.y),
+        np.dot(L.constraints.linear_part, L._one_step),
         L.constraints.offset)
 
     I = L.intervals
@@ -132,9 +132,8 @@ def test_intervals(n=100, p=20, s=5):
     # smoke test
 
     las.soln
-    las.active_constraints
-    las.inactive_constraints
     las.constraints
+    las.full_constraints
     las.active_pvalues
     intervals = las.intervals
     nominal_intervals(las)
