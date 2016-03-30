@@ -26,7 +26,7 @@ def test_FS(k=10, ndraw=5000, burnin=5000, nsim=None):
     FS = forward_step(X, Y, covariance=0.5**2 * np.identity(n))
 
     for i in range(k):
-        FS.next()
+        FS.next(compute_pval=True)
 
     print 'first %s variables selected' % k, FS.variables
 

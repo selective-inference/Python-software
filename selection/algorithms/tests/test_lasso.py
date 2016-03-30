@@ -1,32 +1,105 @@
 import numpy as np
 import numpy.testing.decorators as dec
 
+from itertools import product
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
                                         instance, 
                                         split_model, 
                                         instance, 
                                         nominal_intervals)
+from regreg.api import identity_quadratic
 
 from selection.tests.decorators import set_sampling_params_iftrue
 
-def test_class(n=100, p=20):
+def test_gaussian(n=100, p=20):
+
     y = np.random.standard_normal(n)
     X = np.random.standard_normal((n,p))
+
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
-    L = lasso(y,X,lam=0.5*lam_theor)
+    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
+
+    weights_with_zeros = 0.1 * np.ones(p)
+    weights_with_zeros[:3] = 0.
+
+    for q, fw in product([Q, None],
+                         [0.5*lam_theor, weights_with_zeros]):
+
+        L = lasso.gaussian(X, y, fw, 1., quadratic=Q)
+        L.fit()
+        C = L.constraints
+
+        I = L.intervals
+        P = L.active_pvalues
+
+        yield (np.testing.assert_array_less,
+               np.dot(L.constraints.linear_part, L._onestep),
+               L.constraints.offset)
+
+
+
+def test_logistic():
+
+    for Y, T in [(np.random.binomial(1,0.5,size=(10,)),
+                  np.ones(10)),
+                 (np.random.binomial(1,0.5,size=(10,)),
+                  None),
+                 (np.random.binomial(3,0.5,size=(10,)),
+                  3*np.ones(10))]:
+        X = np.random.standard_normal((10,5))
+
+        L = lasso.logistic(X, Y, 0.1, trials=T)
+        L.fit()
+        C = L.constraints
+
+        np.testing.assert_array_less( \
+            np.dot(L.constraints.linear_part, L._onestep),
+            L.constraints.offset)
+
+        I = L.intervals
+        P = L.active_pvalues
+
+        return L, C, I, P
+
+def test_poisson():
+
+    X = np.random.standard_normal((10,5))
+    Y = np.random.poisson(10, size=(10,))
+
+    L = lasso.poisson(X, Y, 0.1)
     L.fit()
-    L.form_constraints()
     C = L.constraints
 
     np.testing.assert_array_less( \
-        np.dot(L.constraints.linear_part, L.y),
+        np.dot(L.constraints.linear_part, L._onestep),
         L.constraints.offset)
 
     I = L.intervals
     P = L.active_pvalues
 
     return L, C, I, P
+
+def test_coxph():
+
+    Q = identity_quadratic(0.01, 0, np.ones(5), 0)
+    X = np.random.standard_normal((100,5))
+    T = np.random.standard_exponential(100)
+    S = np.random.binomial(1, 0.5, size=(100,))
+
+    L = lasso.coxph(X, T, S, 0.1, quadratic=Q)
+    L.fit()
+    C = L.constraints
+
+    np.testing.assert_array_less( \
+        np.dot(L.constraints.linear_part, L._onestep),
+        L.constraints.offset)
+
+    I = L.intervals
+    P = L.active_pvalues
+
+    return L, C, I, P
+
 
 @set_sampling_params_iftrue(True)
 def test_data_carving(n=100,
@@ -59,9 +132,9 @@ def test_data_carving(n=100,
                                              df=df)
         mu = np.dot(X, beta)
         L, stage_one = split_model(y, X, 
-                        sigma=sigma,
-                        lam_frac=lam_frac,
-                        split_frac=split_frac)[:2]
+                                   sigma=sigma,
+                                   lam_frac=lam_frac,
+                                   split_frac=split_frac)[:2]
 
         if set(range(s)).issubset(L.active):
             while True:
@@ -125,15 +198,12 @@ def test_data_carving_coverage(nsim=200,
 def test_intervals(n=100, p=20, s=5):
     t = []
     X, y, beta = instance(n=n, p=p, s=s)[:3]
-    las = lasso(y, X, 4., sigma = .25)
+    las = lasso.gaussian(X, y, 4., .25)
     las.fit()
-    las.form_constraints()
 
     # smoke test
 
     las.soln
-    las.active_constraints
-    las.inactive_constraints
     las.constraints
     las.active_pvalues
     intervals = las.intervals

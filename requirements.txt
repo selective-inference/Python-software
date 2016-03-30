@@ -1,0 +1,5 @@
+numpy
+scipy
+mpmath
+regreg
+pyinter

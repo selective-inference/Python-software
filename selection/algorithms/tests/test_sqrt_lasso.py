@@ -181,6 +181,7 @@ def test_data_carving(n=100,
                       sigma=3,
                       fit_args={'min_its':120, 'tol':1.e-12},
                       compute_intervals=True,
+                      max_count=100,
                       nsim=None):
 
     counter = 0
@@ -226,6 +227,9 @@ def test_data_carving(n=100,
                 split_coverage.append((si[0] < t) * (t < si[1]))
 
             return carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage
+
+        if counter >= max_count:
+            break
 
 def main_sigma(nsample=1000, sigma=3, s=10):
     S = []

@@ -16,7 +16,13 @@ import warnings
 from copy import copy
 
 import numpy as np
-from sklearn.linear_model import Lasso
+from scipy.stats import norm as ndist, t as tdist
+
+from regreg.api import (glm, 
+                        weighted_l1norm, 
+                        simple_problem,
+                        coxph)
+
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
@@ -24,13 +30,6 @@ from ..constraints.affine import (constraints, selection_interval,
                                  stack)
 from ..distributions.discrete_family import discrete_family
 
-from scipy.stats import norm as ndist, t as tdist
-
-try:
-    import cvxpy as cvx
-except ImportError:
-    warnings.warn('cvx not available')
-    pass
 
 DEBUG = False
 
@@ -119,7 +118,6 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     Y = (np.dot(X, beta) + _noise(n, df)) * sigma
     return X, Y, beta * sigma, np.nonzero(active)[0], sigma
 
-
 class lasso(object):
 
     r"""
@@ -139,7 +137,7 @@ class lasso(object):
     alpha = 0.05
     UMAU = False
 
-    def __init__(self, y, X, lam, sigma=1):
+    def __init__(self, loglike, feature_weights):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -147,104 +145,61 @@ class lasso(object):
         Parameters
         ----------
 
-        y : np.float(n)
-            The target, in the model $y = X\beta$
+        loglike : `regreg.smooth.glm.glm`
+            A (negative) log-likelihood as implemented in `regreg`.
 
-        X : np.float((n, p))
-            The data, in the model $y = X\beta$
+        feature_weights : np.ndarray
+            Feature weights for L-1 penalty. If a float,
+            it is brodcast to all features.
 
-        lam : np.float
-            Coefficient of the L-1 penalty in
-            $\text{minimize}_{\beta} \frac{1}{2} \|y-X\beta\|^2_2 + 
-                \lambda\|\beta\|_1$
-
-        sigma : np.float
-            Standard deviation of the gaussian distribution :
-            The covariance matrix is
-            `sigma**2 * np.identity(X.shape[0])`.
-            Defauts to 1.
         """
-        self.y = y
-        self.X = X
-        self.sigma = sigma
-        n, p = X.shape
 
-        if self.y.shape != (n,):
-            raise ValueError('shapes of (y, X) do not match: %s. X.ndim should be 2 and y.ndim should be 1.' % `(y.shape, X.shape)`)
-        self.lagrange = lam / n
-        self._covariance = self.sigma**2 * np.identity(X.shape[0])
+        self.loglike = loglike
+        if np.asarray(feature_weights).shape == ():
+            feature_weights = np.ones(loglike.shape) * feature_weights
+        self.feature_weights = feature_weights
 
-    def fit(self, sklearn_alpha=None, **lasso_args):
+    def fit(self, **solve_args):
         """
-        Fit the lasso using `Lasso` from `sklearn`.
-        This sets the attribute `soln` and
+        Fit the lasso using `regreg`.
+        This sets the attributes `soln`, `onestep` and
         forms the constraints necessary for post-selection inference
         by calling `form_constraints()`.
 
         Parameters
         ----------
 
-        sklearn_alpha : float
-            Lagrange parameter, in the normalization set by `sklearn`.
-
-        lasso_args : keyword args
-             Passed to `sklearn.linear_model.Lasso`_
+        solve_args : keyword args
+             Passed to `regreg.problems.simple_problem.solve`.
 
         Returns
         -------
 
         soln : np.float
-             Solution to lasso with `sklearn_alpha=self.lagrange`.
+             Solution to lasso.
              
-        
         """
 
-        # fit Lasso using scikit-learn
-        
-        clf = Lasso(alpha = self.lagrange, fit_intercept = False)
-        clf.fit(self.X, self.y, **lasso_args)
-        self._soln = beta = clf.coef_       
-        if not np.all(beta == 0):
-            self.form_constraints()
+        penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
+        problem = simple_problem(self.loglike, penalty)
+        _soln = problem.solve(**solve_args)
+        self._soln = _soln
+        if not np.all(_soln == 0):
+            self.active = np.nonzero(_soln != 0)[0]
+            self.active_signs = np.sign(_soln[self.active])
+            self._active_soln = _soln[self.active]
+            H = self.loglike.hessian(self._soln)[self.active][:,self.active]
+            Hinv = np.linalg.inv(H)
+            G = self.loglike.gradient(self._soln)[self.active]
+            delta = Hinv.dot(G)
+            self._onestep = self._active_soln - delta
+            self.active_penalized = self.feature_weights[self.active] != 0
+            self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
+                                             (self.active_signs * delta)[self.active_penalized],
+                                             covariance=Hinv)
         else:
             self.active = []
         return self._soln
-
-    def form_constraints(self):
-        """
-        After having fit lasso, form the constraints
-        necessary for inference.
-
-        This sets the attributes: `active_constraints`,
-        `inactive_constraints`, `active`.
-
-        Returns
-        -------
-
-        None
-
-        """
-
-        # determine equicorrelation set and signs
-        beta = self.soln
-        n, p = self.X.shape
-        lam = self.lagrange * n
-
-        active = (beta != 0)
-        self.z_E = np.sign(beta[active])
-
-        # calculate the "partial correlation" operator R = X_{-E}^T (I - P_E)
-
-        X_E = self.X[:,active]
-        X_notE = self.X[:,~active]
-        self._XEinv = np.linalg.pinv(X_E)
-        P_E = np.dot(X_E, self._XEinv)
-        R = np.dot(X_notE.T, np.eye(n)-P_E)
-        self.active = np.nonzero(active)[0]
-
-        (self._active_constraints, 
-         self._inactive_constraints, 
-         self._constraints) = _constraint_from_data(X_E, X_notE, self.z_E, active, lam, self.sigma, R)
 
     @property
     def soln(self):
@@ -256,27 +211,11 @@ class lasso(object):
         return self._soln
 
     @property
-    def active_constraints(self):
-        """
-        Affine constraints imposed on the
-        active variables by the KKT conditions.
-        """
-        return self._active_constraints
-
-    @property
-    def inactive_constraints(self):
-        """
-        Affine constraints imposed on the
-        inactive subgradient by the KKT conditions.
-        """
-        return self._inactive_constraints
-
-    @property
     def constraints(self):
         """
         Affine constraints for this LASSO problem.
-        This is `self.active_constraints` stacked with
-        `self.inactive_constraints`.
+        These are the constraints determined only
+        by the active block.
         """
         return self._constraints
 
@@ -289,12 +228,13 @@ class lasso(object):
         """
         if not hasattr(self, "_intervals"):
             self._intervals = []
-            C = self.active_constraints
-            XEinv = self._XEinv
-            if XEinv is not None:
-                for i in range(XEinv.shape[0]):
-                    eta = XEinv[i]
-                    _interval = C.interval(eta, self.y,
+            C = self.constraints
+            if C is not None:
+                one_step = self._onestep
+                for i in range(one_step.shape[0]):
+                    eta = np.zeros_like(one_step)
+                    eta[i] = 1.
+                    _interval = C.interval(eta, one_step,
                                            alpha=self.alpha,
                                            UMAU=self.UMAU)
                     self._intervals.append((self.active[i],
@@ -310,15 +250,37 @@ class lasso(object):
         " for selection."):
         if not hasattr(self, "_pvals"):
             self._pvals = []
-            C = self.active_constraints
-            XEinv = self._XEinv
-            if XEinv is not None:
-                for i in range(XEinv.shape[0]):
-                    eta = XEinv[i]
-                    _pval = C.pivot(eta, self.y)
+            C = self.constraints
+            if C is not None:
+                one_step = self._onestep
+                for i in range(one_step.shape[0]):
+                    eta = np.zeros_like(one_step)
+                    eta[i] = 1.
+                    _pval = C.pivot(eta, one_step)
                     _pval = 2 * min(_pval, 1 - _pval)
                     self._pvals.append((self.active[i], _pval))
         return self._pvals
+
+    @staticmethod
+    def gaussian(X, Y, feature_weights, sigma, quadratic=None):
+        loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
+        return lasso(loglike, feature_weights)
+
+    @staticmethod
+    def logistic(X, successes, feature_weights, trials=None, quadratic=None):
+        loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
+        return lasso(loglike, feature_weights)
+
+    @staticmethod
+    def coxph(X, times, status, feature_weights, quadratic=None):
+        loglike = coxph(X, times, status, quadratic=quadratic)
+        return lasso(loglike, feature_weights)
+
+    @staticmethod
+    def poisson(X, counts, feature_weights, quadratic=None):
+        loglike = glm.poisson(X, counts, quadratic=quadratic)
+        return lasso(loglike, feature_weights)
+
 
 def nominal_intervals(lasso_obj):
     """
@@ -326,20 +288,20 @@ def nominal_intervals(lasso_obj):
     that have not been adjusted for selection.
     """
     unadjusted_intervals = []
-    if not hasattr(lasso_obj, "_constraints"):
-        lasso_obj.form_constraints()
-    XEinv = lasso_obj._XEinv
-    SigmaE = lasso_obj.sigma**2 * np.dot(XEinv, XEinv.T)
-    for i in range(lasso_obj.active.shape[0]):
-        eta = XEinv[i]
-        center = (eta*lasso_obj.y).sum()
-        width = ndist.ppf(1-lasso_obj.alpha/2.) * np.sqrt(SigmaE[i,i])
-        _interval = [center-width, center+width]
-        unadjusted_intervals.append((lasso_obj.active[i], eta, (eta*lasso_obj.y).sum(), 
-                                     _interval))
+
+    if lasso_obj.active is not []:
+        SigmaE = lasso_obj.constraints.covariance
+        for i in range(lasso_obj.active.shape[0]):
+            eta = np.ones_like(lasso_obj._onestep)
+            eta[i] = 1.
+            center = lasso_obj._onestep[i]
+            width = ndist.ppf(1-lasso_obj.alpha/2.) * np.sqrt(SigmaE[i,i])
+            _interval = [center-width, center+width]
+            unadjusted_intervals.append((lasso_obj.active[i], eta, center,
+                                         _interval))
     return unadjusted_intervals
 
-def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
+def _constraint_from_data(X_E, X_notE, active_signs, E, lam, sigma, R):
 
     n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
     if np.array(lam).shape == ():
@@ -348,15 +310,15 @@ def _constraint_from_data(X_E, X_notE, z_E, E, lam, sigma, R):
     # inactive constraints
     den = np.hstack([lam[~E], lam[~E]])[:,None]
     A0 = np.vstack((R, -R)) / den
-    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), lam[E] * z_E)) / lam[~E] 
+    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), lam[E] * active_signs)) / lam[~E] 
     b0 = np.concatenate((1.-b_tmp, 1.+b_tmp))
     _inactive_constraints = constraints(A0, b0)
     _inactive_constraints.covariance *= sigma**2
 
     # active constraints
     C = np.linalg.inv(np.dot(X_E.T, X_E))
-    A1 = -np.dot(np.diag(z_E), np.dot(C, X_E.T))
-    b1 = -z_E * np.dot(C, z_E*lam[E])
+    A1 = -np.dot(np.diag(active_signs), np.dot(C, X_E.T))
+    b1 = -active_signs * np.dot(C, active_signs*lam[E])
 
     _active_constraints = constraints(A1, b1)
     _active_constraints.covariance *= sigma**2
@@ -395,10 +357,8 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
 
     """
     n, p = X.shape
-
-    lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0))
-
-    lasso_selector = lasso(y, X, lam, sigma=sigma)
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0)) / sigma
+    lasso_selector = lasso.gaussian(X, y, lam, sigma)
     lasso_selector.fit()
     return lasso_selector
 
@@ -509,8 +469,8 @@ def data_carving(y, X,
         if n - splitn > s:
 
             linear_part = np.zeros((s, 2*s))
-            linear_part[:, s:] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
+            linear_part[:, s:] = -np.diag(L.active_signs)
+            b = L.constraints.offset
             con = constraints(linear_part, b)
 
             # specify covariance of 2s Gaussian vector
@@ -538,8 +498,8 @@ def data_carving(y, X,
         else:
 
             linear_part = np.zeros((s, s + n - splitn))
-            linear_part[:, :s] = -np.diag(L.z_E)
-            b = L.active_constraints.offset
+            linear_part[:, :s] = -np.diag(L.active_signs)
+            b = L.constraints.offset
             con = constraints(linear_part, b)
 
             # specify covariance of Gaussian vector
@@ -837,7 +797,7 @@ def additive_noise(y,
     X_E = X[:,L.active]
     X_Ei = np.linalg.pinv(X_E)
     Cov_E = np.dot(X_Ei, X_Ei.T)
-    W_E = np.dot(Cov_E, L.z_E)
+    W_E = np.dot(Cov_E, L.active_signs)
 
     pvalues = []
     intervals = []
@@ -856,19 +816,19 @@ def additive_noise(y,
         P_minus_j = np.dot(X_minus_j, np.linalg.pinv(X_minus_j))
         R_minus_j = np.identity(n) - P_minus_j
 
-        theta_E = L.z_E * (np.dot(X_Ei, np.dot(P_minus_j, y)) - lam * W_E)
+        theta_E = L.active_signs * (np.dot(X_Ei, np.dot(P_minus_j, y)) - lam * W_E)
         scale = np.sqrt(Cov_E[j,j])
         kappa = 1. / scale**2
-        alpha_E = kappa * L.z_E * Cov_E[j]
+        alpha_E = kappa * L.active_signs * Cov_E[j]
         A = np.hstack([-alpha_E.reshape((s_obs,1)), np.identity(s_obs)])
         con = constraints(A, theta_E)
         cov = np.zeros((s_obs+1, s_obs+1))
         cov[0,0] = scale**2 * sigma**2
-        cov[1:,1:] = Cov_E * gamma**2 * np.outer(L.z_E, L.z_E)
+        cov[1:,1:] = Cov_E * gamma**2 * np.outer(L.active_signs, L.active_signs)
         con.covariance[:] = cov
         initial = np.zeros(s_obs+1)
         initial[0] = beta_E[j]
-        initial[1:] = -np.dot(X_Ei, y_star-y) * L.z_E
+        initial[1:] = -np.dot(X_Ei, y_star-y) * L.active_signs
         eta = np.zeros(s_obs+1)
         eta[0] = 1.
 
