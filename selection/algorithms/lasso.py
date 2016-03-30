@@ -193,8 +193,9 @@ class lasso(object):
             G = self.loglike.gradient(self._soln)[self.active]
             delta = Hinv.dot(G)
             self._onestep = self._active_soln - delta
-            self._constraints = constraints(-np.diag(self.active_signs),
-                                             self.active_signs * delta,
+            self.active_penalized = self.feature_weights[self.active] != 0
+            self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
+                                             (self.active_signs * delta)[self.active_penalized],
                                              covariance=Hinv)
         else:
             self.active = []

@@ -8,6 +8,8 @@ from base import selective_penalty
 # source: git@github.com:jcrudy/choldate.git
 from choldate import cholupdate, choldowndate
 
+## TODO: should use rr.weighted_l1norm
+
 class selective_l1norm(rr.l1norm, selective_penalty):
 
     ### begin selective_penalty API

@@ -1,6 +1,7 @@
 import numpy as np
 import numpy.testing.decorators as dec
 
+from itertools import product
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
                                         instance, 
@@ -13,28 +14,32 @@ from selection.tests.decorators import set_sampling_params_iftrue
 
 def test_gaussian(n=100, p=20):
 
-    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
-
     y = np.random.standard_normal(n)
     X = np.random.standard_normal((n,p))
 
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
-    L = lasso.gaussian(X, y, 0.5*lam_theor, 1.)
-    L.fit()
-    C = L.constraints
+    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
 
-    np.testing.assert_array_less( \
-        np.dot(L.constraints.linear_part, L._onestep),
-        L.constraints.offset)
+    weights_with_zeros = 0.1 * np.ones(p)
+    weights_with_zeros[:3] = 0.
 
-    I = L.intervals
-    P = L.active_pvalues
+    for q, fw in product([Q, None],
+                         [0.5*lam_theor, weights_with_zeros]):
 
-    return L, C, I, P
+        L = lasso.gaussian(X, y, fw, 1., quadratic=Q)
+        L.fit()
+        C = L.constraints
+
+        I = L.intervals
+        P = L.active_pvalues
+
+        yield (np.testing.assert_array_less,
+               np.dot(L.constraints.linear_part, L._onestep),
+               L.constraints.offset)
+
+
 
 def test_logistic():
-
-    Q = identity_quadratic(0.01, 0, np.ones(5), 0)
 
     for Y, T in [(np.random.binomial(1,0.5,size=(10,)),
                   np.ones(10)),
@@ -59,8 +64,6 @@ def test_logistic():
 
 def test_poisson():
 
-    Q = identity_quadratic(0.01, 0, np.ones(5), 0)
-
     X = np.random.standard_normal((10,5))
     Y = np.random.poisson(10, size=(10,))
 
@@ -80,7 +83,6 @@ def test_poisson():
 def test_coxph():
 
     Q = identity_quadratic(0.01, 0, np.ones(5), 0)
-
     X = np.random.standard_normal((100,5))
     T = np.random.standard_exponential(100)
     S = np.random.binomial(1, 0.5, size=(100,))
