@@ -261,6 +261,21 @@ class lasso(object):
                     self._pvals.append((self.active[i], _pval))
         return self._pvals
 
+    @property
+    def onesided_pvalues(self, doc="Onesided tests for active variables adjusted " + \
+        " for selection."):
+        if not hasattr(self, "_onesided_pvals"):
+            self._onesided_pvals = []
+            C = self.constraints
+            if C is not None:
+                one_step = self._onestep
+                for i in range(one_step.shape[0]):
+                    eta = np.zeros_like(one_step)
+                    eta[i] = self.active_signs[i]
+                    _pval = C.pivot(eta, one_step)
+                    self._onesided_pvals.append((self.active[i], _pval))
+        return self._onesided_pvals
+
     @staticmethod
     def gaussian(X, Y, feature_weights, sigma, quadratic=None):
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
