@@ -157,7 +157,7 @@ class lasso(object):
         self.loglike = loglike
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
-        self.feature_weights = feature_weights
+        self.feature_weights = np.asarray(feature_weights)
 
     def fit(self, **solve_args):
         """
