@@ -343,7 +343,7 @@ def _constraint_from_data(X_E, X_notE, active_signs, E, lam, sigma, R):
     _constraints.covariance *= sigma**2
     return _active_constraints, _inactive_constraints, _constraints
 
-def standard_lasso(y, X, sigma=1, lam_frac=1.):
+def standard_lasso(X, y, sigma=1, lam_frac=1.):
     """
     Fit a LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
@@ -373,11 +373,11 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
     """
     n, p = X.shape
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0)) / sigma
-    lasso_selector = lasso.gaussian(X, y, lam, sigma)
+    lasso_selector = lasso.gaussian(X, y, lam, sigma=sigma)
     lasso_selector.fit()
     return lasso_selector
 
-def data_carving(y, X, 
+def data_carving(X, y, 
                  lam_frac=2.,
                  sigma=1., 
                  stage_one=None,
@@ -730,11 +730,11 @@ def split_model(y, X,
         stage_two = [i for i in np.arange(n) if i not in stage_one]
     y1, X1 = y[stage_one], X[stage_one]
 
-    first_stage = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
+    first_stage = standard_lasso(X1, y1, sigma=sigma, lam_frac=lam_frac)
     return first_stage, stage_one, stage_two
 
-def additive_noise(y, 
-                   X, 
+def additive_noise(X, 
+                   y, 
                    sigma, 
                    lam_frac=1.,
                    perturb_frac=0.2, 
@@ -805,7 +805,7 @@ def additive_noise(y,
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 5000)))).max(0)) * sigma_star
     y_star = y + np.random.standard_normal(n) * gamma
 
-    randomized_lasso = L = standard_lasso(y_star, X, sigma=sigma_star, lam_frac=lam_frac)
+    randomized_lasso = L = standard_lasso(X, y_star, sigma=sigma_star, lam_frac=lam_frac)
     L.fit()
 
     # Form the constraint matrix on (y,y^*)

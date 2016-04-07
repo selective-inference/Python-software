@@ -6,6 +6,7 @@ from selection.algorithms.lasso import (lasso,
                                         data_carving, 
                                         instance, 
                                         split_model, 
+                                        standard_lasso,
                                         instance, 
                                         nominal_intervals)
 from regreg.api import identity_quadratic
@@ -138,7 +139,7 @@ def test_data_carving(n=100,
 
         if set(range(s)).issubset(L.active):
             while True:
-                results, L = data_carving(y, X, lam_frac=lam_frac, 
+                results, L = data_carving(X, y, lam_frac=lam_frac, 
                                           sigma=sigma,
                                           stage_one=stage_one,
                                           splitting=True, 
@@ -211,3 +212,26 @@ def test_intervals(n=100, p=20, s=5):
     t.append([(beta[I], L, U) for I, L, U in intervals])
     return t
     
+def test_gaussian_pvals(n=100,
+                        p=200,
+                        s=7,
+                        sigma=5,
+                        rho=0.3,
+                        snr=7.):
+
+    counter = 0
+
+    return_value = []
+
+    while True:
+        counter += 1
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr)
+        print sigma
+        L = standard_lasso(X, y, sigma, lam_frac=1.5)
+        if set(range(s)).issubset(L.active):
+            return [p for j, p in L.active_pvalues if j >= s+1]
