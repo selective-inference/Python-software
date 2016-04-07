@@ -16,45 +16,48 @@ tol = 1.e-2
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_fixed_lambda():
-    R_code = """
-    library(selectiveInference)
-    set.seed(43)
-    n = 50
-    p = 10
-    sigma = 1
-    x = matrix(rnorm(n*p),n,p)
-    x=scale(x,TRUE,TRUE)
-    beta = c(3,2,rep(0,p-2))
-    y = x%*%beta + sigma*rnorm(n)
-    # first run glmnet
-    gfit = glmnet(x,y,standardize=FALSE)
-    # extract coef for a given lambda; note the 1/n factor!
-    # (and we don't save the intercept term)
-    lambda = .8
-    beta_hat = coef(gfit, s=lambda/n, exact=TRUE)[-1]
+    for s in [1,1.1]:
+        R_code = """
+        library(selectiveInference)
+        set.seed(43)
+        n = 50
+        p = 10
+        sigma = %f
+        x = matrix(rnorm(n*p),n,p)
+        x = scale(x,TRUE,TRUE)
+        beta = c(3,2,rep(0,p-2))
+        y = x%%*%%beta + sigma*rnorm(n)
+        # first run glmnet
+        gfit = glmnet(x,y,standardize=FALSE)
+        # extract coef for a given lambda; note the 1/n factor!
+        # (and we don't save the intercept term)
+        lambda = .8
+        beta_hat = coef(gfit, s=lambda/n, exact=TRUE)[-1]
 
-    # compute fixed lambda p-values and selection intervals
-    out = fixedLassoInf(x,y,beta_hat,lambda,sigma=sigma)
-    pval = out$pv
-    vars = out$var
-    """
+        # compute fixed lambda p-values and selection intervals
+        out = fixedLassoInf(x,y,beta_hat,lambda,sigma=sigma)
+        pval = out$pv
+        vars = out$var
+        """ % s
 
-    rpy.r(R_code)
-    R_pvals = np.asarray(rpy.r('pval'))
-    selected_vars = np.asarray(rpy.r('vars'))
-    y = np.asarray(rpy.r('y'))
-    beta_hat = np.asarray(rpy.r('as.numeric(beta_hat)'))
-    x = np.asarray(rpy.r('x'))
-    y = y.reshape(-1)
-    y -= y.mean()
-    x -= x.mean(0)[None,:]
-    L = lasso.gaussian(x, y, 0.8, sigma=1)
+        rpy.r(R_code)
+        R_pvals = np.asarray(rpy.r('pval'))
+        sigma = float(np.asarray(rpy.r('sigma')))
+        selected_vars = np.asarray(rpy.r('vars'))
+        y = np.asarray(rpy.r('y'))
+        beta_hat = np.asarray(rpy.r('as.numeric(beta_hat)'))
+        x = np.asarray(rpy.r('x'))
+        y = y.reshape(-1)
+        y -= y.mean()
+        x -= x.mean(0)[None,:]
+        L = lasso.gaussian(x, y, 0.8, sigma=sigma)
+        L.fit()
 
-    yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol
-    yield np.testing.assert_equal, L.active + 1, selected_vars
-    yield np.testing.assert_allclose, [p for _, p in L.onesided_pvalues], R_pvals, tol, tol
+        yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol, False, 'fixed lambda, sigma=%f' % s
+        yield np.testing.assert_equal, L.active + 1, selected_vars
+        yield np.testing.assert_allclose, [p for _, p in L.onesided_pvalues], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f' % s
 
-    print([p for _, p in L.onesided_pvalues], R_pvals)
+        print([p for _, p in L.onesided_pvalues], R_pvals)
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step():
@@ -63,7 +66,7 @@ def test_forward_step():
     set.seed(33)
     n = 50
     p = 10
-    sigma = 1
+    sigma = 1.1
     x = matrix(rnorm(n*p),n,p)
     beta = c(3,2,rep(0,p-2))
     y = x%*%beta + sigma*rnorm(n)
@@ -71,14 +74,14 @@ def test_forward_step():
     fsfit = fs(x,y)
     beta_hat = fsfit$beta
     # compute sequential p-values and confidence intervals
-    # (sigma estimated from full model)
-    out.seq = fsInf(fsfit,sigma=1)
+    out.seq = fsInf(fsfit,sigma=sigma)
     vars = out.seq$vars
     pval = out.seq$pv
     """
 
     rpy.r(R_code)
     R_pvals = np.asarray(rpy.r('pval'))
+    sigma = float(np.asarray(rpy.r('sigma')))
     selected_vars = np.asarray(rpy.r('vars'))
     y = np.asarray(rpy.r('y'))
     beta_hat = np.asarray(rpy.r('beta_hat'))
@@ -86,7 +89,6 @@ def test_forward_step():
     y = y.reshape(-1)
     y -= y.mean()
     x -= x.mean(0)[None,:]
-    sigma = 1
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(x.shape[1]):
@@ -107,7 +109,7 @@ def test_forward_step_all():
     set.seed(33)
     n = 50
     p = 10
-    sigma = 1
+    sigma = 1.1
     x = matrix(rnorm(n*p),n,p)
     beta = c(3,2,rep(0,p-2))
     y = x%*%beta + sigma*rnorm(n)
@@ -115,14 +117,14 @@ def test_forward_step_all():
     fsfit = fs(x,y)
     beta_hat = fsfit$beta
     # compute sequential p-values and confidence intervals
-    # (sigma estimated from full model)
-    out.seq = fsInf(fsfit,sigma=1, type='all', k=5)
+    out.seq = fsInf(fsfit,sigma=sigma, type='all', k=5)
     vars = out.seq$vars
     pval = out.seq$pv
     """
 
     rpy.r(R_code)
     R_pvals = np.asarray(rpy.r('pval'))
+    sigma = float(np.asarray(rpy.r('sigma')))
     selected_vars = np.asarray(rpy.r('vars'))
     y = np.asarray(rpy.r('y'))
     beta_hat = np.asarray(rpy.r('beta_hat'))
@@ -130,7 +132,6 @@ def test_forward_step_all():
     y = y.reshape(-1)
     y -= y.mean()
     x -= x.mean(0)[None,:]
-    sigma = 1
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(5):
@@ -150,7 +151,7 @@ def test_coxph():
     set.seed(43)
     n = 50
     p = 10
-    sigma = 1
+    sigma = 1.1
 
     x = matrix(rnorm(n*p),n,p)
     x=scale(x,TRUE,TRUE)
@@ -203,12 +204,12 @@ def test_logistic():
     set.seed(43)
     n = 50
     p = 10
-    sigma = 1
+    sigma = 1.1
 
     x = matrix(rnorm(n*p),n,p)
     x=scale(x,TRUE,TRUE)
     beta = c(3,2,rep(0,p-2))
-    y = x%*%beta + sigma*rnorm(n)
+    y = sigma*x%*%beta + sigma*rnorm(n)
     y=1*(y>mean(y))
     # first run glmnet
     gfit = glmnet(x,y,standardize=FALSE,family="binomial")
