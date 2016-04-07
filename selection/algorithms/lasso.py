@@ -296,6 +296,65 @@ class lasso(object):
         loglike = glm.poisson(X, counts, quadratic=quadratic)
         return lasso(loglike, feature_weights)
 
+    def summary(self, alternative='twosided'):
+        """
+        Summary table for inference adjusted for selection.
+
+        Parameters
+        ----------
+
+        alternative : str
+            One of ["twosided","onesided"]
+
+        Returns
+        -------
+
+        pval_summary : np.recarray
+            Array with one entry per active variable.
+            Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
+
+        """
+
+        if alternative not in ['twosided', 'onesided']:
+            raise ValueError("alternative must be one of ['twosided', 'onesided']")
+
+        result = []
+        C = self.constraints
+        if C is not None:
+            one_step = self._onestep
+            for i in range(one_step.shape[0]):
+                eta = np.zeros_like(one_step)
+                if self.active_penalized[i]: # use truncated Gaussian
+                    eta[i] = self.active_signs[i]
+                    _alt = {"onesided":'greater',
+                            'twosided':"twosided"}[alternative]
+                    _pval = C.pivot(eta, one_step, alternative=_alt)
+                    _bounds = np.array(C.bounds(eta, one_step))
+                    sd = _bounds[-1]
+                    lower_trunc, est, upper_trunc = sorted(_bounds[:3] * self.active_signs[i])
+                else: # use regular Gaussian for Wald test
+                    sd = np.sqrt(C.covariance[i,i])
+                    Z = one_step[i] / sd
+                    _pval = 2 * ndist.sf(np.fabs(Z))
+                    lower_trunc = -np.inf
+                    upper_trunc = np.inf
+
+                result.append((self.active[i],
+                               _pval,
+                               self._soln[self.active[i]],
+                               one_step[i],
+                               lower_trunc,
+                               upper_trunc,
+                               sd))
+
+        return np.array(result,
+                        np.dtype([('variable', np.int),
+                                  ('pval', np.float),
+                                  ('lasso', np.float),
+                                  ('onestep', np.float),
+                                  ('lower_trunc', np.float),
+                                  ('upper_trunc', np.float),
+                                  ('sd', np.float)]))
 
 def nominal_intervals(lasso_obj):
     """
