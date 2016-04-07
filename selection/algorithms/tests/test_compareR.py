@@ -50,7 +50,7 @@ def test_fixed_lambda():
         y = y.reshape(-1)
         y -= y.mean()
         x -= x.mean(0)[None,:]
-        L = lasso.gaussian(x, y, 0.8 / sigma**2, sigma=sigma)
+        L = lasso.gaussian(x, y, 0.8 / sigma**2, sigma=sigma) # gaussian loss is squared error over sigma**2
         L.fit()
 
         yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol, False, 'fixed lambda, sigma=%f' % s
