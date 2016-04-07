@@ -39,7 +39,7 @@ class forward_step(object):
         self.X, self.Y = X, Y
 
         if intercept:
-            fixed_regressors = fixed_regressors + [np.ones(X.shape[0])]
+            fixed_regressors = fixed_regressors + [np.ones((X.shape[0], 1))]
         if fixed_regressors != []:
             self.fixed_regressors = np.hstack(fixed_regressors)
             if self.fixed_regressors.ndim == 1:
@@ -66,6 +66,8 @@ class forward_step(object):
             self.adjusted_X = self.X.copy()
             self.subset_Y = self.Y.copy()
             self.subset_X = self.X.copy()
+
+        self.adjusted_X /= np.sqrt((self.adjusted_X**2).sum(0))[None, :]
 
         self.variables = []
         self.Z = []
@@ -101,8 +103,8 @@ class forward_step(object):
         # up to now inactive
         inactive = self.inactive = sorted(set(range(p)).difference(self.variables))
         scale = np.sqrt(np.sum(adjusted_X**2, 0))
-        
-        Zfunc = adjusted_X.T[inactive] / scale[inactive][:,None]
+
+        Zfunc = adjusted_X.T[inactive] 
         Zstat = np.dot(Zfunc, Y)
         idx = np.argmax(np.fabs(Zstat))
         next_var = inactive[idx]
@@ -122,12 +124,10 @@ class forward_step(object):
         keep = np.zeros(p, np.bool)
         keep[inactive] = True
         keep[next_var] = False
-        identity_linpart = np.vstack([adjusted_X[:,keep].T 
-                                      / scale[keep,None] -
-                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
-                                      -adjusted_X[:,keep].T 
-                                      / scale[keep,None] -
-                                      next_sign * adjusted_X[:,next_var] / scale[next_var],
+        identity_linpart = np.vstack([adjusted_X[:,keep].T -
+                                      next_sign * adjusted_X[:,next_var],
+                                      -adjusted_X[:,keep].T -
+                                      next_sign * adjusted_X[:,next_var],
                                       -next_sign * adjusted_X[:,next_var].reshape((1,-1))])
 
         if self.subset != []:
@@ -169,24 +169,11 @@ class forward_step(object):
                 Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
                 return Tstat
 
-            DEBUG = False
-            if DEBUG:
-                print scale[inactive], 'scale used', inactive
-                aX = adjusted_X[:,inactive]
-                print np.sqrt((aX**2).sum(0)), 'adjusted_X'
-
-                print self.sequential_con.offset , 'seq_offset'
-                print self.sequential_con.mean[:10] , 'seq_mean'
             B = self.sequential_con.offset
             d = B.shape[0]/2
             pos, neg = B[:d], B[d:]
             pos -= XI.T.dot(self.sequential_con.mean)
             neg += XI.T.dot(self.sequential_con.mean)
-
-            if DEBUG:
-                print pos, 'pos'
-                print neg, 'neg'
-                print XI.T.dot(self.sequential_con.mean), 'cur_offset'
 
             pval = gibbs_test(self.sequential_con,
                               Y,
@@ -210,13 +197,6 @@ class forward_step(object):
         self.inactive = inactive # unnecessary?
         self.variables.append(next_var); self.signs.append(next_sign)
 
-        DEBUG = False
-        if DEBUG:
-            print 'zmax', realized_Z_max
-            print 'scale', scale[self.inactive], scale.shape
-            print 'resid', resid_vector[:5]
-            print 'Y', Y[:5]
-
         realized_Z_adjusted = np.fabs(realized_Z_max) * scale
         offset_shift = np.dot(self.subset_X.T, Y - resid_vector)
         self.offset.append([realized_Z_adjusted + offset_shift,
@@ -227,6 +207,8 @@ class forward_step(object):
                                          np.dot(eta,
                                                 adjusted_X)) / 
                        (eta**2).sum())
+        # maintain the scale
+        adjusted_X /= np.sqrt(np.sum(adjusted_X**2, 0))[None, :]
         if compute_pval:
             return pval
 
@@ -300,7 +282,7 @@ class forward_step(object):
             
         return rank
 
-    def model_pivots(self, which_step, alternative='greater',
+    def model_pivots(self, which_step, alternative='onesided',
                      saturated=True,
                      ndraw=5000,
                      burnin=2000,
@@ -318,7 +300,7 @@ class forward_step(object):
         which_step : int
             Which step of forward stepwise.
 
-        alternative : ['greater', 'less', 'twosided']
+        alternative : ['onesided', 'twosided']
             What alternative to use.
 
         saturated : bool
@@ -349,16 +331,19 @@ class forward_step(object):
 
         """
 
+        if alternative not in ['onesided', 'twosided']:
+            raise ValueError('alternative should be either "onesided" or "twosided"')
+
         if which_step == 0:
             return []
 
         if self.covariance is None and saturated:
             raise ValueError('need a covariance matrix to compute pivots for saturated model')
 
-        con = copy(self.constraints())
+        con = copy(self.constraints(which_step))
 
         if self.covariance is not None:
-            con.covariance[:] = self.covariance 
+            con.covariance = self.covariance 
 
         linear_part = self.X[:,self.variables[:which_step]]
         observed = np.dot(linear_part.T, self.Y)
@@ -377,9 +362,14 @@ class forward_step(object):
         if saturated:
             for i in range(LSfunc.shape[0]):
                 if self.variables[i] in which_var:
+                    if alternative == 'onesided':
+                        _alt = {1:'greater',
+                                -1:'less'}[self.signs[i]]
+                    else:
+                        _alt = 'twosided'
                     pivots.append((self.variables[i],
                                    con.pivot(LSfunc[i], self.Y,
-                                             alternative=alternative)))
+                                             alternative=_alt)))
                   
         else:
             sigma_known = self.covariance is not None
@@ -500,11 +490,7 @@ def info_crit_stop(Y, X, sigma, cost=2,
     new_con = stack(FS.constraints(), constraints(new_linear_part,
                                                   new_offset))
     new_con.covariance[:] = sigma**2 * np.identity(n)
-    if DEBUG:
-        print FS.constraints.linear_part.shape, 'before'
     FS._constraints = new_con
-    if DEBUG:
-        print FS.constraints.linear_part.shape, 'should have added number of steps constraints'
     FS.active = FS.variables[:-1]
     return FS
 

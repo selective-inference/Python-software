@@ -76,7 +76,9 @@ def test_forward_step():
     steps = []
     for i in range(x.shape[1]):
         FS.next()
-        steps.extend(FS.model_pivots(i+1, which_var=FS.variables[-1:]))
+        steps.extend(FS.model_pivots(i+1, 
+                                     which_var=FS.variables[-1:],
+                                     alternative='onesided'))
 
     np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
     np.testing.assert_allclose([p for i, p in steps], R_pvals, atol=1.e-4, rtol=1.)
