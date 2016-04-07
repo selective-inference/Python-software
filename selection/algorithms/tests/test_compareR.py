@@ -59,6 +59,7 @@ def test_fixed_lambda():
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step():
     R_code = """
+    library(selectiveInference)
     set.seed(33)
     n = 50
     p = 10
@@ -93,6 +94,49 @@ def test_forward_step():
         steps.extend(FS.model_pivots(i+1, 
                                      which_var=FS.variables[-1:],
                                      alternative='onesided'))
+
+    np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
+    np.testing.assert_allclose([p for i, p in steps], R_pvals, atol=tol, rtol=tol)
+
+    print (R_pvals, [p for i, p in steps])
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+def test_forward_step_all():
+    R_code = """
+    library(selectiveInference)
+    set.seed(33)
+    n = 50
+    p = 10
+    sigma = 1
+    x = matrix(rnorm(n*p),n,p)
+    beta = c(3,2,rep(0,p-2))
+    y = x%*%beta + sigma*rnorm(n)
+    # run forward stepwise
+    fsfit = fs(x,y)
+    beta_hat = fsfit$beta
+    # compute sequential p-values and confidence intervals
+    # (sigma estimated from full model)
+    out.seq = fsInf(fsfit,sigma=1, type='all', k=5)
+    vars = out.seq$vars
+    pval = out.seq$pv
+    """
+
+    rpy.r(R_code)
+    R_pvals = np.asarray(rpy.r('pval'))
+    selected_vars = np.asarray(rpy.r('vars'))
+    y = np.asarray(rpy.r('y'))
+    beta_hat = np.asarray(rpy.r('beta_hat'))
+    x = np.asarray(rpy.r('x'))
+    y = y.reshape(-1)
+    y -= y.mean()
+    x -= x.mean(0)[None,:]
+    sigma = 1
+    FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
+    steps = []
+    for i in range(5):
+        FS.next()
+    steps = FS.model_pivots(5, 
+                            alternative='onesided')
 
     np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
     np.testing.assert_allclose([p for i, p in steps], R_pvals, atol=tol, rtol=tol)
