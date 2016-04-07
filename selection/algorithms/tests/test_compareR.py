@@ -148,7 +148,7 @@ def test_coxph():
 
     yield np.testing.assert_equal, L.active + 1, selected_vars
     yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol, False, 'cox coeff'
-    yield np.testing.assert_allclose, [p for _, p in L.onesided_pvalues], R_pvals, tol, tol, False, 'cox pvalues'
+    yield np.testing.assert_allclose, [p for _, p in L.active_pvalues], R_pvals, tol, tol, False, 'cox pvalues'
 
     print (R_pvals, [p for _, p in L.onesided_pvalues[1:]])
 
@@ -196,6 +196,6 @@ def test_logistic():
 
     yield np.testing.assert_equal, L.active[1:], selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'logistic coef'
-    yield np.testing.assert_allclose, [p for _, p in L.onesided_pvalues[1:]], R_pvals, tol, tol, False, 'logistic pvalues'
+    yield np.testing.assert_allclose, [p for _, p in L.active_pvalues[1:]], R_pvals, tol, tol, False, 'logistic pvalues'
 
     print (R_pvals, [p for _, p in L.onesided_pvalues[1:]])
