@@ -275,6 +275,7 @@ class lasso(object):
 
     @staticmethod
     def gaussian(X, Y, feature_weights, sigma, quadratic=None):
+        # Should we expect the user to divide the weights by sigma**2 or not?
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
         return lasso(loglike, np.asarray(feature_weights) / sigma**2)
 
