@@ -30,9 +30,6 @@ from ..constraints.affine import (constraints, selection_interval,
                                  stack)
 from ..distributions.discrete_family import discrete_family
 
-
-DEBUG = False
-
 def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
              random_signs=False, df=np.inf,
              scale=True, center=True):
@@ -182,37 +179,33 @@ class lasso(object):
 
         penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
         problem = simple_problem(self.loglike, penalty)
-        _soln = problem.solve(**solve_args)
-        self._soln = _soln
-        if not np.all(_soln == 0):
-            self.active = np.nonzero(_soln != 0)[0]
-            self.active_signs = np.sign(_soln[self.active])
-            self._active_soln = _soln[self.active]
-            H = self.loglike.hessian(self._soln)[self.active][:,self.active]
+        lasso_solution = problem.solve(**solve_args)
+        self.lasso_solution = lasso_solution
+        if not np.all(lasso_solution == 0):
+            self.active = np.nonzero(lasso_solution != 0)[0]
+            self.active_signs = np.sign(lasso_solution[self.active])
+            self._active_soln = lasso_solution[self.active]
+            H = self.loglike.hessian(self.lasso_solution)[self.active][:,self.active]
             Hinv = np.linalg.inv(H)
-            G = self.loglike.gradient(self._soln)[self.active]
+            G = self.loglike.gradient(self.lasso_solution)[self.active]
             delta = Hinv.dot(G)
-            self._onestep = self._active_soln - delta
-            print 'onestep', self._onestep
-            self._G = G
-            self._cov = Hinv
-            print 'other', self._active_soln + delta
+            self.onestep_estimator = self._active_soln - delta
             self.active_penalized = self.feature_weights[self.active] != 0
             self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
                                              (self.active_signs * delta)[self.active_penalized],
                                              covariance=Hinv)
         else:
             self.active = []
-        return self._soln
+        return self.lasso_solution
 
     @property
     def soln(self):
         """
         Solution to the lasso problem, set by `fit` method.
         """
-        if not hasattr(self, "_soln"):
+        if not hasattr(self, "lasso_solution"):
             self.fit()
-        return self._soln
+        return self.lasso_solution
 
     @property
     def constraints(self):
@@ -234,7 +227,7 @@ class lasso(object):
             self._intervals = []
             C = self.constraints
             if C is not None:
-                one_step = self._onestep
+                one_step = self.onestep_estimator
                 for i in range(one_step.shape[0]):
                     eta = np.zeros_like(one_step)
                     eta[i] = 1.
@@ -256,7 +249,7 @@ class lasso(object):
             self._pvals = []
             C = self.constraints
             if C is not None:
-                one_step = self._onestep
+                one_step = self.onestep_estimator
                 for i in range(one_step.shape[0]):
                     eta = np.zeros_like(one_step)
                     eta[i] = 1.
@@ -272,7 +265,7 @@ class lasso(object):
             self._onesided_pvals = []
             C = self.constraints
             if C is not None:
-                one_step = self._onestep
+                one_step = self.onestep_estimator
                 for i in range(one_step.shape[0]):
                     eta = np.zeros_like(one_step)
                     eta[i] = self.active_signs[i]
@@ -325,7 +318,7 @@ class lasso(object):
         result = []
         C = self.constraints
         if C is not None:
-            one_step = self._onestep
+            one_step = self.onestep_estimator
             for i in range(one_step.shape[0]):
                 eta = np.zeros_like(one_step)
                 if self.active_penalized[i]: # use truncated Gaussian
@@ -345,7 +338,7 @@ class lasso(object):
 
                 result.append((self.active[i],
                                _pval,
-                               self._soln[self.active[i]],
+                               self.lasso_solution[self.active[i]],
                                one_step[i],
                                lower_trunc,
                                upper_trunc,
@@ -370,9 +363,9 @@ def nominal_intervals(lasso_obj):
     if lasso_obj.active is not []:
         SigmaE = lasso_obj.constraints.covariance
         for i in range(lasso_obj.active.shape[0]):
-            eta = np.ones_like(lasso_obj._onestep)
+            eta = np.ones_like(lasso_obj.onestep_estimator)
             eta[i] = 1.
-            center = lasso_obj._onestep[i]
+            center = lasso_obj.onestep_estimator[i]
             width = ndist.ppf(1-lasso_obj.alpha/2.) * np.sqrt(SigmaE[i,i])
             _interval = [center-width, center+width]
             unadjusted_intervals.append((lasso_obj.active[i], eta, center,
