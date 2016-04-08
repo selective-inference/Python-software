@@ -8,9 +8,6 @@ import numpy as np
 from scipy.stats import chi
 from mpmath import fsum
 
-import matplotlib
-import matplotlib.pyplot as plt
-
 import warnings
 
 from abc import ABCMeta, abstractmethod
@@ -281,33 +278,6 @@ class truncated(object):
         z = self._quantile_notTruncated(q_notTruncated, tol)
         
         return z
-
-    def plt_cdf(self):
-        import matplotlib
-        import matplotlib.pyplot as plt
-        print 1
-        fig, ax = plt.subplots(1, 1)
-        print 2
-        l = self.quantile(0.01)
-        u = self.quantile(0.99)
-        print 2.5
-        x = np.linspace(l, u, 100)
-        print 3
-        cdf_x = [self.cdf(t) for t in x]
-        print 4
-        ax.plot(x, cdf_x, 'r-', lw=5, alpha=0.6, label='cdf')
-        print 5
-        plt.show()
-
-    def plt_pdf(self):
-        import matplotlib
-        import matplotlib.pyplot as plt
-        fig, ax = plt.subplots(1, 1)
-        x = np.linspace(self.quantile(0.01), self.quantile(0.99), 100)
-        pdf_x = [self.pdf(t) for t in x]
-        ax.plot(x, pdf_x, 'r-', lw=5, alpha=0.6, label='pdf')
-        plt.show()
-        
 
 def find_root(f, y, lb, ub, tol=1e-6):
     """
