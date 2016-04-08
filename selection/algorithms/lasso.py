@@ -276,7 +276,7 @@ class lasso(object):
     @staticmethod
     def gaussian(X, Y, feature_weights, sigma, quadratic=None):
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
-        return lasso(loglike, feature_weights)
+        return lasso(loglike, np.asarray(feature_weights) / sigma**2)
 
     @staticmethod
     def logistic(X, successes, feature_weights, trials=None, quadratic=None):
