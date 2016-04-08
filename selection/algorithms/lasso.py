@@ -30,9 +30,6 @@ from ..constraints.affine import (constraints, selection_interval,
                                  stack)
 from ..distributions.discrete_family import discrete_family
 
-
-DEBUG = False
-
 def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
              random_signs=False, df=np.inf,
              scale=True, center=True):
@@ -157,7 +154,7 @@ class lasso(object):
         self.loglike = loglike
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
-        self.feature_weights = feature_weights
+        self.feature_weights = np.asarray(feature_weights)
 
     def fit(self, **solve_args):
         """
@@ -182,33 +179,33 @@ class lasso(object):
 
         penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
         problem = simple_problem(self.loglike, penalty)
-        _soln = problem.solve(**solve_args)
-        self._soln = _soln
-        if not np.all(_soln == 0):
-            self.active = np.nonzero(_soln != 0)[0]
-            self.active_signs = np.sign(_soln[self.active])
-            self._active_soln = _soln[self.active]
-            H = self.loglike.hessian(self._soln)[self.active][:,self.active]
+        lasso_solution = problem.solve(**solve_args)
+        self.lasso_solution = lasso_solution
+        if not np.all(lasso_solution == 0):
+            self.active = np.nonzero(lasso_solution != 0)[0]
+            self.active_signs = np.sign(lasso_solution[self.active])
+            self._active_soln = lasso_solution[self.active]
+            H = self.loglike.hessian(self.lasso_solution)[self.active][:,self.active]
             Hinv = np.linalg.inv(H)
-            G = self.loglike.gradient(self._soln)[self.active]
+            G = self.loglike.gradient(self.lasso_solution)[self.active]
             delta = Hinv.dot(G)
-            self._onestep = self._active_soln - delta
+            self.onestep_estimator = self._active_soln - delta
             self.active_penalized = self.feature_weights[self.active] != 0
             self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
                                              (self.active_signs * delta)[self.active_penalized],
                                              covariance=Hinv)
         else:
             self.active = []
-        return self._soln
+        return self.lasso_solution
 
     @property
     def soln(self):
         """
         Solution to the lasso problem, set by `fit` method.
         """
-        if not hasattr(self, "_soln"):
+        if not hasattr(self, "lasso_solution"):
             self.fit()
-        return self._soln
+        return self.lasso_solution
 
     @property
     def constraints(self):
@@ -230,7 +227,7 @@ class lasso(object):
             self._intervals = []
             C = self.constraints
             if C is not None:
-                one_step = self._onestep
+                one_step = self.onestep_estimator
                 for i in range(one_step.shape[0]):
                     eta = np.zeros_like(one_step)
                     eta[i] = 1.
@@ -252,7 +249,7 @@ class lasso(object):
             self._pvals = []
             C = self.constraints
             if C is not None:
-                one_step = self._onestep
+                one_step = self.onestep_estimator
                 for i in range(one_step.shape[0]):
                     eta = np.zeros_like(one_step)
                     eta[i] = 1.
@@ -268,7 +265,7 @@ class lasso(object):
             self._onesided_pvals = []
             C = self.constraints
             if C is not None:
-                one_step = self._onestep
+                one_step = self.onestep_estimator
                 for i in range(one_step.shape[0]):
                     eta = np.zeros_like(one_step)
                     eta[i] = self.active_signs[i]
@@ -278,8 +275,9 @@ class lasso(object):
 
     @staticmethod
     def gaussian(X, Y, feature_weights, sigma, quadratic=None):
+        # Should we expect the user to divide the weights by sigma**2 or not?
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
-        return lasso(loglike, feature_weights)
+        return lasso(loglike, np.asarray(feature_weights) / sigma**2)
 
     @staticmethod
     def logistic(X, successes, feature_weights, trials=None, quadratic=None):
@@ -296,6 +294,65 @@ class lasso(object):
         loglike = glm.poisson(X, counts, quadratic=quadratic)
         return lasso(loglike, feature_weights)
 
+    def summary(self, alternative='twosided'):
+        """
+        Summary table for inference adjusted for selection.
+
+        Parameters
+        ----------
+
+        alternative : str
+            One of ["twosided","onesided"]
+
+        Returns
+        -------
+
+        pval_summary : np.recarray
+            Array with one entry per active variable.
+            Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
+
+        """
+
+        if alternative not in ['twosided', 'onesided']:
+            raise ValueError("alternative must be one of ['twosided', 'onesided']")
+
+        result = []
+        C = self.constraints
+        if C is not None:
+            one_step = self.onestep_estimator
+            for i in range(one_step.shape[0]):
+                eta = np.zeros_like(one_step)
+                if self.active_penalized[i]: # use truncated Gaussian
+                    eta[i] = self.active_signs[i]
+                    _alt = {"onesided":'greater',
+                            'twosided':"twosided"}[alternative]
+                    _pval = C.pivot(eta, one_step, alternative=_alt)
+                    _bounds = np.array(C.bounds(eta, one_step))
+                    sd = _bounds[-1]
+                    lower_trunc, est, upper_trunc = sorted(_bounds[:3] * self.active_signs[i])
+                else: # use regular Gaussian for Wald test
+                    sd = np.sqrt(C.covariance[i,i])
+                    Z = one_step[i] / sd
+                    _pval = 2 * ndist.sf(np.fabs(Z))
+                    lower_trunc = -np.inf
+                    upper_trunc = np.inf
+
+                result.append((self.active[i],
+                               _pval,
+                               self.lasso_solution[self.active[i]],
+                               one_step[i],
+                               lower_trunc,
+                               upper_trunc,
+                               sd))
+
+        return np.array(result,
+                        np.dtype([('variable', np.int),
+                                  ('pval', np.float),
+                                  ('lasso', np.float),
+                                  ('onestep', np.float),
+                                  ('lower_trunc', np.float),
+                                  ('upper_trunc', np.float),
+                                  ('sd', np.float)]))
 
 def nominal_intervals(lasso_obj):
     """
@@ -307,9 +364,9 @@ def nominal_intervals(lasso_obj):
     if lasso_obj.active is not []:
         SigmaE = lasso_obj.constraints.covariance
         for i in range(lasso_obj.active.shape[0]):
-            eta = np.ones_like(lasso_obj._onestep)
+            eta = np.ones_like(lasso_obj.onestep_estimator)
             eta[i] = 1.
-            center = lasso_obj._onestep[i]
+            center = lasso_obj.onestep_estimator[i]
             width = ndist.ppf(1-lasso_obj.alpha/2.) * np.sqrt(SigmaE[i,i])
             _interval = [center-width, center+width]
             unadjusted_intervals.append((lasso_obj.active[i], eta, center,
@@ -343,7 +400,7 @@ def _constraint_from_data(X_E, X_notE, active_signs, E, lam, sigma, R):
     _constraints.covariance *= sigma**2
     return _active_constraints, _inactive_constraints, _constraints
 
-def standard_lasso(y, X, sigma=1, lam_frac=1.):
+def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
     """
     Fit a LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
@@ -364,6 +421,9 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
     lam_frac : float
         Multiplier for choice of $\lambda$
 
+    solve_args : keyword args
+        Passed to `regreg.problems.simple_problem.solve`.
+
     Returns
     -------
 
@@ -372,12 +432,12 @@ def standard_lasso(y, X, sigma=1, lam_frac=1.):
 
     """
     n, p = X.shape
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0)) / sigma
-    lasso_selector = lasso.gaussian(X, y, lam, sigma)
-    lasso_selector.fit()
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0))
+    lasso_selector = lasso.gaussian(X, y, lam, sigma=sigma)
+    lasso_selector.fit(**solve_args)
     return lasso_selector
 
-def data_carving(y, X, 
+def data_carving(X, y, 
                  lam_frac=2.,
                  sigma=1., 
                  stage_one=None,
@@ -730,11 +790,11 @@ def split_model(y, X,
         stage_two = [i for i in np.arange(n) if i not in stage_one]
     y1, X1 = y[stage_one], X[stage_one]
 
-    first_stage = standard_lasso(y1, X1, sigma=sigma, lam_frac=lam_frac)
+    first_stage = standard_lasso(X1, y1, sigma=sigma, lam_frac=lam_frac)
     return first_stage, stage_one, stage_two
 
-def additive_noise(y, 
-                   X, 
+def additive_noise(X, 
+                   y, 
                    sigma, 
                    lam_frac=1.,
                    perturb_frac=0.2, 
@@ -805,7 +865,7 @@ def additive_noise(y,
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 5000)))).max(0)) * sigma_star
     y_star = y + np.random.standard_normal(n) * gamma
 
-    randomized_lasso = L = standard_lasso(y_star, X, sigma=sigma_star, lam_frac=lam_frac)
+    randomized_lasso = L = standard_lasso(X, y_star, sigma=sigma_star, lam_frac=lam_frac)
     L.fit()
 
     # Form the constraint matrix on (y,y^*)

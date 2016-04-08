@@ -6,6 +6,7 @@ from selection.algorithms.lasso import (lasso,
                                         data_carving, 
                                         instance, 
                                         split_model, 
+                                        standard_lasso,
                                         instance, 
                                         nominal_intervals)
 from regreg.api import identity_quadratic
@@ -138,7 +139,7 @@ def test_data_carving(n=100,
 
         if set(range(s)).issubset(L.active):
             while True:
-                results, L = data_carving(y, X, lam_frac=lam_frac, 
+                results, L = data_carving(X, y, lam_frac=lam_frac, 
                                           sigma=sigma,
                                           stage_one=stage_one,
                                           splitting=True, 
@@ -197,8 +198,8 @@ def test_data_carving_coverage(nsim=200,
 
 def test_intervals(n=100, p=20, s=5):
     t = []
-    X, y, beta = instance(n=n, p=p, s=s)[:3]
-    las = lasso.gaussian(X, y, 4., .25)
+    X, y, beta, active, sigma = instance(n=n, p=p, s=s)
+    las = lasso.gaussian(X, y, 4., sigma=sigma)
     las.fit()
 
     # smoke test
@@ -211,3 +212,27 @@ def test_intervals(n=100, p=20, s=5):
     t.append([(beta[I], L, U) for I, L, U in intervals])
     return t
     
+def test_gaussian_pvals(n=100,
+                        p=200,
+                        s=7,
+                        sigma=5,
+                        rho=0.3,
+                        snr=7.):
+
+    counter = 0
+
+    return_value = []
+
+    while True:
+        counter += 1
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr)
+        L = lasso.gaussian(X, y, 20., sigma=sigma)
+        L.fit()
+        if set(active).issubset(L.active):
+            p = L.summary('twosided')['pval']
+            return [p[j] for j in range(len(p)) if j not in active]
