@@ -188,11 +188,11 @@ class lasso(object):
             H = self.loglike.hessian(self.lasso_solution)[self.active][:,self.active]
             Hinv = np.linalg.inv(H)
             G = self.loglike.gradient(self.lasso_solution)[self.active]
-            delta = Hinv.dot(G)
-            self.onestep_estimator = self._active_soln - delta
+            dbeta = Hinv.dot(G)
+            self.onestep_estimator = self._active_soln - dbeta
             self.active_penalized = self.feature_weights[self.active] != 0
             self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
-                                             (self.active_signs * delta)[self.active_penalized],
+                                             (self.active_signs * dbeta)[self.active_penalized],
                                              covariance=Hinv)
         else:
             self.active = []
