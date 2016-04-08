@@ -156,7 +156,7 @@ class lasso(object):
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
 
-    def fit(self, **solve_args):
+    def fit(self, tol=1.e-12, min_its=50, **solve_args):
         """
         Fit the lasso using `regreg`.
         This sets the attributes `soln`, `onestep` and
@@ -179,7 +179,7 @@ class lasso(object):
 
         penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
         problem = simple_problem(self.loglike, penalty)
-        lasso_solution = problem.solve(**solve_args)
+        lasso_solution = problem.solve(tol=tol, min_its=min_its, **solve_args)
         self.lasso_solution = lasso_solution
         if not np.all(lasso_solution == 0):
             self.active = np.nonzero(lasso_solution != 0)[0]
@@ -196,6 +196,7 @@ class lasso(object):
                                              covariance=Hinv)
         else:
             self.active = []
+            self._constraints = None
         return self.lasso_solution
 
     @property
@@ -241,37 +242,6 @@ class lasso(object):
                                                  ('lower', np.float),
                                                  ('upper', np.float)]))
         return self._intervals
-
-    @property
-    def active_pvalues(self, doc="Tests for active variables adjusted " + \
-        " for selection."):
-        if not hasattr(self, "_pvals"):
-            self._pvals = []
-            C = self.constraints
-            if C is not None:
-                one_step = self.onestep_estimator
-                for i in range(one_step.shape[0]):
-                    eta = np.zeros_like(one_step)
-                    eta[i] = 1.
-                    _pval = C.pivot(eta, one_step)
-                    _pval = 2 * min(_pval, 1 - _pval)
-                    self._pvals.append((self.active[i], _pval))
-        return self._pvals
-
-    @property
-    def onesided_pvalues(self, doc="Onesided tests for active variables adjusted " + \
-        " for selection."):
-        if not hasattr(self, "_onesided_pvals"):
-            self._onesided_pvals = []
-            C = self.constraints
-            if C is not None:
-                one_step = self.onestep_estimator
-                for i in range(one_step.shape[0]):
-                    eta = np.zeros_like(one_step)
-                    eta[i] = self.active_signs[i]
-                    _pval = C.pivot(eta, one_step)
-                    self._onesided_pvals.append((self.active[i], _pval))
-        return self._onesided_pvals
 
     @staticmethod
     def gaussian(X, Y, feature_weights, sigma, quadratic=None):
@@ -712,7 +682,7 @@ def data_carving(X, y,
                        splitting_pvalues,
                        splitting_intervals), L
     else:
-        pvalues = [p for _, p in L.active_pvalues]
+        pvalues = [p for _, p in L.summary("twosided")['pval']]
         intervals = np.array([L.intervals['lower'], L.intervals['upper']]).T
         if splitting:
             splitting_pvalues = np.random.sample(len(pvalues))

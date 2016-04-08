@@ -32,7 +32,8 @@ def test_gaussian(n=100, p=20):
         C = L.constraints
 
         I = L.intervals
-        P = L.active_pvalues
+        S = L.summary('onesided')
+        S = L.summary('twosided')
 
         yield (np.testing.assert_array_less,
                np.dot(L.constraints.linear_part, L._onestep),
@@ -59,7 +60,7 @@ def test_logistic():
             L.constraints.offset)
 
         I = L.intervals
-        P = L.active_pvalues
+        P = L.summary()['pval']
 
         return L, C, I, P
 
@@ -77,7 +78,7 @@ def test_poisson():
         L.constraints.offset)
 
     I = L.intervals
-    P = L.active_pvalues
+    P = L.summary()['pval']
 
     return L, C, I, P
 
@@ -97,7 +98,7 @@ def test_coxph():
         L.constraints.offset)
 
     I = L.intervals
-    P = L.active_pvalues
+    P = L.summary()['pval']
 
     return L, C, I, P
 
@@ -206,7 +207,7 @@ def test_intervals(n=100, p=20, s=5):
 
     las.soln
     las.constraints
-    las.active_pvalues
+    las.summary()
     intervals = las.intervals
     nominal_intervals(las)
     t.append([(beta[I], L, U) for I, L, U in intervals])
@@ -221,8 +222,6 @@ def test_gaussian_pvals(n=100,
 
     counter = 0
 
-    return_value = []
-
     while True:
         counter += 1
         X, y, beta, active, sigma = instance(n=n, 
@@ -233,6 +232,42 @@ def test_gaussian_pvals(n=100,
                                              snr=snr)
         L = lasso.gaussian(X, y, 20., sigma=sigma)
         L.fit()
+        v = {1:'twosided',
+             0:'onesided'}[counter % 2]
         if set(active).issubset(L.active):
-            p = L.summary('twosided')['pval']
-            return [p[j] for j in range(len(p)) if j not in active]
+            S = L.summary(v)
+            return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+        
+def test_logistic_pvals(n=500,
+                        p=200,
+                        s=3,
+                        sigma=2,
+                        rho=0.3,
+                        snr=7.):
+
+    counter = 0
+
+    while True:
+        counter += 1
+
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr)
+
+        z = (y > 0)
+        X = np.hstack([np.ones((n,1)), X])
+
+        active = np.array(active)
+        active += 1
+        active = [0] + list(active)
+
+        L = lasso.logistic(X, z, [0]*1 + [1.2]*p)
+        L.fit()
+        S = L.summary('onesided')
+
+        if set(active).issubset(L.active) > 0:
+            return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+        return []

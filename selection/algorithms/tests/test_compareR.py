@@ -75,8 +75,6 @@ def test_fixed_lambda():
         yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
         yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
 
-        print([p for _, p in L.onesided_pvalues], R_pvals)
-
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step():
     tol = 1.e-2
@@ -214,9 +212,7 @@ def test_coxph():
 
     yield np.testing.assert_equal, L.active + 1, selected_vars
     yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol, False, 'cox coeff'
-    yield np.testing.assert_allclose, [p for _, p in L.active_pvalues], R_pvals, tol, tol, False, 'cox pvalues'
-
-    print (R_pvals, [p for _, p in L.onesided_pvalues[1:]])
+    yield np.testing.assert_allclose, L.summary('twosided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_logistic():
@@ -263,6 +259,6 @@ def test_logistic():
 
     yield np.testing.assert_equal, L.active[1:], selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'logistic coef'
-    yield np.testing.assert_allclose, [p for _, p in L.active_pvalues[1:]], R_pvals, tol, tol, False, 'logistic pvalues'
+    yield np.testing.assert_allclose, L.summary('twosided')['pval'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
 
-    print (R_pvals, [p for _, p in L.onesided_pvalues[1:]])
+
