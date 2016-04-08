@@ -198,8 +198,8 @@ def test_data_carving_coverage(nsim=200,
 
 def test_intervals(n=100, p=20, s=5):
     t = []
-    X, y, beta = instance(n=n, p=p, s=s)[:3]
-    las = lasso.gaussian(X, y, 4., .25)
+    X, y, beta, active, sigma = instance(n=n, p=p, s=s)
+    las = lasso.gaussian(X, y, 4., sigma=sigma)
     las.fit()
 
     # smoke test
@@ -231,7 +231,8 @@ def test_gaussian_pvals(n=100,
                                              sigma=sigma, 
                                              rho=rho, 
                                              snr=snr)
-        print sigma
-        L = standard_lasso(X, y, sigma, lam_frac=1.5)
-        if set(range(s)).issubset(L.active):
-            return [p for j, p in L.active_pvalues if j >= s+1]
+        L = lasso.gaussian(X, y, 20., sigma=sigma)
+        L.fit()
+        if set(active).issubset(L.active):
+            p = L.summary('twosided')['pval']
+            return [p[j] for j in range(len(p)) if j not in active]

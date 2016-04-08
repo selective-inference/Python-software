@@ -400,7 +400,7 @@ def _constraint_from_data(X_E, X_notE, active_signs, E, lam, sigma, R):
     _constraints.covariance *= sigma**2
     return _active_constraints, _inactive_constraints, _constraints
 
-def standard_lasso(X, y, sigma=1, lam_frac=1.):
+def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
     """
     Fit a LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
@@ -421,6 +421,9 @@ def standard_lasso(X, y, sigma=1, lam_frac=1.):
     lam_frac : float
         Multiplier for choice of $\lambda$
 
+    solve_args : keyword args
+        Passed to `regreg.problems.simple_problem.solve`.
+
     Returns
     -------
 
@@ -429,9 +432,9 @@ def standard_lasso(X, y, sigma=1, lam_frac=1.):
 
     """
     n, p = X.shape
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0)) / sigma
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0))
     lasso_selector = lasso.gaussian(X, y, lam, sigma=sigma)
-    lasso_selector.fit()
+    lasso_selector.fit(**solve_args)
     return lasso_selector
 
 def data_carving(X, y, 

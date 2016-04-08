@@ -12,55 +12,74 @@ except ImportError:
 from selection.algorithms.lasso import lasso
 from selection.algorithms.forward_step import forward_step
 
-tol = 1.e-2
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_fixed_lambda():
+    tol = 1.e-5
     for s in [1,1.1]:
+        lam = 7.8
         R_code = """
+
         library(selectiveInference)
         set.seed(43)
         n = 50
         p = 10
         sigma = %f
+
         x = matrix(rnorm(n*p),n,p)
-        x = scale(x,TRUE,TRUE)
-        beta = c(3,2,rep(0,p-2))
+        x=scale(x,TRUE,TRUE)
+
+        beta = c(3,-2,rep(0,p-2))
         y = x%%*%%beta + sigma*rnorm(n)
+
         # first run glmnet
         gfit = glmnet(x,y,standardize=FALSE)
+
         # extract coef for a given lambda; note the 1/n factor!
         # (and we don't save the intercept term)
-        lambda = .8
-        beta_hat = coef(gfit, s=lambda/n, exact=TRUE)[-1]
+        lam = %f
+        beta_hat = coef(gfit, s=lam/n, exact=TRUE)
+        beta_hat = beta_hat[-1]
 
         # compute fixed lambda p-values and selection intervals
-        out = fixedLassoInf(x,y,beta_hat,lambda,sigma=sigma)
-        pval = out$pv
-        vars = out$var
-        """ % s
+        out = fixedLassoInf(x,y,beta_hat,lam,sigma=sigma)
+
+        vlo = out$vlo
+        vup = out$vup
+        sdvar = out$sd
+        pval=out$pv
+        coef0=out$coef0
+        vars=out$vars
+        print(coef(lm(y ~ x[,out$vars])))
+        out 
+        """ % (s, lam)
 
         rpy.r(R_code)
         R_pvals = np.asarray(rpy.r('pval'))
-        sigma = float(np.asarray(rpy.r('sigma')))
         selected_vars = np.asarray(rpy.r('vars'))
+        coef = np.asarray(rpy.r('coef0')).reshape(-1)
+        sdvar = np.asarray(rpy.r('sdvar'))
         y = np.asarray(rpy.r('y'))
         beta_hat = np.asarray(rpy.r('as.numeric(beta_hat)'))
         x = np.asarray(rpy.r('x'))
+        x = np.hstack([np.ones((x.shape[0], 1)), x])
         y = y.reshape(-1)
-        y -= y.mean()
-        x -= x.mean(0)[None,:]
-        L = lasso.gaussian(x, y, 0.8 / sigma**2, sigma=sigma) # gaussian loss is squared error over sigma**2
-        L.fit()
+        #y -= y.mean()
+        L = lasso.gaussian(x, y, lam, sigma=s)
+        L.fit(min_its=200)
 
-        yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol, False, 'fixed lambda, sigma=%f' % s
-        yield np.testing.assert_equal, L.active + 1, selected_vars
-        yield np.testing.assert_allclose, [p for _, p in L.onesided_pvalues], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f' % s
+        S = L.summary('onesided')
+        yield np.testing.assert_allclose, L.fit()[1:], beta_hat, 1.e-2, 1.e-2, False, 'fixed lambda, sigma=%f coef' % s
+        yield np.testing.assert_equal, L.active, selected_vars
+        yield np.testing.assert_allclose, S['pval'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
+        yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
+        yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
 
         print([p for _, p in L.onesided_pvalues], R_pvals)
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step():
+    tol = 1.e-2
     R_code = """
     library(selectiveInference)
     set.seed(33)
@@ -104,6 +123,7 @@ def test_forward_step():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step_all():
+    tol = 1.e-2
     R_code = """
     library(selectiveInference)
     set.seed(33)
@@ -146,6 +166,7 @@ def test_forward_step_all():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_coxph():
+    tol = 1.e-2
     R_code = """
     library(selectiveInference)
     set.seed(43)
@@ -199,6 +220,7 @@ def test_coxph():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_logistic():
+    tol = 1.e-2
     R_code = """
     library(selectiveInference)
     set.seed(43)
