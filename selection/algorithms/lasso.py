@@ -183,20 +183,45 @@ class lasso(object):
         self.lasso_solution = lasso_solution
         if not np.all(lasso_solution == 0):
             self.active = np.nonzero(lasso_solution != 0)[0]
+            self.inactive = lasso_solution == 0
             self.active_signs = np.sign(lasso_solution[self.active])
             self._active_soln = lasso_solution[self.active]
-            H = self.loglike.hessian(self.lasso_solution)[self.active][:,self.active]
-            Hinv = np.linalg.inv(H)
-            G = self.loglike.gradient(self.lasso_solution)[self.active]
-            dbeta = Hinv.dot(G)
-            self.onestep_estimator = self._active_soln - dbeta
+            H = self.loglike.hessian(self.lasso_solution)
+            H_AA = H[self.active][:,self.active]
+            H_AAinv = np.linalg.inv(H_AA)
+            G = self.loglike.gradient(self.lasso_solution)
+            G_A = G[self.active]
+            G_I = G[self.inactive]
+            dbeta_A = H_AAinv.dot(G_A)
+            self.onestep_estimator = self._active_soln - dbeta_A
             self.active_penalized = self.feature_weights[self.active] != 0
             self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
-                                             (self.active_signs * dbeta)[self.active_penalized],
-                                             covariance=Hinv)
+                                             (self.active_signs * dbeta_A)[self.active_penalized],
+                                             covariance=H_AAinv)
+            if self.inactive.sum():
+
+                # inactive constraints
+
+                H_IA = H[self.inactive][:,self.active]
+                H_II = H[self.inactive][:,self.inactive]
+                inactive_cov = H_II - H_IA.dot(H_AAinv).dot(H_IA.T)
+                irrepresentable = H_IA.dot(H_AAinv)
+                inactive_mean = irrepresentable.dot(-G_A)
+                self._inactive_constraints = constraints(np.vstack([np.identity(self.inactive.sum()),
+                                                                    -np.identity(self.inactive.sum())]),
+                                                         np.hstack([self.feature_weights[self.inactive],
+                                                                    self.feature_weights[self.inactive]]),
+                                                         covariance=inactive_cov,
+                                                         mean=inactive_mean)
+                if not self._inactive_constraints(G_I):
+                    warnings.warn('inactive constraint of KKT conditions not satisfied -- perhaps need to solve with more accuracy')
+            else:
+                self._inactive_constraints = None
         else:
             self.active = []
+            self.inactive = np.arange(lasso_solution.shape[0])
             self._constraints = None
+            self._inactive_constraints = None
         return self.lasso_solution
 
     @property
@@ -217,54 +242,189 @@ class lasso(object):
         """
         return self._constraints
 
-    @property
-    def intervals(self):
-        """
-        Intervals for OLS parameters of active variables
-        adjusted for selection.
-
-        """
-        if not hasattr(self, "_intervals"):
-            self._intervals = []
-            C = self.constraints
-            if C is not None:
-                one_step = self.onestep_estimator
-                for i in range(one_step.shape[0]):
-                    eta = np.zeros_like(one_step)
-                    eta[i] = 1.
-                    _interval = C.interval(eta, one_step,
-                                           alpha=self.alpha,
-                                           UMAU=self.UMAU)
-                    self._intervals.append((self.active[i],
-                                            _interval[0], _interval[1]))
-            self._intervals = np.array(self._intervals, 
-                                       np.dtype([('index', np.int),
-                                                 ('lower', np.float),
-                                                 ('upper', np.float)]))
-        return self._intervals
-
     @staticmethod
     def gaussian(X, Y, feature_weights, sigma, quadratic=None):
-        # Should we expect the user to divide the weights by sigma**2 or not?
+        r"""
+        Squared-error LASSO with feature weights.
+
+        Objective function is 
+        $$
+        \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
+        $$
+
+        where $\lambda$ is `feature_weights`.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        Y : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized 
+            features are handled by setting those entries of 
+            `feature_weights` to 0. If `feature_weights` is 
+            a float, then all parameters are penalized equally.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic 
+            coefficient to 0.
+
+        Returns
+        -------
+
+        L : `selection.algorithms.lasso.lasso`
+        
+        """
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
         return lasso(loglike, np.asarray(feature_weights) / sigma**2)
 
     @staticmethod
     def logistic(X, successes, feature_weights, trials=None, quadratic=None):
+        r"""
+        Logistic LASSO with feature weights.
+
+        Objective function is 
+        $$
+        \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+        $$
+
+        where $\ell$ is the negative of the logistic 
+        log-likelihood (half the logistic deviance)
+        and $\lambda$ is `feature_weights`.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        successes : ndarray
+            Shape (n,) -- response vector. An integer number of successes.
+            For data that is proportions, multiply the proportions
+            by the number of trials first.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized 
+            features are handled by setting those entries of 
+            `feature_weights` to 0. If `feature_weights` is 
+            a float, then all parameters are penalized equally.
+
+        trials : ndarray (optional)
+            Number of trials per response, defaults to
+            ones the same shape as Y. 
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic 
+            coefficient to 0.
+
+        Returns
+        -------
+
+        L : `selection.algorithms.lasso.lasso`
+        
+        """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
         return lasso(loglike, feature_weights)
 
     @staticmethod
     def coxph(X, times, status, feature_weights, quadratic=None):
+        r"""
+        Cox proportional hazards LASSO with feature weights.
+
+        Objective function is 
+        $$
+        \beta \mapsto \ell^{\text{Cox}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+        $$
+
+        where $\ell^{\text{Cox}}$ is the 
+        negative of the log of the Cox partial
+        likelihood and $\lambda$ is `feature_weights`.
+
+        Uses Efron's tie breaking method.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        times : ndarray
+            Shape (n,) -- the survival times.
+
+        status : ndarray
+            Shape (n,) -- the censoring status.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized 
+            features are handled by setting those entries of 
+            `feature_weights` to 0. If `feature_weights` is 
+            a float, then all parameters are penalized equally.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic 
+            coefficient to 0.
+
+        Returns
+        -------
+
+        L : `selection.algorithms.lasso.lasso`
+        
+        """
         loglike = coxph(X, times, status, quadratic=quadratic)
         return lasso(loglike, feature_weights)
 
     @staticmethod
     def poisson(X, counts, feature_weights, quadratic=None):
+        r"""
+        Poisson log-linear LASSO with feature weights.
+
+        Objective function is 
+        $$
+        \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+        $$
+
+        where $\ell^{\text{Poisson}}$ is the negative
+        of the log of the Poisson likelihood (half the deviance)
+        and $\lambda$ is `feature_weights`.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        counts : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized 
+            features are handled by setting those entries of 
+            `feature_weights` to 0. If `feature_weights` is 
+            a float, then all parameters are penalized equally.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic 
+            coefficient to 0.
+
+        Returns
+        -------
+
+        L : `selection.algorithms.lasso.lasso`
+        
+        """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
         return lasso(loglike, feature_weights)
 
-    def summary(self, alternative='twosided'):
+    def summary(self, alternative='twosided', alpha=0.05, UMAU=False,
+                compute_intervals=False):
         """
         Summary table for inference adjusted for selection.
 
@@ -281,10 +441,20 @@ class lasso(object):
             Array with one entry per active variable.
             Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
 
+        alpha : float
+            Form (1-alpha)*100% selective confidence intervals.
+
+        UMAU : bool
+            If True, form the UMAU intervals (slow, perhaps less stable).
+
+        compute_intervals : bool
+            Should we compute confidence intervals?
+
         """
 
         if alternative not in ['twosided', 'onesided']:
             raise ValueError("alternative must be one of ['twosided', 'onesided']")
+
 
         result = []
         C = self.constraints
@@ -292,37 +462,43 @@ class lasso(object):
             one_step = self.onestep_estimator
             for i in range(one_step.shape[0]):
                 eta = np.zeros_like(one_step)
-                if self.active_penalized[i]: # use truncated Gaussian
-                    eta[i] = self.active_signs[i]
-                    _alt = {"onesided":'greater',
-                            'twosided':"twosided"}[alternative]
-                    _pval = C.pivot(eta, one_step, alternative=_alt)
-                    _bounds = np.array(C.bounds(eta, one_step))
-                    sd = _bounds[-1]
-                    lower_trunc, est, upper_trunc = sorted(_bounds[:3] * self.active_signs[i])
-                else: # use regular Gaussian for Wald test
-                    sd = np.sqrt(C.covariance[i,i])
-                    Z = one_step[i] / sd
-                    _pval = 2 * ndist.sf(np.fabs(Z))
-                    lower_trunc = -np.inf
-                    upper_trunc = np.inf
+                eta[i] = self.active_signs[i]
+                _alt = {"onesided":'greater',
+                        'twosided':"twosided"}[alternative]
+                _pval = C.pivot(eta, one_step, alternative=_alt)
+                if compute_intervals:
+                    _interval = C.interval(eta, one_step,
+                                           alpha=alpha,
+                                           UMAU=UMAU)
+                    _interval = sorted([_interval[0] * self.active_signs[i],
+                                        _interval[1] * self.active_signs[i]])
+                else:
+                    _interval = [np.nan, np.nan]
+                _bounds = np.array(C.bounds(eta, one_step))
+                sd = _bounds[-1]
+                lower_trunc, est, upper_trunc = sorted(_bounds[:3] * self.active_signs[i])
 
+                
                 result.append((self.active[i],
                                _pval,
                                self.lasso_solution[self.active[i]],
                                one_step[i],
+                               _interval[0],
+                               _interval[1],
                                lower_trunc,
                                upper_trunc,
                                sd))
-
-        return np.array(result,
-                        np.dtype([('variable', np.int),
-                                  ('pval', np.float),
-                                  ('lasso', np.float),
-                                  ('onestep', np.float),
-                                  ('lower_trunc', np.float),
-                                  ('upper_trunc', np.float),
-                                  ('sd', np.float)]))
+                
+        dtype = np.dtype([('variable', np.int),
+                          ('pval', np.float),
+                          ('lasso', np.float),
+                          ('onestep', np.float),
+                          ('lower_confidence', np.float),
+                          ('upper_confidence', np.float),
+                          ('lower_trunc', np.float),
+                          ('upper_trunc', np.float),
+                          ('sd', np.float)])
+        return np.array(result, dtype)
 
 def nominal_intervals(lasso_obj):
     """
