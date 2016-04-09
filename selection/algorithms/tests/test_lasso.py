@@ -31,12 +31,12 @@ def test_gaussian(n=100, p=20):
         L.fit()
         C = L.constraints
 
-        I = L.intervals
-        S = L.summary('onesided')
+        S = L.summary('onesided', compute_intervals=True)
         S = L.summary('twosided')
 
+
         yield (np.testing.assert_array_less,
-               np.dot(L.constraints.linear_part, L._onestep),
+               np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
 
 
@@ -56,13 +56,12 @@ def test_logistic():
         C = L.constraints
 
         np.testing.assert_array_less( \
-            np.dot(L.constraints.linear_part, L._onestep),
+            np.dot(L.constraints.linear_part, L.onestep_estimator),
             L.constraints.offset)
 
-        I = L.intervals
         P = L.summary()['pval']
 
-        return L, C, I, P
+        return L, C, P
 
 def test_poisson():
 
@@ -74,13 +73,12 @@ def test_poisson():
     C = L.constraints
 
     np.testing.assert_array_less( \
-        np.dot(L.constraints.linear_part, L._onestep),
+        np.dot(L.constraints.linear_part, L.onestep_estimator),
         L.constraints.offset)
 
-    I = L.intervals
     P = L.summary()['pval']
 
-    return L, C, I, P
+    return L, C, P
 
 def test_coxph():
 
@@ -94,13 +92,12 @@ def test_coxph():
     C = L.constraints
 
     np.testing.assert_array_less( \
-        np.dot(L.constraints.linear_part, L._onestep),
+        np.dot(L.constraints.linear_part, L.onestep_estimator),
         L.constraints.offset)
 
-    I = L.intervals
     P = L.summary()['pval']
 
-    return L, C, I, P
+    return L, C, P
 
 
 @set_sampling_params_iftrue(True)
@@ -207,11 +204,8 @@ def test_intervals(n=100, p=20, s=5):
 
     las.soln
     las.constraints
-    las.summary()
-    intervals = las.intervals
+    S = las.summary(compute_intervals=True)
     nominal_intervals(las)
-    t.append([(beta[I], L, U) for I, L, U in intervals])
-    return t
     
 def test_gaussian_pvals(n=100,
                         p=200,
