@@ -17,6 +17,7 @@ from copy import copy
 
 import numpy as np
 from scipy.stats import norm as ndist, t as tdist
+from scipy.linalg import block_diag
 
 from regreg.api import (glm, 
                         weighted_l1norm, 
@@ -134,7 +135,9 @@ class lasso(object):
     alpha = 0.05
     UMAU = False
 
-    def __init__(self, loglike, feature_weights):
+    def __init__(self, loglike, 
+                 feature_weights,
+                 covariance_estimator=None):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -149,12 +152,29 @@ class lasso(object):
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
 
+        covariance_estimator : callable (optional)
+            If None, use the parameteric
+            covariance estimate of the selected model.
+
+        Notes
+        -----
+
+        If not None, `covariance_estimator` should 
+        take arguments (X, Y, beta, columns=None)
+        and return an estimate of the covariance of
+        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
+        the unpenalized estimator and the inactive
+        coordinates of the gradient of the likelihood at
+        the unpenalized estimator.
+
         """
 
         self.loglike = loglike
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
+
+        self.covariance_estimator = covariance_estimator
 
     def fit(self, tol=1.e-12, min_its=50, **solve_args):
         """
@@ -189,9 +209,11 @@ class lasso(object):
             H = self.loglike.hessian(self.lasso_solution)
             H_AA = H[self.active][:,self.active]
             H_AAinv = np.linalg.inv(H_AA)
-            G = self.loglike.gradient(self.lasso_solution)
+            Q = self.loglike.quadratic
+            G_Q = Q.objective(self.lasso_solution, 'grad')
+            G = self.loglike.gradient(self.lasso_solution) + G_Q
             G_A = G[self.active]
-            G_I = G[self.inactive]
+            G_I = self._G_I = G[self.inactive]
             dbeta_A = H_AAinv.dot(G_A)
             self.onestep_estimator = self._active_soln - dbeta_A
             self.active_penalized = self.feature_weights[self.active] != 0
@@ -215,6 +237,37 @@ class lasso(object):
                                                          mean=inactive_mean)
                 if not self._inactive_constraints(G_I):
                     warnings.warn('inactive constraint of KKT conditions not satisfied -- perhaps need to solve with more accuracy')
+
+                if self.covariance_estimator is not None:
+
+                    # make full constraints
+
+                    p = penalty.shape[0]
+                    n_active = self._constraints.linear_part.shape[0]
+                    n_inactive = self._inactive_constraints.linear_part.shape[0]
+                    A_full = np.zeros((n_active + n_inactive, p))
+
+                    A_active = A_full[:,:len(self.active)]
+                    A_active[:n_active] = self._constraints.linear_part
+
+                    A_inactive = A_full[:,len(self.active):]
+                    A_inactive[n_active:] = self._inactive_constraints.linear_part
+
+                    b_full = np.hstack([self._constraints.offset,
+                                        self._inactive_constraints.offset])
+                    self._full_constraints = constraints(A_full,
+                                                         b_full)
+                    feasible_point = np.hstack([self.onestep_estimator,G_I])
+
+                    if not self._full_constraints(feasible_point):
+                        warnings.warn('constraints of KKT conditions not satisfied -- ' + 
+                                      'perhaps need to solve with more accuracy')
+
+                    # estimate the covariance
+                    # we don't need the whole covariance matrix, just
+                    # the active columns
+
+
             else:
                 self._inactive_constraints = None
         else:
@@ -243,7 +296,12 @@ class lasso(object):
         return self._constraints
 
     @staticmethod
-    def gaussian(X, Y, feature_weights, sigma, quadratic=None):
+    def gaussian(X, 
+                 Y, 
+                 feature_weights, 
+                 sigma, 
+                 covariance_estimator=None,
+                 quadratic=None):
         r"""
         Squared-error LASSO with feature weights.
 
@@ -269,6 +327,10 @@ class lasso(object):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
+        covariance_estimator : optional
+            If None, use the parameteric
+            covariance estimate of the selected model.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
@@ -279,12 +341,29 @@ class lasso(object):
 
         L : `selection.algorithms.lasso.lasso`
         
+        Notes
+        -----
+
+        If not None, `covariance_estimator` should 
+        take arguments (X, Y, beta, columns=None)
+        and return an estimate of the covariance of
+        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
+        the unpenalized estimator and the inactive
+        coordinates of the gradient of the likelihood at
+        the unpenalized estimator.
+
         """
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
-        return lasso(loglike, np.asarray(feature_weights) / sigma**2)
+        return lasso(loglike, np.asarray(feature_weights) / sigma**2,
+                     covariance_estimator=covariance_estimator)
 
     @staticmethod
-    def logistic(X, successes, feature_weights, trials=None, quadratic=None):
+    def logistic(X, 
+                 successes, 
+                 feature_weights, 
+                 trials=None, 
+                 covariance_estimator=None,
+                 quadratic=None):
         r"""
         Logistic LASSO with feature weights.
 
@@ -318,6 +397,10 @@ class lasso(object):
             Number of trials per response, defaults to
             ones the same shape as Y. 
 
+        covariance_estimator : optional
+            If None, use the parameteric
+            covariance estimate of the selected model.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
@@ -328,12 +411,29 @@ class lasso(object):
 
         L : `selection.algorithms.lasso.lasso`
         
+        Notes
+        -----
+
+        If not None, `covariance_estimator` should 
+        take arguments (X, Y, beta, columns=None)
+        and return an estimate of the covariance of
+        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
+        the unpenalized estimator and the inactive
+        coordinates of the gradient of the likelihood at
+        the unpenalized estimator.
+
         """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
-        return lasso(loglike, feature_weights)
+        return lasso(loglike, feature_weights,
+                     covariance_estimator=covariance_estimator)
 
     @staticmethod
-    def coxph(X, times, status, feature_weights, quadratic=None):
+    def coxph(X, 
+              times, 
+              status, 
+              feature_weights, 
+              covariance_estimator=None,
+              quadratic=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
 
@@ -366,6 +466,10 @@ class lasso(object):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
+        covariance_estimator : optional
+            If None, use the parameteric
+            covariance estimate of the selected model.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
@@ -376,12 +480,28 @@ class lasso(object):
 
         L : `selection.algorithms.lasso.lasso`
         
+        Notes
+        -----
+
+        If not None, `covariance_estimator` should 
+        take arguments (X, Y, beta, columns=None)
+        and return an estimate of the covariance of
+        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
+        the unpenalized estimator and the inactive
+        coordinates of the gradient of the likelihood at
+        the unpenalized estimator.
+
         """
         loglike = coxph(X, times, status, quadratic=quadratic)
-        return lasso(loglike, feature_weights)
+        return lasso(loglike, feature_weights,
+                     covariance_estimator=covariance_estimator)
 
     @staticmethod
-    def poisson(X, counts, feature_weights, quadratic=None):
+    def poisson(X, 
+                counts, 
+                feature_weights, 
+                covariance_estimator=None,
+                quadratic=None):
         r"""
         Poisson log-linear LASSO with feature weights.
 
@@ -409,6 +529,10 @@ class lasso(object):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
+        covariance_estimator : optional
+            If None, use the parameteric
+            covariance estimate of the selected model.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
@@ -419,9 +543,21 @@ class lasso(object):
 
         L : `selection.algorithms.lasso.lasso`
         
+        Notes
+        -----
+
+        If not None, `covariance_estimator` should 
+        take arguments (X, Y, beta, columns=None)
+        and return an estimate of the covariance of
+        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
+        the unpenalized estimator and the inactive
+        coordinates of the gradient of the likelihood at
+        the unpenalized estimator.
+
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
-        return lasso(loglike, feature_weights)
+        return lasso(loglike, feature_weights,
+                     covariance_estimator=covariance_estimator)
 
     def summary(self, alternative='twosided', alpha=0.05, UMAU=False,
                 compute_intervals=False):
