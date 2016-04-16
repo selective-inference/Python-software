@@ -27,7 +27,7 @@ $$
 from copy import copy
 
 import numpy as np
-from regreg.api import glm
+from regreg.api import smooth_atom
 
 class softmax_objective(smooth_atom):
 
