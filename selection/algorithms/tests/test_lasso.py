@@ -33,7 +33,6 @@ def test_gaussian(n=100, p=20):
         C = L.constraints
 
         sandwich = gaussian_sandwich_estimator(X, y)
-        # placeholder
         L = lasso.gaussian(X, y, fw, 1., quadratic=Q, covariance_estimator=sandwich)
         L.fit()
         C = L.constraints
@@ -42,9 +41,9 @@ def test_gaussian(n=100, p=20):
         S = L.summary('twosided')
 
 
-#        yield (np.testing.assert_array_less,
-#               np.dot(L.constraints.linear_part, L.onestep_estimator),
-#               L.constraints.offset)
+        yield (np.testing.assert_array_less,
+               np.dot(L.constraints.linear_part, L.onestep_estimator),
+               L.constraints.offset)
 
 
 
@@ -165,9 +164,9 @@ def test_data_carving(n=100,
                                           coverage=coverage,
                                           compute_intervals=compute_intervals)
                 if set(range(s)).issubset(L.active):
-                    print "succeed"
+                    print("succeed")
                     break
-                print "failed at least once"
+                print("failed at least once")
 
             carve = [r[1] for r in results]
             split = [r[3] for r in results]
@@ -244,6 +243,33 @@ def test_gaussian_pvals(n=100,
                                              rho=rho, 
                                              snr=snr)
         L = lasso.gaussian(X, y, 20., sigma=sigma)
+        L.fit()
+        v = {1:'twosided',
+             0:'onesided'}[counter % 2]
+        if set(active).issubset(L.active):
+            S = L.summary(v)
+            return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+
+def test_gaussian_sandwich_pvals(n=2000,
+                                 p=50,
+                                 s=7,
+                                 sigma=5,
+                                 rho=0.3,
+                                 snr=7.):
+
+    counter = 0
+
+    while True:
+        counter += 1
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr)
+
+        sandwich = gaussian_sandwich_estimator(X, y)
+        L = lasso.gaussian(X, y, 20., sigma=sigma, covariance_estimator=sandwich)
         L.fit()
         v = {1:'twosided',
              0:'onesided'}[counter % 2]

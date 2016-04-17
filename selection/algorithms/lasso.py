@@ -242,35 +242,49 @@ class lasso(object):
 
                     # make full constraints
 
-                    _cov = self.covariance_estimator(self.onestep_estimator,
-                                                     self.active,
-                                                     self.inactive)
+                    _cov_FA = self.covariance_estimator(self.onestep_estimator,
+                                                        self.active,
+                                                        self.inactive)
 
-                    p = penalty.shape[0]
-                    n_active = self._constraints.linear_part.shape[0]
-                    n_inactive = self._inactive_constraints.linear_part.shape[0]
-                    A_full = np.zeros((n_active + n_inactive, p))
+                    _cov_IA = _cov_FA[len(self.active):]
+                    _cov_AA = _cov_FA[:len(self.active)]
 
-                    A_active = A_full[:,:len(self.active)]
-                    A_active[:n_active] = self._constraints.linear_part
+                    # X_{-E}^T(y - X_E \bar{\beta}_E)
 
-                    A_inactive = A_full[:,len(self.active):]
-                    A_inactive[n_active:] = self._inactive_constraints.linear_part
+                    _inactive_score = - G_I - inactive_mean
 
-                    b_full = np.hstack([self._constraints.offset,
-                                        self._inactive_constraints.offset])
-                    self._full_constraints = constraints(A_full,
-                                                         b_full)
-                    feasible_point = np.hstack([self.onestep_estimator,G_I])
+                    _beta_bar = self.onestep_estimator
+                    _indep_linear_part = _cov_IA.dot(np.linalg.inv(_cov_AA))
 
-                    if not self._full_constraints(feasible_point):
-                        warnings.warn('constraints of KKT conditions not satisfied -- ' + 
-                                      'perhaps need to solve with more accuracy')
+                    # we "fix" _nuisance, effectively conditioning on it
+                    _nuisance = _inactive_score - _indep_linear_part.dot(_beta_bar)
+                    _upper_lim = (self.feature_weights[self.inactive] - 
+                                  _nuisance - 
+                                  inactive_mean)
+                    _lower_lim = (_nuisance + 
+                                  self.feature_weights[self.inactive] +
+                                  inactive_mean)
 
-                    # estimate the covariance
-                    # we don't need the whole covariance matrix, just
-                    # the active columns
+                    _upper_linear = _indep_linear_part
+                    _lower_linear = -_indep_linear_part
 
+                    C = self._constraints
+                    _full_linear = np.vstack([C.linear_part,
+                                              _upper_linear,
+                                              _lower_linear])
+
+                    _full_offset = np.hstack([C.offset,
+                                              _upper_lim,
+                                              _lower_lim])
+
+                    self._constraints = constraints(_full_linear,
+                                                    _full_offset,
+                                                    covariance=_cov_AA)
+
+                    if not self._constraints(_beta_bar):
+                        warnings.warn('constraints of KKT conditions on one-step estimator ' + 
+                                      ' not satisfied -- perhaps need to solve with more' + 
+                                      'accuracy')
 
             else:
                 self._inactive_constraints = None
@@ -596,7 +610,6 @@ class lasso(object):
         if alternative not in ['twosided', 'onesided']:
             raise ValueError("alternative must be one of ['twosided', 'onesided']")
 
-
         result = []
         C = self.constraints
         if C is not None:
@@ -619,7 +632,6 @@ class lasso(object):
                 sd = _bounds[-1]
                 lower_trunc, est, upper_trunc = sorted(_bounds[:3] * self.active_signs[i])
 
-                
                 result.append((self.active[i],
                                _pval,
                                self.lasso_solution[self.active[i]],
@@ -660,7 +672,7 @@ def nominal_intervals(lasso_obj):
                                          _interval))
     return unadjusted_intervals
 
-def gaussian_sandwich_estimator(X, Y, B=2000):
+def gaussian_sandwich_estimator(X, Y, B=5000):
     """
     Bootstrap estimator of covariance of 
     
@@ -696,7 +708,7 @@ def gaussian_sandwich_estimator(X, Y, B=2000):
         second_moment_I = second_moment[n_active:]
 
         for b in xrange(B):
-            idx_star = np.random.choice(idx, n, replace=False)
+            idx_star = np.random.choice(idx, n, replace=True)
             X_star = X[idx_star]
             Y_star = Y[idx_star]
             resid_star = Y_star - X_star[:,active].dot(beta)
@@ -707,10 +719,12 @@ def gaussian_sandwich_estimator(X, Y, B=2000):
             second_moment_A += np.multiply.outer(score_star[active], score_star[active])
             second_moment_I += np.multiply.outer(score_star[inactive], score_star[active])
 
-        first_moment /= B
-        second_moment /= B
+        first_moment_norm = first_moment / B
+        second_moment_norm = second_moment / B
 
-        score_cov = second_moment - np.multiply.outer(first_moment, first_moment[active])
+        score_cov = second_moment_norm - np.multiply.outer(first_moment_norm, 
+                                                           first_moment_norm[:n_active])
+
         final_cov = score_cov.dot(Sigma_Ainv)
 
         return final_cov
