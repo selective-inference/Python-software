@@ -160,7 +160,7 @@ class lasso(object):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (X, Y, beta, columns=None)
+        take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
@@ -241,6 +241,10 @@ class lasso(object):
                 if self.covariance_estimator is not None:
 
                     # make full constraints
+
+                    _cov = self.covariance_estimator(self.onestep_estimator,
+                                                     self.active,
+                                                     self.inactive)
 
                     p = penalty.shape[0]
                     n_active = self._constraints.linear_part.shape[0]
@@ -345,8 +349,9 @@ class lasso(object):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (X, Y, beta, columns=None)
-        and return an estimate of the covariance of
+        take arguments (beta, active, inactive)
+        and return an estimate of some of the
+        rows and columns of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
@@ -415,7 +420,7 @@ class lasso(object):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (X, Y, beta, columns=None)
+        take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
@@ -484,7 +489,7 @@ class lasso(object):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (X, Y, beta, columns=None)
+        take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
@@ -547,7 +552,7 @@ class lasso(object):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (X, Y, beta, columns=None)
+        take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
@@ -654,6 +659,63 @@ def nominal_intervals(lasso_obj):
             unadjusted_intervals.append((lasso_obj.active[i], eta, center,
                                          _interval))
     return unadjusted_intervals
+
+def gaussian_sandwich_estimator(X, Y, B=2000):
+    """
+    Bootstrap estimator of covariance of 
+    
+    .. math::
+    
+        (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}_E)
+
+    the OLS estimator of population regression 
+    coefficients and inactive correlation with the
+    OLS residuals.
+
+    Returns
+    -------
+
+    estimator : callable
+        Takes arguments (beta, active, inactive)
+
+    """
+    
+    def _estimator(beta, active, inactive, X=X, Y=Y, B=B):
+        
+        n, p = X.shape
+        n_active = len(active)
+
+        idx = np.arange(n)
+
+        Sigma_A = X[:,active].T.dot(X[:,active])
+        Sigma_Ainv = np.linalg.inv(Sigma_A)
+
+        first_moment = np.zeros(p)
+        second_moment = np.zeros((p, len(active)))
+        second_moment_A = second_moment[:n_active]
+        second_moment_I = second_moment[n_active:]
+
+        for b in xrange(B):
+            idx_star = np.random.choice(idx, n, replace=False)
+            X_star = X[idx_star]
+            Y_star = Y[idx_star]
+            resid_star = Y_star - X_star[:,active].dot(beta)
+            score_star = X_star.T.dot(resid_star)
+            
+            first_moment[:n_active] += score_star[active]
+            first_moment[n_active:] += score_star[inactive]
+            second_moment_A += np.multiply.outer(score_star[active], score_star[active])
+            second_moment_I += np.multiply.outer(score_star[inactive], score_star[active])
+
+        first_moment /= B
+        second_moment /= B
+
+        score_cov = second_moment - np.multiply.outer(first_moment, first_moment[active])
+        final_cov = score_cov.dot(Sigma_Ainv)
+
+        return final_cov
+
+    return _estimator
 
 def _constraint_from_data(X_E, X_notE, active_signs, E, lam, sigma, R):
 

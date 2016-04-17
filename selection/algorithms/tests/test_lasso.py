@@ -8,7 +8,8 @@ from selection.algorithms.lasso import (lasso,
                                         split_model, 
                                         standard_lasso,
                                         instance, 
-                                        nominal_intervals)
+                                        nominal_intervals,
+                                        gaussian_sandwich_estimator)
 from regreg.api import identity_quadratic
 
 from selection.tests.decorators import set_sampling_params_iftrue
@@ -31,8 +32,9 @@ def test_gaussian(n=100, p=20):
         L.fit()
         C = L.constraints
 
+        sandwich = gaussian_sandwich_estimator(X, y)
         # placeholder
-        L = lasso.gaussian(X, y, fw, 1., quadratic=Q, covariance_estimator='sandwich')
+        L = lasso.gaussian(X, y, fw, 1., quadratic=Q, covariance_estimator=sandwich)
         L.fit()
         C = L.constraints
 
