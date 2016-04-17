@@ -317,7 +317,7 @@ class lasso(object):
     def gaussian(X, 
                  Y, 
                  feature_weights, 
-                 sigma, 
+                 sigma=1., 
                  covariance_estimator=None,
                  quadratic=None):
         r"""
@@ -345,7 +345,11 @@ class lasso(object):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
-        covariance_estimator : optional
+        sigma : float (optional)
+            Noise variance. Set to 1 if `covariance_estimator` is not None.
+            This scales the loglikelihood by `sigma**(-2)`.
+
+        covariance_estimator : callable (optional)
             If None, use the parameteric
             covariance estimate of the selected model.
 
@@ -372,6 +376,9 @@ class lasso(object):
         the unpenalized estimator.
 
         """
+        if covariance_estimator is not None:
+            sigma = 1.
+        # TODO should we scale the quadratic here when sigma is not 1?
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
         return lasso(loglike, np.asarray(feature_weights) / sigma**2,
                      covariance_estimator=covariance_estimator)
@@ -672,7 +679,7 @@ def nominal_intervals(lasso_obj):
                                          _interval))
     return unadjusted_intervals
 
-def gaussian_sandwich_estimator(X, Y, B=5000):
+def gaussian_sandwich_estimator(X, Y, B=1000):
     """
     Bootstrap estimator of covariance of 
     
@@ -699,7 +706,7 @@ def gaussian_sandwich_estimator(X, Y, B=5000):
 
         idx = np.arange(n)
 
-        Sigma_A = X[:,active].T.dot(X[:,active])
+        Sigma_A = X[:,active].T.dot(X[:,active]) 
         Sigma_Ainv = np.linalg.inv(Sigma_A)
 
         first_moment = np.zeros(p)

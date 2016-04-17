@@ -250,10 +250,10 @@ def test_gaussian_pvals(n=100,
             S = L.summary(v)
             return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
 
-def test_gaussian_sandwich_pvals(n=200,
-                                 p=50,
+def test_gaussian_sandwich_pvals(n=100,
+                                 p=500,
                                  s=7,
-                                 sigma=5,
+                                 sigma=10,
                                  rho=0.3,
                                  snr=7.):
 
@@ -269,8 +269,9 @@ def test_gaussian_sandwich_pvals(n=200,
                                              snr=snr)
 
         sandwich = gaussian_sandwich_estimator(X, y, B=1000)
-        L = lasso.gaussian(X, y, 20., sigma=sigma, covariance_estimator=sandwich)
+        L = lasso.gaussian(X, y, 5 * sigma, covariance_estimator=sandwich)
         L.fit()
+        print(L.active)
         if set(active).issubset(L.active):
             S = L.summary('twosided')
             return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
