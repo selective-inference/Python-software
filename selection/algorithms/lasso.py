@@ -726,6 +726,7 @@ def gaussian_sandwich_estimator(X, Y, B=5000):
                                                            first_moment_norm[:n_active])
 
         final_cov = score_cov.dot(Sigma_Ainv)
+        final_cov[:n_active][:,:n_active] = Sigma_Ainv.dot(final_cov[:n_active][:,:n_active])
 
         return final_cov
 
