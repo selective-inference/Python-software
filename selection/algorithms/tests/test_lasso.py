@@ -9,7 +9,8 @@ from selection.algorithms.lasso import (lasso,
                                         standard_lasso,
                                         instance, 
                                         nominal_intervals,
-                                        gaussian_sandwich_estimator)
+                                        gaussian_sandwich_estimator,
+                                        gaussian_parametric_estimator)
 from regreg.api import identity_quadratic
 
 from selection.tests.decorators import set_sampling_params_iftrue
@@ -251,7 +252,7 @@ def test_gaussian_pvals(n=100,
             return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
 
 def test_gaussian_sandwich_pvals(n=100,
-                                 p=500,
+                                 p=200,
                                  s=7,
                                  sigma=10,
                                  rho=0.3,
@@ -268,14 +269,36 @@ def test_gaussian_sandwich_pvals(n=100,
                                              rho=rho, 
                                              snr=snr)
 
+        heteroscedastic_error = sigma * np.random.standard_normal(n) * (np.fabs(X[:,-1]) + 0.5)**2
+        heteroscedastic_error += sigma * np.random.standard_normal(n) * (np.fabs(X[:,-2]) + 0.2)**2
+        heteroscedastic_error += sigma * np.random.standard_normal(n) * (np.fabs(X[:,-3]) + 0.5)**2
+        heteroscedastic_error = 0
+        y += heteroscedastic_error
+
+        # two different estimators of variance
         sandwich = gaussian_sandwich_estimator(X, y, B=1000)
-        L = lasso.gaussian(X, y, 5 * sigma, covariance_estimator=sandwich)
-        L.fit()
-        print(L.active)
-        if set(active).issubset(L.active):
-            S = L.summary('twosided')
-            return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+        parametric = gaussian_parametric_estimator(X, y, sigma=None)
+
+        # make sure things work with some unpenalized columns
+
+        feature_weights = np.ones(p) * 5 * sigma
+        feature_weights[10:12] = 0
+        L_P = lasso.gaussian(X, y, feature_weights, covariance_estimator=parametric)
+        L_P.fit()
+
+        if set(active).issubset(L_P.active):
+
+            S = L_P.summary('twosided')
+            P_P = [p for p, v in zip(S['pval'], S['variable']) if v not in active]
         
+            L_S = lasso.gaussian(X, y, feature_weights, covariance_estimator=sandwich)
+            L_S.fit()
+
+            S = L_S.summary('twosided')
+            P_S = [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+
+            return P_P, P_S
+
 def test_logistic_pvals(n=500,
                         p=200,
                         s=3,

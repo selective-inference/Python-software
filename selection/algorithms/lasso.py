@@ -739,6 +739,53 @@ def gaussian_sandwich_estimator(X, Y, B=1000):
 
     return _estimator
 
+def gaussian_parametric_estimator(X, Y, sigma=None):
+    """
+    Parametric estimator of covariance of 
+    
+    .. math::
+    
+        (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}_E)
+
+    the OLS estimator of population regression 
+    coefficients and inactive correlation with the
+    OLS residuals.
+
+    If `sigma` is None, it computes usual unbiased estimate 
+    of variance in Gaussian model and plugs it in, 
+    assuming parametric form is correct.
+
+    Returns
+    -------
+
+    estimator : callable
+        Takes arguments (beta, active, inactive)
+
+    """
+    
+    def _estimator(beta, active, inactive, X=X, Y=Y, sigma=sigma):
+        
+        n, p = X.shape
+        n_active = len(active)
+
+        idx = np.arange(n)
+
+        Sigma_A = X[:,active].T.dot(X[:,active]) 
+        Sigma_Ainv = np.linalg.inv(Sigma_A)
+
+        P_A = X[:,active].dot(Sigma_Ainv).dot(X[:,active].T)
+        _unscaled = np.zeros((p, len(active)))
+        _unscaled[:n_active] = Sigma_Ainv
+
+        if sigma is None:
+            sigma = Y.dot(P_A.dot(Y)) / (X.shape[0] - n_active)
+
+        _unscaled *= sigma**2
+
+        return _unscaled
+
+    return _estimator
+
 def _constraint_from_data(X_E, X_notE, active_signs, E, lam, sigma, R):
 
     n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
