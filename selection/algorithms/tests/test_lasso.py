@@ -272,7 +272,6 @@ def test_gaussian_sandwich_pvals(n=100,
         heteroscedastic_error = sigma * np.random.standard_normal(n) * (np.fabs(X[:,-1]) + 0.5)**2
         heteroscedastic_error += sigma * np.random.standard_normal(n) * (np.fabs(X[:,-2]) + 0.2)**2
         heteroscedastic_error += sigma * np.random.standard_normal(n) * (np.fabs(X[:,-3]) + 0.5)**2
-        heteroscedastic_error = 0
         y += heteroscedastic_error
 
         # two different estimators of variance
