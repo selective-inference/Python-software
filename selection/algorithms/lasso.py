@@ -12,6 +12,8 @@ as described in `post selection LASSO`_.
 
 """
 
+from __future__ import division
+
 import warnings
 from copy import copy
 
@@ -22,13 +24,15 @@ from scipy.linalg import block_diag
 from regreg.api import (glm, 
                         weighted_l1norm, 
                         simple_problem,
-                        coxph)
+                        coxph,
+                        smooth_sum)
 
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
                                  gibbs_test,
                                  stack)
+
 from ..distributions.discrete_family import discrete_family
 
 def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
@@ -257,6 +261,7 @@ class lasso(object):
                     _indep_linear_part = _cov_IA.dot(np.linalg.inv(_cov_AA))
 
                     # we "fix" _nuisance, effectively conditioning on it
+
                     _nuisance = _inactive_score - _indep_linear_part.dot(_beta_bar)
                     _upper_lim = (self.feature_weights[self.inactive] - 
                                   _nuisance - 
@@ -845,22 +850,188 @@ def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
 
     """
     n, p = X.shape
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0))
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0)) * sigma
     lasso_selector = lasso.gaussian(X, y, lam, sigma=sigma)
     lasso_selector.fit(**solve_args)
+
     return lasso_selector
 
-def data_carving(X, y, 
-                 lam_frac=2.,
-                 sigma=1., 
-                 stage_one=None,
+class data_carving(lasso):
+
+    def __init__(self, 
+                 loglike_select,
+                 loglike_inference,
+                 loglike_full,
+                 feature_weights):
+
+        lasso.__init__(self, loglike_select, feature_weights)
+        self.loglike_inference = loglike_inference
+        self.loglike_full = loglike_full
+
+    @classmethod
+    def gaussian(klass,
+                 X, 
+                 Y, 
+                 feature_weights, 
                  split_frac=0.9,
-                 coverage=0.95, 
-                 ndraw=8000,
-                 burnin=2000,
-                 splitting=False,
-                 compute_intervals=True,
-                 UMPU=False):
+                 sigma=1.,
+                 stage_one=None):
+        
+        n, p = X.shape
+        if stage_one is None:
+            splitn = int(n*split_frac)
+            indices = np.arange(n)
+            np.random.shuffle(indices)
+            stage_one = indices[:splitn]
+            stage_two = indices[splitn:]
+        else:
+            stage_two = [i for i in np.arange(n) if i not in stage_one]
+        Y1, X1 = Y[stage_one], X[stage_one]
+        Y2, X2 = Y[stage_two], X[stage_two]
+
+        loglike = glm.gaussian(X, Y, coef=1. / sigma**2)
+        loglike1 = glm.gaussian(X1, Y1, coef=1. / sigma**2)
+        loglike2 = glm.gaussian(X2, Y2, coef=1. / sigma**2)
+
+        return klass(loglike1, loglike2, loglike, np.sqrt(split_frac) * feature_weights / sigma**2)
+
+    def fit(self, tol=1.e-12, min_its=50, **solve_args):
+
+        lasso.fit(self, tol=tol, min_its=min_its, **solve_args)
+
+        n1 = self.loglike.get_data()[0].shape[0]
+        n = self.loglike_full.get_data()[0].shape[0]
+
+        _feature_weights = self.feature_weights.copy()
+        _feature_weights[self.active] = 0.
+        _feature_weights[self.inactive] = np.inf
+        
+        _unpenalized_problem = simple_problem(self.loglike_full, 
+                                              weighted_l1norm(_feature_weights, lagrange=1.))
+        _unpenalized = _unpenalized_problem.solve(**solve_args)
+        _unpenalized_active = _unpenalized[self.active]
+
+        s = len(self.active)
+        H = self.loglike_full.hessian(_unpenalized)
+        H_AA = H[self.active][:,self.active]
+
+        _cov_block = np.linalg.inv(H_AA)
+        _subsample_block = (n * 1. / n1) * _cov_block
+        _carve_cov = np.zeros((2*s,2*s))
+        _carve_cov[:s][:,:s] = _cov_block
+        _carve_cov[s:][:,:s] = _subsample_block
+        _carve_cov[:s][:,s:] = _subsample_block
+        _carve_cov[s:][:,s:] = _subsample_block
+
+        _carve_linear_part = self._constraints.linear_part.dot(np.identity(2*s)[s:])
+        _carve_offset = self._constraints.offset
+        self._carve_constraints = constraints(_carve_linear_part,
+                                              _carve_offset,
+                                              covariance=_carve_cov)
+        self._carve_feasible = np.hstack([_unpenalized_active, self.onestep_estimator])
+        self._unpenalized_active = _unpenalized_active
+        self._carve_invcov = H_AA
+
+    def hypothesis_test(self,
+                        variable,
+                        burnin=2000,
+                        ndraw=8000,
+                        compute_intervals=False):
+
+        if variable not in self.active:
+            raise ValueError('expecting an active variable')
+
+        # shorthand
+        j = list(self.active).index(variable) 
+        twice_s = self._carve_constraints.linear_part.shape[1] 
+        s = sparsity = twice_s / 2                             
+
+        keep = np.ones(s, np.bool)
+        keep[j] = 0
+        conditioning = self._carve_invcov.dot(np.identity(twice_s)[:s])[keep]
+
+        contrast = np.zeros(2*s)
+        contrast[j] = 1.
+
+        conditional_law = self._carve_constraints.conditional(conditioning,
+                                                              conditioning.dot(self._carve_feasible))
+
+        # tilt so that samples are closer to observed values
+        # the multiplier should be the pseudoMLE so that
+        # the observed value is likely 
+
+        observed = (contrast * self._carve_feasible).sum()
+
+        _, _, _, family = gibbs_test(conditional_law,
+                                     self._carve_feasible,
+                                     contrast,
+                                     sigma_known=True,
+                                     white=False,
+                                     ndraw=ndraw,
+                                     burnin=burnin,
+                                     how_often=10,
+                                     UMPU=False)
+
+        pval = family.cdf(0, observed)
+        pval = 2 * min(pval, 1 - pval)
+
+        return pval
+
+class data_splitting(data_carving):
+
+    def fit(self, tol=1.e-12, min_its=50, use_full=True, **solve_args):
+
+        lasso.fit(self, tol=tol, min_its=min_its, **solve_args)
+
+        _feature_weights = self.feature_weights.copy()
+        _feature_weights[self.active] = 0.
+        _feature_weights[self.inactive] = np.inf
+        
+
+        _unpenalized_problem = simple_problem(self.loglike_inference,
+                                              weighted_l1norm(_feature_weights, lagrange=1.))
+        _unpenalized = _unpenalized_problem.solve(**solve_args)
+        self._unpenalized_active = _unpenalized[self.active]
+
+        if use_full:
+            H = self.loglike_full.hessian(_unpenalized)
+            n_inference = self.loglike_inference.data[0].shape[0]
+            n_full = self.loglike_full.data[0].shape[0]
+            H *= (1. * n_inference / n_full)
+        else:
+            H = self.loglike_inference.hessian(_unpenalized)
+
+        H_AA = H[self.active][:,self.active]
+        self._cov_inference = np.linalg.inv(H_AA)
+
+    def hypothesis_test(self,
+                        variable):
+        """
+
+        Wald test for an active variable.
+
+        """
+        if variable not in self.active:
+            raise ValueError('expecting an active variable')
+
+        # shorthand
+        j = list(self.active).index(variable) 
+
+        Z = self._unpenalized_active[j] / np.sqrt(self._cov_inference[j,j])
+
+        return 2 * ndist.sf(np.abs(Z))
+
+def _data_carving_deprec(X, y, 
+                        lam_frac=2.,
+                        sigma=1., 
+                        stage_one=None,
+                        split_frac=0.9,
+                        coverage=0.95, 
+                        ndraw=8000,
+                        burnin=2000,
+                        splitting=False,
+                        compute_intervals=True,
+                        UMPU=False):
 
     """
     Fit a LASSO with a default choice of Lagrange parameter
@@ -927,7 +1098,7 @@ def data_carving(X, y,
     """
 
     n, p = X.shape
-    first_stage, stage_one, stage_two = split_model(y, X,
+    first_stage, stage_one, stage_two = split_model(X, y,
                                                     sigma=sigma,
                                                     lam_frac=lam_frac,
                                                     split_frac=split_frac,
@@ -939,11 +1110,14 @@ def data_carving(X, y,
 
     if splitn < n:
 
+        # JT: this is all about computing constraints for active
+        # variables -- we already have this!
+
         # quantities related to models fit on
         # stage_one and full dataset
 
         y1, X1 = y[stage_one], X[stage_one]
-        X_E = X[:,L.active]
+        X_E = X[:,L.active] 
         X_Ei = np.linalg.pinv(X_E)
         X_E1 = X1[:,L.active]
         X_Ei1 = np.linalg.pinv(X_E1)
@@ -1142,7 +1316,7 @@ def data_carving(X, y,
                        pvalues,
                        intervals), L
             
-def split_model(y, X, 
+def split_model(X, y, 
                 sigma=1, 
                 lam_frac=1.,
                 split_frac=0.9,

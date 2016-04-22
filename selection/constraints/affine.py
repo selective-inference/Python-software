@@ -410,16 +410,44 @@ class constraints(object):
 
         return self._sqrt_cov, self._sqrt_inv, self._rowspace
 
+    def estimate_mean(self, observed):
+        """
+        Softmax estimator based on an observed data point.
+        
+        Makes a whitened copy 
+        then returns softmax estimate.
+
+        TODO: what if self.mean != 0 before hand?
+
+        """
+
+        inverse_map, forward_map, white_con = self.whiten()
+        W = white_con
+        A, b = W.linear_part, W.offset
+
+        white_observed = forward_map(white_observed)
+        slack = A.dot(white_observed)
+        dslack = 1. / (slack + 1.) - 1. / slack
+
+        return inverse_map(white_observed - A.T.dot(dslack))
+
     def whiten(self):
         """
-        Parameters
-        ----------
 
         Return a whitened version of constraints in a different
         basis, and a change of basis matrix.
 
         If `self.covariance` is rank deficient, the change-of
         basis matrix will not be square.
+
+        Returns
+        -------
+
+        inverse_map : callable
+
+        forward_map : callable
+
+        white_con : `constraints`
 
         """
         sqrt_cov, sqrt_inv = self.covariance_factors()[:2]
