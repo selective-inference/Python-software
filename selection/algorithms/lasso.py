@@ -944,10 +944,11 @@ class data_carving(lasso):
         # shorthand
         j = list(self.active).index(variable) 
         twice_s = self._carve_constraints.linear_part.shape[1] 
-        s = sparsity = twice_s / 2                             
+        s = sparsity = int(twice_s / 2)
 
         keep = np.ones(s, np.bool)
         keep[j] = 0
+        print twice_s, s
         conditioning = self._carve_invcov.dot(np.identity(twice_s)[:s])[keep]
 
         contrast = np.zeros(2*s)

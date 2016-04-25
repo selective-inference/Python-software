@@ -4,6 +4,7 @@ import numpy.testing.decorators as dec
 from itertools import product
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
+                                        data_splitting,
                                         instance, 
                                         split_model, 
                                         standard_lasso,
@@ -41,11 +42,9 @@ def test_gaussian(n=100, p=20):
         S = L.summary('onesided', compute_intervals=True)
         S = L.summary('twosided')
 
-
         yield (np.testing.assert_array_less,
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
-
 
 
 def test_logistic():
@@ -61,7 +60,7 @@ def test_logistic():
         L = lasso.logistic(X, Y, 0.1, trials=T)
         L.fit()
 
-        L = lasso.logistic(X, Y, 0.1, trials=T, covariance_estimator='sandwich')
+        L = lasso.logistic(X, Y, 0.1, trials=T)
         L.fit()
 
         C = L.constraints
@@ -82,7 +81,7 @@ def test_poisson():
     L = lasso.poisson(X, Y, 0.1)
     L.fit()
 
-    L = lasso.poisson(X, Y, 0.1, covariance_estimator='sandwich')
+    L = lasso.poisson(X, Y, 0.1)
     L.fit()
 
     C = L.constraints
@@ -105,7 +104,7 @@ def test_coxph():
     L = lasso.coxph(X, T, S, 0.1, quadratic=Q)
     L.fit()
 
-    L = lasso.coxph(X, T, S, 0.1, quadratic=Q, covariance_estimator='sandwich')
+    L = lasso.coxph(X, T, S, 0.1, quadratic=Q)
     L.fit()
 
     C = L.constraints
@@ -149,38 +148,37 @@ def test_data_carving(n=100,
                                              snr=snr, 
                                              df=df)
         mu = np.dot(X, beta)
-        L, stage_one = split_model(y, X, 
+        L, stage_one = split_model(X, y, 
                                    sigma=sigma,
                                    lam_frac=lam_frac,
                                    split_frac=split_frac)[:2]
 
         if set(range(s)).issubset(L.active):
             while True:
-                results, L = data_carving(X, y, lam_frac=lam_frac, 
-                                          sigma=sigma,
-                                          stage_one=stage_one,
-                                          splitting=True, 
-                                          ndraw=ndraw,
-                                          burnin=burnin,
-                                          coverage=coverage,
-                                          compute_intervals=compute_intervals)
-                if set(range(s)).issubset(L.active):
+                DC = data_carving.gaussian(X, y, feature_weights=L.feature_weights,
+                                           sigma=sigma,
+                                           stage_one=stage_one)
+                DC.fit()
+                DS = data_splitting.gaussian(X, y, feature_weights=L.feature_weights,
+                                             sigma=sigma,
+                                             stage_one=stage_one)
+                DS.fit()
+                if set(range(s)).issubset(DC.active):
                     print("succeed")
                     break
                 print("failed at least once")
-
-            carve = [r[1] for r in results]
-            split = [r[3] for r in results]
+                
+            carve = []
+            split = []
+            for var in DC.active:
+                carve.append(DC.hypothesis_test(var, burnin=burnin, ndraw=ndraw))
+                split.append(DS.hypothesis_test(var))
 
             Xa = X[:,L.active]
             truth = np.dot(np.linalg.pinv(Xa), mu) 
 
-            split_coverage = []
-            carve_coverage = []
-            for result, t in zip(results, truth):
-                _, _, ci, _, si = result
-                carve_coverage.append((ci[0] < t) * (t < ci[1]))
-                split_coverage.append((si[0] < t) * (t < si[1]))
+            split_coverage = np.nan
+            carve_coverage = np.nan
 
             TP = s
             FP = L.active.shape[0] - TP
