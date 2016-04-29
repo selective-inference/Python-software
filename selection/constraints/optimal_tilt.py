@@ -1,6 +1,122 @@
 import numpy as np
 import regreg.api as rr
 
+class softmax_conjugate(rr.smooth_atom):
+
+    """
+
+    Objective function that computes the value of 
+
+    .. math..
+
+        \inf_{\mu: A\mu \leq b} \frac{1}{2} \|y-z\|^2_2 + \sum_{i=1}^n \log(1 + 1 /(b_i - a_i^T\mu))
+
+    """
+
+    def __init__(self, affine_con, 
+                 feasible_point,
+                 offset=None,
+                 quadratic=None,
+                 initial=None):
+
+        rr.smooth_atom.__init__(self,
+                                affine_con.linear_part.shape[1],
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial)
+
+        self.affine_con = affine_con
+        self.feasible_point = feasible_point
+
+    def smooth_objective(self, natural_param, mode='func', check_feasibility=False):
+
+        natural_param = self.apply_offset(natural_param)
+
+        value, minimizer = _solve_softmax_problem(natural_param, 
+                                                  self.affine_con,
+                                                  self.feasible_point)
+
+        if mode == 'func':
+            return self.scale(value)
+        elif mode == 'grad':
+            return self.scale(minimizer)
+        elif mode == 'both':
+            return self.scale(value), self.scale(minimizer)
+        else:
+            raise ValueError('mode incorrectly specified')
+
+class softmax(rr.smooth_atom):
+
+    """
+    Softmax function
+
+    .. math..
+
+        \sum_{i=1}^n \log(1 + 1 /(b_i - a_i^T\mu))
+
+    """
+
+    def __init__(self, affine_con, 
+                 offset=None,
+                 quadratic=None,
+                 initial=None):
+
+        rr.smooth_atom.__init__(self,
+                                affine_con.linear_part.shape[1],
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial)
+
+        self.affine_con = affine_con
+
+    def smooth_objective(self, natural_param, mode='func', check_feasibility=False):
+
+        natural_param = self.apply_offset(natural_param)
+        A = self.affine_con.linear_part
+        b = self.affine_con.offset
+
+        slack = b - A.dot(natural_param)
+        if np.any(slack < 0):
+            raise ValueError('point not feasible')
+
+        value = np.log(1 + 1. / slack).sum()
+        grad = -A.T.dot(-1. / slack + 1. / (slack + 1))
+        if mode == 'func':
+            return self.scale(value)
+        elif mode == 'grad':
+            return self.scale(grad)
+        elif mode == 'both':
+            return self.scale(value), self.scale(grad)
+        else:
+            raise ValueError('mode incorrectly specified')
+
+def _solve_softmax_problem(mean_param, affine_con, feasible_point, niter=40, tol=1.e-8):
+
+    loss = softmax(affine_con)
+    A = affine_con.linear_part
+    b = affine_con.offset
+    coefs = feasible_point.copy()
+    step = 1.
+    f_cur = np.inf
+    for i in range(niter):
+        proposed = coefs - step * (coefs - mean_param + loss.smooth_objective(coefs, 'grad'))
+        slack = b - A.dot(proposed) 
+        if i % 5 == 0:
+            step *= 2.
+        if np.any(slack < 0):
+            step *= 0.5
+        else:
+            f_proposed = loss.smooth_objective(proposed, 'func') + 0.5 * ((proposed - mean_param)**2).sum()
+            if f_proposed > f_cur * (1 + tol):
+                step *= 0.5
+            else:
+                coefs = proposed
+                if np.fabs(f_cur - f_proposed) < tol * max([1, f_cur, f_proposed]):
+                    break
+                f_cur = f_proposed
+
+    return f_proposed, coefs
+
 class optimal_tilt(rr.smooth_atom):
 
     """
