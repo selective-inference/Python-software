@@ -26,7 +26,7 @@ from ..distributions.chain import (reversible_markov_chain,
                                    parallel_test,
                                    serial_test)
 
-from .optimal_tilt import optimal_tilt
+from .estimation import optimal_tilt
 
 from ..distributions.discrete_family import discrete_family
 from mpmath import mp
