@@ -1,6 +1,6 @@
 import numpy as np
 from base import selective_loss
-import regreg.api as rr
+from regreg.smooth.glm import logistic_loss
 
 class logistic_Xrandom(selective_loss):
 
@@ -22,7 +22,7 @@ class logistic_Xrandom(selective_loss):
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
 
-        _loss = rr.logistic_loss(self.X, self.y, coef=self.X.shape[0]/2.)
+        _loss = logistic_loss(self.X, self.y, coef=self.X.shape[0]/2.)
 
         return _loss.smooth_objective(beta, mode=mode, check_feasibility=check_feasibility)
 
@@ -49,7 +49,7 @@ class logistic_Xrandom(selective_loss):
         if self.active.any():
             self.inactive = ~active
             X_E = self.X[:, self.active] 
-            loss_E = rr.logistic_loss(X_E, self.y)
+            loss_E = logistic_loss(X_E, self.y)
             self._beta_unpenalized = loss_E.solve(**solve_args)
             self.bootstrap_covariance()
         else:
