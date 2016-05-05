@@ -251,10 +251,10 @@ def test_gaussian_pvals(n=100,
 
 def test_gaussian_sandwich_pvals(n=100,
                                  p=200,
-                                 s=7,
+                                 s=20,
                                  sigma=10,
                                  rho=0.3,
-                                 snr=7.):
+                                 snr=6.):
 
     counter = 0
 
@@ -278,7 +278,7 @@ def test_gaussian_sandwich_pvals(n=100,
 
         # make sure things work with some unpenalized columns
 
-        feature_weights = np.ones(p) * 5 * sigma
+        feature_weights = np.ones(p) * 3 * sigma
         feature_weights[10:12] = 0
         L_P = lasso.gaussian(X, y, feature_weights, covariance_estimator=parametric)
         L_P.fit()
@@ -329,3 +329,19 @@ def test_logistic_pvals(n=500,
         if set(active).issubset(L.active) > 0:
             return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
         return []
+
+def test_adding_quadratic_lasso():
+
+    X, y, beta, active, sigma = instance(n=300, p=200)
+    Q = identity_quadratic(0.01, 0, np.random.standard_normal(X.shape[1]), 0)
+
+    L1 = lasso.gaussian(X, y, 20, quadratic=Q)
+    beta1 = L1.fit(min_its=500, tol=1.e-12)
+    G1 = X[:,L1.active].T.dot(X.dot(beta1) - y) + Q.objective(beta1,'grad')[L1.active]
+    np.testing.assert_allclose(G1 * np.sign(beta1[L1.active]), -20)
+
+    lin = identity_quadratic(0.0, 0, np.random.standard_normal(X.shape[1]), 0)
+    L2 = lasso.gaussian(X, y, 20, quadratic=lin)
+    beta2 = L2.fit(min_its=500, tol=1.e-12)
+    G2 = X[:,L2.active].T.dot(X.dot(beta2) - y) + lin.objective(beta2,'grad')[L2.active]
+    np.testing.assert_allclose(G2 * np.sign(beta2[L2.active]), -20)
