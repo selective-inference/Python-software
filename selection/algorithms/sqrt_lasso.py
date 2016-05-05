@@ -47,10 +47,22 @@ class sqlasso_objective(rr.smooth_atom):
 
     _sqrt2 = np.sqrt(2) # often used constant
 
-    def __init__(self, X, Y):
+    def __init__(self, X, Y, 
+                 quadratic=None, 
+                 initial=None,
+                 offset=None):
+
+        rr.smooth_atom.__init__(self,
+                                X.input_shape,
+                                coef=1.,
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial)
+
         self.X = X
         self.Y = Y
         self._sqerror = rr.squared_error(X, Y)
+
 
     def smooth_objective(self, x, mode='both', check_feasibility=False):
 
@@ -65,7 +77,7 @@ class sqlasso_objective(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-def solve_sqrt_lasso(X, Y, weights=None, initial=None, **solve_kwargs):
+def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, **solve_kwargs):
     """
 
     Solve the square-root LASSO optimization problem:
@@ -95,14 +107,17 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, **solve_kwargs):
     solve_kwargs : dict
         Arguments passed to regreg solver.
 
+    quadratic : `regreg.identity_quadratic`
+        A quadratic term added to objective function.
     """
+
     n, p = X.shape
     if n < p:
-        return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, **solve_kwargs)
+        return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, quadratic=quadratic, **solve_kwargs)
     else:
-        return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, **solve_kwargs)
+        return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, quadratic=quadratic, **solve_kwargs)
 
-def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, **solve_kwargs):
+def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, quadratic=None, **solve_kwargs):
     """
 
     Solve the square-root LASSO optimization problem:
@@ -131,6 +146,9 @@ def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, **solve_kwargs):
 
     solve_kwargs : dict
         Arguments passed to regreg solver.
+
+    quadratic : `regreg.identity_quadratic`
+        A quadratic term added to objective function.
 
     """
     X = rr.astransform(X)
@@ -144,8 +162,8 @@ def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, **solve_kwargs):
     problem = rr.simple_problem(loss, penalty)
     if initial is not None:
         problem.coefs[:] = initial
-    soln = problem.solve(**solve_kwargs)
-    return soln
+    soln = problem.solve(quadratic, **solve_kwargs)
+    return soln, loss
 
 class sqlasso_objective_skinny(rr.smooth_atom):
     """
@@ -209,7 +227,7 @@ class sqlasso_objective_skinny(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, **solve_kwargs):
+def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, **solve_kwargs):
     """
 
     Solve the square-root LASSO optimization problem:
@@ -239,6 +257,9 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, **solve_kwargs):
     solve_kwargs : dict
         Arguments passed to regreg solver.
 
+    quadratic : `regreg.identity_quadratic`
+        A quadratic term added to objective function.
+
     """
     n, p = X.shape
     if weights is None:
@@ -254,8 +275,9 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, **solve_kwargs):
     problem.coefs[-1] = np.linalg.norm(Y)
     if initial is not None:
         problem.coefs[:-1] = initial
-    soln = problem.solve(**solve_kwargs)
-    return soln[:-1]
+    soln = problem.solve(quadratic, **solve_kwargs)
+    _loss = sqlasso_objective(X, Y)
+    return soln[:-1], _loss
 
 class sqrt_lasso(object):
 
@@ -280,7 +302,7 @@ class sqrt_lasso(object):
     alpha = 0.05
     UMAU = False
 
-    def __init__(self, y, X, weights):
+    def __init__(self, y, X, weights, quadratic=None):
 
         """
         Parameters
@@ -308,6 +330,7 @@ class sqrt_lasso(object):
         if np.array(weights).shape == ():
             weights = weights * np.ones(p)
         self.weights = weights
+        self.quadratic = quadratic
 
     def fit(self, **solve_kwargs):
         """
@@ -331,13 +354,17 @@ class sqrt_lasso(object):
         y, X = self.y, self.X
         n, p = self.X.shape
         if n < p:
-            self._soln = solve_sqrt_lasso_skinny(X, y, self.weights, **solve_kwargs)
+            self._soln, self._loss = solve_sqrt_lasso_skinny(X, y, self.weights, quadratic=self.quadratic, **solve_kwargs)
         else:
-            self._soln = solve_sqrt_lasso_fat(X, y, self.weights, **solve_kwargs)
+            self._soln, self._loss = solve_sqrt_lasso_fat(X, y, self.weights, quadratic=self.quadratic, **solve_kwargs)
 
         beta = self._soln
-
+        
         self.active = (beta != 0)             # E
+        self.inactive = ~self.active
+
+        self._subgrad = -(self._loss.smooth_objective(beta, 'grad') + self.quadratic.objective(beta, 'grad'))
+
         nactive = self.active.sum()           # |E|
         if nactive:
             self.z_E = np.sign(beta[self.active]) # z_E
@@ -403,6 +430,7 @@ class sqrt_lasso(object):
             self._active_constraints = self._inactive_constraints = self._constraints = None
 
         self.active = np.nonzero(self.active)[0]
+        self.inactive = np.nonzero(self.inactive)[0]
 
     def compute_sigma_truncation_interval(self, coef, raise_if_outside=False):
         numerator = coef * self.z_E
