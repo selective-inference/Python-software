@@ -55,41 +55,41 @@ def pval(sampler,
     alt = []
 
     if set(nonzero).issubset(active_set):
-        for _, idx in enumerate(active_set):
-            if linear_part is not None:
-                eta = linear_part[:,idx] 
-                keep = np.copy(active)
-                keep[idx] = False
-                L = linear_part[:,keep]
+        for j, idx in enumerate(active_set):
+            if j not in nonzero:
+                if linear_part is not None:
+                    eta = linear_part[:,idx] 
+                    keep = np.copy(active)
+                    keep[idx] = False
+                    L = linear_part[:,keep]
 
-                loss_args['linear_part'] = L.T
-                loss_args['value'] = np.dot(L.T, data)
-                sampler.setup_sampling(data, loss_args=loss_args)
-                samples = sampler.sampling(ndraw=5000, burnin=1000)
-                pop = [np.dot(eta, z) for z, _, in samples]
-                obs = np.dot(eta, data0)
-            else:
-                row, col = nonzero_index(idx, p)
-                print row, col
-                eta = data0[:, row] 
-                sampler.setup_sampling(data, loss_args=loss_args)
-                samples = sampler.sampling(ndraw=5000, burnin=1000)
-                pop = [np.dot(eta, z[:, col]) for z, _, in samples]
-                obs = np.dot(eta, data0[:, col])
+                    loss_args['linear_part'] = L.T
+                    loss_args['value'] = np.dot(L.T, data)
+                    sampler.setup_sampling(data, loss_args=loss_args)
+                    samples = sampler.sampling(ndraw=5000, burnin=1000)
+                    pop = [np.dot(eta, z) for z, _, in samples]
+                    obs = np.dot(eta, data0)
+                else:
+                    row, col = nonzero_index(idx, p)
+                    print row, col
+                    eta = data0[:, row] 
+                    sampler.setup_sampling(data, loss_args=loss_args)
+                    samples = sampler.sampling(ndraw=5000, burnin=1000)
+                    pop = [np.dot(eta, z[:, col]) for z, _, in samples]
+                    obs = np.dot(eta, data0[:, col])
 
-
-            fam = discrete_family(pop, np.ones_like(pop))
-            pval = fam.cdf(0, obs)
-            pval = 2 * min(pval, 1-pval)
-            print "observed: ", obs, "p value: ", pval
-            if pval < 0.0001:
-                print obs, pval, np.percentile(pop, [0.2,0.4,0.6,0.8,1.0]) 
-            if idx in nonzero:
-                alt.append(pval)
-            else:
-                null.append(pval)
-            print 'opt_vars', sampler.penalty.accept_l1_part, sampler.penalty.total_l1_part
-            print 'data', sampler.loss.accept_data, sampler.loss.total_data
+                fam = discrete_family(pop, np.ones_like(pop))
+                pval = fam.cdf(0, obs)
+                pval = 2 * min(pval, 1-pval)
+                print "observed: ", obs, "p value: ", pval
+                if pval < 0.0001:
+                    print obs, pval, np.percentile(pop, [0.2,0.4,0.6,0.8,1.0]) 
+                if idx in nonzero:
+                    alt.append(pval)
+                else:
+                    null.append(pval)
+                print 'opt_vars', sampler.penalty.accept_l1_part, sampler.penalty.total_l1_part
+                print 'data', sampler.loss.accept_data, sampler.loss.total_data
 
     return null, alt
 

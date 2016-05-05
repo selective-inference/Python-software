@@ -1,11 +1,12 @@
 """
 Script to implement selective inference after cross-validation
- 
 
 """
 
 import numpy as np
 from scipy.stats import norm as ndist
+
+from regreg.api import identity_quadratic
 
 from .sqrt_lasso import sqrt_lasso, solve_sqrt_lasso, choose_lambda
 from ..constraints.affine import (constraints, 
@@ -22,7 +23,8 @@ def solve_grid(Y,
                L, 
                mults, 
                post_estimator=False,
-               solve_args={'min_its':10, 'max_its':20}):
+               solve_args={'min_its':10, 'max_its':20},
+               quadratic=None):
     """
     Solve the square-root LASSO over a grid of values.
 
@@ -70,14 +72,16 @@ def solve_grid(Y,
                 (m, solve_sqrt_lasso(X, 
                                      Y, 
                                      m * L * np.ones(p), 
-                                     **solve_args)))
+                                     quadratic=quadratic,
+                                     **solve_args)[0]))
         else:
             results.append(
                 (m, solve_sqrt_lasso(X, 
                                      Y, 
                                      m * L * np.ones(p), 
+                                     quadratic=quadratic,
                                      initial=results[-1][1],
-                                     **solve_args)))
+                                     **solve_args)[0]))
 
         if post_estimator:
             active = np.nonzero(results[-1][1])[0]
@@ -94,7 +98,8 @@ def split_and_validate(Y,
                        L, 
                        mults, 
                        test_frac,
-                       shift_size=0):
+                       shift_size=0,
+                       quadratic=None):
     """
     Choose which lambda minimizes prediction
     over a random split.
@@ -125,13 +130,16 @@ def split_and_validate(Y,
         Affects the size of the window of 
         minimizers to be accepted by later sampling scheme.
 
+    quadratic : `regreg.identity_quadratic`
+        A quadratic term added to objective function.
+
     """
     n, p = X.shape
     training = np.zeros(n, np.bool)
     training[np.random.choice(np.arange(n), size=int(test_frac*n), replace=False)] = 1
     test = ~training
 
-    results = solve_grid(Y[training], X[training], L, mults=mults)
+    results = solve_grid(Y[training], X[training], L, mults=mults, quadratic=quadratic)
     error = []
     for m, coef in results:
         error.append((np.linalg.norm(Y[test] - np.dot(X[test], coef))**2, m))
@@ -231,6 +239,7 @@ def kfold_CV(Y,
 def select_vars_signs(Y, 
                       X, 
                       L, 
+                      quadratic=None,
                       solve_args={'min_its':150}):
 
     """
@@ -267,7 +276,7 @@ def select_vars_signs(Y,
 
     """
     n, p = X.shape
-    SL = sqrt_lasso(Y, X, L * np.ones(p))
+    SL = sqrt_lasso(Y, X, L * np.ones(p), quadratic=quadratic)
     SL.fit(**solve_args)
     return SL.active, SL.z_E, SL
 
@@ -277,7 +286,7 @@ def select_vars_signs(Y,
 ## this class should be closer to examples in `selection.sampling.randomized` so
 ## we can reuse that code
 
-class sqrt_lasso_tuned(object):
+class lasso_tuned(object):
 
     """
     
@@ -297,15 +306,14 @@ class sqrt_lasso_tuned(object):
     def __init__(self, 
                  Y, 
                  X,
-                 mults = np.linspace(1.5,0.5,11),
-                 target_R2 = 0.5,
+                 randomization=ndist,
                  test_frac = 0.9,
+                 mults = np.linspace(1.5,0.5,11),
                  sigma = None,
-                 sd_inter = np.sqrt(0.2),
-                 sd_select = np.sqrt(0.1),
-                 sd_valid = np.sqrt(0.1),
-                 shift_size=1
-                 ):
+                 scale_inter = np.sqrt(0.2),
+                 scale_select = np.sqrt(0.1),
+                 scale_valid = np.sqrt(0.1),
+                 shift_size=1):
 
         """
 
@@ -318,30 +326,28 @@ class sqrt_lasso_tuned(object):
         X : np.float((n,p))
             Design matrix.
 
+        randomization : `scipy.stats.rv_continuous`
+            A random variable with `pdf` and `rvs` methods.
+
         mults: [float]
             Sequence of floats over which to solve square-root LASSO.
-
-        target_R2 : float
-            Rough guess at population $R^2$. Used 
-            to find a rough estimate of noise variance
-            if not known.
 
         sigma : float
             Noise variance, if known. 
 
-        sd_inter : float
+        scale_inter : float
             Proportion of variance (using
             `self.rough_sigma` as baseline) 
             added in randomization
             to Y_inter.
 
-        sd_select : float
+        scale_select : float
             Proportion of variance (using
             `self.rough_sigma` as baseline) 
             added in randomization
             to Y_select.
 
-        sd_valid : float
+        scale_valid : float
             Proportion of variance (using
             `self.rough_sigma` as baseline) 
             added in randomization
@@ -360,26 +366,19 @@ class sqrt_lasso_tuned(object):
         (self.Y, 
          self.X, 
          self.test_frac, 
-         self.mults) = (
+         self.mults,
+         self.randomization) = (
             Y, 
             X, 
             test_frac, 
-            mults)
+            mults,
+            randomization)
 
         self.L = choose_lambda(X)
 
-        self.sd_inter = sd_inter
-        self.sd_select = sd_select
-        self.sd_valid = sd_valid
-
-        # get a rough estimate of sigma
-        # based on a rough population
-        # guess of R^2
-
-        if sigma is None:
-            self.rough_sigma = np.sqrt((1 - target_R2) * np.linalg.norm(Y)**2 / n)
-        else:
-            self.rough_sigma = sigma
+        self.scale_inter = scale_inter
+        self.scale_select = scale_select
+        self.scale_valid = scale_valid
 
         # randomize our response
 
@@ -387,13 +386,8 @@ class sqrt_lasso_tuned(object):
 
         # now find which CV values to accept
 
-        self.accept_values = self.choose_lambda(self.Y_valid, 
+        self.accept_values = self.choose_lambda(self.Y, 
                                                 shift_size=shift_size)
-
-        # TODO: there is a boundary issue above
-        # if we actually randomize lambda
-        # no issue when shift_size=0
-
         self.selected_value = np.median(self.accept_values)
         self.choose_variables()
 
@@ -411,12 +405,13 @@ class sqrt_lasso_tuned(object):
 
         # find response independent of Y_inter, Y_valid, Y_select
 
-        ratio = self.sigma_resid**2 / (self.sd_inter * self.rough_sigma)**2
-        self.Y_indep = Y - ratio * (self.Y_inter - Y)
-        self.betahat_indep = np.dot(np.linalg.pinv(self.X[:,self.active_set]), self.Y_indep)
-        cov_indep = np.linalg.pinv(np.dot(self.X[:,self.active_set].T, self.X[:,self.active_set])) * self.sigma_resid**2 * (1 + ratio)
-        T_indep = np.fabs(self.betahat_indep / np.sqrt(np.diag(cov_indep)))
-        self.pval_indep = 2 * (1 - ndist.cdf(T_indep))
+        # XXX code below is specific to squared error loss -- need to rewrite for logistic
+#         ratio = self.sigma_resid**2 / (self.scale_inter * self.rough_sigma)**2
+#         self.Y_indep = Y - ratio * (self.Y_inter - Y)
+#         self.betahat_indep = np.dot(np.linalg.pinv(self.X[:,self.active_set]), self.Y_indep)
+#         cov_indep = np.linalg.pinv(np.dot(self.X[:,self.active_set].T, self.X[:,self.active_set])) * self.sigma_resid**2 * (1 + ratio)
+#         T_indep = np.fabs(self.betahat_indep / np.sqrt(np.diag(cov_indep)))
+#         self.pval_indep = 2 * (1 - ndist.cdf(T_indep))
 
     def randomize(self):
         """
@@ -429,26 +424,13 @@ class sqrt_lasso_tuned(object):
 
         n = self.Y.shape[0]
 
-        self.Y_sample = self.Y.copy()
-
         # intermediate between 
         # CV and model selection 
         # and the actual data
 
-        self.Y_inter = self.Y_sample + (self.rough_sigma * 
-                                        np.random.standard_normal(n) *
-                                        self.sd_inter)
-
-        # used for choosing CV
-        self.Y_valid = self.Y_inter + (self.rough_sigma * 
-                                    np.random.standard_normal(n) *
-                                    self.sd_valid) 
-
-        # used for choosing variables and signs
-
-        self.Y_select = self.Y_inter + (self.rough_sigma * 
-                                        np.random.standard_normal(n) *
-                                        self.sd_select) 
+        self.Q_inter = identity_quadratic(0, 0, self.randomization.rvs(size=self.X.shape[1]) * self.scale_inter, 0)
+        self.Q_valid = self.Q_inter + identity_quadratic(0, 0, self.randomization.rvs(size=self.X.shape[1]) * self.scale_valid, 0) 
+        self.Q_select = self.Q_inter + identity_quadratic(0, 0, self.randomization.rvs(size=self.X.shape[1]) * self.scale_select, 0)
 
     def choose_lambda(self, Y, shift_size=0):
         """
@@ -478,6 +460,7 @@ class sqrt_lasso_tuned(object):
                                   self.L, 
                                   self.mults, 
                                   self.test_frac,
+                                  quadratic=self.Q_valid,
                                   shift_size=shift_size)
         
     def choose_variables(self):
@@ -492,27 +475,18 @@ class sqrt_lasso_tuned(object):
 
         (self.active_set, 
          self.active_signs,
-         self.SQ) = select_vars_signs(self.Y_select, 
+         self.SQ) = select_vars_signs(self.Y, 
                                       self.X,
-                                      self.selected_value * self.L)
+                                      self.selected_value * self.L,
+                                      quadratic=self.Q_select)
 
-        offset = self.SQ.active_constraints.offset
-        linear_part = - np.identity(offset.shape[0])
-
-        self.X_E = self.X[:,self.active_set]
-        self.OLS_matrix = self.SQ._XEinv
-        self.coef_select = (np.dot(self.OLS_matrix, self.Y_select) *
-                               self.SQ.z_E)
-
-        self.constraints = constraints(linear_part, offset)
-        self.constraints.mean[:] = (np.dot(self.OLS_matrix, self.Y_inter) *
-                                    self.SQ.z_E)
-        self.constraints.covariance[:] = (np.dot(self.OLS_matrix,
-                                          self.OLS_matrix.T) *
-                                    self.rough_sigma**2 * self.sd_select**2)
+        self.inactive_set = self.SQ.inactive
+        self._select_beta = self.SQ._soln
+        self._select_subgrad = self.SQ._subgrad
+        self._select_loss = self.SQ._loss
 
     def step_valid(self,
-                max_trials=10):
+                   max_trials=10):
         """
         Try and move Y_valid
         by accept reject stopping after `max_trials`.
@@ -522,59 +496,85 @@ class sqrt_lasso_tuned(object):
         n, p = X.shape
 
         count = 0
+        Q_old = self.Q_valid
+
         while True:
             count += 1
-            Y_proposal = self.Y_inter + (np.random.standard_normal(n) 
-                                      * self.sd_valid * self.rough_sigma)
+            self.Q_valid = self.Q_inter + identity_quadratic(0, 0, self.randomization.rvs(size=self.X.shape[1]) * 
+                                                             self.scale_valid, 0) 
 
             if len(self.mults) > 0:
-                proposal_value = self.choose_lambda(Y_proposal,
+                proposal_value = self.choose_lambda(self.Y,
                                                     shift_size=0)
 
                 if proposal_value[0] in self.accept_values:
-                    self.Y_valid[:] = Y_proposal
                     break
             else:
-                self.Y_valid[:] = Y_proposal
                 break
 
             if count >= max_trials:
+                self.Q_valid = Q_old
                 break
 
     def step_select(self,
-                    ndraw=500,
-                    fix_residual=True):
+                    step_size=0.1):
         """
         Take `ndraw` Gibbs steps of Y_select
         """
 
-        self.constraints.mean[:] = (np.dot(self.OLS_matrix, self.Y_inter) *
-                                    self.SQ.z_E)
-        Y_current = self.Y_select.copy()
-        sample = sample_from_constraints(self.constraints,
-                                         self.coef_select,
-                                         self.coef_select,
-                                         ndraw=ndraw,
-                                         burnin=0)
-        self.coef_select[:] = sample[-1]
-        Y_hat = np.dot(self.X_E, self.active_signs * self.coef_select)
-        self.Y_select += Y_hat - Y_current
+        L_inter = self.Q_inter.linear_term
+        L_select = self.Q_select.linear_term - L_inter
+ 
+        # self.randomization defaults to Gaussian or beware!
+        G_cur = np.linalg.norm(self._select_loss.smooth_objective(self._select_beta, 'grad') + 
+                               L_inter + self._select_subgrad)**2 / self.scale_select**2
+
+        while True:
+            _beta = self._select_beta.copy()
+            _beta[self.active_set] += (step_size * 
+                                       self.randomization.rvs(size=self.active_set.shape) * 
+                                       self.scale_select)
+
+            _subgrad = self._select_subgrad.copy()
+            _subgrad[self.inactive_set] += (step_size * 
+                                            self.randomization.rvs(size=self.inactive_set.shape) * 
+                                            self.scale_select)
+            if (np.all(np.sign(_beta) == np.sign(self._select_beta))
+                and 
+                np.all(np.fabs(_subgrad) < self.L)):
+                break
+
+        G_proposal = np.linalg.norm(self._select_loss.smooth_objective(_beta, 'grad') + 
+                                    L_inter + _subgrad)**2 / self.scale_select**2
+
+        logMH_ratio = G_proposal - G_cur
+        if np.random.sample() < np.exp(logMH_ratio): # MH step accepted
+            self._select_beta[:] = _beta
+            self._select_subgrad[:] = _subgrad
+
+            self.Q_select.linear_term = -(self._select_loss.smooth_objective(_beta, 'grad') + 
+                                          _subgrad)
 
     def step_inter(self,
                    do_gibbs=True):
-        quadratic_term = (1. / self.sd_inter**2 + 
-                          1. / self.sd_valid**2 + 
-                          1. / self.sd_select**2)
 
-        sampling_sd = self.rough_sigma * 1. / np.sqrt(quadratic_term)
-        sampling_mean = ((self.Y_sample / self.sd_inter**2 + 
-                          self.Y_valid / self.sd_valid**2 + 
-                          self.Y_select / self.sd_select**2) / 
-                         quadratic_term)
-        n = self.Y_sample.shape[0]
+        L_old = self.Q_inter.linear_term
 
-        self.Y_inter[:] = (sampling_mean + np.random.standard_normal(n) * 
-                           sampling_sd)
+        T_IS = self.Q_select.linear_term
+        T_IV = self.Q_valid.linear_term
+
+        quadratic_term = (1. / self.scale_inter**2 + 
+                          1. / self.scale_valid**2 + 
+                          1. / self.scale_select**2)
+
+        linear_term = (T_IS / self.scale_select**2 + T_IV / self.scale_valid**2)
+
+        sampling_sd = 1. / np.sqrt(quadratic_term)
+        sampling_mean = linear_term / quadratic_term
+
+        # self.randomization defaults to scipy.stats.norm -- otherwise beware!
+        self.Q_inter.linear_term = (sampling_mean + self.randomization.rvs(size=T_IS.shape) * 
+                                    sampling_sd)
         
     def step_randomized(self):
         """
@@ -592,29 +592,23 @@ class sqrt_lasso_tuned(object):
 
     def setup_inference(self, which_var): 
         """
-        Setup sampling to sample from
-        null distribution for a given variable.
+        Setup the current gaussian for sampling
 
         TODO: we should use the tilted distribution
         with the selectively unbiased estimate. Will help 
         with intervals.
 
         """
+        p = self.X.shape[1]
+        self._gaussian_mean = np.zeros(p)
+        self._gaussian_cov = np.identity(p)
+        self._invcov_noisy = 0.5 * np.identity(p)
+        self._gaussian_conditional_sqrt = np.sqrt(0.5) * np.identity(p)
         self.which_var = which_var
-        which_idx = list(self.active_set).index(which_var)
-        keep = np.ones(self.active_set.shape[0], np.bool)
-        keep[which_idx] = False
-        self._X_Ej = self.X_E[:,keep]
-        self._X_j = self.X[:,which_var]
-        self._X_Eji = np.linalg.pinv(self._X_Ej)
+        self.null_sample[which_var] = []
+        self._gaussian_stat = np.zeros(p)
+        self._gaussian_obs = self._gaussian_stat.copy()
 
-        self.null_sample.setdefault(which_var, [])
-
-        # maybe we should reinitialize
-        # self.Y_sample[:] = self.Y
-
-        self._mu_j = np.dot(self._X_Ej, 
-                            np.dot(self._X_Eji, self.Y))
     def step_sample(self):
 
         """
@@ -622,21 +616,19 @@ class sqrt_lasso_tuned(object):
         with mean depending on Y_inter.
         """
 
-        n, p = self.X.shape
-        self.null_sample[self.which_var].append((self._X_j * self.Y_sample).sum())
-        sigma_resid = self.sigma_resid
+        p = self.X.shape[1]
+        (mean, 
+         cov, 
+         invcov_noisy, 
+         sampling_sqrt) = (self._gaussian_mean, 
+                           self._gaussian_cov, 
+                           self._invcov_noisy, 
+                           self._gaussian_conditional_sqrt)
 
-        quadratic_term = 1. / sigma_resid**2 + 1. / (self.rough_sigma * self.sd_inter)**2
-        sampling_sd = 1. / np.sqrt(quadratic_term)
-
-        sampling_mean = (self.Y_inter * 1. / 
-                         (self.rough_sigma * self.sd_inter)**2) / quadratic_term
-        
-        uncond_draw = sampling_mean + (np.random.standard_normal(n) * 
-                                       sampling_sd)
-        proj_draw = uncond_draw - np.dot(self._X_Ej,
-                                         np.dot(self._X_Eji, uncond_draw))
-        self.Y_sample[:] = self._mu_j + proj_draw
+        noisy_statistic = self._gaussian_stat - self.Q_inter.linear_term
+        sampling_mean = mean + cov.dot(invcov_noisy).dot(noisy_statistic - mean)
+        self._gaussian_stat = sampling_mean + sampling_sqrt.dot(np.random.standard_normal(p))
+        self.null_sample[self.which_var].append(self._gaussian_stat[self.which_var])
 
     def __iter__(self):
         if not hasattr(self, "which_var"):
@@ -646,7 +638,7 @@ class sqrt_lasso_tuned(object):
 
     def next(self):
         
-        # move randomized responses Y_inter, Y_valid, Y_select
+        # move randomized responses Q_inter, Q_valid, Q_select
         self.step_randomized()
 
         # move Y_sample
@@ -669,7 +661,7 @@ class sqrt_lasso_tuned(object):
 
         family = discrete_family(self.null_sample[which_var][burnin:],
                                  np.ones(ndraw))
-        obs = (self._X_j * self.Y).sum()
+        obs = self._gaussian_obs[self.which_var]
         pval = family.cdf(0, obs)
         pval = 2 * min(pval, 1 - pval)
     
@@ -677,7 +669,7 @@ class sqrt_lasso_tuned(object):
         return pval, self.pval_indep[idx]
 
 
-class sqrt_lasso_tuned_conditional(sqrt_lasso_tuned):
+class lasso_tuned_conditional(lasso_tuned):
 
     """
     Condition on the value of Y_valid -- accomplished by never

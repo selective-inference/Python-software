@@ -3,28 +3,27 @@ from statsmodels.distributions import ECDF
 import matplotlib.pyplot as plt
 
 from selection.algorithms.lasso import instance as data_instance
-from selection.algorithms.cross_valid import sqrt_lasso_tuned, sqrt_lasso_tuned_conditional 
+from selection.algorithms.cross_valid import lasso_tuned, lasso_tuned_conditional 
 from selection.distributions.discrete_family import discrete_family
 
 def test_CV(ndraw=500, sigma_known=True,
-             burnin=100,
-             s=7,
-             rho=0.3,
-             method=sqrt_lasso_tuned,
-             snr=5):
+            burnin=100,
+            s=7,
+            rho=0.3,
+            method=lasso_tuned,
+            snr=5):
     # generate a null and alternative pvalue
     # from a particular model
 
-    X, Y, beta, active, sigma = data_instance(s=s, rho=rho, snr=snr, n=500)
+    X, Y, beta, active, sigma = data_instance(n=500, p=100, s=s, rho=rho, snr=snr)
     if sigma_known:
         sigma = sigma
     else:
         sigma = None
 
-    method_ = method(Y, X, target_R2=0.8, sigma=sigma)
+    method_ = method(Y, X, scale_inter=0.0001, scale_valid=0.0001, scale_select=0.0001)
 
-    if (set(range(7)).issubset(method_.active_set) and
-       method_.active_set.shape[0] > 7):
+    if True: 
         do_null = True
         if do_null:
             which_var = method_.active_set[s] # the first null one
@@ -36,7 +35,7 @@ def test_CV(ndraw=500, sigma_known=True,
             Z = np.array(method_.null_sample[which_var][burnin:])
             family = discrete_family(Z, 
                                      np.ones_like(Z))
-            obs = (method_._X_j * Y).sum()
+            obs = method_._gaussian_obs[which_var]
 
             pval0 = family.cdf(0, obs)
             pval0 = 2 * min(pval0, 1 - pval0)
@@ -50,7 +49,7 @@ def test_CV(ndraw=500, sigma_known=True,
 
         family = discrete_family(method_.null_sample[which_var][burnin:], 
                                  np.ones(ndraw))
-        obs = (method_._X_j * Y).sum()
+        obs = method_._gaussian_obs[which_var]
         pvalA = family.cdf(0, obs)
         pvalA = 2 * min(pvalA, 1 - pvalA)
         return pval0, pvalA, method_
@@ -65,14 +64,14 @@ def plot_fig():
 
     results = {}
     counter = {}
-    linestyle = {sqrt_lasso_tuned:'-',
-                 sqrt_lasso_tuned_conditional:'-.'}
+    linestyle = {lasso_tuned:'-',
+                 lasso_tuned_conditional:'-.'}
 
     results.setdefault('indep', [])
 
     for i in range(200):
         print i
-        for method in [sqrt_lasso_tuned, sqrt_lasso_tuned_conditional]:
+        for method in [lasso_tuned, lasso_tuned_conditional]:
             result = test_CV(ndraw=1000, burnin=500, sigma_known=False,
                               method=method, s=s)
             counter.setdefault(method, 0) 
