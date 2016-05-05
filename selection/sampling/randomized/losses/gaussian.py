@@ -66,7 +66,6 @@ class gaussian_Xfixed(selective_loss):
         self.accept_data = 0
         self.total_data = 0
 
-
         self.sigma = sigma
 
         P = np.dot(linear_part.T, np.linalg.pinv(linear_part).T)
