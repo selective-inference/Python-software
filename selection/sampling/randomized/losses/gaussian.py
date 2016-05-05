@@ -8,6 +8,7 @@ class gaussian_Xfixed(selective_loss):
                  offset=None,
                  quadratic=None,
                  initial=None):
+
         selective_loss.__init__(self, X.shape[1],
                                 coef=coef,
                                 offset=offset,
@@ -16,7 +17,6 @@ class gaussian_Xfixed(selective_loss):
 
         self.X = X
         self.y = y.copy()
-        self._restricted_grad_beta = np.zeros(self.shape)
 
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
