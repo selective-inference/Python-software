@@ -27,6 +27,8 @@ from regreg.api import (glm,
                         coxph,
                         smooth_sum)
 
+from .sqrt_lasso_objective import solve_sqrt_lasso
+
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
                                  sample_from_constraints,
@@ -589,6 +591,97 @@ class lasso(object):
         loglike = glm.poisson(X, counts, quadratic=quadratic)
         return lasso(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
+
+    @staticmethod
+    def sqrt_lasso(X, 
+                   Y, 
+                   feature_weights, 
+                   quadratic=None,
+                   solve_args={}):
+        r"""
+        Use sqrt-LASSO to choose variables.
+
+        Objective function is 
+        $$
+        \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
+        $$
+
+        where $\lambda$ is `feature_weights`. After solving the problem
+        treat as if `gaussian` with implied variance and choice of 
+        multiplier. See arxiv.org/abs/1504.08031 for details.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        Y : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized 
+            features are handled by setting those entries of 
+            `feature_weights` to 0. If `feature_weights` is 
+            a float, then all parameters are penalized equally.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic 
+            coefficient to 0.
+
+        solve_args : dict
+            Arguments passed to solver.
+
+        Returns
+        -------
+
+        L : `selection.algorithms.lasso.lasso`
+        
+        Notes
+        -----
+
+        Unlike other variants of LASSO, this
+        solves the problem on construction as the active
+        set is needed to find equivalent gaussian LASSO.
+
+        Assumes parametric model is correct for inference,
+        i.e. does not accept a covariance estimator.
+
+        """
+
+        n, p = X.shape
+
+        if np.asarray(feature_weights).shape == ():
+            feature_weights = np.ones(p) * feature_weights
+        feature_weights = np.asarray(feature_weights)
+
+        soln = solve_sqrt_lasso(X, Y, weights=feature_weights, quadratic=quadratic, solve_args=solve_args)[0]
+
+        # find active set, and estimate of sigma
+
+        active = (soln != 0)
+        nactive = active.sum()
+        subgrad = np.sign(soln[active]) * feature_weights[active]
+        X_E = X[:,active]
+        X_Ei = np.linalg.pinv(X_E)
+        sigma_E = np.linalg.norm(Y - X_E.dot(X_Ei.dot(Y))) / np.sqrt(n - nactive)
+        
+        multiplier = sigma_E * np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
+                                       
+        # XXX how should quadratic be changed?
+        # multiply everything by sigma_E?
+
+        if quadratic is not None:
+            qc = quadratic.collapsed()
+            qc.coef *= np.sqrt(n - nactive) / sigma_E
+            qc.linear *= np.sqrt(n - nactive) / sigma_E
+            quadratic = qc
+
+        loglike = glm.gaussian(X, Y, coef=1. / sigma_E**2, quadratic=quadratic)
+
+        return lasso(loglike, feature_weights * multiplier / sigma_E**2)
+
 
     def summary(self, alternative='twosided', alpha=0.05, UMAU=False,
                 compute_intervals=False):

@@ -46,6 +46,34 @@ def test_gaussian(n=100, p=20):
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
 
+def test_sqrt_lasso(n=100, p=20):
+
+    y = np.random.standard_normal(n)
+    X = np.random.standard_normal((n,p))
+
+    lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0)) / np.sqrt(n)
+    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
+
+    weights_with_zeros = 0.5*lam_theor * np.ones(p)
+    weights_with_zeros[:3] = 0.
+
+    for q, fw in product([Q, None],
+                         [0.5*lam_theor, weights_with_zeros]):
+
+        L = lasso.sqrt_lasso(X, y, fw, quadratic=Q)
+        L.fit()
+        C = L.constraints
+
+        S = L.summary('onesided', compute_intervals=True)
+        S = L.summary('twosided')
+
+        #yield (np.testing.assert_array_less,
+        #       np.dot(L.constraints.linear_part, L.onestep_estimator),
+        #       L.constraints.offset)
+
+        np.testing.assert_array_less(np.dot(L.constraints.linear_part, L.onestep_estimator),
+                                     L.constraints.offset)
+
 
 def test_logistic():
 
@@ -248,6 +276,39 @@ def test_gaussian_pvals(n=100,
         if set(active).issubset(L.active):
             S = L.summary(v)
             return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+
+def test_sqrt_lasso_pvals(n=100,
+                          p=200,
+                          s=7,
+                          sigma=5,
+                          rho=0.3,
+                          snr=7.):
+
+    counter = 0
+
+    while True:
+        counter += 1
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr)
+
+        lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0)) / np.sqrt(n)
+        Q = identity_quadratic(0.01, 0, np.ones(p), 0)
+
+        weights_with_zeros = 0.5*lam_theor * np.ones(p)
+        weights_with_zeros[:3] = 0.
+
+        L = lasso.sqrt_lasso(X, y, weights_with_zeros)
+        L.fit()
+        v = {1:'twosided',
+             0:'onesided'}[counter % 2]
+        if set(active).issubset(L.active):
+            S = L.summary(v)
+            return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+
 
 def test_gaussian_sandwich_pvals(n=100,
                                  p=200,

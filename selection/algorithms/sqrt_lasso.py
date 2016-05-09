@@ -21,6 +21,8 @@ import regreg.api as rr
 # local
 
 from .lasso import _constraint_from_data
+from .sqrt_lasso_objective import solve_sqrt_lasso
+
 from ..constraints.quasi_affine import (constraints_unknown_sigma, 
                                         constraints as quasi_affine,
                                         orthogonal as orthogonal_QA)
@@ -30,254 +32,7 @@ from ..constraints.affine import (constraints as affine_constraints,
 from ..truncated import find_root
 from ..distributions.discrete_multiparameter import multiparameter_family
 from ..distributions.discrete_family import discrete_family
-from ..sampling.sqrt_lasso import (sample_sqrt_lasso,
-                                   sample_sqrt_lasso_segment)
 
-class sqlasso_objective(rr.smooth_atom):
-    """
-
-    The square-root LASSO objective. Essentially
-    smooth, but singular on 
-    $\{\beta: y=X\beta\}$.
-
-    This singularity is ignored in solving the problem.
-    It might be a problem sometimes?
-
-    """
-
-    _sqrt2 = np.sqrt(2) # often used constant
-
-    def __init__(self, X, Y, 
-                 quadratic=None, 
-                 initial=None,
-                 offset=None):
-
-        rr.smooth_atom.__init__(self,
-                                X.input_shape,
-                                coef=1.,
-                                offset=offset,
-                                quadratic=quadratic,
-                                initial=initial)
-
-        self.X = X
-        self.Y = Y
-        self._sqerror = rr.squared_error(X, Y)
-
-
-    def smooth_objective(self, x, mode='both', check_feasibility=False):
-
-        f, g = self._sqerror.smooth_objective(x, mode='both', check_feasibility=check_feasibility)
-        f = self._sqrt2 * np.sqrt(f)
-        if mode == 'both':
-            return f, g / f
-        elif mode == 'grad':
-            return g / f
-        elif mode == 'func':
-            return f
-        else:
-            raise ValueError("mode incorrectly specified")
-
-def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, **solve_kwargs):
-    """
-
-    Solve the square-root LASSO optimization problem:
-
-    $$
-    \text{minimize}_{\beta} \|y-X\beta\|_2 + D |\beta|,
-    $$
-    where $D$ is the diagonal matrix with weights on its diagonal.
-
-    Parameters
-    ----------
-
-    y : np.float((n,))
-        The target, in the model $y = X\beta$
-
-    X : np.float((n, p))
-        The data, in the model $y = X\beta$
-
-    weights : np.float
-        Coefficients of the L-1 penalty in
-        optimization problem, note that different
-        coordinates can have different coefficients.
-
-    initial : np.float(p)
-        Initial point for optimization.
-
-    solve_kwargs : dict
-        Arguments passed to regreg solver.
-
-    quadratic : `regreg.identity_quadratic`
-        A quadratic term added to objective function.
-    """
-
-    n, p = X.shape
-    if n < p:
-        return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, quadratic=quadratic, **solve_kwargs)
-    else:
-        return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, quadratic=quadratic, **solve_kwargs)
-
-def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, quadratic=None, **solve_kwargs):
-    """
-
-    Solve the square-root LASSO optimization problem:
-
-    $$
-    \text{minimize}_{\beta} \|y-X\beta\|_2 + D |\beta|,
-    $$
-    where $D$ is the diagonal matrix with weights on its diagonal.
-
-    Parameters
-    ----------
-
-    y : np.float((n,))
-        The target, in the model $y = X\beta$
-
-    X : np.float((n, p))
-        The data, in the model $y = X\beta$
-
-    weights : np.float
-        Coefficients of the L-1 penalty in
-        optimization problem, note that different
-        coordinates can have different coefficients.
-
-    initial : np.float(p)
-        Initial point for optimization.
-
-    solve_kwargs : dict
-        Arguments passed to regreg solver.
-
-    quadratic : `regreg.identity_quadratic`
-        A quadratic term added to objective function.
-
-    """
-    X = rr.astransform(X)
-    n, p = X.output_shape[0], X.input_shape[0]
-    if weights is None:
-        lam = choose_lambda(X)
-        weights = lam * np.ones((p,))
-
-    loss = sqlasso_objective(X, Y)
-    penalty = rr.weighted_l1norm(weights, lagrange=1.)
-    problem = rr.simple_problem(loss, penalty)
-    if initial is not None:
-        problem.coefs[:] = initial
-    soln = problem.solve(quadratic, **solve_kwargs)
-    return soln, loss
-
-class sqlasso_objective_skinny(rr.smooth_atom):
-    """
-
-    The square-root LASSO objective on larger parameter space:
-
-    .. math::
-
-         (\beta, \sigma) \mapsto \frac{\|y-X\beta\|_2^2}{\sigma} + \sigma
-
-    """
-
-    def __init__(self, X, Y):
-
-        self.X = rr.astransform(X)
-        n, p = self.X.output_shape[0], self.X.input_shape[0]
-
-        self.Y = Y
-        if n > p:
-            self._quadratic_term = np.dot(X.T, X)
-            self._linear_term = -2 * np.dot(X.T, Y)
-            self._constant_term = (Y**2).sum()
-        self._sqerror = rr.squared_error(X, Y)
-
-    def smooth_objective(self, x, mode='both', check_feasibility=False):
-
-        n, p = self.X.output_shape[0], self.X.input_shape[0]
-
-        beta, sigma = x[:p], x[p]
-
-        if n > p:
-            if mode in ['grad', 'both']:
-                g = np.zeros(p+1)
-                g0 = np.dot(self._quadratic_term, beta) 
-                f1 = self._constant_term + (self._linear_term * beta).sum() + (g0 * beta).sum()
-                g1 = 2 * g0 + self._linear_term
-            else:
-                g1 = np.dot(self._quadratic_term, beta)
-                f1 = self._constant_term + (self._linear_term * beta).sum() + (g1 * beta).sum()
-        else:
-            if mode in ['grad', 'both']:
-                g = np.zeros(p+1)
-                f1, g1 = self._sqerror.smooth_objective(beta, 'both')
-                f1 *= 2; g1 *= 2
-            else:
-                f1 = self._sqerror.smooth_objective(beta, 'func')
-                f1 *= 2
-
-        f = f1 / sigma + sigma
-
-        if mode == 'both':
-            g[:p] = g1 / sigma
-            g[p] = -f1 / sigma**2 + 1.
-            return f, g
-        elif mode == 'grad':
-            g[:p] = g1 / sigma
-            g[p] = -f1 / sigma**2 + 1.
-            return g
-        elif mode == 'func':
-            return f
-        else:
-            raise ValueError("mode incorrectly specified")
-
-def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, **solve_kwargs):
-    """
-
-    Solve the square-root LASSO optimization problem:
-
-    $$
-    \text{minimize}_{\beta} \|y-X\beta\|_2 + D |\beta|,
-    $$
-    where $D$ is the diagonal matrix with weights on its diagonal.
-
-    Parameters
-    ----------
-
-    y : np.float((n,))
-        The target, in the model $y = X\beta$
-
-    X : np.float((n, p))
-        The data, in the model $y = X\beta$
-
-    weights : np.float
-        Coefficients of the L-1 penalty in
-        optimization problem, note that different
-        coordinates can have different coefficients.
-
-    initial : np.float(p)
-        Initial point for optimization.
-
-    solve_kwargs : dict
-        Arguments passed to regreg solver.
-
-    quadratic : `regreg.identity_quadratic`
-        A quadratic term added to objective function.
-
-    """
-    n, p = X.shape
-    if weights is None:
-        lam = choose_lambda(X)
-        weights = lam * np.ones((p,))
-    weight_dict = dict(zip(np.arange(p),
-                           2 * weights))
-    penalty = rr.mixed_lasso(range(p) + [rr.NONNEGATIVE], lagrange=1.,
-                             weights=weight_dict)
-
-    loss = sqlasso_objective_skinny(X, Y)
-    problem = rr.simple_problem(loss, penalty)
-    problem.coefs[-1] = np.linalg.norm(Y)
-    if initial is not None:
-        problem.coefs[:-1] = initial
-    soln = problem.solve(quadratic, **solve_kwargs)
-    _loss = sqlasso_objective(X, Y)
-    return soln[:-1], _loss
 
 class sqrt_lasso(object):
 
@@ -332,7 +87,7 @@ class sqrt_lasso(object):
         self.weights = weights
         self.quadratic = quadratic
 
-    def fit(self, **solve_kwargs):
+    def fit(self, **solve_args):
         """
         Fit the square root LASSO using `regreg`
         using `weights=self.weights.`
@@ -340,7 +95,7 @@ class sqrt_lasso(object):
         Parameters
         ----------
 
-        solve_kwargs : dict
+        solve_args : dict
             Arguments passed to regreg solver.
 
         Returns
@@ -353,10 +108,7 @@ class sqrt_lasso(object):
 
         y, X = self.y, self.X
         n, p = self.X.shape
-        if n < p:
-            self._soln, self._loss = solve_sqrt_lasso_skinny(X, y, self.weights, quadratic=self.quadratic, **solve_kwargs)
-        else:
-            self._soln, self._loss = solve_sqrt_lasso_fat(X, y, self.weights, quadratic=self.quadratic, **solve_kwargs)
+        self._soln, self._loss = solve_sqrt_lasso(X, y, self.weights, quadratic=self.quadratic, **solve_args)
 
         beta = self._soln
         
