@@ -1,6 +1,9 @@
 import numpy as np
 import numpy.testing.decorators as dec
 
+import selection.algorithms.lasso
+reload(selection.algorithms.lasso)
+
 from itertools import product
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
@@ -22,7 +25,7 @@ def test_gaussian(n=100, p=20):
     X = np.random.standard_normal((n,p))
 
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
-    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
+    Q = None # identity_quadratic(0.01, 0, np.ones(p), 0)
 
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
@@ -52,21 +55,22 @@ def test_sqrt_lasso(n=100, p=20):
     X = np.random.standard_normal((n,p))
 
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0)) / np.sqrt(n)
-    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
+    Q = None # identity_quadratic(0.01, 0, np.random.standard_normal(p) / 5., 0)
 
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
 
-    for q, fw in product([Q, None],
+    for q, fw in product([None, Q],
                          [0.5*lam_theor, weights_with_zeros]):
 
-        L = lasso.sqrt_lasso(X, y, fw, quadratic=Q)
-        L.fit()
+        L = lasso.sqrt_lasso(X, y, fw, quadratic=q, solve_args={'min_its':300, 'tol':1.e-12})
+        L.fit(**{'min_its':300, 'tol':1.e-12})
         C = L.constraints
 
         S = L.summary('onesided', compute_intervals=True)
         S = L.summary('twosided')
 
+        print np.linalg.norm(L.soln - L._sqrt_lasso_soln) / np.linalg.norm(L.soln)
         #yield (np.testing.assert_array_less,
         #       np.dot(L.constraints.linear_part, L.onestep_estimator),
         #       L.constraints.offset)
@@ -145,8 +149,7 @@ def test_coxph():
 
     return L, C, P
 
-
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(False)
 def test_data_carving(n=100,
                       p=200,
                       s=7,
@@ -176,48 +179,45 @@ def test_data_carving(n=100,
                                              snr=snr, 
                                              df=df)
         mu = np.dot(X, beta)
-        L, stage_one = split_model(X, y, 
-                                   sigma=sigma,
-                                   lam_frac=lam_frac,
-                                   split_frac=split_frac)[:2]
 
-        if set(range(s)).issubset(L.active):
-            while True:
-                DC = data_carving.gaussian(X, y, feature_weights=L.feature_weights,
-                                           sigma=sigma,
-                                           stage_one=stage_one)
-                DC.fit()
-                DS = data_splitting.gaussian(X, y, feature_weights=L.feature_weights,
-                                             sigma=sigma,
-                                             stage_one=stage_one)
-                DS.fit()
-                if set(range(s)).issubset(DC.active):
-                    print("succeed")
-                    break
-                print("failed at least once")
+        idx = np.arange(n)
+        np.random.shuffle(idx)
+        stage_one = idx[:int(n*split_frac)]
+
+        lam_theor = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 5000)))).max(0)) * sigma
+        DC = data_carving.gaussian(X, y, feature_weights=lam_theor,
+                                   sigma=sigma,
+                                   stage_one=stage_one)
+        DC.fit()
+        DS = data_splitting.gaussian(X, y, feature_weights=lam_theor,
+                                     sigma=sigma,
+                                     stage_one=stage_one)
+        DS.fit()
                 
+        if set(range(s)).issubset(DC.active):
             carve = []
             split = []
             for var in DC.active:
                 carve.append(DC.hypothesis_test(var, burnin=burnin, ndraw=ndraw))
                 split.append(DS.hypothesis_test(var))
 
-            Xa = X[:,L.active]
+            Xa = X[:,DC.active]
             truth = np.dot(np.linalg.pinv(Xa), mu) 
 
             split_coverage = np.nan
             carve_coverage = np.nan
 
             TP = s
-            FP = L.active.shape[0] - TP
+            FP = DC.active.shape[0] - TP
             v = (carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage, TP, FP)
             return_value.append(v)
             break
         else:
-            TP = len(set(L.active).intersection(range(s)))
-            FP = L.active.shape[0] - TP
+            TP = len(set(DC.active).intersection(range(s)))
+            FP = DC.active.shape[0] - TP
             v = (None, None, None, None, counter, np.nan, np.nan, TP, FP)
             return_value.append(v)
+
     return return_value
 
 @set_sampling_params_iftrue(True)
@@ -253,11 +253,11 @@ def test_intervals(n=100, p=20, s=5):
     nominal_intervals(las)
     
 def test_gaussian_pvals(n=100,
-                        p=200,
+                        p=500,
                         s=7,
                         sigma=5,
                         rho=0.3,
-                        snr=7.):
+                        snr=8.):
 
     counter = 0
 
@@ -298,7 +298,7 @@ def test_sqrt_lasso_pvals(n=100,
         lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0)) / np.sqrt(n)
         Q = identity_quadratic(0.01, 0, np.ones(p), 0)
 
-        weights_with_zeros = 0.5*lam_theor * np.ones(p)
+        weights_with_zeros = 0.7*lam_theor * np.ones(p)
         weights_with_zeros[:3] = 0.
 
         L = lasso.sqrt_lasso(X, y, weights_with_zeros)

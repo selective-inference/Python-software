@@ -3,6 +3,8 @@ Module to solve sqrt-LASSO convex program using regreg.
 """
 
 import numpy as np
+from scipy.stats import norm as ndist, chi as chidist
+from scipy.interpolate import interp1d
 
 # regreg http://github.com/regreg 
 
@@ -254,3 +256,89 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, so
     soln = problem.solve(quadratic, **solve_args)
     _loss = sqlasso_objective(X, Y)
     return soln[:-1], _loss
+
+def estimate_sigma(observed, truncated_df, lower_bound, upper_bound, untruncated_df=0, factor=3, npts=50, nsample=2000):
+    """
+
+    Produce an estimate of $\sigma$ from a constrained
+    error sum of squares. The relevant distribution is a
+    scaled $\chi^2$ restricted to $[0,U]$ where $U$ is `upper_bound`.
+
+    Parameters
+    ----------
+
+    observed : float
+        The observed sum of squares.
+
+    truncated_df : float
+        Degrees of freedom of the truncated $\chi^2$ in the sum of squares.
+        The observed sum is assumed to be the sum
+        of an independent untruncated $\chi^2$ and the truncated one.
+
+    lower_bound : float
+        Lower limit of truncation interval.
+    
+    upper_bound : float
+        Upper limit of truncation interval.
+    
+    untruncated_df : float
+        Degrees of freedom of the untruncated $\chi^2$ in the sum of squares.
+
+    factor : float
+        Range of candidate values is 
+        [observed/factor, observed*factor]
+
+    npts : int
+        How many candidate values for interpolator.
+
+    nsample : int
+        How many samples for each expected value
+        of the truncated sum of squares.
+
+    Returns
+    -------
+
+    sigma_hat : np.float
+         Estimate of $\sigma$.
+    
+    """
+
+    if untruncated_df < 50:
+        linear_term = truncated_df**(0.5)
+    else:
+        linear_term = 0
+
+    total_df = untruncated_df + truncated_df
+
+    values = np.linspace(1./factor, factor, npts) * observed
+    expected = 0 * values
+    for i, value in enumerate(values):
+        P_upper = chidist.cdf(upper_bound * np.sqrt(truncated_df) / value, truncated_df) 
+        P_lower = chidist.cdf(lower_bound * np.sqrt(truncated_df) / value, truncated_df) 
+        U = np.random.sample(nsample)
+        if untruncated_df > 0:
+            sample = (chidist.ppf((P_upper - P_lower) * U + P_lower, truncated_df)**2 + chidist.rvs(untruncated_df, size=nsample)**2) * value**2
+        else:
+            sample = (chidist.ppf((P_upper - P_lower) * U + P_lower, truncated_df) * value)**2
+        expected[i] = np.mean(sample) 
+
+        if expected[i] >= 1.5 * (observed**2 * total_df + observed**2 * linear_term):
+            break
+
+    interpolant = interp1d(values, expected + values**2 * linear_term)
+    V = np.linspace(1./factor,factor,10*npts) * observed
+
+    # this solves for the solution to 
+    # expected(sigma) + sqrt(df) * sigma^2 = observed SS * (1 + sqrt(df))
+    # the usual "MAP" estimator would have RHS just observed SS
+    # but this factor seems to correct it.
+    # it is such that if there were no selection it would be 
+    # the usual unbiased estimate
+
+    try:
+        sigma_hat = np.min(V[interpolant(V) >= observed**2 * total_df + observed**2 * linear_term])
+    except ValueError:
+        # no solution, just return observed
+        sigma_hat = observed
+        
+    return sigma_hat

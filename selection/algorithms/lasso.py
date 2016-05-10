@@ -27,7 +27,7 @@ from regreg.api import (glm,
                         coxph,
                         smooth_sum)
 
-from .sqrt_lasso_objective import solve_sqrt_lasso
+from .sqrt_lasso_objective import solve_sqrt_lasso, estimate_sigma
 
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
@@ -207,6 +207,7 @@ class lasso(object):
         problem = simple_problem(self.loglike, penalty)
         lasso_solution = problem.solve(tol=tol, min_its=min_its, **solve_args)
         self.lasso_solution = lasso_solution
+
         if not np.all(lasso_solution == 0):
             self.active = np.nonzero(lasso_solution != 0)[0]
             self.inactive = lasso_solution == 0
@@ -385,7 +386,6 @@ class lasso(object):
         """
         if covariance_estimator is not None:
             sigma = 1.
-        # TODO should we scale the quadratic here when sigma is not 1?
         loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
         return lasso(loglike, np.asarray(feature_weights) / sigma**2,
                      covariance_estimator=covariance_estimator)
@@ -597,7 +597,7 @@ class lasso(object):
                    Y, 
                    feature_weights, 
                    quadratic=None,
-                   solve_args={}):
+                   solve_args={'min_its':200}):
         r"""
         Use sqrt-LASSO to choose variables.
 
@@ -666,22 +666,53 @@ class lasso(object):
         X_E = X[:,active]
         X_Ei = np.linalg.pinv(X_E)
         sigma_E = np.linalg.norm(Y - X_E.dot(X_Ei.dot(Y))) / np.sqrt(n - nactive)
-        
-        multiplier = sigma_E * np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
+        multiplier = np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
                                        
+        # check truncation interval for sigma_E
+
+        # the KKT conditions imply an inequality like
+        # \hat{\sigma}_E \cdot LHS \leq RHS
+
+        penalized = feature_weights[active] != 0
+        D_E = np.sign(soln[active][penalized]) # diagonal matrix of signs
+        LHS = D_E * np.linalg.solve(X_E.T.dot(X_E), subgrad)[penalized]
+        RHS = D_E * X_Ei.dot(Y)[penalized] 
+
+        ratio = RHS / LHS
+
+        group1 = LHS > 0
+        upper_bound = np.inf
+        if group1.sum():
+            upper_bound = min(upper_bound, np.min(ratio[group1])) # necessarily these will have RHS > 0
+            
+        group2 = (LHS <= 0) * (RHS <= 0) # we can ignore the other possibility since this gives a lower bound of 0
+        lower_bound = 0
+        if group2.sum():
+            lower_bound = max(lower_bound, np.max(ratio[group2]))
+
+        upper_bound /= multiplier
+        lower_bound /= multiplier
+
+        sigma_hat = estimate_sigma(sigma_E, 
+                                   n - nactive,
+                                   lower_bound, 
+                                   upper_bound)
+
         # XXX how should quadratic be changed?
         # multiply everything by sigma_E?
 
         if quadratic is not None:
             qc = quadratic.collapsed()
             qc.coef *= np.sqrt(n - nactive) / sigma_E
-            qc.linear *= np.sqrt(n - nactive) / sigma_E
+            qc.linear_term *= np.sqrt(n - nactive) / sigma_E
             quadratic = qc
 
         loglike = glm.gaussian(X, Y, coef=1. / sigma_E**2, quadratic=quadratic)
 
-        return lasso(loglike, feature_weights * multiplier / sigma_E**2)
+        cov_est = gaussian_parametric_estimator(X, Y, sigma=sigma_hat)
 
+        return lasso(loglike, feature_weights * multiplier / sigma_E,
+                     covariance_estimator=cov_est)
 
     def summary(self, alternative='twosided', alpha=0.05, UMAU=False,
                 compute_intervals=False):
@@ -1041,7 +1072,6 @@ class data_carving(lasso):
 
         keep = np.ones(s, np.bool)
         keep[j] = 0
-        print twice_s, s
         conditioning = self._carve_invcov.dot(np.identity(twice_s)[:s])[keep]
 
         contrast = np.zeros(2*s)
