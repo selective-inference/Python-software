@@ -43,7 +43,6 @@ class gaussian_Xfixed(selective_loss):
         """
         Gradient of smooth part restricted to active set
         """
-
         old_data, self.y = self.y, data
         g = self.smooth_objective(beta, 'grad')
         self.y = old_data
@@ -76,6 +75,8 @@ class gaussian_Xfixed(selective_loss):
         self.mean = mean
 
         self.R = I - P
+
+
         self.P = P
         self.linear_part = linear_part
 

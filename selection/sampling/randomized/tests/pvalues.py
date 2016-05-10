@@ -9,7 +9,10 @@ def pval(sampler,
          nonzero):
     """
     The function computes the null and alternative 
-    pvalues for a regularized problem.
+    pvalues for a regularized problem. The null p-values correspond to
+    the coefficients whose corresponding predictors are in the active set
+    but not in the true support (denoted as nonzero in the code) and the
+    alternative are the ones whose corresponding predictors are in the true support.
 
     Parameters:
     -----------
@@ -24,7 +27,7 @@ def pval(sampler,
     To test for the jth parameter, we condition on the 
     C_{\backslash j} y = d_{\backslash j}.
 
-    nonzero: the true underlying nonzero pattern
+    nonzero: the true underlying nonzero pattern (true support)
 
     sigma: noise level of the data, if "None", 
     estimates of covariance is needed
@@ -39,6 +42,7 @@ def pval(sampler,
     data0 = data.copy()
 
     active = sampler.penalty.active_set
+
 
     if linear_part is None:
         off = ~np.identity(p, dtype=bool)

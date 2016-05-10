@@ -2,10 +2,10 @@ import numpy as np
 from base import selective_loss
 from regreg.smooth.glm import logistic_loss
 
-class logistic_Xrandom(selective_loss):
+class logistic_Xrandom_new(selective_loss):
 
-    def __init__(self, X, y, 
-                 coef=1., 
+    def __init__(self, X, y,
+                 coef=1.,
                  offset=None,
                  quadratic=None,
                  initial=None):
@@ -32,9 +32,9 @@ class logistic_Xrandom(selective_loss):
 
     def fit_E(self, active, solve_args={'min_its':50, 'tol':1.e-10}):
         """
-        Fits the logistic regression after seeing the active set, without penalty. 
+        Fits the logistic regression after seeing the active set, without penalty.
         Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
-        
+
         Parameters:
         ----------
         active: the active set from fitting the logistic lasso
@@ -49,7 +49,7 @@ class logistic_Xrandom(selective_loss):
         self.active = active
         if self.active.any():
             self.inactive = ~active
-            X_E = self.X[:, self.active] 
+            X_E = self.X[:, self.active]
             loss_E = logistic_loss(X_E, self.y)
             self._beta_unpenalized = loss_E.solve(**solve_args)
             self.bootstrap_covariance()
@@ -60,9 +60,9 @@ class logistic_Xrandom(selective_loss):
     def bootstrap_covariance(self):
         """
         Bootstrap the covariance matrix of the sufficient statistic $X^T y$,
-        through the use of the restricted unpenalized solution to the 
+        through the use of the restricted unpenalized solution to the
         problem $\bar{beta}_E$.
-        
+
         Set the "_cov" field to be the bootstrapped covariance matrix.
         """
         if not hasattr(self, "_beta_unpenalized"):
@@ -82,7 +82,7 @@ class logistic_Xrandom(selective_loss):
 
             _mean_cum = 0
             self._cov = np.zeros((p, p))
-            
+
             for _ in range(nsample):
                 indices = np.random.choice(n, size=(n,), replace=True)
                 y_star = y[indices]
@@ -110,7 +110,7 @@ class logistic_Xrandom(selective_loss):
         if not hasattr(self, "_cov"):
             self.bootstrap_covariance()
 
-        g = -(data - np.dot(self._cov, beta)) 
+        g = -(data - np.dot(self._cov, beta))
         return g
 
     def hessian(self, data, beta):
@@ -129,12 +129,12 @@ class logistic_Xrandom(selective_loss):
 
         Parameters:
         ----------
-        data: 
+        data:
         The subject of the sampling. In this case the gradient of loss at 0.
 
         mean: \beta^0_E
 
-        sigma: default to None in logistic lasso 
+        sigma: default to None in logistic lasso
 
         linear_part: C
 
@@ -148,10 +148,10 @@ class logistic_Xrandom(selective_loss):
         I = np.identity(linear_part.shape[1])
 
 
-        self.data = data 
+        self.data = data
         self.mean = mean
-        
-        
+
+
         self.R = I - P
         #print 'nonzeros in R', np.count_nonzero(self.R)
         self.P = P
@@ -164,10 +164,10 @@ class logistic_Xrandom(selective_loss):
 
         n, p = self.X.shape
         stepsize = 1. / np.sqrt(p)
-        #new = data + stepsize * np.dot(self.R, 
+        #new = data + stepsize * np.dot(self.R,
         #                               np.dot(self.L, np.random.standard_normal(p)))
-        
-        new = data + stepsize * np.dot(self.R, 
+
+        new = data + stepsize * np.dot(self.R,
                                        np.random.standard_normal(p))
         #print 'data differ',  np.count_nonzero(data-new)
         log_transition_p = self.logpdf(new) - self.logpdf(data)

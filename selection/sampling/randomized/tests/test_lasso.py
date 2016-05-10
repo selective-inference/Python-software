@@ -1,14 +1,14 @@
 import numpy as np
-from scipy.stats import laplace, probplot
+from scipy.stats import laplace, probplot, uniform
 
 from selection.algorithms.lasso import instance
 import selection.sampling.randomized.api as randomized
 from pvalues import pval
+from matplotlib import pyplot as plt
 
-
-def test_lasso(s=5, n=100, p=50):
+def test_lasso(s=5, n=100, p=30):
     
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.)
+    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0.2)
     lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
@@ -29,7 +29,11 @@ def test_lasso(s=5, n=100, p=50):
 
     loss_args = {'mean':np.zeros(n), 
                  'sigma':sigma}
-    null, alt = pval(sampler1, 
+
+    ##
+
+
+    null, alt = pval(sampler1,
                      loss_args,
                      X, y,
                      nonzero)
@@ -37,13 +41,13 @@ def test_lasso(s=5, n=100, p=50):
     return null, alt
 
 if __name__ == "__main__":
-    
+
     P0, PA = [], []
-    for i in range(100):
+    for i in range(5):
         print "iteration", i
-        p0, pA = main()
+        p0, pA = test_lasso()
         P0.extend(p0); PA.extend(pA)
 
     print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
-    probplot(P0, dist=stats.uniform, sparams=(0,1), plot=plt, fit=True)
+    probplot(P0, dist=uniform, sparams=(0,1), plot=plt, fit=True)
     plt.show()
