@@ -182,7 +182,7 @@ class lasso(object):
 
         self.covariance_estimator = covariance_estimator
 
-    def fit(self, tol=1.e-12, min_its=50, **solve_args):
+    def fit(self, lasso_solution=None, solve_args={'tol':1.e-12, 'min_its':50}):
         """
         Fit the lasso using `regreg`.
         This sets the attributes `soln`, `onestep` and
@@ -191,6 +191,13 @@ class lasso(object):
 
         Parameters
         ----------
+
+        lasso_solution : optional
+
+             If not None, this is taken to be the solution
+             of the optimization problem. No checks
+             are done, though the implied affine
+             constraints will generally not be satisfied.
 
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
@@ -201,14 +208,28 @@ class lasso(object):
         soln : np.float
              Solution to lasso.
              
+        Notes
+        -----
+
+        If `self` already has an attribute `lasso_solution`
+        this will be taken to be the solution and 
+        no optimization problem will be solved. Supplying
+        the optional argument `lasso_solution` will
+        overwrite `self`'s `lasso_solution`.
+
         """
 
-        penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
-        problem = simple_problem(self.loglike, penalty)
-        lasso_solution = problem.solve(tol=tol, min_its=min_its, **solve_args)
-        self.lasso_solution = lasso_solution
+        if lasso_solution is None and not hasattr(self, "lasso_solution"):
+            penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
+            problem = simple_problem(self.loglike, penalty)
+            self.lasso_solution = problem.solve(**solve_args)
+        elif lasso_solution is not None:
+            self.lasso_solution = lasso_solution
+
+        lasso_solution = self.lasso_solution # shorthand after setting it correctly above
 
         if not np.all(lasso_solution == 0):
+
             self.active = np.nonzero(lasso_solution != 0)[0]
             self.inactive = lasso_solution == 0
             self.active_signs = np.sign(lasso_solution[self.active])
@@ -656,6 +677,8 @@ class lasso(object):
             feature_weights = np.ones(p) * feature_weights
         feature_weights = np.asarray(feature_weights)
 
+        # TODO: refits sqrt lasso more than once -- make an override for avoiding refitting?
+
         soln = solve_sqrt_lasso(X, Y, weights=feature_weights, quadratic=quadratic, solve_args=solve_args)[0]
 
         # find active set, and estimate of sigma
@@ -693,10 +716,12 @@ class lasso(object):
         upper_bound /= multiplier
         lower_bound /= multiplier
 
-        sigma_hat = estimate_sigma(sigma_E, 
-                                   n - nactive,
-                                   lower_bound, 
-                                   upper_bound)
+        _sigma_estimator_args = (sigma_E, 
+                                 n - nactive,
+                                 lower_bound, 
+                                 upper_bound)
+
+        _sigma_hat = estimate_sigma(*_sigma_estimator_args)
 
         # XXX how should quadratic be changed?
         # multiply everything by sigma_E?
@@ -707,12 +732,21 @@ class lasso(object):
             qc.linear_term *= np.sqrt(n - nactive) / sigma_E
             quadratic = qc
 
-        loglike = glm.gaussian(X, Y, coef=1. / sigma_E**2, quadratic=quadratic)
+        loglike = glm.gaussian(X, Y, quadratic=quadratic)
 
-        cov_est = gaussian_parametric_estimator(X, Y, sigma=sigma_hat)
+        cov_est = gaussian_parametric_estimator(X, Y, sigma=_sigma_hat)
 
-        return lasso(loglike, feature_weights * multiplier / sigma_E,
-                     covariance_estimator=cov_est)
+        L = lasso(loglike, feature_weights * multiplier * sigma_E,
+                  covariance_estimator=cov_est)
+
+        # these arguments are reused for data carving
+
+        L._sigma_hat = _sigma_hat
+        L._sigma_estimator_args = _sigma_estimator_args
+        L._weight_multiplier = multiplier * sigma_E
+        L.lasso_solution = soln
+
+        return L
 
     def summary(self, alternative='twosided', alpha=0.05, UMAU=False,
                 compute_intervals=False):
@@ -982,13 +1016,27 @@ def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
 
 class data_carving(lasso):
 
+    """
+
+    Notes
+    -----
+
+    Even if a covariance estimator is supplied,
+    we assume that we can drop inactive constraints, 
+    i.e. the same (asymptotic) independence that
+    holds for parametric model is assumed to hold here
+    as well.
+
+    """
+
     def __init__(self, 
                  loglike_select,
                  loglike_inference,
                  loglike_full,
-                 feature_weights):
+                 feature_weights,
+                 covariance_estimator=None):
 
-        lasso.__init__(self, loglike_select, feature_weights)
+        lasso.__init__(self, loglike_select, feature_weights, covariance_estimator=covariance_estimator)
         self.loglike_inference = loglike_inference
         self.loglike_full = loglike_full
 
@@ -1017,11 +1065,94 @@ class data_carving(lasso):
         loglike1 = glm.gaussian(X1, Y1, coef=1. / sigma**2)
         loglike2 = glm.gaussian(X2, Y2, coef=1. / sigma**2)
 
-        return klass(loglike1, loglike2, loglike, np.sqrt(split_frac) * feature_weights / sigma**2)
+        return klass(loglike1, loglike2, loglike, feature_weights / sigma**2)
 
-    def fit(self, tol=1.e-12, min_its=50, **solve_args):
+    @classmethod
+    def logistic(klass,
+                 X, 
+                 successes,
+                 feature_weights, 
+                 trials=None,
+                 split_frac=0.9,
+                 sigma=1.,
+                 stage_one=None):
+        
+        n, p = X.shape
+        if stage_one is None:
+            splitn = int(n*split_frac)
+            indices = np.arange(n)
+            np.random.shuffle(indices)
+            stage_one = indices[:splitn]
+            stage_two = indices[splitn:]
+        else:
+            stage_two = [i for i in np.arange(n) if i not in stage_one]
 
-        lasso.fit(self, tol=tol, min_its=min_its, **solve_args)
+        if trials is None:
+            trials = np.ones_like(successes)
+
+        successes1, X1, trials1 = successes[stage_one], X[stage_one], trials[stage_one]
+        successes2, X2, trials2 = successes[stage_two], X[stage_two], trials[stage_two]
+
+        loglike = glm.logistic(X, successes, trials=trials)
+        loglike1 = glm.logistic(X1, successes1, trials=trials1)
+        loglike2 = glm.logistic(X2, successes2, trials=trials2)
+
+        return klass(loglike1, loglike2, loglike, feature_weights)
+
+    @classmethod
+    def sqrt_lasso(klass,
+                   X, 
+                   Y, 
+                   feature_weights, 
+                   split_frac=0.9,
+                   stage_one=None,
+                   solve_args={'min_its':200}):
+        
+        n, p = X.shape
+
+        if stage_one is None:
+            splitn = int(n*split_frac)
+            indices = np.arange(n)
+            np.random.shuffle(indices)
+            stage_one = indices[:splitn]
+            stage_two = indices[splitn:]
+        else:
+            stage_two = [i for i in np.arange(n) if i not in stage_one]
+
+        Y1, X1 = Y[stage_one], X[stage_one]
+        Y2, X2 = Y[stage_two], X[stage_two]
+
+        # TODO: refits sqrt lasso more than once
+
+        L = lasso.sqrt_lasso(X1, Y1, feature_weights, solve_args=solve_args)
+        soln = L.fit(solve_args=solve_args)
+        _sigma_E1, _df1, _lower, _upper = L._sigma_estimator_args
+        _df2 = max(len(stage_two) - len(L.active), 0)
+        if _df2:
+            X_E2 = X2[:,L.active]
+            _sigma_E2 = np.linalg.norm(Y2 - X_E2.dot(np.linalg.pinv(X_E2).dot(Y2))) / (len(stage_two) - len(L.active))
+            _sigma_hat = estimate_sigma(np.sqrt((_sigma_E1**2 * _df1 + _sigma_E2**2 * _df2) / (_df1 + _df2)),
+                                        _df1,
+                                        _lower,
+                                        _upper,
+                                        untruncated_df=_df2)
+        else:
+            _sigma_hat = L._sigma_hat
+
+        cov_est = gaussian_parametric_estimator(X, Y, sigma=_sigma_hat)
+
+        loglike = glm.gaussian(X, Y)
+        loglike1 = glm.gaussian(X1, Y1)
+        loglike2 = glm.gaussian(X2, Y2)
+
+        L = klass(loglike1, loglike2, loglike, feature_weights * L._weight_multiplier,
+                  covariance_estimator=cov_est)
+        L.lasso_solution = soln
+        return L
+
+    def fit(self, solve_args={'tol':1.e-12, 'min_its':50}):
+
+        lasso.fit(self, solve_args=solve_args)
 
         n1 = self.loglike.get_data()[0].shape[0]
         n = self.loglike_full.get_data()[0].shape[0]
@@ -1036,10 +1167,17 @@ class data_carving(lasso):
         _unpenalized_active = _unpenalized[self.active]
 
         s = len(self.active)
-        H = self.loglike_full.hessian(_unpenalized)
-        H_AA = H[self.active][:,self.active]
 
-        _cov_block = np.linalg.inv(H_AA)
+        if self.covariance_estimator is None:
+            H = self.loglike_full.hessian(_unpenalized)
+            H_AA = H[self.active][:,self.active]
+            _cov_block = np.linalg.inv(H_AA)
+            self._carve_invcov = H_AA
+        else:
+            C = self.covariance_estimator(_unpenalized, self.active, self.inactive)
+            _cov_block = C[:len(self.active)][:,:len(self.active)]
+            self._carve_invcov = np.linalg.pinv(_cov_block)
+
         _subsample_block = (n * 1. / n1) * _cov_block
         _carve_cov = np.zeros((2*s,2*s))
         _carve_cov[:s][:,:s] = _cov_block
@@ -1054,7 +1192,6 @@ class data_carving(lasso):
                                               covariance=_carve_cov)
         self._carve_feasible = np.hstack([_unpenalized_active, self.onestep_estimator])
         self._unpenalized_active = _unpenalized_active
-        self._carve_invcov = H_AA
 
     def hypothesis_test(self,
                         variable,
@@ -1103,9 +1240,9 @@ class data_carving(lasso):
 
 class data_splitting(data_carving):
 
-    def fit(self, tol=1.e-12, min_its=50, use_full=True, **solve_args):
+    def fit(self, solve_args={'tol':1.e-12, 'min_its':50}, use_full=True):
 
-        lasso.fit(self, tol=tol, min_its=min_its, **solve_args)
+        lasso.fit(self, solve_args=solve_args)
 
         _feature_weights = self.feature_weights.copy()
         _feature_weights[self.active] = 0.
