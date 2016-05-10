@@ -9,8 +9,8 @@ from copy import copy
 
 import numpy as np
 
-from regreg.api import (logistic_loss, 
-                        weighted_l1norm, 
+from regreg.smooth.glm import logistic_loss 
+from regreg.api import (weighted_l1norm, 
                         simple_problem, 
                         identity_quadratic, 
                         squared_error)
