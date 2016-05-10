@@ -24,7 +24,7 @@ from scipy.linalg import block_diag
 from regreg.api import (glm, 
                         weighted_l1norm, 
                         simple_problem,
-                        coxph,
+                        coxph as coxph_obj,
                         smooth_sum)
 
 from .sqrt_lasso_objective import solve_sqrt_lasso, estimate_sigma
@@ -245,9 +245,11 @@ class lasso(object):
             dbeta_A = H_AAinv.dot(G_A)
             self.onestep_estimator = self._active_soln - dbeta_A
             self.active_penalized = self.feature_weights[self.active] != 0
+
             self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
                                              (self.active_signs * dbeta_A)[self.active_penalized],
                                              covariance=H_AAinv)
+
             if self.inactive.sum():
 
                 # inactive constraints
@@ -546,7 +548,7 @@ class lasso(object):
         the unpenalized estimator.
 
         """
-        loglike = coxph(X, times, status, quadratic=quadratic)
+        loglike = coxph_obj(X, times, status, quadratic=quadratic)
         return lasso(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
@@ -789,13 +791,24 @@ class lasso(object):
                 eta[i] = self.active_signs[i]
                 _alt = {"onesided":'greater',
                         'twosided':"twosided"}[alternative]
-                _pval = C.pivot(eta, one_step, alternative=_alt)
+                if C.linear_part.shape[0] > 0: # there were some constraints
+                    _pval = C.pivot(eta, one_step, alternative=_alt)
+                else:
+                    obs = (eta * one_step).sum()
+                    sd = np.sqrt((eta * C.covariance.dot(eta)))
+                    Z = obs / sd
+                    _pval = 2 * ndist.sf(np.fabs(Z))
+
                 if compute_intervals:
-                    _interval = C.interval(eta, one_step,
-                                           alpha=alpha,
-                                           UMAU=UMAU)
-                    _interval = sorted([_interval[0] * self.active_signs[i],
-                                        _interval[1] * self.active_signs[i]])
+                    if C.linear_part.shape[0] > 0: # there were some constraints
+                        _interval = C.interval(eta, one_step,
+                                               alpha=alpha,
+                                               UMAU=UMAU)
+                        _interval = sorted([_interval[0] * self.active_signs[i],
+                                            _interval[1] * self.active_signs[i]])
+                    else:
+                        _interval = (obs - ndist.ppf(1 - alpha / 2) * sd,
+                                     obs + ndist.ppf(1 - alpha / 2) * sd)
                 else:
                     _interval = [np.nan, np.nan]
                 _bounds = np.array(C.bounds(eta, one_step))
@@ -1100,6 +1113,63 @@ class data_carving(lasso):
         return klass(loglike1, loglike2, loglike, feature_weights)
 
     @classmethod
+    def poisson(klass,
+                X, 
+                counts,
+                feature_weights, 
+                split_frac=0.9,
+                sigma=1.,
+                stage_one=None):
+        
+        n, p = X.shape
+        if stage_one is None:
+            splitn = int(n*split_frac)
+            indices = np.arange(n)
+            np.random.shuffle(indices)
+            stage_one = indices[:splitn]
+            stage_two = indices[splitn:]
+        else:
+            stage_two = [i for i in np.arange(n) if i not in stage_one]
+
+        counts1, X1 = counts[stage_one], X[stage_one]
+        counts2, X2 = counts[stage_two], X[stage_two]
+
+        loglike = glm.poisson(X, counts)
+        loglike1 = glm.poisson(X1, counts1)
+        loglike2 = glm.poisson(X2, counts2)
+
+        return klass(loglike1, loglike2, loglike, feature_weights)
+
+    @classmethod
+    def coxph(klass,
+              X, 
+              times, 
+              status, 
+              feature_weights, 
+              split_frac=0.9,
+              sigma=1.,
+              stage_one=None):
+        
+        n, p = X.shape
+        if stage_one is None:
+            splitn = int(n*split_frac)
+            indices = np.arange(n)
+            np.random.shuffle(indices)
+            stage_one = indices[:splitn]
+            stage_two = indices[splitn:]
+        else:
+            stage_two = [i for i in np.arange(n) if i not in stage_one]
+
+        times1, X1, status1 = times[stage_one], X[stage_one], status[stage_one]
+        times2, X2, status2 = times[stage_two], X[stage_two], status[stage_two]
+
+        loglike = coxph_obj(X, times, status)
+        loglike1 = coxph_obj(X1, times1, status1)
+        loglike2 = coxph_obj(X2, times2, status2)
+
+        return klass(loglike1, loglike2, loglike, feature_weights)
+
+    @classmethod
     def sqrt_lasso(klass,
                    X, 
                    Y, 
@@ -1190,6 +1260,7 @@ class data_carving(lasso):
         self._carve_constraints = constraints(_carve_linear_part,
                                               _carve_offset,
                                               covariance=_carve_cov)
+
         self._carve_feasible = np.hstack([_unpenalized_active, self.onestep_estimator])
         self._unpenalized_active = _unpenalized_active
 
@@ -1214,27 +1285,35 @@ class data_carving(lasso):
         contrast = np.zeros(2*s)
         contrast[j] = 1.
 
-        conditional_law = self._carve_constraints.conditional(conditioning,
-                                                              conditioning.dot(self._carve_feasible))
-
-        # tilt so that samples are closer to observed values
-        # the multiplier should be the pseudoMLE so that
-        # the observed value is likely 
+        # condition to remove dependence on nuisance parameters
+        if len(self.active) > 1: 
+            conditional_law = self._carve_constraints.conditional(conditioning,
+                                                                  conditioning.dot(self._carve_feasible))
+        else:
+            conditional_law = self._carve_constraints
 
         observed = (contrast * self._carve_feasible).sum()
 
-        _, _, _, family = gibbs_test(conditional_law,
-                                     self._carve_feasible,
-                                     contrast,
-                                     sigma_known=True,
-                                     white=False,
-                                     ndraw=ndraw,
-                                     burnin=burnin,
-                                     how_often=10,
-                                     UMPU=False)
+        if self._carve_constraints.linear_part.shape[0] > 0:
 
-        pval = family.cdf(0, observed)
-        pval = 2 * min(pval, 1 - pval)
+            _, _, _, family = gibbs_test(conditional_law,
+                                         self._carve_feasible,
+                                         contrast,
+                                         sigma_known=True,
+                                         white=False,
+                                         ndraw=ndraw,
+                                         burnin=burnin,
+                                         how_often=10,
+                                         UMPU=False)
+
+            pval = family.cdf(0, observed)
+            pval = 2 * min(pval, 1 - pval)
+        
+        else: # only unpenalized coefficients were nonzero, no constraints
+
+            sd = np.sqrt((contrast * self._carve_constraints.covariance.dot(contrast)).sum())
+            Z = observed / sd
+            pval = 2 * ndist.sf(np.fabs(Z))
 
         return pval
 

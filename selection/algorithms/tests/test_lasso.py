@@ -25,13 +25,15 @@ def test_gaussian(n=100, p=20):
     X = np.random.standard_normal((n,p))
 
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
-    Q = None # identity_quadratic(0.01, 0, np.ones(p), 0)
+    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
 
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
 
+    huge_weights = weights_with_zeros * 100
+
     for q, fw in product([Q, None],
-                         [0.5*lam_theor, weights_with_zeros]):
+                         [0.5*lam_theor, weights_with_zeros, huge_weights]):
 
         L = lasso.gaussian(X, y, fw, 1., quadratic=Q)
         L.fit()
@@ -45,6 +47,7 @@ def test_gaussian(n=100, p=20):
         S = L.summary('onesided', compute_intervals=True)
         S = L.summary('twosided')
 
+        print L.active
         yield (np.testing.assert_array_less,
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
@@ -146,20 +149,20 @@ def test_coxph():
     return L, C, P
 
 @set_sampling_params_iftrue(False)
-def test_data_carving(n=100,
-                      p=200,
-                      s=7,
-                      sigma=5,
-                      rho=0.3,
-                      snr=7.,
-                      split_frac=0.8,
-                      lam_frac=2.,
-                      ndraw=8000,
-                      burnin=2000, 
-                      df=np.inf,
-                      coverage=0.90,
-                      compute_intervals=True,
-                      nsim=None):
+def test_data_carving_gaussian(n=100,
+                               p=200,
+                               s=7,
+                               sigma=5,
+                               rho=0.3,
+                               snr=7.,
+                               split_frac=0.8,
+                               lam_frac=2.,
+                               ndraw=8000,
+                               burnin=2000, 
+                               df=np.inf,
+                               coverage=0.90,
+                               compute_intervals=True,
+                               nsim=None):
 
     counter = 0
 
@@ -193,8 +196,9 @@ def test_data_carving(n=100,
             DS.fit()
             data_split = True
         else:
-            data_split = False
             print('not enough data for second stage data splitting')
+            print(DC.active)
+            data_split = False
 
                 
         if set(range(s)).issubset(DC.active):
@@ -354,7 +358,170 @@ def test_data_carving_logistic(n=200,
             DS.fit()
             data_split = True
         else:
-            print 'not enough data for data splitting second stage'
+            print('not enough data for data splitting second stage')
+            print(DC.active)
+            data_split = False
+
+        if set(range(s)).issubset(DC.active):
+            carve = []
+            split = []
+            for var in DC.active:
+                carve.append(DC.hypothesis_test(var, burnin=burnin, ndraw=ndraw))
+                if data_split:
+                    split.append(DS.hypothesis_test(var))
+                else:
+                    split.append(np.random.sample())
+
+            Xa = X[:,DC.active]
+
+            split_coverage = np.nan
+            carve_coverage = np.nan
+
+            TP = s
+            FP = DC.active.shape[0] - TP
+            v = (carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage, TP, FP)
+            return_value.append(v)
+            break
+        else:
+            TP = len(set(DC.active).intersection(range(s)))
+            FP = DC.active.shape[0] - TP
+            v = (None, None, None, None, counter, np.nan, np.nan, TP, FP)
+            return_value.append(v)
+
+    return return_value
+
+@set_sampling_params_iftrue(False)
+def test_data_carving_poisson(n=200,
+                              p=300,
+                              s=5,
+                              sigma=5,
+                              rho=0.3,
+                              snr=9.,
+                              split_frac=0.8,
+                              lam_frac=1.2,
+                              ndraw=8000,
+                              burnin=2000, 
+                              df=np.inf,
+                              coverage=0.90,
+                              compute_intervals=True,
+                              nsim=None):
+    
+    counter = 0
+
+    return_value = []
+
+    while True:
+        counter += 1
+        X, y, beta, active, sigma = instance(n=n, 
+                                             p=p, 
+                                             s=s, 
+                                             sigma=sigma, 
+                                             rho=rho, 
+                                             snr=snr, 
+                                             df=df)
+        y = np.random.poisson(10, size=y.shape)
+        active = []
+        s = 0
+        active = np.array(active)
+
+        idx = np.arange(n)
+        np.random.shuffle(idx)
+        stage_one = idx[:int(n*split_frac)]
+        n1 = len(stage_one)
+
+        lam_theor = 10. * np.ones(p)
+        lam_theor[0] = 0.
+        DC = data_carving.poisson(X, y, feature_weights=lam_theor,
+                                  stage_one=stage_one)
+
+        DC.fit()
+
+        if len(DC.active) < n - int(n*split_frac):
+            DS = data_splitting.poisson(X, y, feature_weights=lam_theor,
+                                         stage_one=stage_one)
+            DS.fit()
+            data_split = True
+        else:
+            print('not enough data for data splitting second stage')
+            print(DC.active)
+            data_split = False
+
+        print DC.active
+        if set(range(s)).issubset(DC.active):
+            carve = []
+            split = []
+            for var in DC.active:
+                carve.append(DC.hypothesis_test(var, burnin=burnin, ndraw=ndraw))
+                if data_split:
+                    split.append(DS.hypothesis_test(var))
+                else:
+                    split.append(np.random.sample())
+
+            Xa = X[:,DC.active]
+
+            split_coverage = np.nan
+            carve_coverage = np.nan
+
+            TP = s
+            FP = DC.active.shape[0] - TP
+            v = (carve[s:], split[s:], carve[:s], split[:s], counter, carve_coverage, split_coverage, TP, FP)
+            return_value.append(v)
+            break
+        else:
+            TP = len(set(DC.active).intersection(range(s)))
+            FP = DC.active.shape[0] - TP
+            v = (None, None, None, None, counter, np.nan, np.nan, TP, FP)
+            return_value.append(v)
+
+    return return_value
+
+@set_sampling_params_iftrue(False)
+def test_data_carving_coxph(n=100,
+                            p=20,
+                            split_frac=0.8,
+                            lam_frac=1.2,
+                            ndraw=8000,
+                            burnin=2000, 
+                            df=np.inf,
+                            coverage=0.90,
+                            compute_intervals=True,
+                            nsim=None):
+    
+    counter = 0
+
+    return_value = []
+
+    while True:
+        counter += 1
+
+        X = np.random.standard_normal((n,p))
+        T = np.random.standard_exponential(n)
+        S = np.random.binomial(1, 0.5, size=(n,))
+
+        active = []
+        s = 0
+        active = np.array(active)
+
+        idx = np.arange(n)
+        np.random.shuffle(idx)
+        stage_one = idx[:int(n*split_frac)]
+        n1 = len(stage_one)
+
+        lam_theor = 10. * np.ones(p)
+        lam_theor[0] = 0.
+        DC = data_carving.coxph(X, T, S, feature_weights=lam_theor,
+                                stage_one=stage_one)
+
+        DC.fit()
+
+        if len(DC.active) < n - int(n*split_frac):
+            DS = data_splitting.coxph(X, T, S, feature_weights=lam_theor,
+                                         stage_one=stage_one)
+            DS.fit()
+            data_split = True
+        else:
+            print('not enough data for data splitting second stage')
+            print(DC.active)
             data_split = False
 
         if set(range(s)).issubset(DC.active):
