@@ -40,3 +40,7 @@ j=0
 mu[j]=0
 print np.dot(Sigma[:,j].T, np.linalg.inv(Sigma))
 print np.dot(np.dot(Sigma[:,j].T, np.linalg.inv(Sigma)), mu)
+
+
+a=np.array([1,2,3,4,-3])
+print np.clip(a, 0, np.inf)

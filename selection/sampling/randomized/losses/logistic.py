@@ -113,7 +113,7 @@ class logistic_Xrandom(selective_loss):
         g = -(data - np.dot(self._cov, beta)) 
         return g
 
-    def hessian(self, data, beta):
+    def hessian(self):  #, data, beta):
         """
         hessian is constant in this case.
         """

@@ -1,19 +1,23 @@
 import numpy as np
 from scipy.stats import laplace, probplot, uniform
 
+import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
+reload(lasso_randomX)
+
 from selection.algorithms.lasso import instance
 import selection.sampling.randomized.api as randomized
+reload(randomized)
 from pvalues_new import pval_new
 from matplotlib import pyplot as plt
 
 
-def test_lasso_randomX(s=5, n=100, p=20):
+def test_lasso_randomX(s=5, n=1000, p=20):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.)
     lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
-    loss = randomized.lasso_randomX(X, y)
+    loss = lasso_randomX.lasso_randomX(X, y)
     random_Z = randomization.rvs(p)
     epsilon = 1.
 
@@ -23,9 +27,9 @@ def test_lasso_randomX(s=5, n=100, p=20):
     # done is sampler.py
     random_Z = randomization.rvs(p)
 
-    penalty = randomized.selective_l1norm(p, lagrange=lam)
+    penalty = randomized.selective_l1norm_new(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH(loss,
+    sampler1 = randomized.selective_sampler_MH_new(loss,
                                                random_Z,
                                                epsilon,
                                                randomization,
@@ -75,7 +79,7 @@ def test_lasso_randomX(s=5, n=100, p=20):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(1):
+    for i in range(3):
         print "iteration", i
         p0, pA = test_lasso_randomX()
         P0.extend(p0); PA.extend(pA)

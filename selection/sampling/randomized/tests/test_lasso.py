@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 
 def test_lasso(s=5, n=100, p=30):
     
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0.2)
+    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
@@ -19,9 +19,9 @@ def test_lasso(s=5, n=100, p=30):
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
     random_Z = randomization.rvs(p)
-    penalty = randomized.selective_l1norm(p, lagrange=lam)
+    penalty = randomized.selective_l1norm_new(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH(loss,
+    sampler1 = randomized.selective_sampler_MH_new(loss,
                                                random_Z,
                                                epsilon,
                                                randomization,

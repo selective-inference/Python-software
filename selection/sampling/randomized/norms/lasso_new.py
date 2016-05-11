@@ -4,25 +4,31 @@ import numpy as np
 import regreg.api as rr
 from base import selective_penalty
 
+
+# same as lasso.py except uses Langevin Metropolis Hastings for simplex_step
+# Sampling from a log-concave distribution with Projected Langevin Monte Carlo (Bubeck et al)
+# http://arxiv.org/pdf/1507.02564v1.pdf
+
 # needed for adaptive MCMC
 # source: git@github.com:jcrudy/choldate.git
 from choldate import cholupdate, choldowndate
 
 ## TODO: should use rr.weighted_l1norm
 
-class selective_l1norm(rr.l1norm, selective_penalty):
+class selective_l1norm_new(rr.l1norm, selective_penalty):
 
     ### begin selective_penalty API
 
     ### API begins here
-    
-    def setup_sampling(self, 
-                       gradient, 
-                       soln, 
+
+    def setup_sampling(self,
+                       gradient,
+                       hessian, ## added
+                       soln,
                        linear_randomization,
                        quadratic_coef):
 
-        # this will get used to randomize on simplex 
+        # this will get used to randomize on simplex
 
         #self.simplex_randomization = (0.05, dirichlet(np.ones(self.shape)))
 
@@ -30,7 +36,7 @@ class selective_l1norm(rr.l1norm, selective_penalty):
 
         self.accept_l1_part, self.total_l1_part = 0, 0
 
-        random_direction = quadratic_coef * soln + linear_randomization 
+        random_direction = quadratic_coef * soln + linear_randomization
         negative_subgrad = gradient + random_direction
 
         self.active_set = (soln != 0)
@@ -41,7 +47,7 @@ class selective_l1norm(rr.l1norm, selective_penalty):
 
         subgrad = -negative_subgrad[self.inactive_set]
         supnorm_ = np.fabs(negative_subgrad).max()
-        
+
         if self.lagrange is None:
             raise NotImplementedError("only lagrange form is implemented")
 
@@ -55,14 +61,15 @@ class selective_l1norm(rr.l1norm, selective_penalty):
         nactive = soln[self.active_set].shape[0]
         self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
 
+        self.hessian = hessian
         return simplex, cube
 
     def form_subgradient(self, opt_vars):
         """
         opt_vars will be of the form returned by self.setup_sampling
-        
+
         this should form z, the subgradient of P at beta
-        
+
         """
         simplex, cube = opt_vars
         lam = self.lagrange
@@ -79,26 +86,26 @@ class selective_l1norm(rr.l1norm, selective_penalty):
     def form_parameters(self, opt_vars):
         """
         opt_vars will be of the form returned by self.setup_sampling
-        
+
         this should form beta
-        
+
         """
 
         simplex, cube = opt_vars
 
         full_params = np.zeros(self.shape)
-        full_params.flat[self.active_set] = simplex * self.signs 
+        full_params.flat[self.active_set] = simplex * self.signs
 
         return full_params
 
     def form_optimization_vector(self, opt_vars):
         """
         opt_vars will be of the form returned by self.setup_sampling
-        
+
         this should form beta, z, epsilon * beta + z
         """
-        
-        
+
+
         # could be more efficient for LASSO
 
         params = self.form_parameters(opt_vars)
@@ -115,7 +122,7 @@ class selective_l1norm(rr.l1norm, selective_penalty):
 
     def step_variables(self, state, randomization, logpdf, gradient):
         """
-        Updates internal parameterization of 
+        Updates internal parameterization of
         the optimization variables.
 
         """
@@ -124,7 +131,7 @@ class selective_l1norm(rr.l1norm, selective_penalty):
         data, opt_vars = state
         simplex, _ = opt_vars
         new_state = (data, (simplex, new_cube))
-        new_simplex = self.step_simplex(new_state, randomization, logpdf)
+        new_simplex = self.step_simplex(new_state, randomization, logpdf, gradient, self.hessian)
         return new_simplex, new_cube
 
     ### end selective_penalty API
@@ -156,14 +163,14 @@ class selective_l1norm(rr.l1norm, selective_penalty):
         nactive = self._active_set.sum()
         ninactive = self._inactive_set.sum()
 
-        self.dtype = np.dtype([('simplex', (np.float,    # parameters 
+        self.dtype = np.dtype([('simplex', (np.float,    # parameters
                                             nactive-1)), # on face simplex
                                ('scale', np.float),
                                ('signs', (np.int, nactive)),
-                               ('cube', (np.float, 
+                               ('cube', (np.float,
                                          ninactive))])
 
-    active_set = property(get_active_set, set_active_set, 
+    active_set = property(get_active_set, set_active_set,
                           doc="The active set for selective sampling.")
 
     @property
@@ -177,8 +184,13 @@ class selective_l1norm(rr.l1norm, selective_penalty):
         else:
             return scale, self.bound
 
-    def step_simplex(self, state, randomization, logpdf):
 
+    def step_simplex(self, state, randomization, logpdf, gradient, hessian):
+        """
+        Uses projected Langevin proposal ( X_{k+1} = P(X_k+\eta\grad\log\pi+\sqrt{2\pi} Z), where Z\sim\mathcal{N}(0,Id))
+        for a new simplex point (a point in non-negative orthant, hence projection onto [0,\inf)^|E|)
+
+        """
         self.total_l1_part += 1
         lam = self.lagrange
 
@@ -189,40 +201,59 @@ class selective_l1norm(rr.l1norm, selective_penalty):
             raise NotImplementedError("The bound form has not been implemented")
 
         nactive = simplex.shape[0]
-        stepsize = 1.5/np.sqrt(nactive)
+
+        #stepsize = 1/np.sqrt(nactive)
+        stepsize = 0.75/float(nactive)  # eta below
+
+        # new for projected Langevin MCMC
+
+        _ , _ , opt_vec = self.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
+
+        sign_vec = np.sign(gradient + opt_vec)[range(nactive)]  # sign(A*\beta+b) for A, b below
+
+        restricted_hessian = hessian[range(nactive)][:, range(nactive)]
+
+        # the following is \grad_{\beta}\log g(w), w = \grad l(\beta)+\epsilon (\beta 0)+\lambda u = A*\beta+b,
+        # becomes - \grad_{\beta}\|w\|_1 = - \grad_{\beta}\|A*\beta+b\|_1=A^T*sign(A*\beta+b)
+        # A = hessian+\epsilon*Id (symmetric), A*\beta+b = gradient+opt_vec
+        # \grad\log\pi if we want a sample from a distribution \pi
+
+        grad_log_pi = - np.dot(restricted_hessian+self.quadratic_coef*np.identity(nactive), sign_vec)
+
+        # proposal = Proj(simplex+\eta*grad_{\beta}\log g+\sqrt{2\eta}*Z), Z\sim\mathcal{N}(0, Id)
+        # projection on the non-negative orthant
+
+        proposal = np.clip(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive)), 0, np.inf)
 
 
 
+        #rand = randomization
+        #random_sample = rand.rvs(size=nactive)
+        #step = np.dot(self.chol_adapt, random_sample)
+        #proposal = np.fabs(simplex + step)
 
 
-        rand = randomization
-        random_sample = rand.rvs(size=nactive)
-        step = np.dot(self.chol_adapt, random_sample)
-        proposal = np.fabs(simplex + step)
+         # update cholesky factor
+
+        #alpha = np.minimum(np.exp(log_ratio), 1)
+        #target = 2.4 / np.sqrt(nactive)
+        #multiplier = ((self.total_l1_part+1)**(-0.8) *
+        #               (np.exp(log_ratio) - target))
+        #rank_one = np.sqrt(np.fabs(multiplier)) * step / np.linalg.norm(random_sample)
+
+        #if multiplier > 0:
+        #     cholupdate(self.chol_adapt, rank_one) # update done in place
+        #else:
+        #     choldowndate(self.chol_adapt, rank_one) # update done in place
+
 
         log_ratio = (logpdf((data, (proposal, cube))) -
                      logpdf(state))
 
-         # update cholesky factor
-
-        alpha = np.minimum(np.exp(log_ratio), 1)
-        target = 2.4 / np.sqrt(nactive)
-        multiplier = ((self.total_l1_part+1)**(-0.8) *
-                       (np.exp(log_ratio) - target))
-        rank_one = np.sqrt(np.fabs(multiplier)) * step / np.linalg.norm(random_sample)
-
-        if multiplier > 0:
-             cholupdate(self.chol_adapt, rank_one) # update done in place
-        else:
-             choldowndate(self.chol_adapt, rank_one) # update done in place
-
-
-
-
         if np.log(np.random.uniform()) < log_ratio:
             simplex = proposal
             self.accept_l1_part += 1
-        
+
         return simplex
 
 
@@ -242,12 +273,12 @@ class selective_l1norm(rr.l1norm, selective_penalty):
         rand = randomization
         active_set = self.active_set
         inactive_set = self.inactive_set
-        
-        # note that we don't need beta here as 
-        # beta_{-E} = 0 for the inactive block 
-        offset = - gradient[inactive_set] 
-        lower = offset - lam  
-        upper = offset + lam  
+
+        # note that we don't need beta here as
+        # beta_{-E} = 0 for the inactive block
+        offset = - gradient[inactive_set]
+        lower = offset - lam
+        upper = offset + lam
 
         percentile = np.random.sample(inactive_set.sum()) \
                 * (rand.cdf(upper) - rand.cdf(lower)) + rand.cdf(lower)
@@ -256,7 +287,7 @@ class selective_l1norm(rr.l1norm, selective_penalty):
         return cube_sample
 
 
-class selective_supnorm(rr.supnorm, selective_l1norm):
+class selective_supnorm(rr.supnorm, selective_l1norm_new):
 
     def setup_sampling(self, gradient, soln, random_direction,
                        tol=1.e-4):

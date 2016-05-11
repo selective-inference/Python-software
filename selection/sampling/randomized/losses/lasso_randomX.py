@@ -17,6 +17,8 @@ class lasso_randomX(selective_loss):
                                 initial=initial)
 
         self.X = X.copy()
+        self._XTX = np.dot(self.X.T,self.X)
+
         self.y = y.copy()
 
 
@@ -207,7 +209,7 @@ class lasso_randomX(selective_loss):
         return g
 
 
-    def hessian(self, data, beta):
+    def hessian(self): #, data, beta):
         """
         hessian is constant in this case.
         """

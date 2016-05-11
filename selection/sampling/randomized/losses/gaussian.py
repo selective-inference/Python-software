@@ -48,7 +48,7 @@ class gaussian_Xfixed(selective_loss):
         self.y = old_data
         return g
 
-    def hessian(self, data, beta):
+    def hessian(self): #, data, beta):
         if not hasattr(self, "_XTX"):
             self._XTX = np.dot(self.X.T, self.X)
         return self._XTX
@@ -76,9 +76,9 @@ class gaussian_Xfixed(selective_loss):
 
         self.R = I - P
 
-
         self.P = P
         self.linear_part = linear_part
+
 
     def proposal(self, data):
         n, p = self.X.shape
