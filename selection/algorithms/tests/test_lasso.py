@@ -738,3 +738,48 @@ def test_adding_quadratic_lasso():
     beta2 = L2.fit(solve_args={'min_its':500, 'tol':1.e-12})
     G2 = X[:,L2.active].T.dot(X.dot(beta2) - y) + lin.objective(beta2,'grad')[L2.active]
     np.testing.assert_allclose(G2 * np.sign(beta2[L2.active]), -20)
+
+def test_equivalence_sqrtlasso(n=200, p=400, s=10, sigma=3.):
+
+    """
+    Check equivalent LASSO and sqrtLASSO solutions.
+    """
+
+    Y = np.random.standard_normal(n) * sigma
+    beta = np.zeros(p)
+    beta[:s] = 8 * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1)
+    X = np.random.standard_normal((n,p)) + 0.3 * np.random.standard_normal(n)[:,None]
+    X /= (X.std(0)[None,:] * np.sqrt(n))
+    Y += np.dot(X, beta) * sigma
+    lam_theor = choose_lambda(X, quantile=0.9)
+
+    weights = lam_theor*np.ones(p)
+    weights[:3] = 0.
+    soln1, loss1 = solve_sqrt_lasso(X, Y, weights=weights, quadratic=None, solve_args={'min_its':500, 'tol':1.e-10})
+
+    G1 = loss1.smooth_objective(soln1, 'grad') 
+
+    # find active set, and estimate of sigma                                                                                                                          
+
+    active = (soln1 != 0)
+    nactive = active.sum()
+    subgrad = np.sign(soln1[active]) * weights[active]
+    X_E = X[:,active]
+    X_Ei = np.linalg.pinv(X_E)
+    sigma_E= np.linalg.norm(Y - X_E.dot(X_Ei.dot(Y))) / np.sqrt(n - nactive)
+
+    multiplier = sigma_E * np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
+
+    # XXX how should quadratic be changed?                                                                                                                            
+    # multiply everything by sigma_E?                                                                                                                                 
+
+    loss2 = rr.glm.gaussian(X, Y)
+    penalty = rr.weighted_l1norm(weights, lagrange=multiplier)
+    problem = rr.simple_problem(loss2, penalty)
+
+    soln2 = problem.solve(tol=1.e-12, min_its=200)
+    G2 = loss2.smooth_objective(soln2, 'grad') / multiplier
+
+    np.testing.assert_allclose(G1[3:], G2[3:])
+    np.testing.assert_allclose(soln1, soln2)
+    

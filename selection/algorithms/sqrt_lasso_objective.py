@@ -9,6 +9,12 @@ from scipy.interpolate import interp1d
 # regreg http://github.com/regreg 
 
 import regreg.api as rr
+from regreg.smooth.glm import gaussian_loglike
+
+from ..constraints.affine import (constraints as affine_constraints, 
+                                  sample_from_sphere)
+from ..distributions.discrete_multiparameter import multiparameter_family
+from ..distributions.discrete_family import discrete_family
 
 class sqlasso_objective(rr.smooth_atom):
     """
@@ -343,7 +349,7 @@ def estimate_sigma(observed, truncated_df, lower_bound, upper_bound, untruncated
         
     return sigma_hat
 
-def goodness_of_fit(sqrt_lasso_obj, statistic, 
+def goodness_of_fit(lasso_obj, statistic, 
                     force=False,
                     alternative='twosided', 
                     ndraw=5000,
@@ -365,9 +371,9 @@ def goodness_of_fit(sqrt_lasso_obj, statistic,
     Parameters
     ----------
 
-    sqrt_lasso_obj : `lasso`
+    lasso_obj : `lasso`
         Instance of selection.algorithms.lasso.lasso instantiated
-        with `sqrt_lasso` classmethod.
+        with a gaussian loglikelihood (instance of `regreg.smooth.glm.gaussian_loglike`
 
     statistic : callable
         Statistic to compute on observed $U_{-E}$ as well
@@ -401,33 +407,52 @@ def goodness_of_fit(sqrt_lasso_obj, statistic,
 
     """
 
-    L = sqrt_lasso_obj # shorthand
+    L = lasso_obj # shorthand
+    if not isinstance(L.loglike.loss, gaussian_loglike):
+        raise ValueError('goodness of fit test assumes response is Gaussian')
 
     X, Y = L.loglike.data
     n, p = X.shape
-    X_E = X[:,L.active]
-    R_E = np.identity(n) - X_E.dot(np.linalg.pinv(X_E))
 
-    if sample is not None:
-        if sqrt_lasso_obj.active.shape[0] > 0:
-            con = sqrt_lasso_obj.inactive_constraints
-            conditional_con = con.conditional(X_E.T, np.dot(X_E.T, sqrt_lasso_obj.y))
+    if len(lasso_obj.active) > 0:
+        X_E = X[:,L.active]
+        C_Ei = np.linalg.pinv(X_E.T.dot(X_E))
+        R_E = lambda z: z - X_E.dot(C_Ei.dot(X_E.T.dot(z)))
+
+        X_minus_E = X[:,L.inactive]
+        RX_minus_E = R_E(X_minus_E)
+        inactive_bound = L.feature_weights[L.inactive]
+        active_subgrad = L.feature_weights[L.active] * L.active_signs
+        irrep_term = X_minus_E.T.dot(X_E.dot(C_Ei.dot(active_subgrad)))
+
+        inactive_constraints = affine_constraints(
+                                 np.vstack([RX_minus_E.T,
+                                            -RX_minus_E.T]),
+                                 np.hstack([inactive_bound - irrep_term,
+                                            inactive_bound + irrep_term]),
+                                 covariance = np.identity(n)) # because we condition on norm, covariance doesn't matter
+
+    if sample is None:
+        if len(lasso_obj.active) > 0:
+            conditional_con = inactive_constraints.conditional(X_E.T, np.dot(X_E.T, Y))
 
             Z, W = sample_from_sphere(conditional_con, 
                                       Y,
                                       ndraw=ndraw,
                                       burnin=burnin)  
-            U_notE_sample = np.dot(R_E, Z.T).T
+            U_notE_sample = R_E(Z.T).T
             U_notE_sample /= np.sqrt((U_notE_sample**2).sum(1))[:,None]
             _goodness_of_fit_sample = multiparameter_family(U_notE_sample, W)
-            _goodness_of_fit_observed = np.dot(R_E, sqrt_lasso_obj.y) / np.linalg.norm(np.dot(R_E, sqrt_lasso_obj.y))
+            _goodness_of_fit_observed = R_E(Y) 
+            _goodness_of_fit_observed /= np.linalg.norm(_goodness_of_fit_observed)
 
         else:
-            n, p = sqrt_lasso_obj.X.shape
             U_sample = np.random.standard_normal((ndraw, n))
             U_sample /= np.sqrt((U_sample**2).sum(1))[:, None]
             _goodness_of_fit_sample = multiparameter_family(U_sample, np.ones(U_sample.shape[0]))
             _goodness_of_fit_observed = Y / np.linalg.norm(Y)
+    else:
+        _goodness_of_fit_sample = sample
 
     null_sample = _goodness_of_fit_sample.sufficient_stat
     importance_weights = _goodness_of_fit_sample.weights
@@ -447,3 +472,33 @@ def goodness_of_fit(sqrt_lasso_obj, statistic,
         pvalue = 2 * min(pvalue, 1. - pvalue)
 
     return pvalue
+
+def choose_lambda(X, quantile=0.95, ndraw=10000):
+    """
+    Choose a value of `lam` for the square-root LASSO
+    based on an empirical quantile of the distribution of
+
+    $$
+    \frac{\|X^T\epsilon\|_{\infty}}{\|\epsilon\|_2}.
+    $$
+
+    Parameters
+    ----------
+
+    X : np.float((n, p))
+        Design matrix.
+
+    quantile : float
+        What quantile should we use?
+
+    ndraw : int
+        How many draws?
+
+    """
+
+    X = rr.astransform(X)
+    n, p = X.output_shape[0], X.input_shape[0]
+    E = np.random.standard_normal((n, ndraw))
+    E /= np.sqrt(np.sum(E**2, 0))[None,:]
+    return np.percentile(np.fabs(X.adjoint_map(E)).max(0), 100*quantile)
+

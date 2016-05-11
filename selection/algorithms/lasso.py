@@ -687,43 +687,55 @@ class lasso(object):
 
         active = (soln != 0)
         nactive = active.sum()
-        subgrad = np.sign(soln[active]) * feature_weights[active]
-        X_E = X[:,active]
-        X_Ei = np.linalg.pinv(X_E)
-        sigma_E = np.linalg.norm(Y - X_E.dot(X_Ei.dot(Y))) / np.sqrt(n - nactive)
-        multiplier = np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
-                                       
-        # check truncation interval for sigma_E
+        if nactive:
 
-        # the KKT conditions imply an inequality like
-        # \hat{\sigma}_E \cdot LHS \leq RHS
+            subgrad = np.sign(soln[active]) * feature_weights[active]
+            X_E = X[:,active]
+            X_Ei = np.linalg.pinv(X_E)
+            sigma_E = np.linalg.norm(Y - X_E.dot(X_Ei.dot(Y))) / np.sqrt(n - nactive)
+            multiplier = np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
 
-        penalized = feature_weights[active] != 0
-        D_E = np.sign(soln[active][penalized]) # diagonal matrix of signs
-        LHS = D_E * np.linalg.solve(X_E.T.dot(X_E), subgrad)[penalized]
-        RHS = D_E * X_Ei.dot(Y)[penalized] 
+            # check truncation interval for sigma_E
 
-        ratio = RHS / LHS
+            # the KKT conditions imply an inequality like
+            # \hat{\sigma}_E \cdot LHS \leq RHS
 
-        group1 = LHS > 0
-        upper_bound = np.inf
-        if group1.sum():
-            upper_bound = min(upper_bound, np.min(ratio[group1])) # necessarily these will have RHS > 0
-            
-        group2 = (LHS <= 0) * (RHS <= 0) # we can ignore the other possibility since this gives a lower bound of 0
-        lower_bound = 0
-        if group2.sum():
-            lower_bound = max(lower_bound, np.max(ratio[group2]))
+            penalized = feature_weights[active] != 0
 
-        upper_bound /= multiplier
-        lower_bound /= multiplier
+            if penalized.sum():
+                D_E = np.sign(soln[active][penalized]) # diagonal matrix of signs
+                LHS = D_E * np.linalg.solve(X_E.T.dot(X_E), subgrad)[penalized]
+                RHS = D_E * X_Ei.dot(Y)[penalized] 
 
-        _sigma_estimator_args = (sigma_E, 
-                                 n - nactive,
-                                 lower_bound, 
-                                 upper_bound)
+                ratio = RHS / LHS
 
-        _sigma_hat = estimate_sigma(*_sigma_estimator_args)
+                group1 = LHS > 0
+                upper_bound = np.inf
+                if group1.sum():
+                    upper_bound = min(upper_bound, np.min(ratio[group1])) # necessarily these will have RHS > 0
+
+                group2 = (LHS <= 0) * (RHS <= 0) # we can ignore the other possibility since this gives a lower bound of 0
+                lower_bound = 0
+                if group2.sum():
+                    lower_bound = max(lower_bound, np.max(ratio[group2]))
+
+                upper_bound /= multiplier
+                lower_bound /= multiplier
+
+            else:
+                lower_bound = 0
+                upper_bound = np.inf
+
+            _sigma_estimator_args = (sigma_E, 
+                                     n - nactive,
+                                     lower_bound, 
+                                     upper_bound)
+
+            _sigma_hat = estimate_sigma(*_sigma_estimator_args)
+        else:
+            _sigma_hat = np.linalg.norm(Y) / np.sqrt(n)
+            multiplier = np.sqrt(n)
+            sigma_E = _sigma_hat
 
         # XXX how should quadratic be changed?
         # multiply everything by sigma_E?
@@ -743,10 +755,11 @@ class lasso(object):
 
         # these arguments are reused for data carving
 
-        L._sigma_hat = _sigma_hat
-        L._sigma_estimator_args = _sigma_estimator_args
-        L._weight_multiplier = multiplier * sigma_E
-        L.lasso_solution = soln
+        if nactive:
+            L._sigma_hat = _sigma_hat
+            L._sigma_estimator_args = _sigma_estimator_args
+            L._weight_multiplier = multiplier * sigma_E
+            L.lasso_solution = soln
 
         return L
 
