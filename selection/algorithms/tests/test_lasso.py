@@ -162,7 +162,8 @@ def test_data_carving_gaussian(n=100,
                                df=np.inf,
                                coverage=0.90,
                                compute_intervals=True,
-                               nsim=None):
+                               nsim=None,
+                               use_full_cov=True):
 
     counter = 0
 
@@ -193,7 +194,9 @@ def test_data_carving_gaussian(n=100,
             DS = data_splitting.gaussian(X, y, feature_weights=lam_theor,
                                          sigma=sigma,
                                          stage_one=stage_one)
-            DS.fit()
+            DS.fit(use_full_cov=True)
+            DS.fit(use_full_cov=False)
+            DS.fit(use_full_cov=use_full_cov)
             data_split = True
         else:
             print('not enough data for second stage data splitting')
@@ -302,23 +305,22 @@ def test_data_carving_sqrt_lasso(n=100,
     return return_value
 
 @set_sampling_params_iftrue(False)
-def test_data_carving_logistic(n=200,
+def test_data_carving_logistic(n=500,
                                p=300,
                                s=5,
                                sigma=5,
-                               rho=0.3,
-                               snr=9.,
+                               rho=0.05,
+                               snr=4.,
                                split_frac=0.8,
-                               lam_frac=1.2,
                                ndraw=8000,
                                burnin=2000, 
                                df=np.inf,
                                coverage=0.90,
                                compute_intervals=True,
-                               nsim=None):
+                               nsim=None,
+                               use_full_cov=False):
     
     counter = 0
-
     return_value = []
 
     while True:
@@ -331,14 +333,16 @@ def test_data_carving_logistic(n=200,
                                              snr=snr, 
                                              df=df)
 
-        z = (y > 0)
-        X = np.hstack([np.ones((n,1)), X])
+        
+        mu = X.dot(beta)
+        prob = np.exp(mu) / (1 + np.exp(mu))
 
+        X = np.hstack([np.ones((n,1)), X])
+        z = np.random.binomial(1, prob)
         active = np.array(active)
         active += 1
+        s += 1
         active = [0] + list(active)
-
-        L = lasso.logistic(X, z, [0]*1 + [1.2]*p)
 
         idx = np.arange(n)
         np.random.shuffle(idx)
@@ -355,7 +359,7 @@ def test_data_carving_logistic(n=200,
         if len(DC.active) < n - int(n*split_frac):
             DS = data_splitting.logistic(X, z, feature_weights=lam_theor,
                                          stage_one=stage_one)
-            DS.fit()
+            DS.fit(use_full_cov=use_full_cov)
             data_split = True
         else:
             print('not enough data for data splitting second stage')
@@ -404,7 +408,8 @@ def test_data_carving_poisson(n=200,
                               df=np.inf,
                               coverage=0.90,
                               compute_intervals=True,
-                              nsim=None):
+                              nsim=None,
+                              use_full_cov=True):
     
     counter = 0
 
@@ -419,17 +424,16 @@ def test_data_carving_poisson(n=200,
                                              rho=rho, 
                                              snr=snr, 
                                              df=df)
+        X = np.hstack([np.ones((n,1)), X])
         y = np.random.poisson(10, size=y.shape)
-        active = []
-        s = 0
-        active = np.array(active)
+        s = 1
 
         idx = np.arange(n)
         np.random.shuffle(idx)
         stage_one = idx[:int(n*split_frac)]
         n1 = len(stage_one)
 
-        lam_theor = 10. * np.ones(p)
+        lam_theor = 6. * np.ones(p+1)
         lam_theor[0] = 0.
         DC = data_carving.poisson(X, y, feature_weights=lam_theor,
                                   stage_one=stage_one)
@@ -439,7 +443,7 @@ def test_data_carving_poisson(n=200,
         if len(DC.active) < n - int(n*split_frac):
             DS = data_splitting.poisson(X, y, feature_weights=lam_theor,
                                          stage_one=stage_one)
-            DS.fit()
+            DS.fit(use_full_cov=use_full_cov)
             data_split = True
         else:
             print('not enough data for data splitting second stage')
@@ -472,7 +476,7 @@ def test_data_carving_poisson(n=200,
             FP = DC.active.shape[0] - TP
             v = (None, None, None, None, counter, np.nan, np.nan, TP, FP)
             return_value.append(v)
-
+        
     return return_value
 
 @set_sampling_params_iftrue(False)

@@ -1332,7 +1332,7 @@ class data_carving(lasso):
 
 class data_splitting(data_carving):
 
-    def fit(self, solve_args={'tol':1.e-12, 'min_its':50}, use_full=True):
+    def fit(self, solve_args={'tol':1.e-12, 'min_its':500}, use_full_cov=True):
 
         lasso.fit(self, solve_args=solve_args)
 
@@ -1340,13 +1340,13 @@ class data_splitting(data_carving):
         _feature_weights[self.active] = 0.
         _feature_weights[self.inactive] = np.inf
         
-
         _unpenalized_problem = simple_problem(self.loglike_inference,
                                               weighted_l1norm(_feature_weights, lagrange=1.))
         _unpenalized = _unpenalized_problem.solve(**solve_args)
+
         self._unpenalized_active = _unpenalized[self.active]
 
-        if use_full:
+        if use_full_cov:
             H = self.loglike_full.hessian(_unpenalized)
             n_inference = self.loglike_inference.data[0].shape[0]
             n_full = self.loglike_full.data[0].shape[0]
