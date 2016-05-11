@@ -55,6 +55,7 @@ def test_fixed_lambda():
         """ % (s, lam)
 
         rpy.r(R_code)
+
         R_pvals = np.asarray(rpy.r('pval'))
         selected_vars = np.asarray(rpy.r('vars'))
         coef = np.asarray(rpy.r('coef0')).reshape(-1)
@@ -66,14 +67,14 @@ def test_fixed_lambda():
         y = y.reshape(-1)
         #y -= y.mean()
         L = lasso.gaussian(x, y, lam, sigma=s)
-        L.fit(min_its=200)
+        L.fit(solve_args={'min_its':200})
 
         S = L.summary('onesided')
         yield np.testing.assert_allclose, L.fit()[1:], beta_hat, 1.e-2, 1.e-2, False, 'fixed lambda, sigma=%f coef' % s
         yield np.testing.assert_equal, L.active, selected_vars
         yield np.testing.assert_allclose, S['pval'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
-        yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
-        yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
+        yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f sd ' % s
+        yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f estimator' % s
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step():
@@ -116,8 +117,6 @@ def test_forward_step():
 
     np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
     np.testing.assert_allclose([p for i, p in steps], R_pvals, atol=tol, rtol=tol)
-
-    print (R_pvals, [p for i, p in steps])
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step_all():
