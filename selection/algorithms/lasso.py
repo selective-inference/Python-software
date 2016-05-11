@@ -143,7 +143,8 @@ class lasso(object):
 
     def __init__(self, loglike, 
                  feature_weights,
-                 covariance_estimator=None):
+                 covariance_estimator=None,
+                 ignore_inactive_constraints=False):
         r"""
 
         Create a new post-selection dor the LASSO problem
@@ -181,6 +182,7 @@ class lasso(object):
         self.feature_weights = np.asarray(feature_weights)
 
         self.covariance_estimator = covariance_estimator
+        self.ignore_inactive_constraints = ignore_inactive_constraints
 
     def fit(self, lasso_solution=None, solve_args={'tol':1.e-12, 'min_its':50}):
         """
@@ -279,38 +281,42 @@ class lasso(object):
                     _cov_IA = _cov_FA[len(self.active):]
                     _cov_AA = _cov_FA[:len(self.active)]
 
-                    # X_{-E}^T(y - X_E \bar{\beta}_E)
-
-                    _inactive_score = - G_I - inactive_mean
-
                     _beta_bar = self.onestep_estimator
-                    _indep_linear_part = _cov_IA.dot(np.linalg.inv(_cov_AA))
 
-                    # we "fix" _nuisance, effectively conditioning on it
+                    if not self.ignore_inactive_constraints:
+                        # X_{-E}^T(y - X_E \bar{\beta}_E)
 
-                    _nuisance = _inactive_score - _indep_linear_part.dot(_beta_bar)
-                    _upper_lim = (self.feature_weights[self.inactive] - 
-                                  _nuisance - 
-                                  inactive_mean)
-                    _lower_lim = (_nuisance + 
-                                  self.feature_weights[self.inactive] +
-                                  inactive_mean)
+                        _inactive_score = - G_I - inactive_mean
 
-                    _upper_linear = _indep_linear_part
-                    _lower_linear = -_indep_linear_part
+                        _indep_linear_part = _cov_IA.dot(np.linalg.inv(_cov_AA))
 
-                    C = self._constraints
-                    _full_linear = np.vstack([C.linear_part,
-                                              _upper_linear,
-                                              _lower_linear])
+                        # we "fix" _nuisance, effectively conditioning on it
 
-                    _full_offset = np.hstack([C.offset,
-                                              _upper_lim,
-                                              _lower_lim])
+                        _nuisance = _inactive_score - _indep_linear_part.dot(_beta_bar)
+                        _upper_lim = (self.feature_weights[self.inactive] - 
+                                      _nuisance - 
+                                      inactive_mean)
+                        _lower_lim = (_nuisance + 
+                                      self.feature_weights[self.inactive] +
+                                      inactive_mean)
 
-                    self._constraints = constraints(_full_linear,
-                                                    _full_offset,
-                                                    covariance=_cov_AA)
+                        _upper_linear = _indep_linear_part
+                        _lower_linear = -_indep_linear_part
+
+                        C = self._constraints
+                        _full_linear = np.vstack([C.linear_part,
+                                                  _upper_linear,
+                                                  _lower_linear])
+
+                        _full_offset = np.hstack([C.offset,
+                                                  _upper_lim,
+                                                  _lower_lim])
+
+                        self._constraints = constraints(_full_linear,
+                                                        _full_offset,
+                                                        covariance=_cov_AA)
+                    else:
+                        self._constraints.covariance[:] = _cov_AA
 
                     if not self._constraints(_beta_bar):
                         warnings.warn('constraints of KKT conditions on one-step estimator ' + 
@@ -751,7 +757,8 @@ class lasso(object):
         cov_est = gaussian_parametric_estimator(X, Y, sigma=_sigma_hat)
 
         L = lasso(loglike, feature_weights * multiplier * sigma_E,
-                  covariance_estimator=cov_est)
+                  covariance_estimator=cov_est,
+                  ignore_inactive_constraints=True)
 
         # these arguments are reused for data carving
 

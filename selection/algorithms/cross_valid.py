@@ -8,7 +8,8 @@ from scipy.stats import norm as ndist
 
 from regreg.api import identity_quadratic
 
-from .sqrt_lasso import sqrt_lasso, solve_sqrt_lasso, choose_lambda
+from .lasso import lasso
+from .sqrt_lasso import solve_sqrt_lasso, choose_lambda
 from ..constraints.affine import (constraints, 
                                   sample_from_constraints)
 from ..distributions.discrete_family import discrete_family
@@ -73,7 +74,7 @@ def solve_grid(Y,
                                      Y, 
                                      m * L * np.ones(p), 
                                      quadratic=quadratic,
-                                     **solve_args)[0]))
+                                     solve_args=solve_args)[0]))
         else:
             results.append(
                 (m, solve_sqrt_lasso(X, 
@@ -81,7 +82,7 @@ def solve_grid(Y,
                                      m * L * np.ones(p), 
                                      quadratic=quadratic,
                                      initial=results[-1][1],
-                                     **solve_args)[0]))
+                                     solve_args=solve_args)[0]))
 
         if post_estimator:
             active = np.nonzero(results[-1][1])[0]
@@ -276,9 +277,9 @@ def select_vars_signs(Y,
 
     """
     n, p = X.shape
-    SL = sqrt_lasso(Y, X, L * np.ones(p), quadratic=quadratic)
-    SL.fit(**solve_args)
-    return SL.active, SL.z_E, SL
+    SL = lasso.sqrt_lasso(X, Y, L * np.ones(p), quadratic=quadratic)
+    SL.fit(solve_args=solve_args)
+    return SL.active, SL.active_signs, SL
 
 ### end -- generalize from sqrt_lasso to smooth losses with \ell_1 penalty
 
@@ -399,7 +400,7 @@ class lasso_tuned(object):
             self.sigma_resid = sigma
         else:
             resid_current = (Y - np.dot(self.X[:,self.active_set],
-                                        np.dot(self.SQ._XEinv, Y)))
+                                        self.SQ.onestep_estimator))
             n = Y.shape[0]
             self.sigma_resid = np.linalg.norm(resid_current) / np.sqrt(n - self.active_set.shape[0])
 
@@ -481,9 +482,10 @@ class lasso_tuned(object):
                                       quadratic=self.Q_select)
 
         self.inactive_set = self.SQ.inactive
-        self._select_beta = self.SQ._soln
-        self._select_subgrad = self.SQ._subgrad
-        self._select_loss = self.SQ._loss
+        self._select_beta = self.SQ.lasso_solution
+        self._select_loss = self.SQ.loglike
+        self._select_subgrad = -(self._select_loss.smooth_objective(self._select_beta, 'grad') + 
+                                 self.Q_select.objective(self._select_beta, 'grad'))
 
     def step_valid(self,
                    max_trials=10):
@@ -537,11 +539,13 @@ class lasso_tuned(object):
 
             _subgrad = self._select_subgrad.copy()
             _subgrad[self.inactive_set] += (step_size * 
-                                            self.randomization.rvs(size=self.inactive_set.shape) * 
+                                            self.randomization.rvs(size=self.inactive_set.sum()) * 
                                             self.scale_select)
+
+
             if (np.all(np.sign(_beta) == np.sign(self._select_beta))
                 and 
-                np.all(np.fabs(_subgrad) < self.L)):
+                np.all(np.fabs(_subgrad[self.inactive_set]) < self.SQ.feature_weights[self.inactive_set])):
                 break
 
         G_proposal = np.linalg.norm(self._select_loss.smooth_objective(_beta, 'grad') + 
