@@ -342,3 +342,108 @@ def estimate_sigma(observed, truncated_df, lower_bound, upper_bound, untruncated
         sigma_hat = observed
         
     return sigma_hat
+
+def goodness_of_fit(sqrt_lasso_obj, statistic, 
+                    force=False,
+                    alternative='twosided', 
+                    ndraw=5000,
+                    burnin=2000,
+                    sample=None,
+                    ):
+
+    """
+
+    Compute a goodness of fit test based on a given
+    statistic applied to 
+
+    .. math::
+
+         U_{-E}(y) = (I-P_E)y / \|(I-P_E)y\|_2
+
+    which is ancillary for the selected model.
+
+    Parameters
+    ----------
+
+    sqrt_lasso_obj : `lasso`
+        Instance of selection.algorithms.lasso.lasso instantiated
+        with `sqrt_lasso` classmethod.
+
+    statistic : callable
+        Statistic to compute on observed $U_{-E}$ as well
+        as sample from null distribution.
+
+    alternative : str
+        One of ['greater', 'less', 'twosided']. Determines
+        how pvalue is computed, based on upper tail, lower tail
+        or equal tail.
+
+    force : bool
+        Resample from $U_{-E}$ under the null even if
+        the instance already has a null sample.
+
+    ndraw : int (optional)
+        If a null sample is to be drawn, how large a sample?
+        Defaults to 1000.
+
+    burnin : int (optional)
+        If a null sample is to be drawn, how long a burnin?
+        Defaults to 1000.
+
+    sample : multiparameter_family (optional)
+        If not None, this is used as sample instead of generating a new sample.
+
+    Returns
+    -------
+
+    pvalue : np.float
+         Two-tailed p-value.
+
+    """
+
+    L = sqrt_lasso_obj # shorthand
+
+    X, Y = L.loglike.data
+    n, p = X.shape
+    X_E = X[:,L.active]
+    R_E = np.identity(n) - X_E.dot(np.linalg.pinv(X_E))
+
+    if sample is not None:
+        if sqrt_lasso_obj.active.shape[0] > 0:
+            con = sqrt_lasso_obj.inactive_constraints
+            conditional_con = con.conditional(X_E.T, np.dot(X_E.T, sqrt_lasso_obj.y))
+
+            Z, W = sample_from_sphere(conditional_con, 
+                                      Y,
+                                      ndraw=ndraw,
+                                      burnin=burnin)  
+            U_notE_sample = np.dot(R_E, Z.T).T
+            U_notE_sample /= np.sqrt((U_notE_sample**2).sum(1))[:,None]
+            _goodness_of_fit_sample = multiparameter_family(U_notE_sample, W)
+            _goodness_of_fit_observed = np.dot(R_E, sqrt_lasso_obj.y) / np.linalg.norm(np.dot(R_E, sqrt_lasso_obj.y))
+
+        else:
+            n, p = sqrt_lasso_obj.X.shape
+            U_sample = np.random.standard_normal((ndraw, n))
+            U_sample /= np.sqrt((U_sample**2).sum(1))[:, None]
+            _goodness_of_fit_sample = multiparameter_family(U_sample, np.ones(U_sample.shape[0]))
+            _goodness_of_fit_observed = Y / np.linalg.norm(Y)
+
+    null_sample = _goodness_of_fit_sample.sufficient_stat
+    importance_weights = _goodness_of_fit_sample.weights
+    null_statistic = np.array([statistic(u) for u in null_sample])
+    observed = statistic(_goodness_of_fit_observed)
+    family = discrete_family(null_statistic, importance_weights)
+
+    if alternative not in ['greater', 'less', 'twosided']:
+        raise ValueError("expecting alternative to be in ['greater', 'less', 'twosided']")
+
+    if alternative == 'less':
+        pvalue = family.cdf(0, observed)
+    elif alternative == 'greater':
+        pvalue = family.ccdf(0, observed)
+    else:
+        pvalue = family.cdf(0, observed)
+        pvalue = 2 * min(pvalue, 1. - pvalue)
+
+    return pvalue
