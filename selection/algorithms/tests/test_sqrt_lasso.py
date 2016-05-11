@@ -16,16 +16,13 @@ import statsmodels.api as sm
 
 import regreg.api as rr
 
-import selection.algorithms.sqrt_lasso_objective
-reload(selection.algorithms.sqrt_lasso_objective)
-
-from selection.algorithms.sqrt_lasso_objective import (solve_sqrt_lasso, 
-                                                       choose_lambda,
-                                                       goodness_of_fit,
-                                                       sqlasso_objective,
-                                                       sqlasso_objective_skinny,
-                                                       solve_sqrt_lasso_fat,
-                                                       solve_sqrt_lasso_skinny)
+from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, 
+                                             choose_lambda,
+                                             goodness_of_fit,
+                                             sqlasso_objective,
+                                             sqlasso_objective_skinny,
+                                             solve_sqrt_lasso_fat,
+                                             solve_sqrt_lasso_skinny)
 
 from selection.algorithms.lasso import instance, lasso
 # from selection.constraints.quasi_affine import constraints_unknown_sigma

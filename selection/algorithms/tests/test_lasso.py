@@ -13,9 +13,9 @@ from selection.algorithms.lasso import (lasso,
                                         gaussian_sandwich_estimator,
                                         gaussian_parametric_estimator)
 
-from selection.algorithms.sqrt_lasso import solve_sqrt_lasso 
+from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, choose_lambda)
 
-from regreg.api import identity_quadratic
+import regreg.api as rr
 
 from selection.tests.decorators import set_sampling_params_iftrue
 
@@ -25,7 +25,7 @@ def test_gaussian(n=100, p=20):
     X = np.random.standard_normal((n,p))
 
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
-    Q = identity_quadratic(0.01, 0, np.ones(p), 0)
+    Q = rr.identity_quadratic(0.01, 0, np.ones(p), 0)
 
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
@@ -58,7 +58,7 @@ def test_sqrt_lasso(n=100, p=20):
     X = np.random.standard_normal((n,p))
 
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0)) / np.sqrt(n)
-    Q = None # identity_quadratic(0.01, 0, np.random.standard_normal(p) / 5., 0)
+    Q = rr.identity_quadratic(0.01, 0, np.random.standard_normal(p) / 5., 0)
 
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
@@ -127,7 +127,7 @@ def test_poisson():
 
 def test_coxph():
 
-    Q = identity_quadratic(0.01, 0, np.ones(5), 0)
+    Q = rr.identity_quadratic(0.01, 0, np.ones(5), 0)
     X = np.random.standard_normal((100,5))
     T = np.random.standard_exponential(100)
     S = np.random.binomial(1, 0.5, size=(100,))
@@ -628,7 +628,7 @@ def test_sqrt_lasso_pvals(n=100,
                                              snr=snr)
 
         lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0)) / np.sqrt(n)
-        Q = identity_quadratic(0.01, 0, np.ones(p), 0)
+        Q = rr.identity_quadratic(0.01, 0, np.ones(p), 0)
 
         weights_with_zeros = 0.7*lam_theor * np.ones(p)
         weights_with_zeros[:3] = 0.
@@ -726,14 +726,14 @@ def test_logistic_pvals(n=500,
 def test_adding_quadratic_lasso():
 
     X, y, beta, active, sigma = instance(n=300, p=200)
-    Q = identity_quadratic(0.01, 0, np.random.standard_normal(X.shape[1]), 0)
+    Q = rr.identity_quadratic(0.01, 0, np.random.standard_normal(X.shape[1]), 0)
 
     L1 = lasso.gaussian(X, y, 20, quadratic=Q)
     beta1 = L1.fit(solve_args={'min_its':500, 'tol':1.e-12})
     G1 = X[:,L1.active].T.dot(X.dot(beta1) - y) + Q.objective(beta1,'grad')[L1.active]
     np.testing.assert_allclose(G1 * np.sign(beta1[L1.active]), -20)
 
-    lin = identity_quadratic(0.0, 0, np.random.standard_normal(X.shape[1]), 0)
+    lin = rr.identity_quadratic(0.0, 0, np.random.standard_normal(X.shape[1]), 0)
     L2 = lasso.gaussian(X, y, 20, quadratic=lin)
     beta2 = L2.fit(solve_args={'min_its':500, 'tol':1.e-12})
     G2 = X[:,L2.active].T.dot(X.dot(beta2) - y) + lin.objective(beta2,'grad')[L2.active]

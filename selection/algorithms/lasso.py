@@ -27,7 +27,7 @@ from regreg.api import (glm,
                         coxph as coxph_obj,
                         smooth_sum)
 
-from .sqrt_lasso_objective import solve_sqrt_lasso, estimate_sigma
+from .sqrt_lasso import solve_sqrt_lasso, estimate_sigma
 
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
