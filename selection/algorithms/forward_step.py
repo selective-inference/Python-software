@@ -411,6 +411,13 @@ class forward_step(object):
 
                         intervals.append((self.variables[i], (lower_lim_final, upper_lim_final)))
                     else: # we do not really need to tilt just for p-values
+
+                        if alternative == 'onesided':
+                            _alt = {1:'greater',
+                                    -1:'less'}[self.signs[i]]
+                        else:
+                            _alt = 'twosided'
+
                         _ , _, _, family = gibbs_test(conditional_law,
                                                       self.Y,
                                                       eta,
@@ -419,8 +426,9 @@ class forward_step(object):
                                                       ndraw=ndraw,
                                                       burnin=burnin,
                                                       how_often=10,
-                                                      use_random_directions=False,                                                     UMPU=False,
-                                                      alternative=alternative)
+                                                      use_random_directions=False,                                                     
+                                                      UMPU=False,
+                                                      alternative=_alt)
 
                     pval = family.cdf(0, observed_func)
                     if alternative == 'twosided':
