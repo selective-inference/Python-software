@@ -22,12 +22,18 @@ install:
   # Coverage packages are on my binstar channel
   - conda install --yes -c dan_blanchard python-coveralls nose-cov
   - pip install -r requirements.txt
-  # Install regreg and selection
+  # Install regreg 
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
   - pip install -r requirements.txt
   - pip install -e .
   - cd ..
+  # Install choldate -- hopefully we can drop this dependency
+  - git clone https://github.com/jcrudy/choldate.git
+  - cd choldate
+  - pip install -e .
+  - cd ..
+  # Install selection
   - pip install -e .
 
 # Run test
