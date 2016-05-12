@@ -21,11 +21,12 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose dateutil pandas statsmodels scikit-learn 
   # Coverage packages are on my binstar channel
   - conda install --yes -c dan_blanchard python-coveralls nose-cov
+  - pip install -r requirements.txt
+  # Install regreg and selection
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
   - python setup.py install
   - cd ..
-  - pip install -r requirements.txt
   - python setup.py install
 
 # Run test
