@@ -25,9 +25,10 @@ install:
   # Install regreg and selection
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
-  - python setup.py install
+  - pip install -r requirements.txt
+  - pip install -e .
   - cd ..
-  - python setup.py install
+  - pip install -e .
 
 # Run test
 script:
