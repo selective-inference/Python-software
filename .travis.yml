@@ -19,11 +19,16 @@ before_install:
 # Install packages
 install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose dateutil pandas statsmodels scikit-learn 
-  - conda install --yes -c r r-essentials
-  - pip install rpy2
   # Coverage packages are on my binstar channel
   - conda install --yes -c dan_blanchard python-coveralls nose-cov
-  - pip install -r requirements.txt
+  # Install R and rpy2
+  - conda install --yes -c r r-essentials
+  - pip install rpy2
+  # Install selectiveInference
+  - git clone https://github.com/selective-inference/R-software.git
+  - cd R-software
+  - R CMD INSTALL selectiveInference
+  - cd ..
   # Install regreg 
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
@@ -36,6 +41,7 @@ install:
   - pip install -e .
   - cd ..
   # Install selection
+  - pip install -r requirements.txt
   - pip install -e .
 
 # Run test
