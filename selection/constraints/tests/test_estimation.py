@@ -98,34 +98,42 @@ def test_gaussian_unknown():
 
     G = conj.smooth_objective(sufficient_stat, 'grad')
     M = cumulant.smooth_objective(G, 'grad')
-
     np.testing.assert_allclose(sufficient_stat, M)
 
-def test_gaussian_unknown():
+    G = cumulant.smooth_objective(MLE2, 'grad')
+    M = conj.smooth_objective(G, 'grad')
+    np.testing.assert_allclose(MLE2, M)
+
+def test_gaussian_known():
 
     n, p = 20, 5
     X = np.random.standard_normal((n, p))
     Y = np.random.standard_normal(n)
 
+    sigma = 2
     T = X.T.dot(Y)
 
     sufficient_stat = T
 
-    cumulant = gaussian_cumulant_known(X, 2.)
-    conj = gaussian_cumulant_conjugate_known(X, 2.)
+    cumulant = gaussian_cumulant_known(X, sigma)
+    conj = gaussian_cumulant_conjugate_known(X, sigma)
 
     MLE = cumulant.regression_parameters(conj.smooth_objective(sufficient_stat, 'grad'))
     linear = rr.identity_quadratic(0, 0, -sufficient_stat, 0)
     cumulant.coefs[:] = 1.
     MLE2 = cumulant.solve(linear, tol=1.e-10, min_its=200)
 
-    np.testing.assert_allclose(MLE2, conj.smooth_objective(sufficient_stat, 'grad'))
-
     beta_hat = np.linalg.pinv(X).dot(Y)
     np.testing.assert_allclose(beta_hat, MLE)
 
+    np.testing.assert_allclose(beta_hat / sigma**2, conj.smooth_objective(sufficient_stat, 'grad'))
+    np.testing.assert_allclose(MLE2, conj.smooth_objective(sufficient_stat, 'grad'))
+
     G = conj.smooth_objective(sufficient_stat, 'grad')
     M = cumulant.smooth_objective(G, 'grad')
+    np.testing.assert_allclose(sufficient_stat, M)
 
+    G = cumulant.smooth_objective(sufficient_stat, 'grad')
+    M = conj.smooth_objective(G, 'grad')
     np.testing.assert_allclose(sufficient_stat, M)
 

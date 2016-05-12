@@ -391,7 +391,7 @@ class gaussian_cumulant_known(rr.smooth_atom):
         mean_part = natural_param   # \gamma in formula above
 
         pseudo_fit = X.dot(mean_part)
-        value = self.sigma**2 * ((pseudo_fit)**2).sum() 
+        value = self.sigma**2 * ((pseudo_fit)**2).sum() / 2.
         grad = self.sigma**2 * X.T.dot(pseudo_fit) 
         
         if mode == 'func':
