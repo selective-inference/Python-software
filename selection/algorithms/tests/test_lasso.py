@@ -49,7 +49,7 @@ def test_gaussian(n=100, p=20):
         S = L.summary('twosided')
 
         nt.assert_raises(ValueError, L.summary, 'none')
-        print L.active
+        print(L.active)
         yield (np.testing.assert_array_less,
                np.dot(L.constraints.linear_part, L.onestep_estimator),
                L.constraints.offset)
@@ -454,7 +454,7 @@ def test_data_carving_poisson(n=200,
             print(DC.active)
             data_split = False
 
-        print DC.active
+        print(DC.active)
         if set(range(s)).issubset(DC.active):
             carve = []
             split = []

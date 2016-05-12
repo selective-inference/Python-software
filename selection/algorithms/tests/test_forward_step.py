@@ -23,13 +23,13 @@ def test_FS(k=10, ndraw=5000, burnin=5000, nsim=None):
     for i in range(k):
         FS.next(compute_pval=True)
 
-    print 'first %s variables selected' % k, FS.variables
+    print('first %s variables selected' % k, FS.variables)
 
-    print 'pivots for 3rd selected model knowing that we performed %d steps of forward stepwise' % k
+    print('pivots for 3rd selected model knowing that we performed %d steps of forward stepwise' % k)
 
-    print FS.model_pivots(3)
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
-    print FS.model_quadratic(3)
+    print(FS.model_pivots(3))
+    print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
+    print(FS.model_quadratic(3))
 
 @set_sampling_params_iftrue(True)
 def test_FS_unknown(k=10, ndraw=5000, burnin=5000, nsim=None):
@@ -45,11 +45,11 @@ def test_FS_unknown(k=10, ndraw=5000, burnin=5000, nsim=None):
     for i in range(k):
         FS.next()
 
-    print 'first %s variables selected' % k, FS.variables
+    print('first %s variables selected' % k, FS.variables)
 
-    print 'pivots for last variable of 3rd selected model knowing that we performed %d steps of forward stepwise' % k
+    print('pivots for last variable of 3rd selected model knowing that we performed %d steps of forward stepwise' % k)
 
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
+    print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
 
 @set_sampling_params_iftrue(True)
 def test_subset(k=10, ndraw=5000, burnin=5000, nsim=None):
@@ -68,18 +68,18 @@ def test_subset(k=10, ndraw=5000, burnin=5000, nsim=None):
     for i in range(k):
         FS.next()
 
-    print 'first %s variables selected' % k, FS.variables
+    print('first %s variables selected' % k, FS.variables)
 
-    print 'pivots for last variable of 3rd selected model knowing that we performed %d steps of forward stepwise' % k
+    print('pivots for last variable of 3rd selected model knowing that we performed %d steps of forward stepwise' % k)
 
-    print FS.model_pivots(3, saturated=True)
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
+    print(FS.model_pivots(3, saturated=True))
+    print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
 
     FS = forward_step(X, Y, subset=subset)
 
     for i in range(k):
         FS.next()
-    print FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw)
+    print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
 
 @set_sampling_params_iftrue(True)
 def test_BIC(do_sample=True, ndraw=8000, burnin=2000, nsim=None,

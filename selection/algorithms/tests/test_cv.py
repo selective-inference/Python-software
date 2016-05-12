@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from statsmodels.distributions import ECDF
 
@@ -70,7 +71,7 @@ def plot_fig():
     results.setdefault('indep', [])
 
     for i in range(200):
-        print i
+        print(i)
         for method in [lasso_tuned, lasso_tuned_conditional]:
             result = test_CV(ndraw=1000, burnin=500, sigma_known=False,
                               method=method, s=s)
@@ -94,16 +95,16 @@ def plot_fig():
                 results['indep'].append((result[2].pval_indep[s], result[2].pval_indep[0]))
                 np.savez(str(method.__name__)[11:] + '.npz', P0=P0, PA=PA)
 
-            print ('screening', str(method.__name__)), (counter[method] * 1.) / (i + 1)
-            print ('power', str(method.__name__)), np.mean(PA < 0.05)
-            print ('level', str(method.__name__)), np.mean(P0 < 0.05)
+            print(('screening', str(method.__name__)), (counter[method] * 1.) / (i + 1))
+            print(('power', str(method.__name__)), np.mean(PA < 0.05))
+            print(('level', str(method.__name__)), np.mean(P0 < 0.05))
 
         P0 = np.array(results['indep'])[:,0]
         PA = np.array(results['indep'])[:,1]
         np.savez('indep.npz', P0=P0, PA=PA)
 
-        print ('power', 'indep'), np.mean(PA < 0.05)
-        print ('level', 'level'), np.mean(P0 < 0.05)
+        print(('power', 'indep'), np.mean(PA < 0.05))
+        print(('level', 'level'), np.mean(P0 < 0.05))
 
 
         U = np.linspace(0,1,101)
