@@ -27,6 +27,8 @@ install:
   # Install selectiveInference
   - git clone https://github.com/selective-inference/R-software.git
   - cd R-software
+  # Install intervals -- hacky!!
+  - python -c "import rpy2.robjects as rpy; rpy.r('''install.packages('intervals', repos='http://cran.r-project.org')''')"
   - R CMD INSTALL selectiveInference
   - cd ..
   # Install regreg 
