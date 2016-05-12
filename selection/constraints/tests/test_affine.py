@@ -97,15 +97,16 @@ def test_simulate_nonwhitened():
     cov = np.dot(X.T, X)
 
     W = np.random.standard_normal((3,p))
-    con = AC.constraints(W, np.ones(3), covariance=cov)
+    con = AC.constraints(W, 3 * np.ones(3), covariance=cov)
 
     while True:
         z = np.random.standard_normal(p)
-        if np.dot(W, z).max() <= 1:
+        if np.dot(W, z).max() <= 3:
             break
 
-    Z = AC.sample_from_constraints(con, z)
-    nt.assert_true((np.dot(Z, W.T) - 1).max() < 0)
+    Z = AC.sample_from_constraints(con, z, burnin=100, ndraw=100)
+   
+    nt.assert_true((np.dot(Z, W.T) - 3).max() < 1.e-5)
 
 def test_pivots_intervals():
 
