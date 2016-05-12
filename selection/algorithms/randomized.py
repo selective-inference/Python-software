@@ -21,7 +21,7 @@ from ..constraints.affine import (constraints, selection_interval,
                                  gibbs_test,
                                  stack)
 from ..distributions.discrete_family import discrete_family
-from .lasso import lasso as OLS_lasso, _constraint_from_data
+from .lasso import lasso as OLS_lasso
 
 class randomized_lasso(object):
 

@@ -1,4 +1,5 @@
 import numpy as np
+import nose.tools as nt
 import numpy.testing.decorators as dec
 
 from itertools import product
@@ -30,7 +31,7 @@ def test_gaussian(n=100, p=20):
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
 
-    huge_weights = weights_with_zeros * 100
+    huge_weights = weights_with_zeros * 10000
 
     for q, fw in product([Q, None],
                          [0.5*lam_theor, weights_with_zeros, huge_weights]):
@@ -47,6 +48,7 @@ def test_gaussian(n=100, p=20):
         S = L.summary('onesided', compute_intervals=True)
         S = L.summary('twosided')
 
+        nt.assert_raises(ValueError, L.summary, 'none')
         print L.active
         yield (np.testing.assert_array_less,
                np.dot(L.constraints.linear_part, L.onestep_estimator),
@@ -63,8 +65,10 @@ def test_sqrt_lasso(n=100, p=20):
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
 
+    huge_weights = weights_with_zeros * 10000
+
     for q, fw in product([None, Q],
-                         [0.5*lam_theor, weights_with_zeros]):
+                         [0.5*lam_theor, weights_with_zeros, huge_weights]):
 
         L = lasso.sqrt_lasso(X, y, fw, quadratic=q, solve_args={'min_its':300, 'tol':1.e-12})
         L.fit(solve_args={'min_its':300, 'tol':1.e-12})
@@ -607,6 +611,7 @@ def test_gaussian_pvals(n=100,
                                              snr=snr)
         L = lasso.gaussian(X, y, 20., sigma=sigma)
         L.fit()
+        L.fit(L.lasso_solution)
         v = {1:'twosided',
              0:'onesided'}[counter % 2]
         if set(active).issubset(L.active):

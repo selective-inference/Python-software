@@ -248,9 +248,14 @@ class lasso(object):
             self.onestep_estimator = self._active_soln - dbeta_A
             self.active_penalized = self.feature_weights[self.active] != 0
 
-            self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
-                                             (self.active_signs * dbeta_A)[self.active_penalized],
-                                             covariance=H_AAinv)
+            if self.active_penalized.sum():
+                self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
+                                                 (self.active_signs * dbeta_A)[self.active_penalized],
+                                                 covariance=H_AAinv)
+            else:
+                self._constraints = constraints(np.identity(self.active.shape[0]),
+                                                1.e12 * np.ones(self.active.shape[0]) * H_AAinv.max(), # XXX np.inf seems to fail tests
+                                                covariance=H_AAinv)
 
             if self.inactive.sum():
 
@@ -693,6 +698,7 @@ class lasso(object):
 
         active = (soln != 0)
         nactive = active.sum()
+
         if nactive:
 
             subgrad = np.sign(soln[active]) * feature_weights[active]
@@ -981,33 +987,6 @@ def gaussian_parametric_estimator(X, Y, sigma=None):
         return _unscaled
 
     return _estimator
-
-def _constraint_from_data(X_E, X_notE, active_signs, E, lam, sigma, R):
-
-    n, p = X_E.shape[0], X_E.shape[1] + X_notE.shape[1]
-    if np.array(lam).shape == ():
-        lam = np.ones(p) * lam
-
-    # inactive constraints
-    den = np.hstack([lam[~E], lam[~E]])[:,None]
-    A0 = np.vstack((R, -R)) / den
-    b_tmp = np.dot(X_notE.T, np.dot(np.linalg.pinv(X_E.T), lam[E] * active_signs)) / lam[~E] 
-    b0 = np.concatenate((1.-b_tmp, 1.+b_tmp))
-    _inactive_constraints = constraints(A0, b0)
-    _inactive_constraints.covariance *= sigma**2
-
-    # active constraints
-    C = np.linalg.inv(np.dot(X_E.T, X_E))
-    A1 = -np.dot(np.diag(active_signs), np.dot(C, X_E.T))
-    b1 = -active_signs * np.dot(C, active_signs*lam[E])
-
-    _active_constraints = constraints(A1, b1)
-    _active_constraints.covariance *= sigma**2
-
-    _constraints = stack(_active_constraints,
-                         _inactive_constraints)
-    _constraints.covariance *= sigma**2
-    return _active_constraints, _inactive_constraints, _constraints
 
 def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
     """
