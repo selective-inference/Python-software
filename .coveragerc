@@ -1,0 +1,6 @@
+[run]
+branch = True
+source = selection
+include = */selection/*
+omit =
+    */setup.py

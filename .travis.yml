@@ -52,4 +52,4 @@ script:
 
 # Calculate coverage
 after_success:
-  - coveralls --config_file .coveragerc
+    - if [ "${COVERAGE}" == "1" ]; then coveralls; fi
