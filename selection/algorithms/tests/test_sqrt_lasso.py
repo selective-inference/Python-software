@@ -67,7 +67,7 @@ def test_skinny_fat():
     soln1 = solve_sqrt_lasso_fat(X, Y, weights=np.ones(p) * lam, solve_args={'min_its':500})[0]
     soln2 = solve_sqrt_lasso_skinny(X, Y, weights=np.ones(p) * lam, solve_args={'min_its':500})[0]
 
-    np.testing.assert_almost_equal(soln1, soln2, rtol=1.e-3)
+    np.testing.assert_allclose(soln1, soln2, rtol=1.e-3)
 
     X, Y = instance(p=50)[:2]
     n, p = X.shape
@@ -77,5 +77,5 @@ def test_skinny_fat():
     soln1 = solve_sqrt_lasso_fat(X, Y, weights=np.ones(p) * lam, solve_args={'min_its':500})[0]
     soln2 = solve_sqrt_lasso_skinny(X, Y, weights=np.ones(p) * lam, solve_args={'min_its':500})[0]
 
-    np.testing.assert_almost_equal(soln1, soln2, rtol=1.e-3)
+    np.testing.assert_allclose(soln1, soln2, rtol=1.e-3)
 

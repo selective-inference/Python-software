@@ -46,7 +46,7 @@ install:
 
 # Run test
 script:
-  - nosetests --with-coverage --cover-package --verbose selection
+  - ./tools/noseall_with_coverage
 
 # Calculate coverage
 after_success:
