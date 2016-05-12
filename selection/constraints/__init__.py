@@ -1,2 +1,2 @@
-import affine, quadratic
+import .affine, .quadratic
 
