@@ -6,7 +6,7 @@ from selection.algorithms.randomized import logistic_instance
 import selection.sampling.randomized.api as randomized
 from pvalues import pval
 
-
+@np.testing.decorators.setastest(False)
 def test_logistic(s=5, n=200, p=20):
     
     X, y, beta, active= logistic_instance(n=n, p=p, s=s, rho=0)

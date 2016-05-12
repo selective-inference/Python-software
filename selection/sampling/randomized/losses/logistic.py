@@ -101,7 +101,7 @@ class logistic_Xrandom(selective_loss):
 
         return self._cov
 
-    def gradient(self, data, beta):
+    def gradient(self, beta):
         """
         Gradient of smooth part restricted to active set
         """
@@ -112,7 +112,7 @@ class logistic_Xrandom(selective_loss):
         g = -(data - np.dot(self._cov, beta)) 
         return g
 
-    def hessian(self, data, beta):
+    def hessian(self, beta):
         """
         hessian is constant in this case.
         """

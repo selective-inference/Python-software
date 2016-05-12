@@ -98,7 +98,8 @@ class selective_sampler_MH(selective_sampler):
 
         # update the gradient
         param = self.penalty.form_parameters(self.state[1])
-        self.cur_grad = self.loss.gradient(self.state[0], param)
+        self.loss.data = self.state[0]
+        self.cur_grad = self.loss.smooth_objective(param, 'grad')
 
         opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, self.cur_grad)
         betaE, subgrad = opt_vars

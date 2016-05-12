@@ -39,7 +39,7 @@ class gaussian_Xfixed(selective_loss):
     # this is something that regreg does not know about, i.e.
     # what is data and what is not...
 
-    def gradient(self, data, beta):
+    def gradient(self, beta):
         """
         Gradient of smooth part restricted to active set
         """
@@ -49,7 +49,7 @@ class gaussian_Xfixed(selective_loss):
         self.y = old_data
         return g
 
-    def hessian(self, data, beta):
+    def hessian(self, beta):
         if not hasattr(self, "_XTX"):
             self._XTX = np.dot(self.X.T, self.X)
         return self._XTX

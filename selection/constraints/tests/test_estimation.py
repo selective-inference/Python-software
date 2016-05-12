@@ -86,7 +86,7 @@ def test_gaussian_unknown():
     MLE = cumulant.regression_parameters(conj.smooth_objective(sufficient_stat, 'grad'))
     linear = rr.identity_quadratic(0, 0, -sufficient_stat, 0)
     cumulant.coefs[:] = 1.
-    MLE2 = cumulant.solve(linear, tol=1.e-10, min_its=200)
+    MLE2 = cumulant.solve(linear, tol=1.e-12, min_its=400)
 
     np.testing.assert_allclose(MLE2, conj.smooth_objective(sufficient_stat, 'grad'))
 
@@ -121,7 +121,7 @@ def test_gaussian_known():
     MLE = cumulant.regression_parameters(conj.smooth_objective(sufficient_stat, 'grad'))
     linear = rr.identity_quadratic(0, 0, -sufficient_stat, 0)
     cumulant.coefs[:] = 1.
-    MLE2 = cumulant.solve(linear, tol=1.e-10, min_its=200)
+    MLE2 = cumulant.solve(linear, tol=1.e-12, min_its=400)
 
     beta_hat = np.linalg.pinv(X).dot(Y)
     np.testing.assert_allclose(beta_hat, MLE)

@@ -24,7 +24,7 @@ from rpy2.robjects.numpy2ri import numpy2ri
 ro.conversion.py2ri = numpy2ri
 ro.numpy2ri.activate()
 
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(True, ndraw=5000)
 def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
 
     n, p = 4, 10
@@ -41,12 +41,15 @@ def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
     P = []
     for i in range(Z.shape[0]/10):
         P.append(chisq.quadratic_test(Z[10*i], S, con))
-    ecdf = sm.distributions.ECDF(P)
 
-    plt.clf()
-    x = np.linspace(0,1,101)
-    plt.plot(x, ecdf(x), c='red')
-    plt.plot([0,1],[0,1], c='blue', linewidth=2)
+#     no plots in the test!
+#     ecdf = sm.distributions.ECDF(P)
+
+#     plt.clf()
+#     x = np.linspace(0,1,101)
+#     plt.plot(x, ecdf(x), c='red')
+#     plt.plot([0,1],[0,1], c='blue', linewidth=2)
+
     nt.assert_true(np.fabs(np.mean(P)-0.5) < 0.03)
     nt.assert_true(np.fabs(np.std(P)-1/np.sqrt(12)) < 0.03)
     
@@ -78,10 +81,9 @@ def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
     P = []
     for i in range(nsim):
         Z = AC.sample_from_constraints(con, z, ndraw=ndraw, burnin=burnin)
-        print i
-        u = 0 * Z
-        u[:3] = Z[:3] / np.linalg.norm(Z[:3])
-        L, V, U = con.pivot(u, Z)[:3]
+        u = Z[-1]
+        u[:3] = u[:3] / np.linalg.norm(u[:3])
+        L, V, U = con.bounds(u, Z[-1])[:3]
         if L > 0:
             Ln = L**2
             Un = U**2
@@ -91,23 +93,22 @@ def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
             Un = U**2
             Vn = V**2
 
-        if U < 0:
-            stop
         P.append(np.array((F(Un) - F(Vn)) / (F(Un) - F(Ln))))
 
     P = np.array(P).reshape(-1)
     P = P[P > 0]
     P = P[P < 1]
 
-    ecdf = sm.distributions.ECDF(P)
+#     no plots in the tests!
+#     ecdf = sm.distributions.ECDF(P)
 
-    plt.clf()
-    x = np.linspace(0,1,101)
-    plt.plot(x, ecdf(x), c='red')
-    plt.plot([0,1],[0,1], c='blue', linewidth=2)
+#     plt.clf()
+#     x = np.linspace(0,1,101)
+#     plt.plot(x, ecdf(x), c='red')
+#     plt.plot([0,1],[0,1], c='blue', linewidth=2)
 
 @set_sampling_params_iftrue(True)
-def main_test(nsim=1000, burnin=None, ndraw=None):
+def main(nsim=1000, burnin=None, ndraw=None):
 
 
     def full_sim(L, b, p):
@@ -116,13 +117,16 @@ def main_test(nsim=1000, burnin=None, ndraw=None):
         A2 = L[:p]
         A3 = np.array([np.arange(q)**(i/2.) for i in range(1,4)])
 
-        con = AC.constraints((L, b), None)
+        con = AC.constraints(L, b)
         
         def sim(A):
 
-            y = C.simulate_from_constraints(con) 
-            return quadratic_test(y, np.identity(con.dim),
-                                  con)
+            while True:
+                y = np.random.standard_normal(L.shape[1])
+                if con(y):
+                    break
+            return chisq.quadratic_test(y, np.identity(con.dim),
+                                        con)
 
         return sim(A1), sim(A2), sim(A3)
 
