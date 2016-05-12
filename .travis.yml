@@ -32,10 +32,10 @@ matrix:
     # Check these dependencies against regreg/info.py
 
 before_install:
-    - source travis-tools/utils.sh
-    - travis_before_install
+    # - source travis-tools/utils.sh
+    # - travis_before_install
 install:
-    - travis_install $INSTALL_TYPE
+    # - travis_install $INSTALL_TYPE
 # command to run tests, e.g. python setup.py test
 script:
     - pip install nose
