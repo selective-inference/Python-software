@@ -3,16 +3,6 @@ import itertools
 import numpy as np
 import numpy.testing.decorators as dec
 
-# make any plots not use display
-
-from matplotlib import use
-use('Agg')
-import matplotlib.pyplot as plt
-
-# used for ECDF
-
-import statsmodels.api as sm
-
 from selection.algorithms.lasso import instance, lasso
 from selection.algorithms.covtest import covtest, selected_covtest
 from selection.constraints.affine import gibbs_test
@@ -122,14 +112,3 @@ def test_tilting(nsim=100, ndraw=50000, burnin=10000):
 
         print screen / (i + 1.), 'screening'
 
-    plt.figure()
-    plt.scatter(Pa[:,0], Pa[:,1])
-
-    try:
-        import statsmodels.api as sm
-        plt.figure()
-        G = np.linspace(0, 1, 101)
-        plt.plot(G, sm.distributions.ECDF(Pa[:,0])(G))
-        plt.plot(G, sm.distributions.ECDF(Pa[:,1])(G))
-    except ImportError: # no statsmodels
-        pass

@@ -1003,17 +1003,19 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         opt_tilt = optimal_tilt(tilted1_con, eta)
         tilt2 = opt_tilt.fit()
 
-        # tilteded contrast will be a point whose mean 
+        # tilted contrast will be a point whose mean 
         # (approximately) satisfies the constraint
         # and whose mean is closest to tilted1_con
 
         tilted2_con = copy(tilted1_con)
         tilted2_con.mean = tilted1_con.mean + tilt2
 
-        MLE = one_parameter_MLE(tilted2_con,
-                                Y,
-                                tilt,
-                                **MLE_opts)
+        # TODO use the selective_mle from estimation module
+
+        MLE = 0 # one_parameter_MLE(tilted2_con,
+                #                Y,
+                #                tilt,
+                #                **MLE_opts)
 
         tilted2_con.mean += MLE * tilt
 
