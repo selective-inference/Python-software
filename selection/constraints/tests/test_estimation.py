@@ -111,8 +111,8 @@ def test_gaussian_unknown():
 
     sufficient_stat = T
 
-    cumulant = gaussian_cumulant_known(X)
-    conj = gaussian_cumulant_conjugate_known(X)
+    cumulant = gaussian_cumulant_known(X, 2.)
+    conj = gaussian_cumulant_conjugate_known(X, 2.)
 
     MLE = cumulant.regression_parameters(conj.smooth_objective(sufficient_stat, 'grad'))
     linear = rr.identity_quadratic(0, 0, -sufficient_stat, 0)
