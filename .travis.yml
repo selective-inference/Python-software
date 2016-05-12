@@ -21,6 +21,7 @@ install:
   - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose dateutil pandas statsmodels scikit-learn 
   # Coverage packages are on my binstar channel
   - conda install --yes -c dan_blanchard python-coveralls nose-cov
+  - pip install -r requirements.txt
   - python setup.py install
 
 # Run test
