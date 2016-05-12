@@ -38,7 +38,7 @@ install:
 
 # Run test
 script:
-  - nosetests --with-coverage --cover-package selection
+  - nosetests --with-coverage --cover-package --verbose selection
 
 # Calculate coverage
 after_success:
