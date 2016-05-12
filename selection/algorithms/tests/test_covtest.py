@@ -61,7 +61,7 @@ def test_tilting(nsim=100, ndraw=50000, burnin=10000):
         lower_lim_final = np.dot(eta, np.dot(cone.covariance, eta)) * lower_lim
         upper_lim_final = np.dot(eta, np.dot(cone.covariance, eta)) * upper_lim
         covered0 += (lower_lim_final < 0) * (upper_lim_final > 0)
-        print covered0 / (i + 1.), 'coverage0'
+        print(covered0 / (i + 1.), 'coverage0')
 
         # compare to no tilting
 
@@ -72,17 +72,17 @@ def test_tilting(nsim=100, ndraw=50000, burnin=10000):
                         sigma_known=True,
                         tilt=None,
                         UMPU=False)[0]
-        print p2, 'huh'
+        print(p2, 'huh')
         P.append((p1, p2))
         Pa = np.array(P)
 
         # p1 and p2 should be very close, so have high correlation
-        print np.corrcoef(Pa.T)[0,1], 'correlation'
+        print(np.corrcoef(Pa.T)[0,1], 'correlation')
 
         # they should also look uniform -- mean should be about 0.5, sd about 0.29
 
-        print np.mean(Pa, 0), 'mean of nulls'
-        print np.std(Pa, 0), 'sd of nulls'
+        print(np.mean(Pa, 0), 'mean of nulls')
+        print(np.std(Pa, 0), 'sd of nulls')
 
         # alternative intervals
 
@@ -106,9 +106,9 @@ def test_tilting(nsim=100, ndraw=50000, burnin=10000):
             lower_lim, upper_lim = fam.equal_tailed_interval(observed_value)
             lower_lim_final = np.dot(eta, np.dot(cone.covariance, eta)) * lower_lim
             upper_lim_final = np.dot(eta, np.dot(cone.covariance, eta)) * upper_lim
-            print lower_lim_final, upper_lim_final, target
+            print(lower_lim_final, upper_lim_final, target)
             coveredA += (lower_lim_final < target) * (upper_lim_final > target)
-            print coveredA / (screen * 1.), 'coverageA'
+            print(coveredA / (screen * 1.), 'coverageA')
 
-        print screen / (i + 1.), 'screening'
+        print(screen / (i + 1.), 'screening')
 
