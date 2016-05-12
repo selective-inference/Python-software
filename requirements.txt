@@ -1,4 +1,6 @@
+cython
 numpy
+scikit-learn
 scipy
 mpmath
 pyinter
