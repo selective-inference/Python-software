@@ -1,15 +1,5 @@
 import numpy as np
 
-# make any plots not use display
-
-from matplotlib import use
-use('Agg')
-import matplotlib.pyplot as plt
-
-# used for ECDF
-
-import statsmodels.api as sm
-
 from selection.algorithms.lasso import instance as lasso_instance
 from selection.algorithms.randomized import logistic_instance, randomized_lasso, randomized_logistic
 from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
@@ -153,6 +143,17 @@ def compare_sandwich(selected=False, min_sim=500,
         print np.mean(nanclean(P0[False], remove_zeros=True)), np.std(nanclean(P0[False], remove_zeros=True)), 'parametric'
 
         if i % 25 == 0 and i > 20:
+            # make any plots not use display
+
+            from matplotlib import use
+            use('Agg')
+            import matplotlib.pyplot as plt
+
+            # used for ECDF
+
+            import statsmodels.api as sm
+
+
             plt.clf()
             U = np.linspace(0,1, 101)
 

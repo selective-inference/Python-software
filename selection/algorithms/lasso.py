@@ -1,4 +1,3 @@
-##test for travis
 """
 This module contains a class `lasso`_ that implements
 post selection for the lasso

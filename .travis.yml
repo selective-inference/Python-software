@@ -17,7 +17,7 @@ addons:
 env:
     global:
         # Maximal dependencies
-        - DEPENDS="cython numpy scipy matplotlib"
+        - DEPENDS="cython numpy"
 python:
     - 2.6
     #    - 3.3
@@ -38,7 +38,7 @@ install:
     # - travis_install $INSTALL_TYPE
 # command to run tests, e.g. python setup.py test
 script:
-    - pip install nose
+    - pip install nose scipy
     - git clone https://github.com/jonathan-taylor/regreg.git
     - cd regreg
     - pip install -e .

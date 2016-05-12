@@ -2,8 +2,6 @@ from __future__ import absolute_import
 
 import nose
 import numpy as np
-import matplotlib.pyplot as plt
-import statsmodels.api as sm 
 from scipy.stats import chi
 import nose.tools as nt
 

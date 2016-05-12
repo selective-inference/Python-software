@@ -4,9 +4,6 @@ import nose.tools as nt
 import numpy as np
 import numpy.testing.decorators as dec
 
-import matplotlib.pyplot as plt
-import statsmodels.api as sm 
-
 from scipy.stats import chi
 import nose.tools as nt
 import selection.constraints.affine as AC
@@ -150,8 +147,12 @@ def test_distribution_sphere(n=15, p=10, sigma=1.,
             break
 
     U = np.linspace(0, 1, 101)
-    plt.plot(U, sm.distributions.ECDF(pvalues)(U))
-    plt.plot([0,1],[0,1])
+
+#     import matplotlib.pyplot as plt
+#     import statsmodels.api as sm 
+
+#     plt.plot(U, sm.distributions.ECDF(pvalues)(U))
+#     plt.plot([0,1],[0,1])
 
 @set_seed_for_test()
 @set_sampling_params_iftrue(True)

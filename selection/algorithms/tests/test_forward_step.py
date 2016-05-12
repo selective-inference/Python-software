@@ -1,10 +1,5 @@
 import numpy as np
 
-# make any plots not use display
-
-from matplotlib import use
-use('Agg')
-import matplotlib.pyplot as plt
 
 # used for ECDF
 
@@ -136,10 +131,6 @@ def test_ecdf(nsim=1000, BIC=False,
     P = np.array(P)
 
     ecdf = sm.distributions.ECDF(P)
-
-    plt.clf()
-    plt.plot(ecdf.x, ecdf.y, linewidth=4, color='black')
-    plt.show()
 
 @set_sampling_params_iftrue(True)
 def test_data_carving_IC(nsim=500,

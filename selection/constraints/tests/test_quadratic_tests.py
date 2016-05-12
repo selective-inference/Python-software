@@ -6,15 +6,6 @@ import nose.tools as nt
 from selection.tests.decorators import set_sampling_params_iftrue
 import selection.constraints.affine as AC
 
-# make any plots not use display
-
-from matplotlib import use
-use('Agg')
-import matplotlib.pyplot as plt
-
-# used for ECDF
-
-import statsmodels.api as sm
 
 # we use R's chisq
 
@@ -138,6 +129,16 @@ def main(nsim=1000, burnin=None, ndraw=None):
     for _ in range(nsim):
         P.append(full_sim(L, b, p))
     P = np.array(P)
+
+    # make any plots not use display
+
+    from matplotlib import use
+    use('Agg')
+    import matplotlib.pyplot as plt
+
+    # used for ECDF
+
+    import statsmodels.api as sm
 
     ecdf = sm.distributions.ECDF(P[:,0])
     ecdf2 = sm.distributions.ECDF(P[:,1])
