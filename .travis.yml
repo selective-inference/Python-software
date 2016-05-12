@@ -17,7 +17,7 @@ addons:
 env:
     global:
         # Maximal dependencies
-        - DEPENDS="cython numpy scipy matplotlib regreg"
+        - DEPENDS="cython numpy scipy matplotlib"
 python:
     - 2.6
     #    - 3.3
