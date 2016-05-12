@@ -1,3 +1,3 @@
-import .affine
-import .quadratic
+import affine
+import quadratic
 
