@@ -8,7 +8,6 @@ from scipy.stats import chi
 import nose.tools as nt
 
 import selection.constraints.affine as AC
-from selection.constraints.optimal_tilt import optimal_tilt
 from selection.tests.decorators import set_seed_for_test
 
 @set_seed_for_test()
@@ -149,6 +148,7 @@ def test_sampling():
                                   np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
 
 @set_seed_for_test()
+@np.testing.decorators.skipif(True, msg="optimal tilt undefined -- need to implement softmax version")
 def test_optimal_tilt():
 
     A = np.vstack(-np.identity(4))
