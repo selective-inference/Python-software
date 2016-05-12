@@ -117,7 +117,7 @@ def compare_sandwich(selected=False, min_sim=500,
         for sandwich in [True,False]:
             P0.setdefault(sandwich, [])
             PA.setdefault(sandwich, [])
-            print selected, 'selected'
+            print(selected, 'selected')
             try:
                 if logistic:
                     R = test_logistic(burnin=2000, ndraw=8000, sandwich=sandwich, selected=selected,
@@ -130,7 +130,7 @@ def compare_sandwich(selected=False, min_sim=500,
                     P0[sandwich].append(R[0])
                     PA[sandwich].append(R[1])
                     counter += 1
-                    print counter * 1. / no_except, 'screen'
+                    print(counter * 1. / no_except, 'screen')
             except np.linalg.LinAlgError:
                 pass
         if ((nonnan(P0[True]) > min_sim)
@@ -138,9 +138,9 @@ def compare_sandwich(selected=False, min_sim=500,
             and (nonnan(PA[False]) > min_sim)
             and (nonnan(PA[True]) > min_sim)):
             break
-        print nonnan(P0[True]), nonnan(P0[False]), nonnan(PA[True]), nonnan(PA[False])
-        print np.mean(nanclean(P0[True], remove_zeros=True)), np.std(nanclean(P0[True], remove_zeros=True)), 'sandwich'
-        print np.mean(nanclean(P0[False], remove_zeros=True)), np.std(nanclean(P0[False], remove_zeros=True)), 'parametric'
+        print(nonnan(P0[True]), nonnan(P0[False]), nonnan(PA[True]), nonnan(PA[False]))
+        print(np.mean(nanclean(P0[True], remove_zeros=True)), np.std(nanclean(P0[True], remove_zeros=True)), 'sandwich')
+        print(np.mean(nanclean(P0[False], remove_zeros=True)), np.std(nanclean(P0[False], remove_zeros=True)), 'parametric')
 
         if i % 25 == 0 and i > 20:
             # make any plots not use display
