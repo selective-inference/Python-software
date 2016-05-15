@@ -290,7 +290,6 @@ class lasso_randomX(selective_loss):
 
         # stepsize=15./p
 
-        # stepsize = 1/float(p)
         # the new data point proposed will change the current one only along the direction
         # perpendicular to the column space of L^T (or the residual leftover after projection onto the
         # column space of L^T)
