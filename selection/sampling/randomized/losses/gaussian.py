@@ -80,13 +80,27 @@ class gaussian_Xfixed(selective_loss):
         self.linear_part = linear_part
 
 
-    def proposal(self, data):
+    def proposal(self, data, val):
         n, p = self.X.shape
-        stepsize = 2. / np.sqrt(n)
-        new = data + stepsize * np.dot(self.R, 
-                                       self.sigma * np.random.standard_normal(n))
+        #stepsize = 2. / np.sqrt(n)  # originally 2. / np.sqrt(n)
+
+        # new = data + stepsize * np.dot(self.R,
+        #                               self.sigma * np.random.standard_normal(n))
+
+        stepsize = 5./n
+        sign_vector =  np.sign(val)
+
+        grad_log_pi = -(data + np.dot(self.X,sign_vector))
+
+        #grad_log_pi = 0
+
+        new = data + np.dot(self.R,
+                            (stepsize*grad_log_pi) + (np.sqrt(2*stepsize)*np.random.standard_normal(data.shape[0])))
+
         log_transition_p = self.logpdf(new) - self.logpdf(data)
+
         return new, log_transition_p
+
 
     def logpdf(self, y):
         ### Up to some constant...
@@ -94,6 +108,7 @@ class gaussian_Xfixed(selective_loss):
 
     def update_proposal(self, state, proposal, logpdf):
         pass
+
 
 
 class sqrt_Lasso_Xfixed(gaussian_Xfixed):

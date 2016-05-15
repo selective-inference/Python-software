@@ -7,7 +7,8 @@ def pval_new(sampler,
          linear_part, # not used anymore
          data,
          nonzero,
-         Sigma):
+         Sigma,
+         true_beta):
     """
     The function computes the null and alternative pvalues for a regularized problem.
     The null p-values correspond to the coefficients whose corresponding predictors
@@ -61,7 +62,7 @@ def pval_new(sampler,
                                               # \beta_j^E corresponds to the predictor X[:,idx] in the model X[:,E]
             if linear_part is not None:
                 eta = np.zeros(size_active)
-                eta[j]=1    # eta = e_j \in R^{|E|}
+                eta[j] = 1    # eta = e_j \in R^{|E|}
 
                 sigma_eta_sq = np.dot(np.dot(eta.T, Sigma), eta)    # \eta^T \Sigma \eta, for the eta above this should be Sigma[j,j]
                 # print 'sigma_eta', sigma_eta
@@ -73,8 +74,16 @@ def pval_new(sampler,
                 #keep = np.copy(active)
                 #keep[idx] = False
 
-                # adding |E|\times(p-|E|) matrix of zero on L1 to get L, then conditioning done on L * data
-                L = np.concatenate((L1, np.zeros((size_active, size_data-size_active))), axis=1)
+                # adding |E|\times(p-|E|) matrix of zero on L1 to get L, then conditioning done on L * data fixed
+                # for the selected model
+                L2 = np.concatenate((L1, np.zeros((size_active, size_data-size_active))), axis=1)
+
+                # for the saturated model
+                L3 = np.concatenate((np.zeros((size_data-size_active, size_active )), np.identity(size_data-size_active) ), axis=1)
+                L = np.concatenate((L2, L3), axis=0)
+                # print L
+                # print L.shape
+
                 #print L[:,j]
                 #print L[:, 3]
                 eta1 = np.concatenate((eta, np.zeros(p-size_active)), axis=0)
@@ -83,6 +92,12 @@ def pval_new(sampler,
 
                 loss_args['linear_part'] = L
                 loss_args['value'] = np.dot(L, data)  # conditioning is on L*data=value
+                loss_args['beta'] = true_beta.copy()
+                #print 'true_beta', true_beta
+                loss_args['beta'][j]=0
+
+                #print 'loss_args',loss_args['beta']
+
                 sampler.setup_sampling(data, loss_args=loss_args)
                 samples = sampler.sampling(ndraw=5000, burnin=1000)
                 pop = [np.dot(eta1,z) for z, _, in samples]

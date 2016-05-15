@@ -74,6 +74,7 @@ class lasso_randomX(selective_loss):
 
             self._XTX = np.dot(self.X.T,self.X)
             self._XETXE = np.dot(X_E.T,X_E)
+
             self._XTXE = np.dot(self.X.T, X_E)
 
             #loss_E = logistic_loss(X_E, self.y)
@@ -109,7 +110,7 @@ class lasso_randomX(selective_loss):
 
             X, y = self.X, self.y
             n, p = X.shape
-            nsample = 2000
+            nsample = 5000
 
             active = self.active
             inactive = ~active
@@ -121,22 +122,32 @@ class lasso_randomX(selective_loss):
             #    return w / (1 + w)
 
             _mean_cum_Z = 0
-            self._cov_XTepsilon = np.zeros((p, p))    # this will become the bootstrapped covaraince of X^T\epsilon
-            self._cov_XETepsilon = np.zeros((self.size_active, self.size_active)) # this will become the bootstrapped covariance of X_E^T\epsilon
+            # The following will become the bootstrapped covariance of X^T\epsilon.
+            self._cov_XTepsilon = np.zeros((p, p))
+            # The following will become the bootstrapped covariance of X_E^T\epsilon.
+            self._cov_XETepsilon = np.zeros((self.size_active, self.size_active))
 
             _mean_cum_N = 0
-            self._cov_N=np.zeros((p-self.size_active, p-self.size_active))  # this will become the bootstrapped covariance of
-                                                                            # the null statistic X_{-E}^T(y-X_E\bar{\beta}_E)
+            # The following will become the bootstrapped covariance of the null statistic X_{-E}^T(y-X_E\bar{\beta}_E).
+            self._cov_N = np.zeros((p-self.size_active, p-self.size_active))
 
             _mean_cum_beta_bar = 0
             # bootstrapped covariance of \bar{\beta}_E, (X_E^{*T}X_E^*)^{-1}X_E^{*T}(y^*-X_E^*\bar{\beta}_E)
-            self._cov_beta_bar=np.zeros((self.size_active, self.size_active))
+            self._cov_beta_bar = np.zeros((self.size_active, self.size_active))
+
+            self._XTX_b = np.zeros((p,p))
+
 
             for _ in range(nsample):
                 indices = np.random.choice(n, size=(n,), replace=True)
                 y_star = y[indices]
                 X_star = X[indices]
-                Z_star = np.dot(X_star.T, y_star - pi(X_star))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
+
+                self._XTX_b += np.dot(X_star.T, X_star)
+
+                #Z_star = np.dot(X_star.T, y_star - pi(X_star))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
+                Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:, self.active], self._beta_unpenalized))
+
                 _mean_cum_Z += Z_star
                 self._cov_XTepsilon += np.multiply.outer(Z_star, Z_star)
 
@@ -147,13 +158,16 @@ class lasso_randomX(selective_loss):
                 self._cov_N += np.multiply.outer(N_star, N_star)
 
                 beta_star =  np.dot(mat_XEstar, Z_star[active,])
+                beta_star
+                #np.linalg.lstsq(X_star[:, self.active], y_star)[0]-self._beta_unpenalized
                 _mean_cum_beta_bar += beta_star
                 self._cov_beta_bar += np.multiply.outer(beta_star, beta_star)
 
-
+            self._XTX_b /= nsample
 
             self._cov_XTepsilon /= nsample
             _mean_Z = _mean_cum_Z / nsample
+            print 'mean Z', _mean_Z
             self._cov_XTepsilon -= np.multiply.outer(_mean_Z, _mean_Z)
 
             self._cov_N /= nsample
@@ -162,12 +176,13 @@ class lasso_randomX(selective_loss):
             self._inv_cov_N = np.linalg.inv(self._cov_N)
 
             # to get _cov_XETepsilon we need to get [active,:]\times[:,active] block of _cov_XTepsilon
-            mat = self._cov_XTepsilon[self.active,:]
-            self._cov_XETepsilon = mat[:,self.active]
+            #mat = self._cov_XTepsilon[self.active,:]
+            self._cov_XETepsilon = self._cov_XTepsilon[self.active][:,self.active]
 
 
             self._cov_beta_bar /= nsample
             _mean_beta_star = _mean_cum_beta_bar/nsample
+            print 'mean beta', _mean_beta_star
             self._cov_beta_bar -= np.multiply.outer(_mean_beta_star, _mean_beta_star)
             self._inv_cov_beta_bar = np.linalg.inv(self._cov_beta_bar)
 
@@ -198,18 +213,25 @@ class lasso_randomX(selective_loss):
             self.bootstrap_covariance()
 
         # g = -(data - np.dot(self._cov, beta))
+
         data1 = data.copy()
 
-        data0 = data1[range(self.size_active)]  # \bar{beta}_E, the first |E| coordinates of 'data' vector
+        #data0 = data1[range(self.size_active)].copy()  # \bar{beta}_E, the first |E| coordinates of 'data' vector
 
-        data1[range(self.size_active), ] = 0 # last p-|E| coordinates of data vector kept, first |E| become zeros
+        data1[:self.size_active] = 0 # last p-|E| coordinates of data vector kept, first |E| become zeros
                                              # (0, N), N is the null statistic, N=X_{-E}^Y(y-X_E\bar{\beta}_E)
-        g = - data1 + np.dot(self._XTXE, beta[range(self.size_active)]-data0)
+        #print data1
+
+        # g = - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
+
+        g = - data1 + np.dot(self._XTX_b[:,  self.active], beta[self.active]-data[:self.size_active])
+
+        #g =  - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
         return g
 
 
-    def hessian(self): #, data, beta):
+    def hessian(self):#, data, beta):
         """
         hessian is constant in this case.
         """
@@ -219,7 +241,7 @@ class lasso_randomX(selective_loss):
         return self._XTX
 
 
-    def setup_sampling(self, data, mean, linear_part, value):
+    def setup_sampling(self, data, beta, linear_part, value):
         """
         Set up the sampling conditioning on the linear constraints L * data = value
 
@@ -248,8 +270,9 @@ class lasso_randomX(selective_loss):
         I = np.identity(linear_part.shape[1])
 
         self.data = data
-        self.mean = mean
+        self.beta = beta[self.active]
 
+        # print 'beta', self.beta
         # L(I-P)=LR=0, hence for new_data = data+R*proposal, we have L*new_data = L*data+LR*proposal = L*data=constant
         self.R = I - P
 
@@ -258,20 +281,61 @@ class lasso_randomX(selective_loss):
         self.linear_part = linear_part
 
 
-    def proposal(self, data):
+    def proposal(self, data, val):
         # if not hasattr(self, "L"):  # don't know what this is for
         #    self.bootstrap_covariance()
 
         n, p = self.X.shape
-        stepsize = 1. / np.sqrt(p)
+        stepsize = 15. / np.sqrt(p)   # 20 for the selected model
 
+        # stepsize=15./p
+
+        # stepsize = 1/float(p)
         # the new data point proposed will change the current one only along the direction
         # perpendicular to the column space of L^T (or the residual leftover after projection onto the
         # column space of L^T)
 
-        new = data + stepsize * np.dot(self.R,
-                                       np.random.standard_normal(p))
+        # new = data + stepsize * np.dot(self.R,
+        #                               np.random.standard_normal(p))
+
+
+        ## bootstrap
+        active = self.active
+        inactive = ~active
+        size_active = self.size_active
+        size_inactive = data.shape[0] - size_active
+
+        indices = np.random.choice(n, size=(n,), replace=True)
+        y_star = self.y[indices]
+        X_star = self.X[indices]
+        X_star_E = X_star[:,active]
+
+        mat_XEstar = np.linalg.inv(np.dot(X_star_E.T, X_star_E))  # (X^{*T}_E X^*_E)^{-1}
+        Z_star = np.dot(X_star_E.T, y_star - np.dot(X_star_E, self._beta_unpenalized))  # X^{*T}_E(y^*-X^{*T}_E\bar{\beta}_E)
+
+        # selected, additionally bootstrap N
+        #Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:,self.active], data[:size_active]))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
+
+        #mat_XEstar = np.linalg.inv(np.dot(X_star[:,active].T, X_star[:,active]))  # (X^{*T}_E X^*_E)^{-1}
+        #mat_star = np.dot(np.dot(X_star[:, inactive].T, X_star[:,active]), mat_XEstar)
+        #N_star = Z_star[inactive, ]-np.dot(mat_star, Z_star[active, ])
+
+
+        #data_star = np.concatenate((Z_star,
+        #                           N_star-data[-size_inactive:]), axis=0)
+
+        # saturated
+
+        data_star = np.concatenate((np.dot(mat_XEstar,Z_star), np.zeros(size_inactive)), axis=0)
+
+        # data_star = np.concatenate((np.dot(mat_XEstar,Z_star), data[:size_inactive]), axis=0)
+
+
+        new = data + stepsize * np.dot(self.R, data_star)
+
+
         log_transition_p = self.logpdf(new) - self.logpdf(data)
+
         return new, log_transition_p
 
 
@@ -284,7 +348,7 @@ class lasso_randomX(selective_loss):
         # R_cut = mat[:,self.active]
         #print 'R_cut size', R_cut.shape
 
-        beta_unpen = data[range(self.size_active)]
+        beta_unpen = data[:self.size_active,]
 
         # beta_unpen = sampling_data[range(self.size_active)]
         # cov_beta_unpen = np.dot(np.dot(R_cut, self._cov_beta_bar),R_cut.T)
@@ -293,7 +357,7 @@ class lasso_randomX(selective_loss):
         # Z = sampling_data[(self.size_active):data.shape[0]]
 
 
-        N = data[(self.size_active):data.shape[0]]
+        #N = data[(self.size_active):data.shape[0]]
 
         logl_beta_unpen = - np.dot(np.dot(beta_unpen.T, self._inv_cov_beta_bar), beta_unpen) # not true but what to put?
 
@@ -301,8 +365,11 @@ class lasso_randomX(selective_loss):
         #logl_beta_unpen = - np.dot(np.dot(beta_unpen.T, inv_cov_beta_unpen), beta_unpen)
         #print 'cov N size', self._covN.shape
         #print 'length Z', Z.shape
-        logl_N = - np.dot(np.dot(N.T, self._inv_cov_N), N)
-        return logl_beta_unpen + logl_N
+        #logl_N = - np.dot(np.dot(N.T, self._inv_cov_N), N)
+        return logl_beta_unpen #+ logl_N
+
+
+        #return - np.dot(np.dot((beta_unpen-self.beta).T, self._inv_cov_beta_bar), beta_unpen-self.beta)
 
         #return -((data-self.mean)*np.dot(np.linalg.pinv(self._cov), data-self.mean)).sum() / 2
 

@@ -6,9 +6,10 @@ import selection.sampling.randomized.api as randomized
 from pvalues import pval
 from matplotlib import pyplot as plt
 
-def test_lasso(s=5, n=100, p=30):
+def test_lasso(s=5, n=1000, p=30):
     
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
+    print 'sigma', sigma
     lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
@@ -29,9 +30,6 @@ def test_lasso(s=5, n=100, p=30):
 
     loss_args = {'mean':np.zeros(n), 
                  'sigma':sigma}
-
-    ##
-
 
     null, alt = pval(sampler1,
                      loss_args,

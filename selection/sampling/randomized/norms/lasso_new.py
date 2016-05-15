@@ -6,6 +6,7 @@ from base import selective_penalty
 
 
 # same as lasso.py except uses Langevin Metropolis Hastings for simplex_step
+# relies on the fact that the randomization used is Laplace to compute the \grad log \pi in the Langevin update
 # Sampling from a log-concave distribution with Projected Langevin Monte Carlo (Bubeck et al)
 # http://arxiv.org/pdf/1507.02564v1.pdf
 
@@ -203,7 +204,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         nactive = simplex.shape[0]
 
         #stepsize = 1/np.sqrt(nactive)
-        stepsize = 0.75/float(nactive)  # eta below
+        stepsize = 1/float(nactive)  # eta below
 
         # new for projected Langevin MCMC
 
@@ -255,7 +256,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
             self.accept_l1_part += 1
 
         return simplex
-
+        #return proposal
 
     def step_cube(self, state, randomization, gradient):
         """

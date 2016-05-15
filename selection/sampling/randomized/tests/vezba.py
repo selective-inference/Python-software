@@ -33,14 +33,23 @@ W = np.array([[1,5, 10],[3, 10, 18], [8, 5, 11]], dtype=float)
 #print np.dot(R, eta.T)
 
 Sigma=np.dot(W,W.T)
-print Sigma
-print np.linalg.inv(Sigma)
+#print Sigma
+#print np.linalg.inv(Sigma)
 mu = np.random.normal(size=Sigma.shape[0])
 j=0
 mu[j]=0
-print np.dot(Sigma[:,j].T, np.linalg.inv(Sigma))
-print np.dot(np.dot(Sigma[:,j].T, np.linalg.inv(Sigma)), mu)
+#rint np.dot(Sigma[:,j].T, np.linalg.inv(Sigma))
+#print np.dot(np.dot(Sigma[:,j].T, np.linalg.inv(Sigma)), mu)
 
 
 a=np.array([1,2,3,4,-3])
-print np.clip(a, 0, np.inf)
+#print np.clip(a, 0, np.inf)
+
+d={'Jelena':1, 'Bojana':2}
+def proba(Jelena=0, Bojana=0):
+    return Jelena+1
+
+print proba(**d)
+#print map(proba,**d)
+
+
