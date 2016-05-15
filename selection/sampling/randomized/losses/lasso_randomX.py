@@ -220,18 +220,18 @@ class lasso_randomX(selective_loss):
 
         data1[:self.size_active] = 0 # last p-|E| coordinates of data vector kept, first |E| become zeros
                                              # (0, N), N is the null statistic, N=X_{-E}^Y(y-X_E\bar{\beta}_E)
-        #print data1
+        # print data1
 
         # g = - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
-        g = - data1 + np.dot(self._XTX_b[:,  self.active], beta[self.active]-data[:self.size_active])
+        g = - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
-        #g =  - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
+        # g = - data1 + np.dot(self._XTX_b[:, self.active], beta[self.active]-data[:self.size_active])
 
         return g
 
 
-    def hessian(self):#, data, beta):
+    def hessian(self): #, data, beta):
         """
         hessian is constant in this case.
         """
@@ -304,7 +304,7 @@ class lasso_randomX(selective_loss):
         size_active = self.size_active
         size_inactive = data.shape[0] - size_active
 
-        indices = np.random.choice(n, size=(n,), replace=True)
+        indices = np.random.choice(n, size=(n,), replace = True)
         y_star = self.y[indices]
         X_star = self.X[indices]
         X_star_E = X_star[:,active]
@@ -313,14 +313,13 @@ class lasso_randomX(selective_loss):
         Z_star = np.dot(X_star_E.T, y_star - np.dot(X_star_E, self._beta_unpenalized))  # X^{*T}_E(y^*-X^{*T}_E\bar{\beta}_E)
 
         # selected, additionally bootstrap N
-        #Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:,self.active], data[:size_active]))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
+        # Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:,self.active], data[:size_active]))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
 
-        #mat_XEstar = np.linalg.inv(np.dot(X_star[:,active].T, X_star[:,active]))  # (X^{*T}_E X^*_E)^{-1}
-        #mat_star = np.dot(np.dot(X_star[:, inactive].T, X_star[:,active]), mat_XEstar)
-        #N_star = Z_star[inactive, ]-np.dot(mat_star, Z_star[active, ])
+        # mat_XEstar = np.linalg.inv(np.dot(X_star[:,active].T, X_star[:,active]))  # (X^{*T}_E X^*_E)^{-1}
+        # mat_star = np.dot(np.dot(X_star[:, inactive].T, X_star[:,active]), mat_XEstar)
+        # N_star = Z_star[inactive, ]-np.dot(mat_star, Z_star[active, ])
 
-
-        #data_star = np.concatenate((Z_star,
+        # data_star = np.concatenate((Z_star,
         #                           N_star-data[-size_inactive:]), axis=0)
 
         # saturated
@@ -329,9 +328,7 @@ class lasso_randomX(selective_loss):
 
         # data_star = np.concatenate((np.dot(mat_XEstar,Z_star), data[:size_inactive]), axis=0)
 
-
         new = data + stepsize * np.dot(self.R, data_star)
-
 
         log_transition_p = self.logpdf(new) - self.logpdf(data)
 

@@ -11,7 +11,7 @@ from pvalues_new import pval_new
 from matplotlib import pyplot as plt
 
 
-def test_lasso_randomX(s=5, n=1000, p=30):
+def test_lasso_randomX(s=5, n=100, p=30):
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0)
 
