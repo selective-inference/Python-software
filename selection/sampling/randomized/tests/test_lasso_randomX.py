@@ -11,7 +11,7 @@ from pvalues_new import pval_new
 from matplotlib import pyplot as plt
 
 
-def test_lasso_randomX(s=5, n=100, p=30):
+def test_lasso_randomX(s=5, n=1000, p=20):
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0)
 
@@ -29,9 +29,9 @@ def test_lasso_randomX(s=5, n=100, p=30):
 
     random_Z = randomization.rvs(p)
 
-    penalty = randomized.selective_l1norm_new(p, lagrange=lam)
+    penalty = randomized.selective_l1norm(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH_new(loss,
+    sampler1 = randomized.selective_sampler_MH(loss,
                                                random_Z,
                                                epsilon,
                                                randomization,
@@ -68,10 +68,11 @@ def test_lasso_randomX(s=5, n=100, p=30):
 
     loss_args = {'beta':true_beta.copy()}
 
-    # linear_part=np.identity(p)
+    # linear_part = np.identity(p)
     # data=np.dot(X.T, y)
 
     # pval_new_new function calls sampler.setup_sampling and runs the sampling scheme
+
     null, alt = pval_new(sampler1,
                          loss_args,
                          linear_part,
@@ -85,7 +86,7 @@ def test_lasso_randomX(s=5, n=100, p=30):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(5):
+    for i in range(10):
         print "iteration", i
         p0, pA = test_lasso_randomX()
         P0.extend(p0); PA.extend(pA)

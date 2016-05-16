@@ -158,7 +158,7 @@ class lasso_randomX(selective_loss):
                 self._cov_N += np.multiply.outer(N_star, N_star)
 
                 beta_star =  np.dot(mat_XEstar, Z_star[active,])
-                beta_star
+                #beta_star
                 #np.linalg.lstsq(X_star[:, self.active], y_star)[0]-self._beta_unpenalized
                 _mean_cum_beta_bar += beta_star
                 self._cov_beta_bar += np.multiply.outer(beta_star, beta_star)
@@ -167,7 +167,7 @@ class lasso_randomX(selective_loss):
 
             self._cov_XTepsilon /= nsample
             _mean_Z = _mean_cum_Z / nsample
-            print 'mean Z', _mean_Z
+            #print 'mean Z', _mean_Z
             self._cov_XTepsilon -= np.multiply.outer(_mean_Z, _mean_Z)
 
             self._cov_N /= nsample
@@ -176,13 +176,13 @@ class lasso_randomX(selective_loss):
             self._inv_cov_N = np.linalg.inv(self._cov_N)
 
             # to get _cov_XETepsilon we need to get [active,:]\times[:,active] block of _cov_XTepsilon
-            #mat = self._cov_XTepsilon[self.active,:]
+            # mat = self._cov_XTepsilon[self.active,:]
             self._cov_XETepsilon = self._cov_XTepsilon[self.active][:,self.active]
 
 
             self._cov_beta_bar /= nsample
             _mean_beta_star = _mean_cum_beta_bar/nsample
-            print 'mean beta', _mean_beta_star
+            #print 'mean beta', _mean_beta_star
             self._cov_beta_bar -= np.multiply.outer(_mean_beta_star, _mean_beta_star)
             self._inv_cov_beta_bar = np.linalg.inv(self._cov_beta_bar)
 
@@ -224,18 +224,18 @@ class lasso_randomX(selective_loss):
 
         # g = - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
-        g = - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
+        #g = np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
-        # g = - data1 + np.dot(self._XTX_b[:, self.active], beta[self.active]-data[:self.size_active])
+        g = - data1 + np.dot(self._XTX_b[:, self.active], beta[self.active]-data[:self.size_active])
 
         return g
 
 
-    def hessian(self): #, data, beta):
+    def hessian(self, data, beta):
         """
         hessian is constant in this case.
         """
-        #if not hasattr(self, "_cov"):
+        #if not hasattr(self, "_XTX_b"):
         #    self.bootstrap_covariance()
 
         return self._XTX
@@ -281,7 +281,7 @@ class lasso_randomX(selective_loss):
         self.linear_part = linear_part
 
 
-    def proposal(self, data, val):
+    def proposal(self, data): #, val):
         # if not hasattr(self, "L"):  # don't know what this is for
         #    self.bootstrap_covariance()
 
@@ -355,8 +355,7 @@ class lasso_randomX(selective_loss):
 
         #N = data[(self.size_active):data.shape[0]]
 
-        logl_beta_unpen = - np.dot(np.dot(beta_unpen.T, self._inv_cov_beta_bar), beta_unpen) # not true but what to put?
-
+        logl_beta_unpen = - np.dot(np.dot(beta_unpen.T, self._inv_cov_beta_bar), beta_unpen)
 
         #logl_beta_unpen = - np.dot(np.dot(beta_unpen.T, inv_cov_beta_unpen), beta_unpen)
         #print 'cov N size', self._covN.shape

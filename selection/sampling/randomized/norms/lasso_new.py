@@ -43,10 +43,11 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         self.active_set = (soln != 0)
 
         self.signs = np.sign(soln[self.active_set])
-        abs_l1part = np.fabs(soln[self.active_set])
-        l1norm_ = abs_l1part.sum()
 
-        subgrad = -negative_subgrad[self.inactive_set]
+        #abs_l1part = np.fabs(soln[self.active_set])
+        #l1norm_ = abs_l1part.sum()
+
+        subgrad = -negative_subgrad[self.inactive_set] # u_{-E}
         supnorm_ = np.fabs(negative_subgrad).max()
 
         if self.lagrange is None:
@@ -57,9 +58,13 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         simplex, cube = np.fabs(soln[self.active_set]), subgrad / supnorm_
 
+        #simplex, cube = np.fabs(soln[self.active_set]), subgrad / self.lagrange
+
+        # print cube
         # for adaptive mcmc
 
         nactive = soln[self.active_set].shape[0]
+
         self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
 
         self.hessian = hessian
@@ -210,9 +215,9 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         _ , _ , opt_vec = self.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
-        sign_vec = np.sign(gradient + opt_vec)[range(nactive)]  # sign(A*\beta+b) for A, b below
+        sign_vec = np.sign(gradient + opt_vec)[self.active_set]  # sign(A*\beta+b) for A, b below
 
-        restricted_hessian = hessian[range(nactive)][:, range(nactive)]
+        restricted_hessian = hessian[self.active_set][:, self.active_set]
 
         # the following is \grad_{\beta}\log g(w), w = \grad l(\beta)+\epsilon (\beta 0)+\lambda u = A*\beta+b,
         # becomes - \grad_{\beta}\|w\|_1 = - \grad_{\beta}\|A*\beta+b\|_1=A^T*sign(A*\beta+b)
@@ -223,17 +228,18 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         # proposal = Proj(simplex+\eta*grad_{\beta}\log g+\sqrt{2\eta}*Z), Z\sim\mathcal{N}(0, Id)
         # projection on the non-negative orthant
-
+        # print np.sum(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))<0)
         proposal = np.clip(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive)), 0, np.inf)
-
 
 
         #rand = randomization
         #random_sample = rand.rvs(size=nactive)
         #step = np.dot(self.chol_adapt, random_sample)
+        #print np.sum(simplex+step<0)
         #proposal = np.fabs(simplex + step)
 
-
+        log_ratio = (logpdf((data, (proposal, cube))) -
+                     logpdf(state))
          # update cholesky factor
 
         #alpha = np.minimum(np.exp(log_ratio), 1)
@@ -248,8 +254,6 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         #     choldowndate(self.chol_adapt, rank_one) # update done in place
 
 
-        log_ratio = (logpdf((data, (proposal, cube))) -
-                     logpdf(state))
 
         if np.log(np.random.uniform()) < log_ratio:
             simplex = proposal

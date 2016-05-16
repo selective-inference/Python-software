@@ -48,7 +48,7 @@ class gaussian_Xfixed(selective_loss):
         self.y = old_data
         return g
 
-    def hessian(self): #, data, beta):
+    def hessian(self, data, beta):
         if not hasattr(self, "_XTX"):
             self._XTX = np.dot(self.X.T, self.X)
         return self._XTX
@@ -80,22 +80,22 @@ class gaussian_Xfixed(selective_loss):
         self.linear_part = linear_part
 
 
-    def proposal(self, data, val):
+    def proposal(self, data):
         n, p = self.X.shape
-        #stepsize = 2. / np.sqrt(n)  # originally 2. / np.sqrt(n)
+        stepsize = 2. / np.sqrt(n)  # originally 2. / np.sqrt(n)
 
-        # new = data + stepsize * np.dot(self.R,
-        #                               self.sigma * np.random.standard_normal(n))
+        new = data + stepsize * np.dot(self.R,
+                                       self.sigma * np.random.standard_normal(n))
 
-        stepsize = 5./n
-        sign_vector =  np.sign(val)
+        #stepsize = 5./n
+        #sign_vector =  np.sign(val)
 
-        grad_log_pi = -(data + np.dot(self.X,sign_vector))
+        #grad_log_pi = -(data + np.dot(self.X,sign_vector))
 
         #grad_log_pi = 0
 
-        new = data + np.dot(self.R,
-                            (stepsize*grad_log_pi) + (np.sqrt(2*stepsize)*np.random.standard_normal(data.shape[0])))
+        #new = data + np.dot(self.R,
+        #                    (stepsize*grad_log_pi) + (np.sqrt(2*stepsize)*np.random.standard_normal(data.shape[0])))
 
         log_transition_p = self.logpdf(new) - self.logpdf(data)
 

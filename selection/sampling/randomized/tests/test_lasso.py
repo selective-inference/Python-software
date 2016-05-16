@@ -20,9 +20,9 @@ def test_lasso(s=5, n=1000, p=30):
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
     random_Z = randomization.rvs(p)
-    penalty = randomized.selective_l1norm_new(p, lagrange=lam)
+    penalty = randomized.selective_l1norm(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH_new(loss,
+    sampler1 = randomized.selective_sampler_MH(loss,
                                                random_Z,
                                                epsilon,
                                                randomization,
@@ -41,7 +41,7 @@ def test_lasso(s=5, n=1000, p=30):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(5):
+    for i in range(10):
         print "iteration", i
         p0, pA = test_lasso()
         P0.extend(p0); PA.extend(pA)

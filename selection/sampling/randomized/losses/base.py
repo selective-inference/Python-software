@@ -52,13 +52,13 @@ class selective_loss(rr.smooth_atom):
         """
         raise NotImplementedError("abstract method")
 
-    def step_data(self, state, logpdf, val): #ADDED VAL
+    def step_data(self, state, logpdf): #ADDED VAL
 
         self.total_data += 1
 
         data, opt_vars = state
 
-        proposal, log_transition_ratio = self.proposal(data, val) ## ADDED VAL
+        proposal, log_transition_ratio = self.proposal(data) ## ADDED VAL
 
         #return proposal
 

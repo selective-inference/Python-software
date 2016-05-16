@@ -84,8 +84,8 @@ class selective_sampler(object):
 class selective_sampler_MH_new(selective_sampler):
 
     def sampling(self,
-                 ndraw=500,
-                 burnin=100):
+                 ndraw=7000,
+                 burnin=3000):
         """
         This function provides samples (data, \beta, subgrad) from
         normal_distribution(data)*g(gradient+epsilon*\beta+\epsilon(\beta 0))*jacobian,
@@ -96,7 +96,7 @@ class selective_sampler_MH_new(selective_sampler):
 
         for i in range(ndraw + burnin):
             sample = self.next()
-            if i >= burnin:
+            if (i >= burnin): #and (i % 3==0):
                 samples.append(copy(sample))
         return samples
 
@@ -118,7 +118,7 @@ class selective_sampler_MH_new(selective_sampler):
         gradient = self.loss.gradient(data, param)
         val = - gradient - opt_vec
 
-        self.state[0] = self.loss.step_data(self.state, self.logpdf, val)  # self.state[0] is the data vector
+        self.state[0] = self.loss.step_data(self.state, self.logpdf)  # self.state[0] is the data vector
 
         # update the gradient
         param = self.penalty.form_parameters(self.state[1]) # (beta_E, 0)
