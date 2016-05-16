@@ -113,8 +113,13 @@ def pval_new(sampler,
 
 
             fam = discrete_family(pop, np.ones_like(pop))
+
+            # pval1 = np.sum(pop>obs)/float(len(pop))
+            # print 'pval1', 2*min(pval1, 1-pval1)
+
             pval = fam.cdf(0, obs)
             pval = 2 * min(pval, 1-pval)
+
             print "observed: ", obs, "p value: ", pval
             if pval < 0.0001:
                 print obs, pval, np.percentile(pop, [0.2,0.4,0.6,0.8,1.0])

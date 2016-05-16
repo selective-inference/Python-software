@@ -1,10 +1,10 @@
 import numpy as np
 from base import selective_loss
 
-class gaussian_Xfixed(selective_loss):
+class gaussian_Xfixed_boot(selective_loss):
 
-    def __init__(self, X, y, 
-                 coef=1., 
+    def __init__(self, X, y,
+                 coef=1.,
                  offset=None,
                  quadratic=None,
                  initial=None):
@@ -16,13 +16,45 @@ class gaussian_Xfixed(selective_loss):
 
         self.X = X
         self.y = y.copy()
-        self._restricted_grad_beta = np.zeros(self.shape)
+        #self._restricted_grad_beta = np.zeros(self.shape)
+
+
+    # added for bootstrap
+    def fit_E(self, active):
+        """
+        Computes the OLS estimator \bar{\beta}_E (y~X_E) after seeing the active set (E).
+        Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
+
+        Parameters:
+        ----------
+        active: the active set from fitting the randomized lasso for the first time
+
+        solve_args: passed to regreg.simple_problem.solve # not used here
+
+        """
+
+        self.active = active
+
+        if self.active.any():
+            self.inactive = ~active
+            X_E = self.X[:, self.active]
+            self.size_active = X_E.shape[1]  # |E|
+
+            self._beta_unpenalized = np.linalg.lstsq(X_E, self.y)[0]  # \bar{\beta}_E
+            residuals = self.y - np.dot(X_E, self._beta_unpenalized)
+
+            self.centered_residuals = residuals - residuals.mean()
+
+        else:
+            raise ValueError("Empty active set.")
+
+
 
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
 
         resid = self.y - np.dot(self.X, beta)
-        
+
         if mode == 'both':
             f = self.scale((resid**2).sum()) / 2.
             g = self.scale(-np.dot(self.X.T, resid))
@@ -48,7 +80,7 @@ class gaussian_Xfixed(selective_loss):
         self.y = old_data
         return g
 
-    def hessian(self): #, data, beta):
+    def hessian(self):#, data, beta):
         if not hasattr(self, "_XTX"):
             self._XTX = np.dot(self.X.T, self.X)
         return self._XTX
@@ -59,7 +91,7 @@ class gaussian_Xfixed(selective_loss):
         ### if it is unknown then the pdf below should be uniform
         ### supported on sphere of some radius
 
-        ### This can be implemented as part of 
+        ### This can be implemented as part of
         ### a subclass
 
         self.accept_data = 0
@@ -82,10 +114,24 @@ class gaussian_Xfixed(selective_loss):
 
     def proposal(self, data):
         n, p = self.X.shape
-        stepsize = 2. / np.sqrt(n)  # originally 2. / np.sqrt(n)
 
-        new = data + stepsize * np.dot(self.R,
-                                       self.sigma * np.random.standard_normal(n))
+        stepsize = 0.5/float(n)
+        # stepsize = 1. / np.sqrt(n)  # originally 2. / np.sqrt(n)
+
+        # new = data + stepsize * np.dot(self.R,
+        #                               self.sigma * np.random.standard_normal(n))
+
+        # added for bootstrap
+        active = self.active
+        # size_active = self.size_active
+
+        indices = np.random.choice(n, size=(n,), replace=True)
+
+        residuals_star = self.centered_residuals[indices]
+
+        y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
+
+        new = data + stepsize * np.dot(self.R, y_star-self.y)
 
 
         #stepsize = 5./n
@@ -112,8 +158,8 @@ class gaussian_Xfixed(selective_loss):
 
 
 
-class sqrt_Lasso_Xfixed(gaussian_Xfixed):
-    
+class sqrt_Lasso_Xfixed(gaussian_Xfixed_boot):
+
     ### linear part is X_{E\j}^T
     def proposal(self, y):
         P, R = self.R, self.P
@@ -149,5 +195,5 @@ class sqrt_Lasso_Xfixed(gaussian_Xfixed):
         residual = data - np.dot(self.X, beta)
         R = np.identity(n) - np.outer(residual, residual) / (np.linalg.norm(residual)**2)
         temp = np.dot(selected_part, R)
-        result = np.dot(temp, selected_part.T) / (np.linalg.norm(residual)**2) 
+        result = np.dot(temp, selected_part.T) / (np.linalg.norm(residual)**2)
         return result

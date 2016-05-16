@@ -198,7 +198,8 @@ class selective_l1norm(rr.l1norm, selective_penalty):
         rand = randomization
         random_sample = rand.rvs(size=nactive)
         step = np.dot(self.chol_adapt, random_sample)
-        proposal = np.fabs(simplex + step)
+        #proposal = np.fabs(simplex + step)
+        proposal = np.clip(simplex+step, 0, np.inf)
 
         #print np.sum(simplex+step<0)
         log_ratio = (logpdf((data, (proposal, cube))) -

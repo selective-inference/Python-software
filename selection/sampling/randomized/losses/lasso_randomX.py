@@ -17,7 +17,7 @@ class lasso_randomX(selective_loss):
                                 initial=initial)
 
         self.X = X.copy()
-        self._XTX = np.dot(self.X.T,self.X)
+        self._XTX = np.dot(self.X.T,self.X).copy()
 
         self.y = y.copy()
 
@@ -288,13 +288,13 @@ class lasso_randomX(selective_loss):
         n, p = self.X.shape
         stepsize = 15. / np.sqrt(p)   # 20 for the selected model
 
-        # stepsize=15./p
+        #stepsize=15./p
 
         # the new data point proposed will change the current one only along the direction
         # perpendicular to the column space of L^T (or the residual leftover after projection onto the
         # column space of L^T)
 
-        # new = data + stepsize * np.dot(self.R,
+        #new = data + stepsize * np.dot(self.R,
         #                               np.random.standard_normal(p))
 
 
