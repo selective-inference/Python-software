@@ -29,9 +29,9 @@ def test_lasso_randomX(s=5, n=200, p=20):
 
     random_Z = randomization.rvs(p)
 
-    penalty = randomized.selective_l1norm_new(p, lagrange=lam)
+    penalty = randomized.selective_l1norm(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH_new(loss,
+    sampler1 = randomized.selective_sampler_MH(loss,
                                                random_Z,
                                                epsilon,
                                                randomization,

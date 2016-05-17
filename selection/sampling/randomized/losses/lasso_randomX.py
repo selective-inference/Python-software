@@ -231,7 +231,7 @@ class lasso_randomX(selective_loss):
         return g
 
 
-    def hessian(self):#, data, beta):
+    def hessian(self, data, beta):
         """
         hessian is constant in this case.
         """
@@ -304,10 +304,9 @@ class lasso_randomX(selective_loss):
         size_active = self.size_active
         size_inactive = data.shape[0] - size_active
 
-        eta = 0.3
+        eta = 0.2
         indices = np.random.choice(n, size=(n,), replace = True)
         indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
-
         y_star = self.y[indices1]
         X_star = self.X[indices1]
         X_star_E = X_star[:,active]
@@ -366,8 +365,8 @@ class lasso_randomX(selective_loss):
         #print 'cov N size', self._covN.shape
         #print 'length Z', Z.shape
         #logl_N = - np.dot(np.dot(N.T, self._inv_cov_N), N)
-        return logl_beta_unpen #+ logl_N
-
+        #return logl_beta_unpen #+ logl_N
+        return 0
 
         #return - np.dot(np.dot((beta_unpen-self.beta).T, self._inv_cov_beta_bar), beta_unpen-self.beta)
 
