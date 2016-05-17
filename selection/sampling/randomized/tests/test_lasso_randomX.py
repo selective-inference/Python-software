@@ -11,7 +11,7 @@ from pvalues_new import pval_new
 from matplotlib import pyplot as plt
 
 
-def test_lasso_randomX(s=5, n=5000, p=20):
+def test_lasso_randomX(s=5, n=200, p=20):
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0)
 
@@ -20,7 +20,7 @@ def test_lasso_randomX(s=5, n=5000, p=20):
     randomization = laplace(loc=0, scale=1.)
     loss = lasso_randomX.lasso_randomX(X, y)
     random_Z = randomization.rvs(p)
-    epsilon = 1.
+    epsilon = 1.  # quadratic coeff
 
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
@@ -29,9 +29,9 @@ def test_lasso_randomX(s=5, n=5000, p=20):
 
     random_Z = randomization.rvs(p)
 
-    penalty = randomized.selective_l1norm(p, lagrange=lam)
+    penalty = randomized.selective_l1norm_new(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH(loss,
+    sampler1 = randomized.selective_sampler_MH_new(loss,
                                                random_Z,
                                                epsilon,
                                                randomization,

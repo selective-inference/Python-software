@@ -28,7 +28,7 @@ def test_lasso_boot(s=5, n=200, p=20):
                                                randomization,
                                                penalty)
 
-    sampler1.loss.fit_E(sampler1.penalty.active_set) ## added for bootstrap
+    sampler1.loss.fit_E(sampler1.penalty.active_set) # added for bootstrap
 
     loss_args = {'mean':np.zeros(n),
                  'sigma':sigma}

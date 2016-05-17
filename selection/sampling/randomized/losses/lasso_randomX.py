@@ -231,7 +231,7 @@ class lasso_randomX(selective_loss):
         return g
 
 
-    def hessian(self, data, beta):
+    def hessian(self):#, data, beta):
         """
         hessian is constant in this case.
         """
@@ -328,7 +328,12 @@ class lasso_randomX(selective_loss):
 
         # data_star = np.concatenate((np.dot(mat_XEstar,Z_star), data[:size_inactive]), axis=0)
 
-        new = data + stepsize * np.dot(self.R, data_star)
+        # data1 = data.copy()
+        # data1[:self.size_active] = 0
+
+        # new = data1 + stepsize * np.dot(self.R, data_star)
+
+        new = np.dot(self.P, data) + np.dot(self.R, data_star)
 
         log_transition_p = self.logpdf(new) - self.logpdf(data)
 
