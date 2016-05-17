@@ -127,12 +127,15 @@ class gaussian_Xfixed_boot(selective_loss):
 
         indices = np.random.choice(n, size=(n,), replace=True)
 
+
+
         residuals_star = self.centered_residuals[indices]
 
         y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
 
-        new = data + stepsize * np.dot(self.R, y_star-self.y)
+        # new = data + stepsize * np.dot(self.R, y_star-self.y)
 
+        new = np.dot(self.P, data)+np.dot(self.R, y_star-self.y)
 
         #stepsize = 5./n
         #sign_vector =  np.sign(val)

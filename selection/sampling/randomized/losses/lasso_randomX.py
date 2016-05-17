@@ -304,9 +304,12 @@ class lasso_randomX(selective_loss):
         size_active = self.size_active
         size_inactive = data.shape[0] - size_active
 
+        eta = 0.3
         indices = np.random.choice(n, size=(n,), replace = True)
-        y_star = self.y[indices]
-        X_star = self.X[indices]
+        indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
+
+        y_star = self.y[indices1]
+        X_star = self.X[indices1]
         X_star_E = X_star[:,active]
 
         mat_XEstar = np.linalg.inv(np.dot(X_star_E.T, X_star_E))  # (X^{*T}_E X^*_E)^{-1}
@@ -328,10 +331,7 @@ class lasso_randomX(selective_loss):
 
         # data_star = np.concatenate((np.dot(mat_XEstar,Z_star), data[:size_inactive]), axis=0)
 
-        # data1 = data.copy()
-        # data1[:self.size_active] = 0
-
-        # new = data1 + stepsize * np.dot(self.R, data_star)
+        # new = data + stepsize * np.dot(self.R, data_star)
 
         new = np.dot(self.P, data) + np.dot(self.R, data_star)
 

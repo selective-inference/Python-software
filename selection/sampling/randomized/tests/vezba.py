@@ -49,7 +49,31 @@ d={'Jelena':1, 'Bojana':2}
 def proba(Jelena=0, Bojana=0):
     return Jelena+1
 
-print proba(**d)
+#print proba(**d)
 #print map(proba,**d)
+
+
+n=5
+eta=1
+indices = np.random.choice(n, size=(n,), replace = True)
+print indices
+indices1 = [i if np.random.uniform(0,1,1)<eta else indices[i] for i in range(n)]
+
+print indices1
+for i in range(n):
+    if (np.random.uniform(0,1,1)<eta):
+        indices[i]=i
+        print i
+print indices
+
+
+
+
+
+
+
+
+
+
 
 
