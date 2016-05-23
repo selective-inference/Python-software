@@ -16,6 +16,7 @@ class gaussian_Xfixed_boot(selective_loss):
 
         self.X = X
         self.y = y.copy()
+        self.indices=np.arange(X.shape[0])
         #self._restricted_grad_beta = np.zeros(self.shape)
 
 
@@ -23,7 +24,6 @@ class gaussian_Xfixed_boot(selective_loss):
     def fit_E(self, active):
         """
         Computes the OLS estimator \bar{\beta}_E (y~X_E) after seeing the active set (E).
-        Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
 
         Parameters:
         ----------
@@ -43,8 +43,9 @@ class gaussian_Xfixed_boot(selective_loss):
             self._beta_unpenalized = np.linalg.lstsq(X_E, self.y)[0]  # \bar{\beta}_E
             residuals = self.y - np.dot(X_E, self._beta_unpenalized)
 
-            self.centered_residuals = residuals - residuals.mean()
-
+            #self.centered_residuals = residuals - residuals.mean()
+            self.centered_residuals=residuals
+            #print 'centered res', self.centered_residuals
         else:
             raise ValueError("Empty active set.")
 
@@ -78,9 +79,10 @@ class gaussian_Xfixed_boot(selective_loss):
         old_data, self.y = self.y, data
         g = self.smooth_objective(beta, 'grad')
         self.y = old_data
+        # print self.y
         return g
 
-    def hessian(self):#, data, beta):
+    def hessian(self, data, beta):
         if not hasattr(self, "_XTX"):
             self._XTX = np.dot(self.X.T, self.X)
         return self._XTX
@@ -125,20 +127,25 @@ class gaussian_Xfixed_boot(selective_loss):
         active = self.active
         # size_active = self.size_active
 
-        eta = 0.5
-        indices = np.random.choice(n, size=(n,), replace=True)
-        indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
+        #eta = 0.98
+        #indices = np.arrange(n)
+        for _ in range(1):
+             self.indices[np.random.choice(n,1)] = np.random.choice(n,1)
 
-        residuals_star = self.centered_residuals[indices1]
+        #print self.indices
+        #indices = np.random.choice(n, size=(n,), replace=True)
+        #print 'incices', indices
+        #indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
+        #print 'indices1', indices1
+        residuals_star = self.centered_residuals[self.indices]
 
-        y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
+        # y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
 
-        #print y_star-self.y
+        # print y_star-self.y
         # new = data + stepsize * np.dot(self.R, y_star-self.y)
 
-        new = np.dot(self.P, data)+np.dot(self.R, y_star-self.y)
-        #new = np.dot(self.P, data) + np.dot(self.R,residuals_star)
-
+        #new = np.dot(self.P, data) + np.dot(self.R, y_star-self.y)
+        new = np.dot(self.P, self.y) + np.dot(self.R, residuals_star)
 
         #stepsize = 5./n
         #sign_vector =  np.sign(val)

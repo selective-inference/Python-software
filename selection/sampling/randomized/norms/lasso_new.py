@@ -253,7 +253,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         #else:
         #     choldowndate(self.chol_adapt, rank_one) # update done in place
 
-
+        # return proposal
 
         if np.log(np.random.uniform()) < log_ratio:
             simplex = proposal
