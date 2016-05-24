@@ -131,7 +131,7 @@ class gaussian_Xfixed_boot_new(selective_loss):
 
         #eta = 0.98
         #indices = np.arange(n)
-        for _ in range(20):
+        for _ in range(15):
              self.indices[np.random.choice(n,1)] = np.random.choice(n,1)
 
         #if np.random.choice(6000,1)<600:
@@ -149,7 +149,7 @@ class gaussian_Xfixed_boot_new(selective_loss):
         # new = data + stepsize * np.dot(self.R, y_star-self.y)
 
         #new = np.dot(self.P, data) + np.dot(self.R, y_star-self.y)
-        new = np.dot(self.P, self.centered_residuals) + np.dot(self.R, residuals_star)
+        new = np.dot(self.P, data) + np.dot(self.R, residuals_star)
 
         #stepsize = 5./n
         #sign_vector =  np.sign(val)

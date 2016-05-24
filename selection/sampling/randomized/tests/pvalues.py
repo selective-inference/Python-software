@@ -64,7 +64,7 @@ def pval(sampler,
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
             if linear_part is not None:
-                e_j = np.arange(X_E.shape[1])
+                e_j = np.zeros(X_E.shape[1])
                 e_j[j] = 1
                 eta = linear_part[:,idx] 
                 keep = np.copy(active)
@@ -79,6 +79,7 @@ def pval(sampler,
                 #obs = np.dot(eta, data0)
                 pop = [np.dot(e_j, np.linalg.lstsq(X_E, z)[0]) for z, _, in samples]
                 obs = np.dot(e_j, np.linalg.lstsq(X_E, y)[0])
+                #print 'obs', obs
             else:
                 row, col = nonzero_index(idx, p)
                 print row, col
