@@ -43,6 +43,7 @@ class gaussian_Xfixed_boot_new(selective_loss):
             self._beta_unpenalized = np.linalg.lstsq(X_E, self.y)[0]  # \bar{\beta}_E
             residuals = self.y - np.dot(X_E, self._beta_unpenalized)
 
+            self.residuals = residuals
             self.centered_residuals = residuals - residuals.mean()
             #self.centered_residuals=residuals
             #print 'centered res', self.centered_residuals
@@ -141,15 +142,17 @@ class gaussian_Xfixed_boot_new(selective_loss):
         #print 'indices', indices
         #indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
         #print 'indices1', indices1
-        residuals_star = self.centered_residuals[self.indices]
 
-        #y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
+        # residuals_star = self.centered_residuals[self.indices]
+        residuals_star = self.residuals[self.indices]
+
+        y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
 
         # print y_star-self.y
         # new = data + stepsize * np.dot(self.R, y_star-self.y)
 
-        #new = np.dot(self.P, data) + np.dot(self.R, y_star-self.y)
-        new = np.dot(self.P, data) + np.dot(self.R, residuals_star)
+        new = np.dot(self.P, data) + np.dot(self.R, y_star-self.y)
+        # new = np.dot(self.P, data) + np.dot(self.R, residuals_star)
 
         #stepsize = 5./n
         #sign_vector =  np.sign(val)
