@@ -190,7 +190,7 @@ class selective_l1norm(rr.l1norm, selective_penalty):
 
         nactive = simplex.shape[0]
         stepsize = 1.5/np.sqrt(nactive)
-
+        #stepsize = 0.05/float(nactive)
 
 
 

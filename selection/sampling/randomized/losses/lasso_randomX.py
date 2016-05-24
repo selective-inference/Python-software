@@ -20,7 +20,7 @@ class lasso_randomX(selective_loss):
         self._XTX = np.dot(self.X.T,self.X).copy()
 
         self.y = y.copy()
-
+        self.indices=np.arange(X.shape[0])
 
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
@@ -304,15 +304,19 @@ class lasso_randomX(selective_loss):
         size_active = self.size_active
         size_inactive = data.shape[0] - size_active
 
-        eta = 0.2
-        indices = np.random.choice(n, size=(n,), replace = True)
-        indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
-        y_star = self.y[indices1]
-        X_star = self.X[indices1]
+        #eta = 0.2
+        self.indices = np.random.choice(n, size=(n,), replace = True)
+        #indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
+        #for _ in range(199):
+        #    self.indices[np.random.choice(n, 1)] = np.random.choice(n, 1)
+
+        y_star = self.y[self.indices]
+        X_star = self.X[self.indices]
         X_star_E = X_star[:,active]
 
         mat_XEstar = np.linalg.inv(np.dot(X_star_E.T, X_star_E))  # (X^{*T}_E X^*_E)^{-1}
         Z_star = np.dot(X_star_E.T, y_star - np.dot(X_star_E, self._beta_unpenalized))  # X^{*T}_E(y^*-X^{*T}_E\bar{\beta}_E)
+
 
         # selected, additionally bootstrap N
         # Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:,self.active], data[:size_active]))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
@@ -326,7 +330,10 @@ class lasso_randomX(selective_loss):
 
         # saturated
 
-        data_star = np.concatenate((np.dot(mat_XEstar,Z_star), np.zeros(size_inactive)), axis=0)
+        beta_bar_star = np.linalg.lstsq(X_star_E, y_star)[0]
+        data_star = np.concatenate((beta_bar_star-self._beta_unpenalized, np.zeros(size_inactive)), axis=0)
+
+        # data_star = np.concatenate((np.dot(mat_XEstar,Z_star), np.zeros(size_inactive)), axis=0)
 
         # data_star = np.concatenate((np.dot(mat_XEstar,Z_star), data[:size_inactive]), axis=0)
 

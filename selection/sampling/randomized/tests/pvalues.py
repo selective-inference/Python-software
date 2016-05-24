@@ -5,7 +5,7 @@ from scipy.stats import norm as ndist, percentileofscore
 def pval(sampler, 
          loss_args,
          linear_part,
-         data,
+         data, y,
          nonzero):
     """
     The function computes the null and alternative 
@@ -58,9 +58,14 @@ def pval(sampler,
     null = []
     alt = []
 
+    X = linear_part.copy()
+    X_E = X[:, active_set]
+
     if set(nonzero).issubset(active_set):
-        for _, idx in enumerate(active_set):
+        for j, idx in enumerate(active_set):
             if linear_part is not None:
+                e_j = np.arange(X_E.shape[1])
+                e_j[j] = 1
                 eta = linear_part[:,idx] 
                 keep = np.copy(active)
                 keep[idx] = False
@@ -70,14 +75,17 @@ def pval(sampler,
                 loss_args['value'] = np.dot(L.T, data)
                 sampler.setup_sampling(data, loss_args=loss_args)
                 samples = sampler.sampling(ndraw=5000, burnin=1000)
-                pop = [np.dot(eta, z) for z, _, in samples]
-                obs = np.dot(eta, data0)
+                #pop = [np.dot(eta, z) for z, _, in samples]
+                #obs = np.dot(eta, data0)
+                pop = [np.dot(e_j, np.linalg.lstsq(X_E, z)[0]) for z, _, in samples]
+                obs = np.dot(e_j, np.linalg.lstsq(X_E, y)[0])
             else:
                 row, col = nonzero_index(idx, p)
                 print row, col
                 eta = data0[:, row] 
                 sampler.setup_sampling(data, loss_args=loss_args)
                 samples = sampler.sampling(ndraw=5000, burnin=1000)
+
                 pop = [np.dot(eta, z[:, col]) for z, _, in samples]
                 obs = np.dot(eta, data0[:, col])
 

@@ -86,7 +86,7 @@ def test_lasso_randomX(s=5, n=200, p=20):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(10):
+    for i in range(5):
         print "iteration", i
         p0, pA = test_lasso_randomX()
         P0.extend(p0); PA.extend(pA)

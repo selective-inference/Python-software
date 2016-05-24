@@ -13,7 +13,7 @@ def test_lasso_boot(s=5, n=100, p=20):
     lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
-    loss = randomized.gaussian_Xfixed_boot(X, y)
+    loss = randomized.gaussian_Xfixed_boot_new(X, y)
     random_Z = randomization.rvs(p)
     epsilon = 1.
 
@@ -33,9 +33,14 @@ def test_lasso_boot(s=5, n=100, p=20):
     loss_args = {'mean':np.zeros(n),
                  'sigma':sigma}
 
+    active = sampler1.penalty.active_set
+    beta_bar = np.linalg.lstsq(X[:,active], y)[0]
+    data = y - np.dot(X[:, active], beta_bar)
+
+
     null, alt = pval(sampler1,
                      loss_args,
-                     X, y,
+                     X, data, y,
                      nonzero)
 
     return null, alt
@@ -43,7 +48,7 @@ def test_lasso_boot(s=5, n=100, p=20):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(3):
+    for i in range(10):
         print "iteration", i
         p0, pA = test_lasso_boot()
         P0.extend(p0); PA.extend(pA)

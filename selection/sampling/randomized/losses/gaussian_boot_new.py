@@ -1,7 +1,7 @@
 import numpy as np
 from base import selective_loss
 
-class gaussian_Xfixed_boot(selective_loss):
+class gaussian_Xfixed_boot_new(selective_loss):
 
     def __init__(self, X, y,
                  coef=1.,
@@ -16,7 +16,7 @@ class gaussian_Xfixed_boot(selective_loss):
 
         self.X = X
         self.y = y.copy()
-        self.indices=np.arange(X.shape[0])
+        self.indices = np.arange(X.shape[0])
         #self._restricted_grad_beta = np.zeros(self.shape)
 
 
@@ -76,13 +76,13 @@ class gaussian_Xfixed_boot(selective_loss):
         """
         Gradient of smooth part restricted to active set
         """
-        #return -np.dot(self.X.T, data+np.dot(self.X[:, self.active],self._beta_unpenalized)-np.dot(self.X,beta))
+        return -np.dot(self.X.T, data+np.dot(self.X[:, self.active],self._beta_unpenalized)-np.dot(self.X,beta))
 
-        old_data, self.y = self.y, data
-        g = self.smooth_objective(beta, 'grad')
-        self.y = old_data
+        #old_data, self.y = self.y, data
+        #g = self.smooth_objective(beta, 'grad')
+        #self.y = old_data
         # print self.y
-        return g #-np.dot(self.X.T, np.dot(self.X[:,self.active], self._beta_unpenalized))
+        #return g-np.dot(self.X.T, np.dot(self.X[:,self.active], self._beta_unpenalized))
 
     def hessian(self, data, beta):
         if not hasattr(self, "_XTX"):
@@ -131,7 +131,7 @@ class gaussian_Xfixed_boot(selective_loss):
 
         #eta = 0.98
         #indices = np.arange(n)
-        for _ in range(30):
+        for _ in range(20):
              self.indices[np.random.choice(n,1)] = np.random.choice(n,1)
 
         #if np.random.choice(6000,1)<600:
@@ -143,13 +143,13 @@ class gaussian_Xfixed_boot(selective_loss):
         #print 'indices1', indices1
         residuals_star = self.centered_residuals[self.indices]
 
-        y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
+        #y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
 
         # print y_star-self.y
         # new = data + stepsize * np.dot(self.R, y_star-self.y)
 
-        new = np.dot(self.P, self.y) + np.dot(self.R, y_star-self.y)
-        #new = np.dot(self.P, data) + np.dot(self.R, residuals_star)
+        #new = np.dot(self.P, data) + np.dot(self.R, y_star-self.y)
+        new = np.dot(self.P, self.centered_residuals) + np.dot(self.R, residuals_star)
 
         #stepsize = 5./n
         #sign_vector =  np.sign(val)
@@ -176,42 +176,3 @@ class gaussian_Xfixed_boot(selective_loss):
 
 
 
-class sqrt_Lasso_Xfixed(gaussian_Xfixed_boot):
-
-    ### linear part is X_{E\j}^T
-    def proposal(self, y):
-        P, R = self.R, self.P
-        residual = np.dot(R, y)
-
-        eta = np.dot(R, np.random.standard_normal(y.shape))
-        eta -= np.dot(residual, eta) * residual / (np.linalg.norm(residual)**2)
-        eta /= np.linalg.norm(eta)
-
-        # we should try adaptive MCMC on this to get a proper scale
-
-        n = self.R.shape[0]
-        theta = np.random.beta(1, n/4)
-        new_sample = np.cos(theta) * residual + np.sin(theta) * np.linalg.norm(residual) * eta + np.dot(P, y)
-
-        log_transition_p = 0
-        return new_sample, log_transition_p
-
-    def gradient(self, data, beta):
-        old_data, self.y = self.y, data
-        residual = self.y - np.dot(self.X, beta)
-        g = - np.dot(self.X.T, residual) / np.linalg.norm(residual)
-        self.y = old_data
-        return g
-
-    ### calculate the det part in sqrt lasso
-    ### selected_part is X_E^T
-
-    def hessian(self, data, beta):
-
-        selected_part = self.X.T
-        n = selected_part.shape[1]
-        residual = data - np.dot(self.X, beta)
-        R = np.identity(n) - np.outer(residual, residual) / (np.linalg.norm(residual)**2)
-        temp = np.dot(selected_part, R)
-        result = np.dot(temp, selected_part.T) / (np.linalg.norm(residual)**2)
-        return result
