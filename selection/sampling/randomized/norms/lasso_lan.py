@@ -16,7 +16,7 @@ from choldate import cholupdate, choldowndate
 
 ## TODO: should use rr.weighted_l1norm
 
-class selective_l1norm_new(rr.l1norm, selective_penalty):
+class selective_l1norm_lan(rr.l1norm, selective_penalty):
 
     ### begin selective_penalty API
 
@@ -32,7 +32,6 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         # this will get used to randomize on simplex
 
         #self.simplex_randomization = (0.05, dirichlet(np.ones(self.shape)))
-
         self.quadratic_coef = quadratic_coef
 
         self.accept_l1_part, self.total_l1_part = 0, 0
@@ -56,7 +55,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         ##TODO: replace supnorm_ with self.lagrange? check whether they are the same
         ## it seems like supnorm_ is slightly bigger than self.lagrange
 
-        simplex, cube = soln[self.active_set], subgrad / supnorm_
+        betaE, cube = soln[self.active_set], subgrad / supnorm_
 
         #simplex, cube = np.fabs(soln[self.active_set]), subgrad / self.lagrange
 
@@ -65,10 +64,10 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         nactive = soln[self.active_set].shape[0]
 
-        self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
+        #self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
 
         self.hessian = hessian
-        return simplex, cube
+        return betaE, cube
 
     def form_subgradient(self, opt_vars):
         """
@@ -97,10 +96,10 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         """
 
-        simplex, _ = opt_vars
+        betaE, _ = opt_vars
 
         full_params = np.zeros(self.shape)
-        full_params.flat[self.active_set] = simplex
+        full_params.flat[self.active_set] = betaE
 
         return full_params
 
@@ -132,12 +131,14 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
     #    the optimization variables.
 
     #    """
-    #    #new_cube = self.step_cube(state, randomization, gradient)
+    #    new_cube = self.step_cube(state, randomization, gradient)
 
     #    data, opt_vars = state
     #    simplex, _ = opt_vars
     #    new_state = (data, (simplex, new_cube))
+
     #    new_simplex = self.step_simplex(new_state, randomization, logpdf, gradient, self.hessian)
+
     #    return new_simplex, new_cube
 
     ### end selective_penalty API
@@ -169,7 +170,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         nactive = self._active_set.sum()
         ninactive = self._inactive_set.sum()
 
-        self.dtype = np.dtype([('simplex', (np.float,    # parameters
+        self.dtype = np.dtype([('betaE', (np.float,    # parameters
                                             nactive-1)), # on face simplex
                                ('scale', np.float),
                                ('signs', (np.int, nactive)),
@@ -191,41 +192,44 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
             return scale, self.bound
 
 
-    def step_variables(self, state, randomization, logpdf, gradient, hessian):
+    def step_variables(self, state, randomization, logpdf, gradient, X, P, R):
         """
         Uses projected Langevin proposal ( X_{k+1} = P(X_k+\eta\grad\log\pi+\sqrt{2\pi} Z), where Z\sim\mathcal{N}(0,Id))
         for a new simplex point (a point in non-negative orthant, hence projection onto [0,\inf)^|E|)
-
         """
         self.total_l1_part += 1
         lam = self.lagrange
 
         data, opt_vars = state
-        simplex, cube = opt_vars
+        betaE, cube = opt_vars
         active = self.active_set
+        #print 'active', active
         inactive = ~active
+        #print 'inactive', inactive
+        hessian = self.hessian
 
         if self.lagrange is None:
             raise NotImplementedError("The bound form has not been implemented")
 
-        nactive = simplex.shape[0]
-        ninactive=cube.shape[0]
-
+        nactive = betaE.shape[0]
+        ninactive = cube.shape[0]
         #stepsize = 1/np.sqrt(nactive)
-        stepsize = 0.2/float(nactive)  # eta below
+        stepsize = 1/float(nactive+ninactive)  # eta below
 
+        #stepsize = 0.1/float(nactive)
         # new for projected Langevin MCMC
 
         _ , _ , opt_vec = self.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
-        sign_vec = - np.sign(gradient + opt_vec)  # sign(A*\beta+b) for A, b below
-        #print 'dim of hes',hessian.shape
-        B = hessian + self.quadratic_coef*np.identity(nactive+ninactive)
-        #A1 = hessian[active][:, active] + self.quadratic_coef * np.identity(nactive)
-        #A2 = hessian[inactive][:, active]
-        #A = np.concatenate((A1, A2), axis=0)
-        A = B[:, active]
+        sign_vec = - np.sign(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
 
+        #restricted_hessian = hessian[self.active_set][:, active]
+        B = hessian+self.quadratic_coef*np.identity(nactive+ninactive)
+        A = B[:, active]
+        #A1 = hessian[active][:, active] + self.quadratic_coef*np.identity(nactive)
+        #A2 = hessian[inactive][:, active]
+
+        #A=np.concatenate((A1, A2), axis=0)
         # the following is \grad_{\beta}\log g(w), w = \grad l(\beta)+\epsilon (\beta 0)+\lambda u = A*\beta+b,
         # becomes - \grad_{\beta}\|w\|_1 = - \grad_{\beta}\|A*\beta+b\|_1=A^T*sign(A*\beta+b)
         # A = hessian+\epsilon*Id (symmetric), A*\beta+b = gradient+opt_vec
@@ -238,15 +242,23 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         # print np.sum(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))<0)
         #proposal = np.clip(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive)), 0, np.inf)
 
-        simplex_proposal = simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))
+        betaE_proposal = betaE+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))
 
         for i in range(nactive):
-            if (simplex_proposal[i]*self.signs[i]<0):
-                    simplex_proposal[i] = 0
+            if (betaE_proposal[i]*self.signs[i]<0):
+                    betaE_proposal[i] = 0
 
-        grad_cube_log_pi = - self.lagrange * sign_vec[inactive]
-        cube_proposal = cube + (stepsize * grad_cube_log_pi) + (np.sqrt(2 * stepsize) * np.random.standard_normal(ninactive))
+
+        grad_cube_log_pi = - self.lagrange*sign_vec[inactive]
+        cube_proposal = cube + (stepsize*grad_cube_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(ninactive))
         cube_proposal = np.clip(cube_proposal, -1, 1)
+
+
+        grad_y_log_pi = - (data + np.dot(X, sign_vec))
+        data_proposal = data + (stepsize*grad_y_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(data.shape[0]))
+
+
+        data_proposal = np.dot(P, data) + np.dot(R, data_proposal)
 
         #rand = randomization
         #random_sample = rand.rvs(size=nactive)
@@ -254,8 +266,9 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         #print np.sum(simplex+step<0)
         #proposal = np.fabs(simplex + step)
 
-        log_ratio = (logpdf((data, (simplex_proposal, cube_proposal))) -
-                     logpdf(state))
+        #log_ratio = (logpdf((data_proposal, (betaE_proposal, cube_proposal)))-logpdf(state))
+        #log_ratio = log_ratio+((-np.dot(data_proposal, data_proposal) + np.dot(data,data))/float(2))
+
          # update cholesky factor
 
         #alpha = np.minimum(np.exp(log_ratio), 1)
@@ -271,11 +284,12 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         # return proposal
 
-        if np.log(np.random.uniform()) < log_ratio:
-            simplex, cube = simplex_proposal, cube_proposal
-            self.accept_l1_part += 1
+        #if np.log(np.random.uniform()) < log_ratio:
+        data, betaE, cube = data_proposal, betaE_proposal, cube_proposal
+        opt_vars = (betaE, cube)
+        self.accept_l1_part += 1
 
-        return simplex, cube
+        return data, opt_vars
         #return proposal
 
     def step_cube(self, state, randomization, gradient):
@@ -306,38 +320,3 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         cube_sample = (offset - rand.ppf(percentile)) / lam
 
         return cube_sample
-
-
-class selective_supnorm(rr.supnorm, selective_l1norm_new):
-
-    def setup_sampling(self, gradient, soln, random_direction,
-                       tol=1.e-4):
-
-        negative_subgrad = gradient + random_direction
-
-        supnorm_ = np.fabs(soln).max()
-        self.active_set = (np.fabs(soln) > (1 - tol) * supnorm_)
-        self.initial_parameters = np.empty(1, self.dtype)
-        self.initial_parameters['signs'] = np.sign(negative_subgrad[self.active_set])
-        abs_l1part = np.fabs(negative_subgrad[self.active_set])
-        l1norm_ = abs_l1part.sum()
-
-        self.initial_parameters['simplex'] = (abs_l1part / l1norm_)[:-1]
-        self.initial_parameters['cube'] = soln / supnorm_
-
-        if self.lagrange is not None:
-            self.initial_parameters['scale'] = supnorm_
-        else:
-            self.initial_parameters['scale'] = l1norm_
-
-    def get_penalty_params(self, scale):
-        if self.lagrange is not None:
-            return self.lagrange, scale
-        else:
-            return scale, self.bound
-
-    def get_penalty_params(self, scale):
-        if self.lagrange is not None:
-            return self.lagrange, scale
-        else:
-            return scale, self.bound

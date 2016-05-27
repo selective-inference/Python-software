@@ -1,3 +1,4 @@
 from base import selective_penalty
 from lasso import selective_l1norm
 from lasso_new import selective_l1norm_new
+from lasso_lan import selective_l1norm_lan

@@ -59,7 +59,9 @@ def pval(sampler,
     alt = []
 
     X = linear_part.copy()
-    X_E = X[:, active_set]
+    X_E = X[:, active]
+    #print 'active_set', X[1,active_set]
+    #print 'active', X[1, active]
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
@@ -68,6 +70,8 @@ def pval(sampler,
                 e_j[j] = 1
                 eta = linear_part[:,idx] 
                 keep = np.copy(active)
+                # keep=np.arange(X.shape[1])
+
                 keep[idx] = False
                 L = linear_part[:,keep]
 
@@ -75,9 +79,14 @@ def pval(sampler,
                 loss_args['value'] = np.dot(L.T, data)
                 sampler.setup_sampling(data, loss_args=loss_args)
                 samples = sampler.sampling(ndraw=5000, burnin=1000)
+                R = sampler.loss.R
+                P = sampler.loss.P
+
                 #pop = [np.dot(eta, z) for z, _, in samples]
+                #pop = [np.dot(eta, np.dot(P,y)+np.dot(R,z)) for z, _, in samples]
                 #obs = np.dot(eta, data0)
-                pop = [np.dot(e_j, np.linalg.lstsq(X_E, z)[0]) for z, _, in samples]
+                pop = [np.dot(e_j, np.linalg.lstsq(X_E, np.dot(P,y)+np.dot(R,z))[0]) for z, _, in samples]
+                #pop = [np.dot(e_j, np.linalg.lstsq(X_E, z)[0]) for z, _, in samples]
                 obs = np.dot(e_j, np.linalg.lstsq(X_E, y)[0])
                 #print 'obs', obs
             else:

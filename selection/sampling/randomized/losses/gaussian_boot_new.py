@@ -16,8 +16,7 @@ class gaussian_Xfixed_boot_new(selective_loss):
 
         self.X = X
         self.y = y.copy()
-        self.indices = np.arange(X.shape[0])
-        #self._restricted_grad_beta = np.zeros(self.shape)
+        # self.indices = np.arange(X.shape[0])
 
 
     # added for bootstrap
@@ -77,7 +76,8 @@ class gaussian_Xfixed_boot_new(selective_loss):
         """
         Gradient of smooth part restricted to active set
         """
-        return -np.dot(self.X.T, data+np.dot(self.X[:, self.active],self._beta_unpenalized)-np.dot(self.X,beta))
+        resid = data+np.dot(self.X[:, self.active],self._beta_unpenalized)-np.dot(self.X,beta)
+        return -np.dot(self.X.T, resid)
 
         #old_data, self.y = self.y, data
         #g = self.smooth_objective(beta, 'grad')
@@ -85,7 +85,7 @@ class gaussian_Xfixed_boot_new(selective_loss):
         # print self.y
         #return g-np.dot(self.X.T, np.dot(self.X[:,self.active], self._beta_unpenalized))
 
-    def hessian(self, data, beta):
+    def hessian(self): #, data, beta):
         if not hasattr(self, "_XTX"):
             self._XTX = np.dot(self.X.T, self.X)
         return self._XTX
@@ -116,6 +116,8 @@ class gaussian_Xfixed_boot_new(selective_loss):
         self.P = P
         self.linear_part = linear_part
 
+        self.indices = np.arange(self.X.shape[0])
+
 
     def proposal(self, data):
         n, p = self.X.shape
@@ -127,32 +129,37 @@ class gaussian_Xfixed_boot_new(selective_loss):
         #                               self.sigma * np.random.standard_normal(n))
 
         # added for bootstrap
+
         active = self.active
+
         # size_active = self.size_active
 
         #eta = 0.98
         #indices = np.arange(n)
-        for _ in range(15):
+
+        for _ in range(20):
              self.indices[np.random.choice(n,1)] = np.random.choice(n,1)
 
         #if np.random.choice(6000,1)<600:
         #    self.indices=np.arange(n)
         #print self.indices
+
         #indices = np.random.choice(n, size=(n,), replace=True)
+
         #print 'indices', indices
         #indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
         #print 'indices1', indices1
 
         # residuals_star = self.centered_residuals[self.indices]
-        residuals_star = self.residuals[self.indices]
+        residuals_star = self.centered_residuals[self.indices]
 
-        y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
+        # y_star = np.dot(self.X[:, active], self._beta_unpenalized) + residuals_star
 
         # print y_star-self.y
         # new = data + stepsize * np.dot(self.R, y_star-self.y)
 
-        new = np.dot(self.P, data) + np.dot(self.R, y_star-self.y)
-        # new = np.dot(self.P, data) + np.dot(self.R, residuals_star)
+        # new = np.dot(self.P, data) + np.dot(self.R, y_star-self.y)
+        new = np.dot(self.P, data) + np.dot(self.R, residuals_star)
 
         #stepsize = 5./n
         #sign_vector =  np.sign(val)
