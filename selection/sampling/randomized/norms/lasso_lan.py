@@ -221,7 +221,7 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
 
         _ , _ , opt_vec = self.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
-        sign_vec = - np.sign(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
+        sign_vec =  - np.sign(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
 
         #restricted_hessian = hessian[self.active_set][:, active]
         B = hessian+self.quadratic_coef*np.identity(nactive+ninactive)
@@ -235,7 +235,7 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
         # A = hessian+\epsilon*Id (symmetric), A*\beta+b = gradient+opt_vec
         # \grad\log\pi if we want a sample from a distribution \pi
 
-        grad_log_pi = - np.dot(A.T, sign_vec)
+        grad_log_pi =  np.dot(A.T, sign_vec)
 
         # proposal = Proj(simplex+\eta*grad_{\beta}\log g+\sqrt{2\eta}*Z), Z\sim\mathcal{N}(0, Id)
         # projection on the non-negative orthant
@@ -249,7 +249,7 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
                     betaE_proposal[i] = 0
 
 
-        grad_cube_log_pi = - self.lagrange*sign_vec[inactive]
+        grad_cube_log_pi =  self.lagrange*sign_vec[inactive]
         cube_proposal = cube + (stepsize*grad_cube_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(ninactive))
         cube_proposal = np.clip(cube_proposal, -1, 1)
 

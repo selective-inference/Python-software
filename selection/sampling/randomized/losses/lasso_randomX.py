@@ -20,7 +20,6 @@ class lasso_randomX(selective_loss):
         self._XTX = np.dot(self.X.T,self.X).copy()
 
         self.y = y.copy()
-        self.indices=np.arange(X.shape[0])
 
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
@@ -280,6 +279,7 @@ class lasso_randomX(selective_loss):
 
         self.linear_part = linear_part
 
+        self.indices = np.arange(X.shape[0])
 
     def proposal(self, data): #, val):
         # if not hasattr(self, "L"):  # don't know what this is for
@@ -299,23 +299,21 @@ class lasso_randomX(selective_loss):
 
 
         ## bootstrap
-        active = self.active
-        inactive = ~active
-        size_active = self.size_active
-        size_inactive = data.shape[0] - size_active
+        #active = self.active
+        #inactive = ~active
+        #size_active = self.size_active
+        #size_inactive = data.shape[0] - size_active
 
         #eta = 0.2
-        self.indices = np.random.choice(n, size=(n,), replace = True)
-        #indices1 = [i if np.random.uniform(0, 1, 1) < eta else indices[i] for i in range(n)]
         #for _ in range(199):
         #    self.indices[np.random.choice(n, 1)] = np.random.choice(n, 1)
 
-        y_star = self.y[self.indices]
-        X_star = self.X[self.indices]
-        X_star_E = X_star[:,active]
+        #y_star = self.y[self.indices]
+        #X_star = self.X[self.indices]
+        #X_star_E = X_star[:,active]
 
-        mat_XEstar = np.linalg.inv(np.dot(X_star_E.T, X_star_E))  # (X^{*T}_E X^*_E)^{-1}
-        Z_star = np.dot(X_star_E.T, y_star - np.dot(X_star_E, self._beta_unpenalized))  # X^{*T}_E(y^*-X^{*T}_E\bar{\beta}_E)
+        #mat_XEstar = np.linalg.inv(np.dot(X_star_E.T, X_star_E))  # (X^{*T}_E X^*_E)^{-1}
+        #Z_star = np.dot(X_star_E.T, y_star - np.dot(X_star_E, self._beta_unpenalized))  # X^{*T}_E(y^*-X^{*T}_E\bar{\beta}_E)
 
 
         # selected, additionally bootstrap N
@@ -330,8 +328,8 @@ class lasso_randomX(selective_loss):
 
         # saturated
 
-        beta_bar_star = np.linalg.lstsq(X_star_E, y_star)[0]
-        data_star = np.concatenate((beta_bar_star-self._beta_unpenalized, np.zeros(size_inactive)), axis=0)
+        #beta_bar_star = np.linalg.lstsq(X_star_E, y_star)[0]
+        #data_star = np.concatenate((beta_bar_star-self._beta_unpenalized, np.zeros(size_inactive)), axis=0)
 
         # data_star = np.concatenate((np.dot(mat_XEstar,Z_star), np.zeros(size_inactive)), axis=0)
 
@@ -339,7 +337,7 @@ class lasso_randomX(selective_loss):
 
         # new = data + stepsize * np.dot(self.R, data_star)
 
-        new = np.dot(self.P, data) + np.dot(self.R, data_star)
+        #new = np.dot(self.P, data) + np.dot(self.R, data_star)
 
         log_transition_p = self.logpdf(new) - self.logpdf(data)
 

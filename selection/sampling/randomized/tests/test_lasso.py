@@ -41,7 +41,7 @@ def test_lasso(s=5, n=100, p=20):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(30):
+    for i in range(20):
         print "iteration", i
         p0, pA = test_lasso()
         P0.extend(p0); PA.extend(pA)

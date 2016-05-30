@@ -7,8 +7,7 @@ def pval_new(sampler,
          linear_part, # not used anymore
          data,
          nonzero,
-         Sigma,
-         true_beta):
+         Sigma):
     """
     The function computes the null and alternative pvalues for a regularized problem.
     The null p-values correspond to the coefficients whose corresponding predictors
@@ -92,9 +91,6 @@ def pval_new(sampler,
 
                 loss_args['linear_part'] = L
                 loss_args['value'] = np.dot(L, data)  # conditioning is on L*data=value
-                loss_args['beta'] = true_beta.copy()
-                #print 'true_beta', true_beta
-                loss_args['beta'][j]=0
 
                 #print 'loss_args',loss_args['beta']
 

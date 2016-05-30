@@ -11,7 +11,7 @@ from pvalues_new import pval_new
 from matplotlib import pyplot as plt
 
 
-def test_lasso_randomX(s=5, n=200, p=20):
+def test_lasso_randomX(s=5, n=100, p=20):
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0)
 
@@ -42,7 +42,7 @@ def test_lasso_randomX(s=5, n=200, p=20):
     # new
 
     active_set = sampler1.penalty.active_set # set E
-    print 'size of the active set', np.sum(active_set)
+    #print 'size of the active set', np.sum(active_set)
     beta_unpenalized = sampler1.loss._beta_unpenalized  #\bar{\beta}_E
 
     # the estimate of the covariance of \bar{\beta}_E-\beta_E = (X_E^TX_E)^{-1}X_E^T\epsilon
@@ -64,7 +64,7 @@ def test_lasso_randomX(s=5, n=200, p=20):
 
     linear_part = np.identity(p) # not used anymore
 
-    data = np.concatenate((beta_unpenalized, N))  # (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}^E))
+    data = np.concatenate((beta_unpenalized, N), axis=0)  # (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}^E))
 
     loss_args = {'beta':true_beta.copy()}
 
@@ -78,8 +78,7 @@ def test_lasso_randomX(s=5, n=200, p=20):
                          linear_part,
                          data,
                          nonzero,
-                         Sigma_b,
-                         true_beta)
+                         Sigma_b)
 
     return null, alt
 

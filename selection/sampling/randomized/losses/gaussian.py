@@ -82,7 +82,7 @@ class gaussian_Xfixed(selective_loss):
 
     def proposal(self, data):
         n, p = self.X.shape
-        stepsize = 2. / np.sqrt(n)  # originally 2. / np.sqrt(n)
+        stepsize = 2.5 / np.sqrt(n)  # originally 2. / np.sqrt(n)
 
         new = data + stepsize * np.dot(self.R,
                                        self.sigma * np.random.standard_normal(n))

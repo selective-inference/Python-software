@@ -129,7 +129,8 @@ class selective_sampler_MH_new(selective_sampler):
         # step_simplex moves according to MH step and step_cube draws an immediate sample since its density conditional on
         # everything else has explicit form (more in penalty class)
         hessian = self.loss.hessian()
-        opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, self.cur_grad, hessian)
+        X= self.loss.X
+        opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, self.cur_grad, hessian, X)
         #betaE, subgrad = opt_vars
 
         # update the optimization variables.

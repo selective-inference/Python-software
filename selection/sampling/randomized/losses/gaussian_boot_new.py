@@ -137,7 +137,7 @@ class gaussian_Xfixed_boot_new(selective_loss):
         #eta = 0.98
         #indices = np.arange(n)
 
-        for _ in range(20):
+        for _ in range(3):
              self.indices[np.random.choice(n,1)] = np.random.choice(n,1)
 
         #if np.random.choice(6000,1)<600:
