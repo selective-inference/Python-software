@@ -281,8 +281,4 @@ class truncated_chi2(truncated):
 
         return z 
         
-        
-
-import doctest
-doctest.testmod()
 

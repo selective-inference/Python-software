@@ -221,9 +221,9 @@ class lasso(object):
 
         """
 
+        self._penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
         if lasso_solution is None and not hasattr(self, "lasso_solution"):
-            penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
-            problem = simple_problem(self.loglike, penalty)
+            problem = simple_problem(self.loglike, self._penalty)
             self.lasso_solution = problem.solve(**solve_args)
         elif lasso_solution is not None:
             self.lasso_solution = lasso_solution
