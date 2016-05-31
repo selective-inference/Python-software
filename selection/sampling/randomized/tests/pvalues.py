@@ -82,12 +82,12 @@ def pval(sampler,
                 R = sampler.loss.R
                 P = sampler.loss.P
 
-                #pop = [np.dot(eta, z) for z, _, in samples]
-                #pop = [np.dot(eta, np.dot(P,y)+np.dot(R,z)) for z, _, in samples]
-                #obs = np.dot(eta, data0)
-                pop = [np.dot(e_j, np.linalg.lstsq(X_E, np.dot(P,y)+np.dot(R,z))[0]) for z, _, in samples]
+                pop = [np.dot(eta, z) for z, _, in samples]
+                obs = np.dot(eta, data0)
+
+                #pop = [np.dot(e_j, np.linalg.lstsq(X_E, np.dot(P,y)+np.dot(R,z))[0]) for z, _, in samples]
                 #pop = [np.dot(e_j, np.linalg.lstsq(X_E, z)[0]) for z, _, in samples]
-                obs = np.dot(e_j, np.linalg.lstsq(X_E, y)[0])
+                #obs = np.dot(e_j, np.linalg.lstsq(X_E, y)[0])
                 #print 'obs', obs
             else:
                 row, col = nonzero_index(idx, p)

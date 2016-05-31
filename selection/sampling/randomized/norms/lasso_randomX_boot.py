@@ -16,7 +16,7 @@ from choldate import cholupdate, choldowndate
 
 ## TODO: should use rr.weighted_l1norm
 
-class selective_l1norm_new(rr.l1norm, selective_penalty):
+class selective_l1norm_randomX_boot(rr.l1norm, selective_penalty):
 
     ### begin selective_penalty API
 
@@ -24,7 +24,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
     def setup_sampling(self,
                        gradient,
-                       hessian, ## added
+                    #   hessian, ## added
                        soln,
                        linear_randomization,
                        quadratic_coef):
@@ -68,7 +68,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
 
-        self.hessian = hessian
+        #self.hessian = hessian
         return betaE, cube
 
     def form_subgradient(self, opt_vars):
@@ -192,7 +192,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
             return scale, self.bound
 
 
-    def step_variables(self, state, randomization, logpdf, gradient, hessian, X):
+    def step_variables(self, state, randomization, logpdf, gradient, SigmaTinv, hessian, _XTX_b):
         """
         Uses projected Langevin proposal ( X_{k+1} = P(X_k+\eta\grad\log\pi+\sqrt{2\pi} Z), where Z\sim\mathcal{N}(0,Id))
         for a new simplex point (a point in non-negative orthant, hence projection onto [0,\inf)^|E|)
@@ -218,31 +218,16 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         # new for projected Langevin MCMC
 
         B = hessian + self.quadratic_coef*np.identity(nactive+ninactive)
-        #A1 = hessian[active][:, active] + self.quadratic_coef * np.identity(nactive)
-        #A2 = hessian[inactive][:, active]
-        #A = np.concatenate((A1, A2), axis=0)
         A = B[:, active]
 
-        # the following is \grad_{\beta}\log g(w), w = \grad l(\beta)+\epsilon (\beta 0)+\lambda u = A*\beta+b,
-        # becomes - \grad_{\beta}\|w\|_1 = - \grad_{\beta}\|A*\beta+b\|_1=A^T*sign(A*\beta+b)
-        # A = hessian+\epsilon*Id (symmetric), A*\beta+b = gradient+opt_vec
-        # \grad\log\pi if we want a sample from a distribution \pi
 
-        _grad_loglik0 = self.grad_loglik(data, opt_vars, X, A)
+        _grad_loglik0 = self.grad_loglik(data, opt_vars, A, hessian, _XTX_b)
         opt_vars_proposal = self.proposal(opt_vars, stepsize, _grad_loglik0)
         betaE_proposal, cube_proposal = opt_vars_proposal
 
 
-        #######
 
-        #rand = randomization
-        #random_sample = rand.rvs(size=nactive)
-        #step = np.dot(self.chol_adapt, random_sample)
-        #print np.sum(simplex+step<0)
-        #proposal = np.fabs(simplex + step)
-
-
-        _grad_loglik1 = self.grad_loglik(data, opt_vars_proposal, X, A)
+        _grad_loglik1 = self.grad_loglik(data, opt_vars_proposal, A, hessian, _XTX_b)
 
         log_ratio = logpdf((data, (betaE_proposal, cube_proposal))) - logpdf(state) \
                     - self.q_transition(opt_vars, opt_vars_proposal, _grad_loglik0, stepsize) \
@@ -271,12 +256,18 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
 
         #return proposal
 
-    def grad_loglik(self, y, opt_vars, X, A):
+    def grad_loglik(self, data, opt_vars, A, hessian, _XTX_b):
         params, _, opt_vec = self.form_optimization_vector(opt_vars)
-        gradient = - np.dot(X.T, y-np.dot(X,params))
+
+        active=self.active_set
+        nactive=np.sum(active)
+        data1 = data.copy()
+        data1[:nactive]=0
+        gradient = - (data1+ np.dot(_XTX_b[:, active], params[active]-data[:nactive]))
+
         sign_vec = - np.sign(gradient+opt_vec)
         grad_betaE = np.dot(A.T, sign_vec)
-        grad_cube = self.lagrange*sign_vec[self.inactive]
+        grad_cube = self.lagrange*sign_vec[~active]
         _grad_loglik = np.concatenate((grad_betaE, grad_cube), axis=0)
         return _grad_loglik
 
@@ -287,6 +278,7 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         nactive = betaE.shape[0]
         grad_betaE = _grad_loglik[:nactive]
         grad_cube = _grad_loglik[nactive:]
+
 
         betaE_proposal = betaE + stepsize*grad_betaE + np.sqrt(2*stepsize)*np.random.standard_normal(betaE.shape[0])
         cube_proposal = cube + stepsize*grad_cube + np.sqrt(2*stepsize)*np.random.standard_normal(cube.shape[0])
@@ -309,66 +301,3 @@ class selective_l1norm_new(rr.l1norm, selective_penalty):
         return -((x0-x1-stepsize*grad_loglik)**2).sum()/(4*stepsize)
 
 
-
-    def step_cube(self, state, randomization, gradient):
-        """
-        move a step for the subgradients.
-        """
-
-        data, opt_vars = state
-        betaE, cube = opt_vars
-
-        if self.lagrange is None:
-            raise NotImplementedError("The bound form has not been implemented")
-
-        lam = self.lagrange
-
-        rand = randomization
-        active_set = self.active_set
-        inactive_set = self.inactive_set
-
-        # note that we don't need beta here as
-        # beta_{-E} = 0 for the inactive block
-        offset = - gradient[inactive_set]
-        lower = offset - lam
-        upper = offset + lam
-
-        percentile = np.random.sample(inactive_set.sum()) \
-                * (rand.cdf(upper) - rand.cdf(lower)) + rand.cdf(lower)
-        cube_sample = (offset - rand.ppf(percentile)) / lam
-
-        return cube_sample
-
-
-class selective_supnorm(rr.supnorm, selective_l1norm_new):
-
-    def setup_sampling(self, gradient, soln, random_direction,tol=1.e-4):
-
-        negative_subgrad = gradient + random_direction
-
-        supnorm_ = np.fabs(soln).max()
-        self.active_set = (np.fabs(soln) > (1 - tol) * supnorm_)
-        self.initial_parameters = np.empty(1, self.dtype)
-        self.initial_parameters['signs'] = np.sign(negative_subgrad[self.active_set])
-        abs_l1part = np.fabs(negative_subgrad[self.active_set])
-        l1norm_ = abs_l1part.sum()
-
-        self.initial_parameters['betaE'] = (abs_l1part / l1norm_)[:-1]
-        self.initial_parameters['cube'] = soln / supnorm_
-
-        if self.lagrange is not None:
-            self.initial_parameters['scale'] = supnorm_
-        else:
-            self.initial_parameters['scale'] = l1norm_
-
-    def get_penalty_params(self, scale):
-        if self.lagrange is not None:
-            return self.lagrange, scale
-        else:
-            return scale, self.bound
-
-    def get_penalty_params(self, scale):
-        if self.lagrange is not None:
-            return self.lagrange, scale
-        else:
-            return scale, self.bound

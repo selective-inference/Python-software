@@ -627,6 +627,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=7,
     beta[:s] = snr 
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    beta = 2*beta
     active = np.zeros(p, np.bool)
     active[:s] = True
 

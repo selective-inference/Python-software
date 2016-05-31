@@ -29,9 +29,9 @@ def test_lasso_randomX(s=5, n=100, p=20):
 
     random_Z = randomization.rvs(p)
 
-    penalty = randomized.selective_l1norm_randomX_boot(p, lagrange=lam)
+    penalty = randomized.selective_l1norm_lan_randomX(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH_randomX_boot(loss,
+    sampler1 = randomized.selective_sampler_MH_lan_randomX(loss,
                                                random_Z,
                                                epsilon,
                                                randomization,
@@ -68,7 +68,7 @@ def test_lasso_randomX(s=5, n=100, p=20):
 
     loss_args = {'beta':true_beta.copy()}
 
-    linear_part = np.identity(p)
+    # linear_part = np.identity(p)
     # data=np.dot(X.T, y)
 
     # pval_new_new function calls sampler.setup_sampling and runs the sampling scheme
@@ -85,7 +85,7 @@ def test_lasso_randomX(s=5, n=100, p=20):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(5):
+    for i in range(50):
         print "iteration", i
         p0, pA = test_lasso_randomX()
         P0.extend(p0); PA.extend(pA)

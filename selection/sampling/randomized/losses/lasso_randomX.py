@@ -80,6 +80,10 @@ class lasso_randomX(selective_loss):
             #self._beta_unpenalized = loss_E.solve(**solve_args)
             self._beta_unpenalized = np.linalg.lstsq(X_E, self.y)[0]  # \bar{\beta}_E
             self.bootstrap_covariance()
+
+            residuals = self.y - np.dot(X_E, self._beta_unpenalized)
+            self.residuals = residuals
+            self.centered_residuals = residuals - residuals.mean()
         else:
             raise ValueError("Empty active set.")
 
@@ -230,7 +234,7 @@ class lasso_randomX(selective_loss):
         return g
 
 
-    def hessian(self, data, beta):
+    def hessian(self):#, data, beta):
         """
         hessian is constant in this case.
         """
@@ -269,9 +273,7 @@ class lasso_randomX(selective_loss):
         I = np.identity(linear_part.shape[1])
 
         self.data = data
-        self.beta = beta[self.active]
 
-        # print 'beta', self.beta
         # L(I-P)=LR=0, hence for new_data = data+R*proposal, we have L*new_data = L*data+LR*proposal = L*data=constant
         self.R = I - P
 
@@ -279,14 +281,16 @@ class lasso_randomX(selective_loss):
 
         self.linear_part = linear_part
 
-        self.indices = np.arange(X.shape[0])
+        self.indices = np.arange(self.X.shape[0])
+
 
     def proposal(self, data): #, val):
         # if not hasattr(self, "L"):  # don't know what this is for
         #    self.bootstrap_covariance()
 
         n, p = self.X.shape
-        stepsize = 15. / np.sqrt(p)   # 20 for the selected model
+        nactive = sum(self.active)
+        stepsize = 10. / np.sqrt(p)   # 20 for the selected model
 
         # stepsize=15./p
 
@@ -304,12 +308,18 @@ class lasso_randomX(selective_loss):
         #size_active = self.size_active
         #size_inactive = data.shape[0] - size_active
 
-        #eta = 0.2
-        #for _ in range(199):
+        #for _ in range(50):
         #    self.indices[np.random.choice(n, 1)] = np.random.choice(n, 1)
 
-        #y_star = self.y[self.indices]
-        #X_star = self.X[self.indices]
+        self.indices= np.random.choice(n, size=(n,), replace=True)
+        #residuals_star = self.centered_residuals[self.indices]
+        y_star = self.y[self.indices]
+        X_star = self.X[self.indices]
+        beta_star = np.linalg.lstsq(X_star[:,self.active], y_star)[0]
+
+        data_proposal = np.concatenate((beta_star-self._beta_unpenalized, np.zeros(p-nactive)), axis=0)
+        new = np.dot(self.P, data) + np.dot(self.R, data_proposal)
+
         #X_star_E = X_star[:,active]
 
         #mat_XEstar = np.linalg.inv(np.dot(X_star_E.T, X_star_E))  # (X^{*T}_E X^*_E)^{-1}
@@ -347,35 +357,11 @@ class lasso_randomX(selective_loss):
 
     def logpdf(self, data):
 
-        #sampling_data = np.dot(self.R, data)
 
-        # mat = self.R[self.active,:]
-        # R_cut = mat[:,self.active]
-        #print 'R_cut size', R_cut.shape
-
-        beta_unpen = data[:self.size_active,]
-
-        # beta_unpen = sampling_data[range(self.size_active)]
-        # cov_beta_unpen = np.dot(np.dot(R_cut, self._cov_beta_bar),R_cut.T)
-        # inv_cov_beta_unpen = np.linalg.inv(cov_beta_unpen)
-
-        # Z = sampling_data[(self.size_active):data.shape[0]]
-
-
-        #N = data[(self.size_active):data.shape[0]]
-
-        logl_beta_unpen = - np.dot(np.dot(beta_unpen.T, self._inv_cov_beta_bar), beta_unpen)
-
-        #logl_beta_unpen = - np.dot(np.dot(beta_unpen.T, inv_cov_beta_unpen), beta_unpen)
-        #print 'cov N size', self._covN.shape
-        #print 'length Z', Z.shape
-        #logl_N = - np.dot(np.dot(N.T, self._inv_cov_N), N)
-        #return logl_beta_unpen #+ logl_N
         return 0
 
-        #return - np.dot(np.dot((beta_unpen-self.beta).T, self._inv_cov_beta_bar), beta_unpen-self.beta)
-
-        #return -((data-self.mean)*np.dot(np.linalg.pinv(self._cov), data-self.mean)).sum() / 2
+        #nactive = np.sum(self.active)
+        #return -np.inner(data[:nactive],np.dot(self._inv_cov_beta_bar, data[:nactive])) / float(2)
 
 
 

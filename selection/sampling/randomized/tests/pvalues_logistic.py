@@ -2,7 +2,7 @@ import numpy as np
 from selection.distributions.discrete_family import discrete_family
 from scipy.stats import norm as ndist, percentileofscore
 
-def pval_new(sampler,
+def pval_logistic(sampler,
          loss_args,
          linear_part, # not used anymore
          data,
@@ -76,10 +76,10 @@ def pval_new(sampler,
                 # adding |E|\times(p-|E|) matrix of zero on L1 to get L, then conditioning done on L * data fixed
                 # for the selected model
                 L2 = np.concatenate((L1, np.zeros((size_active, size_data-size_active))), axis=1)
-
+                L = L2
                 # for the saturated model
-                L3 = np.concatenate((np.zeros((size_data-size_active, size_active )), np.identity(size_data-size_active) ), axis=1)
-                L = np.concatenate((L2, L3), axis=0)
+                #L3 = np.concatenate((np.zeros((size_data-size_active, size_active )), np.identity(size_data-size_active) ), axis=1)
+                #L = np.concatenate((L2, L3), axis=0)
 
                 # print L
                 # print L.shape

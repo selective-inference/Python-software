@@ -76,7 +76,8 @@ class gaussian_Xfixed_boot_new(selective_loss):
         """
         Gradient of smooth part restricted to active set
         """
-        resid = data+np.dot(self.X[:, self.active],self._beta_unpenalized)-np.dot(self.X,beta)
+        #resid = data+np.dot(self.X[:, self.active],self._beta_unpenalized)-np.dot(self.X,beta)
+        resid = data - np.dot(self.X,beta)
         return -np.dot(self.X.T, resid)
 
         #old_data, self.y = self.y, data
@@ -137,7 +138,7 @@ class gaussian_Xfixed_boot_new(selective_loss):
         #eta = 0.98
         #indices = np.arange(n)
 
-        for _ in range(3):
+        for _ in range(5):
              self.indices[np.random.choice(n,1)] = np.random.choice(n,1)
 
         #if np.random.choice(6000,1)<600:

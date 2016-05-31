@@ -35,9 +35,9 @@ def test_lasso_boot(s=5, n=100, p=20):
 
     active = sampler1.penalty.active_set
     beta_bar = np.linalg.lstsq(X[:,active], y)[0]
-    data = y - np.dot(X[:, active], beta_bar)
+    #data = y - np.dot(X[:, active], beta_bar)
 
-
+    data=y.copy()
     null, alt = pval(sampler1,
                      loss_args,
                      X, data, y,
@@ -48,7 +48,7 @@ def test_lasso_boot(s=5, n=100, p=20):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(20):
+    for i in range(10):
         print "iteration", i
         p0, pA = test_lasso_boot()
         P0.extend(p0); PA.extend(pA)
