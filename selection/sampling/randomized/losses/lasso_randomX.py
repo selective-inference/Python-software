@@ -252,7 +252,7 @@ class lasso_randomX(selective_loss):
         ----------
         data:
 
-        The subject of the sampling. 'data' vector set in tests/test_lasso_randomX.py
+        The subject of the sampling. 'data' vector set in tests/test_lasso_randomX_boot.py
 
         mean: \beta^0_E # ?
 
@@ -290,7 +290,7 @@ class lasso_randomX(selective_loss):
 
         n, p = self.X.shape
         nactive = sum(self.active)
-        stepsize = 10. / np.sqrt(p)   # 20 for the selected model
+        stepsize = 15. / np.sqrt(p)   # 20 for the selected model
 
         # stepsize=15./p
 
@@ -298,7 +298,7 @@ class lasso_randomX(selective_loss):
         # perpendicular to the column space of L^T (or the residual leftover after projection onto the
         # column space of L^T)
 
-        #new = data + stepsize * np.dot(self.R,
+        #new = np.dot(self.P, data) + stepsize * np.dot(self.R,
         #                               np.random.standard_normal(p))
 
 
@@ -308,16 +308,18 @@ class lasso_randomX(selective_loss):
         #size_active = self.size_active
         #size_inactive = data.shape[0] - size_active
 
-        #for _ in range(50):
+        #for _ in range(10):
         #    self.indices[np.random.choice(n, 1)] = np.random.choice(n, 1)
 
-        self.indices= np.random.choice(n, size=(n,), replace=True)
+        self.indices = np.random.choice(n, size=(n,), replace=True)
         #residuals_star = self.centered_residuals[self.indices]
         y_star = self.y[self.indices]
         X_star = self.X[self.indices]
         beta_star = np.linalg.lstsq(X_star[:,self.active], y_star)[0]
 
         data_proposal = np.concatenate((beta_star-self._beta_unpenalized, np.zeros(p-nactive)), axis=0)
+        #data_proposal = np.concatenate((self._beta_unpenalized- beta_star, np.zeros(p-nactive)), axis=0)
+
         new = np.dot(self.P, data) + np.dot(self.R, data_proposal)
 
         #X_star_E = X_star[:,active]

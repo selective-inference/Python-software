@@ -16,7 +16,7 @@ from choldate import cholupdate, choldowndate
 
 ## TODO: should use rr.weighted_l1norm
 
-class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
+class selective_l1norm_lan_randomX_boot(rr.l1norm, selective_penalty):
 
     ### begin selective_penalty API
 
@@ -32,6 +32,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         # this will get used to randomize on simplex
 
         #self.simplex_randomization = (0.05, dirichlet(np.ones(self.shape)))
+
         self.quadratic_coef = quadratic_coef
 
         self.accept_l1_part, self.total_l1_part = 0, 0
@@ -40,6 +41,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         negative_subgrad = gradient + random_direction
 
         self.active_set = (soln != 0)
+        self.inactive = (soln ==0)
 
         self.signs = np.sign(soln[self.active_set])
 
@@ -64,7 +66,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
 
         nactive = soln[self.active_set].shape[0]
 
-        #self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
+        self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
 
         #self.hessian = hessian
         return betaE, cube
@@ -131,14 +133,12 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
     #    the optimization variables.
 
     #    """
-    #    new_cube = self.step_cube(state, randomization, gradient)
+    #    #new_cube = self.step_cube(state, randomization, gradient)
 
     #    data, opt_vars = state
     #    simplex, _ = opt_vars
     #    new_state = (data, (simplex, new_cube))
-
     #    new_simplex = self.step_simplex(new_state, randomization, logpdf, gradient, self.hessian)
-
     #    return new_simplex, new_cube
 
     ### end selective_penalty API
@@ -171,7 +171,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         ninactive = self._inactive_set.sum()
 
         self.dtype = np.dtype([('betaE', (np.float,    # parameters
-                                            nactive)), # on face simplex
+                                            nactive-1)), # on face simplex
                                ('scale', np.float),
                                ('signs', (np.int, nactive)),
                                ('cube', (np.float,
@@ -192,7 +192,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
             return scale, self.bound
 
 
-    def step_variables(self, state, randomization, logpdf, gradient, SigmaInv, SigmaTinv,  hessian, P, R):
+    def step_variables(self, state, randomization, logpdf, gradient, hessian):
         """
         Uses projected Langevin proposal ( X_{k+1} = P(X_k+\eta\grad\log\pi+\sqrt{2\pi} Z), where Z\sim\mathcal{N}(0,Id))
         for a new simplex point (a point in non-negative orthant, hence projection onto [0,\inf)^|E|)
@@ -203,79 +203,98 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         data, opt_vars = state
         betaE, cube = opt_vars
         active = self.active_set
-        #print 'active', active
         inactive = ~active
-        #print 'inactive', inactive
-        #hessian = self.hessian
+        nactive = betaE.shape[0]
+        ninactive = cube.shape[0]
+
 
         if self.lagrange is None:
             raise NotImplementedError("The bound form has not been implemented")
 
-        nactive = betaE.shape[0]
-        ninactive = cube.shape[0]
-        #stepsize = 1/np.sqrt(nactive)
-        stepsize = 1/float(nactive+ninactive)  # eta below
 
-        #stepsize = 0.1/float(nactive)
+        #stepsize = 1/np.sqrt(nactive)
+        stepsize = 2./float(nactive+ninactive)  # eta below
+
         # new for projected Langevin MCMC
 
-        _ , _ , opt_vec = self.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
-
-        sign_vec =  - np.sign(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
-
-        #restricted_hessian = hessian[self.active_set][:, active]
-        B = hessian+self.quadratic_coef*np.identity(nactive+ninactive)
+        B = hessian + self.quadratic_coef*np.identity(nactive+ninactive)
         A = B[:, active]
-        #A1 = hessian[active][:, active] + self.quadratic_coef*np.identity(nactive)
-        #A2 = hessian[inactive][:, active]
-
-        #A=np.concatenate((A1, A2), axis=0)
-        # the following is \grad_{\beta}\log g(w), w = \grad l(\beta)+\epsilon (\beta 0)+\lambda u = A*\beta+b,
-        # becomes - \grad_{\beta}\|w\|_1 = - \grad_{\beta}\|A*\beta+b\|_1=A^T*sign(A*\beta+b)
-        # A = hessian+\epsilon*Id (symmetric), A*\beta+b = gradient+opt_vec
-        # \grad\log\pi if we want a sample from a distribution \pi
-
-        grad_betaE_loglik =  np.dot(A.T, sign_vec)
-
-        # proposal = Proj(simplex+\eta*grad_{\beta}\log g+\sqrt{2\eta}*Z), Z\sim\mathcal{N}(0, Id)
-        # projection on the non-negative orthant
-        # print np.sum(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))<0)
-        #proposal = np.clip(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive)), 0, np.inf)
-
-        betaE_proposal = betaE+(stepsize*grad_betaE_loglik)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))
-
-        for i in range(nactive):
-            if (betaE_proposal[i]*self.signs[i]<0):
-                    betaE_proposal[i] = 0
 
 
-        grad_cube_loglik =  self.lagrange*sign_vec[inactive]
-        cube_proposal = cube + (stepsize*grad_cube_loglik) + (np.sqrt(2*stepsize)*np.random.standard_normal(ninactive))
-        cube_proposal = np.clip(cube_proposal, -1, 1)
-
-        T = data[:nactive]
-        grad_T = -(np.dot(SigmaTinv, T)+np.dot(hessian[:, active].T, sign_vec))
-        #grad_N = sign_vec[inactive]
-        #grad_data_loglik = - (np.dot(SigmaInv,data) + np.concatenate((grad_T, grad_N), axis=0))
-        #data_proposal = data + (stepsize*grad_data_loglik)+(np.sqrt(2*stepsize)*np.random.standard_normal(data.shape[0]))
-
-
-        T_proposal = T + (stepsize*grad_T)+(np.sqrt(2*stepsize)*np.random.standard_normal(T.shape[0]))
-
-
-        data_proposal = np.concatenate((T_proposal, data[nactive:]), axis=0)
-
-
-        #data_proposal = np.dot(P, data) + np.dot(R, data_proposal)
+        _grad_loglik0 = self.grad_loglik(data, opt_vars, A, hessian, gradient)
+        opt_vars_proposal = self.proposal(opt_vars, stepsize, _grad_loglik0)
+        betaE_proposal, cube_proposal = opt_vars_proposal
 
 
 
+        #_grad_loglik1 = self.grad_loglik(data, opt_vars_proposal, A, hessian, _XTX_b)
 
+        #log_ratio = logpdf((data, (betaE_proposal, cube_proposal))) - logpdf(state) \
+        #            - self.q_transition(opt_vars, opt_vars_proposal, _grad_loglik0, stepsize) \
+        #            + self.q_transition(opt_vars_proposal, opt_vars, _grad_loglik1, stepsize)
 
+        # update cholesky factor
+
+        #alpha = np.minimum(np.exp(log_ratio), 1)
+        #target = 2.4 / np.sqrt(nactive)
+        #multiplier = ((self.total_l1_part+1)**(-0.8) *
+        #               (np.exp(log_ratio) - target))
+        #rank_one = np.sqrt(np.fabs(multiplier)) * step / np.linalg.norm(random_sample)
+
+        #if multiplier > 0:
+        #     cholupdate(self.chol_adapt, rank_one) # update done in place
+        #else:
+        #     choldowndate(self.chol_adapt, rank_one) # update done in place
+
+        # return proposal
 
         #if np.log(np.random.uniform()) < log_ratio:
-        data, betaE, cube = data_proposal, betaE_proposal, cube_proposal
-        opt_vars = (betaE, cube)
+        betaE, cube = betaE_proposal, cube_proposal
         self.accept_l1_part += 1
 
-        return data, opt_vars
+        return betaE, cube
+
+        #return proposal
+
+    def grad_loglik(self, data, opt_vars, A, hessian, gradient):
+        params, _, opt_vec = self.form_optimization_vector(opt_vars)
+
+        active = self.active_set
+        nactive = np.sum(active)
+
+        sign_vec = - np.sign(gradient+opt_vec)
+        grad_betaE = np.dot(A.T, sign_vec)
+        grad_cube = self.lagrange*sign_vec[~active]
+        _grad_loglik = np.concatenate((grad_betaE, grad_cube), axis=0)
+        return _grad_loglik
+
+
+    def proposal(self, opt_vars, stepsize, _grad_loglik):
+
+        betaE, cube = opt_vars
+        nactive = betaE.shape[0]
+        grad_betaE = _grad_loglik[:nactive]
+        grad_cube = _grad_loglik[nactive:]
+
+
+        betaE_proposal = betaE + stepsize*grad_betaE + np.sqrt(2*stepsize)*np.random.standard_normal(betaE.shape[0])
+        cube_proposal = cube + stepsize*grad_cube + np.sqrt(2*stepsize)*np.random.standard_normal(cube.shape[0])
+
+        #print 'betaE', betaE_proposal
+        for i in range(nactive):
+            if (betaE_proposal[i] * self.signs[i] < 0):
+                betaE_proposal[i] = 0
+
+        cube_proposal = np.clip(cube_proposal, -1, 1)
+
+        return betaE_proposal, cube_proposal
+
+
+    def q_transition(self, opt_vars0, opt_vars1, grad_loglik, stepsize):
+        betaE0, cube0 = opt_vars0
+        betaE1, cube1 = opt_vars1
+        x0 = np.concatenate((betaE0, cube0), axis=0)
+        x1 = np.concatenate((betaE1, cube1), axis=0)
+        return -((x0-x1-stepsize*grad_loglik)**2).sum()/(4*stepsize)
+
+

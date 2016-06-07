@@ -37,7 +37,8 @@ def test_lasso_boot(s=5, n=100, p=20):
     beta_bar = np.linalg.lstsq(X[:,active], y)[0]
     #data = y - np.dot(X[:, active], beta_bar)
 
-    data=y.copy()
+    data = y.copy()
+
     null, alt = pval(sampler1,
                      loss_args,
                      X, data, y,

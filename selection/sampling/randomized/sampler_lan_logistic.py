@@ -123,6 +123,7 @@ class selective_sampler_MH_lan_logistic(selective_sampler):
 
         #XTXE = self.loss._XTXE
         SigmaInv = self.loss._cov_inv
+        SigmaTinv=self.loss._cov_T_inv
         P = self.loss.P
         R = self.loss.R
         #self.state[0] = self.loss.step_data(self.state, self.logpdf)  # self.state[0] is the data vector
@@ -135,7 +136,7 @@ class selective_sampler_MH_lan_logistic(selective_sampler):
         # step_variables calls step_simplex and step_cube in e.g. norms/lasso.py
         # step_simplex moves according to MH step and step_cube draws an immediate sample since its density conditional on
         # everything else has explicit form (more in penalty class)
-        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient, SigmaInv, hessian, P,R)
+        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient, SigmaInv, SigmaTinv, hessian, P,R)
         #betaE, subgrad = opt_vars
 
         # update the optimization variables.

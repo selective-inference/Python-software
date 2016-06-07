@@ -16,7 +16,7 @@ from choldate import cholupdate, choldowndate
 
 ## TODO: should use rr.weighted_l1norm
 
-class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
+class selective_l1norm_high_dim(rr.l1norm, selective_penalty):
 
     ### begin selective_penalty API
 
@@ -24,7 +24,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
 
     def setup_sampling(self,
                        gradient,
-                    #   hessian, ## added
+                 #      hessian, ## added
                        soln,
                        linear_randomization,
                        quadratic_coef):
@@ -40,6 +40,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         negative_subgrad = gradient + random_direction
 
         self.active_set = (soln != 0)
+
 
         self.signs = np.sign(soln[self.active_set])
 
@@ -167,9 +168,12 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         self._active_set[active_set] = 1
         self._inactive_set = ~self._active_set
 
-        nactive = self._active_set.sum()
-        ninactive = self._inactive_set.sum()
-
+        if any(active_set):
+            nactive = self._active_set.sum()
+            ninactive = self._inactive_set.sum()
+        else:
+            nactive = 0
+            ninactive = 10
         self.dtype = np.dtype([('betaE', (np.float,    # parameters
                                             nactive)), # on face simplex
                                ('scale', np.float),
@@ -192,7 +196,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
             return scale, self.bound
 
 
-    def step_variables(self, state, randomization, logpdf, gradient, SigmaInv, SigmaTinv,  hessian, P, R):
+    def step_variables(self, state, randomization, logpdf, gradient, hessian,  X):
         """
         Uses projected Langevin proposal ( X_{k+1} = P(X_k+\eta\grad\log\pi+\sqrt{2\pi} Z), where Z\sim\mathcal{N}(0,Id))
         for a new simplex point (a point in non-negative orthant, hence projection onto [0,\inf)^|E|)
@@ -207,7 +211,7 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         inactive = ~active
         #print 'inactive', inactive
         #hessian = self.hessian
-
+        n, p = X.shape
         if self.lagrange is None:
             raise NotImplementedError("The bound form has not been implemented")
 
@@ -221,11 +225,10 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
 
         _ , _ , opt_vec = self.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
-        sign_vec =  - np.sign(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
+        w = -(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
+
 
         #restricted_hessian = hessian[self.active_set][:, active]
-        B = hessian+self.quadratic_coef*np.identity(nactive+ninactive)
-        A = B[:, active]
         #A1 = hessian[active][:, active] + self.quadratic_coef*np.identity(nactive)
         #A2 = hessian[inactive][:, active]
 
@@ -235,47 +238,62 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
         # A = hessian+\epsilon*Id (symmetric), A*\beta+b = gradient+opt_vec
         # \grad\log\pi if we want a sample from a distribution \pi
 
-        grad_betaE_loglik =  np.dot(A.T, sign_vec)
+        B = hessian + self.quadratic_coef * np.identity(nactive + ninactive)
+        A1 = B[:, active]
 
-        # proposal = Proj(simplex+\eta*grad_{\beta}\log g+\sqrt{2\eta}*Z), Z\sim\mathcal{N}(0, Id)
-        # projection on the non-negative orthant
-        # print np.sum(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))<0)
-        #proposal = np.clip(simplex+(stepsize*grad_log_pi)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive)), 0, np.inf)
-
-        betaE_proposal = betaE+(stepsize*grad_betaE_loglik)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))
+        grad_betaE =  np.dot(A1.T, w)/float(n)
+        betaE_proposal = betaE+(stepsize*grad_betaE)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))
 
         for i in range(nactive):
             if (betaE_proposal[i]*self.signs[i]<0):
                     betaE_proposal[i] = 0
 
 
-        grad_cube_loglik =  self.lagrange*sign_vec[inactive]
-        cube_proposal = cube + (stepsize*grad_cube_loglik) + (np.sqrt(2*stepsize)*np.random.standard_normal(ninactive))
+        grad_cube =  self.lagrange*w[inactive]/float(n)
+        cube_proposal = cube + (stepsize*grad_cube)+(np.sqrt(2*stepsize)*np.random.standard_normal(ninactive))
         cube_proposal = np.clip(cube_proposal, -1, 1)
 
-        T = data[:nactive]
-        grad_T = -(np.dot(SigmaTinv, T)+np.dot(hessian[:, active].T, sign_vec))
-        #grad_N = sign_vec[inactive]
-        #grad_data_loglik = - (np.dot(SigmaInv,data) + np.concatenate((grad_T, grad_N), axis=0))
-        #data_proposal = data + (stepsize*grad_data_loglik)+(np.sqrt(2*stepsize)*np.random.standard_normal(data.shape[0]))
 
-
-        T_proposal = T + (stepsize*grad_T)+(np.sqrt(2*stepsize)*np.random.standard_normal(T.shape[0]))
-
-
-        data_proposal = np.concatenate((T_proposal, data[nactive:]), axis=0)
-
-
-        #data_proposal = np.dot(P, data) + np.dot(R, data_proposal)
+        grad_data = - (np.dot(np.linalg.inv(hessian), data) + (w/float(n)))
+        data_proposal = data + (stepsize*grad_data)+(np.sqrt(2*stepsize)*np.random.standard_normal(data.shape[0]))
 
 
 
 
-
-
-        #if np.log(np.random.uniform()) < log_ratio:
         data, betaE, cube = data_proposal, betaE_proposal, cube_proposal
         opt_vars = (betaE, cube)
         self.accept_l1_part += 1
 
         return data, opt_vars
+        #return proposal
+
+
+
+    def step_cube(self, state, randomization, gradient):
+        """
+        move a step for the subgradients.
+        """
+
+        data, opt_vars = state
+        simplex, cube = opt_vars
+
+        if self.lagrange is None:
+            raise NotImplementedError("The bound form has not been implemented")
+
+        lam = self.lagrange
+
+        rand = randomization
+        active_set = self.active_set
+        inactive_set = self.inactive_set
+
+        # note that we don't need beta here as
+        # beta_{-E} = 0 for the inactive block
+        offset = - gradient[inactive_set]
+        lower = offset - lam
+        upper = offset + lam
+
+        percentile = np.random.sample(inactive_set.sum()) \
+                * (rand.cdf(upper) - rand.cdf(lower)) + rand.cdf(lower)
+        cube_sample = (offset - rand.ppf(percentile)) / lam
+
+        return cube_sample

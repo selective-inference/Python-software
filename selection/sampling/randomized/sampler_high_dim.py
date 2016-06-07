@@ -22,7 +22,6 @@ class selective_sampler(object):
                                  linear_randomization,
                                  randomization,
                                  quadratic_coef)
-
         # initialize optimization problem
 
         self.penalty = penalty
@@ -37,22 +36,22 @@ class selective_sampler(object):
         self.initial_grad = self.loss.smooth_objective(self.initial_soln,
                                                        mode='grad')
 
-        self.hessian = self.loss.hessian() ## ADDED since needed for projected Langevin used in step_simplex in penalty class
+        #self.hessian = self.loss.hessian() ## ADDED since needed for projected Langevin used in step_simplex in penalty class
         self.opt_vars = self.penalty.setup_sampling( \
             self.initial_grad,
-           # self.hessian,  ## ADDED
+         #   self.hessian,  ## ADDED
             self.initial_soln,
             self.linear_randomization,
             self.quadratic_coef)
 
-    def setup_sampling(self, data, loss_args={}):
+    def setup_sampling(self, data):
 
-        self.loss.setup_sampling(data, **loss_args)
+        self.loss.setup_sampling(data)
         self.cur_grad = self.loss.smooth_objective(self.initial_soln, 'grad')
         #self.hessian = self.loss.hessian() # added since needed for projected Langevin in step_simplex
 
         self.penalty.setup_sampling(self.initial_grad,
-                                  #  self.hessian,
+                                   # self.hessian,
                                     self.initial_soln,
                                     self.linear_randomization,
                                     self.quadratic_coef)
@@ -68,7 +67,7 @@ class selective_sampler(object):
             -w = \epsilon\beta+\grad P(\beta)+\grad l(\beta)
         """
 
-        data, opt_vars = state   # opt_var=(simplex, cube) in penalty class (e.g. norms\lasso.py)
+        data, opt_vars = state   # opt_vars=(simplex, cube) in penalty class (e.g. norms\lasso.py)
         # the following is an important step that makes param as (signs*simplex, 0), subgrad = (signs, cube),
         # opt_vec = \epsilon\beta+subgrad (subgrad = \grad P(\beta), gradient of the penalty)
         # opt_vec becomes quadratic_coef*params+subgrad in penalty class
@@ -81,7 +80,7 @@ class selective_sampler(object):
         return self.randomization.logpdf(val).sum() + log_jacobian   # sum since we assume randomization is iid
 
 
-class selective_sampler_MH_randomX_boot(selective_sampler):
+class selective_sampler_MH_high_dim(selective_sampler):
 
     def sampling(self,
                  ndraw=7000,
@@ -93,6 +92,7 @@ class selective_sampler_MH_randomX_boot(selective_sampler):
         """
 
         samples = []
+
 
         for i in range(ndraw + burnin):
             sample = self.next()
@@ -118,23 +118,25 @@ class selective_sampler_MH_randomX_boot(selective_sampler):
         gradient = self.loss.gradient(data, param)
         #val = - gradient - opt_vec
 
-        self.state[0] = self.loss.step_data(self.state, self.logpdf)  # self.state[0] is the data vector
+        X = self.loss.X
+        hessian = self.loss.hessian()
+
+        #self.state[0] = self.loss.step_data(self.state, self.logpdf)  # self.state[0] is the data vector
 
         # update the gradient
-        param = self.penalty.form_parameters(self.state[1]) # (beta_E, 0)
-        self.cur_grad = self.loss.gradient(self.state[0], param) # gradient is \grad l(\beta), a function of
+        #param = self.penalty.form_parameters(self.state[1]) # (beta_E, 0)
+        #self.cur_grad = self.loss.gradient(self.state[0], param) # gradient is \grad l(\beta), a function of
                     # data vector (self.state[0]) and beta (param)
-        #_XTX_b = self.loss._XTX_b
-        SigmaTinv = self.loss._inv_cov_beta_bar
+
         # step_variables calls step_simplex and step_cube in e.g. norms/lasso.py
         # step_simplex moves according to MH step and step_cube draws an immediate sample since its density conditional on
         # everything else has explicit form (more in penalty class)
-        hessian = self.loss.hessian()
-
-        opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, self.cur_grad,  hessian)
+        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient, hessian, X)
         #betaE, subgrad = opt_vars
 
         # update the optimization variables.
+        self.state[0] = data
         self.state[1] = opt_vars
 
         return self.state
+
