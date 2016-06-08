@@ -161,10 +161,10 @@ def test_forward_step_all():
 
     print (R_pvals, [p for i, p in steps])
 
+#@np.testing.dec.skipif(True, msg="fails because R does not use proper Hessian")
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
-@np.testing.dec.skipif(True, msg="fails because R does not use proper Hessian")
 def test_coxph():
-    tol = 1.e-5
+    tol = 1.e-3
     R_code = """
     library(selectiveInference)
     set.seed(43)
@@ -192,7 +192,6 @@ def test_coxph():
     pval = out$pv
     vars_cox = out$var
 
-
     """
 
     rpy.r(R_code)
@@ -210,9 +209,15 @@ def test_coxph():
     L = lasso.coxph(x, tim, status, 1.5)
     beta2 = L.fit()
 
+    G1 = L.loglike.gradient(beta_hat)
+    G2 = L.loglike.gradient(beta2)
+
+    print(G1, 'glmnet')
+    print(G2, 'regreg')
+
     yield np.testing.assert_equal, L.active + 1, selected_vars
-    yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol, False, 'cox coeff'
-    yield np.testing.assert_allclose, L.summary('twosided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
+    yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'cox coeff'
+    yield np.testing.assert_allclose, L.summary('onesided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_logistic():
