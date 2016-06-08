@@ -107,20 +107,14 @@ class selective_sampler_MH_lan_randomX(selective_sampler):
 
     def next(self):
         """
-        Gibbs sampler:
-        calls one-step MH for the data vector (step_data in loss class), then one-step MH for simplex and moves cube vector
-        (the last two done under step_variables in the penalty class)
         """
-
-        # updates data according to MH step (might not actually move depending whether accepts or rejects)
-        # step_data written in losses/base.py
 
         data, opt_vars = self.state
         param, subgrad, opt_vec = self.penalty.form_optimization_vector(opt_vars)
         gradient = self.loss.gradient(data, param)
-        #val = - gradient - opt_vec
 
-        XTXE = self.loss._XTXE
+
+        hessian = self.loss.hessian
         SigmaTinv = self.loss._inv_cov_beta_bar
         P = self.loss.P
         R = self.loss.R
@@ -134,7 +128,7 @@ class selective_sampler_MH_lan_randomX(selective_sampler):
         # step_variables calls step_simplex and step_cube in e.g. norms/lasso.py
         # step_simplex moves according to MH step and step_cube draws an immediate sample since its density conditional on
         # everything else has explicit form (more in penalty class)
-        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient,SigmaTinv,XTXE, P,R)
+        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient, hessian, SigmaTinv,P,R)
         #betaE, subgrad = opt_vars
 
         # update the optimization variables.

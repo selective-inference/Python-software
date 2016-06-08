@@ -73,7 +73,7 @@ class selective_sampler(object):
         # opt_vec becomes quadratic_coef*params+subgrad in penalty class
         param, subgrad, opt_vec = self.penalty.form_optimization_vector(opt_vars)
         gradient = self.loss.gradient(data, param)
-        hessian =  self.loss.hessian()
+        hessian =  self.loss.hessian
         log_jacobian = self.penalty.log_jacobian(hessian)
         val = - gradient - opt_vec
 
@@ -92,9 +92,6 @@ class selective_sampler_MH_lan_logistic(selective_sampler):
         """
 
         samples = []
-
-        P = self.loss.P
-        R = self.loss.R
 
         for i in range(ndraw + burnin):
             sample = self.next()
@@ -122,8 +119,7 @@ class selective_sampler_MH_lan_logistic(selective_sampler):
         hessian = self.loss.hessian
 
         #XTXE = self.loss._XTXE
-        SigmaInv = self.loss._cov_inv
-        SigmaTinv=self.loss._cov_T_inv
+        SigmaTinv = self.loss._inv_cov_beta_bar
         P = self.loss.P
         R = self.loss.R
         #self.state[0] = self.loss.step_data(self.state, self.logpdf)  # self.state[0] is the data vector
@@ -136,7 +132,7 @@ class selective_sampler_MH_lan_logistic(selective_sampler):
         # step_variables calls step_simplex and step_cube in e.g. norms/lasso.py
         # step_simplex moves according to MH step and step_cube draws an immediate sample since its density conditional on
         # everything else has explicit form (more in penalty class)
-        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient, SigmaInv, SigmaTinv, hessian, P,R)
+        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient, hessian, SigmaTinv, P,R)
         #betaE, subgrad = opt_vars
 
         # update the optimization variables.

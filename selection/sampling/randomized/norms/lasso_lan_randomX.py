@@ -24,7 +24,7 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
 
     def setup_sampling(self,
                        gradient,
-                       hessian, ## added
+                     #  hessian, ## added
                        soln,
                        linear_randomization,
                        quadratic_coef):
@@ -66,7 +66,7 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
 
         #self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
 
-        self.hessian = hessian
+        #self.hessian = hessian
         return betaE, cube
 
     def form_subgradient(self, opt_vars):
@@ -171,7 +171,7 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
         ninactive = self._inactive_set.sum()
 
         self.dtype = np.dtype([('betaE', (np.float,    # parameters
-                                            nactive-1)), # on face simplex
+                                            nactive)), # on face simplex
                                ('scale', np.float),
                                ('signs', (np.int, nactive)),
                                ('cube', (np.float,
@@ -192,7 +192,7 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
             return scale, self.bound
 
 
-    def step_variables(self, state, randomization, logpdf, gradient, SigmaTinv, XTXE, P, R):
+    def step_variables(self, state, randomization, logpdf, gradient, hessian, SigmaTinv, P, R):
         """
         Uses projected Langevin proposal ( X_{k+1} = P(X_k+\eta\grad\log\pi+\sqrt{2\pi} Z), where Z\sim\mathcal{N}(0,Id))
         for a new simplex point (a point in non-negative orthant, hence projection onto [0,\inf)^|E|)
@@ -206,7 +206,7 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
         #print 'active', active
         inactive = ~active
         #print 'inactive', inactive
-        hessian = self.hessian
+        #hessian = self.hessian
 
         if self.lagrange is None:
             raise NotImplementedError("The bound form has not been implemented")
@@ -226,10 +226,8 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
         #restricted_hessian = hessian[self.active_set][:, active]
         B = hessian+self.quadratic_coef*np.identity(nactive+ninactive)
         A = B[:, active]
-        #A1 = hessian[active][:, active] + self.quadratic_coef*np.identity(nactive)
-        #A2 = hessian[inactive][:, active]
 
-        #A=np.concatenate((A1, A2), axis=0)
+
         # the following is \grad_{\beta}\log g(w), w = \grad l(\beta)+\epsilon (\beta 0)+\lambda u = A*\beta+b,
         # becomes - \grad_{\beta}\|w\|_1 = - \grad_{\beta}\|A*\beta+b\|_1=A^T*sign(A*\beta+b)
         # A = hessian+\epsilon*Id (symmetric), A*\beta+b = gradient+opt_vec
@@ -255,7 +253,7 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
 
 
         T = data[:nactive]
-        grad_T_loglik = - (np.dot(SigmaTinv,T) + np.dot(XTXE.T, sign_vec))
+        grad_T_loglik = - (np.dot(SigmaTinv,T) + np.dot(hessian[:,active].T, sign_vec))
         T_proposal = T + (stepsize*grad_T_loglik)+(np.sqrt(2*stepsize)*np.random.standard_normal(nactive))
 
 
@@ -263,29 +261,9 @@ class selective_l1norm_lan_randomX(rr.l1norm, selective_penalty):
 
         data_proposal = np.dot(P, data) + np.dot(R, data_proposal)
 
-        #rand = randomization
-        #random_sample = rand.rvs(size=nactive)
-        #step = np.dot(self.chol_adapt, random_sample)
-        #print np.sum(simplex+step<0)
-        #proposal = np.fabs(simplex + step)
 
-        #log_ratio = (logpdf((data_proposal, (betaE_proposal, cube_proposal)))-logpdf(state))
-        #log_ratio = log_ratio+((-np.dot(data_proposal, data_proposal) + np.dot(data,data))/float(2))
 
-         # update cholesky factor
 
-        #alpha = np.minimum(np.exp(log_ratio), 1)
-        #target = 2.4 / np.sqrt(nactive)
-        #multiplier = ((self.total_l1_part+1)**(-0.8) *
-        #               (np.exp(log_ratio) - target))
-        #rank_one = np.sqrt(np.fabs(multiplier)) * step / np.linalg.norm(random_sample)
-
-        #if multiplier > 0:
-        #     cholupdate(self.chol_adapt, rank_one) # update done in place
-        #else:
-        #     choldowndate(self.chol_adapt, rank_one) # update done in place
-
-        # return proposal
 
         #if np.log(np.random.uniform()) < log_ratio:
         data, betaE, cube = data_proposal, betaE_proposal, cube_proposal

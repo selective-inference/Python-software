@@ -80,7 +80,7 @@ class lasso_randomX(selective_loss):
             #self._beta_unpenalized = loss_E.solve(**solve_args)
             self._beta_unpenalized = np.linalg.lstsq(X_E, self.y)[0]  # \bar{\beta}_E
             self.bootstrap_covariance()
-
+            self.hessian()
             residuals = self.y - np.dot(X_E, self._beta_unpenalized)
             self.residuals = residuals
             self.centered_residuals = residuals - residuals.mean()
@@ -189,7 +189,7 @@ class lasso_randomX(selective_loss):
             self._cov_beta_bar -= np.multiply.outer(_mean_beta_star, _mean_beta_star)
             self._inv_cov_beta_bar = np.linalg.inv(self._cov_beta_bar)
 
-            #self.L = np.linalg.cholesky(self._cov) #don't know what this is for
+
 
 
     @property
@@ -234,13 +234,13 @@ class lasso_randomX(selective_loss):
         return g
 
 
-    def hessian(self):#, data, beta):
+    def hessian(self):
         """
         hessian is constant in this case.
         """
         #if not hasattr(self, "_XTX_b"):
         #    self.bootstrap_covariance()
-
+        self.hessian = self._XTX
         return self._XTX
 
 
@@ -284,7 +284,7 @@ class lasso_randomX(selective_loss):
         self.indices = np.arange(self.X.shape[0])
 
 
-    def proposal(self, data): #, val):
+    def proposal(self, data):
         # if not hasattr(self, "L"):  # don't know what this is for
         #    self.bootstrap_covariance()
 

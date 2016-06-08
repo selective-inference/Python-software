@@ -64,18 +64,11 @@ class logistic_Xrandom_new(selective_loss):
 
     def bootstrap_covariance(self):
         """
-        Bootstrap the covariance matrix of the sufficient statistic $X^T y$,
-        through the use of the restricted unpenalized solution to the
-        problem $\bar{beta}_E$.
-
-        Set the "_cov" field to be the bootstrapped covariance matrix.
         """
         if not hasattr(self, "_beta_unpenalized"):
             raise ValueError("method fit_E has to be called before computing the covariance")
 
         if not hasattr(self, "_cov"):
-
-            # nonparametric bootstrap for covariance of X^Ty
 
             X, y = self.X, self.y
             n, p = X.shape
@@ -123,10 +116,10 @@ class logistic_Xrandom_new(selective_loss):
 
             self._cov_inv = np.linalg.inv(self._cov)
 
-            self._cov_T = self._cov[active][:,active]
-            self._cov_T_inv = np.linalg.inv(self._cov_T)
+            self._cov_beta_bar = self._cov[:nactive][:,:nactive]
+            self._inv_cov_beta_bar = np.linalg.inv(self._cov_beta_bar)
 
-
+            print "beta_bar ", np.diag(self._cov_beta_bar)
             #self._cov_T = np.dot(self.X[:, self.active].T, np.dot(W, self.X[:, self.active]))
             #self._cov_T_inv = np.linalg.inv(self._cov_T)
             #self.L = np.linalg.cholesky(self._cov)
@@ -149,17 +142,15 @@ class logistic_Xrandom_new(selective_loss):
         #g = -(data - np.dot(self._cov, beta))
         data1 = data.copy()
 
-        # data0 = data1[range(self.size_active)].copy()  # \bar{beta}_E, the first |E| coordinates of 'data' vector
-
         data1[:self.size_active] = 0  # last p-|E| coordinates of data vector kept, first |E| become zeros
         # (0, N), N is the null statistic, N=X_{-E}^Y(y-X_E\bar{\beta}_E)
-        # print data1
 
         # g = - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
         # g = np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
         restricted_hessian = self.hessian[:, self.active]
+        #restricted_hessian = self._cov_inv[:, :np.sum(self.active)]
         g = - data1 + np.dot(restricted_hessian, beta[self.active] - data[:self.size_active])
         return g
 
@@ -175,11 +166,15 @@ class logistic_Xrandom_new(selective_loss):
             w = np.exp(np.dot(X[:, self.active], beta))
             return w / (1 + w)
 
-        _pi = pi_beta(self.X, self._beta_unpenalized)
+        _pi = pi_beta(self.X, self._beta_unpenalized)  # n-dim
         W = np.diag(np.diag(np.outer(_pi, 1-_pi)))
 
         self.hessian = np.dot(self.X.T,np.dot(W, self.X))
+
+        print "hessian diag", np.diag(np.linalg.inv(self.hessian[self.active][:, self.active]))
+
         return np.dot(self.X.T,np.dot(W, self.X))
+
 
     def setup_sampling(self, data, mean, linear_part, value):
         """
@@ -222,7 +217,7 @@ class logistic_Xrandom_new(selective_loss):
             self.bootstrap_covariance()
 
         n, p = self.X.shape
-        stepsize = 1. / np.sqrt(p)
+        stepsize = 10. / np.sqrt(p)
         #new = data + stepsize * np.dot(self.R,
         #                               np.dot(self.L, np.random.standard_normal(p)))
 
@@ -233,7 +228,7 @@ class logistic_Xrandom_new(selective_loss):
         return new, log_transition_p
 
     def logpdf(self, data):
-        return -((data-self.mean)*np.dot(np.linalg.pinv(self._cov), data-self.mean)).sum() / 2
+        return -((data-self.mean)*np.dot(self._cov_inv, data-self.mean)).sum() / 2
 
     def update_proposal(self, state, proposal, logpdf):
         pass

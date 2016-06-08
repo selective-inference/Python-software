@@ -125,6 +125,7 @@ class selective_sampler_MH_lan(selective_sampler):
         R=self.loss.R
         #self.state[0] = self.loss.step_data(self.state, self.logpdf)  # self.state[0] is the data vector
 
+
         # update the gradient
         #param = self.penalty.form_parameters(self.state[1]) # (beta_E, 0)
         #self.cur_grad = self.loss.gradient(self.state[0], param) # gradient is \grad l(\beta), a function of
