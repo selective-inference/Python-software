@@ -161,10 +161,9 @@ def test_forward_step_all():
 
     print (R_pvals, [p for i, p in steps])
 
-#@np.testing.dec.skipif(True, msg="fails because R does not use proper Hessian")
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_coxph():
-    tol = 1.e-3
+    tol = 1.e-5
     R_code = """
     library(selectiveInference)
     set.seed(43)
@@ -182,7 +181,7 @@ def test_coxph():
     # first run glmnet
 
 
-    gfit = glmnet(x,Surv(tim,status),standardize=FALSE,family="cox")
+    gfit = glmnet(x,Surv(tim,status),standardize=FALSE,family="cox", thresh=1.e-14)
     # extract coef for a given lambda; note the 1/n factor!
 
     lambda = 1.5
