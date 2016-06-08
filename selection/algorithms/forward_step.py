@@ -261,14 +261,17 @@ class forward_step(object):
         keep = np.ones(XA.shape[1], np.bool)
         keep[list(variables).index(variable)] = 0
         nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
-        XA_0 = X[:,nuisance_variables]
 
-        P0 = XA_0.dot(np.linalg.pinv(XA_0))
-        adjusted_direction = X[:,variable] - np.dot(P0, X[:,variable])
+        if nuisance_variables:
+            XA_0 = X[:,nuisance_variables]
+            beta_dir = np.linalg.solve(XA_0.T.dot(XA_0), XA_0.T.dot(X[:,variable]))
+            adjusted_direction = X[:,variable] - XA_0.dot(beta_dir)
+            con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
+        else:
+            con_test = con
+            adjusted_direction = X[:,variable]
 
-        con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
         chain_test = gaussian_hit_and_run(con_test, new_Y, nstep=nstep)
-
         test_stat = lambda y: -np.fabs(adjusted_direction.dot(y))
 
         if method == 'parallel':
