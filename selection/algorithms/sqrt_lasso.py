@@ -9,6 +9,7 @@ from scipy.interpolate import interp1d
 # regreg http://github.com/regreg 
 
 import regreg.api as rr
+import regreg.affine as ra
 from regreg.smooth.glm import gaussian_loglike
 
 from ..constraints.affine import (constraints as affine_constraints, 
@@ -95,8 +96,9 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_arg
         A quadratic term added to objective function.
     """
 
-    n, p = X.shape
-    if n < p:
+    X = rr.astransform(X)
+    n, p = X.output_shape, X.input_shape
+    if n > p:
         return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)
     else:
         return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)
@@ -164,12 +166,17 @@ class sqlasso_objective_skinny(rr.smooth_atom):
 
         self.X = rr.astransform(X)
         n, p = self.X.output_shape[0], self.X.input_shape[0]
-
         self.Y = Y
+        self._constant_term = (Y**2).sum()
         if n > p:
-            self._quadratic_term = np.dot(X.T, X)
-            self._linear_term = -2 * np.dot(X.T, Y)
-            self._constant_term = (Y**2).sum()
+            if isinstance(X, np.ndarray):
+                self._isXmatrix = True
+                self._quadratic_term = np.dot(X.T, X)
+                self._linear_term = -2 * np.dot(X.T, Y)
+            else:
+                self._isXmatrix = False
+                self._quadratic_term = ra.composition(ra.adjoint(self.X), self.X)
+                self._linear_term = -2 * self.X.adjoint_map(Y)
         self._sqerror = rr.squared_error(X, Y)
 
     def smooth_objective(self, x, mode='both', check_feasibility=False):
@@ -181,11 +188,17 @@ class sqlasso_objective_skinny(rr.smooth_atom):
         if n > p:
             if mode in ['grad', 'both']:
                 g = np.zeros(p+1)
-                g0 = np.dot(self._quadratic_term, beta) 
+                if self._isXmatrix:
+                    g0 = np.dot(self._quadratic_term, beta) 
+                else:
+                    g0 = self._quadratic_term.linear_map(beta)
                 f1 = self._constant_term + (self._linear_term * beta).sum() + (g0 * beta).sum()
                 g1 = 2 * g0 + self._linear_term
             else:
-                g1 = np.dot(self._quadratic_term, beta)
+                if self._isXmatrix:
+                    g1 = np.dot(self._quadratic_term, beta)
+                else:
+                    g1 = self._quadratic_term.linear_map(beta)
                 f1 = self._constant_term + (self._linear_term * beta).sum() + (g1 * beta).sum()
         else:
             if mode in ['grad', 'both']:
@@ -245,7 +258,8 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, so
         A quadratic term added to objective function.
 
     """
-    n, p = X.shape
+    X = rr.astransform(X)
+    n, p = X.output_shape[0], X.input_shape[0]
     if weights is None:
         lam = choose_lambda(X)
         weights = lam * np.ones((p,))
