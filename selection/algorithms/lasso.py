@@ -119,7 +119,7 @@ def instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
             sd_t = np.std(tdist.rvs(df,size=50000))
             return tdist.rvs(df, size=n) / sd_t
 
-    Y = (np.dot(X, beta) + _noise(n, df)) * sigma
+    Y = (X.dot(beta) + _noise(n, df)) * sigma
     return X, Y, beta * sigma, np.nonzero(active)[0], sigma
 
 class lasso(object):
@@ -1020,7 +1020,7 @@ def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
 
     """
     n, p = X.shape
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 50000)))).max(0)) * sigma
+    lam = lam_frac * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 50000)))).max(0)) * sigma
     lasso_selector = lasso.gaussian(X, y, lam, sigma=sigma)
     lasso_selector.fit(**solve_args)
 
@@ -1461,11 +1461,11 @@ def _data_carving_deprec(X, y,
         X_E1 = X1[:,L.active]
         X_Ei1 = np.linalg.pinv(X_E1)
 
-        inv_info_E = np.dot(X_Ei, X_Ei.T)
-        inv_info_E1 =np.dot(X_Ei1, X_Ei1.T)
+        inv_info_E = X_Ei.dot(X_Ei.T)
+        inv_info_E1 = X_Ei1.dot(X_Ei1.T)
 
-        beta_E = np.dot(X_Ei, y)
-        beta_E1 = np.dot(X_Ei1, y[stage_one])
+        beta_E = X_Ei.dot(y)
+        beta_E1 = X_Ei1.dot(y[stage_one])
 
         if n - splitn > s:
 
@@ -1489,7 +1489,7 @@ def _data_carving_deprec(X, y,
 
             selector = np.zeros((s, 2*s))
             selector[:, :s]  = np.identity(s)
-            conditional_linear = np.dot(np.dot(X_E.T, X_E), selector) 
+            conditional_linear = X_E.T.dot(X_E).dot(selector) 
 
             # a valid initial condition
 
@@ -1524,7 +1524,7 @@ def _data_carving_deprec(X, y,
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-            OLS_func = np.dot(inv_info_E, conditional_linear) 
+            OLS_func = inv_info_E.dot(conditional_linear) 
 
             # a valid initial condition
 
@@ -1537,8 +1537,8 @@ def _data_carving_deprec(X, y,
             y2, X2 = y[stage_two], X[stage_two]
             X_E2 = X2[:,L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
-            beta_E2 = np.dot(X_Ei2, y2)
-            inv_info_E2 = np.dot(X_Ei2, X_Ei2.T)
+            beta_E2 = X_Ei2.dot(y2)
+            inv_info_E2 = X_Ei2.dot(X_Ei2.T)
 
             splitting_pvalues = []
             splitting_intervals = []
@@ -1561,7 +1561,7 @@ def _data_carving_deprec(X, y,
 
             con_cp = copy(con)
             conditional_law = con_cp.conditional(conditional_linear[keep], \
-                                                 np.dot(X_E.T, y)[keep])
+                                                 X_E.T.dot(y)[keep])
             
             # tilt so that samples are closer to observed values
             # the multiplier should be the pseudoMLE so that
@@ -1579,8 +1579,7 @@ def _data_carving_deprec(X, y,
                                              burnin=burnin,
                                              how_often=10,
                                              UMPU=UMPU,
-                                             tilt=np.dot(conditional_law.covariance, 
-                                                         eta))
+                                             tilt=conditional_law.covariance.dot(eta))
 
                 lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 
@@ -1588,8 +1587,8 @@ def _data_carving_deprec(X, y,
                 # to the natural parameter as below
                 # exercise: justify this!
 
-                lower_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * lower_lim
-                upper_lim_final = np.dot(eta, np.dot(conditional_law.covariance, eta)) * upper_lim
+                lower_lim_final = eta.dot(conditional_law.covariance.dot(eta)) * lower_lim
+                upper_lim_final = eta.dot(conditional_law.covariance.dot(eta)) * upper_lim
 
                 intervals.append((lower_lim_final, upper_lim_final))
             else: # we do not really need to tilt just for p-values
@@ -1788,7 +1787,7 @@ def additive_noise(X,
 
     gamma = np.sqrt(perturb_frac) * sigma 
     sigma_star = np.sqrt(sigma**2 + gamma**2)
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 5000)))).max(0)) * sigma_star
+    lam = lam_frac * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 5000)))).max(0)) * sigma_star
     y_star = y + np.random.standard_normal(n) * gamma
 
     randomized_lasso = L = standard_lasso(X, y_star, sigma=sigma_star, lam_frac=lam_frac)
@@ -1797,13 +1796,13 @@ def additive_noise(X,
     # Form the constraint matrix on (y,y^*)
     X_E = X[:,L.active]
     X_Ei = np.linalg.pinv(X_E)
-    Cov_E = np.dot(X_Ei, X_Ei.T)
-    W_E = np.dot(Cov_E, L.active_signs)
+    Cov_E = X_Ei.dot(X_Ei.T)
+    W_E = Cov_E.dot(L.active_signs)
 
     pvalues = []
     intervals = []
 
-    beta_E = np.dot(X_Ei, y)
+    beta_E = X_Ei.dot(y)
 
     # compute each pvalue
     for j in range(X_E.shape[1]):
@@ -1814,10 +1813,10 @@ def additive_noise(X,
         # form the 2s Gaussian vector we will condition on
 
         X_minus_j = X_E[:,keep]
-        P_minus_j = np.dot(X_minus_j, np.linalg.pinv(X_minus_j))
+        P_minus_j = X_minus_j.dot(np.linalg.pinv(X_minus_j))
         R_minus_j = np.identity(n) - P_minus_j
 
-        theta_E = L.active_signs * (np.dot(X_Ei, np.dot(P_minus_j, y)) - lam * W_E)
+        theta_E = L.active_signs * (X_Ei.dot(P_minus_j.dot(y)) - lam * W_E)
         scale = np.sqrt(Cov_E[j,j])
         kappa = 1. / scale**2
         alpha_E = kappa * L.active_signs * Cov_E[j]
@@ -1829,7 +1828,7 @@ def additive_noise(X,
         con.covariance[:] = cov
         initial = np.zeros(s_obs+1)
         initial[0] = beta_E[j]
-        initial[1:] = -np.dot(X_Ei, y_star-y) * L.active_signs
+        initial[1:] = -X_Ei.dot(y_star-y) * L.active_signs
         eta = np.zeros(s_obs+1)
         eta[0] = 1.
 
@@ -1844,8 +1843,7 @@ def additive_noise(X,
                                          ndraw=ndraw,
                                          burnin=burnin,
                                          how_often=5,
-                                         tilt=np.dot(con.covariance, 
-                                                     eta))
+                                         tilt=con.covariance.dot(eta))
 
             lower_lim, upper_lim = family.equal_tailed_interval(observed, 1 - coverage)
 
@@ -1853,8 +1851,8 @@ def additive_noise(X,
             # to the natural parameter as below
             # exercise: justify this!
 
-            lower_lim_final = np.dot(eta, np.dot(con.covariance, eta)) * lower_lim
-            upper_lim_final = np.dot(eta, np.dot(con.covariance, eta)) * upper_lim
+            lower_lim_final = eta.dot(con.covariance.dot(eta)) * lower_lim
+            upper_lim_final = eta.dot(con.covariance.dot(eta)) * upper_lim
 
             intervals.append((lower_lim_final, upper_lim_final))
 
@@ -1867,8 +1865,7 @@ def additive_noise(X,
                                          ndraw=ndraw,
                                          burnin=burnin,
                                          how_often=5,
-                                         tilt=np.dot(con.covariance, 
-                                                     eta))
+                                         tilt=con.covariance.dot(eta))
 
             intervals.append((np.nan, np.nan))
 
