@@ -166,40 +166,28 @@ class sqlasso_objective_skinny(rr.smooth_atom):
     def __init__(self, X, Y):
 
         self.X = X
-        n, p = X.shape # self.X.output_shape[0], self.X.input_shape[0]
+        n, p = X.shape 
         self.Y = Y
         self._constant_term = (Y**2).sum()
         if n > p:
-            if isinstance(X, np.ndarray):
-                self._isXmatrix = True
-                self._quadratic_term = np.dot(X.T, X)
-                self._linear_term = -2 * np.dot(X.T, Y)
-            else:
-                self._isXmatrix = False
-                self._quadratic_term = ra.composition(ra.adjoint(self.X), self.X)
-                self._linear_term = -2 * self.X.adjoint_map(Y)
+            self._quadratic_term = X.T.dot(X)
+            self._linear_term = -2 * X.T.dot(Y)
         self._sqerror = rr.squared_error(X, Y)
 
     def smooth_objective(self, x, mode='both', check_feasibility=False):
 
-        n, p = self.X.shape #self.X.output_shape[0], self.X.input_shape[0]
+        n, p = self.X.shape
 
         beta, sigma = x[:p], x[p]
 
         if n > p:
             if mode in ['grad', 'both']:
                 g = np.zeros(p+1)
-                if self._isXmatrix:
-                    g0 = np.dot(self._quadratic_term, beta) 
-                else:
-                    g0 = self._quadratic_term.linear_map(beta)
+                g0 = self._quadratic_term.dot(beta) 
                 f1 = self._constant_term + (self._linear_term * beta).sum() + (g0 * beta).sum()
                 g1 = 2 * g0 + self._linear_term
             else:
-                if self._isXmatrix:
-                    g1 = np.dot(self._quadratic_term, beta)
-                else:
-                    g1 = self._quadratic_term.linear_map(beta)
+                g1 = self._quadratic_term.dot(beta)
                 f1 = self._constant_term + (self._linear_term * beta).sum() + (g1 * beta).sum()
         else:
             if mode in ['grad', 'both']:
@@ -449,7 +437,7 @@ def goodness_of_fit(lasso_obj, statistic,
 
     if sample is None:
         if len(lasso_obj.active) > 0:
-            conditional_con = inactive_constraints.conditional(X_E.T, np.dot(X_E.T, Y))
+            conditional_con = inactive_constraints.conditional(X_E.T, X_E.T.dot(Y))
 
             Z, W = sample_from_sphere(conditional_con, 
                                       Y,
