@@ -105,7 +105,7 @@ class constraints(object):
         """
 
         self.linear_part, self.offset = \
-            np.asarray(linear_part), np.asarray(offset)
+            linear_part, np.asarray(offset)
         
         if self.linear_part.ndim == 2:
             self.dim = self.linear_part.shape[1]
@@ -143,8 +143,8 @@ class constraints(object):
 
         Also copies _sqrt_cov, _sqrt_inv if attributes are present.
         """
-        con = constraints(self.linear_part.copy(),
-                          self.offset.copy(),
+        con = constraints(copy(self.linear_part),
+                          copy(self.offset),
                           mean=copy(self.mean),
                           covariance=copy(self.covariance),
                           rank=self.rank)
@@ -172,7 +172,7 @@ class constraints(object):
         r"""
         Compute $\max(Ay-b)$.
         """
-        return (np.dot(self.linear_part, Y) - self.offset)
+        return (self.linear_part.dot(Y) - self.offset).max()
 
     def conditional(self, linear_part, value,
                     rank=None):
@@ -214,20 +214,16 @@ class constraints(object):
         A, b, S = self.linear_part, self.offset, self.covariance
         C, d = linear_part, value
 
-        M1 = np.dot(S, C.T)
-        M2 = np.dot(C, M1)
+        M1 = S.dot(C.T)
+        M2 = C.dot(M1)
 
         if M2.shape:
             M2i = np.linalg.pinv(M2)
-            delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_mean = \
-            np.dot(M1,
-                   np.dot(M2i,
-                          np.dot(C,
-                                 self.mean) - d))
+            delta_cov = M1.dot(M2i.dot(M1.T))
+            delta_mean = M1.dot(M2i.dot(C.dot(self.mean) - d))
         else:
             delta_cov = np.multiply.outer(M1, M1) / M2
-            delta_mean = M1 * (np.dot(C, self.mean) - d) / M2
+            delta_mean = M1 * (C.dot(self.mean) - d) / M2
 
         if rank is None:
             if len(linear_part.shape) == 2:
@@ -451,20 +447,20 @@ class constraints(object):
         """
         sqrt_cov, sqrt_inv = self.covariance_factors()[:2]
 
-        new_A = np.dot(self.linear_part, sqrt_cov)
+        new_A = self.linear_part.dot(sqrt_cov)
         den = np.sqrt((new_A**2).sum(1))
-        new_b = self.offset - np.dot(self.linear_part, self.mean)
+        new_b = self.offset - self.linear_part.dot(self.mean)
         new_con = constraints(new_A / den[:,None], new_b / den)
 
         mu = self.mean.copy()
 
         def inverse_map(Z): 
             if Z.ndim == 2:
-                return np.dot(sqrt_cov, Z) + mu[:,None]
+                return sqrt_cov.dot(Z) + mu[:,None]
             else:
-                return np.dot(sqrt_cov, Z) + mu
+                return sqrt_cov.dot(Z) + mu
 
-        forward_map = lambda W: np.dot(sqrt_inv, W - mu)
+        forward_map = lambda W: sqrt_inv.dot(W - mu)
 
         return inverse_map, forward_map, new_con
 
@@ -474,7 +470,7 @@ class constraints(object):
         of the covariance.
         """
         rowspace = self.covariance_factors()[-1]
-        return np.dot(rowspace, np.dot(rowspace.T, direction))
+        return rowspace.dot(rowspace.T.dot(direction))
 
     def solve(self, direction):
         """
@@ -482,7 +478,7 @@ class constraints(object):
         times a direction vector.
         """
         sqrt_inv = self.covariance_factors()[1]
-        return np.dot(sqrt_inv.T, np.dot(sqrt_inv, direction))
+        return sqrt_inv.T.dot(sqrt_inv.dot(direction))
 
 def stack(*cons):
     """
@@ -578,13 +574,13 @@ def interval_constraints(support_directions,
                      observed_data,
                      direction_of_interest)
 
-    U = np.dot(A, X) - b
+    U = A.dot(X) - b
     if not np.all(U  < tol * np.fabs(U).max()) and WARNINGS:
         warn('constraints not satisfied: %s' % `U`)
 
-    Sw = np.dot(S, w)
+    Sw = S.dot(w)
     sigma = np.sqrt((w*Sw).sum())
-    alpha = np.dot(A, Sw) / sigma**2
+    alpha = A.dot(Sw) / sigma**2
     V = (w*X).sum() # \eta^TZ
 
     # adding the zero_coords in the denominator ensures that
@@ -742,7 +738,7 @@ def sample_from_constraints(con,
     if not white:
         inverse_map, forward_map, white_con = con.whiten()
         white_Y = forward_map(Y)
-        white_direction_of_interest = forward_map(np.dot(con.covariance, direction_of_interest))
+        white_direction_of_interest = forward_map(con.covariance.dot(direction_of_interest))
         if DEBUG:
             print (white_direction_of_interest * white_Y).sum(), (Y * direction_of_interest).sum(), 'white'
     else:
@@ -759,7 +755,7 @@ def sample_from_constraints(con,
 
         def _accept_reject(sample_size, linear_part, offset):
             Z_sample = np.random.standard_normal((100, linear_part.shape[1]))
-            constraint_satisfied = (np.dot(Z_sample, linear_part.T) - 
+            constraint_satisfied = (Z_sample.dot(linear_part.T) - 
                                     offset[None,:]).max(1) < 0
             return Z_sample[constraint_satisfied]
 
@@ -1051,12 +1047,12 @@ def gibbs_test(affine_con, Y, direction_of_interest,
             W = np.ones(Z.shape[0], np.float)
         else:
             # now reweight 
-            logW = -np.dot(Z, total_reweight)
+            logW = -Z.dot(total_reweight)
             logW -= logW.max() + 4.
             W = np.exp(logW)
 
     if test_statistic is None:
-        suff_statistics = np.dot(Z, eta)
+        suff_statistics = Z.dot(eta)
         observed = (eta*Y).sum()
     else:
         suff_statistics = test_statistic(Z)

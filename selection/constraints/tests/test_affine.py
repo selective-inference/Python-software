@@ -5,6 +5,8 @@ import numpy as np
 from scipy.stats import chi
 import nose.tools as nt
 
+import regreg.api as rr
+
 import selection.constraints.affine as AC
 from selection.tests.decorators import set_seed_for_test
 
@@ -88,6 +90,21 @@ def test_stack():
     con2 = AC.constraints(A,b)
 
     return AC.stack(con1, con2)
+
+def test_regreg_transform():
+
+    A, b = np.random.standard_normal((4,30)), np.random.standard_normal(4)
+    A = rr.astransform(A)
+    con = AC.constraints(A,b, covariance=np.identity(30))
+
+    while True:
+        Z = np.random.standard_normal(30) # conditional distribution
+        if con.value(Z) < 0:
+            break
+
+    W = np.random.standard_normal(30)
+
+    print(con.pivot(W, Z))
 
 @set_seed_for_test()
 def test_simulate_nonwhitened():
