@@ -96,8 +96,8 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_arg
         A quadratic term added to objective function.
     """
 
-    X = rr.astransform(X)
-    n, p = X.output_shape, X.input_shape
+    #X = rr.astransform(X)
+    n, p = X.shape
     if n > p:
         return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)
     else:
@@ -137,8 +137,9 @@ def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, quadratic=None, solve
         A quadratic term added to objective function.
 
     """
-    X = rr.astransform(X)
-    n, p = X.output_shape[0], X.input_shape[0]
+    #X = rr.astransform(X)
+    #n, p = X.output_shape[0], X.input_shape[0]
+    n, p = X.shape
     if weights is None:
         lam = choose_lambda(X)
         weights = lam * np.ones((p,))
@@ -164,8 +165,8 @@ class sqlasso_objective_skinny(rr.smooth_atom):
 
     def __init__(self, X, Y):
 
-        self.X = rr.astransform(X)
-        n, p = self.X.output_shape[0], self.X.input_shape[0]
+        self.X = X
+        n, p = X.shape # self.X.output_shape[0], self.X.input_shape[0]
         self.Y = Y
         self._constant_term = (Y**2).sum()
         if n > p:
@@ -181,7 +182,7 @@ class sqlasso_objective_skinny(rr.smooth_atom):
 
     def smooth_objective(self, x, mode='both', check_feasibility=False):
 
-        n, p = self.X.output_shape[0], self.X.input_shape[0]
+        n, p = self.X.shape #self.X.output_shape[0], self.X.input_shape[0]
 
         beta, sigma = x[:p], x[p]
 
