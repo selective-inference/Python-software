@@ -211,7 +211,7 @@ class constraints(object):
 
         """
 
-        A, b, S = self.linear_part, self.offset, self.covariance
+        S = self.covariance
         C, d = linear_part, value
 
         M1 = S.dot(C.T)

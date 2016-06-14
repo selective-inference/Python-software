@@ -102,8 +102,11 @@ def test_regreg_transform():
         if con.value(Z) < 0:
             break
 
+    C = np.random.standard_normal((2,30))
+    conditional = con.conditional(C, C.dot(Z))
     W = np.random.standard_normal(30)
 
+    print(conditional.pivot(W, Z))
     print(con.pivot(W, Z))
 
 @set_seed_for_test()
