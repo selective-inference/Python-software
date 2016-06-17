@@ -4,33 +4,11 @@ import numpy as np, pandas as pd
 
 import regreg.api as rr
 import regreg.affine as ra
-from regreg.affine.multiscale import multiscale, choose_tuning_parameter, SMUCE_stat
+from regreg.affine.multiscale import multiscale, choose_tuning_parameter
 
-from .sqrt_lasso import solve_sqrt_lasso, goodness_of_fit
+from .sqrt_lasso import solve_sqrt_lasso
 from .lasso import lasso
 from ..constraints.affine import constraints
-
-def instance(delta, p=60, sigma=1):
-    """
-    Data generating mechanism of Figure 1 in [http://arxiv.org/abs/1606.03552](http://arxiv.org/abs/1606.03552).
-
-    Parameters
-    ----------
-
-    delta : float
-        Signal size
-
-    p : int
-        Shape of signal.
-
-    sigma : float
-        Noise variance -- both signal and noise are scaled by this scalar.
-
-    """
-    signal = np.zeros(p)
-    signal[(p/2):] += delta * sigma
-    y = np.random.standard_normal(p) * sigma + signal
-    return y, signal
 
 class change_point(object):
 
@@ -41,7 +19,7 @@ class change_point(object):
                                                                                 
     """
 
-    # parameteres for choosing tuning parameter
+    # parameters for choosing tuning parameter
 
     ndraw = 50
     quantile = 0.95
@@ -53,18 +31,18 @@ class change_point(object):
         self.p = p = Y.shape[0]
         self.M = multiscale(p)
         self.M.scaling = np.sqrt(self.M.sizes)
-        self.lam = choose_tuning_parameter(self.M, 
+        self.tuning_param = choose_tuning_parameter(self.M, 
                                            ndraw=self.ndraw, 
                                            quantile=self.quantile, 
                                            sigma=self.sigma)
-        self.feature_weights = (self.lam + np.sqrt(2 * np.log(p / self.M.sizes))) / np.sqrt(p)
+        self.feature_weights = (self.tuning_param + np.sqrt(2 * np.log(p / self.M.sizes))) / np.sqrt(p)
 
-    def fit(self, solve_args={}):
+    def fit(self, solve_args={'min_its':200}):
 
-        Y, M, p = self.Y, self.M, self.Y.shape[0]
+        Y, M, p, weights = self.Y, self.M, self.Y.shape[0], self.feature_weights
 
         Y0 = Y - Y.mean()
-        coef = solve_sqrt_lasso(M.T, Y0, weights=self.feature_weights, solve_args=solve_args)[0]
+        coef = solve_sqrt_lasso(M.T, Y0, weights=weights, solve_args=solve_args)[0]
 
         self.active = active = coef != 0
         self.inactive = inactive = ~active
@@ -77,10 +55,9 @@ class change_point(object):
             R = np.identity(p) - X.dot(np.linalg.pinv(X))
             L_inactive = M_inactive.dot(rr.astransform(R))
             L = lasso.sqrt_lasso(X, Y0, weights[active])
-            L.fit(solve_args={'min_its':200})
+            L.fit(solve_args={'min_its':200}, lasso_solution=coef[active])
             C = L.constraints.linear_part.dot(X.T)
             L_inactive_neg = ra.scalar_multiply(L_inactive, -1.)
-
 
             irrep = L_inactive.dot(X.dot(-np.diag(L.active_signs).dot(L.constraints.offset)))
             full_lin = ra.vstack([L_inactive, L_inactive_neg, C])
@@ -135,17 +112,25 @@ class change_point(object):
             j[-1] = M.input_shape[0] 
         return j
 
-def main(delta, p=60, sigma=1):
+def one_change_instance(delta, p=60, sigma=1):
+    """
+    Data generating mechanism of Figure 1 in [http://arxiv.org/abs/1606.03552](http://arxiv.org/abs/1606.03552).
 
-    import matplotlib.pyplot as plt
-    y, signal = instance(delta, p, sigma)
-    plt.figure(figsize=(8,6))
-    plt.scatter(np.arange(y.shape[0]), y)
-    CP = change_point(y)
-    fit, relaxed_fit, summary, segments = CP.fit()
-    plt.plot(fit, 'r', label='Penalized', linewidth=3)
-    plt.plot(relaxed_fit, 'k', label='Relaxed', linewidth=3)
-    plt.plot(signal, 'g', label='Truth', linewidth=3)
-    plt.legend(loc='upper left')
-    #print('interval that achieves multiscale max:', onestep(y))
-    return segments
+    Parameters
+    ----------
+
+    delta : float
+        Signal size
+
+    p : int
+        Shape of signal.
+
+    sigma : float
+        Noise variance -- both signal and noise are scaled by this scalar.
+
+    """
+    signal = np.zeros(p)
+    signal[(p/2):] += delta * sigma
+    y = np.random.standard_normal(p) * sigma + signal
+    return y, signal
+
