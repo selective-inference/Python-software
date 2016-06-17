@@ -772,6 +772,7 @@ class lasso(object):
             L._sigma_hat = _sigma_hat
             L._sigma_estimator_args = _sigma_estimator_args
             L._weight_multiplier = multiplier * sigma_E
+            L._multiplier = multiplier
             L.lasso_solution = soln
 
         return L
