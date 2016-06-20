@@ -56,8 +56,9 @@ class logistic_Xrandom_new(selective_loss):
             X_E = self.X[:, self.active]
             loss_E = logistic_loss(X_E, self.y)
             self._beta_unpenalized = loss_E.solve(**solve_args)
-            self.bootstrap_covariance()
             self.hessian()
+
+            self.bootstrap_covariance()
         else:
             raise ValueError("Empty active set.")
 
@@ -116,6 +117,7 @@ class logistic_Xrandom_new(selective_loss):
 
             self._cov_inv = np.linalg.inv(self._cov)
 
+
             self._cov_beta_bar = self._cov[:nactive][:,:nactive]
             self._inv_cov_beta_bar = np.linalg.inv(self._cov_beta_bar)
 
@@ -145,9 +147,6 @@ class logistic_Xrandom_new(selective_loss):
         data1[:self.size_active] = 0  # last p-|E| coordinates of data vector kept, first |E| become zeros
         # (0, N), N is the null statistic, N=X_{-E}^Y(y-X_E\bar{\beta}_E)
 
-        # g = - data1 + np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
-
-        # g = np.dot(self._XTXE, beta[self.active]-data[:self.size_active])
 
         restricted_hessian = self.hessian[:, self.active]
         #restricted_hessian = self._cov_inv[:, :np.sum(self.active)]
@@ -217,7 +216,7 @@ class logistic_Xrandom_new(selective_loss):
             self.bootstrap_covariance()
 
         n, p = self.X.shape
-        stepsize = 10. / np.sqrt(p)
+        stepsize = 30. / np.sqrt(p)
         #new = data + stepsize * np.dot(self.R,
         #                               np.dot(self.L, np.random.standard_normal(p)))
 

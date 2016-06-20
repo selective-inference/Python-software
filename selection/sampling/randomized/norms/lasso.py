@@ -189,7 +189,7 @@ class selective_l1norm(rr.l1norm, selective_penalty):
             raise NotImplementedError("The bound form has not been implemented")
 
         nactive = simplex.shape[0]
-        stepsize = 1/np.sqrt(nactive)
+        stepsize = 0.5/nactive
         #stepsize = 2/np.sqrt(nactive)
 
 

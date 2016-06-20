@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 from pvalues_logistic import pval_logistic
 
 
-def test_logistic_new(s=5, n=2000, p=20):
+def test_logistic_new(s=5, n=2500, p=20):
 
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0)
     #print beta
@@ -18,7 +18,7 @@ def test_logistic_new(s=5, n=2000, p=20):
     loss = randomized.logistic_Xrandom_new(X, y)
     epsilon = 1.
 
-    lam = 500*lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1./2, (n, 10000)))).max(0))
+    lam = 400*lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1./2, (n, 10000)))).max(0))
     random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan_logistic(p, lagrange=lam)
 

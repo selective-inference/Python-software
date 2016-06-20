@@ -97,13 +97,13 @@ def pval_logistic(sampler,
 
                 sampler.setup_sampling(data, loss_args=loss_args)
                 samples = sampler.sampling(ndraw=5000, burnin=1000)
-                #pop = [np.dot(eta1,z) for z, _, in samples]
-                #obs = np.dot(eta1, data0)   # observed \bar{\beta}_{E,j}
+                pop = [np.dot(eta1,z) for z, _, in samples]
+                obs = np.dot(eta1, data0)   # observed \bar{\beta}_{E,j}
 
-                R = sampler.loss.R
-                P = sampler.loss.P
-                pop = [np.dot(eta1, np.dot(P,data0)+np.dot(R,z)) for z, _, in samples]
-                obs = np.dot(eta1, data0)
+                #R = sampler.loss.R
+                #P = sampler.loss.P
+                #pop = [np.dot(eta1, np.dot(P,data0)+np.dot(R,z)) for z, _, in samples]
+                #obs = np.dot(eta1, data0)
             else:   #this part haven't read
                 row, col = nonzero_index(idx, p)
                 print row, col

@@ -212,14 +212,13 @@ class selective_l1norm_lan_logistic(rr.l1norm, selective_penalty):
 
         nactive = betaE.shape[0]
         ninactive = cube.shape[0]
-        # stepsize = 1/np.sqrt(nactive)
-        stepsize = 1 / float(nactive + ninactive)  # eta below
+        #stepsize = 20./np.sqrt(nactive+ninactive)
+        stepsize = 1. / float(nactive + ninactive)  # eta below
 
         # stepsize = 0.1/float(nactive)
         # new for projected Langevin MCMC
 
-        _, _, opt_vec = self.form_optimization_vector(
-            opt_vars)  # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
+        _, _, opt_vec = self.form_optimization_vector(opt_vars)  # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
         sign_vec = - np.sign(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
 
