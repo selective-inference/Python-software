@@ -18,14 +18,12 @@ class logistic_Xrandom(selective_loss):
         self.X = X.copy()
         self.y = y.copy()
         self._restricted_grad_beta = np.zeros(self.shape)
-        #self._cov = np.dot(X.T,X)
+        self._loss = logistic_loss(self.X, self.y, coef=self.X.shape[0]/2.)
 
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
 
-        _loss = logistic_loss(self.X, self.y, coef=self.X.shape[0]/2.)
-
-        return _loss.smooth_objective(beta, mode=mode, check_feasibility=check_feasibility)
+        return self._loss.smooth_objective(beta, mode=mode, check_feasibility=check_feasibility)
 
     # this is something that regreg does not know about, i.e.
     # what is data and what is not...
@@ -93,6 +91,7 @@ class logistic_Xrandom(selective_loss):
             self._cov /= nsample
             _mean = _mean_cum / nsample
             self._cov -= np.multiply.outer(_mean, _mean)
+            self._cov_pinv = np.linalg.pinv(self._cov)
             self.L = np.linalg.cholesky(self._cov)
 
     @property
@@ -102,7 +101,7 @@ class logistic_Xrandom(selective_loss):
 
         return self._cov
 
-    def gradient(self, data, beta):
+    def gradient(self, beta):
         """
         Gradient of smooth part restricted to active set
         """
@@ -174,7 +173,7 @@ class logistic_Xrandom(selective_loss):
         return new, log_transition_p
 
     def logpdf(self, data):
-        return -((data-self.mean)*np.dot(np.linalg.pinv(self._cov), data-self.mean)).sum() / 2
+        return -((data-self.mean) * self._cov_pinv.dot(data-self.mean)).sum() / 2
 
     def update_proposal(self, state, proposal, logpdf):
         pass

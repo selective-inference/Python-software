@@ -26,7 +26,7 @@ from ..distributions.chain import (reversible_markov_chain,
                                    parallel_test,
                                    serial_test)
 
-from .optimal_tilt import optimal_tilt
+from .estimation import optimal_tilt
 
 from ..distributions.discrete_family import discrete_family
 from mpmath import mp
@@ -105,7 +105,7 @@ class constraints(object):
         """
 
         self.linear_part, self.offset = \
-            np.asarray(linear_part), np.asarray(offset)
+            linear_part, np.asarray(offset)
         
         if self.linear_part.ndim == 2:
             self.dim = self.linear_part.shape[1]
@@ -143,8 +143,8 @@ class constraints(object):
 
         Also copies _sqrt_cov, _sqrt_inv if attributes are present.
         """
-        con = constraints(self.linear_part.copy(),
-                          self.offset.copy(),
+        con = constraints(copy(self.linear_part),
+                          copy(self.offset),
                           mean=copy(self.mean),
                           covariance=copy(self.covariance),
                           rank=self.rank)
@@ -172,7 +172,7 @@ class constraints(object):
         r"""
         Compute $\max(Ay-b)$.
         """
-        return (np.dot(self.linear_part, Y) - self.offset)
+        return (self.linear_part.dot(Y) - self.offset).max()
 
     def conditional(self, linear_part, value,
                     rank=None):
@@ -211,23 +211,19 @@ class constraints(object):
 
         """
 
-        A, b, S = self.linear_part, self.offset, self.covariance
+        S = self.covariance
         C, d = linear_part, value
 
-        M1 = np.dot(S, C.T)
-        M2 = np.dot(C, M1)
+        M1 = S.dot(C.T)
+        M2 = C.dot(M1)
 
         if M2.shape:
             M2i = np.linalg.pinv(M2)
-            delta_cov = np.dot(M1, np.dot(M2i, M1.T))
-            delta_mean = \
-            np.dot(M1,
-                   np.dot(M2i,
-                          np.dot(C,
-                                 self.mean) - d))
+            delta_cov = M1.dot(M2i.dot(M1.T))
+            delta_mean = M1.dot(M2i.dot(C.dot(self.mean) - d))
         else:
             delta_cov = np.multiply.outer(M1, M1) / M2
-            delta_mean = M1 * (np.dot(C, self.mean) - d) / M2
+            delta_mean = M1 * (C.dot(self.mean) - d) / M2
 
         if rank is None:
             if len(linear_part.shape) == 2:
@@ -410,10 +406,28 @@ class constraints(object):
 
         return self._sqrt_cov, self._sqrt_inv, self._rowspace
 
+    def estimate_mean(self, observed):
+        """
+        Softmax estimator based on an observed data point.
+        
+        Makes a whitened copy 
+        then returns softmax estimate.
+
+        TODO: what if self.mean != 0 before hand?
+
+        """
+
+        inverse_map, forward_map, white_con = self.whiten()
+        W = white_con
+        A, b = W.linear_part, W.offset
+
+        white_observed = forward_map(observed)
+        slack = b - A.dot(white_observed) 
+        dslack = 1. / (slack + 1.) - 1. / slack
+        return inverse_map(white_observed - A.T.dot(dslack))
+
     def whiten(self):
         """
-        Parameters
-        ----------
 
         Return a whitened version of constraints in a different
         basis, and a change of basis matrix.
@@ -421,23 +435,32 @@ class constraints(object):
         If `self.covariance` is rank deficient, the change-of
         basis matrix will not be square.
 
+        Returns
+        -------
+
+        inverse_map : callable
+
+        forward_map : callable
+
+        white_con : `constraints`
+
         """
         sqrt_cov, sqrt_inv = self.covariance_factors()[:2]
 
-        new_A = np.dot(self.linear_part, sqrt_cov)
+        new_A = self.linear_part.dot(sqrt_cov)
         den = np.sqrt((new_A**2).sum(1))
-        new_b = self.offset - np.dot(self.linear_part, self.mean)
+        new_b = self.offset - self.linear_part.dot(self.mean)
         new_con = constraints(new_A / den[:,None], new_b / den)
 
         mu = self.mean.copy()
 
         def inverse_map(Z): 
             if Z.ndim == 2:
-                return np.dot(sqrt_cov, Z) + mu[:,None]
+                return sqrt_cov.dot(Z) + mu[:,None]
             else:
-                return np.dot(sqrt_cov, Z) + mu
+                return sqrt_cov.dot(Z) + mu
 
-        forward_map = lambda W: np.dot(sqrt_inv, W - mu)
+        forward_map = lambda W: sqrt_inv.dot(W - mu)
 
         return inverse_map, forward_map, new_con
 
@@ -447,7 +470,7 @@ class constraints(object):
         of the covariance.
         """
         rowspace = self.covariance_factors()[-1]
-        return np.dot(rowspace, np.dot(rowspace.T, direction))
+        return rowspace.dot(rowspace.T.dot(direction))
 
     def solve(self, direction):
         """
@@ -455,7 +478,7 @@ class constraints(object):
         times a direction vector.
         """
         sqrt_inv = self.covariance_factors()[1]
-        return np.dot(sqrt_inv.T, np.dot(sqrt_inv, direction))
+        return sqrt_inv.T.dot(sqrt_inv.dot(direction))
 
 def stack(*cons):
     """
@@ -551,13 +574,13 @@ def interval_constraints(support_directions,
                      observed_data,
                      direction_of_interest)
 
-    U = np.dot(A, X) - b
+    U = A.dot(X) - b
     if not np.all(U  < tol * np.fabs(U).max()) and WARNINGS:
         warn('constraints not satisfied: %s' % `U`)
 
-    Sw = np.dot(S, w)
+    Sw = S.dot(w)
     sigma = np.sqrt((w*Sw).sum())
-    alpha = np.dot(A, Sw) / sigma**2
+    alpha = A.dot(Sw) / sigma**2
     V = (w*X).sum() # \eta^TZ
 
     # adding the zero_coords in the denominator ensures that
@@ -647,170 +670,6 @@ def selection_interval(support_directions,
     
     return _selection_interval
 
-def one_parameter_MLE(constraint, 
-                      Y,
-                      tilt,
-                      how_often=-1,
-                      ndraw=500,
-                      burnin=500,
-                      niter=20, 
-                      white=False,
-                      step_size=0.9,
-                      hessian_min=1.,
-                      tol=1.e-5,
-                      startMLE=None):
-    r"""
-    Find one parameter MLE for family
-
-    .. math::
-
-        \frac{dP_{\theta}}{dP_0}(y) \propto \exp(\theta \cdot \eta^Ty)
-
-    where $\eta$ is `direction_of_interest` and $P_0$ is the truncated
-    Gaussian distribution defined by `constraint`.
-
-    Parameters
-    ----------
-
-    constraint : `selection.affine.constraints`_
-
-    Y : np.float
-        Point satisfying the constraint.
-
-    tilt : np.float
-        Direction along which we will move the mean.
-        It will be first projected onto the rowspace
-        of constraint.covariance.
-
-    how_often : int (optional)
-        How often should the sampler make a move along `tilt`?
-        If negative, defaults to ndraw+burnin (so it will never be used).
-
-    ndraw : int (optional)
-        Defaults to 500.
-
-    burnin : int (optional)
-        Defaults to 500.
-
-    niter : int (optional)
-        How many Newton steps should we take? Defaults to 10. 
-
-    white : bool (optional)
-        Is con.covariance equal to identity?
-
-    step_size : float
-        What proportion of Newton step should we take?
-
-    min_hessian : float (optional)    
-        Lower bound on Hessian (will help taking too large a step).
-
-    tol : float (optional)    
-        Tolerance for convergance. Iteration stops
-        when sqrt(grad**2 / hessian) < tol
-
-    startMLE : float (optional)
-        Initial condition for iteration. If None,
-        default starting point is unconstrained MLE.
-    Returns
-    -------
-
-    MLE : float
-        Maximum pseudolikelihood estimate.
-        
-    """
-
-    con = constraint # shorthand
-
-    if how_often < 0:
-        how_often = ndraw + burnin
-
-    # we take the unconstrained MLE as starting point
-    # if we change the mean by \theta *  \tilt
-    # the negative log-likelihood is 
-    
-    # \frac{\theta^2}{2} (tilt^T \Sigma tilt) - \theta tilt^Ty
-
-    tilt_inv = con.solve(tilt)
-    observed = (tilt_inv*Y).sum()
-
-    MLE = startMLE or 0.
-    samples = []
-
-    con_cp = copy(con)
-    for iter_count in range(niter):
-        con_cp.mean[:] = con.mean + MLE * tilt
-
-        if not white:
-            inverse_map, forward_map, white_con = con_cp.whiten()
-            white_Y = forward_map(Y)
-            white_direction_of_interest = forward_map(np.dot(  
-                    con_cp.covariance, tilt))
-        else:
-            white_con = con_cp
-            inverse_map = lambda V: V
-
-        cur_sample = sample_truncnorm_white(white_con.linear_part,
-                                            white_con.offset,
-                                            white_Y, 
-                                            white_direction_of_interest,
-                                            how_often=how_often,
-                                            ndraw=ndraw, 
-                                            burnin=burnin,
-                                            sigma=1.,
-                                            use_constraint_directions=False)
-
-        Z = inverse_map(cur_sample.T).T
-
-        Ztilt = np.dot(Z, tilt_inv)
-        samples.append((MLE, Ztilt))
-
-        sum_mean = 0.
-        sum_second_moment = 0.
-        sum_weights = 0.
-
-        weight_adjust = -np.inf
-        lag = len(samples)
-
-        for sample in samples[-lag:]:
-
-            # each previous sample is from a different value of
-            # the natural parameter, i.e. exp(param * np.dot(tilt, y))
-            # but to evaluate the current meal, we want
-            # exp(MLE * np.dot(tilt, y))
-
-            prev_param, prev_sufficient_stat = sample
-            weight_adjust = max(weight_adjust, ((MLE - prev_param) * prev_sufficient_stat).max())
-            
-        weight_adjust -= 4.
-
-        for sample in samples[-lag:]:
-
-            prev_param, prev_sufficient_stat = sample
-            weight_correction = np.exp((MLE - prev_param) * prev_sufficient_stat - weight_adjust)
-
-            sum_mean += weight_correction * prev_sufficient_stat
-            sum_second_moment += weight_correction * prev_sufficient_stat**2
-            sum_weights += weight_correction
-
-        weighted_mean = sum_mean.sum() / sum_weights.sum()
-        weighted_second_moment = sum_second_moment.sum() / sum_weights.sum()
-
-        grad = (weighted_mean - observed)
-        hessian = weighted_second_moment - weighted_mean**2
-
-        step = - step_size * grad / (max(hessian, hessian_min))
-        MLE += step
-
-        if np.sqrt(grad**2 / (max(hessian, hessian_min))) < tol:
-            break
-
-        DEBUG = False
-        if DEBUG:
-            # observed should match weighted_mean
-            print observed, weighted_mean, MLE
-
-    return MLE
-
 def sample_from_constraints(con, 
                             Y,
                             direction_of_interest=None,
@@ -879,7 +738,7 @@ def sample_from_constraints(con,
     if not white:
         inverse_map, forward_map, white_con = con.whiten()
         white_Y = forward_map(Y)
-        white_direction_of_interest = forward_map(np.dot(con.covariance, direction_of_interest))
+        white_direction_of_interest = forward_map(con.covariance.dot(direction_of_interest))
         if DEBUG:
             print (white_direction_of_interest * white_Y).sum(), (Y * direction_of_interest).sum(), 'white'
     else:
@@ -896,7 +755,7 @@ def sample_from_constraints(con,
 
         def _accept_reject(sample_size, linear_part, offset):
             Z_sample = np.random.standard_normal((100, linear_part.shape[1]))
-            constraint_satisfied = (np.dot(Z_sample, linear_part.T) - 
+            constraint_satisfied = (Z_sample.dot(linear_part.T) - 
                                     offset[None,:]).max(1) < 0
             return Z_sample[constraint_satisfied]
 
@@ -1140,17 +999,19 @@ def gibbs_test(affine_con, Y, direction_of_interest,
         opt_tilt = optimal_tilt(tilted1_con, eta)
         tilt2 = opt_tilt.fit()
 
-        # tilteded contrast will be a point whose mean 
+        # tilted contrast will be a point whose mean 
         # (approximately) satisfies the constraint
         # and whose mean is closest to tilted1_con
 
         tilted2_con = copy(tilted1_con)
         tilted2_con.mean = tilted1_con.mean + tilt2
 
-        MLE = one_parameter_MLE(tilted2_con,
-                                Y,
-                                tilt,
-                                **MLE_opts)
+        # TODO use the selective_mle from estimation module
+
+        MLE = 0 # one_parameter_MLE(tilted2_con,
+                #                Y,
+                #                tilt,
+                #                **MLE_opts)
 
         tilted2_con.mean += MLE * tilt
 
@@ -1186,32 +1047,16 @@ def gibbs_test(affine_con, Y, direction_of_interest,
             W = np.ones(Z.shape[0], np.float)
         else:
             # now reweight 
-            logW = -np.dot(Z, total_reweight)
+            logW = -Z.dot(total_reweight)
             logW -= logW.max() + 4.
             W = np.exp(logW)
 
     if test_statistic is None:
-        suff_statistics = np.dot(Z, eta)
+        suff_statistics = Z.dot(eta)
         observed = (eta*Y).sum()
     else:
         suff_statistics = test_statistic(Z)
         observed = test_statistic(Y)
-
-    adjust = False
-    # this adjustment seems to not work
-    if adjust:
-
-        # adjust Z sample so some points fall on either side, this requires
-        # reweighting
-
-        median_suff = np.median(suff_statistics)
-        tilt_med = (observed - median_suff) * eta / (eta**2).sum()
-        tilt_reweight = affine_con.solve(tilt_med)
-        logW_med = -np.dot(Z, tilt_reweight)
-        logW_med -= logW_med.max() - 4
-        W *= np.exp(logW_med)
-        Z += tilt_med[None,:]
-        suff_statistics += observed - median_suff
 
     dfam = discrete_family(suff_statistics, W)
 

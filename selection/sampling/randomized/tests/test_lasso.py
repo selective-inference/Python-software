@@ -6,7 +6,8 @@ import selection.sampling.randomized.api as randomized
 from pvalues import pval
 from matplotlib import pyplot as plt
 
-def test_lasso(s=5, n=100, p=20):
+@np.testing.decorators.setastest(False)
+def test_lasso(s=5, n=100, p=50):
     
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     print 'sigma', sigma

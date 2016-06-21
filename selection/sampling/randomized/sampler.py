@@ -64,8 +64,10 @@ class selective_sampler(object):
         """
         data, opt_vars = state
         param, subgrad, opt_vec = self.penalty.form_optimization_vector(opt_vars)
-        gradient = self.loss.gradient(data, param)
-        hessian =  self.loss.hessian(data, param)
+
+        self.loss.data = data
+        gradient = self.loss.smooth_objective(param, 'grad')
+        hessian =  self.loss.hessian(param)
         log_jacobian = self.penalty.log_jacobian(hessian)
         val = - gradient - opt_vec
 
@@ -97,7 +99,8 @@ class selective_sampler_MH(selective_sampler):
         # update the gradient
         #for i in range(5):
         param = self.penalty.form_parameters(self.state[1])
-        self.cur_grad = self.loss.gradient(self.state[0], param)
+        self.loss.data = self.state[0]
+        self.cur_grad = self.loss.smooth_objective(param, 'grad')
 
         opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, self.cur_grad)
         #betaE, subgrad = opt_vars
