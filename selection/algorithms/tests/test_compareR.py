@@ -55,6 +55,7 @@ def test_fixed_lambda():
         """ % (s, lam)
 
         rpy.r(R_code)
+
         R_pvals = np.asarray(rpy.r('pval'))
         selected_vars = np.asarray(rpy.r('vars'))
         coef = np.asarray(rpy.r('coef0')).reshape(-1)
@@ -66,18 +67,18 @@ def test_fixed_lambda():
         y = y.reshape(-1)
         #y -= y.mean()
         L = lasso.gaussian(x, y, lam, sigma=s)
-        L.fit(min_its=200)
+        L.fit(solve_args={'min_its':200})
 
         S = L.summary('onesided')
         yield np.testing.assert_allclose, L.fit()[1:], beta_hat, 1.e-2, 1.e-2, False, 'fixed lambda, sigma=%f coef' % s
         yield np.testing.assert_equal, L.active, selected_vars
         yield np.testing.assert_allclose, S['pval'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
-        yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
-        yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
+        yield np.testing.assert_allclose, S['sd'], sdvar, tol, tol, False, 'fixed lambda, sigma=%f sd ' % s
+        yield np.testing.assert_allclose, S['onestep'], coef, tol, tol, False, 'fixed lambda, sigma=%f estimator' % s
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step():
-    tol = 1.e-2
+    tol = 1.e-5
     R_code = """
     library(selectiveInference)
     set.seed(33)
@@ -117,11 +118,9 @@ def test_forward_step():
     np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
     np.testing.assert_allclose([p for i, p in steps], R_pvals, atol=tol, rtol=tol)
 
-    print (R_pvals, [p for i, p in steps])
-
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step_all():
-    tol = 1.e-2
+    tol = 1.e-5
     R_code = """
     library(selectiveInference)
     set.seed(33)
@@ -164,7 +163,7 @@ def test_forward_step_all():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_coxph():
-    tol = 1.e-2
+    tol = 1.e-5
     R_code = """
     library(selectiveInference)
     set.seed(43)
@@ -182,7 +181,7 @@ def test_coxph():
     # first run glmnet
 
 
-    gfit = glmnet(x,Surv(tim,status),standardize=FALSE,family="cox")
+    gfit = glmnet(x,Surv(tim,status),standardize=FALSE,family="cox", thresh=1.e-14)
     # extract coef for a given lambda; note the 1/n factor!
 
     lambda = 1.5
@@ -191,7 +190,6 @@ def test_coxph():
     out = fixedLassoInf(x,tim,beta_hat,lambda,status=status,family="cox")
     pval = out$pv
     vars_cox = out$var
-
 
     """
 
@@ -210,24 +208,31 @@ def test_coxph():
     L = lasso.coxph(x, tim, status, 1.5)
     beta2 = L.fit()
 
+    G1 = L.loglike.gradient(beta_hat)
+    G2 = L.loglike.gradient(beta2)
+
+    print(G1, 'glmnet')
+    print(G2, 'regreg')
+
     yield np.testing.assert_equal, L.active + 1, selected_vars
-    yield np.testing.assert_allclose, L.fit(), beta_hat, tol, tol, False, 'cox coeff'
-    yield np.testing.assert_allclose, L.summary('twosided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
+    yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'cox coeff'
+    yield np.testing.assert_allclose, L.summary('onesided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_logistic():
-    tol = 1.e-2
+    tol = 1.e-4
     R_code = """
     library(selectiveInference)
     set.seed(43)
     n = 50
     p = 10
-    sigma = 1.1
+    sigma = 10
 
     x = matrix(rnorm(n*p),n,p)
     x=scale(x,TRUE,TRUE)
+
     beta = c(3,2,rep(0,p-2))
-    y = sigma*x%*%beta + sigma*rnorm(n)
+    y = x %*% beta + sigma * rnorm(n)
     y=1*(y>mean(y))
     # first run glmnet
     gfit = glmnet(x,y,standardize=FALSE,family="binomial")
@@ -235,10 +240,17 @@ def test_logistic():
     # extract coef for a given lambda; note the 1/n factor!
     # (and here  we DO  include the intercept term)
     lambda = .8
-    beta_hat = coef(gfit, s=lambda/n, exact=TRUE)
+    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE))
 
     # compute fixed lambda p-values and selection intervals
     out = fixedLassoInf(x,y,beta_hat,lambda,family="binomial")
+    vlo = out$vlo
+    vup = out$vup
+    sdvar = out$sd
+    coef=out$coef0
+    info_mat=out$info.matrix
+    beta_hat = beta_hat[c(1, out$vars+1)]
+    out
     pval = out$pv
     vars_logit = out$var
 
@@ -255,10 +267,10 @@ def test_logistic():
     x = np.asarray(rpy.r('x'))
     x = np.hstack([np.ones((x.shape[0],1)), x])
     L = lasso.logistic(x, y, [0] + [0.8] * (x.shape[1]-1))
-    beta2 = L.fit()
+    beta2 = L.fit()[L.active]
 
     yield np.testing.assert_equal, L.active[1:], selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'logistic coef'
-    yield np.testing.assert_allclose, L.summary('twosided')['pval'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
+    yield np.testing.assert_allclose, L.summary('onesided')['pval'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
 
 

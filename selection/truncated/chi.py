@@ -280,9 +280,3 @@ class truncated_chi2(truncated):
         z = find_root(f, q, lb, ub, tol)
 
         return z 
-        
-        
-
-import doctest
-doctest.testmod()
-

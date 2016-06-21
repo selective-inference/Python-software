@@ -8,6 +8,7 @@ class gaussian_Xfixed(selective_loss):
                  offset=None,
                  quadratic=None,
                  initial=None):
+
         selective_loss.__init__(self, X.shape[1],
                                 coef=coef,
                                 offset=offset,
@@ -16,7 +17,6 @@ class gaussian_Xfixed(selective_loss):
 
         self.X = X
         self.y = y.copy()
-        self._restricted_grad_beta = np.zeros(self.shape)
 
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
@@ -39,7 +39,7 @@ class gaussian_Xfixed(selective_loss):
     # this is something that regreg does not know about, i.e.
     # what is data and what is not...
 
-    def gradient(self, data, beta):
+    def gradient(self, beta):
         """
         Gradient of smooth part restricted to active set
         """
@@ -64,7 +64,6 @@ class gaussian_Xfixed(selective_loss):
 
         self.accept_data = 0
         self.total_data = 0
-
 
         self.sigma = sigma
 
