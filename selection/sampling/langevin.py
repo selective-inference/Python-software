@@ -29,8 +29,8 @@ class projected_langevin(object):
 
     def next(self):
         while True:
-            proj_arg = (self.state 
-                        - 0.5 * self.stepsize * self.gradient_map(self.state)
+            proj_arg = (self.state
+                        + 0.5 * self.stepsize * self.gradient_map(self.state)
                         + self._noise.rvs(self._shape) * self._sqrt_step)
             candidate = self.projection_map(proj_arg)
             if not np.all(np.isfinite(self.gradient_map(candidate))):
