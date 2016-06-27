@@ -30,7 +30,7 @@ def pval(vec_state, full_gradient, full_projection,
 
             keep[idx] = False
 
-            linear_part = X[:keep].T
+            linear_part = X[:,keep].T
 
             P = np.dot(linear_part.T, np.linalg.pinv(linear_part).T)
             I = np.identity(linear_part.shape[1])

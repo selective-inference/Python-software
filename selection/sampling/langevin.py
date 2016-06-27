@@ -16,11 +16,11 @@ class projected_langevin(object):
         (self.state,
          self.gradient_map,
          self.projection_map,
-         self.stepsize) = (initial_condition.copy(),
+         self.stepsize) = (np.copy(initial_condition),
                            gradient_map,
                            projection_map,
                            stepsize)
-        self._shape = self.state.shape
+        self._shape = self.state.shape[0]
         self._sqrt_step = np.sqrt(self.stepsize)
         self._noise = ndist(loc=0,scale=1)
 

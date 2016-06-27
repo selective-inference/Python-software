@@ -24,7 +24,6 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
 
     def setup_sampling(self,
                        gradient,
-                       hessian, ## added
                        soln,
                        linear_randomization,
                        quadratic_coef):
@@ -66,7 +65,6 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
 
         #self.chol_adapt = np.identity(nactive) / np.sqrt(nactive)
 
-        self.hessian = hessian
         return betaE, cube
 
     def form_subgradient(self, opt_vars):
@@ -192,6 +190,8 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
             return scale, self.bound
 
 
+
+
     def step_variables(self, state, randomization, logpdf, gradient, X, P, R):
         """
         Uses projected Langevin proposal ( X_{k+1} = P(X_k+\eta\grad\log\pi+\sqrt{2\pi} Z), where Z\sim\mathcal{N}(0,Id))
@@ -290,8 +290,10 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
         self.accept_l1_part += 1
 
         return data, opt_vars
-        #return proposal
 
+
+
+'''
     def step_cube(self, state, randomization, gradient):
         """
         move a step for the subgradients.
@@ -320,3 +322,4 @@ class selective_l1norm_lan(rr.l1norm, selective_penalty):
         cube_sample = (offset - rand.ppf(percentile)) / lam
 
         return cube_sample
+'''

@@ -39,7 +39,7 @@ class gaussian_Xfixed(selective_loss):
     # this is something that regreg does not know about, i.e.
     # what is data and what is not...
 
-    def gradient(self, beta):
+    def gradient(self, data, beta):
         """
         Gradient of smooth part restricted to active set
         """
@@ -48,7 +48,7 @@ class gaussian_Xfixed(selective_loss):
         self.y = old_data
         return g
 
-    def hessian(self):#, data, beta):
+    def hessian(self):
         if not hasattr(self, "_XTX"):
             self._XTX = np.dot(self.X.T, self.X)
         return self._XTX
@@ -79,6 +79,7 @@ class gaussian_Xfixed(selective_loss):
         self.linear_part = linear_part
 
 
+'''
     def proposal(self, data):
         n, p = self.X.shape
         stepsize = 4. / np.sqrt(n)  # originally 2. / np.sqrt(n)
@@ -108,7 +109,7 @@ class gaussian_Xfixed(selective_loss):
 
     def update_proposal(self, state, proposal, logpdf):
         pass
-
+'''
 
 
 class sqrt_Lasso_Xfixed(gaussian_Xfixed):

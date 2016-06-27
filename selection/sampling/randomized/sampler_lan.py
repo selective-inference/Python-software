@@ -36,10 +36,8 @@ class selective_sampler(object):
         self.initial_grad = self.loss.smooth_objective(self.initial_soln,
                                                        mode='grad')
 
-        self.hessian = self.loss.hessian() ## ADDED since needed for projected Langevin used in step_simplex in penalty class
         self.opt_vars = self.penalty.setup_sampling( \
             self.initial_grad,
-            self.hessian,  ## ADDED
             self.initial_soln,
             self.linear_randomization,
             self.quadratic_coef)
@@ -48,15 +46,16 @@ class selective_sampler(object):
 
         self.loss.setup_sampling(data, **loss_args)
         self.cur_grad = self.loss.smooth_objective(self.initial_soln, 'grad')
-        self.hessian = self.loss.hessian() # added since needed for projected Langevin in step_simplex
 
         self.penalty.setup_sampling(self.initial_grad,
-                                    self.hessian,
                                     self.initial_soln,
                                     self.linear_randomization,
                                     self.quadratic_coef)
 
         self.state = [self.loss.data.copy(), self.opt_vars]
+
+
+'''
 
     def logpdf(self, state):
         """
@@ -78,6 +77,7 @@ class selective_sampler(object):
         val = - gradient - opt_vec
 
         return self.randomization.logpdf(val).sum() + log_jacobian   # sum since we assume randomization is iid
+'''
 
 
 class selective_sampler_MH_lan(selective_sampler):
@@ -93,17 +93,17 @@ class selective_sampler_MH_lan(selective_sampler):
 
         samples = []
 
-        P = self.loss.P
-        R = self.loss.R
-
         for i in range(ndraw + burnin):
             sample = self.next()
-            if (i >= burnin): #and (i % 3==0):
+            if (i >= burnin):
                 samples.append(copy(sample))
         return samples
 
     def __iter__(self):
         return self
+
+
+
 
     def next(self):
         """
@@ -115,31 +115,34 @@ class selective_sampler_MH_lan(selective_sampler):
         # updates data according to MH step (might not actually move depending whether accepts or rejects)
         # step_data written in losses/base.py
 
-        data, opt_vars = self.state
+        data, opt_vars = np.copy(self.state)
         param, subgrad, opt_vec = self.penalty.form_optimization_vector(opt_vars)
         gradient = self.loss.gradient(data, param)
-        #val = - gradient - opt_vec
+        hessian = self.loss.hessian()
 
         X = self.loss.X
-        P=self.loss.P
-        R=self.loss.R
-        #self.state[0] = self.loss.step_data(self.state, self.logpdf)  # self.state[0] is the data vector
+        P = self.loss.P
+        R = self.loss.R
 
+        p = data.shape[0]
+        _full_gradient = self.penalty.full_gradient(self.state, gradient, hessian, X)
+        _full_projection = self.penalty.full_projection(self.state)
+        vector = np.zeros(data.shape[0]+param.shape[0]+subgrad.shape[0])
+        vector[:p] = data
+        vector[p:(p+param.shape[0])] = param
+        vector[(p+param.shape[0]):] = subgrad
 
-        # update the gradient
-        #param = self.penalty.form_parameters(self.state[1]) # (beta_E, 0)
-        #self.cur_grad = self.loss.gradient(self.state[0], param) # gradient is \grad l(\beta), a function of
-                    # data vector (self.state[0]) and beta (param)
+        new_state = projected_langevin(vector,
+                                            _full_gradient,
+                                            _full_projection,
+                                            1. / p).next()
 
-        # step_variables calls step_simplex and step_cube in e.g. norms/lasso.py
-        # step_simplex moves according to MH step and step_cube draws an immediate sample since its density conditional on
-        # everything else has explicit form (more in penalty class)
-        data, opt_vars = self.penalty.step_variables(self.state, self.randomization, self.logpdf, gradient, X,P,R)
-        #betaE, subgrad = opt_vars
+        new_data, new_opt_vars = new_state
+        new_data = np.dot(P, data) + np.dot(R, new_data)
 
         # update the optimization variables.
-        self.state[0] = data
-        self.state[1] = opt_vars
+        self.state[0] = new_data
+        self.state[1] = new_opt_vars
 
         return self.state
 

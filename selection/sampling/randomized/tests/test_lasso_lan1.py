@@ -3,9 +3,9 @@ from scipy.stats import laplace, probplot, uniform
 
 from selection.algorithms.lasso import instance
 import selection.sampling.randomized.api as randomized
-from pvalues import pval
+from pvalues1 import pval
 from matplotlib import pyplot as plt
-from selection.sampling.langevin import projected_langevin
+import regreg.api as rr
 
 
 def test_lasso(s=5, n=100, p=20):
@@ -24,26 +24,37 @@ def test_lasso(s=5, n=100, p=20):
     random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
 
-    sampler1 = randomized.selective_sampler_MH_lan(loss,
-                                               random_Z,
-                                               epsilon,
-                                               randomization,
-                                               penalty)
-    loss_args = {'mean': np.zeros(n),
-                 'sigma': sigma,
-                 'linear_part':np.identity(y.shape[0]),
-                 'value': 0}
+    #sampler1 = randomized.selective_sampler_MH_lan(loss,
+    #                                           random_Z,
+    #                                           epsilon,
+    #                                           randomization,
+    #                                          penalty)
 
-    sampler1.setup_sampling(y, loss_args=loss_args)
+    #loss_args = {'mean': np.zeros(n),
+    #             'sigma': sigma,
+    #             'linear_part':np.identity(y.shape[0]),
+    #             'value': 0}
 
+    #sampler1.setup_sampling(y, loss_args=loss_args)
+    # data, opt_vars = sampler1.state
 
-    data, opt_vars = sampler1.state
-    #print data
-    #print y
+    # initial solution
+    problem = rr.simple_problem(loss, penalty)
+    random_term = rr.identity_quadratic(epsilon, 0,
+                                        random_Z, 0)
+    solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
+    initial_soln = problem.solve(random_term, **solve_args)
+    initial_grad = loss.smooth_objective(initial_soln,  mode='grad')
+    betaE, cube = penalty.setup_sampling(initial_grad,
+                                         initial_soln,
+                                         random_Z,
+                                         epsilon)
+
+    data = y.copy()
     active = penalty.active_set
     inactive = ~active
 
-    betaE, cube = opt_vars
+    #betaE, cube = opt_vars
     ndata = data.shape[0];  nactive = betaE.shape[0];  ninactive = cube.shape[0]
     init_vec_state = np.zeros(n+nactive+ninactive)
     init_vec_state[:ndata] = data
@@ -58,7 +69,7 @@ def test_lasso(s=5, n=100, p=20):
         cube = vec_state[(ndata+nactive):]
 
         signs = penalty.signs
-        projected_betaE = np.zeros_like(betaE)
+        projected_betaE = betaE.copy()
         projected_cube = np.zeros_like(cube)
 
         for i in range(nactive):
@@ -72,7 +83,7 @@ def test_lasso(s=5, n=100, p=20):
 
     def full_gradient(vec_state, loss=loss, penalty =penalty, X=X,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
-        nactive=np.sum(active); ninactive=np.sum(inactive)
+        nactive = np.sum(active); ninactive=np.sum(inactive)
 
         data = vec_state[:ndata]
         betaE = vec_state[ndata:(ndata + nactive)]
