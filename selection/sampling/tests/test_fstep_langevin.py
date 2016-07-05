@@ -60,6 +60,66 @@ def projection_cone(p, max_idx, max_sign):
 
     return _projection
 
+def projection_cone_nosign(p, max_idx):
+    """
+
+    Does not condition on sign!
+
+    Create a callable that projects onto one of two cones,
+    determined by which coordinate achieves the max in one
+    step of forward stepwise.
+
+    Parameters
+    ----------
+
+    p : int
+        Dimension.
+
+    max_idx : int
+        Index achieving the max.
+
+    max_sign : [-1,1]
+        Sign of achieved max.
+
+
+    Returns
+    -------
+
+    projection : callable
+        A function to compute projection onto appropriate cone.
+        Takes one argument of shape (p,).
+
+    """
+
+    P_plus = rr.linf_epigraph(p-1)
+    P_minus = rr.l1_epigraph_polar(p-1)
+
+    def _projection(state):
+        permuted_state = np.zeros_like(state)
+        permuted_state[-1] = state[max_idx] 
+        permuted_state[:max_idx] = state[:max_idx]
+        permuted_state[max_idx:-1] = state[(max_idx+1):]
+
+        projected_state_plus = P_plus.cone_prox(permuted_state)
+        projected_state_minus = P_minus.cone_prox(permuted_state)
+
+        D_plus = np.linalg.norm(permuted_state - projected_state_plus)
+        D_minus = np.linalg.norm(permuted_state - projected_state_minus)
+
+        if D_plus < D_minus:
+            projected_state = projected_state_plus
+        else:
+            projected_state = projected_state_minus
+
+        new_state = np.zeros_like(state)
+        new_state[max_idx] = projected_state[-1]
+        new_state[:max_idx] = projected_state[:max_idx]
+        new_state[(max_idx+1):] = projected_state[max_idx:-1]
+
+        return new_state
+
+    return _projection
+
 def test_fstep(s=0, n=100, p=10):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
