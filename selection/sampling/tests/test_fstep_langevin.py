@@ -120,7 +120,7 @@ def projection_cone_nosign(p, max_idx):
 
     return _projection
 
-def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, condition_on_sign=True):
+def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, burning=2000, condition_on_sign=True):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     epsilon = 0.
@@ -138,7 +138,7 @@ def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, condition_on_sign=True):
         projection = projection_cone(p, j_star, s_star)
     else:
         projection = projection_cone_nosign(p, j_star)
-        
+
     def full_projection(state, n=n, p=p):
         """
         State is (y, u) -- first n coordinates are y, last p are u.
@@ -197,14 +197,19 @@ def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, condition_on_sign=True):
 if __name__ == "__main__":
 
     P0 = []
-    for i in range(50):
+    for i in range(100):
         print "iteration", i
         #print form_Ab(1,4)
-        pval = test_fstep(use_sign=False)
+        pval = test_fstep(condition_on_sign=False)
+
         P0.append(pval)
 
     print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
-    probplot(P0, dist=uniform, sparams=(0,1), plot=plt, fit=True)
+
+    import statsmodels.api as sm
+    U = np.linspace(0, 1, 101)
+    plt.clf()
+    plt.plot(U, sm.distributions.ECDF(P0)(U))
     plt.show()
 
 
