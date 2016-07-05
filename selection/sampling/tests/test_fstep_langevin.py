@@ -120,7 +120,7 @@ def projection_cone_nosign(p, max_idx):
 
     return _projection
 
-def test_fstep(s=0, n=100, p=10):
+def test_fstep(s=0, n=100, p=10, use_sign=True):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     epsilon = 0.
@@ -134,8 +134,11 @@ def test_fstep(s=0, n=100, p=10):
     s_star = np.sign(T_random[j_star])
 
     # this is the subgradient part of the projection
-    projection = projection_cone(p, j_star, s_star)
-
+    if use_sign:
+        projection = projection_cone(p, j_star, s_star)
+    else:
+        projection = projection_cone_nosign(p, j_star)
+        
     def full_projection(state, n=n, p=p):
         """
         State is (y, u) -- first n coordinates are y, last p are u.
@@ -196,7 +199,7 @@ if __name__ == "__main__":
     for i in range(50):
         print "iteration", i
         #print form_Ab(1,4)
-        pval = test_fstep()
+        pval = test_fstep(use_sign=False)
         P0.append(pval)
 
     print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
