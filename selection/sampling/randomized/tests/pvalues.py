@@ -30,7 +30,7 @@ def pval(vec_state, full_gradient, full_projection,
 
             keep[idx] = False
 
-            linear_part = X[:keep].T
+            linear_part = X[:, keep].T
 
             P = np.dot(linear_part.T, np.linalg.pinv(linear_part).T)
             I = np.identity(linear_part.shape[1])
@@ -43,7 +43,7 @@ def pval(vec_state, full_gradient, full_projection,
 
             samples = []
 
-            for _ in range(6000):
+            for _ in range(5000):
                 old_state = sampler.state.copy()
                 old_data = old_state[:ndata]
                 sampler.next()
