@@ -21,14 +21,19 @@ def test_lasso(s=5, n=200, p=20):
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
     random_Z = randomization.rvs(p)
+    lam=1
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
 
+
     # initial solution
+    groups = np.arange(p)
     problem = rr.simple_problem(loss, penalty)
+
     random_term = rr.identity_quadratic(epsilon, 0,
                                         random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_soln = problem.solve(random_term, **solve_args)
+
     initial_grad = loss.smooth_objective(initial_soln,  mode='grad')
     betaE, cube = penalty.setup_sampling(initial_grad,
                                          initial_soln,
@@ -43,11 +48,14 @@ def test_lasso(s=5, n=200, p=20):
     subgradient = np.zeros(p)
     subgradient[:nactive] = subgradient_initial[active]
     subgradient[nactive:] = subgradient_initial[inactive]
-    gamma = np.sqrt(np.inner(betaE, betaE))
+
+    z_active = subgradient_initial[active]
+    #gamma = np.sqrt(np.inner(betaE, betaE))
+    gamma = np.abs(betaE)
 
     data = y.copy()
 
-    ndata = data.shape[0];
+    ndata = data.shape[0]
     init_vec_state = np.zeros(ndata+nactive+ninactive+nactive)
     init_vec_state[:ndata] = data
     init_vec_state[ndata:(ndata+nactive+ninactive)] = subgradient
@@ -63,7 +71,7 @@ def test_lasso(s=5, n=200, p=20):
         projected_subgradient = subgradient.copy()
         projected_gamma = gamma.copy()
 
-        projected_subgradient[:nactive] = lam*np.sign(projected_subgradient[:nactive])
+        #projected_subgradient[:nactive] = lam*np.sign(projected_subgradient[:nactive])
         projected_subgradient[nactive:] = np.clip(projected_subgradient[nactive:], -lam, lam)
 
         projected_gamma = np.clip(projected_gamma, 0, np.inf)
@@ -80,13 +88,13 @@ def test_lasso(s=5, n=200, p=20):
         subgradient = vec_state[ndata:(ndata + nactive+ninactive)]
         gamma = vec_state[(ndata + nactive+ninactive):]
 
+
         mat = np.dot(X.T, X) + epsilon*np.identity(X.shape[1])
         vec = np.multiply(subgradient[:nactive], gamma)/lam
         w = - (np.dot(mat[:, active], vec)-np.dot(X.T, y)+subgradient)
 
 
         B = np.dot(mat[:, active], np.diag(gamma))/lam
-        #print B.shape
         A = np.concatenate((B, np.zeros((nactive+ninactive, ninactive))), 1)
         A = A + np.identity(nactive+ninactive)
 
