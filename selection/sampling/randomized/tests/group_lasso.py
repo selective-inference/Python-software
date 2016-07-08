@@ -7,7 +7,7 @@ from pvalues1 import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
 
-def test_lasso(s=5, n=200, p=20):
+def test_lasso(s=3, n=200, p=10):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     print 'sigma', sigma
@@ -21,7 +21,7 @@ def test_lasso(s=5, n=200, p=20):
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
     random_Z = randomization.rvs(p)
 
-    groups = [0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,2,3,3]
+    groups = [0,0,1,1,2,2,3,3,4,4]
     ngroups  = np.unique(groups).shape[0]
     print 'ngroups', ngroups
 
@@ -33,6 +33,7 @@ def test_lasso(s=5, n=200, p=20):
         weights.update({g: x})
 
     penalty = rr.group_lasso(groups, weights, lagrange=lam)
+
     lambdas = lam*np.ones(ngroups)
     for g in range(ngroups):
         lambdas[g] *= weights[g]
@@ -43,7 +44,6 @@ def test_lasso(s=5, n=200, p=20):
                                         -random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_sol = problem.solve(random_term, **solve_args)
-    print 'number of nonzero betas', np.sum(initial_sol!=0)
 
     active_groups = np.zeros(ngroups, dtype = bool)
     active_vars = np.zeros(p, dtype = bool)
@@ -54,6 +54,7 @@ def test_lasso(s=5, n=200, p=20):
             active_vars[groups_mat[:, g]] = True
 
     print 'active_groups', active_groups
+    print 'number of nonzero betas', np.sum(initial_sol!=0)
     print 'active variables', active_vars
 
     subgradient_initial = np.dot(X.T, y-X.dot(initial_sol)) + random_Z -epsilon*initial_sol
@@ -96,7 +97,7 @@ def test_lasso(s=5, n=200, p=20):
             z_g = subgradient_inactive[g_set]
             z_g_norm = np.linalg.norm(z_g)
             if (z_g_norm>lambdas[g]):
-                projected_subgradient_inactive[g_set] = lambdas[g]*(z_g/z_g_norm)
+                projected_subgradient_inactive[g_set] = z_g*(lambdas[g]/z_g_norm)
 
         return np.concatenate((data, projected_gamma_active, projected_subgradient_inactive), 0)
 
@@ -129,7 +130,8 @@ def test_lasso(s=5, n=200, p=20):
     _mat_gamma = mat_gamma()
 
 
-    def gradient_log_jac(gamma_active, active_groups = active_groups):
+    def gradient_log_jac(gamma_active):
+
         active_groups_set = np.where(active_groups)[0]
         active_groups_mat = groups_mat[active_vars, :]
         subgradient_active = subgradient_initial[active_vars]
@@ -138,15 +140,14 @@ def test_lasso(s=5, n=200, p=20):
 
         D = np.zeros((nactive_vars, nactive_vars))
         XE = X[:,active_vars]
-        I = np.identity(nactive_vars)
-        mat1 = np.dot(XE.T, XE) + I
+        mat1 = np.dot(XE.T, XE) + epsilon*np.identity(nactive_vars)
         D_seq = np.zeros((nactive_groups, nactive_vars, nactive_vars))
         for i, g in enumerate(active_groups_set):
             g_set = active_groups_mat[:, g]  # part of active vars in g
             z_g = subgradient_active[g_set]
-            D_seq[i][:, g_set] = np.copy(mat1[:, g_set])
+            D_seq[i][:, g_set] = mat1[:, g_set]
             col_block = gamma_active[i] * np.copy(mat1[:, g_set])
-            col_block[g_set, :] += lambdas[g]*(np.identity(np.sum(g_set)) - (np.outer(z_g, z_g)/np.square(lambdas[g])))
+            col_block[g_set, :] += lambdas[g]*np.identity(np.sum(g_set)) - (np.outer(z_g, z_g)/lambdas[g])
             D[:, g_set] = np.copy(col_block)
 
         _gradient_log_jac = np.zeros(nactive_groups)
@@ -154,7 +155,11 @@ def test_lasso(s=5, n=200, p=20):
         D_inv = np.linalg.inv(D)
 
         for i in range(nactive_groups):
-            _gradient_log_jac[i] = -(1./np.square(gamma_active[i])) + np.trace(D_inv.dot(D_seq[i]))
+            _gradient_log_jac[i] = + np.sum(np.diag(D_inv.dot(D_seq[i])))
+            if gamma_active[i]>0:
+                _gradient_log_jac[i] -= (1./gamma_active[i])
+            else:
+                _gradient_log_jac[i] -= 10
 
         return _gradient_log_jac
 
@@ -173,7 +178,7 @@ def test_lasso(s=5, n=200, p=20):
         subgradient_full[active_vars] = subgradient_initial[active_vars]
 
 
-        w = -np.dot(X.T, y) + subgradient_full +_mat_gamma.dot(gamma_active)
+        w = -np.dot(X.T, y) + subgradient_full + _mat_gamma.dot(gamma_active)
         sign_vec = np.sign(w)
 
         mat_z = np.zeros((p, ninactive_vars))
@@ -182,7 +187,6 @@ def test_lasso(s=5, n=200, p=20):
         _gradient = np.zeros(ndata + nactive_groups+ninactive_vars)
         _gradient[:ndata] = - (data - np.dot(X, sign_vec))
         _gradient_log_jacobian = gradient_log_jac(gamma_active)
-
         _gradient[ndata:(ndata + nactive_groups)] = - np.dot(_mat_gamma.T, sign_vec) + _gradient_log_jacobian
         _gradient[(ndata + nactive_groups):] = - np.dot(mat_z.T, sign_vec)
 
@@ -197,7 +201,7 @@ def test_lasso(s=5, n=200, p=20):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(10):
+    for i in range(20):
         print "iteration", i
         p0, pA = test_lasso()
         P0.extend(p0); PA.extend(pA)
