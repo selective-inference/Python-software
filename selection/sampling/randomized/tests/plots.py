@@ -31,7 +31,7 @@ plot_randomX.set_ylim([0,1])
 P0, PA = [], []
 for i in range(50):
     print "iteration", i
-    p0, pA = test_fixedX(s=5, n=200, p=20)
+    p0, pA = test_fixedX(s=5, n=100, p=10)
     P0.extend(p0); PA.extend(pA)
 
 print "fixed X done! mean: ", np.mean(P0), "std: ", np.std(P0)
