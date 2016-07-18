@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
 import random
 
-random.seed(1)
+random.seed(2)
 
 fig = plt.figure()
 plot_randomX = fig.add_subplot(131)
@@ -15,9 +15,9 @@ plot_logistic = fig.add_subplot(133)
 
 P0, PA = [], []
 
-for i in range(40):
+for i in range(50):
     print "iteration", i
-    p0, pA = test_randomX(s=5, n=100, p=10)
+    p0, pA = test_randomX(s=5, n=200, p=20)
     P0.extend(p0); PA.extend(pA)
 
 print "random X done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -29,7 +29,7 @@ plot_randomX.set_ylim([0,1])
 
 
 P0, PA = [], []
-for i in range(40):
+for i in range(50):
     print "iteration", i
     p0, pA = test_fixedX(s=5, n=200, p=20)
     P0.extend(p0); PA.extend(pA)
