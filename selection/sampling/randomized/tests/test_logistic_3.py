@@ -9,24 +9,24 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=0, n=200, p=10):
+def test_lasso(s=5, n=200, p=20):
 
     # problem setup
 
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0)
+    print 'true_beta', beta
     nonzero = np.where(beta)[0]
-    lam_frac = 0.8
+    lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
     loss = randomized.logistic_Xrandom_new(X, y)
     epsilon = 1.
 
-    lam = 50*lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan_logistic(p, lagrange=lam)
 
     random_Z = randomization.rvs(p)
-
 
     # initial solution
 
@@ -34,11 +34,31 @@ def test_lasso(s=0, n=200, p=10):
     random_term = rr.identity_quadratic(epsilon, 0, random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_soln = problem.solve(random_term, **solve_args)
+
+    active = (initial_soln != 0)
+    inactive = ~active
+    betaE = initial_soln[active]
+    print 'betaE', betaE
+    signs = np.sign(betaE)
+
+    w_initial = np.exp(np.dot(X, initial_soln))
+    pi_initial = w_initial/(1+w_initial)
+    initial_grad = -np.dot(X.T, y-pi_initial)*n/2
+    print 'ini', initial_grad
+    subgradient = -(initial_grad+epsilon*initial_soln+random_Z)
+    cube = subgradient[inactive]/lam
+    print 'cube', cube
+
     initial_grad = loss.smooth_objective(initial_soln,  mode='grad')
+    print 'ini', initial_grad
     betaE, cube = penalty.setup_sampling(initial_grad,
                                          initial_soln,
                                          random_Z,
                                          epsilon)
+
+    print 'betaE', betaE
+    print 'cube', cube
+
 
     active = penalty.active_set
     if (np.sum(active)==0):
@@ -50,6 +70,7 @@ def test_lasso(s=0, n=200, p=10):
     pi = w / (1 + w)
     N = np.dot(X[:, inactive].T, y - pi)
     data = np.concatenate((beta_unpenalized, N), axis=0)
+
     ndata = data.shape[0];  nactive = betaE.shape[0];  ninactive = cube.shape[0]
 
 
@@ -84,13 +105,14 @@ def test_lasso(s=0, n=200, p=10):
     init_vec_state[(ndata+nactive):] = cube
 
 
-    def full_projection(vec_state, penalty=penalty,
+    def full_projection(vec_state, signs=signs,
                         ndata=ndata, nactive=nactive, ninactive = ninactive):
+
         data = vec_state[:ndata].copy()
         betaE = vec_state[ndata:(ndata+nactive)]
         cube = vec_state[(ndata+nactive):]
 
-        signs = penalty.signs
+        #signs = penalty.signs
 
         projected_betaE = betaE.copy()
         projected_cube = np.zeros_like(cube)
@@ -115,8 +137,8 @@ def test_lasso(s=0, n=200, p=10):
         opt_vars = [betaE, cube]
         params , _ , opt_vec = penalty.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
-        gradient = loss.gradient(data, params)
-        hessian = loss.hessian
+        gradient = loss.gradient(data, params)*n/2
+        hessian = loss.hessian * n/2
 
         ndata = data.shape[0]
         nactive = betaE.shape[0]
@@ -134,6 +156,7 @@ def test_lasso(s=0, n=200, p=10):
         _gradient[:ndata] = - np.dot(Sigma_full_inv, data)
         _gradient[:nactive] -= hessian[:,active].T.dot(sign_vec)
         _gradient[nactive:(ndata)] -= sign_vec[inactive]
+
         # selected model
         #gradient[:nactive] = - (np.dot(Sigma_T_inv, data[:nactive]) + np.dot(hessian[:, active].T, sign_vec))
 
@@ -154,8 +177,7 @@ if __name__ == "__main__":
     for i in range(20):
         print "iteration", i
         p0, pA = test_lasso()
-        if (p0[0]>0):
-            P0.extend(p0); PA.extend(pA)
+        P0.extend(p0); PA.extend(pA)
 
 
     print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
