@@ -4,9 +4,8 @@ from test_logistic_langevin import test_lasso as test_logistic
 from test_lasso_randomX_langevin import test_lasso as test_randomX
 from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
-import random
 
-random.seed(2)
+np.random.seed(1)
 
 fig = plt.figure()
 plot_randomX = fig.add_subplot(131)
@@ -15,7 +14,7 @@ plot_logistic = fig.add_subplot(133)
 
 P0, PA = [], []
 
-for i in range(50):
+for i in range(100):
     print "iteration", i
     p0, pA = test_randomX(s=5, n=200, p=20)
     P0.extend(p0); PA.extend(pA)
@@ -29,7 +28,7 @@ plot_randomX.set_ylim([0,1])
 
 
 P0, PA = [], []
-for i in range(50):
+for i in range(100):
     print "iteration", i
     p0, pA = test_fixedX(s=5, n=100, p=10)
     P0.extend(p0); PA.extend(pA)

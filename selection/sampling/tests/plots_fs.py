@@ -5,7 +5,7 @@ from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
 import random
 
-random.seed(1)
+random.seed(2)
 
 fig = plt.figure()
 plot_1step = fig.add_subplot(121)
