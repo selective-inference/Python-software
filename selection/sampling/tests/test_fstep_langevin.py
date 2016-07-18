@@ -175,7 +175,7 @@ def test_fstep(s=0, n=100, p=10, use_sign=True):
                                  1./p)
     samples = []
 
-    for _ in range(1000):
+    for _ in range(5000):
         sampler.next()
         samples.append(sampler.state.copy())
 

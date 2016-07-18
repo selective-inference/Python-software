@@ -64,7 +64,7 @@ def projection_cone(p, max_idx, max_sign):
     return _projection
 
 
-def test_kfstep(k=3, s=0, n=100, p=10):
+def test_kfstep(k=3, s=2, n=100, p=10):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     epsilon = 0.
@@ -74,7 +74,7 @@ def test_kfstep(k=3, s=0, n=100, p=10):
     s_seq = np.empty(k)
 
     left = np.ones(p, dtype=bool)
-    obs = np.zeros((p,k))
+    obs_statistic = 0
 
     state = np.zeros(n + np.sum([i for i in range(p-k+1,p+1)]))
 
@@ -83,31 +83,34 @@ def test_kfstep(k=3, s=0, n=100, p=10):
     mat = [np.array((n, ncol)) for ncol in range(p,p-k,-1)]
 
     curr = n
+
+    keep = np.zeros(p, dtype=bool)
+
     for i in range(k):
         X_left = X[:,left]
-        X_used = X[:, ~left]
+        X_used = X[:, ~left] # active set
         if (np.sum(left)<p):
-            P_perp = np.identity(X_used.shape[0]) - X_used.dot(np.linalg.pinv(X_used))
-            y_mod = P_perp.dot(y)
+            P_perp = np.identity(n) - X_used.dot(np.linalg.pinv(X_used))
+            residual = P_perp.dot(y)
             mat[i] = P_perp.dot(X_left)
         else:
-            y_mod = y
+            residual = y
             mat[i] = X
 
-        T = np.dot(X_left.T,y_mod)
+        T = np.dot(X_left.T,residual)
         obs = np.max(np.abs(T))
+        if (i==k-2):
+            obs_statistic = obs.copy()
 
         random_Z = randomization.rvs(T.shape[0])
 
         T_random = T + random_Z
-        state[curr:(curr+p-i)] = T_random
+        state[curr:(curr+p-i)] = T_random # initializing subgradients
         curr = curr + p-i
 
         T_abs = np.abs(T_random)
         j_seq[i] = np.argmax(T_abs)
         s_seq[i] = np.sign(T_random[j_seq[i]])
-
-        #print j_seq[i]
 
         def find_index(v, idx):
             _sumF = 0
@@ -121,13 +124,16 @@ def test_kfstep(k=3, s=0, n=100, p=10):
             return (_sumT + _sumF - 1)
 
         left[find_index(left,j_seq[i])] = False
-        #print np.sum(left)
 
+        if (i==k-2):
+            keep = np.copy(~left)
 
+    # conditioning
 
-    #print 'index', find_index(np.array([True, True, False, True]), 0)
-
-    # this is the subgradient part of the projection
+    linear_part = X[:, keep].T
+    P = np.dot(linear_part.T, np.linalg.pinv(linear_part).T)
+    I = np.identity(linear_part.shape[1])
+    R = I - P
 
 
     def full_projection(state, n=n, p=p, k=k):
@@ -141,6 +147,7 @@ def test_kfstep(k=3, s=0, n=100, p=10):
             new_state[curr:(curr+p-i)] = projection(state[curr:(curr+p-i)])
             curr = curr+p-i
         return new_state
+
 
     def full_gradient(state, n=n, p=p, k=k, X=X, mat=mat):
         data = state[:n]
@@ -167,17 +174,25 @@ def test_kfstep(k=3, s=0, n=100, p=10):
                                  1./p)
     samples = []
 
+
     for _ in range(5000):
+        old_state = sampler.state.copy()
+        old_data = old_state[:n]
         sampler.next()
+        new_state = sampler.state.copy()
+        new_data = new_state[:n]
+        new_data = np.dot(P, old_data) + np.dot(R, new_data)
+        sampler.state[:n] = new_data
         samples.append(sampler.state.copy())
+
 
     samples = np.array(samples)
     Z = samples[:,:n]
 
-    print 'matk', mat[k-1].shape
-    pop = np.abs(mat[k-1].T.dot(Z.T)).max(0)
+
+    pop = np.abs(mat[k-1].T.dot(Z)).max(0)
     fam = discrete_family(pop, np.ones_like(pop))
-    pval = fam.cdf(0, obs)
+    pval = fam.cdf(0, obs_statistic)
     pval = 2 * min(pval, 1 - pval)
 
     #stop
