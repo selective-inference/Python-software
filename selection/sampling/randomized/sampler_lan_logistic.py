@@ -9,7 +9,7 @@ import regreg.api as rr
 class selective_sampler(object):
 
     def __init__(self, loss,
-                 linear_randomization,  #set in e.g. tests/test_logistic.py, the model selection done based on this randomization
+                 linear_randomization,  #set in e.g. tests/test_logistic_first_version.py, the model selection done based on this randomization
                  quadratic_coef,  # \epsilon in \frac{\epsilon}{2}\|\beta\|_2^2 term in the objective we are minimizing
                  randomization,
                  penalty,
