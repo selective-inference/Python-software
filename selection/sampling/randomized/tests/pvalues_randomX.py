@@ -30,7 +30,7 @@ def pval(vec_state, full_gradient, full_projection,
             linear_part = np.zeros((ndata, ndata))
             linear_part[:nactive,:nactive]  = np.identity(nactive) - (np.outer(np.dot(Sigma, eta), eta) / sigma_eta_sq)
             #saturated model
-            linear_part[nactive:,nactive:] = np.identity(ndata - nactive)
+            #linear_part[nactive:,nactive:] = np.identity(ndata - nactive)
 
             #linear_part = L
 

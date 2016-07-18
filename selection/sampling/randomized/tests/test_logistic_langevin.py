@@ -13,7 +13,7 @@ def test_lasso(s=5, n=200, p=20):
 
     # problem setup
 
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
     print 'true_beta', beta
     nonzero = np.where(beta)[0]
     lam_frac = 1.

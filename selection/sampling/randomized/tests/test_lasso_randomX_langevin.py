@@ -11,7 +11,7 @@ import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 def test_lasso(s=5, n=100, p=20):
 
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
+    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0.1)
     print 'sigma', sigma
     lam_frac = 1.
 
