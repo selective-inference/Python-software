@@ -64,12 +64,11 @@ def projection_cone(p, max_idx, max_sign):
     return _projection
 
 
-def test_2fstep(s=0, n=100, p=10):
+def test_kfstep(k=3, s=0, n=100, p=10):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     epsilon = 0.
     randomization = laplace(loc=0, scale=1.)
-    k = 5
 
     j_seq = np.empty(k, dtype=int)
     s_seq = np.empty(k)
@@ -192,7 +191,7 @@ if __name__ == "__main__":
     for i in range(50):
         print "iteration", i
         # print form_Ab(1,4)
-        pval = test_2fstep()
+        pval = test_kfstep()
         P0.append(pval)
 
     print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
