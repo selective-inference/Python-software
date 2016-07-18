@@ -3,7 +3,7 @@ from scipy.stats import laplace, probplot, uniform
 
 from selection.algorithms.randomized import logistic_instance
 import selection.sampling.randomized.api as randomized
-from pvalues_randomX2 import pval
+from pvalues_randomX import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
