@@ -64,21 +64,21 @@ def projection_cone(p, max_idx, max_sign):
     return _projection
 
 
-def test_kfstep(k=3, s=2, n=100, p=10):
+def test_kfstep(k=4, s=3, n=100, p=10):
 
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
+    X, y, beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0, snr=10)
     epsilon = 0.
+
     randomization = laplace(loc=0, scale=1.)
 
     j_seq = np.empty(k, dtype=int)
     s_seq = np.empty(k)
 
     left = np.ones(p, dtype=bool)
-    obs_statistic = 0
+    obs = 0
 
-    state = np.zeros(n + np.sum([i for i in range(p-k+1,p+1)]))
-
-    state[:n] = y.copy()
+    initial_state = np.zeros(n + np.sum([i for i in range(p-k+1,p+1)]))
+    initial_state[:n] = y.copy()
 
     mat = [np.array((n, ncol)) for ncol in range(p,p-k,-1)]
 
@@ -88,48 +88,47 @@ def test_kfstep(k=3, s=2, n=100, p=10):
 
     for i in range(k):
         X_left = X[:,left]
-        X_used = X[:, ~left] # active set
+        X_selected = X[:, ~left]
         if (np.sum(left)<p):
-            P_perp = np.identity(n) - X_used.dot(np.linalg.pinv(X_used))
-            residual = P_perp.dot(y)
+            P_perp = np.identity(n) - X_selected.dot(np.linalg.pinv(X_selected))
             mat[i] = P_perp.dot(X_left)
         else:
-            residual = y
             mat[i] = X
 
-        T = np.dot(X_left.T,residual)
+        mat_complete = np.zeros((n,p))
+        mat_complete[:, left] = mat[i]
+
+        T = np.dot(mat[i].T, y)
+        T_complete = np.dot(mat_complete.T, y)
+
         obs = np.max(np.abs(T))
-        if (i==k-2):
-            obs_statistic = obs.copy()
+        keep = np.copy(~left)
 
         random_Z = randomization.rvs(T.shape[0])
-
         T_random = T + random_Z
-        state[curr:(curr+p-i)] = T_random # initializing subgradients
+        initial_state[curr:(curr+p-i)] = T_random # initializing subgradients
         curr = curr + p-i
 
-        T_abs = np.abs(T_random)
-        j_seq[i] = np.argmax(T_abs)
+        j_seq[i] = np.argmax(np.abs(T_random))
         s_seq[i] = np.sign(T_random[j_seq[i]])
 
-        def find_index(v, idx):
-            _sumF = 0
-            _sumT = 0
-            for i in range(v.shape[0]):
-                if (v[i] == False):
-                    _sumF = _sumF + 1
-                else:
-                    _sumT = _sumT + 1
-                if _sumT >= idx + 1: break
-            return (_sumT + _sumF - 1)
+        #def find_index(v, idx1):
+        #    _sumF = 0
+        #    _sumT = 0
+        #    idx = idx1+1
+        #    for i in range(v.shape[0]):
+        #        if (v[i] == False):
+        #            _sumF = _sumF + 1
+        #        else:
+        #           _sumT = _sumT + 1
+        #        if _sumT >= idx: break
+        #    return (_sumT + _sumF-1)
 
-        left[find_index(left,j_seq[i])] = False
+        T_complete[left] += random_Z
+        left[np.argmax(np.abs(T_complete))] = False
 
-        if (i==k-2):
-            keep = np.copy(~left)
 
     # conditioning
-
     linear_part = X[:, keep].T
     P = np.dot(linear_part.T, np.linalg.pinv(linear_part).T)
     I = np.identity(linear_part.shape[1])
@@ -168,7 +167,7 @@ def test_kfstep(k=3, s=2, n=100, p=10):
 
 
 
-    sampler = projected_langevin(state,
+    sampler = projected_langevin(initial_state,
                                  full_gradient,
                                  full_projection,
                                  1./p)
@@ -189,10 +188,9 @@ def test_kfstep(k=3, s=2, n=100, p=10):
     samples = np.array(samples)
     Z = samples[:,:n]
 
-
-    pop = np.abs(mat[k-1].T.dot(Z)).max(0)
+    pop = np.abs(mat[k-1].T.dot(Z.T)).max(0)
     fam = discrete_family(pop, np.ones_like(pop))
-    pval = fam.cdf(0, obs_statistic)
+    pval = fam.cdf(0, obs)
     pval = 2 * min(pval, 1 - pval)
 
     #stop
@@ -203,9 +201,8 @@ def test_kfstep(k=3, s=2, n=100, p=10):
 
 if __name__ == "__main__":
     P0 = []
-    for i in range(50):
+    for i in range(100):
         print "iteration", i
-        # print form_Ab(1,4)
         pval = test_kfstep()
         P0.append(pval)
 
