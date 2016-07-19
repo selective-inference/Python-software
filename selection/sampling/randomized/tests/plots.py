@@ -14,7 +14,7 @@ plot_logistic = fig.add_subplot(133)
 
 P0, PA = [], []
 
-for i in range(100):
+for i in range(150):
     print "iteration", i
     p0, pA = test_randomX(s=5, n=200, p=20)
     P0.extend(p0); PA.extend(pA)
@@ -28,7 +28,7 @@ plot_randomX.set_ylim([0,1])
 
 
 P0, PA = [], []
-for i in range(100):
+for i in range(150):
     print "iteration", i
     p0, pA = test_fixedX(s=5, n=100, p=10)
     P0.extend(p0); PA.extend(pA)
@@ -36,7 +36,7 @@ for i in range(100):
 print "fixed X done! mean: ", np.mean(P0), "std: ", np.std(P0)
 probplot(P0, dist=uniform, sparams=(0,1), plot=plot_fixedX, fit=False)
 plot_fixedX.plot([0, 1], color='k', linestyle='-', linewidth=2)
-plot_fixedX.set_title("Lasso fixed X")
+plot_fixedX.set_title(" ")
 plot_fixedX.set_xlim([0,1])
 plot_fixedX.set_ylim([0,1])
 
@@ -49,7 +49,7 @@ for i in range(20):
 print "logistic done! mean: ", np.mean(P0), "std: ", np.std(P0)
 probplot(P0, dist=uniform, sparams=(0,1), plot=plot_logistic, fit=False)
 plot_logistic.plot([0, 1], color='k', linestyle='-', linewidth=2)
-plot_logistic.set_title("Logistic Lasso random X")
+plot_logistic.set_title(" ")
 plot_logistic.set_xlim([0,1])
 plot_logistic.set_ylim([0,1])
 

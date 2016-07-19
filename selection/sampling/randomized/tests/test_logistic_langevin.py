@@ -9,7 +9,7 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=200, p=20):
+def test_lasso(s=5, n=500, p=20):
 
     # problem setup
 
