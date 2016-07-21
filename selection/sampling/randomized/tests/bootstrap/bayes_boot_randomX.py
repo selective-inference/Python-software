@@ -3,13 +3,14 @@ from scipy.stats import laplace, probplot, uniform
 
 from selection.algorithms.lasso import instance
 import selection.sampling.randomized.api as randomized
-from pvalues_randomX2 import pval
+from pvalues_bayes_randomX import pval
+#from pvalues_bayes_ranX_gn import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=200, p=20):
+def test_lasso(s=3, n=100, p=10):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     print 'sigma', sigma
@@ -34,6 +35,8 @@ def test_lasso(s=5, n=200, p=20):
     initial_soln = problem.solve(random_term, **solve_args)
 
     active = (initial_soln != 0)
+    if np.sum(active)==0:
+        return [-1], [-1]
     inactive = ~active
     betaE = initial_soln[active]
     signs = np.sign(betaE)
@@ -51,7 +54,6 @@ def test_lasso(s=5, n=200, p=20):
     full_null = np.zeros(p)
     full_null[nactive:] = N
 
-
     # parametric coveriance estimate
     XE_pinv = np.linalg.pinv(X[:, active])
     mat = np.zeros((nactive+ninactive, n))
@@ -59,7 +61,6 @@ def test_lasso(s=5, n=200, p=20):
     mat[nactive:,:] = X[:, inactive].T.dot(np.identity(n)-X[:, active].dot(XE_pinv))
 
     Sigma_full = mat.dot(mat.T)
-
 
     # non-parametric covariance estimate
     # Sigma_full = loss._Sigma_full
@@ -93,24 +94,33 @@ def test_lasso(s=5, n=200, p=20):
         return np.concatenate((projected_alpha, projected_betaE, projected_cube), 0)
 
 
-
+    Sigma = np.linalg.inv(np.dot(X[:, active].T, X[:, active]))
     null, alt = pval(init_vec_state, full_projection, X, obs_residuals, beta_unpenalized, full_null,
                      signs, lam, epsilon,
-                     nonzero, active,
-                     Sigma_full[:nactive, :nactive])
+                     nonzero, active, Sigma)
+                   #  Sigma_full[:nactive, :nactive])
 
     return null, alt
 
 if __name__ == "__main__":
 
+    plt.figure()
+    plt.xlim([0,1])
+    plt.ylim([0,1])
+    plt.ion()
     P0, PA = [], []
-    for i in range(30):
+    for i in range(50):
         print "iteration", i
         p0, pA = test_lasso()
-        P0.extend(p0); PA.extend(pA)
+        if np.sum(p0)>-1:
+            P0.extend(p0); PA.extend(pA)
+        plt.clf()
+        probplot(P0, dist=uniform, sparams=(0, 1), plot=plt, fit=False)
+        plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
+        plt.pause(0.01)
 
     print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
-    plt.figure()
-    probplot(P0, dist=uniform, sparams=(0,1), plot=plt, fit=True)
-    plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
-    plt.show()
+
+    while True:
+        plt.pause(0.05)
+

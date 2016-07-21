@@ -27,28 +27,26 @@ def pval(vec_state, full_projection,
 
     XEpinv = np.linalg.pinv(X[:, active])
     hessian = np.dot(X.T, X)
-    hessian_reistricted = hessian[:,active]
+    hessian_restricted = hessian[:,active]
+
     mat = XEpinv.dot(np.diag(obs_residuals))
 
-
     if set(nonzero).issubset(active_set):
-        for j, idx in enumerate(active_set):
+        #for j, idx in enumerate(active_set):
 
-            eta = np.zeros(nactive)
-            eta[j] = 1
-            sigma_eta_sq = Sigma[j,j]
+            #eta = np.zeros(nactive)
+            #eta[j] = 1
+            #sigma_eta_sq = Sigma[j,j]
 
-            linear_part = np.identity(nactive) - (np.outer(np.dot(Sigma, eta), eta) / sigma_eta_sq)
-            #P = np.dot(linear_part.T, np.linalg.pinv(linear_part).T)
-            #T_minus_j = np.dot(P, beta_unpenalized)
-            T_minus_j = np.dot(linear_part, beta_unpenalized) # sufficient stat for the nuisance
-            c = np.dot(Sigma, eta) / sigma_eta_sq
-            fixed_part = full_null + hessian_reistricted.dot(T_minus_j)
+            #linear_part = np.identity(nactive) - (np.outer(np.dot(Sigma, eta), eta) / sigma_eta_sq)
 
-            XXc = hessian_reistricted.dot(c)
+            #T_minus_j = np.dot(linear_part, beta_unpenalized) # sufficient stat for the nuisance
+            #c = np.dot(Sigma, eta) / sigma_eta_sq
+            #fixed_part = full_null #+ hessian_reistricted.dot(T_minus_j)
 
-            def full_gradient(vec_state, fixed_part=fixed_part, obs_residuals=obs_residuals,
-                              eta = eta,
+
+
+            def full_gradient(vec_state, obs_residuals=obs_residuals,
                               lam=lam, epsilon=epsilon, active=active, inactive=inactive):
 
                 nactive = np.sum(active)
@@ -58,6 +56,7 @@ def pval(vec_state, full_projection,
                 betaE = vec_state[n:(n + nactive)]
                 cube = vec_state[(n + nactive):]
 
+                p = X.shape[1]
                 beta_full = np.zeros(p)
                 beta_full[active] = betaE
                 subgradient = np.zeros(p)
@@ -66,8 +65,8 @@ def pval(vec_state, full_projection,
 
                 opt_vec = epsilon * beta_full + subgradient
 
-                beta_bar_j_boot = np.inner(mat[j,:],alpha)
-                omega = - fixed_part - XXc * beta_bar_j_boot + np.dot(hessian_reistricted, betaE) + opt_vec
+                beta_bar_boot = mat.dot(alpha)
+                omega = - full_null - np.dot(hessian_restricted, beta_bar_boot)+ np.dot(hessian_restricted, betaE) + opt_vec
 
                 sign_vec = np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
 
@@ -77,10 +76,9 @@ def pval(vec_state, full_projection,
                 _gradient = np.zeros(n + nactive + ninactive)
 
                 # saturated model
-                mat_q = np.outer(XXc, eta).dot(mat)
-                _gradient[:n] = -np.ones(n)+np.dot(mat_q.T,sign_vec)
-                #_gradient[:n] = -alpha + np.dot(mat_q.T, sign_vec)
-
+                mat_q = np.dot(hessian_restricted, mat)
+                _gradient[:n] = -np.ones(n)+mat_q.T.dot(sign_vec)
+                #_gradient[:n] = - alpha + mat_q.T.dot(sign_vec)
                 _gradient[n:(n + nactive)] = - A_restricted.T.dot(sign_vec)
                 _gradient[(n + nactive):] = - lam * sign_vec[inactive]
 
@@ -99,10 +97,9 @@ def pval(vec_state, full_projection,
             samples = []
 
 
-            for i in range(50000):
+            for i in range(6000):
                 sampler.next()
-                if (i>2000):
-                    samples.append(sampler.state.copy())
+                samples.append(sampler.state.copy())
 
             samples = np.array(samples)
             alpha_samples = samples[:, :n]
@@ -110,8 +107,8 @@ def pval(vec_state, full_projection,
             beta_bars = [np.dot(XEpinv, np.diag(obs_residuals)).dot(alpha_samples[i,:].T) for i in range(len(samples))]
 
 
-            pop = [z[j] for z in beta_bars]
-            obs = beta_unpenalized[j]
+            pop = [np.linalg.norm(z) for z in beta_bars]
+            obs = np.linalg.norm(beta_unpenalized)
 
             fam = discrete_family(pop, np.ones_like(pop))
             pval = fam.cdf(0, obs)
@@ -119,10 +116,10 @@ def pval(vec_state, full_projection,
             print "observed: ", obs, "p value: ", pval
             #if pval < 0.0001:
             #    print obs, pval, np.percentile(pop, [0.2,0.4,0.6,0.8,1.0])
-            if idx in nonzero:
-                alt.append(pval)
-            else:
-                null.append(pval)
+            #if idx in nonzero:
+            #    alt.append(pval)
+            #else:
+            #    null.append(pval)
 
 
-    return null, alt
+    return [pval], [0]

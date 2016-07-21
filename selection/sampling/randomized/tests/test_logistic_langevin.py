@@ -22,7 +22,7 @@ def test_lasso(s=5, n=500, p=20):
     loss = randomized.logistic_Xrandom_new(X, y)
     epsilon = 1.
 
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    lam = (n/2)*lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan_logistic(p, lagrange=lam)
 
@@ -31,10 +31,13 @@ def test_lasso(s=5, n=500, p=20):
     # initial solution
 
     problem = rr.simple_problem(loss, penalty)
-    random_term = rr.identity_quadratic(epsilon, 0, random_Z, 0)
+    scale = n
+    random_term = rr.identity_quadratic(epsilon, 0, scale*random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
+
     initial_soln = problem.solve(random_term, **solve_args)
 
+    print initial_soln
     active = (initial_soln != 0)
     inactive = ~active
     betaE = initial_soln[active]
@@ -163,7 +166,7 @@ def test_lasso(s=5, n=500, p=20):
         _gradient[ndata:(ndata + nactive)] = np.dot(A_restricted.T, sign_vec)
         _gradient[(ndata + nactive):] = lam * sign_vec[inactive]
 
-        return _gradient
+        return _gradient/scale
 
 
     null, alt = pval(init_vec_state, full_gradient, full_projection,
