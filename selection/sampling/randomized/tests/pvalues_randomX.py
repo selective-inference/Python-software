@@ -45,7 +45,7 @@ def pval(vec_state, full_gradient, full_projection,
 
             samples = []
 
-            for _ in range(3000):
+            for _ in range(12000):
                 old_state = sampler.state.copy()
                 old_data = old_state[:ndata]
                 sampler.next()

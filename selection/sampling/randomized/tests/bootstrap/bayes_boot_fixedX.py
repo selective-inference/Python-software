@@ -3,14 +3,14 @@ from scipy.stats import laplace, probplot, uniform
 
 from selection.algorithms.lasso import instance
 import selection.sampling.randomized.api as randomized
-from pvalues import pval
+from pvalues_bayes import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
 
 
-def test_lasso(s=3, n=100, p=10):
+def test_lasso(s=5, n=200, p=20):
 
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
+    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0, snr=10)
     print 'sigma', sigma
     lam_frac = 1.
 
@@ -115,7 +115,7 @@ def test_lasso(s=3, n=100, p=10):
 if __name__ == "__main__":
 
     P0, PA = [], []
-    for i in range(100):
+    for i in range(50):
         print "iteration", i
         p0, pA = test_lasso()
         #if (sum(pA)>=0):
