@@ -3,15 +3,15 @@ from scipy.stats import laplace, probplot, uniform
 
 from selection.algorithms.lasso import instance
 import selection.sampling.randomized.api as randomized
-#from pvalues_bayes_randomX import pval
-from pvalues_bayes_ranX_gn import pval
+from pvalues_bayes_randomX import pval
+#from pvalues_bayes_ranX_gn import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=0, n=100, p=10, weights = "normal", randomization_dist = "logistic",
-               Langevin_steps = 50000, burning = 2000):
+def test_lasso(s=5, n=200, p=20, weights = "gumbel", randomization_dist = "logistic",
+               Langevin_steps = 10000, burning = 2000):
 
     """ weights: exponential, normal, gumbel
     randomization_dist: logistic, laplace """
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         print "iteration", i
         p0, pA = test_lasso()
         if np.sum(p0)>-1:
-            P0.append(p0[0]); PA.extend(pA)
+            P0.extend(p0); PA.extend(pA)
         plt.clf()
         plt.xlim([0, 1])
         plt.ylim([0, 1])
