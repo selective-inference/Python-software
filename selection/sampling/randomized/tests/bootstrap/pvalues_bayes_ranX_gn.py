@@ -82,8 +82,21 @@ def pval(vec_state, full_projection,
 
                 # saturated model
                 mat_q = np.dot(hessian_restricted, mat)
+
                 _gradient[:n] = -np.ones(n)+mat_q.T.dot(randomization_derivative)
-                #_gradient[:n] = - alpha + mat_q.T.dot(sign_vec)
+                _gradient[:n] = np.dot(mat_q.T, randomization_derivative)
+
+                if (weights == 'exponential'):
+                    _gradient[:n] -= np.ones(n)
+                if (weights == "normal"):
+                    _gradient[:n] -= alpha
+                if (weights == "gumbel"):
+                    gumbel_beta = np.sqrt(6) / (1.14 * np.pi)
+                    euler = 0.57721
+                    gumbel_mu = -gumbel_beta * euler
+                    gumbel_sigma = 1. / 1.14
+                    _gradient[:n] -= (1. - np.exp(
+                        -(alpha * gumbel_sigma - gumbel_mu) / gumbel_beta)) * gumbel_sigma / gumbel_beta
                 _gradient[n:(n + nactive)] = - A_restricted.T.dot(randomization_derivative)
                 _gradient[(n + nactive):] = - lam * randomization_derivative[inactive]
 
