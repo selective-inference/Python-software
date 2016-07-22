@@ -8,7 +8,7 @@ def pval(vec_state, full_projection,
          nonzero, active,
          Sigma,
          weights, randomization_dist,
-         Langevin_steps, step_size):
+         Langevin_steps, step_size, burning):
     """
     """
 
@@ -115,9 +115,10 @@ def pval(vec_state, full_projection,
             samples = []
 
 
-            for i in range(6000):
+            for i in range(Langevin_steps):
                 sampler.next()
-                samples.append(sampler.state.copy())
+                if (i>burning):
+                    samples.append(sampler.state.copy())
 
             samples = np.array(samples)
             alpha_samples = samples[:, :n]
