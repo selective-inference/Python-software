@@ -90,6 +90,9 @@ def pval(vec_state, full_projection,
                     _gradient[:n] -= np.ones(n)
                 if (weights == "normal"):
                     _gradient[:n] -= alpha
+                if weights == "gamma":
+                    _gradient[:n] = 3. / (alpha + 2) - 2
+
                 if (weights == "gumbel"):
                     gumbel_beta = np.sqrt(6) / (1.14 * np.pi)
                     euler = 0.57721
