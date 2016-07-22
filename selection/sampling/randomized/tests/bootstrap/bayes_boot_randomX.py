@@ -10,20 +10,29 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=3, n=100, p=10):
+def test_lasso(s=0, n=300, p=10, weights = "gumbel", randomization_dist = "logistic",
+               Langevin_steps = 10000):
+
+    """ weights: exponential, normal, gumbel
+    randomization_dist: logistic, laplace """
+
+    step_size = 1./p
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     print 'sigma', sigma
     lam_frac = 1.
 
-    randomization = laplace(loc=0, scale=1.)
+    if randomization_dist == "laplace":
+        randomization = laplace(loc=0, scale=1.)
+        random_Z = randomization.rvs(p)
+    if randomization_dist == "logistic":
+        random_Z = np.random.logistic(loc=0, scale = 1, size = p)
+
     loss = lasso_randomX.lasso_randomX(X, y)
 
-    random_Z = randomization.rvs(p)
     epsilon = 1.
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
-    random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
 
     # initial solution
@@ -67,7 +76,11 @@ def test_lasso(s=3, n=100, p=10):
     # Sigma_full_inv = np.linalg.inv(Sigma_full)
 
     init_vec_state = np.zeros(n+nactive+ninactive)
-    init_vec_state[:n] = np.ones(n)
+    if weights =="exponential":
+        init_vec_state[:n] = np.ones(n)
+    else:
+        init_vec_state[:n] = np.zeros(n)
+
     init_vec_state[n:(n+nactive)] = betaE
     init_vec_state[(n+nactive):] = cube
 
@@ -83,7 +96,8 @@ def test_lasso(s=3, n=100, p=10):
         projected_betaE = betaE.copy()
         projected_cube = np.zeros_like(cube)
 
-        projected_alpha = np.clip(alpha, 0, np.inf)
+        if weights == "exponential":
+            projected_alpha = np.clip(alpha, 0, np.inf)
 
         for i in range(nactive):
             if (projected_betaE[i] * signs[i] < 0):
@@ -97,7 +111,9 @@ def test_lasso(s=3, n=100, p=10):
     Sigma = np.linalg.inv(np.dot(X[:, active].T, X[:, active]))
     null, alt = pval(init_vec_state, full_projection, X, obs_residuals, beta_unpenalized, full_null,
                      signs, lam, epsilon,
-                     nonzero, active, Sigma)
+                     nonzero, active, Sigma,
+                     weights, randomization_dist,
+                     Langevin_steps, step_size)
                    #  Sigma_full[:nactive, :nactive])
 
     return null, alt
@@ -105,8 +121,6 @@ def test_lasso(s=3, n=100, p=10):
 if __name__ == "__main__":
 
     plt.figure()
-    plt.xlim([0,1])
-    plt.ylim([0,1])
     plt.ion()
     P0, PA = [], []
     for i in range(50):
@@ -115,6 +129,8 @@ if __name__ == "__main__":
         if np.sum(p0)>-1:
             P0.extend(p0); PA.extend(pA)
         plt.clf()
+        plt.xlim([0, 1])
+        plt.ylim([0, 1])
         probplot(P0, dist=uniform, sparams=(0, 1), plot=plt, fit=False)
         plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
         plt.pause(0.01)
