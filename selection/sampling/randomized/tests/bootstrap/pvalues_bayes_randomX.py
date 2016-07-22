@@ -8,7 +8,7 @@ def pval(vec_state, full_projection,
          nonzero, active,
          Sigma,
          weights, randomization_dist,
-         Langevin_steps, step_size):
+         Langevin_steps, step_size, burning):
     """
     """
 
@@ -35,6 +35,8 @@ def pval(vec_state, full_projection,
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
+            if j>0:
+                break
 
             eta = np.zeros(nactive)
             eta[j] = 1
@@ -89,6 +91,8 @@ def pval(vec_state, full_projection,
                     _gradient[:n] -= np.ones(n)
                 if (weights=="normal"):
                     _gradient[:n] -= alpha
+                if weights == "gamma":
+                    _gradient[:n] = 3./(alpha+2)-2
                 if (weights == "gumbel"):
                        gumbel_beta = np.sqrt(6)/(1.14*np.pi)
                        euler = 0.57721
@@ -115,7 +119,7 @@ def pval(vec_state, full_projection,
 
             for i in range(Langevin_steps):
                 sampler.next()
-                if (i>1000):
+                if (i>burning):
                     samples.append(sampler.state.copy())
 
             samples = np.array(samples)
