@@ -10,7 +10,7 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=0, n=100, p=20, weights = "normal", randomization_dist = "logistic",
+def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logistic",
                Langevin_steps = 6000, burning = 2000):
 
     """ weights: exponential, gamma, normal, gumbel
