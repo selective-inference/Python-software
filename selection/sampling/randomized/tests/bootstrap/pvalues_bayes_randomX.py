@@ -115,7 +115,7 @@ def pval(vec_state, full_projection,
 
             for i in range(Langevin_steps):
                 sampler.next()
-                if (i>3000):
+                if (i>1000):
                     samples.append(sampler.state.copy())
 
             samples = np.array(samples)

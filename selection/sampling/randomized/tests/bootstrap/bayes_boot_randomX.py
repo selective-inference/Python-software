@@ -10,8 +10,8 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=0, n=300, p=10, weights = "gumbel", randomization_dist = "logistic",
-               Langevin_steps = 10000):
+def test_lasso(s=5, n=50, p=10, weights = "gumbel", randomization_dist = "logistic",
+               Langevin_steps = 6000):
 
     """ weights: exponential, normal, gumbel
     randomization_dist: logistic, laplace """
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     plt.figure()
     plt.ion()
     P0, PA = [], []
-    for i in range(50):
+    for i in range(100):
         print "iteration", i
         p0, pA = test_lasso()
         if np.sum(p0)>-1:
