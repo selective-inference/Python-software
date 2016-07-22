@@ -35,8 +35,6 @@ def pval(vec_state, full_projection,
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
-            if j>0:
-                break
 
             eta = np.zeros(nactive)
             eta[j] = 1
