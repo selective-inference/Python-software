@@ -6,7 +6,9 @@ from selection.sampling.langevin import projected_langevin
 def pval(vec_state, full_projection,
          X, obs_residuals, beta_unpenalized, full_null, signs, lam, epsilon,
          nonzero, active,
-         Sigma):
+         Sigma,
+         weights, randomization_dist,
+         Langevin_steps, step_size):
     """
     """
 
@@ -68,7 +70,10 @@ def pval(vec_state, full_projection,
                 beta_bar_boot = mat.dot(alpha)
                 omega = - full_null - np.dot(hessian_restricted, beta_bar_boot)+ np.dot(hessian_restricted, betaE) + opt_vec
 
-                sign_vec = np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
+                if randomization_dist == "laplace":
+                    randomization_derivative = np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
+                if randomization_dist == "logistic":
+                    randomization_derivative = -(np.exp(-omega) - 1) / (np.exp(-omega) + 1)
 
                 A = hessian + epsilon * np.identity(nactive + ninactive)
                 A_restricted = A[:, active]
@@ -77,10 +82,10 @@ def pval(vec_state, full_projection,
 
                 # saturated model
                 mat_q = np.dot(hessian_restricted, mat)
-                _gradient[:n] = -np.ones(n)+mat_q.T.dot(sign_vec)
+                _gradient[:n] = -np.ones(n)+mat_q.T.dot(randomization_derivative)
                 #_gradient[:n] = - alpha + mat_q.T.dot(sign_vec)
-                _gradient[n:(n + nactive)] = - A_restricted.T.dot(sign_vec)
-                _gradient[(n + nactive):] = - lam * sign_vec[inactive]
+                _gradient[n:(n + nactive)] = - A_restricted.T.dot(randomization_derivative)
+                _gradient[(n + nactive):] = - lam * randomization_derivative[inactive]
 
                 # selected model
                 # _gradient[:nactive] = - (np.dot(Sigma_T_inv, data[:nactive]) + np.dot(hessian[:, active].T, sign_vec))

@@ -6,7 +6,9 @@ from selection.sampling.langevin import projected_langevin
 def pval(vec_state, full_projection,
          X, obs_residuals, beta_unpenalized, full_null, signs, lam, epsilon,
          nonzero, active,
-         Sigma):
+         Sigma,
+         weights, randomization_dist,
+         Langevin_steps, step_size):
     """
     """
 
@@ -69,8 +71,10 @@ def pval(vec_state, full_projection,
                 beta_bar_j_boot = np.inner(mat[j,:],alpha)
                 omega = - fixed_part - XXc * beta_bar_j_boot + np.dot(hessian_reistricted, betaE) + opt_vec
 
-                sign_vec = np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
-
+                if randomization_dist=="laplace":
+                    randomization_derivative = np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
+                if randomization_dist=="logistic":
+                    randomization_derivative = -(np.exp(-omega)-1)/(np.exp(-omega)+1)
                 A = hessian + epsilon * np.identity(nactive + ninactive)
                 A_restricted = A[:, active]
 
@@ -78,11 +82,21 @@ def pval(vec_state, full_projection,
 
                 # saturated model
                 mat_q = np.outer(XXc, eta).dot(mat)
-                _gradient[:n] = -np.ones(n)+np.dot(mat_q.T,sign_vec)
-                #_gradient[:n] = -alpha + np.dot(mat_q.T, sign_vec)
 
-                _gradient[n:(n + nactive)] = - A_restricted.T.dot(sign_vec)
-                _gradient[(n + nactive):] = - lam * sign_vec[inactive]
+                _gradient[:n] = np.dot(mat_q.T, randomization_derivative)
+
+                if (weights == 'exponential'):
+                    _gradient[:n] -= np.ones(n)
+                if (weights=="normal"):
+                    _gradient[:n] -= alpha
+                if (weights == "gumbel"):
+                       gumbel_beta = np.sqrt(6)/(1.14*np.pi)
+                       euler = 0.57721
+                       gumbel_mu = -gumbel_beta * euler
+                       gumbel_sigma = 1./1.14
+                       _gradient[:n] -= (1.-np.exp(-(alpha*gumbel_sigma-gumbel_mu)/gumbel_beta))*gumbel_sigma/gumbel_beta
+                _gradient[n:(n + nactive)] = - A_restricted.T.dot(randomization_derivative)
+                _gradient[(n + nactive):] = - lam * randomization_derivative[inactive]
 
                 # selected model
                 # _gradient[:nactive] = - (np.dot(Sigma_T_inv, data[:nactive]) + np.dot(hessian[:, active].T, sign_vec))
@@ -94,14 +108,14 @@ def pval(vec_state, full_projection,
             sampler = projected_langevin(vec_state.copy(),
                                          full_gradient,
                                          full_projection,
-                                         1. / p)
+                                         step_size)
 
             samples = []
 
 
-            for i in range(50000):
+            for i in range(Langevin_steps):
                 sampler.next()
-                if (i>2000):
+                if (i>3000):
                     samples.append(sampler.state.copy())
 
             samples = np.array(samples)
