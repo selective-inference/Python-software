@@ -24,7 +24,7 @@ class logistic_Xrandom_new(selective_loss):
     def smooth_objective(self, beta, mode='both',
                          check_feasibility=False):
 
-        _loss = logistic_loss(self.X, self.y, coef=self.X.shape[0]/2.)
+        _loss = logistic_loss(self.X, self.y, coef=1.)
 
         return _loss.smooth_objective(beta, mode=mode, check_feasibility=check_feasibility)
 
@@ -115,13 +115,14 @@ class logistic_Xrandom_new(selective_loss):
             _mean = _mean_cum / float(nsample)
             self._cov -= np.multiply.outer(_mean, _mean)
 
-            self._cov_inv = np.linalg.inv(self._cov)
+            return self._cov
+            #self._cov_inv = np.linalg.inv(self._cov)
 
 
-            self._cov_beta_bar = self._cov[:nactive][:,:nactive]
-            self._inv_cov_beta_bar = np.linalg.inv(self._cov_beta_bar)
+            #self._cov_beta_bar = self._cov[:nactive][:,:nactive]
+            #self._inv_cov_beta_bar = np.linalg.inv(self._cov_beta_bar)
 
-            print "beta_bar ", np.diag(self._cov_beta_bar)
+            #print "beta_bar ", np.diag(self._cov_beta_bar)
             #self._cov_T = np.dot(self.X[:, self.active].T, np.dot(W, self.X[:, self.active]))
             #self._cov_T_inv = np.linalg.inv(self._cov_T)
             #self.L = np.linalg.cholesky(self._cov)
