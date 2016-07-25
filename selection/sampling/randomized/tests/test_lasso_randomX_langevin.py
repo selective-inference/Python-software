@@ -9,7 +9,7 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=100, p=20, covariance_estimate = "nonparametric",
+def test_lasso(s=5, n=200, p=20, covariance_estimate = "parametric",
                Langevin_steps = 7000, burning=0):
 
     step_size = 1./p
@@ -59,7 +59,6 @@ def test_lasso(s=5, n=100, p=20, covariance_estimate = "nonparametric",
     init_vec_state[ndata:(ndata+nactive)] = betaE
     init_vec_state[(ndata+nactive):] = cube
 
-
     def bootstrap_covariance(X=X, y=y, active=active, beta_unpenalized=beta_unpenalized):
         n, p = X.shape
         nsample = 5000
@@ -68,14 +67,13 @@ def test_lasso(s=5, n=100, p=20, covariance_estimate = "nonparametric",
         _mean_cum_data = 0
         _cov_data = np.zeros((p, p))
 
-
         for _ in range(nsample):
             indices = np.random.choice(n, size=(n,), replace=True)
             y_star = y[indices]
             X_star = X[indices]
 
             # Z_star = np.dot(X_star.T, y_star - pi(X_star))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
-            Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:, active], beta_unpenalized))
+            Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:,active], beta_unpenalized))
 
             mat_XEstar = np.linalg.inv(np.dot(X_star[:, active].T, X_star[:, active]))  # (X^{*T}_E X^*_E)^{-1}
             mat_star = np.dot(np.dot(X_star[:, inactive].T, X_star[:, active]), mat_XEstar)
@@ -86,14 +84,13 @@ def test_lasso(s=5, n=100, p=20, covariance_estimate = "nonparametric",
             _mean_cum_data += data_star
             _cov_data += np.multiply.outer(data_star, data_star)
 
-
         _cov_data /= nsample
         _mean_cum_data = _mean_cum_data / nsample
         _cov_data -= np.multiply.outer(_mean_cum_data, _mean_cum_data)
 
         return _cov_data
 
-    if covariance_estimate=="nonparametrid":
+    if covariance_estimate=="nonparametric":
         Sigma_full = bootstrap_covariance()
     else:
         # parametric coveriance estimate
