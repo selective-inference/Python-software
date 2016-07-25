@@ -9,8 +9,8 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=200, p=20, covariance_estimate = "parametric",
-               Langevin_steps = 7000, burning=0):
+def test_lasso(s=5, n=200, p=20, covariance_estimate = "nonparametric",
+               Langevin_steps = 10000, burning=0):
 
     step_size = 1./p
 
