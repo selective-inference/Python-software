@@ -10,8 +10,9 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logistic",
-               Langevin_steps = 6000, burning = 2000):
+def test_lasso(s=0, n=100, p=10, weights = "gumbel",
+               randomization_dist = "logistic", randomization_scale = 0.6,
+               Langevin_steps = 10000, burning = 3000):
 
     """ weights: exponential, gamma, normal, gumbel
     randomization_dist: logistic, laplace """
@@ -27,7 +28,10 @@ def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logist
         random_Z = randomization.rvs(p)
     if randomization_dist == "logistic":
         random_Z = np.random.logistic(loc=0, scale = 1, size = p)
+    if randomization_dist== "normal":
+        random_Z = np.random.standard_normal(p)
 
+    print 'randomization', random_Z*randomization_scale
     loss = lasso_randomX.lasso_randomX(X, y)
 
     epsilon = 1.
@@ -39,7 +43,7 @@ def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logist
 
     problem = rr.simple_problem(loss, penalty)
 
-    random_term = rr.identity_quadratic(epsilon, 0, -random_Z, 0)
+    random_term = rr.identity_quadratic(epsilon, 0, -randomization_scale*random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_soln = problem.solve(random_term, **solve_args)
 
@@ -51,6 +55,7 @@ def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logist
     signs = np.sign(betaE)
 
     initial_grad = -np.dot(X.T, y - np.dot(X, initial_soln))
+    print 'initial_gradient', initial_grad
     subgradient = random_Z - initial_grad - epsilon * initial_soln
     cube = np.divide(subgradient[inactive], lam)
 
@@ -58,6 +63,7 @@ def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logist
     ninactive = cube.shape[0]
 
     beta_unpenalized = np.linalg.lstsq(X[:, active], y)[0]
+    print 'beta_OLS onto E', beta_unpenalized
     obs_residuals = y - np.dot(X[:, active], beta_unpenalized)  # y-X_E\bar{\beta}^E
     N = np.dot(X[:, inactive].T, obs_residuals)  # X_{-E}^T(y-X_E\bar{\beta}_E), null statistic
     full_null = np.zeros(p)
@@ -81,6 +87,8 @@ def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logist
     else:
         init_vec_state[:n] = np.zeros(n)
 
+    #init_vec_state[:n] = np.random.standard_normal(n)
+    #init_vec_state[:n] = np.ones(n)
     init_vec_state[n:(n+nactive)] = betaE
     init_vec_state[(n+nactive):] = cube
 
@@ -114,7 +122,7 @@ def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logist
     null, alt = pval(init_vec_state, full_projection, X, obs_residuals, beta_unpenalized, full_null,
                      signs, lam, epsilon,
                      nonzero, active, Sigma,
-                     weights, randomization_dist,
+                     weights, randomization_dist, randomization_scale,
                      Langevin_steps, step_size, burning)
                    #  Sigma_full[:nactive, :nactive])
 
@@ -122,10 +130,12 @@ def test_lasso(s=0, n=100, p=20, weights = "gamma", randomization_dist = "logist
 
 if __name__ == "__main__":
 
+    np.random.seed(2)
+
     plt.figure()
     plt.ion()
     P0, PA = [], []
-    for i in range(100):
+    for i in range(500):
         print "iteration", i
         p0, pA = test_lasso()
         if np.sum(p0)>-1:
@@ -133,7 +143,7 @@ if __name__ == "__main__":
         plt.clf()
         plt.xlim([0, 1])
         plt.ylim([0, 1])
-        probplot(P0, dist=uniform, sparams=(0, 1), plot=plt, fit=False)
+        probplot(P0, dist=uniform, sparams=(0, 1), plot=plt,fit=False)
         plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
         plt.pause(0.01)
 
@@ -141,4 +151,5 @@ if __name__ == "__main__":
 
     while True:
         plt.pause(0.05)
+    plt.savefig('bayes.pdf')
 

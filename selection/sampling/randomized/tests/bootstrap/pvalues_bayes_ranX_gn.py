@@ -7,7 +7,7 @@ def pval(vec_state, full_projection,
          X, obs_residuals, beta_unpenalized, full_null, signs, lam, epsilon,
          nonzero, active,
          Sigma,
-         weights, randomization_dist,
+         weights, randomization_dist, randomization_scale,
          Langevin_steps, step_size, burning):
     """
     """
@@ -71,7 +71,7 @@ def pval(vec_state, full_projection,
                 omega = - full_null - np.dot(hessian_restricted, beta_bar_boot)+ np.dot(hessian_restricted, betaE) + opt_vec
 
                 if randomization_dist == "laplace":
-                    randomization_derivative = np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
+                    randomization_derivative = np.sign(omega)/randomization_scale  # sign(w), w=grad+\epsilon*beta+lambda*u
                 if randomization_dist == "logistic":
                     randomization_derivative = -(np.exp(-omega) - 1) / (np.exp(-omega) + 1)
 

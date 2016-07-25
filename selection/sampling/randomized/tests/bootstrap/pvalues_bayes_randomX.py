@@ -7,7 +7,7 @@ def pval(vec_state, full_projection,
          X, obs_residuals, beta_unpenalized, full_null, signs, lam, epsilon,
          nonzero, active,
          Sigma,
-         weights, randomization_dist,
+         weights, randomization_dist, randomization_scale,
          Langevin_steps, step_size, burning):
     """
     """
@@ -35,7 +35,8 @@ def pval(vec_state, full_projection,
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
-
+            if j>0:
+                break
             eta = np.zeros(nactive)
             eta[j] = 1
             sigma_eta_sq = Sigma[j,j]
@@ -72,9 +73,14 @@ def pval(vec_state, full_projection,
                 omega = - fixed_part - XXc * beta_bar_j_boot + np.dot(hessian_reistricted, betaE) + opt_vec
 
                 if randomization_dist=="laplace":
-                    randomization_derivative = np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
+                    randomization_derivative = np.sign(omega)/randomization_scale  # sign(w), w=grad+\epsilon*beta+lambda*u
                 if randomization_dist=="logistic":
-                    randomization_derivative = -(np.exp(-omega)-1)/(np.exp(-omega)+1)
+                    omega_scaled = omega/randomization_scale
+                    randomization_derivative = -(np.exp(-omega_scaled)-1)/(np.exp(-omega_scaled)+1)
+                    randomization_derivative /= randomization_scale
+                if randomization_dist=="normal":
+                    randomization_derivative = omega/(randomization_scale**2)
+
                 A = hessian + epsilon * np.identity(nactive + ninactive)
                 A_restricted = A[:, active]
 
@@ -117,7 +123,7 @@ def pval(vec_state, full_projection,
 
             for i in range(Langevin_steps):
                 sampler.next()
-                if (i>burning):
+                if (i>burning) and (i % 3==0):
                     samples.append(sampler.state.copy())
 
             samples = np.array(samples)
