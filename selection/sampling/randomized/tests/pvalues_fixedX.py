@@ -5,7 +5,8 @@ from selection.sampling.langevin import projected_langevin
 
 def pval(vec_state, full_gradient, full_projection,
          X, y,
-         nonzero, active):
+         nonzero, active,
+         Langevin_steps, burning, step_size):
     """
     """
     
@@ -39,19 +40,20 @@ def pval(vec_state, full_gradient, full_projection,
             sampler = projected_langevin(vec_state.copy(),
                                          full_gradient,
                                          full_projection,
-                                         1. / p)
+                                         step_size)
 
             samples = []
 
-            for _ in range(6000):
-                old_state = sampler.state.copy()
-                old_data = old_state[:ndata]
-                sampler.next()
-                new_state = sampler.state.copy()
-                new_data = new_state[:ndata]
-                new_data = np.dot(P, old_data) + np.dot(R, new_data)
-                sampler.state[:ndata] = new_data
-                samples.append(sampler.state.copy())
+            for i in range(Langevin_steps):
+                if (i>burning):
+                    old_state = sampler.state.copy()
+                    old_data = old_state[:ndata]
+                    sampler.next()
+                    new_state = sampler.state.copy()
+                    new_data = new_state[:ndata]
+                    new_data = np.dot(P, old_data) + np.dot(R, new_data)
+                    sampler.state[:ndata] = new_data
+                    samples.append(sampler.state.copy())
 
             samples = np.array(samples)
             data_samples = samples[:, :n]

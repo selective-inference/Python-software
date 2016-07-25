@@ -9,8 +9,9 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=500, p=20):
+def test_lasso(s=5, n=500, p=20, Langevin_steps=10000, burning=0):
 
+    step_size = 1./p
     # problem setup
 
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)

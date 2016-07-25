@@ -5,7 +5,7 @@ from test_lasso_randomX_langevin import test_lasso as test_randomX
 from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
 
-np.random.seed(5)
+np.random.seed(1)
 
 fig = plt.figure()
 plot_randomX = fig.add_subplot(131)

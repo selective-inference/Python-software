@@ -9,7 +9,10 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=100, p=20):
+def test_lasso(s=5, n=100, p=20, covariance_estimate = "nonparametric",
+               Langevin_steps = 7000, burning=0):
+
+    step_size = 1./p
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0.1)
     print 'sigma', sigma
@@ -24,20 +27,6 @@ def test_lasso(s=5, n=100, p=20):
 
     random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
-
-    #sampler1 = randomized.selective_sampler_MH_lan(loss,
-    #                                           random_Z,
-    #                                           epsilon,
-    #                                           randomization,
-    #                                          penalty)
-
-    #loss_args = {'mean': np.zeros(n),
-    #             'sigma': sigma,
-    #             'linear_part':np.identity(y.shape[0]),
-    #             'value': 0}
-
-    #sampler1.setup_sampling(y, loss_args=loss_args)
-    # data, opt_vars = sampler1.state
 
     # initial solution
 
@@ -61,25 +50,62 @@ def test_lasso(s=5, n=100, p=20):
     ndata = data.shape[0];  nactive = betaE.shape[0];  ninactive = cube.shape[0]
 
 
-    # parametric coveriance estimate
-    XE_pinv = np.linalg.pinv(X[:, active])
-    mat = np.zeros((nactive+ninactive, n))
-    mat[:nactive,:] = XE_pinv
-    mat[nactive:,:] = X[:, inactive].T.dot(np.identity(n)-X[:, active].dot(XE_pinv))
-
-    Sigma_full = mat.dot(mat.T)
-    Sigma_full_inv= np.linalg.inv(Sigma_full)
-
-
     # non-parametric covariance estimate
     #Sigma_full = loss._Sigma_full
     #Sigma_full_inv = np.linalg.inv(Sigma_full)
-
 
     init_vec_state = np.zeros(ndata+nactive+ninactive)
     init_vec_state[:ndata] = data
     init_vec_state[ndata:(ndata+nactive)] = betaE
     init_vec_state[(ndata+nactive):] = cube
+
+
+    def bootstrap_covariance(X=X, y=y, active=active, beta_unpenalized=beta_unpenalized):
+        n, p = X.shape
+        nsample = 5000
+        nactive = np.sum(active)
+
+        _mean_cum_data = 0
+        _cov_data = np.zeros((p, p))
+
+
+        for _ in range(nsample):
+            indices = np.random.choice(n, size=(n,), replace=True)
+            y_star = y[indices]
+            X_star = X[indices]
+
+            # Z_star = np.dot(X_star.T, y_star - pi(X_star))  # X^{*T}(y^*-X^{*T}_E\bar{\beta}_E)
+            Z_star = np.dot(X_star.T, y_star - np.dot(X_star[:, active], beta_unpenalized))
+
+            mat_XEstar = np.linalg.inv(np.dot(X_star[:, active].T, X_star[:, active]))  # (X^{*T}_E X^*_E)^{-1}
+            mat_star = np.dot(np.dot(X_star[:, inactive].T, X_star[:, active]), mat_XEstar)
+            data_star = np.zeros(p)
+            data_star[nactive:] = Z_star[inactive,] - np.dot(mat_star, Z_star[active,])
+            data_star[:nactive] = np.dot(mat_XEstar, Z_star[active,])
+
+            _mean_cum_data += data_star
+            _cov_data += np.multiply.outer(data_star, data_star)
+
+
+        _cov_data /= nsample
+        _mean_cum_data = _mean_cum_data / nsample
+        _cov_data -= np.multiply.outer(_mean_cum_data, _mean_cum_data)
+
+        return _cov_data
+
+    if covariance_estimate=="nonparametrid":
+        Sigma_full = bootstrap_covariance()
+    else:
+        # parametric coveriance estimate
+        XE_pinv = np.linalg.pinv(X[:, active])
+        mat = np.zeros((nactive + ninactive, n))
+        mat[:nactive, :] = XE_pinv
+        mat[nactive:, :] = X[:, inactive].T.dot(np.identity(n) - X[:, active].dot(XE_pinv))
+
+        Sigma_full = mat.dot(mat.T)
+        Sigma_full_inv = np.linalg.inv(Sigma_full)
+
+    Sigma_full_inv = np.linalg.inv(Sigma_full)
 
 
     def full_projection(vec_state, penalty=penalty,
@@ -141,22 +167,39 @@ def test_lasso(s=5, n=100, p=20):
         return _gradient
 
 
+
+
     null, alt = pval(init_vec_state, full_gradient, full_projection,
-                      Sigma_full[:nactive, :nactive], data, nonzero, active)
+                      Sigma_full[:nactive, :nactive], data, nonzero, active,
+                      Langevin_steps, burning, step_size)
 
     return null, alt
 
 if __name__ == "__main__":
 
     P0, PA = [], []
+    plt.figure()
+    plt.ion()
+
     for i in range(20):
         print "iteration", i
         p0, pA = test_lasso()
         P0.extend(p0); PA.extend(pA)
+        plt.clf()
+        plt.xlim([0, 1])
+        plt.ylim([0, 1])
+        probplot(P0, dist=uniform, sparams=(0, 1), plot=plt,fit=False)
+        plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
+        plt.pause(0.01)
+
 
     print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
     plt.figure()
     probplot(P0, dist=uniform, sparams=(0,1), plot=plt, fit=True)
     plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
     plt.suptitle("LASSO with random X")
+
+    while True:
+        plt.pause(0.05)
+
     plt.show()
