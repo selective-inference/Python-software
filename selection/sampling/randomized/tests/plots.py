@@ -14,9 +14,9 @@ plot_logistic = fig.add_subplot(133)
 
 P0, PA = [], []
 
-for i in range(150):
+for i in range(100):
     print "iteration", i
-    p0, pA = test_randomX(s=5, n=200, p=20)
+    p0, pA = test_randomX(s=5, n=200, p=20, Langevin_steps=7000)
     P0.extend(p0); PA.extend(pA)
 
 print "random X done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -28,9 +28,9 @@ plot_randomX.set_ylim([0,1])
 
 
 P0, PA = [], []
-for i in range(150):
+for i in range(100):
     print "iteration", i
-    p0, pA = test_fixedX(s=5, n=100, p=10)
+    p0, pA = test_fixedX(s=5, n=200, p=20, Langevin_steps=7000)
     P0.extend(p0); PA.extend(pA)
 
 print "fixed X done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -42,9 +42,9 @@ plot_fixedX.set_ylim([0,1])
 
 
 P0, PA = [], []
-for i in range(20):
+for i in range(100):
     print "iteration", i
-    p0, pA = test_logistic(s=5, n=200, p=20)
+    p0, pA = test_logistic(s=5, n=200, p=20, Langevin_steps=7000)
     P0.extend(p0); PA.extend(pA)
 print "logistic done! mean: ", np.mean(P0), "std: ", np.std(P0)
 probplot(P0, dist=uniform, sparams=(0,1), plot=plot_logistic, fit=False)

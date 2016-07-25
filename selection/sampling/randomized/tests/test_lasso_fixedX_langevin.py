@@ -117,7 +117,8 @@ def test_lasso(s=5, n=100, p=20, Langevin_steps=7000, burning=0):
 
 
     null, alt = pval(init_vec_state, full_gradient, full_projection,
-                      X, y, nonzero, active)
+                      X, y, nonzero, active,
+                     Langevin_steps, burning, step_size)
 
     return null, alt
 
