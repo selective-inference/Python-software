@@ -28,6 +28,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=0,
     if randomization_dist=="logistic":
         random_Z = np.random.logistic(loc=0, scale=1,size=p)
     loss = randomized.logistic_Xrandom_new(X, y)
+    #epsilon = 1./np.sqrt(n)
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
