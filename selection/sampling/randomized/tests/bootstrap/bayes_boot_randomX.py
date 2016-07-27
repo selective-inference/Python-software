@@ -10,14 +10,14 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=0, n=200, p=10, weights = "normal",
+def test_lasso(s=0, n=50, p=10, weights = "neutral",
                randomization_dist = "logistic", randomization_scale = 1,
-               Langevin_steps = 10000, burning = 1000):
+               Langevin_steps = 10000, burning = 0):
 
     """ weights: exponential, gamma, normal, gumbel
     randomization_dist: logistic, laplace """
 
-    step_size = 1./p
+    step_size = 1./n
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     print 'sigma', sigma
