@@ -6,9 +6,9 @@ from selection.sampling.langevin import projected_langevin
 from selection.distributions.discrete_family import discrete_family
 
 
-def test_simple_problem(n=10, randomization_dist = "logistic", threshold =1,
-                        weights="gumbel",
-                        Langevin_steps=10000, burning = 1000):
+def test_simple_problem(n=100, randomization_dist = "logistic", threshold =1,
+                        weights="normal",
+                        Langevin_steps=6000, burning = 1000):
     step_size = 1./n
 
     y = np.random.standard_normal(n)
@@ -42,10 +42,15 @@ def test_simple_problem(n=10, randomization_dist = "logistic", threshold =1,
         if weights == "logistic":
             gradient = np.divide(np.exp(-state)-1, np.exp(-state)+1)
 
-        omega = -np.inner(centered_y, state)/np.sqrt(n) + threshold
+        y_cs = centered_y / np.sqrt(n)
+        if weights =="neutral":
+            gradient = - np.inner(state, y_cs) * y_cs
+
+        omega = -np.inner(y_cs, state) + threshold
         if randomization_dist=="logistic":
             randomization_derivative = -1./(1+np.exp(-omega))
-        gradient -= np.inner(centered_y, randomization_derivative)/np.sqrt(n)
+
+        gradient -= y_cs * randomization_derivative
 
         return gradient
 
@@ -54,7 +59,6 @@ def test_simple_problem(n=10, randomization_dist = "logistic", threshold =1,
                                  full_gradient,
                                  full_projection,
                                  step_size)
-
 
     samples = []
 
