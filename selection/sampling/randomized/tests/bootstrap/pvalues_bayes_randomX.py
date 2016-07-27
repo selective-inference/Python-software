@@ -128,12 +128,14 @@ def pval(vec_state, full_projection,
 
             samples = np.array(samples)
             alpha_samples = samples[:, :n]
+            beta_samples = samples[:,n:(n+nactive)]
 
             beta_bars = [np.dot(XEpinv, np.diag(obs_residuals)).dot(alpha_samples[i,:].T) for i in range(len(samples))]
-
-
             pop = [z[j] for z in beta_bars]
             obs = beta_unpenalized[j]
+
+            #pop = [np.linalg.norm(beta_samples[i,:]) for i in range(beta_samples.shape[0])]
+            #obs = np.linalg.norm(vec_state[n:(n+nactive)])
 
             fam = discrete_family(pop, np.ones_like(pop))
             pval = fam.cdf(0, obs)
