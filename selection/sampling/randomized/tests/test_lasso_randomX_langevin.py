@@ -14,15 +14,17 @@ def test_lasso(s=5, n=200, p=20, covariance_estimate = "nonparametric",
 
     step_size = 1./p
 
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0.1)
-    print 'sigma', sigma
+    X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0.1)
+    #print 'true beta', true_beta
     lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
     loss = lasso_randomX.lasso_randomX(X, y)
 
     random_Z = randomization.rvs(p)
+    #epsilon = 1./np.sqrt(n)
     epsilon = 1.
+
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
     random_Z = randomization.rvs(p)
