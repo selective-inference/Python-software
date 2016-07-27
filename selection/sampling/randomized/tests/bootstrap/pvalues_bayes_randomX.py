@@ -103,6 +103,10 @@ def pval(vec_state, full_projection,
                        gumbel_mu = -gumbel_beta * euler
                        gumbel_sigma = 1./1.14
                        _gradient[:n] -= (1.-np.exp(-(alpha*gumbel_sigma-gumbel_mu)/gumbel_beta))*gumbel_sigma/gumbel_beta
+
+                if weights == "neutral":
+                    _gradient[:n] -= (beta_bar_j_boot/sigma_eta_sq)*np.dot(mat.T, eta)
+
                 _gradient[n:(n + nactive)] = - A_restricted.T.dot(randomization_derivative)
                 _gradient[(n + nactive):] = - lam * randomization_derivative[inactive]
 
