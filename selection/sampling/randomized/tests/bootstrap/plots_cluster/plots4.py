@@ -18,7 +18,10 @@ for noise in ["normal", "uniform", "laplace", "logistic"]:
 
     for i in range(200):
         print "iteration", i, noise
-        p0, pA = test_lasso(s=0, n=100, p=20, noise = noise)
+        p0, pA = test_lasso(s=0, n=100, p=10, weights="gumbel",
+                            randomization_dist="logistic", randomization_scale=1,
+                            Langevin_steps=20000, burning=2000, X_scaled=True,
+                            covariance_estimate="nonparametric", noise=noise)
         if np.sum(p0)>-1:
             P0.extend(p0); PA.extend(pA)
     print "bootstrap for "+noise+" done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -50,6 +53,6 @@ for noise in ["normal", "uniform", "laplace", "logistic"]:
         plot_logistic.set_xlim([0, 1])
         plot_logistic.set_ylim([0, 1])
 
-plt.show()
-plt.savefig('wild_bootstrap_plot.pdf')
+
+plt.savefig('wild_bootstrap_plot4.pdf')
 

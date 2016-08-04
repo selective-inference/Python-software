@@ -12,15 +12,15 @@ import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 import statsmodels.api as sm
 
 
-def test_lasso(s=0, n=100, p=30, weights = "gumbel",
-               randomization_dist = "logistic", randomization_scale = 1,
-               Langevin_steps = 30000, burning = 2000, X_scaled = True,
+def test_lasso(s=0, n=100, p=10, weights = "gumbel",
+               randomization_dist = "logistic", randomization_scale = 0.8,
+               Langevin_steps = 10000, burning = 2000, X_scaled = True,
                covariance_estimate = "nonparametric", noise = "uniform"):
 
     """ weights: exponential, gamma, normal, gumbel
     randomization_dist: logistic, laplace """
 
-    step_size = 1./n
+    step_size = 1./p
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0, scale=X_scaled, noise=noise)
     print 'true beta', true_beta
