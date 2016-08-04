@@ -22,8 +22,8 @@ def test_lasso(s=5, n=200, p=20, covariance_estimate = "nonparametric",
     loss = lasso_randomX.lasso_randomX(X, y)
 
     random_Z = randomization.rvs(p)
-    #epsilon = 1./np.sqrt(n)
-    epsilon = 1.
+    epsilon = 1./np.sqrt(n)
+    #epsilon = 1.
 
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 

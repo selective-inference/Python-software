@@ -20,8 +20,8 @@ def test_lasso(s=5, n=100, p=20, Langevin_steps=7000, burning=0):
     loss = randomized.gaussian_Xfixed(X, y)
 
     random_Z = randomization.rvs(p)
-    #epsilon = 1./np.sqrt(n)
-    epsilon = 1.
+    epsilon = 1./np.sqrt(n)
+    #epsilon = 1.
 
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 

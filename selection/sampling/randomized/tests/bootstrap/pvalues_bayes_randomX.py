@@ -8,7 +8,8 @@ def pval(vec_state, full_projection,
          nonzero, active,
          Sigma,
          weights, randomization_dist, randomization_scale,
-         Langevin_steps, step_size, burning):
+         Langevin_steps, step_size, burning,
+         X_scaled):
     """
     """
 
@@ -35,8 +36,8 @@ def pval(vec_state, full_projection,
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
-            if j>0:
-                break
+            #if j>0:
+            #    break
             eta = np.zeros(nactive)
             eta[j] = 1
             sigma_eta_sq = Sigma[j,j]
@@ -49,6 +50,12 @@ def pval(vec_state, full_projection,
             fixed_part = full_null + hessian_reistricted.dot(T_minus_j)
 
             XXc = hessian_reistricted.dot(c)
+
+            if (X_scaled==False):
+                fixed_part/=np.sqrt(n)
+                hessian /= np.sqrt(n)
+                hessian_reistricted /=np.sqrt(n)
+                XXc /= np.sqrt(n)
 
             def full_gradient(vec_state, fixed_part=fixed_part, obs_residuals=obs_residuals,
                               eta = eta,
@@ -106,6 +113,7 @@ def pval(vec_state, full_projection,
 
                 if weights == "neutral":
                     _gradient[:n] -= (beta_bar_j_boot/sigma_eta_sq)*np.dot(mat.T, eta)
+
 
                 _gradient[n:(n + nactive)] = - A_restricted.T.dot(randomization_derivative)
                 _gradient[(n + nactive):] = - lam * randomization_derivative[inactive]

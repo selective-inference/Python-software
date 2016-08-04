@@ -9,10 +9,10 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=3, n=1000, p=10):
+def test_lasso(s=3, n=1000, p=10, scale = True):
 
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
-    print 'sigma', sigma
+    X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0, scale =scale)
+    print 'true beta', true_beta
     lam_frac = 1.
 
     randomization = laplace(loc=0, scale=1.)
@@ -22,6 +22,11 @@ def test_lasso(s=3, n=1000, p=10):
     epsilon = 1.
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
+    if (scale==False):
+        random_Z = np.sqrt(n)*random_Z
+        lam = np.sqrt(n)*lam
+
+
     random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
 
@@ -29,6 +34,7 @@ def test_lasso(s=3, n=1000, p=10):
 
     problem = rr.simple_problem(loss, penalty)
     random_term = rr.identity_quadratic(epsilon, 0, random_Z, 0)
+
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_soln = problem.solve(random_term, **solve_args)
     initial_grad = loss.smooth_objective(initial_soln,  mode='grad')
@@ -36,6 +42,7 @@ def test_lasso(s=3, n=1000, p=10):
                                          initial_soln,
                                          random_Z,
                                          epsilon)
+    print initial_soln
 
     active = penalty.active_set
     inactive = ~active
