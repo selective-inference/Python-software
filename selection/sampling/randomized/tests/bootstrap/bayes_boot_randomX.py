@@ -13,8 +13,8 @@ import statsmodels.api as sm
 
 
 def test_lasso(s=0, n=100, p=10, weights = "gumbel",
-               randomization_dist = "logistic", randomization_scale = 0.8,
-               Langevin_steps = 10000, burning = 2000, X_scaled = True,
+               randomization_dist = "logistic", randomization_scale = 0.6,
+               Langevin_steps = 20000, burning = 2000, X_scaled = True,
                covariance_estimate = "nonparametric", noise = "uniform"):
 
     """ weights: exponential, gamma, normal, gumbel
