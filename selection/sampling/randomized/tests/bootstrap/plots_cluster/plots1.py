@@ -1,6 +1,5 @@
 import numpy as np
 from selection.sampling.randomized.tests.bootstrap.bayes_boot_randomX import test_lasso
-#from bootstrap.bayes_boot_randomX import test_lasso
 from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
 
