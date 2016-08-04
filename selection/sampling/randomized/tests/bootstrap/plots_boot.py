@@ -1,0 +1,43 @@
+import numpy as np
+from bayes_boot_randomX import test_lasso
+from matplotlib import pyplot as plt
+from scipy.stats import probplot, uniform
+
+np.random.seed(1)
+
+fig = plt.figure()
+plot_normal = fig.add_subplot(221)
+plot_uniform = fig.add_subplot(222)
+plot_laplace = fig.add_subplot(223)
+plot_logistic = fig.add_subplot(224)
+import statsmodels.api as sm
+
+
+for noise in ["normal", "uniform", "laplace", "logistic"]:
+    P0, PA = [], []
+
+    for i in range(10):
+        print "iteration", i, noise
+        p0, pA = test_lasso(s=0, n=100, p=20, noise = noise)
+        P0.extend(p0); PA.extend(pA)
+        print "bootstrap for "+noise+" done! mean: ", np.mean(P0), "std: ", np.std(P0)
+        ecdf = sm.distributions.ECDF(P0)
+        x = np.linspace(min(P0), max(P0))
+        y = ecdf(x)
+    if noise=="normal":
+        plot_normal.plot(x, y, lw=2)
+        plot_normal.plot([0, 1], [0, 1], 'k-', lw=1)
+    if noise =="uniform":
+        plot_uniform.plot(x, y, lw=2)
+        plot_uniform.plot([0, 1], [0, 1], 'k-', lw=1)
+    if noise == "laplace":
+        plot_laplace.plot(x, y, lw=2)
+        plot_laplace.plot([0, 1], [0, 1], 'k-', lw=1)
+    if noise == "logistic":
+        plot_logistic.plot(x, y, lw=2)
+        plot_logistic.plot([0, 1], [0, 1], 'k-', lw=1)
+
+
+plt.show()
+plt.savefig('wild_bootstrap_plot.pdf')
+
