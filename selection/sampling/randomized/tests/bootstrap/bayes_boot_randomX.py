@@ -12,9 +12,9 @@ import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 import statsmodels.api as sm
 
 
-def test_lasso(s=0, n=100, p=10, weights = "gumbel",
-               randomization_dist = "logistic", randomization_scale = 0.6,
-               Langevin_steps = 20000, burning = 2000, X_scaled = True,
+def test_lasso(s=0, n=100, p=20, weights = "normal",
+               randomization_dist = "logistic", randomization_scale = 1,
+               Langevin_steps = 10000, burning = 2000, X_scaled = True,
                covariance_estimate = "nonparametric", noise = "uniform"):
 
     """ weights: exponential, gamma, normal, gumbel
@@ -39,7 +39,7 @@ def test_lasso(s=0, n=100, p=10, weights = "gumbel",
 
     epsilon = 1./np.sqrt(n)
     #epsilon = 1.
-    lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
+    lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))+randomization_scale*np.random.logistic(size=(p,10000))).max(0))
 
     lam_scaled = lam.copy()
     random_Z_scaled = random_Z.copy()
