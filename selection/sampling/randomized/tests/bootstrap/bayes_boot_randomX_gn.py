@@ -4,8 +4,8 @@ from scipy.stats import laplace, probplot, uniform
 #from selection.algorithms.lasso import instance
 from instances import instance, bootstrap_covariance
 import selection.sampling.randomized.api as randomized
-from pvalues_bayes_randomX import pval
-#ffrom pvalues_bayes_ranX_gn import pval
+#from pvalues_bayes_randomX import pval
+from pvalues_bayes_ranX_gn import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
