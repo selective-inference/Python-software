@@ -16,7 +16,7 @@ import statsmodels.api as sm
 for noise in ["normal", "uniform", "laplace", "logistic"]:
     P0, PA = [], []
 
-    for i in range(1000):
+    for i in range(300):
         print "iteration", i, noise
         p0, pA = test_lasso(noise = noise)
         if np.sum(p0)>-1:

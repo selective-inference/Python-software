@@ -4,15 +4,15 @@ from scipy.stats import laplace, probplot, uniform
 #from selection.algorithms.lasso import instance
 from instances import instance, bootstrap_covariance
 import selection.sampling.randomized.api as randomized
-from pvalues_bayes_randomX import pval
-#from pvalues_bayes_ranX_gn import pval
+#from pvalues_bayes_randomX import pval
+from pvalues_bayes_ranX_gn import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 import statsmodels.api as sm
 
 
-def test_lasso(s=0, n=100, p=20, weights = "normal",
+def test_lasso(s=0, n=100, p=20, weights = "neutral",
                randomization_dist = "logistic", randomization_scale = 1,
                Langevin_steps = 10000, burning = 2000, X_scaled = True,
                covariance_estimate = "nonparametric", noise = "uniform"):

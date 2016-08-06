@@ -8,7 +8,8 @@ def pval(vec_state, full_projection,
          nonzero, active,
          Sigma,
          weights, randomization_dist, randomization_scale,
-         Langevin_steps, step_size, burning):
+         Langevin_steps, step_size, burning,
+         X_scaled):
     """
     """
 
@@ -33,19 +34,9 @@ def pval(vec_state, full_projection,
 
     mat = XEpinv.dot(np.diag(obs_residuals))
 
+    SigmaE_inv = np.linalg.inv(Sigma[:nactive, :nactive])
+
     if set(nonzero).issubset(active_set):
-        #for j, idx in enumerate(active_set):
-
-            #eta = np.zeros(nactive)
-            #eta[j] = 1
-            #sigma_eta_sq = Sigma[j,j]
-
-            #linear_part = np.identity(nactive) - (np.outer(np.dot(Sigma, eta), eta) / sigma_eta_sq)
-
-            #T_minus_j = np.dot(linear_part, beta_unpenalized) # sufficient stat for the nuisance
-            #c = np.dot(Sigma, eta) / sigma_eta_sq
-            #fixed_part = full_null #+ hessian_reistricted.dot(T_minus_j)
-
 
 
             def full_gradient(vec_state, obs_residuals=obs_residuals,
@@ -68,7 +59,7 @@ def pval(vec_state, full_projection,
                 opt_vec = epsilon * beta_full + subgradient
 
                 beta_bar_boot = mat.dot(alpha)
-                omega = - full_null - np.dot(hessian_restricted, beta_bar_boot)+ np.dot(hessian_restricted, betaE) + opt_vec
+                omega = - full_null - np.dot(hessian_restricted, beta_bar_boot) + np.dot(hessian_restricted, betaE) + opt_vec
 
                 if randomization_dist == "laplace":
                     randomization_derivative = np.sign(omega)/randomization_scale  # sign(w), w=grad+\epsilon*beta+lambda*u
@@ -83,7 +74,6 @@ def pval(vec_state, full_projection,
                 # saturated model
                 mat_q = np.dot(hessian_restricted, mat)
 
-                _gradient[:n] = -np.ones(n)+mat_q.T.dot(randomization_derivative)
                 _gradient[:n] = np.dot(mat_q.T, randomization_derivative)
 
                 if (weights == 'exponential'):
@@ -100,8 +90,14 @@ def pval(vec_state, full_projection,
                     gumbel_sigma = 1. / 1.14
                     _gradient[:n] -= (1. - np.exp(
                         -(alpha * gumbel_sigma - gumbel_mu) / gumbel_beta)) * gumbel_sigma / gumbel_beta
+
+                if weights == "neutral":
+                    _gradient[:n] -= np.dot(mat.T, np.dot(SigmaE_inv, beta_bar_boot))
+
+
                 _gradient[n:(n + nactive)] = - A_restricted.T.dot(randomization_derivative)
                 _gradient[(n + nactive):] = - lam * randomization_derivative[inactive]
+
 
                 # selected model
                 # _gradient[:nactive] = - (np.dot(Sigma_T_inv, data[:nactive]) + np.dot(hessian[:, active].T, sign_vec))
