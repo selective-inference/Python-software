@@ -1,5 +1,5 @@
 import numpy as np
-from selection.sampling.randomized.tests.bootstrap.bayes_boot_randomX import test_lasso
+from selection.sampling.randomized.tests.bootstrap.bayes_boot_randomX_gn import test_lasso
 from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
 
@@ -16,12 +16,9 @@ import statsmodels.api as sm
 for noise in ["normal", "uniform", "laplace", "logistic"]:
     P0, PA = [], []
 
-    for i in range(200):
+    for i in range(1000):
         print "iteration", i, noise
-        p0, pA = test_lasso(s=0, n=100, p=10, weights="gumbel",
-                            randomization_dist="logistic", randomization_scale=1,
-                            Langevin_steps=20000, burning=2000, X_scaled=True,
-                            covariance_estimate="nonparametric", noise=noise)
+        p0, pA = test_lasso(randomization_dist="laplace")
         if np.sum(p0)>-1:
             P0.extend(p0); PA.extend(pA)
     print "bootstrap for "+noise+" done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -54,5 +51,5 @@ for noise in ["normal", "uniform", "laplace", "logistic"]:
         plot_logistic.set_ylim([0, 1])
 
 
-plt.savefig('wild_bootstrap_plot4.pdf')
+plt.savefig('wild_bootstrap_gn_laplace.pdf')
 
