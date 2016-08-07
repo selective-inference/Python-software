@@ -120,7 +120,7 @@ def projection_cone_nosign(p, max_idx):
 
     return _projection
 
-def test_fstep(s=0, n=100, p=10, use_sign=True):
+def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, condition_on_sign=True):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     epsilon = 0.
@@ -134,7 +134,7 @@ def test_fstep(s=0, n=100, p=10, use_sign=True):
     s_star = np.sign(T_random[j_star])
 
     # this is the subgradient part of the projection
-    if use_sign:
+    if condition_on_sign:
         projection = projection_cone(p, j_star, s_star)
     else:
         projection = projection_cone_nosign(p, j_star)
@@ -175,7 +175,7 @@ def test_fstep(s=0, n=100, p=10, use_sign=True):
                                  1./p)
     samples = []
 
-    for _ in range(5000):
+    for _ in range(Langevin_steps):
         sampler.next()
         samples.append(sampler.state.copy())
 
