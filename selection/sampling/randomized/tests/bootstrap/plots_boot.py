@@ -2,6 +2,7 @@ import numpy as np
 from bayes_boot_randomX import test_lasso
 from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
+import statsmodels.api as sm
 
 np.random.seed(1)
 
@@ -10,7 +11,7 @@ plot_normal = fig.add_subplot(221)
 plot_uniform = fig.add_subplot(222)
 plot_laplace = fig.add_subplot(223)
 plot_logistic = fig.add_subplot(224)
-import statsmodels.api as sm
+
 
 
 for noise in ["normal", "uniform", "laplace", "logistic"]:
