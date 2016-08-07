@@ -60,7 +60,7 @@ def projection_cone(p, max_idx, max_sign):
 
     return _projection
 
-def test_fstep(s=0, n=100, p=10):
+def test_fstep(s=0, n=100, p=10, Langevin_steps=10000):
 
     X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     epsilon = 0.
@@ -112,7 +112,7 @@ def test_fstep(s=0, n=100, p=10):
                                  1./p)
     samples = []
 
-    for _ in range(5000):
+    for _ in range(Langevin_steps):
         sampler.next()
         samples.append(sampler.state.copy())
 
