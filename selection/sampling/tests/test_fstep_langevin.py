@@ -175,9 +175,10 @@ def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, condition_on_sign=True):
                                  1./p)
     samples = []
 
-    for _ in range(Langevin_steps):
-        sampler.next()
-        samples.append(sampler.state.copy())
+    for i in range(Langevin_steps):
+        if i>burning:
+            sampler.next()
+            samples.append(sampler.state.copy())
 
     samples = np.array(samples)
     Z = samples[:,:n]

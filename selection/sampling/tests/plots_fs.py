@@ -15,9 +15,9 @@ plot_kstep = fig.add_subplot(122)
 
 
 P0 = []
-for i in range(100):
+for i in range(200):
     print "iteration", i
-    p0 = test_fstep(Langevin_steps=10000)
+    p0 = test_fstep(Langevin_steps=10000, burning=2000)
     P0.append(p0)
 
 print "one step FS done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -27,7 +27,7 @@ print "one step FS done! mean: ", np.mean(P0), "std: ", np.std(P0)
 ecdf = sm.distributions.ECDF(P0)
 x = np.linspace(min(P0), max(P0))
 y = ecdf(x)
-plot_1step.plot(x, y, lw=2)
+plot_1step.plot(x, y, '-o',lw=2)
 plot_1step.plot([0, 1], [0, 1], 'k-', lw=2)
 
 plot_1step.set_title("One step FS")
@@ -36,9 +36,9 @@ plot_1step.set_ylim([0,1])
 
 
 P0 = []
-for i in range(100):
+for i in range(200):
     print "iteration", i
-    p0 = test_kfstep(Langevin_steps=10000)
+    p0 = test_kfstep(Langevin_steps=10000, burning=2000)
     P0.append(p0)
 
 print "k steps FS done done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -49,7 +49,7 @@ print "k steps FS done done! mean: ", np.mean(P0), "std: ", np.std(P0)
 ecdf = sm.distributions.ECDF(P0)
 x = np.linspace(min(P0), max(P0))
 y = ecdf(x)
-plot_kstep.plot(x, y, lw=2)
+plot_kstep.plot(x, y,'-o', lw=2)
 plot_kstep.plot([0, 1], [0, 1], 'k-', lw=2)
 
 plot_kstep.set_title("Four steps FS")

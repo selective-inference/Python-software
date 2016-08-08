@@ -7,7 +7,7 @@ from scipy.stats import probplot, uniform
 import statsmodels.api as sm
 
 
-np.random.seed(2)
+np.random.seed(50)
 
 fig = plt.figure()
 plot_randomX = fig.add_subplot(131)
@@ -16,9 +16,9 @@ plot_logistic = fig.add_subplot(133)
 
 P0, PA = [], []
 
-for i in range(3):
+for i in range(100):
     print "iteration", i
-    p0, pA = test_randomX(s=5, n=200, p=20, Langevin_steps=5000)
+    p0, pA = test_randomX(s=5, n=200, p=20, Langevin_steps=10000, burning=2000)
     P0.extend(p0); PA.extend(pA)
 
 print "random X done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -28,7 +28,7 @@ print "random X done! mean: ", np.mean(P0), "std: ", np.std(P0)
 ecdf = sm.distributions.ECDF(P0)
 x = np.linspace(min(P0), max(P0))
 y = ecdf(x)
-plot_randomX.plot(x, y, lw=2)
+plot_randomX.plot(x, y, '-o', lw=2)
 plot_randomX.plot([0, 1], [0, 1], 'k-', lw=2)
 
 plot_randomX.set_title("Lasso random X")
@@ -37,9 +37,9 @@ plot_randomX.set_ylim([0,1])
 
 
 P0, PA = [], []
-for i in range(3):
+for i in range(100):
     print "iteration", i
-    p0, pA = test_fixedX(s=5, n=200, p=20, Langevin_steps=5000)
+    p0, pA = test_fixedX(s=5, n=200, p=20, Langevin_steps=10000, burning=2000)
     P0.extend(p0); PA.extend(pA)
 
 print "fixed X done! mean: ", np.mean(P0), "std: ", np.std(P0)
@@ -49,7 +49,7 @@ print "fixed X done! mean: ", np.mean(P0), "std: ", np.std(P0)
 ecdf = sm.distributions.ECDF(P0)
 x = np.linspace(min(P0), max(P0))
 y = ecdf(x)
-plot_fixedX.plot(x, y, lw=2)
+plot_fixedX.plot(x, y,'-o',  lw=2)
 plot_fixedX.plot([0, 1], [0, 1], 'k-', lw=2)
 
 plot_fixedX.set_title("Lasso fixed X")
@@ -58,9 +58,9 @@ plot_fixedX.set_ylim([0,1])
 
 
 P0, PA = [], []
-for i in range(3):
+for i in range(50):
     print "iteration", i
-    p0, pA = test_logistic(s=5, n=200, p=20, Langevin_steps=5000)
+    p0, pA = test_logistic(s=5, n=200, p=20, Langevin_steps=10000, burning=2000)
     P0.extend(p0); PA.extend(pA)
 print "logistic done! mean: ", np.mean(P0), "std: ", np.std(P0)
 # probplot(P0, dist=uniform, sparams=(0,1), plot=plot_logistic, fit=False)
@@ -69,7 +69,7 @@ print "logistic done! mean: ", np.mean(P0), "std: ", np.std(P0)
 ecdf = sm.distributions.ECDF(P0)
 x = np.linspace(min(P0), max(P0))
 y = ecdf(x)
-plot_logistic.plot(x, y, lw=2)
+plot_logistic.plot(x, y,'-o', lw=2)
 plot_logistic.plot([0, 1], [0, 1], 'k-', lw=2)
 
 plot_logistic.set_title("Logistic random X")
