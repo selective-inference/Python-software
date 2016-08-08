@@ -7,7 +7,7 @@ import random
 import statsmodels.api as sm
 
 
-random.seed(3)
+random.seed(4)
 
 fig = plt.figure()
 plot_1step = fig.add_subplot(121)
@@ -15,7 +15,7 @@ plot_kstep = fig.add_subplot(122)
 
 
 P0 = []
-for i in range(200):
+for i in range(300):
     print "iteration", i
     p0 = test_fstep(Langevin_steps=10000, burning=2000)
     P0.append(p0)
@@ -36,7 +36,7 @@ plot_1step.set_ylim([0,1])
 
 
 P0 = []
-for i in range(200):
+for i in range(300):
     print "iteration", i
     p0 = test_kfstep(Langevin_steps=10000, burning=2000)
     P0.append(p0)
