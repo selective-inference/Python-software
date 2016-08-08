@@ -9,7 +9,7 @@ import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
 
-def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=0,
+def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
                randomization_dist = "laplace", randomization_scale=1,
                covariance_estimate="nonparametric"):
 

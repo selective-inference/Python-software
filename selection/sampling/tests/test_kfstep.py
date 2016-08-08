@@ -64,7 +64,7 @@ def projection_cone(p, max_idx, max_sign):
     return _projection
 
 
-def test_kfstep(k=4, s=3, n=100, p=10, Langevin_steps=10000):
+def test_kfstep(k=4, s=3, n=100, p=10, Langevin_steps=10000, burning=2000):
 
     X, y, beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0, snr=10)
     epsilon = 0.
@@ -174,15 +174,16 @@ def test_kfstep(k=4, s=3, n=100, p=10, Langevin_steps=10000):
     samples = []
 
 
-    for _ in range(Langevin_steps):
-        old_state = sampler.state.copy()
-        old_data = old_state[:n]
-        sampler.next()
-        new_state = sampler.state.copy()
-        new_data = new_state[:n]
-        new_data = np.dot(P, old_data) + np.dot(R, new_data)
-        sampler.state[:n] = new_data
-        samples.append(sampler.state.copy())
+    for i in range(Langevin_steps):
+        if i>burning:
+            old_state = sampler.state.copy()
+            old_data = old_state[:n]
+            sampler.next()
+            new_state = sampler.state.copy()
+            new_data = new_state[:n]
+            new_data = np.dot(P, old_data) + np.dot(R, new_data)
+            sampler.state[:n] = new_data
+            samples.append(sampler.state.copy())
 
 
     samples = np.array(samples)
