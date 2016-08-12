@@ -80,9 +80,10 @@ def intervals(n=50, p=10, s=0):
         return Sigma_inv, Sigma_inv_mu
 
     Sigma_inv, Sigma_inv_mu = joint_Gaussian_parameters()
+    Sigma = np.linalg.inv(Sigma_inv)
 
 
-    def selection_probability(param=0, Sigma_inv=Sigma_inv, Sigma_inv_mu=Sigma_inv_mu):
+    def log_selection_probability(param=0, Sigma_inv=Sigma_inv, Sigma_inv_mu=Sigma_inv_mu):
         Sigma_inv_mu_modified = Sigma_inv_mu
         Sigma_inv_mu_modified[0] += np.true_divide(param, sigma**2)
 
@@ -99,16 +100,20 @@ def intervals(n=50, p=10, s=0):
             else:
                 bounds += ((0,None), )
         bounds += ((-1,1),)* ninactive
+        print signs
         print bounds
+        #print 'fun', minimize(lambda x:x**2, x0=1).fun
         def objective(x):
-            return np.inner(x, Sigma_inv.dot(x))/2 - np.inner(Sigma_inv_mu_modified, x) \
-                   -np.sum(np.log(np.multiply(signs, x[1:(nactive + 1)]))) \
-                   -np.sum(np.log(1 + x[(nactive + 1):])) - np.sum(np.log(1 - x[(nactive + 1):]))
+            return np.inner(x, Sigma_inv.dot(x))/2 - np.inner(Sigma_inv_mu_modified, x) #\
+                  # -np.sum(np.log(np.multiply(signs, x[1:(nactive + 1)]))) \
+                  # -np.sum(np.log(1 + x[(nactive + 1):])) - np.sum(np.log(1 - x[(nactive + 1):]))
 
-        return -minimize(objective, x0=initial_guess, bounds=bounds)
+        res = minimize(objective, x0=np.ones(p+1), bounds=bounds)
+        print res.fun
+        mu = np.dot(Sigma, Sigma_inv_mu_modified)
+        return -np.inner(mu, Sigma_inv_mu_modified)/2 - res.fun
 
-
-    print selection_probability()
+    print log_selection_probability()
 
 
     return 0
