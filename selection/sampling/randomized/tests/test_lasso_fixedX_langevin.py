@@ -8,18 +8,17 @@ from matplotlib import pyplot as plt
 import regreg.api as rr
 
 
-def test_lasso(s=5, n=100, p=20, Langevin_steps=10000, burning=2000):
+def test_lasso(X, y, nonzero, sigma, random_Z, Langevin_steps=10000, burning=2000):
 
+    n, p = X.shape
     step_size = 1./p
-
-    X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0.1)
     print 'true beta', true_beta
     lam_frac = 1.
 
-    randomization = laplace(loc=0, scale=1.)
+    #randomization = laplace(loc=0, scale=1.)
     loss = randomized.gaussian_Xfixed(X, y)
 
-    random_Z = randomization.rvs(p)
+    #random_Z = randomization.rvs(p)
     epsilon = 1./np.sqrt(n)
     #epsilon = 1.
 
@@ -28,19 +27,6 @@ def test_lasso(s=5, n=100, p=20, Langevin_steps=10000, burning=2000):
     random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
 
-    #sampler1 = randomized.selective_sampler_MH_lan(loss,
-    #                                           random_Z,
-    #                                           epsilon,
-    #                                           randomization,
-    #                                          penalty)
-
-    #loss_args = {'mean': np.zeros(n),
-    #             'sigma': sigma,
-    #             'linear_part':np.identity(y.shape[0]),
-    #             'value': 0}
-
-    #sampler1.setup_sampling(y, loss_args=loss_args)
-    # data, opt_vars = sampler1.state
 
     # initial solution
     problem = rr.simple_problem(loss, penalty)
@@ -126,10 +112,16 @@ def test_lasso(s=5, n=100, p=20, Langevin_steps=10000, burning=2000):
 
 if __name__ == "__main__":
 
+    s = 5; n = 100; p = 20
+
     P0, PA = [], []
     for i in range(50):
         print "iteration", i
-        p0, pA = test_lasso()
+        X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0.1)
+        randomization = laplace(loc=0, scale=1.)
+        random_Z = randomization.rvs(p)
+
+        p0, pA = test_lasso(X,y, nonzero, sigma, random_Z)
         P0.extend(p0); PA.extend(pA)
 
     plt.figure()
