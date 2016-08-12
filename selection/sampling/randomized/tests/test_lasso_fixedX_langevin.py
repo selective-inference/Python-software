@@ -8,30 +8,27 @@ from matplotlib import pyplot as plt
 import regreg.api as rr
 
 
-def test_lasso(X, y, nonzero, sigma, random_Z, Langevin_steps=10000, burning=2000):
+def test_lasso(X, y, nonzero, sigma, random_Z, randomization_distribution, Langevin_steps=10000, burning=2000):
 
     n, p = X.shape
     step_size = 1./p
     print 'true beta', true_beta
     lam_frac = 1.
 
-    #randomization = laplace(loc=0, scale=1.)
     loss = randomized.gaussian_Xfixed(X, y)
 
-    #random_Z = randomization.rvs(p)
     epsilon = 1./np.sqrt(n)
     #epsilon = 1.
 
     lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
-    random_Z = randomization.rvs(p)
     penalty = randomized.selective_l1norm_lan(p, lagrange=lam)
 
 
     # initial solution
     problem = rr.simple_problem(loss, penalty)
     random_term = rr.identity_quadratic(epsilon, 0,
-                                        random_Z, 0)
+                                        -random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
     initial_soln = problem.solve(random_term, **solve_args)
     initial_grad = loss.smooth_objective(initial_soln,  mode='grad')
@@ -73,6 +70,7 @@ def test_lasso(X, y, nonzero, sigma, random_Z, Langevin_steps=10000, burning=200
 
     def full_gradient(vec_state, loss=loss, penalty =penalty, X=X,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
+
         nactive = np.sum(active); ninactive=np.sum(inactive)
 
         data = vec_state[:ndata]
@@ -89,15 +87,22 @@ def test_lasso(X, y, nonzero, sigma, random_Z, Langevin_steps=10000, burning=200
         nactive = betaE.shape[0]
         ninactive = cube.shape[0]
 
-        sign_vec = - np.sign(gradient + opt_vec)  # sign(w), w=grad+\epsilon*beta+lambda*u
+        omega = gradient+opt_vec
+
+        if randomization_distribution == "laplace":
+                randomization_derivative = - np.sign(omega)  # sign(w), w=grad+\epsilon*beta+lambda*u
+        if randomization_distribution == "normal":
+                randomization_derivative = - omega
+        if randomization_distribution == "logistic":
+                randomization_derivative = (np.exp(-omega)-1)/(np.exp(-omega)+1)
 
         B = hessian + epsilon * np.identity(nactive + ninactive)
         A = B[:, active]
 
         _gradient = np.zeros(ndata + nactive + ninactive)
-        _gradient[:ndata] = - (data + np.dot(X, sign_vec))
-        _gradient[ndata:(ndata + nactive)] = np.dot(A.T, sign_vec)
-        _gradient[(ndata + nactive):] = lam * sign_vec[inactive]
+        _gradient[:ndata] = - data - np.dot(X, randomization_derivative)
+        _gradient[ndata:(ndata + nactive)] = np.dot(A.T, randomization_derivative)
+        _gradient[(ndata + nactive):] = lam * randomization_derivative[inactive]
 
         # data_proposal = np.dot(P, data) + np.dot(R, data_proposal)
 
@@ -113,15 +118,22 @@ def test_lasso(X, y, nonzero, sigma, random_Z, Langevin_steps=10000, burning=200
 if __name__ == "__main__":
 
     s = 5; n = 100; p = 20
+    randomization_distribution = "normal"
 
     P0, PA = [], []
     for i in range(50):
         print "iteration", i
-        X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0.1)
-        randomization = laplace(loc=0, scale=1.)
-        random_Z = randomization.rvs(p)
+        X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0)
 
-        p0, pA = test_lasso(X,y, nonzero, sigma, random_Z)
+        if randomization_distribution == "laplace":
+            randomization = laplace(loc=0, scale=1.)
+            random_Z = randomization.rvs(p)
+        if randomization_distribution == "normal":
+            random_Z = np.random.standard_normal(p)
+        if randomization_distribution == "logistic":
+            random_Z = np.random.logistic(loc=0, scale=1.)
+
+        p0, pA = test_lasso(X,y, nonzero, sigma, random_Z, randomization_distribution)
         P0.extend(p0); PA.extend(pA)
 
     plt.figure()
