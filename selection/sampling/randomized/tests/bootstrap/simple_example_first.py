@@ -136,7 +136,7 @@ for noise in ['normal','laplace', 'uniform','logistic']:
     y = ecdf(x)
     plt.plot(x, y, lw=2)
     plt.plot([0,1], [0,1], 'k-', lw=1)
-plt.savefig('foo.pdf')    
+#plt.savefig('foo.pdf')
 plt.show()
 
 
