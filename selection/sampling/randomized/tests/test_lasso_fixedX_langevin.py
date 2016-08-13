@@ -37,6 +37,7 @@ def test_lasso(X, y, nonzero, sigma, random_Z, randomization_distribution, Lange
                                          random_Z,
                                          epsilon)
 
+    signs = np.sign(betaE)
     data = y.copy()
     active = penalty.active_set
     inactive = ~active
@@ -49,13 +50,13 @@ def test_lasso(X, y, nonzero, sigma, random_Z, randomization_distribution, Lange
     init_vec_state[(ndata+nactive):] = cube
 
 
-    def full_projection(vec_state, penalty=penalty,
+    def full_projection(vec_state, signs=signs,
                         ndata=ndata, nactive=nactive, ninactive = ninactive):
+
         data = vec_state[:ndata].copy()
         betaE = vec_state[ndata:(ndata+nactive)]
         cube = vec_state[(ndata+nactive):]
 
-        signs = penalty.signs
         projected_betaE = betaE.copy()
         projected_cube = np.zeros_like(cube)
 
@@ -68,20 +69,27 @@ def test_lasso(X, y, nonzero, sigma, random_Z, randomization_distribution, Lange
         return np.concatenate((data, projected_betaE, projected_cube), 0)
 
 
-    def full_gradient(vec_state, loss=loss, penalty =penalty, X=X,
+    hessian = np.dot(X.T,X)
+
+    def full_gradient(vec_state, X=X,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
 
         nactive = np.sum(active); ninactive=np.sum(inactive)
-
         data = vec_state[:ndata]
         betaE = vec_state[ndata:(ndata + nactive)]
         cube = vec_state[(ndata + nactive):]
 
-        opt_vars = [betaE, cube]
-        params , _ , opt_vec = penalty.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
+        #opt_vars = [betaE, cube]
+        #params , _ , opt_vec = penalty.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
-        gradient = loss.gradient(data, params)
-        hessian = loss.hessian()
+        beta_full = np.zeros(p)
+        beta_full[active] = betaE
+        subgradient = np.zeros(p)
+        subgradient[inactive] = lam * cube
+        subgradient[active] = lam * signs
+
+        opt_vec = epsilon * beta_full + subgradient
+        gradient = -np.dot(X.T,data-np.dot(X,beta_full))
 
         ndata = data.shape[0]
         nactive = betaE.shape[0]
