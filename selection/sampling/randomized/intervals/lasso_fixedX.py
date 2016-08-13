@@ -107,54 +107,69 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             obs = all_observed[j]
             sd = np.sqrt(all_variances[j])
             indicator = np.array(all_samples[j,:]<all_observed[j], dtype =int)
-            sample_size = indicator.shape[0]
+            pop = all_samples[j,:]
+            variance = all_variances[j]
 
-            def pvalue_by_tilting(param, pop=all_samples[j,:]):
-                log_sel_prob_param = log_selection_probability(param, Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
-                                                               nactive, ninactive, signs, betaE)
+            def pvalue_by_tilting(param_value, variance=variance, pop=pop, indicator =indicator):
+                #log_sel_prob_param = log_selection_probability(param_value, Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
+                #                                               nactive, ninactive, signs, betaE)
                 #print 'log sele prob',log_sel_prob_param
-                if log_sel_prob_param<-100:
-                    return 0
-                log_LR = pop*param/(2*all_variances[j])
-                log_LR += log_sel_prob_ref - log_sel_prob_param - np.true_divide(param**2,2*all_variances[j])
+                #if log_sel_prob_param <- 100:
+                #    return 0
+                log_LR = pop*param_value/(2*variance)-param_value**2/(2*variance)
+                #log_LR += log_sel_prob_ref - log_sel_prob_param
                 #print log_LR
-                return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ sample_size, 0,1)
+                return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ indicator.shape[0], 0,1)
 
+            #print 'pvalue at the truth', pvalue_by_tilting(0)
+            #print 'pvalue at the truth', pvalue_by_tilting(0)
 
-            print 'pvalue at the truth', pvalue_by_tilting(0)
-            param_values = np.linspace(-5, 5, num=100)
+            param_values = np.linspace(-5, 5, num=1000)
+            param_values[500] = 0
             #print 'param value', param_values
             pvalues = np.zeros(param_values.shape[0])
-            pvalues_modified = np.zeros(param_values.shape[0])
             for i in range(param_values.shape[0]):
-                pvalues[i] = pvalue_by_tilting(param=param_values[i])
+                #print param_values[i]
+                #print pvalue_by_tilting(param_values[i])
+                pvalues[i] = pvalue_by_tilting(param_values[i])
+                #print pvalues[i]
                 #print param_values[i], pvalue_by_tilting(param_values[i])
-                pvalues_modified[i]=pvalue_by_tilting(param_values[i])-1.+alpha/2
-            #pvalues = [pvalue_by_tilting(param_values[i]) for i in range(param_values.shape[0])]
 
+            #pvalues = [pvalue_by_tilting(param_values[i]) for i in range(param_values.shape[0])]
             #pvalues = np.asarray(pvalues, dtype=np.float32)
+
             #print pvalues
-            #print pvalues_modified
-            print 'sum', np.sum(np.abs(pvalues-1.+alpha/2)<0.1)
-            cl_zero= pvalue_by_tilting(param_values[np.argmin(np.abs(param_values))])
-            print 'closest to zero pvalue exists' , cl_zero
-            L = param_values[np.argmin(np.abs(pvalues-(alpha/2)))]
-            U = param_values[np.argmin(np.abs(pvalues-1.+(alpha/2)))]
-            print 'alpha', alpha/2
-            print 'truth', np.abs(pvalue_by_tilting(0)-1.+(alpha/2)), np.abs(pvalue_by_tilting(0)-(alpha/2))
-            print "min", np.min(np.abs(pvalues-1.+(alpha/2)))
-            print "min", np.min(np.abs(pvalues-(alpha/2)))
-            print "pvalue at L", pvalue_by_tilting(L)
-            print "pvalue at U", pvalue_by_tilting(U)
-            print 'truth', truth
+            #print 'sum', np.sum(np.abs(pvalues-1.+alpha/2)<0.1)
+            #cl_zero= pvalue_by_tilting(param_values[np.argmin(np.abs(param_values))])
+            #print 'closest to zero pvalue exists' , cl_zero
+
+            accepted_indices = np.multiply(np.array(pvalues>alpha/2), np.array(pvalues<1.-alpha/2))
+            #print accepted_indices
+            if np.sum(accepted_indices)==0:
+                L=0
+                U=0
+            else:
+                L = np.min(param_values[accepted_indices])
+                U = np.max(param_values[accepted_indices])
+
+            #L = param_values[np.argmin(np.abs(pvalues-(alpha/2)))]
+            #U = param_values[np.argmin(np.abs(pvalues-1.+(alpha/2)))]
+            #print 'truth', np.abs(pvalue_by_tilting(0)-1.+(alpha/2)), np.abs(pvalue_by_tilting(0)-(alpha/2))
+            #print "min", np.min(np.abs(pvalues-1.+(alpha/2)))
+            #print "min", np.min(np.abs(pvalues-(alpha/2)))
+            #print "pvalue at L", pvalue_by_tilting(L)
+            #print "pvalue at U", pvalue_by_tilting(U)
+            #print 'truth', truth
             print "interval",  L, U
+            #print 'pvalue at the truth', pvalue_by_tilting(0)
+
             if (L<=truth) and (U>=truth):
                 coverage +=1
             if (U <= truth) and (L >= truth):
                 coverage += 1
 
             plt.clf()
-            plt.plot(param_values, pvalues, lw=3)
+            plt.plot(param_values, pvalues, 'o')
             plt.pause(0.01)
 
 
@@ -165,7 +180,7 @@ total_coverage = 0
 total_number = 0
 
 
-for i in range(10):
+for i in range(50):
     print "iteration", i
     coverage, nactive = intervals()
     total_coverage += coverage
