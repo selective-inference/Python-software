@@ -29,7 +29,8 @@ def pval(vec_state0, full_projection,
     print "true nonzero ", nonzero, "active set", active_set
 
     all_samples = np.zeros((nactive, Langevin_steps-burning-1))
-
+    all_observed = np.zeros(nactive)
+    all_variances = np.zeros(nactive)
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
@@ -99,6 +100,8 @@ def pval(vec_state0, full_projection,
             obs = np.dot(eta, y0)
 
             all_samples[j, :] = pop
+            all_observed[j] = obs
+            all_variances[j] = sigma_sq_eta
 
             fam = discrete_family(pop, np.ones_like(pop))
             pval = fam.cdf(0, obs)
@@ -112,4 +115,4 @@ def pval(vec_state0, full_projection,
                 null.append(pval)
 
 
-    return null, alt, all_samples
+    return null, alt, all_observed, all_variances, all_samples

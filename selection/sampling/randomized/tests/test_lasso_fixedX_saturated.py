@@ -12,7 +12,6 @@ def test_lasso(X, y, nonzero, sigma, random_Z, randomization_distribution, Lange
 
     n, p = X.shape
     step_size = 1./p
-    print 'true beta', true_beta
     lam_frac = 1.
 
     loss = randomized.gaussian_Xfixed(X, y)
@@ -33,7 +32,7 @@ def test_lasso(X, y, nonzero, sigma, random_Z, randomization_distribution, Lange
     initial_soln = problem.solve(random_term, **solve_args)
     active = (initial_soln!=0)
     if np.sum(active)==0:
-        return [-1], [-1]
+        return [-1], [-1], np.nan, np.nan, np.nan, np.nan, np.nan, np.nan
     initial_grad = loss.smooth_objective(initial_soln,  mode='grad')
     betaE, cube = penalty.setup_sampling(initial_grad,
                                          initial_soln,
@@ -63,21 +62,21 @@ def test_lasso(X, y, nonzero, sigma, random_Z, randomization_distribution, Lange
         return projected_state
 
 
-    null, alt, all_samples = pval(init_vec_state, full_projection,
+    null, alt, all_observed, all_variances, all_samples = pval(init_vec_state, full_projection,
                       X, y, epsilon, lam,
                       nonzero, active,
                       Langevin_steps, burning, step_size,
                       randomization_distribution)
 
-    return null, alt, all_samples
+    return null, alt, all_observed, all_variances, all_samples, active, initial_soln[active], lam
 
 if __name__ == "__main__":
 
-    s = 5; n = 100; p = 20
+    s = 0; n = 100; p = 20
     randomization_distribution = "normal"
 
     P0, PA = [], []
-    for i in range(20):
+    for i in range(100):
         print "iteration", i
         X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1., rho=0)
 
@@ -89,8 +88,8 @@ if __name__ == "__main__":
         if randomization_distribution == "logistic":
             random_Z = np.random.logistic(loc=0, scale=1.)
 
-        p0, pA, _ = test_lasso(X,y, nonzero, sigma, random_Z, randomization_distribution)
-        if p0[0]>-1:
+        p0, pA, _, _, _, _, _, _ = test_lasso(X,y, nonzero, sigma, random_Z, randomization_distribution)
+        if np.sum(p0)>-1:
             P0.extend(p0); PA.extend(pA)
 
     plt.figure()
