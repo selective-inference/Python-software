@@ -19,7 +19,7 @@ for noise in ["normal", "uniform", "laplace", "logistic"]:
 
     for i in range(300):
         print "iteration", i, noise
-        p0, pA = test_lasso(noise = noise)
+        p0, pA = test_lasso(noise = noise, Langevin_steps=10000, weights="neutral")
         if np.sum(p0)>-1:
             P0.extend(p0); PA.extend(pA)
     print "bootstrap for "+noise+" done! mean: ", np.mean(P0), "std: ", np.std(P0)
