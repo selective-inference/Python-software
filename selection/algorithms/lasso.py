@@ -1346,7 +1346,8 @@ class data_splitting(data_carving):
         self._cov_inference = np.linalg.inv(H_AA)
 
     def hypothesis_test(self,
-                        variable):
+                        variable,
+                        df=np.inf):
         """
 
         Wald test for an active variable.
@@ -1360,7 +1361,10 @@ class data_splitting(data_carving):
 
         Z = self._unpenalized_active[j] / np.sqrt(self._cov_inference[j,j])
 
-        return 2 * ndist.sf(np.abs(Z))
+        if df == np.inf:
+            return 2 * ndist.sf(np.abs(Z))
+        else:
+            return 2 * tdist.sf(np.abs(Z), df)
 
 def _data_carving_deprec(X, y, 
                         lam_frac=2.,
