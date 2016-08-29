@@ -16,12 +16,13 @@ def joint_Gaussian_parameters(X, y, active, signs, j, epsilon, lam, sigma, tau):
     n, p = X.shape
     nactive = np.sum(active)
     ninactive = p-nactive
-
-    eta = np.linalg.pinv(X[:, active])[j, :]
+    mat = np.linalg.pinv(X[:, active])
+    eta = mat[j, :]
+    print 'eta size', eta.shape[0]
     c = np.true_divide(eta, np.linalg.norm(eta) ** 2)
 
     A = np.zeros((p, p + 1))
-    A[:, 0] = -np.dot(X.T, c.T)
+    A[:, 0] = -np.dot(X.T, c)
     A[:, 1:(nactive + 1)] = np.dot(X.T, X[:, active])
     A[:nactive, 1:(nactive + 1)] += epsilon * np.identity(nactive)
     A[nactive:, (nactive + 1):] = lam * np.identity(ninactive)
@@ -49,21 +50,41 @@ def log_selection_probability(param, Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
 
     initial_guess = np.zeros(p + 1)
     initial_guess[1:(nactive + 1)] = betaE
+    initial_guess[(nactive+1):] = np.random.uniform(-1,1,ninactive)
 
-    bounds = ((None, None),)
-    for i in range(nactive):
-        if signs[i] < 0:
-            bounds += ((None, 0),)
-        else:
-            bounds += ((0, None),)
-    bounds += ((-1, 1),) * ninactive
+    #bounds = ((None, None),)
+    #for i in range(nactive):
+    #    if signs[i] < 0:
+    #        bounds += ((None, 0),)
+    #    else:
+    #        bounds += ((0, None),)
+    #bounds += ((-1, 1),) * ninactive
+
+    def chernoff(x):
+        return np.true_divide(np.inner(x, Sigma_inv.dot(x)),2) - np.inner(Sigma_inv_mu_modified, x)
+
+
+    def barrier(x):
+        A = np.zeros((nactive+2*ninactive, 1+nactive+ninactive))
+        A[:nactive, 1:(nactive+1)] = np.diag(signs)
+        A[nactive:(nactive+ninactive),(nactive+1):] = np.identity(ninactive)
+        A[(nactive+ninactive):, (nactive+1):] = -np.identity(ninactive)
+        b = np.zeros(nactive+2*ninactive)
+        b[nactive:] = -1
+
+        if all(b-np.dot(A,x)>=np.power(10,-9)):
+            return np.sum(np.log(1+np.true_divide(1,b-np.dot(A,x))))
+
+        return (nactive+ninactive)*(10**9)
 
     def objective(x):
-        return np.inner(x, Sigma_inv.dot(x)) / 2 - np.inner(Sigma_inv_mu_modified, x)  # \
-            # -np.sum(np.log(np.multiply(signs, x[1:(nactive + 1)]))) \
-            # -np.sum(np.log(1 + x[(nactive + 1):])) - np.sum(np.log(1 - x[(nactive + 1):]))
+        return chernoff(x)+barrier(x)
 
-    res = minimize(objective, x0=np.ones(p + 1), bounds=bounds)
+    res = minimize(objective, x0=initial_guess) #, bounds=bounds)
+    #print nactive, ninactive
+    #print signs
+    #print res.fun
+    #print "minimizer", np.true_divide(np.inner(res.x, Sigma_inv.dot(res.x)),2) - np.inner(Sigma_inv_mu_modified, res.x)
     mu = np.dot(Sigma_full, Sigma_inv_mu_modified)
     return -np.inner(mu, Sigma_inv_mu_modified) / 2 - res.fun
 
@@ -71,6 +92,7 @@ def log_selection_probability(param, Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
 def intervals(n=50, p=10, s=0, alpha=0.1):
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, snr =2, sigma=1., rho=0)
+    print sigma
     print true_beta
     random_Z = np.random.standard_normal(p)
 
@@ -86,7 +108,6 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
     inactive = ~active
     signs = np.sign(betaE)
-
     nactive = np.sum(active)
     print 'size of the active set', nactive
     if nactive==0: return -1
@@ -124,17 +145,21 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             #print 'pvalue at the truth', pvalue_by_tilting(0)
             #print 'pvalue at the truth', pvalue_by_tilting(0)
 
-            param_values = np.linspace(-5, 5, num=1000)
-            param_values[500] = 0
+            param_values = np.linspace(-5, 5, num=100)
+            log_sel_prob_param = np.zeros(param_values.shape[0])
             #print 'param value', param_values
             pvalues = np.zeros(param_values.shape[0])
             for i in range(param_values.shape[0]):
                 #print param_values[i]
                 #print pvalue_by_tilting(param_values[i])
                 pvalues[i] = pvalue_by_tilting(param_values[i])
+                log_sel_prob_param[i] = log_selection_probability(param_values[i], Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
+                                                                  nactive, ninactive, signs, betaE)
                 #print pvalues[i]
                 #print param_values[i], pvalue_by_tilting(param_values[i])
-
+            plt.clf()
+            plt.plot(param_values, log_sel_prob_param)
+            plt.pause(0.01)
             #pvalues = [pvalue_by_tilting(param_values[i]) for i in range(param_values.shape[0])]
             #pvalues = np.asarray(pvalues, dtype=np.float32)
 
@@ -168,9 +193,9 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             if (U <= truth) and (L >= truth):
                 coverage += 1
 
-            plt.clf()
-            plt.plot(param_values, pvalues, 'o')
-            plt.pause(0.01)
+            #plt.clf()
+            #plt.plot(param_values, pvalues, 'o')
+            #plt.pause(0.01)
 
 
     return coverage, nactive
