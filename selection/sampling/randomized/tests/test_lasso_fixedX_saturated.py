@@ -79,7 +79,7 @@ def test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE, cube, random_Z
 
 if __name__ == "__main__":
 
-    s = 1; n = 100; p = 20
+    s = 0; n = 100; p = 20
     randomization_distribution = "normal"
 
     P0, PA = [], []
@@ -98,8 +98,8 @@ if __name__ == "__main__":
 
         lam, epsilon, active, betaE, cube = selection(X,y,random_Z)
         if lam>0:
-            beta_reference = np.zeros(np.sum(active))
-            beta_reference[0]=true_beta[0]
+            beta_reference = np.ones(np.sum(active))*2
+            #beta_reference[0]=true_beta[0]
             p0, pA, _, _, _ = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE, cube, random_Z,
                                          beta_reference, randomization_distribution)
             if np.sum(p0)>-1:

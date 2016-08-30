@@ -127,8 +127,8 @@ def compute_mle(observed_vector, Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
 def intervals(n=50, p=10, s=0, alpha=0.1):
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, snr =2, sigma=1., rho=0)
-    print sigma
-    print true_beta
+    #print sigma
+    #print true_beta
     random_Z = np.random.standard_normal(p)
 
     lam, epsilon, active, betaE, cube = selection(X,y, random_Z)
@@ -137,10 +137,8 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
         return -1, -1
 
     nactive = np.sum(active)
-    print 'size of the active set', nactive
-
-    print 'true beta', true_beta
-    print active
+    #print 'size of the active set', nactive
+    #print 'active set', active
 
     tau = 1.
     inactive = ~active
@@ -175,10 +173,10 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
     print "MLE", beta_mle
 
-    null, alt, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
-                                                                     cube, random_Z,
-                                                                     beta_reference=beta_mle,
-                                                                     randomization_distribution="normal")
+    _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
+                                                                cube, random_Z,
+                                                                beta_reference=beta_mle,
+                                                                randomization_distribution="normal")
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
@@ -205,22 +203,18 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
             pop = all_samples[j,:]
             variance = all_variances[j]
-            log_sel_prob_ref = log_selection_probability(beta_mle[j], Sigma_full[j].copy(), Sigma_inv[j].copy(), Sigma_inv_mu[j].copy(),
+            log_sel_prob_ref = log_selection_probability(beta_mle[j].copy(), Sigma_full[j].copy(), Sigma_inv[j].copy(), Sigma_inv_mu[j].copy(),
                                                          sigma,
                                                          nactive, ninactive, signs, betaE, eta_norm_sq)
 
-            def pvalue_by_tilting(param_value, variance=variance, pop=pop, indicator =indicator):
+            def pvalue_by_tilting(param_value, variance=variance, pop=pop, indicator=indicator):
                  log_sel_prob_param = log_selection_probability(param_value, Sigma_full[j], Sigma_inv[j], Sigma_inv_mu[j],
                                                                 sigma,
                                                                 nactive, ninactive, signs, betaE, eta_norm_sq)
-            #     #print 'log sele prob',log_sel_prob_param
-            #     #if log_sel_prob_param <- 100:
-            #     #    return 0
                  log_LR = pop*param_value/(2*variance)-param_value**2/(2*variance)
                  log_LR += log_sel_prob_ref - log_sel_prob_param
-            #     #print log_LR
                  return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ indicator.shape[0], 0,1)
-            #
+
             # #print 'pvalue at the truth', pvalue_by_tilting(0)
             # #print 'pvalue at the truth', pvalue_by_tilting(0)
             #
@@ -228,18 +222,14 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
             pvalues = [pvalue_by_tilting(param_values[i]) for i in range(param_values.shape[0])]
             pvalues = np.asarray(pvalues, dtype=np.float32)
-            #
             #print pvalues
             plt.title("Tilted p-values")
             plt.plot(param_values, pvalues)
             plt.pause(0.01)
 
-            # #print 'sum', np.sum(np.abs(pvalues-1.+alpha/2)<0.1)
-            # #cl_zero= pvalue_by_tilting(param_values[np.argmin(np.abs(param_values))])
-            # #print 'closest to zero pvalue exists' , cl_zero
-            #
-            accepted_indices = np.multiply(np.array(pvalues>alpha/2), np.array(pvalues<1.-alpha/2))
-            # #print accepted_indices
+            #accepted_indices = np.multiply(np.array(pvalues>alpha/2), np.array(pvalues<1.-alpha/2))
+            accepted_indices = np.array(pvalues > alpha)
+
             if np.sum(accepted_indices)==0:
                  L=0
                  U=0
@@ -247,16 +237,15 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
                  L = np.min(param_values[accepted_indices])
                  U = np.max(param_values[accepted_indices])
 
-
             #L = param_values[np.argmin(np.abs(pvalues-(alpha/2)))]
             #U = param_values[np.argmin(np.abs(pvalues-1.+(alpha/2)))]
-
-            if (L<=truth) and (U>=truth):
+            #print "truth", truth
+            if (L<truth) and (U> truth):
                  coverage +=1
-            if (U <= truth) and (L >= truth):
+            if (U < truth) and (L > truth):
                  coverage += 1
             print "interval", L, U
-    #return 0, 0
+
     return coverage, nactive
 
 total_coverage = 0
