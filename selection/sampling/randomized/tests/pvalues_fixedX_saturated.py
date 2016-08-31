@@ -6,8 +6,8 @@ from selection.sampling.langevin import projected_langevin
 def pval(vec_state0, full_projection,
          X, y, epsilon, lam,
          nonzero, active,
+         beta_reference,
          Langevin_steps, burning, step_size, randomization_distribution):
-
     """
     """
 
@@ -36,7 +36,6 @@ def pval(vec_state0, full_projection,
         for j, idx in enumerate(active_set):
             eta = XEpinv[j,:]
             sigma_sq_eta = np.linalg.norm(eta)**2
-
 
             c = np.true_divide(eta, sigma_sq_eta)
             XTc = np.dot(X.T, c)
@@ -76,7 +75,7 @@ def pval(vec_state0, full_projection,
                 A = B[:, active]
 
                 _gradient = np.zeros(1 + nactive + ninactive)
-                _gradient[0] = - data/sigma_sq_eta - np.inner(XTc, randomization_derivative)
+                _gradient[0] = - (data-beta_reference[j])/sigma_sq_eta - np.inner(XTc, randomization_derivative)
                 _gradient[1:(1 + nactive)] = np.dot(A.T, randomization_derivative)
                 _gradient[(1 + nactive):] = lam * randomization_derivative[inactive]
 

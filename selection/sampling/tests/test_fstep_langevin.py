@@ -60,6 +60,7 @@ def projection_cone(p, max_idx, max_sign):
 
     return _projection
 
+<<<<<<< HEAD
 def projection_cone_nosign(p, max_idx):
     """
 
