@@ -73,11 +73,11 @@ class change_point(object):
             segments = np.array([jumps[:-1],jumps[1:]]).T
             Xr = M.form_matrix(segments)[0]
             relaxed_fit = Xr.dot(np.linalg.pinv(Xr).dot(Y)) + Y.mean()
-            S = L.summary('onesided')
-            pS = pd.DataFrame(S)
-            pS['interval'] = [M.slices[i] for i in np.nonzero(active)[0]]
-            pS = pS.reindex(columns=['interval', 'pval', 'lasso', 'onestep'])
-
+#             S = L.summary('onesided')
+#             pS = pd.DataFrame(S)
+#             pS['interval'] = [M.slices[i] for i in np.nonzero(active)[0]]
+#             pS = pS.reindex(columns=['interval', 'pval', 'lasso', 'onestep'])
+            pS = None
         else:
             fit = relaxed_fit = Y.mean() * np.ones(self.p)
             pS = None
@@ -112,7 +112,7 @@ class change_point(object):
             j[-1] = M.input_shape[0] 
         return j
 
-def one_change_instance(delta, p=60, sigma=1):
+def one_jump_instance(delta, p=60, sigma=1):
     """
     Data generating mechanism of Figure 1 in [http://arxiv.org/abs/1606.03552](http://arxiv.org/abs/1606.03552).
 

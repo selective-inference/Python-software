@@ -1,8 +1,9 @@
+import numpy as np
 from selection.algorithms.change_point import one_jump_instance, change_point
 
 def test_change_point(delta, p=60, sigma=1, plot=False):
 
-    y, signal = instance(delta, p, sigma)
+    y, signal = one_jump_instance(delta, p, sigma)
     CP = change_point(y)
     fit, relaxed_fit, summary, segments = CP.fit()
     if plot:
