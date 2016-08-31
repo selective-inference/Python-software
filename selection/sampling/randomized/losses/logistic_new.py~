@@ -175,6 +175,67 @@ class logistic_Xrandom_new(selective_loss):
         return np.dot(self.X.T,np.dot(W, self.X))
 
 
+#     def setup_sampling(self, data, mean, linear_part, value):
+#         """
+#         Set up the sampling conditioning on the KKT constraints as well as
+#         the linear constraints C * data = d
+
+#         Parameters:
+#         ----------
+#         data:
+#         The subject of the sampling. In this case the gradient of loss at 0.
+
+#         mean: \beta^0_E
+
+#         sigma: default to None in logistic lasso
+
+#         linear_part: C
+
+#         value: d
+#         """
+
+#         self.accept_data = 0
+#         self.total_data = 0
+
+#         P = np.dot(linear_part.T, np.linalg.pinv(linear_part).T)
+#         I = np.identity(linear_part.shape[1])
+
+
+#         self.data = data
+#         self.mean = mean
+
+
+#         self.R = I - P
+#         #print 'nonzeros in R', np.count_nonzero(self.R)
+#         self.P = P
+#         self.linear_part = linear_part
+
+
+#     def proposal(self, data):
+#         if not hasattr(self, "L"):
+#             self.bootstrap_covariance()
+
+#         n, p = self.X.shape
+#         stepsize = 30. / np.sqrt(p)
+#         #new = data + stepsize * np.dot(self.R,
+#         #                               np.dot(self.L, np.random.standard_normal(p)))
+
+#         new = data + stepsize * np.dot(self.R,
+#                                        np.random.standard_normal(p))
+#         #print 'data differ',  np.count_nonzero(data-new)
+#         log_transition_p = self.logpdf(new) - self.logpdf(data)
+#         return new, log_transition_p
+
+#     def logpdf(self, data):
+#         return -((data-self.mean)*np.dot(self._cov_inv, data-self.mean)).sum() / 2
+
+#     def update_proposal(self, state, proposal, logpdf):
+#         pass
+
+
+
+
+
 
 
 

@@ -12,7 +12,7 @@ from base import selective_penalty
 
 # needed for adaptive MCMC
 # source: git@github.com:jcrudy/choldate.git
-from choldate import cholupdate, choldowndate
+# from choldate import cholupdate, choldowndate
 
 ## TODO: should use rr.weighted_l1norm
 

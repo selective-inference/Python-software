@@ -74,7 +74,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     if (np.sum(active)==0):
         return np.array([-1]), np.array([-1])
     inactive = ~active
-    loss.fit_E(active)
+    loss.fit_restricted(active)
     beta_unpenalized = loss._beta_unpenalized
     w = np.exp(np.dot(X[:, active], beta_unpenalized))
     pi = w / (1 + w)
@@ -82,8 +82,6 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     data = np.concatenate((beta_unpenalized, N), axis=0)
 
     ndata = data.shape[0];  nactive = betaE.shape[0];  ninactive = cube.shape[0]
-
-
 
     if covariance_estimate == "parametric":
         # parametric coveriance estimate
@@ -148,7 +146,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
         params , _ , opt_vec = penalty.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
 
         gradient = loss.gradient(data, params)
-        hessian = loss.hessian
+        hessian = loss._hessian
 
         ndata = data.shape[0]
         nactive = betaE.shape[0]
