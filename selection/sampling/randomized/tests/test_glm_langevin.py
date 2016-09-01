@@ -30,11 +30,14 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     penalty = rr.weighted_l1norm(lam * np.ones(p), lagrange=1.)
+    penalty = rr.group_lasso(np.arange(p),
+                             weights=dict(zip(np.arange(p), lam*np.ones(p))),
+                             lagrange=1.)
 
     # initial solution
 
     problem = rr.simple_problem(loss, penalty)
-    random_term = rr.identity_quadratic(epsilon, 0, randomization_scale*random_Z, 0)
+    random_term = rr.identity_quadratic(epsilon, 0, -randomization_scale*random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
 
     initial_soln = problem.solve(random_term, **solve_args)
@@ -90,7 +93,10 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     init_state[mle_slice] = beta_unpenalized
     init_state[null_slice] = null_stat
     init_state[beta_slice] = betaE
-    init_state[subgrad_slice] = -initial_grad[inactive] / (penalty.weights[inactive] * penalty.lagrange)
+
+    inactive_weight = np.array([penalty.weights[i] for i in range(p) if inactive[i]])
+    active_weight = np.array([penalty.weights[i] for i in range(p) if active[i]])
+    init_state[subgrad_slice] = (initial_grad[inactive] + random_Z[inactive] * randomization_scale) / (inactive_weight * penalty.lagrange)
 
     # define the projection map for langevin
 
@@ -121,10 +127,10 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     linear_term[:nactive][:,beta_slice] = linear_term[:nactive][:,beta_slice] + epsilon * np.identity(nactive)
 
     # subgrad part
-    linear_term[nactive:][:,subgrad_slice] = linear_term[nactive:][:,subgrad_slice] + np.diag(penalty.lagrange * penalty.weights[inactive])
+    linear_term[nactive:][:,subgrad_slice] = linear_term[nactive:][:,subgrad_slice] + np.diag(penalty.lagrange * inactive_weight)
 
     affine_term = np.zeros(p)
-    affine_term[:nactive] = penalty.lagrange * penalty.weights[active] * active_signs
+    affine_term[:nactive] = penalty.lagrange * active_weight * active_signs
 
     # define the gradient
 
