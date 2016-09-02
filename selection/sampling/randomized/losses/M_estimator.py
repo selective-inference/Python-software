@@ -10,7 +10,7 @@ class group_lasso_sampler(object):
         Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
 
         Computes $\bar{\beta}_E$ which is the restricted 
-        MLE (i.e. subject to the constraint $\beta_{-E}=0$).
+        M-estimator (i.e. subject to the constraint $\beta_{-E}=0$).
 
         Parameters:
         -----------
@@ -30,7 +30,7 @@ class group_lasso_sampler(object):
         ------
 
         Sets self._beta_unpenalized which will be used in the covariance matrix calculation.
-        Also computes Hessian of loss at restricted MLE as well as the bootstrap covariance.
+        Also computes Hessian of loss at restricted M-estimator as well as the bootstrap covariance.
 
         """
 
@@ -60,12 +60,14 @@ class group_lasso_sampler(object):
 
         # solve the restricted problem
 
+        overall = active + unpenalized
+
         X, Y = loss.data
         if self._is_transform:
             raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
-        X_E = X[:,active]
-        loss_E = rr.affine_smooth(self.loss, X_E)
-        _beta_unpenalized = loss_E.solve(**solve_args)
+        X_restricted = X[:,overall]
+        loss_restricted = rr.affine_smooth(self.loss, X_restricted)
+        _beta_unpenalized = loss_restricted.solve(**solve_args)
         beta_full = np.zeros(active.shape)
         beta_full[active] = _beta_unpenalized
         _hessian = loss.hessian(beta_full)
@@ -84,10 +86,9 @@ class group_lasso_sampler(object):
 
         # \bar{\beta}_{E \cup U} piece
 
-        overall = active + unpenalized
-        mle_slice = slice(0, overall.sum())
-        _mle_hessian = _hessian[:,overall]
-        _linear_term[:,mle_slice] = -_mle_hessian
+        Mest_slice = slice(0, overall.sum())
+        _Mest_hessian = _hessian[:,overall]
+        _linear_term[:,Mest_slice] = -_Mest_hessian
 
         # N_{-E} piece
 
