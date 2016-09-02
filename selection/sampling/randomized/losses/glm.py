@@ -38,7 +38,7 @@ class glm(regreg_glm):
         """
 
         self.active = active
-        self.size_active = np.sum(self.active)
+        size_active = np.sum(self.active)
 
         if self.active.any():
             self.inactive = ~active
@@ -51,7 +51,10 @@ class glm(regreg_glm):
             beta_full = np.zeros(active.shape)
             beta_full[active] = self._beta_unpenalized
             self._hessian = self.hessian(beta_full)
-            self._restricted_hessian = self._hessian[:, self.active]
+            _restricted_hessian = self._hessian[:, self.active]
+            self._restricted_hessian = np.zeros_like(_restricted_hessian)
+            self._restricted_hessian[:size_active] = _restricted_hessian[self.active]
+            self._restricted_hessian[size_active:] = _restricted_hessian[self.inactive]
             self.bootstrap_covariance()
         else:
             raise ValueError("Empty active set.")
@@ -76,14 +79,13 @@ class glm(regreg_glm):
             beta_full[self.active] = self._beta_unpenalized
 
             def mu(X):
-                return self.loss.smooth_objective(X.dot(beta_full), 'grad')
+                return self.loss.smooth_objective(X.dot(beta_full), 'grad') + y 
 
             _mean_cum = 0
 
             self._cov = np.zeros((p,p))
             Q = np.zeros((p,p))
 
-            mu_E = mu(X)
             W = np.diag(self.loss.hessian(X.dot(beta_full)))
             Q = np.dot(X[:, active].T, np.dot(W, X[:, active]))
             Q_inv = np.linalg.inv(Q)

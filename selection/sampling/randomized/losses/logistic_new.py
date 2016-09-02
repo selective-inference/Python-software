@@ -150,7 +150,8 @@ class logistic_Xrandom_new(selective_loss):
 
         restricted_hessian = self._restricted_hessian
         #restricted_hessian = self._cov_inv[:, :np.sum(self.active)]
-        g = - data1 + np.dot(restricted_hessian, beta[self.active] - data[:self.size_active])
+        g = np.dot(restricted_hessian, beta[self.active] - data[:self.size_active])
+        g[~self.active] -= data1[self.size_active:]
         return g
 
 

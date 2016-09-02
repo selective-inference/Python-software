@@ -8,11 +8,11 @@ from matplotlib import pyplot as plt
 import regreg.api as rr
 import selection.sampling.randomized.losses.lasso_randomX as lasso_randomX
 
-
 def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
                randomization_dist = "laplace", randomization_scale=1,
-               covariance_estimate="nonparametric"):
+               covariance_estimate="nonparametric", seed=0):
 
+    np.random.seed(seed)
     "randomization_dist: laplace or logistic"
     step_size = 1./p
     # problem setup
@@ -66,6 +66,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
                                          random_Z,
                                          epsilon)
 
+    print 'randomZ', random_Z
     print 'betaE', betaE
     print 'cube', cube
 
@@ -74,6 +75,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     if (np.sum(active)==0):
         return np.array([-1]), np.array([-1])
     inactive = ~active
+    np.random.seed(seed)
     loss.fit_restricted(active)
     beta_unpenalized = loss._beta_unpenalized
     w = np.exp(np.dot(X[:, active], beta_unpenalized))
@@ -167,16 +169,19 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
         T = data[:nactive]
         _gradient = np.zeros(ndata + nactive + ninactive)
 
-        _gradient[:ndata] = - np.dot(Sigma_full_inv, data)
+        g1 = np.dot(Sigma_full_inv, data)
         _gradient[:nactive] -= hessian[:,active].T.dot(randomization_derivative)
         _gradient[nactive:(ndata)] -= randomization_derivative[inactive]
 
         _gradient[ndata:(ndata + nactive)] = np.dot(A_restricted.T, randomization_derivative)
         _gradient[(ndata + nactive):] = lam * randomization_derivative[inactive]
 
+        _gradient[:ndata] -= g1
+
         return _gradient
 
 
+    np.random.seed(seed)
     null, alt = pval(init_vec_state, full_gradient, full_projection,
                       Sigma_full[:nactive, :nactive], data, nonzero, active,
                      Langevin_steps, burning, step_size)
@@ -190,9 +195,9 @@ if __name__ == "__main__":
     plt.figure()
     plt.ion()
 
-    for i in range(20):
+    for i in range(50):
         print "iteration", i
-        p0, pA = test_lasso()
+        p0, pA = test_lasso(seed=i)
         P0.extend(p0); PA.extend(pA)
         plt.clf()
         plt.xlim([0, 1])

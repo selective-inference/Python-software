@@ -6,11 +6,14 @@ from selection.sampling.randomized.losses.glm import glm
 from pvalues_randomX import pval
 from matplotlib import pyplot as plt
 import regreg.api as rr
+import selection.sampling.randomized.api as randomized
 
-def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
+
+def test_lasso(s=5, n=200, p=20, Langevin_steps=20000, burning=5000,
                randomization_dist = "laplace", randomization_scale=1,
-               covariance_estimate="nonparametric"):
+               covariance_estimate="nonparametric", seed=0):
 
+    np.random.seed(seed)
     "randomization_dist: laplace or logistic"
     step_size = 1./p
     # problem setup
@@ -29,7 +32,9 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-    penalty = rr.weighted_l1norm(lam * np.ones(p), lagrange=1.)
+
+    penalty2 = randomized.selective_l1norm_lan_logistic(p, lagrange=lam)
+    loss2 = randomized.logistic_Xrandom_new(X, y)
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), lam*np.ones(p))),
                              lagrange=1.)
@@ -37,7 +42,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     # initial solution
 
     problem = rr.simple_problem(loss, penalty)
-    random_term = rr.identity_quadratic(epsilon, 0, -randomization_scale*random_Z, 0)
+    random_term = rr.identity_quadratic(epsilon, 0, randomization_scale*random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
 
     initial_soln = problem.solve(random_term, **solve_args)
@@ -46,12 +51,20 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     active = (initial_soln != 0)
     inactive = ~active
     betaE = initial_soln[active]
+    print 'randomZ', random_Z
     print 'betaE', betaE
     active_signs = np.sign(betaE)
 
+    penalty2.active_set = active
+    penalty2.signs = active_signs
+    penalty2.quadratic_coef = epsilon
+
+    np.random.seed(seed)
     # fit restricted problem
 
+    np.random.seed(seed)
     loss.fit_restricted(active)
+    loss2.fit_restricted(active)
     beta_unpenalized = loss._beta_unpenalized
     beta_full = np.zeros(p)
     beta_full[active] = beta_unpenalized
@@ -96,7 +109,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
 
     inactive_weight = np.array([penalty.weights[i] for i in range(p) if inactive[i]])
     active_weight = np.array([penalty.weights[i] for i in range(p) if active[i]])
-    init_state[subgrad_slice] = (initial_grad[inactive] + random_Z[inactive] * randomization_scale) / (inactive_weight * penalty.lagrange)
+    init_state[subgrad_slice] = -(initial_grad[inactive] + random_Z[inactive] * randomization_scale) / (inactive_weight * penalty.lagrange)
 
     # define the projection map for langevin
 
@@ -118,7 +131,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     # hessian part
     H = loss._restricted_hessian
     linear_term[:,mle_slice] = -H
-    linear_term[:,beta_slice] = H 
+    linear_term[:,beta_slice] = H
 
     # null part
     linear_term[nactive:][:,null_slice] = -np.identity(ninactive)
@@ -129,16 +142,64 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     # subgrad part
     linear_term[nactive:][:,subgrad_slice] = linear_term[nactive:][:,subgrad_slice] + np.diag(penalty.lagrange * inactive_weight)
 
+    I = np.identity(p)
+    permute = np.zeros((p,p))
+    permute[active] = I[:nactive]
+    permute[inactive] = I[nactive:]
+    linear_term = permute.dot(linear_term)
+
     affine_term = np.zeros(p)
-    affine_term[:nactive] = penalty.lagrange * active_weight * active_signs
+    affine_term[active] = penalty.lagrange * active_weight * active_signs
 
     # define the gradient
 
     def full_gradient(state, loss=loss, penalty = penalty, Sigma_full_inv=Sigma_full_inv,
                       lam=lam, epsilon=epsilon, ndata=ndata, active=active, inactive=inactive):
 
+#         # old method
+
+#         nactive = active.sum()
+
+#         data = state[:ndata]
+#         betaE = state[ndata:(ndata + nactive)]
+#         cube = state[(ndata + nactive):]
+
+#         opt_vars = [betaE, cube]
+#         params , _ , opt_vec = penalty2.form_optimization_vector(opt_vars) # opt_vec=\epsilon(\beta 0)+u, u=\grad P(\beta), P penalty
+
+#         gradient = loss2.gradient(data, params)
+#         hessian = loss2._hessian
+
+#         ndata = data.shape[0]
+#         nactive = betaE.shape[0]
+#         ninactive = cube.shape[0]
+
+#         omega2 = -(gradient+opt_vec)
+#         if randomization_dist == "laplace":
+#             randomization_derivative2 = np.sign(omega2)/randomization_scale
+
+#         if randomization_dist == "logistic":
+#             omega_scaled = omega2/randomization_scale
+#             randomization_derivative2 = -(np.exp(-omega_scaled)-1)/(np.exp(-omega_scaled)+1)
+#             randomization_derivative2 /= randomization_scale
+
+#         A = hessian + epsilon * np.identity(nactive + ninactive)
+#         A_restricted = A[:, active]
+
+#         #T = data[:nactive]
+#         _gradient2 = np.zeros(ndata + nactive + ninactive)
+
+#         _gradient2[:ndata] = - np.dot(Sigma_full_inv, data)
+#         _gradient2[:nactive] -= hessian[:,active].T.dot(randomization_derivative2)
+#         _gradient2[nactive:(ndata)] -= randomization_derivative2[inactive]
+
+#         _gradient2[ndata:(ndata + nactive)] = np.dot(A_restricted.T, randomization_derivative2)
+#         _gradient2[(ndata + nactive):] = lam * randomization_derivative2[inactive]
+
+
         # affine reconstruction map
-        omega = linear_term.dot(state) + affine_term
+
+        omega = -(linear_term.dot(state) + affine_term)
 
         if randomization_dist == "laplace":
             randomization_derivative = np.sign(omega)/randomization_scale
@@ -148,15 +209,24 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
             randomization_derivative = -(np.exp(-omega_scaled)-1)/(np.exp(-omega_scaled)+1)
             randomization_derivative /= randomization_scale
 
-        _gradient = -linear_term.T.dot(randomization_derivative)
+        #print hessian[:,active].T.dot(randomization_derivative2)
+        #print linear_term.T.dot(randomization_derivative)[:nactive]
+        _gradient = linear_term.T.dot(randomization_derivative)
 
         # now add in the Gaussian derivative
 
-        _gradient[:p] -= np.dot(Sigma_full_inv, data)
+        data = state[:p]
+        g1 = np.dot(Sigma_full_inv, data)
+        _gradient[:p] -= g1
+
+#        np.testing.assert_allclose(_gradient, _gradient2)
+#        np.testing.assert_allclose(randomization_derivative, randomization_derivative2) 
+#        np.testing.assert_allclose(omega, omega2)
 
         return _gradient
 
 
+    np.random.seed(seed)
     null, alt = pval(init_state, full_gradient, full_projection,
                       Sigma_full[:nactive, :nactive], data, nonzero, active,
                      Langevin_steps, burning, step_size)
@@ -170,9 +240,9 @@ if __name__ == "__main__":
     plt.figure()
     plt.ion()
 
-    for i in range(20):
+    for i in range(50):
         print "iteration", i
-        p0, pA = test_lasso()
+        p0, pA = test_lasso(seed=i)
         P0.extend(p0); PA.extend(pA)
         plt.clf()
         plt.xlim([0, 1])
