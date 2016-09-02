@@ -1,8 +1,8 @@
 import numpy as np
-from regreg.smooth.glm import glm as regreg_glm
+from regreg.smooth.glm import glm as regreg_glm, logistic_loglike
 import regreg.api as rr
 
-class group_lasso_sampler(object):
+class M_estimator(object):
 
     def __init__(self, loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
         """
@@ -37,18 +37,30 @@ class group_lasso_sampler(object):
         (self.loss,
          self.epsilon,
          self.penalty,
-         self.randomization) = (loss,
-                                epsilon,
-                                penalty,
-                                randomization)
+         self.randomization,
+         self.solve_args) = (loss,
+                             epsilon,
+                             penalty,
+                             randomization,
+                             solve_args)
          
+    def solve(self):
+
+        (loss,
+         epsilon,
+         penalty,
+         randomization,
+         solve_args) = (self.loss,
+                          self.epsilon,
+                          self.penalty,
+                          self.randomization,
+                          self.solve_args)
+
         # initial solution
 
         problem = rr.simple_problem(loss, penalty)
         self._randomZ = self.randomization.sample()
         self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
-        solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
-
         self.initial_soln = problem.solve(self._random_term, **solve_args)
 
 
@@ -83,7 +95,7 @@ class group_lasso_sampler(object):
             unpenalized_groups[i] = (penalty.weights[g] == 0)
             if active_groups[i]:
                 active[group] = True
-                z = np.zeros_like(active)
+                z = np.zeros(active.shape, np.float)
                 z[group] = initial_soln[group] / np.linalg.norm(initial_soln[group])
                 active_directions.append(z)
                 initial_scalings.append(np.linalg.norm(initial_soln[group]))
@@ -97,7 +109,7 @@ class group_lasso_sampler(object):
 
         # initial state for opt variables
 
-        initial_subgrad = -(self.loss.smooth_objective(self.initial_soln, 'grad') + self._random_term.smooth_objective(self.initial_soln, 'grad'))
+        initial_subgrad = -(self.loss.smooth_objective(self.initial_soln, 'grad') + self._random_term.objective(self.initial_soln, 'grad'))
         initial_subgrad = initial_subgrad[inactive]
         initial_unpenalized = self.initial_soln[unpenalized]
         self._initial_state = np.concatenate([initial_scalings,
@@ -106,16 +118,19 @@ class group_lasso_sampler(object):
 
         active_directions = np.array(active_directions).T
 
+        # we are implicitly assuming that
+        # loss is a pairs model
 
         X, Y = loss.data
-        if self._is_transform:
+        if loss._is_transform:
             raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
         X_restricted = X[:,overall]
-        loss_restricted = rr.affine_smooth(self.loss, X_restricted)
+        loss_restricted = rr.affine_smooth(loss.loss, X_restricted)
         _beta_unpenalized = loss_restricted.solve(**solve_args)
         beta_full = np.zeros(active.shape)
         beta_full[active] = _beta_unpenalized
         _hessian = loss.hessian(beta_full)
+        self._beta_full = beta_full
 
         # form linear part
 
@@ -149,7 +164,8 @@ class group_lasso_sampler(object):
         # beta_U piece
 
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
-        _opt_linear_term[:,unpenalized_slice] = _hessian[:,unpenalized] + epsilon * np.identity(unpenalized.sum())
+        if unpenalized.sum():
+            _opt_linear_term[:,unpenalized_slice] = _hessian[:,unpenalized] + epsilon * np.identity(unpenalized.sum())
 
         # subgrad piece
         subgrad_slice = slice(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
@@ -158,10 +174,12 @@ class group_lasso_sampler(object):
         # form affine part
 
         _opt_affine_term = np.zeros(p)
+        idx = 0
         for i, g in enumerate(groups):
             if active_groups[i]:
                 group = penalty.groups == g
-                _opt_affine_term[group] = active_directions[i][group] * penalty.weights[g]
+                _opt_affine_term[group] = active_directions[:,idx][group] * penalty.weights[g]
+                idx += 1
 
         # two transforms that encode score and optimization
         # variable roles 
@@ -178,7 +196,7 @@ class group_lasso_sampler(object):
         self.scaling_slice = scaling_slice
 
         new_groups = penalty.groups[inactive]
-        new_weights = [penalty.weights[g] for g in penalty.weights.keys() if g in np.unique(new_groups)]
+        new_weights = dict([(g,penalty.weights[g]) for g in penalty.weights.keys() if g in np.unique(new_groups)])
 
         # we form a dual group lasso object
         # to do the projection
@@ -186,45 +204,15 @@ class group_lasso_sampler(object):
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
 
+        (self.overall,
+         self.active,
+         self.unpenalized,
+         self.inactive) = (overall,
+                           active,
+                           unpenalized,
+                           inactive)
+
         self.setup_bootstrap()
-
-        def setup_bootstrap(self):
-            """
-            Should define a callable _boot_score
-            that takes `indices` and returns
-            a bootstrap sample of (\bar{\beta}_{E \cup U}, N_{-(E \cup U)})
-            """
-            # form objects needed to bootstrap the score
-            # which will be used to estimate covariance
-            # of score and target model parameters
-
-            # this code below will work for GLMs
-            # not general M-estimators !!!
-            # self.loss is the loss for a saturated GLM likelihood
-
-            # gradient of saturated loss if \mu - Y
-
-            if isinstance(self.loss, logistic_loglike):
-                Y = Y[0]
-
-            _boot_mu = lambda X: self.loss.smooth_objective(X.dot(beta_full), 'grad') + Y
-
-            _bootQ = np.zeros((p,p))
-
-            _bootW = np.diag(self.loss.hessian(X.dot(beta_full)))
-            _bootQ = X[:, overall].T.dot(self._bootW.dot(X[:, overall]))
-            _bootQinv = np.linalg.inv(self._bootQ)
-            _bootC = X[:, inactive].T.dot(self._bootW.dot(X[:, active]))
-            _bootI = self._bootC.dot(self._bootQinv)
-
-            noverall = overall.sum()
-            def _boot_score(X_star, Y_star):
-                initial_score = X_star.T.dot(Y_star - _boot_mu(X_star))
-                result = np.zeros_like(initial_score)
-                result[:noverall] = _bootQinv.dot(initial_score)
-                result[noverall:] = initial_score[inactive] + _bootI.dot(result[:noverall])
-                return result
-            self._boot_score = _boot_score
 
     def projection(self, opt_state):
         """
@@ -258,6 +246,67 @@ class group_lasso_sampler(object):
         opt_grad = self.opt_transform.adjoint_map(randomization_derivative)
         return data_grad, opt_grad
 
+    def setup_bootstrap(self):
+        """
+        Should define a callable _boot_score
+        that takes `indices` and returns
+        a bootstrap sample of (\bar{\beta}_{E \cup U}, N_{-(E \cup U)})
+        """
+
+        raise NotImplementedError("abstract method")
+
+    def bootstrap_score(self, indices):
+        """
+        """
+
+        raise NotImplementedError("abstract method")
+
+
+class glm(M_estimator):
+
+    def setup_bootstrap(self):
+        """
+        Should define a callable _boot_score
+        that takes `indices` and returns
+        a bootstrap sample of (\bar{\beta}_{E \cup U}, N_{-(E \cup U)})
+        """
+        # form objects needed to bootstrap the score
+        # which will be used to estimate covariance
+        # of score and target model parameters
+
+        # this code below will work for GLMs
+        # not general M-estimators !!!
+        # self.loss is the loss for a saturated GLM likelihood
+
+        # gradient of saturated loss if \mu - Y
+
+        overall, inactive = self.overall, self.inactive
+
+        X, Y = self.loss.data
+
+        if isinstance(self.loss.loss, logistic_loglike):
+            Y = Y[0]
+        self._bootX, self._bootY = X, Y
+
+        _boot_mu = lambda X: self.loss.loss.smooth_objective(X.dot(self._beta_full), 'grad') + Y
+
+        _bootQ = np.zeros((p,p))
+
+        _bootW = np.diag(self.loss.loss.hessian(X.dot(self._beta_full)))
+        _bootQ = X[:, overall].T.dot(_bootW.dot(X[:, overall]))
+        _bootQinv = np.linalg.inv(_bootQ)
+        _bootC = X[:, inactive].T.dot(_bootW.dot(X[:, overall]))
+        _bootI = _bootC.dot(_bootQinv)
+
+        noverall = overall.sum()
+        def _boot_score(X_star, Y_star):
+            initial_score = X_star.T.dot(Y_star - _boot_mu(X_star))
+            result = np.zeros_like(initial_score)
+            result[:noverall] = _bootQinv.dot(initial_score[overall])
+            result[noverall:] = initial_score[inactive] + _bootI.dot(result[:noverall])
+            return result
+        self._boot_score = _boot_score
+
     def bootstrap_score(self, indices):
         """
         """
@@ -271,5 +320,35 @@ class group_lasso_sampler(object):
 
         return self._boot_score(X_star, Y_star)
 
+if __name__ == "__main__":
 
+    from selection.algorithms.randomized import logistic_instance
+    from selection.sampling.randomized.randomization import base
+
+    s, n, p = 5, 200, 20 
+
+    randomization = base.laplace((p,), scale=0.5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    print 'true_beta', beta
+    nonzero = np.where(beta)[0]
+    lam_frac = 1.
+
+    loss = regreg_glm.logistic(X, y)
+    epsilon = 1.
+
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    penalty = rr.group_lasso(np.arange(p),
+                             weights=dict(zip(np.arange(p), np.ones(p)*lam)), lagrange=1.)
+
+    M_est = glm(loss, epsilon, penalty, randomization)
+    M_est.solve()
+    M_est.setup_sampler()
+    
+    result = []
+
+    for _ in range(10):
+        indices = np.random.choice(n, size=(n,), replace=True)
+        result.append(M_est.bootstrap_score(indices))
+
+    print(np.array(result).shape)
 
