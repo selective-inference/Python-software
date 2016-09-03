@@ -212,7 +212,13 @@ class M_estimator(object):
                            unpenalized,
                            inactive)
 
-        self.setup_bootstrap()
+    def form_covariance(self, target):
+        """
+        For an estimator of a target statistical 
+        functional, compute covariance
+        of the estimator with score.
+        """
+        raise NotImplementedError('abstract method')
 
     def projection(self, opt_state):
         """
@@ -246,23 +252,34 @@ class M_estimator(object):
         opt_grad = self.opt_transform.adjoint_map(randomization_derivative)
         return data_grad, opt_grad
 
-    def setup_bootstrap(self):
-        """
-        Should define a callable _boot_score
-        that takes `indices` and returns
-        a bootstrap sample of (\bar{\beta}_{E \cup U}, N_{-(E \cup U)})
-        """
-
-        raise NotImplementedError("abstract method")
-
-    def bootstrap_score(self, indices):
-        """
-        """
-
-        raise NotImplementedError("abstract method")
-
 
 class glm(M_estimator):
+
+    def form_covariance(self, target_bootstrap, nsample=2000):
+        """
+
+        """
+        self.setup_bootstrap()
+
+        _target_mean = 0
+        _score_mean = 0
+        _cov = 0
+        for _ in range(nsample):
+            indices = np.random.choice(n, size=(n,), replace=True)
+            target_star = target_bootstrap(indices)
+            score_star = self.bootstrap_score(indices)
+
+            _target_mean += target_star
+            _score_mean += score_star
+
+            _cov += np.multiply.outer(target_star, score_star)
+
+        _cov /= float(nsample)
+        _target_mean = _target_mean / float(nsample)
+        _score_mean = _score_mean / float(nsample)
+        _cov -= np.multiply.outer(_target_mean, _score_mean)
+
+        return _cov
 
     def setup_bootstrap(self):
         """
@@ -320,6 +337,13 @@ class glm(M_estimator):
 
         return self._boot_score(X_star, Y_star)
 
+    def target_bootstrap(self, indices):
+        """
+        Bootstrap the `overall` M-estimator coefficients
+        """
+        overall = self.overall
+        return self.bootstrap_score(indices)[:overall.sum()]
+
 if __name__ == "__main__":
 
     from selection.algorithms.randomized import logistic_instance
@@ -343,7 +367,8 @@ if __name__ == "__main__":
     M_est = glm(loss, epsilon, penalty, randomization)
     M_est.solve()
     M_est.setup_sampler()
-    
+    cov = M_est.form_covariance(M_est.target_bootstrap)
+    print cov.shape
     result = []
 
     for _ in range(10):
