@@ -424,6 +424,7 @@ if __name__ == "__main__":
 
     # make sure bootstrap runs 
 
+    result = []
     for _ in range(10):
         indices = np.random.choice(n, size=(n,), replace=True)
         result.append(M_est.bootstrap_score(indices))
@@ -435,6 +436,7 @@ if __name__ == "__main__":
 
     # for second coefficient
     A, b = M_est.condition(cov[1], target_cov[1,1], target_initial[1])
+    target_inv_cov = 1. / target_cov[1,1]
 
     initial_state = np.hstack([target_initial[1],
                                M_est._initial_opt_state])
@@ -443,9 +445,18 @@ if __name__ == "__main__":
     opt_slice = slice(1, p+1)
 
     def target_gradient(state):
+        # with many samplers, we will add up the `target_slice` component
+        # many target_grads
+        # and only once do the Gaussian addition of full_grad
+
         target = state[target_slice]
         opt_state = state[opt_slice]
-        return np.hstack(M_est.gradient(target, (A, b), opt_state))
+        target_grad = np.hstack(M_est.gradient(target, (A, b), opt_state))
+
+        full_grad = target_grad.copy()
+        full_grad[target_slice] -= target / target_cov[1,1]
+
+        return full_grad
 
     def target_projection(state):
         opt_state = state[opt_slice]
