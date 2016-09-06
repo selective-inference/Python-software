@@ -415,34 +415,43 @@ if __name__ == "__main__":
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), np.ones(p)*lam)), lagrange=1.)
 
+    # first randomization
+
     M_est = glm(loss, epsilon, penalty, randomization)
     M_est.solve()
     M_est.setup_sampler()
+
+    # second randomization
+
+    M_est2 = glm(loss, epsilon, penalty, randomization)
+    M_est2.solve()
+    M_est2.setup_sampler()
+
+    # for exposition, we will just take
+    # the target from first randomization
+    # should really do something different 
+
     cov = M_est.form_covariance(M_est.bootstrap_target)
+    cov2 = M_est2.form_covariance(M_est.bootstrap_target)
     target_cov = M_est.form_target_cov()
+
     print cov.shape, target_cov.shape
-
-    # make sure bootstrap runs 
-
-    result = []
-    for _ in range(10):
-        indices = np.random.choice(n, size=(n,), replace=True)
-        result.append(M_est.bootstrap_score(indices))
-
-    print(np.array(result).shape)
-
 
     target_initial = M_est._initial_score_state[:M_est.active.sum()]
 
     # for second coefficient
-    A, b = M_est.condition(cov[1], target_cov[1,1], target_initial[1])
+    A1, b1 = M_est.condition(cov[1], target_cov[1,1], target_initial[1])
+    A2, b2 = M_est2.condition(cov2[1], target_cov[1,1], target_initial[1])
+
     target_inv_cov = 1. / target_cov[1,1]
 
     initial_state = np.hstack([target_initial[1],
-                               M_est._initial_opt_state])
+                               M_est._initial_opt_state,
+                               M_est2._initial_opt_state])
 
     target_slice = slice(0,1)
     opt_slice = slice(1, p+1)
+    opt_slice2 = slice(p+1, 2*p+1)
 
     def target_gradient(state):
         # with many samplers, we will add up the `target_slice` component
@@ -451,9 +460,15 @@ if __name__ == "__main__":
 
         target = state[target_slice]
         opt_state = state[opt_slice]
-        target_grad = np.hstack(M_est.gradient(target, (A, b), opt_state))
+        opt_state2 = state[opt_slice2]
+        target_grad = M_est.gradient(target, (A1, b1), opt_state)
+        target_grad2 = M_est.gradient(target, (A2, b2), opt_state2)
 
-        full_grad = target_grad.copy()
+        full_grad = np.zeros_like(state)
+        full_grad[opt_slice] = target_grad[1]
+        full_grad[opt_slice2] = target_grad2[1]
+        full_grad[target_slice] = target_grad[0] + target_grad2[0]
+
         full_grad[target_slice] -= target / target_cov[1,1]
 
         return full_grad
@@ -461,6 +476,8 @@ if __name__ == "__main__":
     def target_projection(state):
         opt_state = state[opt_slice]
         state[opt_slice] = M_est.projection(opt_state)
+        opt_state2 = state[opt_slice2]
+        state[opt_slice2] = M_est2.projection(opt_state2)
         return state
 
     target_langevin = projected_langevin(initial_state,
