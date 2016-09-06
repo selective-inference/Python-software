@@ -462,7 +462,7 @@ if __name__ == "__main__":
         opt_state = state[opt_slice]
         opt_state2 = state[opt_slice2]
         target_grad = M_est.gradient(target, (A1, b1), opt_state)
-        target_grad2 = M_est.gradient(target, (A2, b2), opt_state2)
+        target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
 
         full_grad = np.zeros_like(state)
         full_grad[opt_slice] = target_grad[1]
