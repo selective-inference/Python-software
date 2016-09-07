@@ -123,7 +123,7 @@ class M_estimator(object):
         _beta_unpenalized = restricted_glm(loss, overall, solve_args=solve_args)
 
         beta_full = np.zeros(active.shape)
-        beta_full[active] = _beta_unpenalized
+        beta_full[overall] = _beta_unpenalized
         _hessian = loss.hessian(beta_full)
         self._beta_full = beta_full
 
