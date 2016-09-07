@@ -274,29 +274,6 @@ class M_estimator(object):
 
         return (composition_linear_part, composition_offset)
 
-# class glm(M_estimator):
-
-#     def setup_bootstrap(self):
-#         """
-#         Should return a callable _boot_score
-#         that takes `indices` and returns
-#         a bootstrap sample of (\bar{\beta}_{E \cup U}, N_{-(E \cup U)})
-#         """
-#         # form objects needed to bootstrap the score
-#         # which will be used to estimate covariance
-#         # of score and target model parameters
-
-#         # this code below will work for GLMs
-#         # not general M-estimators !!!
-#         # self.loss is the loss for a saturated GLM likelihood
-
-#         # gradient of saturated loss if \mu - Y
-
-#         return pairs_bootstrap_glm(self.loss, 
-#                                    self.overall, 
-#                                    beta_full=self._beta_full,
-#                                    inactive=self.inactive)[0]
-
 def restricted_glm(glm_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 
     X, Y = glm_loss.data
@@ -414,6 +391,7 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active):
 from selection.algorithms.randomized import logistic_instance
 from selection.sampling.randomized.randomization import base
 from selection.sampling.langevin import projected_langevin
+from selection.distributions.discrete_family import discrete_family
 
 def main():
     s, n, p = 5, 200, 20 
@@ -454,123 +432,77 @@ def main():
     # we take target to be union of two active sets
 
     active = M_est1.active + M_est2.active
-    boot_target, target_observed = pairs_bootstrap_glm(loss, active)
 
-    # could maybe stack the scores,
-    # have bootstrap_cov compute covariance on
-    # same indices...
+    if set(nonzero).issubset(np.nonzero(active)[0]):
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active)
 
-    target_cov, cov1, cov2 = bootstrap_cov((n, n), boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
+        # target are all true null coefficients selected
 
-    print cov1.shape, target_cov.shape
+        target_cov, cov1, cov2 = bootstrap_cov((n, n), boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
 
-    # for second coefficient
-    A1, b1 = M_est1.condition(cov1[1], target_cov[1,1], target_observed[1])
-    A2, b2 = M_est2.condition(cov2[1], target_cov[1,1], target_observed[1])
+        active_set = np.nonzero(active)[0]
+        I = inactive_selected = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+        
+        A1, b1 = M_est1.condition(cov1[I], target_cov[I][:,I], target_observed[I])
+        A2, b2 = M_est2.condition(cov2[I], target_cov[I][:,I], target_observed[I])
 
-    target_inv_cov = 1. / target_cov[1,1]
+        target_inv_cov = np.linalg.inv(target_cov[I][:,I])
 
-    initial_state = np.hstack([target_observed[1],
-                               M_est1._initial_opt_state,
-                               M_est2._initial_opt_state])
-
-    target_slice = slice(0,1)
-    opt_slice = slice(1, p+1)
-    opt_slice2 = slice(p+1, 2*p+1)
-
-    def target_gradient(state):
-        # with many samplers, we will add up the `target_slice` component
-        # many target_grads
-        # and only once do the Gaussian addition of full_grad
-
-        target = state[target_slice]
-        opt_state = state[opt_slice]
-        opt_state2 = state[opt_slice2]
-        target_grad = M_est1.gradient(target, (A1, b1), opt_state)
-        target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
-
-        full_grad = np.zeros_like(state)
-        full_grad[opt_slice] = target_grad[1]
-        full_grad[opt_slice2] = target_grad2[1]
-        full_grad[target_slice] = target_grad[0] + target_grad2[0]
-
-        full_grad[target_slice] -= target * target_inv_cov
-
-        return full_grad
-
-    def target_projection(state):
-        opt_state = state[opt_slice]
-        state[opt_slice] = M_est1.projection(opt_state)
-        opt_state2 = state[opt_slice2]
-        state[opt_slice2] = M_est2.projection(opt_state2)
-        return state
-
-    target_langevin = projected_langevin(initial_state,
-                                         target_gradient,
-                                         target_projection,
-                                         1. / p)
-
-    Langevin_steps = 10000
-    burning = 1000
-    samples = []
-    for i in range(Langevin_steps):
-        if (i>burning):
-            target_langevin.next()
-            samples.append(target_langevin.state[target_slice].copy())
-
-    # let's try a 2-dimensional target
-
-    A1, b1 = M_est1.condition(cov1[:2], target_cov[:2][:,:2], target_observed[:2])
-    A2, b2 = M_est2.condition(cov2[:2], target_cov[:2][:,:2], target_observed[:2])
-
-    target_inv_cov = np.linalg.inv(target_cov[:2][:,:2])
-
-    initial_state = np.hstack([target_observed[:2],
-                               M_est1._initial_opt_state,
-                               M_est2._initial_opt_state])
+        initial_state = np.hstack([target_observed[I],
+                                   M_est1._initial_opt_state,
+                                   M_est2._initial_opt_state])
 
 
-    target_slice = slice(0,2)
-    opt_slice = slice(2, p+2)
-    opt_slice2 = slice(p+2, 2*p+2)
+        ntarget = len(I)
+        target_slice = slice(0, ntarget)
+        opt_slice1 = slice(ntarget, p + ntarget)
+        opt_slice2 = slice(p + ntarget, 2*p + ntarget)
 
-    def target_gradient(state):
-        # with many samplers, we will add up the `target_slice` component
-        # many target_grads
-        # and only once do the Gaussian addition of full_grad
+        def target_gradient(state):
+            # with many samplers, we will add up the `target_slice` component
+            # many target_grads
+            # and only once do the Gaussian addition of full_grad
 
-        target = state[target_slice]
-        opt_state = state[opt_slice]
-        opt_state2 = state[opt_slice2]
-        target_grad = M_est1.gradient(target, (A1, b1), opt_state)
-        target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
+            target = state[target_slice]
+            opt_state1 = state[opt_slice1]
+            opt_state2 = state[opt_slice2]
+            target_grad1 = M_est1.gradient(target, (A1, b1), opt_state1)
+            target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
 
-        full_grad = np.zeros_like(state)
-        full_grad[opt_slice] = target_grad[1]
-        full_grad[opt_slice2] = target_grad2[1]
-        full_grad[target_slice] = target_grad[0] + target_grad2[0]
+            full_grad = np.zeros_like(state)
+            full_grad[opt_slice1] = -target_grad1[1]
+            full_grad[opt_slice2] = -target_grad2[1]
+            full_grad[target_slice] = -target_grad1[0] - target_grad2[0]
 
-        full_grad[target_slice] -= target_inv_cov.dot(target)
+            full_grad[target_slice] -= target_inv_cov.dot(target)
 
-        return full_grad
+            return full_grad
 
-    def target_projection(state):
-        opt_state = state[opt_slice]
-        state[opt_slice] = M_est1.projection(opt_state)
-        opt_state2 = state[opt_slice2]
-        state[opt_slice2] = M_est2.projection(opt_state2)
-        return state
+        def target_projection(state):
+            opt_state1 = state[opt_slice1]
+            state[opt_slice1] = M_est1.projection(opt_state1)
+            opt_state2 = state[opt_slice2]
+            state[opt_slice2] = M_est2.projection(opt_state2)
+            return state
 
-    target_langevin = projected_langevin(initial_state,
-                                         target_gradient,
-                                         target_projection,
-                                         1. / p)
+        target_langevin = projected_langevin(initial_state,
+                                             target_gradient,
+                                             target_projection,
+                                             1. / p)
 
 
-    Langevin_steps = 10000
-    burning = 1000
-    samples2 = []
-    for i in range(Langevin_steps):
-        if (i>burning):
-            target_langevin.next()
-            samples2.append(target_langevin.state[target_slice].copy())
+        Langevin_steps = 10000
+        burning = 1000
+        samples = []
+        for i in range(Langevin_steps + burning):
+            if (i>=burning):
+                target_langevin.next()
+                samples.append(target_langevin.state[target_slice].copy())
+                
+        test_stat = np.linalg.norm
+        observed = test_stat(target_observed[I])
+        sample_test_stat = np.array([test_stat(x) for x in samples])
+
+        family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
+        pval = family.ccdf(0, observed)
+        return pval
