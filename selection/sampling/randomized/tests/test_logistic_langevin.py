@@ -22,6 +22,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
+    np.random.seed(seed)
     if randomization_dist=="laplace":
         randomization = laplace(loc=0, scale=1.)
         random_Z = randomization.rvs(p)
@@ -31,7 +32,9 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     #epsilon = 1./np.sqrt(n)
     epsilon = 1.
 
+    np.random.seed(seed)
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    print lam, 'lam'
     penalty = randomized.selective_l1norm_lan_logistic(p, lagrange=lam)
 
 
@@ -39,7 +42,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
 
     problem = rr.simple_problem(loss, penalty)
 
-    random_term = rr.identity_quadratic(epsilon, 0, randomization_scale*random_Z, 0)
+    random_term = rr.identity_quadratic(epsilon, 0, -randomization_scale*random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
 
     initial_soln = problem.solve(random_term, **solve_args)
@@ -55,7 +58,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     pi_initial = w_initial/(1+w_initial)
     initial_grad = -np.dot(X.T, y-pi_initial)
     print "initial gradient manual", initial_grad
-    subgradient = -(initial_grad+epsilon*initial_soln+randomization_scale*random_Z)
+    subgradient = -(initial_grad+epsilon*initial_soln-randomization_scale*random_Z)
     cube = subgradient[inactive]/lam
     print 'cube', cube
 
@@ -78,6 +81,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
     np.random.seed(seed)
     loss.fit_restricted(active)
     beta_unpenalized = loss._beta_unpenalized
+    print beta_unpenalized, 'unpenalized'
     w = np.exp(np.dot(X[:, active], beta_unpenalized))
     pi = w / (1 + w)
     N = np.dot(X[:, inactive].T, y - pi)
@@ -106,6 +110,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
         # non-parametric covariance estimate
         Sigma_full = loss._cov
 
+    print Sigma_full[0,0]
     Sigma_full_inv = np.linalg.inv(Sigma_full)
 
 
@@ -188,7 +193,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=10000, burning=2000,
 
     return null, alt
 
-if __name__ == "__main__":
+def main():
 
     P0, PA = [], []
 

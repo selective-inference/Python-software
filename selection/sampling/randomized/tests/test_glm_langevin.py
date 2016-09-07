@@ -23,6 +23,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=20000, burning=5000,
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
+    np.random.seed(seed)
     if randomization_dist=="laplace":
         randomization = laplace(loc=0, scale=1.)
         random_Z = randomization.rvs(p)
@@ -42,7 +43,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=20000, burning=5000,
     # initial solution
 
     problem = rr.simple_problem(loss, penalty)
-    random_term = rr.identity_quadratic(epsilon, 0, randomization_scale*random_Z, 0)
+    random_term = rr.identity_quadratic(epsilon, 0, -randomization_scale*random_Z, 0)
     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
 
     initial_soln = problem.solve(random_term, **solve_args)
@@ -59,13 +60,14 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=20000, burning=5000,
     penalty2.signs = active_signs
     penalty2.quadratic_coef = epsilon
 
-    np.random.seed(seed)
     # fit restricted problem
 
     np.random.seed(seed)
     loss.fit_restricted(active)
+    np.random.seed(seed)
     loss2.fit_restricted(active)
     beta_unpenalized = loss._beta_unpenalized
+    print beta_unpenalized, 'beta unpenalized'
     beta_full = np.zeros(p)
     beta_full[active] = beta_unpenalized
     null_stat = -loss.gradient(beta_full)[inactive]
@@ -93,6 +95,8 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=20000, burning=5000,
         # non-parametric covariance estimate
         Sigma_full = loss._cov
 
+    print np.diag(Sigma_full)
+    stop
     Sigma_full_inv = np.linalg.inv(Sigma_full)
 
     # initialize the sampler
@@ -109,7 +113,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=20000, burning=5000,
 
     inactive_weight = np.array([penalty.weights[i] for i in range(p) if inactive[i]])
     active_weight = np.array([penalty.weights[i] for i in range(p) if active[i]])
-    init_state[subgrad_slice] = -(initial_grad[inactive] + random_Z[inactive] * randomization_scale) / (inactive_weight * penalty.lagrange)
+    init_state[subgrad_slice] = -(initial_grad[inactive] - random_Z[inactive] * randomization_scale) / (inactive_weight * penalty.lagrange)
 
     # define the projection map for langevin
 
@@ -233,7 +237,7 @@ def test_lasso(s=5, n=200, p=20, Langevin_steps=20000, burning=5000,
 
     return null, alt
 
-if __name__ == "__main__":
+def main():
 
     P0, PA = [], []
 

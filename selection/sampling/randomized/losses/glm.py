@@ -46,7 +46,7 @@ class glm(regreg_glm):
             if self._is_transform:
                 raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
             X_E = X[:, self.active] 
-            loss_E = rr.affine_smooth(self.loss, X_E)
+            loss_E = rr.affine_smooth(self.saturated_loss, X_E)
             self._beta_unpenalized = loss_E.solve(**solve_args)
             beta_full = np.zeros(active.shape)
             beta_full[active] = self._beta_unpenalized
@@ -69,8 +69,6 @@ class glm(regreg_glm):
 
             X, y = self.data
 
-            if isinstance(self.loss, logistic_loglike):
-                y = y[0]
             n, p = X.shape
             active=self.active
             inactive=~active
@@ -79,14 +77,14 @@ class glm(regreg_glm):
             beta_full[self.active] = self._beta_unpenalized
 
             def mu(X):
-                return self.loss.smooth_objective(X.dot(beta_full), 'grad') + y 
+                return self.saturated_loss.smooth_objective(X.dot(beta_full), 'grad') + y 
 
             _mean_cum = 0
 
             self._cov = np.zeros((p,p))
             Q = np.zeros((p,p))
 
-            W = np.diag(self.loss.hessian(X.dot(beta_full)))
+            W = np.diag(self.saturated_loss.hessian(X.dot(beta_full)))
             Q = np.dot(X[:, active].T, np.dot(W, X[:, active]))
             Q_inv = np.linalg.inv(Q)
             C = np.dot(X[:, inactive].T, np.dot(W, X[:, active]))
