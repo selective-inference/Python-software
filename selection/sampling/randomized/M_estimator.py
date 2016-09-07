@@ -51,10 +51,10 @@ class M_estimator(object):
          penalty,
          randomization,
          solve_args) = (self.loss,
-                          self.epsilon,
-                          self.penalty,
-                          self.randomization,
-                          self.solve_args)
+                        self.epsilon,
+                        self.penalty,
+                        self.randomization,
+                        self.solve_args)
 
         # initial solution
 
@@ -62,7 +62,6 @@ class M_estimator(object):
         self._randomZ = self.randomization.sample()
         self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
         self.initial_soln = problem.solve(self._random_term, **solve_args)
-
 
     def setup_sampler(self, solve_args={'min_its':50, 'tol':1.e-10}):
 
@@ -121,12 +120,8 @@ class M_estimator(object):
         # we are implicitly assuming that
         # loss is a pairs model
 
-        X, Y = loss.data
-        if loss._is_transform:
-            raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
-        X_restricted = X[:,overall]
-        loss_restricted = rr.affine_smooth(loss.loss, X_restricted)
-        _beta_unpenalized = loss_restricted.solve(**solve_args)
+        _beta_unpenalized = restricted_glm(loss, overall, solve_args=solve_args)
+
         beta_full = np.zeros(active.shape)
         beta_full[active] = _beta_unpenalized
         _hessian = loss.hessian(beta_full)
@@ -219,14 +214,6 @@ class M_estimator(object):
                            unpenalized,
                            inactive)
 
-    def form_covariance(self, target):
-        """
-        For an estimator of a target statistical 
-        functional, compute covariance
-        of the estimator with score.
-        """
-        raise NotImplementedError('abstract method')
-
     def projection(self, opt_state):
         """
         Full projection for Langevin.
@@ -263,7 +250,7 @@ class M_estimator(object):
         return data_grad, opt_grad
 
 
-    def condition(self, target_score_cov, target_cov, initial_target_state):
+    def condition(self, target_score_cov, target_cov, target_observed_state):
         """
         condition the score on the target,
         return a new score_transform
@@ -273,10 +260,10 @@ class M_estimator(object):
 
         target_score_cov = np.atleast_2d(target_score_cov) 
         target_cov = np.atleast_2d(target_cov) 
-        initial_target_state = np.atleast_1d(initial_target_state)
+        target_observed_state = np.atleast_1d(target_observed_state)
 
         linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
-        offset = self._initial_score_state - linear_part.dot(initial_target_state)
+        offset = self._initial_score_state - linear_part.dot(target_observed_state)
 
         # now compute the composition of this map with
         # self.score_transform
@@ -286,125 +273,146 @@ class M_estimator(object):
         composition_offset = score_linear.dot(offset) + score_offset
 
         return (composition_linear_part, composition_offset)
-        
+
+# class glm(M_estimator):
+
+#     def setup_bootstrap(self):
+#         """
+#         Should return a callable _boot_score
+#         that takes `indices` and returns
+#         a bootstrap sample of (\bar{\beta}_{E \cup U}, N_{-(E \cup U)})
+#         """
+#         # form objects needed to bootstrap the score
+#         # which will be used to estimate covariance
+#         # of score and target model parameters
+
+#         # this code below will work for GLMs
+#         # not general M-estimators !!!
+#         # self.loss is the loss for a saturated GLM likelihood
+
+#         # gradient of saturated loss if \mu - Y
+
+#         return pairs_bootstrap_glm(self.loss, 
+#                                    self.overall, 
+#                                    beta_full=self._beta_full,
+#                                    inactive=self.inactive)[0]
+
+def restricted_glm(glm_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
+
+    X, Y = glm_loss.data
+
+    if glm_loss._is_transform:
+        raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
+    X_restricted = X[:,active]
+    loss_restricted = rr.affine_smooth(glm_loss.saturated_loss, X_restricted)
+    beta_E = loss_restricted.solve(**solve_args)
+    
+    return beta_E
+
+def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_args={'min_its':50, 'tol':1.e-10}):
+
+    X, Y = glm_loss.data
+
+    if beta_full is None:
+        beta_active = restricted_glm(glm_loss, active, solve_args=solve_args)
+    else:
+        beta_active = beta_full[active]
 
 
-class glm(M_estimator):
+    X_active = X[:,active]
+    _boot_mu = lambda X: glm_loss.saturated_loss.smooth_objective(X_active.dot(beta_active), 'grad') + Y
 
-    def form_covariance(self, bootstrap_target, nsample=2000):
-        """
+    nactive = active.sum()
+    ntotal = nactive
 
-        """
-        self.setup_bootstrap()
+    if inactive is not None:
+        X_inactive = X[:,inactive]
+        ntotal += inactive.sum()
 
-        _target_mean = 0.
-        _score_mean = 0.
-        _cov = 0.
-        for _ in range(nsample):
-            indices = np.random.choice(n, size=(n,), replace=True)
-            target_star = bootstrap_target(indices)
-            score_star = self.bootstrap_score(indices)
-
-            _target_mean += target_star
-            _score_mean += score_star
-
-            _cov += np.multiply.outer(target_star, score_star)
-
-        _cov /= nsample
-        _target_mean = _target_mean / nsample
-        _score_mean = _score_mean / nsample
-        _cov -= np.multiply.outer(_target_mean, _score_mean)
-
-        return _cov
-
-    def setup_bootstrap(self):
-        """
-        Should define a callable _boot_score
-        that takes `indices` and returns
-        a bootstrap sample of (\bar{\beta}_{E \cup U}, N_{-(E \cup U)})
-        """
-        # form objects needed to bootstrap the score
-        # which will be used to estimate covariance
-        # of score and target model parameters
-
-        # this code below will work for GLMs
-        # not general M-estimators !!!
-        # self.loss is the loss for a saturated GLM likelihood
-
-        # gradient of saturated loss if \mu - Y
-
-        overall, inactive = self.overall, self.inactive
-
-        X, Y = self.loss.data
-
-        if isinstance(self.loss.loss, logistic_loglike):
-            Y = Y[0]
-        self._bootX, self._bootY = X, Y
-
-        _boot_mu = lambda X: self.loss.loss.smooth_objective(X.dot(self._beta_full), 'grad') + Y
-
-        _bootQ = np.zeros((p,p))
-
-        _bootW = np.diag(self.loss.loss.hessian(X.dot(self._beta_full)))
-        _bootQ = X[:, overall].T.dot(_bootW.dot(X[:, overall]))
-        _bootQinv = np.linalg.inv(_bootQ)
-        _bootC = X[:, inactive].T.dot(_bootW.dot(X[:, overall]))
+    nactive = active.sum()
+    _bootW = np.diag(glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
+    _bootQ = X_active.T.dot(_bootW.dot(X_active))
+    _bootQinv = np.linalg.inv(_bootQ)
+    if inactive is not None:
+        _bootC = X_inactive.T.dot(_bootW.dot(X_active))
         _bootI = _bootC.dot(_bootQinv)
 
-        noverall = overall.sum()
-        def _boot_score(X_star, Y_star):
-            score = X_star.T.dot(Y_star - _boot_mu(X_star))
-            result = np.zeros_like(score)
-            result[:noverall] = _bootQinv.dot(score[overall])
-            result[noverall:] = score[inactive] + _bootI.dot(result[:noverall])
-            return result
-        self._boot_score = _boot_score
+    noverall = active.sum()
 
-    def bootstrap_score(self, indices):
-        """
-        """
+    if inactive is not None:
+        X_full = np.hstack([X_active,X_inactive])
+    else:
+        X_full = X_active
 
-        if not hasattr(self, "_boot_score"):
-            raise ValueError('setup_bootstrap should be called before using this function')
-
-        X, Y = self._bootX, self._bootY
+    def _boot_score(indices):
+        X_star = X_full[indices]
         Y_star = Y[indices]
-        X_star = X[indices]
+        score = X_star.T.dot(Y_star - _boot_mu(X_star))
+        result = np.zeros(ntotal)
+        result[:nactive] = _bootQinv.dot(score[:nactive])
+        if ntotal > nactive:
+            result[nactive:] = score[nactive:] + _bootI.dot(result[:nactive])
+        return result
 
-        return self._boot_score(X_star, Y_star)
+    return _boot_score, beta_active
 
-    def bootstrap_target(self, indices):
-        """
-        Bootstrap the `overall` M-estimator coefficients
-        """
-        overall = self.overall
-        return self.bootstrap_score(indices)[:overall.sum()]
+def bootstrap_cov(boot_1, m_n, boot_2=None, nsample=2000):
+    """
+    m out of n bootstrap
+    """
+    m, n = m_n
 
-    def form_target_cov(self, nsample=2000):
-        _mean = 0.
-        _crossprod = 0
+    _mean_1 = 0.
+    _mean_2 = 0.
+    _crossprod = 0.
 
-        for _ in range(nsample):
-            indices = np.random.choice(n, size=(n,), replace=True)
-            _target = self.bootstrap_target(indices)
-            _mean += _target
-            _crossprod += np.multiply.outer(_target, _target)
+    have_boot_2 = boot_2 is not None
 
-        _mean /= nsample
-        _crossprod /= nsample
-        return _crossprod - np.multiply.outer(_mean, _mean)
+    for _ in range(nsample):
+        indices = np.random.choice(n, size=(m,), replace=True)
+        _boot_1 = boot_1(indices); _mean_1 += _boot_1
+        if have_boot_2:
+            _boot_2 = boot_2(indices); _mean_2 += _boot_2
+        else:
+            _boot_2 = _boot_1; _mean_2 += _boot_2
+        _crossprod += np.multiply.outer(_boot_1, _boot_2)
 
-if __name__ == "__main__":
+    _mean_1 /= nsample
+    _mean_2 /= nsample
+    _crossprod /= nsample
+    return _crossprod - np.multiply.outer(_mean_1, _mean_2)
 
-    from selection.algorithms.randomized import logistic_instance
-    from selection.sampling.randomized.randomization import base
-    from selection.sampling.langevin import projected_langevin
+def pairs_inactive_score_glm(glm_loss, active, beta_active):
 
+    """
+    Bootstrap inactive score at \bar{\beta}_E
+
+    Will be used with forward stepwise.
+    """
+    inactive = ~active
+    beta_full = np.zeros(glm_loss.shape)
+    beta_full[active] = beta_active
+
+    _full_boot_score = pairs_bootstrap_glm(glm_loss, 
+                                           active, 
+                                           beta_full=beta_full,
+                                           inactive=inactive)[0]
+    nactive = active.sum()
+    def _boot_score(indices):
+        return _full_boot_score(indices)[nactive:]
+
+### test
+
+from selection.algorithms.randomized import logistic_instance
+from selection.sampling.randomized.randomization import base
+from selection.sampling.langevin import projected_langevin
+
+def main():
     s, n, p = 5, 200, 20 
 
     randomization = base.laplace((p,), scale=0.5)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
-    print 'true_beta', beta
+
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
@@ -417,36 +425,47 @@ if __name__ == "__main__":
 
     # first randomization
 
-    M_est = glm(loss, epsilon, penalty, randomization)
-    M_est.solve()
-    M_est.setup_sampler()
+    M_est1 = M_estimator(loss, epsilon, penalty, randomization)
+    M_est1.solve()
+    M_est1.setup_sampler()
+    bootstrap_score1 = pairs_bootstrap_glm(M_est1.loss, 
+                                           M_est1.overall, 
+                                           beta_full=M_est1._beta_full, # this is private -- we "shouldn't" observe this
+                                           inactive=M_est1.inactive)[0]
 
     # second randomization
 
-    M_est2 = glm(loss, epsilon, penalty, randomization)
+    M_est2 = M_estimator(loss, epsilon, penalty, randomization)
     M_est2.solve()
     M_est2.setup_sampler()
+    bootstrap_score2 = pairs_bootstrap_glm(M_est2.loss, 
+                                           M_est2.overall, 
+                                           beta_full=M_est2._beta_full, # this is private -- we "shouldn't" observe this
+                                           inactive=M_est2.inactive)[0]
 
-    # for exposition, we will just take
-    # the target from first randomization
-    # should really do something different 
+    # we take target to be union of two active sets
 
-    cov = M_est.form_covariance(M_est.bootstrap_target)
-    cov2 = M_est2.form_covariance(M_est.bootstrap_target)
-    target_cov = M_est.form_target_cov()
+    active = M_est1.active + M_est2.active
+    boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+
+    # could maybe stack the scores,
+    # have bootstrap_cov compute covariance on
+    # same indices...
+
+    cov = bootstrap_cov(boot_target, (n, n), bootstrap_score1)
+    cov2 = bootstrap_cov(boot_target, (n, n), bootstrap_score2)
+    target_cov = bootstrap_cov(boot_target, (n, n))
 
     print cov.shape, target_cov.shape
 
-    target_initial = M_est._initial_score_state[:M_est.active.sum()]
-
     # for second coefficient
-    A1, b1 = M_est.condition(cov[1], target_cov[1,1], target_initial[1])
-    A2, b2 = M_est2.condition(cov2[1], target_cov[1,1], target_initial[1])
+    A1, b1 = M_est1.condition(cov[1], target_cov[1,1], target_observed[1])
+    A2, b2 = M_est2.condition(cov2[1], target_cov[1,1], target_observed[1])
 
     target_inv_cov = 1. / target_cov[1,1]
 
-    initial_state = np.hstack([target_initial[1],
-                               M_est._initial_opt_state,
+    initial_state = np.hstack([target_observed[1],
+                               M_est1._initial_opt_state,
                                M_est2._initial_opt_state])
 
     target_slice = slice(0,1)
@@ -461,7 +480,7 @@ if __name__ == "__main__":
         target = state[target_slice]
         opt_state = state[opt_slice]
         opt_state2 = state[opt_slice2]
-        target_grad = M_est.gradient(target, (A1, b1), opt_state)
+        target_grad = M_est1.gradient(target, (A1, b1), opt_state)
         target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
 
         full_grad = np.zeros_like(state)
@@ -469,13 +488,69 @@ if __name__ == "__main__":
         full_grad[opt_slice2] = target_grad2[1]
         full_grad[target_slice] = target_grad[0] + target_grad2[0]
 
-        full_grad[target_slice] -= target / target_cov[1,1]
+        full_grad[target_slice] -= target * target_inv_cov
 
         return full_grad
 
     def target_projection(state):
         opt_state = state[opt_slice]
-        state[opt_slice] = M_est.projection(opt_state)
+        state[opt_slice] = M_est1.projection(opt_state)
+        opt_state2 = state[opt_slice2]
+        state[opt_slice2] = M_est2.projection(opt_state2)
+        return state
+
+    target_langevin = projected_langevin(initial_state,
+                                         target_gradient,
+                                         target_projection,
+                                         1. / p)
+
+    Langevin_steps = 10000
+    burning = 1000
+    samples = []
+    for i in range(Langevin_steps):
+        if (i>burning):
+            target_langevin.next()
+            samples.append(target_langevin.state[target_slice].copy())
+
+    # let's try a 2-dimensional target
+
+    A1, b1 = M_est1.condition(cov[:2], target_cov[:2][:,:2], target_observed[:2])
+    A2, b2 = M_est2.condition(cov2[:2], target_cov[:2][:,:2], target_observed[:2])
+
+    target_inv_cov = np.linalg.inv(target_cov[:2][:,:2])
+
+    initial_state = np.hstack([target_observed[:2],
+                               M_est1._initial_opt_state,
+                               M_est2._initial_opt_state])
+
+
+    target_slice = slice(0,2)
+    opt_slice = slice(2, p+2)
+    opt_slice2 = slice(p+2, 2*p+2)
+
+    def target_gradient(state):
+        # with many samplers, we will add up the `target_slice` component
+        # many target_grads
+        # and only once do the Gaussian addition of full_grad
+
+        target = state[target_slice]
+        opt_state = state[opt_slice]
+        opt_state2 = state[opt_slice2]
+        target_grad = M_est1.gradient(target, (A1, b1), opt_state)
+        target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
+
+        full_grad = np.zeros_like(state)
+        full_grad[opt_slice] = target_grad[1]
+        full_grad[opt_slice2] = target_grad2[1]
+        full_grad[target_slice] = target_grad[0] + target_grad2[0]
+
+        full_grad[target_slice] -= target_inv_cov.dot(target)
+
+        return full_grad
+
+    def target_projection(state):
+        opt_state = state[opt_slice]
+        state[opt_slice] = M_est1.projection(opt_state)
         opt_state2 = state[opt_slice2]
         state[opt_slice2] = M_est2.projection(opt_state2)
         return state
@@ -486,10 +561,10 @@ if __name__ == "__main__":
                                          1. / p)
 
 
-    Langevin_steps = 1000
-    burning = 100
-    samples = []
+    Langevin_steps = 10000
+    burning = 1000
+    samples2 = []
     for i in range(Langevin_steps):
         if (i>burning):
             target_langevin.next()
-            samples.append(target_langevin.state[target_slice].copy())
+            samples2.append(target_langevin.state[target_slice].copy())
