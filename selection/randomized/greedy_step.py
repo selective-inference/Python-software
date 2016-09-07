@@ -102,6 +102,8 @@ class greedy_score_step(M_estimator):
         padding_map = np.identity(self.active.shape[0])[:,self.inactive]
         self.maximizing_variables = padding_map.dot(winning_variables) > 0
         
+        self.selection_variable = (maximizing_group, self.maximizing_subgrad)
+
     def setup_sampler(self):
 
         self.observed_opt_state = np.hstack([self.observed_subgradients,

@@ -62,18 +62,6 @@ class M_estimator(object):
         self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
         self.initial_soln = problem.solve(self._random_term, **solve_args)
 
-    def setup_sampler(self, solve_args={'min_its':50, 'tol':1.e-10}):
-
-        (loss,
-         epsilon,
-         penalty,
-         randomization,
-         initial_soln) = (self.loss,
-                          self.epsilon,
-                          self.penalty,
-                          self.randomization,
-                          self.initial_soln)
-
         # find the active groups and their direction vectors
         # as well as unpenalized groups
 
@@ -89,39 +77,69 @@ class M_estimator(object):
 
         for i, g in enumerate(groups):
             group = penalty.groups == g
-            active_groups[i] = (np.linalg.norm(initial_soln[group]) > 1.e-6 * penalty.weights[g]) and (penalty.weights[g] > 0)
+            active_groups[i] = (np.linalg.norm(self.initial_soln[group]) > 1.e-6 * penalty.weights[g]) and (penalty.weights[g] > 0)
             unpenalized_groups[i] = (penalty.weights[g] == 0)
             if active_groups[i]:
                 active[group] = True
                 z = np.zeros(active.shape, np.float)
-                z[group] = initial_soln[group] / np.linalg.norm(initial_soln[group])
+                z[group] = self.initial_soln[group] / np.linalg.norm(self.initial_soln[group])
                 active_directions.append(z)
-                initial_scalings.append(np.linalg.norm(initial_soln[group]))
+                initial_scalings.append(np.linalg.norm(self.initial_soln[group]))
             if unpenalized_groups[i]:
                 unpenalized[group] = True
 
         # solve the restricted problem
 
-        overall = active + unpenalized
-        inactive = ~overall
+        self.overall = active + unpenalized
+        self.inactive = ~self.overall
+        self.unpenalized = unpenalized
+        self.active_directions = np.array(active_directions).T
+        self.active_groups = np.array(active_groups, np.bool)
+
+        self.selection_variable = (self.active_groups, self.active_directions)
 
         # initial state for opt variables
 
         initial_subgrad = -(self.loss.smooth_objective(self.initial_soln, 'grad') + self._random_term.objective(self.initial_soln, 'grad') + epsilon * self.initial_soln)
-        initial_subgrad = initial_subgrad[inactive]
-        initial_unpenalized = self.initial_soln[unpenalized]
+        initial_subgrad = initial_subgrad[self.inactive]
+        initial_unpenalized = self.initial_soln[self.unpenalized]
         self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized,
                                                   initial_subgrad], axis=0)
 
-        active_directions = np.array(active_directions).T
+
+    def setup_sampler(self, solve_args={'min_its':50, 'tol':1.e-10}):
+
+        """
+        Should return a bootstrap_score
+        """
+
+        (loss,
+         epsilon,
+         penalty,
+         randomization,
+         initial_soln,
+         overall,
+         inactive,
+         unpenalized,
+         active_groups,
+         active_directions) = (self.loss,
+                               self.epsilon,
+                               self.penalty,
+                               self.randomization,
+                               self.initial_soln,
+                               self.overall,
+                               self.inactive,
+                               self.unpenalized,
+                               self.active_groups,
+                               self.active_directions)
 
         # we are implicitly assuming that
         # loss is a pairs model
 
         _beta_unpenalized = restricted_Mest(loss, overall, solve_args=solve_args)
 
-        beta_full = np.zeros(active.shape)
+        beta_full = np.zeros(overall.shape)
         beta_full[overall] = _beta_unpenalized
         _hessian = loss.hessian(beta_full)
         self._beta_full = beta_full
@@ -140,7 +158,7 @@ class M_estimator(object):
         # U for unpenalized
         # -E for inactive
 
-        _opt_linear_term = np.zeros((p, active_groups.sum() + unpenalized.sum() + inactive.sum()))
+        _opt_linear_term = np.zeros((p, self.active_groups.sum() + unpenalized.sum() + inactive.sum()))
         _score_linear_term = np.zeros((p, p))
 
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
@@ -175,6 +193,7 @@ class M_estimator(object):
 
         _opt_affine_term = np.zeros(p)
         idx = 0
+        groups = np.unique(penalty.groups) 
         for i, g in enumerate(groups):
             if active_groups[i]:
                 group = penalty.groups == g
@@ -204,17 +223,6 @@ class M_estimator(object):
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
 
-        # store active sets, etc.
-
-        self.active_groups = active_groups
-        self.unpenalized_groups = unpenalized_groups
-        (self.overall,
-         self.active,
-         self.unpenalized,
-         self.inactive) = (overall,
-                           active,
-                           unpenalized,
-                           inactive)
 
     def projection(self, opt_state):
         """
@@ -232,7 +240,7 @@ class M_estimator(object):
 
         return new_state
 
-    def gradient(self, data_state, data_transform, opt_state):
+    def randomization_gradient(self, data_state, data_transform, opt_state):
         """
         Randomization derivative at full state.
         """

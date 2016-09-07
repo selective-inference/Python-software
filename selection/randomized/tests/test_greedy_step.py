@@ -6,7 +6,7 @@ import regreg.api as rr
 from selection.randomized.randomization import base
 from selection.randomized.M_estimator import M_estimator
 from selection.randomized.greedy_step import greedy_score_step
-from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, pairs_inactive_score_glm
+from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, pairs_inactive_score_glm, glm_greedy, glm_group_lasso
 
 from selection.algorithms.randomized import logistic_instance
 from selection.distributions.discrete_family import discrete_family
@@ -31,13 +31,13 @@ def test_overall_null_two_views():
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     # first randomization
 
-    M_est1 = M_estimator(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
     M_est1.solve()
-    M_est1.setup_sampler()
-    bootstrap_score1 = pairs_bootstrap_glm(M_est1.loss, 
-                                           M_est1.overall, 
-                                           beta_full=M_est1._beta_full, # this is private -- we "shouldn't" observe this
-                                           inactive=M_est1.inactive)[0]
+    bootstrap_score1 = M_est1.setup_sampler()
+#     bootstrap_score1 = pairs_bootstrap_glm(M_est1.loss, 
+#                                            M_est1.overall, 
+#                                            beta_full=M_est1._beta_full, # this is private -- we "shouldn't" observe this
+#                                            inactive=M_est1.inactive)[0]
 
     # second randomization -- a greedy step from LASSO
 
@@ -45,15 +45,15 @@ def test_overall_null_two_views():
     inactive_groups = ~active_groups
     inactive_randomization = base.laplace((inactive_groups.sum(),), scale=0.5)
 
-    step = greedy_score_step(loss, penalty,
-                             active_groups,
-                             inactive_groups,
-                             inactive_randomization)
+    step = glm_greedy(loss, penalty,
+                      active_groups,
+                      inactive_groups,
+                      inactive_randomization)
     step.solve()
-    step.setup_sampler()
-    bootstrap_score2 = pairs_inactive_score_glm(step.loss, 
-                                                step.active,
-                                                step.beta_active)
+    bootstrap_score2 = step.setup_sampler()
+#     bootstrap_score2 = pairs_inactive_score_glm(step.loss, 
+#                                                 step.active,
+#                                                 step.beta_active)
 
     # we take target to be union of two active sets
 
@@ -94,8 +94,8 @@ def test_overall_null_two_views():
             target = state[target_slice]
             opt_state1 = state[opt_slice1]
             opt_state2 = state[opt_slice2]
-            target_grad1 = M_est1.gradient(target, (A1, b1), opt_state1)
-            target_grad2 = step.gradient(target, (A2, b2), opt_state2)
+            target_grad1 = M_est1.randomization_gradient(target, (A1, b1), opt_state1)
+            target_grad2 = step.randomization_gradient(target, (A2, b2), opt_state2)
 
             full_grad = np.zeros_like(state)
             full_grad[opt_slice1] = -target_grad1[1]

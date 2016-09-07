@@ -1,6 +1,7 @@
 import numpy as np
 
-from .M_estimator import restricted_Mest
+from .M_estimator import restricted_Mest, M_estimator
+from .greedy_step import greedy_score_step
 
 def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_args={'min_its':50, 'tol':1.e-10}):
     """
@@ -109,3 +110,25 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active):
     def _boot_score(indices):
         return _full_boot_score(indices)[nactive:]
 
+    return _boot_score
+
+class glm_group_lasso(M_estimator):
+
+    def setup_sampler(self):
+        M_estimator.setup_sampler(self)
+
+        bootstrap_score = pairs_bootstrap_glm(self.loss, 
+                                              self.overall, 
+                                              beta_full=self._beta_full,
+                                              inactive=self.inactive)[0]
+        return bootstrap_score
+
+class glm_greedy(greedy_score_step):
+
+    def setup_sampler(self):
+        greedy_score_step.setup_sampler(self)
+
+        bootstrap_score = pairs_inactive_score_glm(self.loss, 
+                                                   self.active,
+                                                   self.beta_active)
+        return bootstrap_score
