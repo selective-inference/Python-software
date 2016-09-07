@@ -1,6 +1,8 @@
 import numpy as np
 from .glm_boot import bootstrap_cov
 
+#test
+
 class multiple_views(object):
 
     def __init__(self, objectives):
