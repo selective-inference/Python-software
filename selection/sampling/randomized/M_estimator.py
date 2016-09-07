@@ -356,31 +356,39 @@ def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_a
 
     return _boot_score, beta_active
 
-def bootstrap_cov(boot_1, m_n, boot_2=None, nsample=2000):
+def bootstrap_cov(m_n, boot_target, cross_terms=(), nsample=2000):
     """
     m out of n bootstrap
     """
     m, n = m_n
 
-    _mean_1 = 0.
-    _mean_2 = 0.
-    _crossprod = 0.
-
-    have_boot_2 = boot_2 is not None
+    _mean_target = 0.
+    if len(cross_terms) > 0:
+        _mean_cross = [0.] * len(cross_terms)
+        _outer_cross = [0.] * len(cross_terms)
+    _outer_target = 0.
 
     for _ in range(nsample):
         indices = np.random.choice(n, size=(m,), replace=True)
-        _boot_1 = boot_1(indices); _mean_1 += _boot_1
-        if have_boot_2:
-            _boot_2 = boot_2(indices); _mean_2 += _boot_2
-        else:
-            _boot_2 = _boot_1; _mean_2 += _boot_2
-        _crossprod += np.multiply.outer(_boot_1, _boot_2)
+        _boot_target = boot_target(indices)
 
-    _mean_1 /= nsample
-    _mean_2 /= nsample
-    _crossprod /= nsample
-    return _crossprod - np.multiply.outer(_mean_1, _mean_2)
+        _mean_target += _boot_target
+        _outer_target += np.multiply.outer(_boot_target, _boot_target)
+
+        for i, _boot in enumerate(cross_terms):
+            _boot_sample = _boot(indices)
+            _mean_cross[i] += _boot_sample
+            _outer_cross[i] += np.multiply.outer(_boot_target, _boot_sample)
+
+    _mean_target /= nsample
+    _outer_target /= nsample
+
+    for i in range(len(cross_terms)):
+        _mean_cross[i] /= nsample
+        _outer_cross[i] /= nsample
+
+    _cov_target = _outer_target - np.multiply.outer(_mean_target, _mean_target)
+    return [_cov_target] + [_o - np.multiply.outer(_mean_target, _m) for _m, _o in zip(_mean_cross, _outer_cross)]
 
 def pairs_inactive_score_glm(glm_loss, active, beta_active):
 
@@ -452,14 +460,12 @@ def main():
     # have bootstrap_cov compute covariance on
     # same indices...
 
-    cov = bootstrap_cov(boot_target, (n, n), bootstrap_score1)
-    cov2 = bootstrap_cov(boot_target, (n, n), bootstrap_score2)
-    target_cov = bootstrap_cov(boot_target, (n, n))
+    target_cov, cov1, cov2 = bootstrap_cov((n, n), boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
 
-    print cov.shape, target_cov.shape
+    print cov1.shape, target_cov.shape
 
     # for second coefficient
-    A1, b1 = M_est1.condition(cov[1], target_cov[1,1], target_observed[1])
+    A1, b1 = M_est1.condition(cov1[1], target_cov[1,1], target_observed[1])
     A2, b2 = M_est2.condition(cov2[1], target_cov[1,1], target_observed[1])
 
     target_inv_cov = 1. / target_cov[1,1]
@@ -514,7 +520,7 @@ def main():
 
     # let's try a 2-dimensional target
 
-    A1, b1 = M_est1.condition(cov[:2], target_cov[:2][:,:2], target_observed[:2])
+    A1, b1 = M_est1.condition(cov1[:2], target_cov[:2][:,:2], target_observed[:2])
     A2, b2 = M_est2.condition(cov2[:2], target_cov[:2][:,:2], target_observed[:2])
 
     target_inv_cov = np.linalg.inv(target_cov[:2][:,:2])
