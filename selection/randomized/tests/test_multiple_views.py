@@ -36,75 +36,17 @@ def test():
     mv = multiple_views([M_est1, M_est2])
     mv.solve()
 
-#     bootstrap_score = ()
-#     active = np.zeros(p, dtype=bool)
-
-#     for i in range(mv.nviews):
-#         bootstrap_score += (randomized.glm_boot.pairs_bootstrap_glm(mv.objectives[i].loss,
-#                                                                mv.objectives[i].overall,
-#                                                                beta_full=mv.objectives[i]._beta_full,
-#                                                                # this is private -- we "shouldn't" observe this
-#                                                                inactive=mv.objectives[i].inactive)[0],)
-#         active += mv.objectives[i].overall
-
-
-
     active = M_est1.overall + M_est2.overall
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active)
-        mv.setup_sampler((n, n), boot_target, target_observed)
-
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
 
-#         # target are all true null coefficients selected
-
-#         #target_cov, cov1, cov2 = randomized.glm_boot.bootstrap_cov((n, n), boot_target, cross_terms=bootstrap_score)
-#         covariances = randomized.glm_boot.bootstrap_cov((n, n), boot_target, cross_terms=bootstrap_score)
-
-#         target_cov = covariances[0]
-#         cov = []
-#         for i in range(mv.nviews):
-#             cov.append(covariances[i+1])
-
-
-
-
-
-#         data_transform = ()
-#         for i in range(mv.nviews):
-#             data_transform += (mv.objectives[i].condition(cov[i][I], target_cov[I][:,I], target_observed[I]),)
-
-
-#         target_inv_cov = np.linalg.inv(target_cov[I][:,I])
-
-#         initial_state = np.hstack([target_observed[I].copy(),
-#                                    mv.observed_opt_state])
-
-#         ntarget = len(I)
-#         target_slice = slice(0, ntarget)
-#         opt_slice = slice(ntarget, mv.num_opt_var + ntarget)
-
-#         def target_gradient(state):
-
-#             target = state[target_slice]
-#             opt_state = state[opt_slice]
-#             target_grad = mv.gradient(target, data_transform, opt_state)
-
-#             full_grad = np.zeros_like(state)
-#             full_grad[opt_slice] = -target_grad[1]
-#             full_grad[target_slice] -= target_grad[0]
-#             full_grad[target_slice] -= target_inv_cov.dot(target)
-
-#             return full_grad
-
-#         def target_projection(state):
-#             opt_state = state[opt_slice]
-#             state[opt_slice] = mv.projection(opt_state)
-#             return state
-
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+        inactive_target = lambda indices: boot_target(indices)[inactive_selected]
+        inactive_observed = target_observed[inactive_selected]
+        mv.setup_sampler((n, n), inactive_target, inactive_observed)
 
         target_langevin = projected_langevin(mv.observed_state.copy(),
                                              mv.gradient,
@@ -121,7 +63,7 @@ def test():
                 samples.append(target_langevin.state[mv.target_slice].copy())
 
         test_stat = lambda x: np.linalg.norm(x)
-        observed = test_stat(target_observed[I])
+        observed = test_stat(inactive_observed)
         sample_test_stat = np.array([test_stat(x) for x in samples])
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
@@ -138,6 +80,9 @@ if __name__ == "__main__":
         pval = test()
         if pval >-1:
             pvalues.append(pval)
+            print np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05)
+
+    import matplotlib.pyplot as plt
 
     plt.clf()
     plt.xlim([0, 1])
