@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.stats import norm as ndist
+
 import regreg.api as rr
 
 from selection.randomized.randomization import base
@@ -110,9 +112,9 @@ def test_overall_null_two_views():
 
 
         Langevin_steps = 20000
-        burning = 2000
+        burning = 10000
         samples = []
-        for i in range(Langevin_steps + burning):
+        for i in range(Langevin_steps):
             if (i>=burning):
                 target_langevin.next()
                 samples.append(target_langevin.state[target_slice].copy())
@@ -177,7 +179,7 @@ def test_one_inactive_coordinate(seed=None):
         # seems so...
 
         if not I:
-            return None
+            return None, None
 
         # take the first inactive one
         I = I[:1]
@@ -234,4 +236,11 @@ def test_one_inactive_coordinate(seed=None):
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.ccdf(0, observed)
-        return pval
+        pval = 2 * min(pval, 1-pval)
+        
+        _i = I[0]
+        naive_Z = target_observed[_i] / np.sqrt(target_cov[_i,_i])
+        naive_pval = ndist.sf(np.fabs(naive_Z))
+        return pval, naive_pval
+    else:
+        return None, None
