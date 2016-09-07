@@ -111,7 +111,7 @@ class M_estimator(object):
         initial_subgrad = -(self.loss.smooth_objective(self.initial_soln, 'grad') + self._random_term.objective(self.initial_soln, 'grad'))
         initial_subgrad = initial_subgrad[inactive]
         initial_unpenalized = self.initial_soln[unpenalized]
-        self._initial_opt_state = np.concatenate([initial_scalings,
+        self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized,
                                                   initial_subgrad], axis=0)
 
@@ -127,10 +127,10 @@ class M_estimator(object):
         _hessian = loss.hessian(beta_full)
         self._beta_full = beta_full
 
-        # initial state for score
+        # observed state for score
 
-        self._initial_score_state = np.hstack([_beta_unpenalized,
-                                               loss.smooth_objective(beta_full, 'grad')[inactive]])
+        self.observed_score_state = np.hstack([_beta_unpenalized,
+                                               -loss.smooth_objective(beta_full, 'grad')[inactive]])
 
         # form linear part
 
@@ -250,7 +250,7 @@ class M_estimator(object):
         return data_grad, opt_grad
 
 
-    def condition(self, target_score_cov, target_cov, target_observed_state):
+    def condition(self, target_score_cov, target_cov, observed_target_state):
         """
         condition the score on the target,
         return a new score_transform
@@ -260,10 +260,10 @@ class M_estimator(object):
 
         target_score_cov = np.atleast_2d(target_score_cov) 
         target_cov = np.atleast_2d(target_cov) 
-        target_observed_state = np.atleast_1d(target_observed_state)
+        observed_target_state = np.atleast_1d(observed_target_state)
 
         linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
-        offset = self._initial_score_state - linear_part.dot(target_observed_state)
+        offset = self.observed_score_state - linear_part.dot(observed_target_state)
 
         # now compute the composition of this map with
         # self.score_transform
@@ -431,7 +431,11 @@ def main():
 
     # we take target to be union of two active sets
 
-    active = M_est1.active + M_est2.active
+    active = M_est1.overall + M_est2.overall
+
+    # for now just use 1st randomization
+
+    # active = M_est1.overall
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
@@ -441,17 +445,19 @@ def main():
         target_cov, cov1, cov2 = bootstrap_cov((n, n), boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
 
         active_set = np.nonzero(active)[0]
-        I = inactive_selected = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-        
+        inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+
+        # is it enough only to bootstrap the inactive ones?
+        # seems so...
+
         A1, b1 = M_est1.condition(cov1[I], target_cov[I][:,I], target_observed[I])
         A2, b2 = M_est2.condition(cov2[I], target_cov[I][:,I], target_observed[I])
 
         target_inv_cov = np.linalg.inv(target_cov[I][:,I])
 
         initial_state = np.hstack([target_observed[I],
-                                   M_est1._initial_opt_state,
-                                   M_est2._initial_opt_state])
-
+                                   M_est1.observed_opt_state,
+                                   M_est2.observed_opt_state])
 
         ntarget = len(I)
         target_slice = slice(0, ntarget)
@@ -470,10 +476,9 @@ def main():
             target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
 
             full_grad = np.zeros_like(state)
-            full_grad[opt_slice1] = -target_grad1[1]
-            full_grad[opt_slice2] = -target_grad2[1]
-            full_grad[target_slice] = -target_grad1[0] - target_grad2[0]
-
+            full_grad[opt_slice1] = target_grad1[1]
+            full_grad[opt_slice2] = target_grad2[1]
+            full_grad[target_slice] -= target_grad1[0] + target_grad2[0]
             full_grad[target_slice] -= target_inv_cov.dot(target)
 
             return full_grad
@@ -488,19 +493,19 @@ def main():
         target_langevin = projected_langevin(initial_state,
                                              target_gradient,
                                              target_projection,
-                                             1. / p)
+                                             1. / (2*p + 1))
 
 
-        Langevin_steps = 10000
-        burning = 1000
+        Langevin_steps = 15000
+        burning = 10000
         samples = []
         for i in range(Langevin_steps + burning):
             if (i>=burning):
                 target_langevin.next()
                 samples.append(target_langevin.state[target_slice].copy())
                 
-        test_stat = np.linalg.norm
-        observed = test_stat(target_observed[I])
+        test_stat = lambda x: np.linalg.norm(x)
+        observed = test_stat(target_observed)
         sample_test_stat = np.array([test_stat(x) for x in samples])
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
