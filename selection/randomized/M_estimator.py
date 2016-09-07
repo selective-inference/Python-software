@@ -140,8 +140,8 @@ class M_estimator(object):
         # U for unpenalized
         # -E for inactive
 
-        _opt_linear_term = np.zeros((p, p))
-        _score_linear_term = np.zeros((p, active_groups.sum() + unpenalized.sum() + inactive.sum()))
+        _opt_linear_term = np.zeros((p, active_groups.sum() + unpenalized.sum() + inactive.sum()))
+        _score_linear_term = np.zeros((p, p))
 
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
@@ -206,6 +206,8 @@ class M_estimator(object):
 
         # store active sets, etc.
 
+        self.active_groups = active_groups
+        self.unpenalized_groups = unpenalized_groups
         (self.overall,
          self.active,
          self.unpenalized,
@@ -247,8 +249,16 @@ class M_estimator(object):
         randomization_derivative = self.randomization.gradient(full_state)
         data_grad = data_linear.T.dot(randomization_derivative)
         opt_grad = opt_linear.T.dot(randomization_derivative)
-        return data_grad, opt_grad
+        return data_grad, opt_grad + self.grad_log_jacobian(opt_state)
 
+    def grad_log_jacobian(self, opt_state):
+        """
+        log_jacobian depends only on data through
+        Hessian at \bar{\beta}_E which we 
+        assume is close to Hessian at \bar{\beta}_E^*
+        """
+        # needs to be implemented for group lasso
+        return 0. 
 
     def condition(self, target_score_cov, target_cov, observed_target_state):
         """
