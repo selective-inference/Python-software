@@ -6,7 +6,7 @@ import regreg.api as rr
 from selection.randomized.randomization import base
 from selection.randomized.M_estimator import M_estimator
 from selection.randomized.greedy_step import greedy_score_step
-from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov
+from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, pairs_inactive_score_glm
 
 from selection.algorithms.randomized import logistic_instance
 from selection.distributions.discrete_family import discrete_family
@@ -43,10 +43,12 @@ def test_overall_null_two_views():
 
     active_groups = M_est1.active_groups + M_est1.unpenalized_groups
     inactive_groups = ~active_groups
+    inactive_randomization = base.laplace((inactive_groups.sum(),), scale=0.5)
+
     step = greedy_score_step(loss, penalty,
                              active_groups,
                              inactive_groups,
-                             randomization)
+                             inactive_randomization)
     step.solve()
     step.setup_sampler()
     bootstrap_score2 = pairs_inactive_score_glm(step.loss, 
@@ -55,7 +57,7 @@ def test_overall_null_two_views():
 
     # we take target to be union of two active sets
 
-    active = M_est1.overall 
+    active = M_est1.overall + step.maximizing_variables
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
@@ -71,13 +73,13 @@ def test_overall_null_two_views():
         # seems so...
 
         A1, b1 = M_est1.condition(cov1[I], target_cov[I][:,I], target_observed[I])
-        A2, b2 = M_est2.condition(cov2[I], target_cov[I][:,I], target_observed[I])
+        A2, b2 = step.condition(cov2[I], target_cov[I][:,I], target_observed[I])
 
         target_inv_cov = np.linalg.inv(target_cov[I][:,I])
 
         initial_state = np.hstack([target_observed[I],
                                    M_est1.observed_opt_state,
-                                   M_est2.observed_opt_state])
+                                   step.observed_opt_state])
 
         ntarget = len(I)
         target_slice = slice(0, ntarget)
@@ -93,7 +95,7 @@ def test_overall_null_two_views():
             opt_state1 = state[opt_slice1]
             opt_state2 = state[opt_slice2]
             target_grad1 = M_est1.gradient(target, (A1, b1), opt_state1)
-            target_grad2 = M_est2.gradient(target, (A2, b2), opt_state2)
+            target_grad2 = step.gradient(target, (A2, b2), opt_state2)
 
             full_grad = np.zeros_like(state)
             full_grad[opt_slice1] = -target_grad1[1]
@@ -107,7 +109,7 @@ def test_overall_null_two_views():
             opt_state1 = state[opt_slice1]
             state[opt_slice1] = M_est1.projection(opt_state1)
             opt_state2 = state[opt_slice2]
-            state[opt_slice2] = M_est2.projection(opt_state2)
+            state[opt_slice2] = step.projection(opt_state2)
             return state
 
         target_langevin = projected_langevin(initial_state,

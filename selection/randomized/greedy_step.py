@@ -26,8 +26,8 @@ class greedy_score_step(M_estimator):
                               beta_active)
          
         self.active = np.zeros(self.loss.shape, np.bool)
-        for g in np.unique(self.penalty.groups):
-            if g in active_groups:
+        for i, g in enumerate(np.unique(self.penalty.groups)):
+            if self.active_groups[i]:
                 self.active[self.penalty.groups == g] = True
 
         self.inactive = ~self.active
@@ -75,33 +75,41 @@ class greedy_score_step(M_estimator):
         # assuming a.s. unique maximizing group here
 
         maximizing_group = np.unique(self.group_lasso_dual.groups)[np.argmax(terms)]
-        maximizing_subgrad = self.observed_score[self.group_lasso_dual.groups == maximizing_group]
+        maximizing_subgrad = self.observed_score_state[self.group_lasso_dual.groups == maximizing_group]
         maximizing_subgrad /= np.linalg.norm(maximizing_subgrad) # this is now a unit vector
         maximizing_subgrad *= self.group_lasso_dual.weights[maximizing_group] # now a vector of length given by weight of maximizing group
         self.maximizing_subgrad = np.zeros(inactive.sum())
         self.maximizing_subgrad[self.group_lasso_dual.groups == maximizing_group] = maximizing_subgrad
         self.observed_scaling = np.max(terms) / self.group_lasso_dual.weights[maximizing_group]
 
-        losing_groups = [g != maximizing_group  for g in np.unique(self.group_lasso_dual.groups)]
-        losing_set = np.zeros_like(self.maximizing_subgrad)
+        # which groups did not win
+
+        losing_groups = [g for g in np.unique(self.group_lasso_dual.groups) if g != maximizing_group]
+        losing_set = np.zeros_like(self.maximizing_subgrad, np.bool)
         for g in losing_groups:
-            losing_set += self.groups_lasso_dual.groups == g
-        new_weights = dict([(g, self.group_lasso_dual.weights[g]) for g in self.group_lasso_dual.weights.keys() if g in losing_groups])
-        group_lasso_dual_losing = rr.group_lasso_dual(self.group_lasso_dual.groups[losing_set], weights=new_weights, lagrange=1.)
+            losing_set += self.group_lasso_dual.groups == g
 
         # (inactive_subgradients, scaling) are in this epigraph:
-        self.group_lasso_dual_epigraph = rr.group_lasso_dual_epigraph(group_lasso_dual_losing)
+        losing_weights = dict([(g, self.group_lasso_dual.weights[g]) for g in self.group_lasso_dual.weights.keys() if g in losing_groups])
+        self.group_lasso_dual_epigraph = rr.group_lasso_dual_epigraph(self.group_lasso_dual.groups[losing_set], weights=losing_weights)
         
         self.observed_subgradients = -randomized_score[losing_set]
-        self.losing_padding_map = np.identity(losing_set.shape)[:,losing_set]
+        self.losing_padding_map = np.identity(losing_set.shape[0])[:,losing_set]
 
+        # which variables are added to the model
+
+        winning_variables = self.group_lasso_dual.groups == maximizing_group
+        padding_map = np.identity(self.active.shape[0])[:,self.inactive]
+        self.maximizing_variables = padding_map.dot(winning_variables) > 0
+        
     def setup_sampler(self):
 
         self.observed_opt_state = np.hstack([self.observed_subgradients,
                                              self.observed_scaling])
 
+        p = self.inactive.sum() # shorthand
         _opt_linear_term = np.zeros((p, 1 + self.observed_subgradients.shape[0]))
-        _opt_linear_term[:,:self.observed_subgradients.shape[0]] = self.losting_padding_map
+        _opt_linear_term[:,:self.observed_subgradients.shape[0]] = self.losing_padding_map
         _opt_linear_term[:,-1] = self.maximizing_subgrad
 
         _score_linear_term = np.identity(p)
@@ -115,6 +123,5 @@ class greedy_score_step(M_estimator):
 
         The state here will be only the state of the optimization variables.
         """
-        new_state = self.group_lasso_dual_epigraph.cone_prox(opt_state)
-        return new_state
+        return self.group_lasso_dual_epigraph.cone_prox(opt_state)
 
