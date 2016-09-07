@@ -406,8 +406,10 @@ def main():
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    W = np.ones(p)*lam
+    W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), np.ones(p)*lam)), lagrange=1.)
+                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     # first randomization
 
