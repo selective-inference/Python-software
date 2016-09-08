@@ -10,7 +10,23 @@ from selection.algorithms.randomized import logistic_instance
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
-def test():
+from nose.tools import make_decorator
+
+def wait_for_pvalue(test, max_tries=50):
+
+    def _new_test():
+        count = 0
+        while True:
+            v = test()
+            if v is not None:
+                return v
+            count += 1
+            if count >= max_tries:
+                break
+    return make_decorator(test)(_new_test)
+
+@wait_for_pvalue
+def test_multiple_views():
     s, n, p = 5, 200, 20
 
     randomization = base.laplace((p,), scale=0.5)
@@ -47,29 +63,11 @@ def test():
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
         inactive_observed = target_observed[inactive_selected]
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-        mv.setup_sampler(sampler, inactive_target, inactive_observed)
 
-        target_langevin = projected_langevin(mv.observed_state.copy(),
-                                             mv.gradient,
-                                             mv.projection,
-                                             .5 / (2*p + 1))
-
-
-        Langevin_steps = 20000
-        burning = 10000
-        samples = []
-        for i in range(Langevin_steps):
-            if (i>=burning):
-                target_langevin.next()
-                samples.append(target_langevin.state[mv.target_slice].copy())
-
+        target_sampler = mv.setup_sampler(sampler, inactive_target, inactive_observed)
         test_stat = lambda x: np.linalg.norm(x)
-        observed = test_stat(inactive_observed)
-        sample_test_stat = np.array([test_stat(x) for x in samples])
 
-        family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
-        pval = family.ccdf(0, observed)
-        print "pvalue", pval
+        pval = target_sampler.hypothesis_test(test_stat, inactive_observed, alternative='greater')
         return pval
 
 

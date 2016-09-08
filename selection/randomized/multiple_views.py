@@ -2,18 +2,20 @@ from itertools import product
 import numpy as np
 from .glm_boot import bootstrap_cov
 
+from ..distributions.discrete_family import discrete_family
+from ..sampling.langevin import projected_langevin
+
 class multiple_views(object):
 
     def __init__(self, objectives):
 
         self.objectives = objectives
-        self.nviews = len(self.objectives)
 
     def solve(self):
-        for i in range(self.nviews):
+        for objective in self.objectives:
             # maybe just check if they have been solved
             # randomize first?
-            self.objectives[i].solve()
+            objective.solve()
 
     def setup_sampler(self, 
                       sampler, 
@@ -21,6 +23,25 @@ class multiple_views(object):
                       observed_target_state, 
                       target_set=None,
                       reference=None):
+
+        return targeted_sampler(self.objectives,
+                                sampler,
+                                target_bootstrap,
+                                observed_target_state,
+                                target_set=target_set,
+                                reference=reference)
+
+class targeted_sampler(object):
+
+    # make one of these for each hypothesis test
+
+    def __init__(self,
+                 objectives,
+                 sampler,
+                 target_bootstrap,
+                 observed_target_state,
+                 target_set=None,
+                 reference=None):
 
         # sampler will draw samples for bootstrap
         # these are arguments to target_bootstrap and score_bootstrap
@@ -31,19 +52,22 @@ class multiple_views(object):
         # is assumed to be independent of the rest
         # the corresponding block of `target_cov` is zeroed out
 
+        self.objectives = objectives
+        nviews = self.nviews = len(self.objectives)
+
         self.num_opt_var = 0
         self.opt_slice = []
         self.score_bootstrap = []
 
-        for i in range(self.nviews):
-            score_bootstrap = self.objectives[i].setup_sampler()
+        for objective in self.objectives:
+            score_bootstrap = objective.setup_sampler()
             self.score_bootstrap.append(score_bootstrap)
-            self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var+self.objectives[i].num_opt_var))
-            self.num_opt_var += self.objectives[i].num_opt_var
+            self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
+            self.num_opt_var += objective.num_opt_var
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
 
-        for i in range(self.nviews):
+        for i in range(nviews):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
         # now setup conditioning
@@ -66,7 +90,7 @@ class multiple_views(object):
         self.score_cov = covariances[1:]
 
         self.target_transform = []
-        for i in range(self.nviews):
+        for i in range(nviews):
             self.target_transform.append(self.objectives[i].condition(self.score_cov[i], 
                                                                       self.target_cov,
                                                                       self.observed_target_state))
@@ -114,4 +138,48 @@ class multiple_views(object):
 
         return full_grad
 
+    def sample(self, ndraw, burnin, stepsize=None):
+        """
+        assumes setup_sampler has been called
+        """
+        if stepsize is None:
+            stepsize = .5 / self.observed_state.shape[0]
+        target_langevin = projected_langevin(self.observed_state.copy(),
+                                             self.gradient,
+                                             self.projection,
+                                             stepsize)
+
+
+        samples = []
+        for i in range(ndraw + burnin):
+            target_langevin.next()
+            if (i >= burnin):
+                samples.append(target_langevin.state[self.target_slice].copy())
+
+        return samples
+
+    def hypothesis_test(self, 
+                        test_stat, 
+                        observed_target, 
+                        ndraw=10000,
+                        burnin=2000,
+                        stepsize=None,
+                        alternative='twosided'):
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        samples = self.sample(ndraw, burnin, stepsize=stepsize)
+        observed_stat = test_stat(observed_target)
+        sample_test_stat = np.array([test_stat(x) for x in samples])
+
+        family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
+        pval = family.cdf(0, observed_stat)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * min(pval, 1 - pval)
 
