@@ -34,10 +34,6 @@ def test_overall_null_two_views():
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
-#     bootstrap_score1 = pairs_bootstrap_glm(M_est1.loss, 
-#                                            M_est1.overall, 
-#                                            beta_full=M_est1._beta_full, # this is private -- we "shouldn't" observe this
-#                                            inactive=M_est1.inactive)[0]
 
     # second randomization -- a greedy step from LASSO
 
@@ -51,9 +47,6 @@ def test_overall_null_two_views():
                       inactive_randomization)
     step.solve()
     bootstrap_score2 = step.setup_sampler()
-#     bootstrap_score2 = pairs_inactive_score_glm(step.loss, 
-#                                                 step.active,
-#                                                 step.beta_active)
 
     # we take target to be union of two active sets
 
@@ -64,7 +57,8 @@ def test_overall_null_two_views():
 
         # target are all true null coefficients selected
 
-        target_cov, cov1, cov2 = bootstrap_cov((n, n), boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        target_cov, cov1, cov2 = bootstrap_cov(sampler, boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
 
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]

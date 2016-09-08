@@ -95,6 +95,7 @@ class M_estimator(object):
         self.unpenalized = unpenalized
         self.active_directions = np.array(active_directions).T
         self.active_groups = np.array(active_groups, np.bool)
+        self.unpenalized_groups = np.array(unpenalized_groups, np.bool)
 
         self.selection_variable = (self.active_groups, self.active_directions)
 

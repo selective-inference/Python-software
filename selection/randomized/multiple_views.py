@@ -16,7 +16,11 @@ class multiple_views(object):
             # randomize first?
             self.objectives[i].solve()
 
-    def setup_sampler(self, m_n, target_bootstrap, observed_target_state, reference=None):
+    def setup_sampler(self, sampler, target_bootstrap, observed_target_state, reference=None):
+        # sampler will draw samples for bootstrap
+        # these are arguments to target_bootstrap and score_bootstrap
+        # nonparamteric bootstrap is np.random.choice(n, size=(n,), replace=True)
+        # residual bootstrap might be X_E.dot(\bar{\beta}_E) + np.random.choice(resid, size=(n,), replace=True)
 
         self.num_opt_var = 0
         self.opt_slice = []
@@ -35,10 +39,9 @@ class multiple_views(object):
 
         # now setup conditioning
 
-        m, n = m_n
         self.observed_target_state = observed_target_state
 
-        covariances = bootstrap_cov(m_n, target_bootstrap, cross_terms=self.score_bootstrap)
+        covariances = bootstrap_cov(sampler, target_bootstrap, cross_terms=self.score_bootstrap)
         self.target_cov = np.atleast_2d(covariances[0])
         self.score_cov = covariances[1:]
 
@@ -76,7 +79,9 @@ class multiple_views(object):
         target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
         target_grad, opt_grad = np.zeros_like(target_state), np.zeros_like(opt_state)
         full_grad = np.zeros_like(state)
+
         # randomization_gradient are gradients of a CONVEX function
+
         for i in range(self.nviews):
             target_grad_curr, opt_grad[self.opt_slice[i]] = \
                 self.objectives[i].randomization_gradient(target_state, self.target_transform[i], opt_state[self.opt_slice[i]])

@@ -53,7 +53,7 @@ def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_a
 
     return _boot_score, beta_active
 
-def bootstrap_cov(m_n, boot_target, cross_terms=(), nsample=2000):
+def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     """
     m out of n bootstrap
 
@@ -61,7 +61,6 @@ def bootstrap_cov(m_n, boot_target, cross_terms=(), nsample=2000):
     and the blocks of (boot_target, boot_other) for other in cross_terms
 
     """
-    m, n = m_n
 
     _mean_target = 0.
     if len(cross_terms) > 0:
@@ -70,7 +69,7 @@ def bootstrap_cov(m_n, boot_target, cross_terms=(), nsample=2000):
     _outer_target = 0.
 
     for _ in range(nsample):
-        indices = np.random.choice(n, size=(m,), replace=True)
+        indices = sampler()
         _boot_target = boot_target(indices)
 
         _mean_target += _boot_target

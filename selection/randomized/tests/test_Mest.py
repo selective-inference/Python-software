@@ -33,20 +33,12 @@ def test_overall_null_two_views():
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
-#     bootstrap_score1 = pairs_bootstrap_glm(M_est1.loss, 
-#                                            M_est1.overall, 
-#                                            beta_full=M_est1._beta_full, # this is private -- we "shouldn't" observe this
-#                                            inactive=M_est1.inactive)[0]
 
     # second randomization
 
     M_est2 = glm_group_lasso(loss, epsilon, penalty, randomization)
     M_est2.solve()
     bootstrap_score2 = M_est2.setup_sampler()
-#     bootstrap_score2 = pairs_bootstrap_glm(M_est2.loss, 
-#                                            M_est2.overall, 
-#                                            beta_full=M_est2._beta_full, # this is private -- we "shouldn't" observe this
-#                                            inactive=M_est2.inactive)[0]
 
     # we take target to be union of two active sets
 
@@ -57,7 +49,8 @@ def test_overall_null_two_views():
 
         # target are all true null coefficients selected
 
-        target_cov, cov1, cov2 = bootstrap_cov((n, n), boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        target_cov, cov1, cov2 = bootstrap_cov(sampler, boot_target, cross_terms=(bootstrap_score1, bootstrap_score2))
 
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
@@ -155,10 +148,6 @@ def test_one_inactive_coordinate(seed=None):
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
-#     bootstrap_score1 = pairs_bootstrap_glm(M_est1.loss, 
-#                                            M_est1.overall, 
-#                                            beta_full=M_est1._beta_full, # this is private -- we "shouldn't" observe this
-#                                            inactive=M_est1.inactive)[0]
 
     active = M_est1.overall
     if set(nonzero).issubset(np.nonzero(active)[0]):
@@ -168,7 +157,8 @@ def test_one_inactive_coordinate(seed=None):
 
         if seed is not None:
             np.random.seed(seed)
-        target_cov, cov1 = bootstrap_cov((n, n), boot_target, cross_terms=(bootstrap_score1,))
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        target_cov, cov1 = bootstrap_cov(sampler, boot_target, cross_terms=(bootstrap_score1,))
 
         # have checked that covariance up to here agrees with other test_glm_langevin example
 

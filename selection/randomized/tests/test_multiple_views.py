@@ -46,7 +46,8 @@ def test():
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
         inactive_observed = target_observed[inactive_selected]
-        mv.setup_sampler((n, n), inactive_target, inactive_observed)
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        mv.setup_sampler(sampler, inactive_target, inactive_observed)
 
         target_langevin = projected_langevin(mv.observed_state.copy(),
                                              mv.gradient,
