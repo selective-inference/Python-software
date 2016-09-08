@@ -17,15 +17,34 @@ class multiple_views(object):
             # randomize first?
             objective.solve()
 
-    def setup_sampler(self, 
-                      sampler, 
-                      target_bootstrap, 
-                      observed_target_state, 
-                      target_set=None,
-                      reference=None):
+    def setup_sampler(self, sampler): 
 
-        return targeted_sampler(self.objectives,
-                                sampler,
+        self.sampler = sampler # this should be a callable that generates an argument to all of our bootstrap callables
+
+        nviews = self.nviews = len(self.objectives)
+
+        self.num_opt_var = 0
+        self.opt_slice = []
+        self.score_bootstrap = []
+
+        for objective in self.objectives:
+            score_bootstrap = objective.setup_sampler() # shouldn't have to refit all the time as this function does
+            self.score_bootstrap.append(score_bootstrap)
+            self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
+            self.num_opt_var += objective.num_opt_var
+
+        self.observed_opt_state = np.zeros(self.num_opt_var)
+
+        for i in range(nviews):
+            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
+
+    def setup_target(self, 
+                     target_bootstrap, 
+                     observed_target_state, 
+                     target_set=None,
+                     reference=None):
+
+        return targeted_sampler(self,
                                 target_bootstrap,
                                 observed_target_state,
                                 target_set=target_set,
@@ -36,8 +55,7 @@ class targeted_sampler(object):
     # make one of these for each hypothesis test
 
     def __init__(self,
-                 objectives,
-                 sampler,
+                 multi_view,
                  target_bootstrap,
                  observed_target_state,
                  target_set=None,
@@ -52,29 +70,15 @@ class targeted_sampler(object):
         # is assumed to be independent of the rest
         # the corresponding block of `target_cov` is zeroed out
 
-        self.objectives = objectives
-        nviews = self.nviews = len(self.objectives)
+        # we need these attributes of multi_view
 
-        self.num_opt_var = 0
-        self.opt_slice = []
-        self.score_bootstrap = []
-
-        for objective in self.objectives:
-            score_bootstrap = objective.setup_sampler()
-            self.score_bootstrap.append(score_bootstrap)
-            self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
-            self.num_opt_var += objective.num_opt_var
-
-        self.observed_opt_state = np.zeros(self.num_opt_var)
-
-        for i in range(nviews):
-            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
-
-        # now setup conditioning
+        self.nviews = len(multi_view.objectives)
+        self.opt_slice = multi_view.opt_slice
+        self.objectives = multi_view.objectives
 
         self.observed_target_state = observed_target_state
 
-        covariances = bootstrap_cov(sampler, target_bootstrap, cross_terms=self.score_bootstrap)
+        covariances = bootstrap_cov(multi_view.sampler, target_bootstrap, cross_terms=multi_view.score_bootstrap)
         self.target_cov = np.atleast_2d(covariances[0])
 
         # zero out some coordinates of target_cov
@@ -90,7 +94,7 @@ class targeted_sampler(object):
         self.score_cov = covariances[1:]
 
         self.target_transform = []
-        for i in range(nviews):
+        for i in range(self.nviews):
             self.target_transform.append(self.objectives[i].condition(self.score_cov[i], 
                                                                       self.target_cov,
                                                                       self.observed_target_state))
@@ -101,14 +105,14 @@ class targeted_sampler(object):
 
         # need to vectorize the state for Langevin
 
-        self.overall_opt_slice = slice(0, self.num_opt_var)
-        self.target_slice = slice(self.num_opt_var, self.num_opt_var + self.reference_inv.shape[0])
+        self.overall_opt_slice = slice(0, multi_view.num_opt_var)
+        self.target_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.reference_inv.shape[0])
 
         # set the observed state
 
-        self.observed_state = np.zeros(self.num_opt_var + self.reference_inv.shape[0])
+        self.observed_state = np.zeros(multi_view.num_opt_var + self.reference_inv.shape[0])
         self.observed_state[self.target_slice] = self.observed_target_state
-        self.observed_state[self.overall_opt_slice] = self.observed_opt_state
+        self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
     def projection(self, state):
         target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 

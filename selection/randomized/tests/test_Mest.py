@@ -294,7 +294,8 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
-        target_sampler = mv.setup_sampler(sampler, null_target, null_observed, target_set=[0])
+        mv.setup_sampler(sampler)
+        target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
         return pval
@@ -352,7 +353,8 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
-        target_sampler = mv.setup_sampler(sampler, null_target, null_observed)
+        mv.setup_sampler(sampler)
+        target_sampler = mv.setup_target(null_target, null_observed)
 
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
@@ -413,7 +415,8 @@ def test_logistic_selected_active_coordinate(seed=None):
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
-        target_sampler = mv.setup_sampler(sampler, active_target, active_observed, target_set=[0])
+        mv.setup_sampler(sampler)
+        target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
         return pval
@@ -473,7 +476,101 @@ def test_logistic_saturated_active_coordinate(seed=None):
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
-        target_sampler = mv.setup_sampler(sampler, active_target, active_observed)
+        mv.setup_sampler(sampler)
+        target_sampler = mv.setup_target(active_target, active_observed)
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
         return pval
+
+@wait_for_pvalue
+def test_logistic_many_targets():
+    s, n, p = 5, 200, 20 
+
+    randomization = base.laplace((p,), scale=1.)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+
+    nonzero = np.where(beta)[0]
+    lam_frac = 1.
+
+    loss = rr.glm.logistic(X, y)
+    epsilon = 1.
+
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    W = np.ones(p)*lam
+    penalty = rr.group_lasso(np.arange(p),
+                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
+
+    print lam
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+
+    mv = multiple_views([M_est1])
+    mv.solve()
+
+    active = M_est1.overall
+    nactive = active.sum()
+
+
+    if set(nonzero).issubset(np.nonzero(active)[0]):
+
+        pvalues = []
+        active_set = np.nonzero(active)[0]
+        inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+        active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
+
+        idx = I[0]
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        mv.setup_sampler(sampler)
+
+        # null saturated
+
+        def null_target(indices):
+            result = boot_target(indices)
+            return result[idx]
+
+        null_observed = np.zeros(1)
+        null_observed[0] = target_observed[idx]
+
+        target_sampler = mv.setup_target(null_target, null_observed)
+
+        test_stat = lambda x: x[0]
+        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pvalues.append(pval)
+
+        # null selected
+
+        target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
+
+        test_stat = lambda x: x[0]
+        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pvalues.append(pval)
+
+        # true saturated
+
+        idx = A[0]
+
+        def active_target(indices):
+            result = boot_target(indices)
+            return result[idx]
+
+        active_observed = np.zeros(1)
+        active_observed[0] = target_observed[idx]
+
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+
+        target_sampler = mv.setup_target(active_target, active_observed)
+
+        test_stat = lambda x: x[0]
+        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pvalues.append(pval)
+
+        # true selected
+
+        target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
+
+        test_stat = lambda x: x[0]
+        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pvalues.append(pval)
+
+        return pvalues

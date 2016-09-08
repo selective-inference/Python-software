@@ -64,7 +64,8 @@ def test_multiple_views():
         inactive_observed = target_observed[inactive_selected]
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
-        target_sampler = mv.setup_sampler(sampler, inactive_target, inactive_observed)
+        mv.setup_sampler(sampler) 
+        target_sampler = mv.setup_target(inactive_target, inactive_observed)
         test_stat = lambda x: np.linalg.norm(x)
 
         pval = target_sampler.hypothesis_test(test_stat, inactive_observed, alternative='greater')
