@@ -1,7 +1,6 @@
+from itertools import product
 import numpy as np
 from .glm_boot import bootstrap_cov
-
-#test
 
 class multiple_views(object):
 
@@ -16,11 +15,21 @@ class multiple_views(object):
             # randomize first?
             self.objectives[i].solve()
 
-    def setup_sampler(self, sampler, target_bootstrap, observed_target_state, reference=None):
+    def setup_sampler(self, 
+                      sampler, 
+                      target_bootstrap, 
+                      observed_target_state, 
+                      target_set=None,
+                      reference=None):
+
         # sampler will draw samples for bootstrap
         # these are arguments to target_bootstrap and score_bootstrap
         # nonparamteric bootstrap is np.random.choice(n, size=(n,), replace=True)
         # residual bootstrap might be X_E.dot(\bar{\beta}_E) + np.random.choice(resid, size=(n,), replace=True)
+
+        # if target_set is not None, we assume that these coordinates (specified by a list of coordinates) of target
+        # is assumed to be independent of the rest
+        # the corresponding block of `target_cov` is zeroed out
 
         self.num_opt_var = 0
         self.opt_slice = []
@@ -43,6 +52,17 @@ class multiple_views(object):
 
         covariances = bootstrap_cov(sampler, target_bootstrap, cross_terms=self.score_bootstrap)
         self.target_cov = np.atleast_2d(covariances[0])
+
+        # zero out some coordinates of target_cov
+        # to enforce independence of target and null statistics
+
+        if target_set is not None:
+            null_set = set(range(self.target_cov.shape[0])).difference(target_set)
+            
+            for t, n in product(target_set, null_set):
+                self.target_cov[t, n] = 0.
+                self.target_cov[n, t] = 0.
+
         self.score_cov = covariances[1:]
 
         self.target_transform = []

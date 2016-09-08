@@ -170,8 +170,10 @@ class M_estimator(object):
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
-        null_slice = slice(overall.sum(), p)
-        _score_linear_term[inactive][:,null_slice] = -np.identity(inactive.sum())
+        null_idx = range(overall.sum(), p)
+        inactive_idx = np.nonzero(inactive)[0]
+        for _i, _n in zip(inactive_idx, null_idx):
+            _score_linear_term[_i,_n] = -1.
 
         # c_E piece 
 
@@ -187,8 +189,10 @@ class M_estimator(object):
             _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions)
 
         # subgrad piece
+        subgrad_idx = range(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         subgrad_slice = slice(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
-        _opt_linear_term[inactive][:,subgrad_slice] = np.identity(inactive.sum())
+        for _i, _s in zip(inactive_idx, subgrad_idx):
+            _opt_linear_term[_i,_s] = 1.
 
         # form affine part
 
@@ -282,6 +286,7 @@ class M_estimator(object):
         observed_target_state = np.atleast_1d(observed_target_state)
 
         linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
+
         offset = self.observed_score_state - linear_part.dot(observed_target_state)
 
         # now compute the composition of this map with
@@ -289,6 +294,7 @@ class M_estimator(object):
 
         score_linear, score_offset = self.score_transform
         composition_linear_part = score_linear.dot(linear_part)
+
         composition_offset = score_linear.dot(offset) + score_offset
 
         return (composition_linear_part, composition_offset)

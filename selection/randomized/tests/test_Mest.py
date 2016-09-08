@@ -281,7 +281,8 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         null_observed = null_target(np.arange(n))
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-        mv.setup_sampler(sampler, null_target, null_observed)
+
+        mv.setup_sampler(sampler, null_target, null_observed, target_set=[0])
 
         target_langevin = projected_langevin(mv.observed_state.copy(),
                                              mv.gradient,
@@ -298,7 +299,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
                 samples.append(target_langevin.state[mv.target_slice].copy())
 
         test_stat = lambda x: x[0]
-        observed = test_stat(inactive_observed)
+        observed = test_stat(null_observed)
         sample_test_stat = np.array([test_stat(x) for x in samples])
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
