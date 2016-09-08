@@ -2,8 +2,13 @@ import numpy as np
 
 from .M_estimator import restricted_Mest, M_estimator
 from .greedy_step import greedy_score_step
+from regreg.api import glm
 
-def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_args={'min_its':50, 'tol':1.e-10}):
+def pairs_bootstrap_glm(glm_loss, 
+                        active, 
+                        beta_full=None, 
+                        inactive=None, 
+                        solve_args={'min_its':50, 'tol':1.e-10}):
     """
     pairs bootstrap of (beta_hat_active, -grad_inactive(beta_hat_active))
     """
@@ -137,4 +142,62 @@ class glm_greedy(greedy_score_step):
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
                                                    self.beta_active)
+        return bootstrap_score
+
+def resid_bootstrap(gaussian_loss,
+                    active,
+                    inactive=None):
+
+    X, Y = gaussian_loss.data
+    X_active = X[:,active]
+
+    nactive = active.sum()
+    ntotal = nactive
+
+    if inactive is not None:
+        X_inactive = X[:,inactive]
+        ntotal += inactive.sum()
+
+    X_active_inv = np.linalg.pinv(X_active)
+    beta_active = X_active_inv.dot(Y)
+
+    if ntotal > nactive:
+        beta_full = np.zeros(X.shape[1])
+        beta_full[active] = beta_active
+        observed = np.hstack([beta_active, -gaussian_loss.smooth_objective(beta_full, 'grad')[inactive]])
+    else:
+        observed = beta_active
+
+    if ntotal > nactive:
+        X_inactive = X[:,inactive]
+        X_inactive_resid = X_inactive - X_active.dot(X_active_inv.dot(X_inactive))
+
+    def _boot_score(Y_star):
+        beta_hat = X_active_inv.dot(Y_star)
+        result = np.zeros(ntotal)
+        result[:nactive] = beta_hat
+        if ntotal > nactive:
+            result[nactive:] = X_inactive_resid.T.dot(Y_star)
+        return result
+
+    return _boot_score, observed
+
+class fixedX_group_lasso(M_estimator):
+
+    def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
+        loss = glm.gaussian(X, Y)
+        M_estimator.__init__(self,
+                             loss, 
+                             epsilon, 
+                             penalty, 
+                             randomization, solve_args=solve_args)
+
+    def setup_sampler(self):
+        M_estimator.setup_sampler(self)
+
+        X, Y = self.loss.data
+
+        bootstrap_score = resid_bootstrap(self.loss,
+                                          self.overall, 
+                                          self.inactive)[0]
         return bootstrap_score

@@ -4,7 +4,6 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.randomized.randomization import base
-from selection.randomized.M_estimator import M_estimator
 from selection.randomized.multiple_views import multiple_views
 from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso
 
@@ -287,6 +286,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         null_observed = np.zeros(M_est1.inactive.sum() + 1)
         null_observed[0] = target_observed[idx]
+        null_observed[1:] = target_observed[nactive:]
 
         # the null_observed[1:] is only used as a
         # starting point for chain -- could be 0
@@ -297,7 +297,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
         mv.setup_sampler(sampler)
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
         return pval
 
 @wait_for_pvalue
@@ -357,7 +357,7 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
         target_sampler = mv.setup_target(null_target, null_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
         return pval
 
 @wait_for_pvalue
@@ -408,6 +408,7 @@ def test_logistic_selected_active_coordinate(seed=None):
 
         active_observed = np.zeros(M_est1.inactive.sum() + 1)
         active_observed[0] = target_observed[idx]
+        active_observed[1:] = target_observed[nactive:]
 
         # the active_observed[1:] is only used as a
         # starting point for chain -- could be 0
@@ -418,7 +419,7 @@ def test_logistic_selected_active_coordinate(seed=None):
         mv.setup_sampler(sampler)
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
         return pval
 
 @wait_for_pvalue
@@ -479,7 +480,7 @@ def test_logistic_saturated_active_coordinate(seed=None):
         mv.setup_sampler(sampler)
         target_sampler = mv.setup_target(active_target, active_observed)
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
         return pval
 
 @wait_for_pvalue
@@ -501,12 +502,12 @@ def test_logistic_many_targets():
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     print lam
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est = glm_group_lasso(loss, epsilon, penalty, randomization)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_views([M_est])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est.overall
     nactive = active.sum()
 
 
@@ -518,7 +519,7 @@ def test_logistic_many_targets():
         active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
 
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est.inactive)
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
         mv.setup_sampler(sampler)
@@ -535,15 +536,23 @@ def test_logistic_many_targets():
         target_sampler = mv.setup_target(null_target, null_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         # null selected
 
+        def null_target(indices):
+            result = boot_target(indices)
+            return np.hstack([result[idx], result[nactive:]])
+
+        null_observed = np.zeros_like(null_target(range(n)))
+        null_observed[0] = target_observed[idx]
+        null_observed[1:] = target_observed[nactive:]
+
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -562,15 +571,23 @@ def test_logistic_many_targets():
         target_sampler = mv.setup_target(active_target, active_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         # true selected
 
+        def active_target(indices):
+            result = boot_target(indices)
+            return np.hstack([result[idx], result[nactive:]])
+
+        active_observed = np.zeros_like(active_target(range(n)))
+        active_observed[0] = target_observed[idx]
+        active_observed[1:] = target_observed[nactive:]
+
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         return pvalues
