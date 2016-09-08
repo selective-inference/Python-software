@@ -46,7 +46,7 @@ def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_a
     if ntotal > nactive:
         observed = np.hstack([beta_active, -glm_loss.smooth_objective(beta_full, 'grad')[inactive]])
     else:
-        observed = beta
+        observed = beta_active
 
     def _boot_score(indices):
         X_star = X_full[indices]
