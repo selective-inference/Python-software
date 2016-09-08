@@ -11,6 +11,8 @@ def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_a
 
     if beta_full is None:
         beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        beta_full = np.zeros(glm_loss.shape)
+        beta_full[active] = beta_active
     else:
         beta_active = beta_full[active]
 
@@ -41,6 +43,11 @@ def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_a
 
     _boot_mu = lambda X_full: glm_loss.saturated_loss.smooth_objective(X_full.dot(beta_overall), 'grad') + Y
 
+    if ntotal > nactive:
+        observed = np.hstack([beta_active, -glm_loss.smooth_objective(beta_full, 'grad')[inactive]])
+    else:
+        observed = beta
+
     def _boot_score(indices):
         X_star = X_full[indices]
         Y_star = Y[indices]
@@ -51,7 +58,7 @@ def pairs_bootstrap_glm(glm_loss, active, beta_full=None, inactive=None, solve_a
             result[nactive:] = score[nactive:] + _bootI.dot(result[:nactive])
         return result
 
-    return _boot_score, beta_active
+    return _boot_score, observed
 
 def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     """

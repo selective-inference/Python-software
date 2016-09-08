@@ -274,12 +274,20 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+        idx = I[0]
         boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+
         def null_target(indices):
             result = boot_target(indices)
-            return np.hstack([result[inactive_selected[-1]], result[nactive:]])
+            return np.hstack([result[idx], result[nactive:]])
 
-        null_observed = null_target(np.arange(n))
+        null_observed = np.zeros(M_est1.inactive.sum() + 1)
+        null_observed[0] = target_observed[idx]
+
+        # the null_observed[1:] is only used as a
+        # starting point for chain -- could be 0
+        # null_observed[1:] = target_observed[nactive:]
+
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
         mv.setup_sampler(sampler, null_target, null_observed, target_set=[0])
@@ -287,11 +295,11 @@ def test_logistic_selected_inactive_coordinate(seed=None):
         target_langevin = projected_langevin(mv.observed_state.copy(),
                                              mv.gradient,
                                              mv.projection,
-                                             1. / (null_observed.shape[0] + p))
+                                             .5 / (null_observed.shape[0] + p))
 
 
-        Langevin_steps = 20000
-        burning = 10000
+        Langevin_steps = 30000
+        burning = 20000
         samples = []
         for i in range(Langevin_steps):
             if (i>=burning):
@@ -303,6 +311,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
         sample_test_stat = np.array([test_stat(x) for x in samples])
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
-        pval = family.ccdf(0, observed)
+        pval = np.clip(family.ccdf(0, observed), 0, 1)
+        pval = 2 * min(pval, 1 - pval)
         print "pvalue", pval
         return pval
