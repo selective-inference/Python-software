@@ -12,6 +12,9 @@ from selection.algorithms.randomized import logistic_instance
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
+from test_multiple_views import wait_for_pvalue
+
+@wait_for_pvalue
 def test_overall_null_two_views():
     s, n, p = 5, 200, 20 
 
@@ -113,12 +116,12 @@ def test_overall_null_two_views():
                                              .5 / (2*p + 1))
 
 
-        Langevin_steps = 20000
-        burning = 10000
+        Langevin_steps = 10000
+        burning = 2000
         samples = []
         for i in range(Langevin_steps):
+            target_langevin.next()
             if (i>=burning):
-                target_langevin.next()
                 samples.append(target_langevin.state[target_slice].copy())
                 
         test_stat = lambda x: np.linalg.norm(x)
