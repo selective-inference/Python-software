@@ -290,7 +290,6 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         # the null_observed[1:] is only used as a
         # starting point for chain -- could be 0
-        # null_observed[1:] = target_observed[nactive:]
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 

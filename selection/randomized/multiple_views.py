@@ -99,6 +99,7 @@ class targeted_sampler(object):
                                                                       self.target_cov,
                                                                       self.observed_target_state))
         self.target_inv_cov = np.linalg.inv(self.target_cov)
+        # size of reference? should it only be target_set?
         if reference is None:
             reference = np.zeros(self.target_inv_cov.shape[0])
         self.reference_inv = self.target_inv_cov.dot(reference)

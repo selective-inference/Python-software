@@ -61,7 +61,7 @@ def test_gaussian_many_targets():
         target_sampler = mv.setup_target(null_target, null_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         # null selected
@@ -72,11 +72,12 @@ def test_gaussian_many_targets():
 
         null_observed = np.zeros_like(null_target(np.random.standard_normal(n)))
         null_observed[0] = target_observed[idx]
+        null_observed[1:] = target_observed[nactive:]
 
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -95,7 +96,7 @@ def test_gaussian_many_targets():
         target_sampler = mv.setup_target(active_target, active_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         # true selected
@@ -106,11 +107,12 @@ def test_gaussian_many_targets():
 
         active_observed = np.zeros_like(active_target(np.random.standard_normal(n)))
         active_observed[0] = target_observed[idx]
+        active_observed[1:] = target_observed[nactive:]
 
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
         pvalues.append(pval)
 
         return pvalues
