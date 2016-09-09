@@ -8,13 +8,12 @@ from selection.randomized.M_estimator import M_estimator
 from selection.randomized.greedy_step import greedy_score_step
 from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, pairs_inactive_score_glm, glm_greedy, glm_group_lasso
 
-from selection.algorithms.randomized import logistic_instance
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
-from test_multiple_views import wait_for_pvalue
+from . import wait_for_return_value, logistic_instance
 
-@wait_for_pvalue
+@wait_for_return_value
 def test_overall_null_two_views():
     s, n, p = 5, 200, 20 
 

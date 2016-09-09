@@ -1,9 +1,12 @@
 import numpy as np
 
 from selection.algorithms.lasso import instance as lasso_instance
-from selection.algorithms.randomized import logistic_instance, randomized_lasso, randomized_logistic
+from selection.algorithms.randomized import randomized_lasso, randomized_logistic
 from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
 
+from selection.randomized.tests import logistic_instance, wait_for_return_value
+
+@wait_for_return_value
 @set_seed_for_test()
 @set_sampling_params_iftrue(True)
 def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
@@ -45,6 +48,8 @@ def test_logistic(n=200, p=30, burnin=2000, ndraw=8000,
 
         return P0, PA, L
 
+@wait_for_return_value
+@set_seed_for_test()
 @set_sampling_params_iftrue(True)
 def test_gaussian(n=200, p=30, burnin=2000, ndraw=8000,
                   compute_interval=False,

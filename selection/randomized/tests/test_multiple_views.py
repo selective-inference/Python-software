@@ -6,26 +6,12 @@ from selection.randomized.randomization import base
 from selection.randomized.glm_boot import glm_group_lasso, pairs_bootstrap_glm
 from selection.randomized.multiple_views import multiple_views
 
-from selection.algorithms.randomized import logistic_instance
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
-from nose.tools import make_decorator
+from . import logistic_instance, wait_for_return_value
 
-def wait_for_pvalue(test, max_tries=50):
-
-    def _new_test():
-        count = 0
-        while True:
-            v = test()
-            if v is not None:
-                return v
-            count += 1
-            if count >= max_tries:
-                break
-    return make_decorator(test)(_new_test)
-
-@wait_for_pvalue
+@wait_for_return_value
 def test_multiple_views():
     s, n, p = 5, 200, 20
 
