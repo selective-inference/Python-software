@@ -3,10 +3,7 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.randomized.randomization import base
-from selection.randomized.multiple_views import multiple_views
-from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso
-
+from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
@@ -16,7 +13,7 @@ from . import wait_for_return_value, logistic_instance
 def test_overall_null_two_views():
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=0.5)
+    randomizer = randomization.laplace((p,), scale=0.5)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
 
     nonzero = np.where(beta)[0]
@@ -32,13 +29,13 @@ def test_overall_null_two_views():
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     # first randomization
 
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
 
     # second randomization
 
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     M_est2.solve()
     bootstrap_score2 = M_est2.setup_sampler()
 
@@ -125,7 +122,7 @@ def test_overall_null_two_views():
 def test_one_inactive_coordinate_handcoded(seed=None):
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     if seed is not None:
         np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
@@ -149,7 +146,7 @@ def test_one_inactive_coordinate_handcoded(seed=None):
     # our randomization
 
     np.random.seed(seed)
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
 
@@ -243,7 +240,7 @@ def test_one_inactive_coordinate_handcoded(seed=None):
 def test_logistic_selected_inactive_coordinate(seed=None):
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     if seed is not None:
         np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
@@ -265,7 +262,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
     # our randomization
 
     np.random.seed(seed)
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_views([M_est1])
     mv.solve()
@@ -306,7 +303,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 def test_logistic_saturated_inactive_coordinate(seed=None):
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     if seed is not None:
         np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
@@ -328,7 +325,7 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
     # our randomization
 
     np.random.seed(seed)
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_views([M_est1])
     mv.solve()
@@ -369,7 +366,7 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
 def test_logistic_selected_active_coordinate(seed=None):
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     if seed is not None:
         np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
@@ -391,7 +388,7 @@ def test_logistic_selected_active_coordinate(seed=None):
     # our randomization
 
     np.random.seed(seed)
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_views([M_est1])
     mv.solve()
@@ -431,7 +428,7 @@ def test_logistic_selected_active_coordinate(seed=None):
 def test_logistic_saturated_active_coordinate(seed=None):
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     if seed is not None:
         np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
@@ -453,7 +450,7 @@ def test_logistic_saturated_active_coordinate(seed=None):
     # our randomization
 
     np.random.seed(seed)
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_views([M_est1])
     mv.solve()
@@ -492,7 +489,7 @@ def test_logistic_saturated_active_coordinate(seed=None):
 def test_logistic_many_targets():
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
 
     nonzero = np.where(beta)[0]
@@ -507,7 +504,7 @@ def test_logistic_many_targets():
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     print lam
-    M_est = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_views([M_est])
     mv.solve()

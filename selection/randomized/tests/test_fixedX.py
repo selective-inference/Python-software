@@ -3,29 +3,29 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.randomized.randomization import base
+from selection.randomized.randomization import randomization
 from selection.randomized.multiple_views import multiple_views
 from selection.randomized.glm_boot import resid_bootstrap, fixedX_group_lasso
 from selection.algorithms.lasso import instance
 
-from test_multiple_views import wait_for_pvalue
+from . import wait_for_return_value
 
-@wait_for_pvalue
+@wait_for_return_value
 def test_gaussian_many_targets():
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     X, Y, beta, nonzero, sigma = instance(n=n, p=p, s=s, rho=0.1, snr=7)
 
     lam_frac = 1.
     lam = lam_frac * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 50000)))).max(0)) * sigma
     W = np.ones(p) * lam
-    epsilon = 1.
+    epsilon = 1. / np.sqrt(n)
 
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    M_est = fixedX_group_lasso(X, Y, epsilon, penalty, randomization)
+    M_est = fixedX_group_lasso(X, Y, epsilon, penalty, randomizer)
 
     mv = multiple_views([M_est])
     mv.solve()

@@ -10,7 +10,7 @@ import numpy as np
 import regreg.api as rr
 from scipy.stats import laplace, norm as ndist
 
-class base(rr.smooth_atom):
+class randomization(rr.smooth_atom):
 
     def __init__(self, shape, density, grad_negative_log_density, sampler):
         rr.smooth_atom.__init__(self,
@@ -57,7 +57,7 @@ class base(rr.smooth_atom):
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
-        return base(shape, density, grad_negative_log_density, sampler)
+        return randomization(shape, density, grad_negative_log_density, sampler)
 
     @staticmethod
     def gaussian(covariance):
@@ -69,7 +69,7 @@ class base(rr.smooth_atom):
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         grad_negative_log_density = lambda x: precision.dot(x)
         sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
-        return base((p,), density, grad_negative_log_density, sampler)
+        return randomization((p,), density, grad_negative_log_density, sampler)
 
     @staticmethod
     def laplace(shape, scale):
@@ -77,7 +77,7 @@ class base(rr.smooth_atom):
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
-        return base(shape, density, grad_negative_log_density, sampler)
+        return randomization(shape, density, grad_negative_log_density, sampler)
 
     @staticmethod
     def logistic(shape, scale):
@@ -87,4 +87,4 @@ class base(rr.smooth_atom):
         # x/s + log(s) + 2 \log (1 + e(-x/s))
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
-        return base(shape, density, grad_negative_log_density, sampler)
+        return randomization(shape, density, grad_negative_log_density, sampler)

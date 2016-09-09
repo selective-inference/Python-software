@@ -2,9 +2,7 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.randomized.randomization import base
-from selection.randomized.glm_boot import glm_group_lasso, pairs_bootstrap_glm
-from selection.randomized.multiple_views import multiple_views
+from selection.randomized.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views
 
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
@@ -15,7 +13,7 @@ from . import logistic_instance, wait_for_return_value
 def test_multiple_views():
     s, n, p = 5, 200, 20
 
-    randomization = base.laplace((p,), scale=0.5)
+    randomizer = randomization.laplace((p,), scale=0.5)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
 
     nonzero = np.where(beta)[0]
@@ -31,9 +29,9 @@ def test_multiple_views():
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_views([M_est1, M_est2])
     mv.solve()

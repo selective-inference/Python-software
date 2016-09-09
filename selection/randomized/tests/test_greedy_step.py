@@ -3,10 +3,7 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.randomized.randomization import base
-from selection.randomized.M_estimator import M_estimator
-from selection.randomized.greedy_step import greedy_score_step
-from selection.randomized.glm_boot import pairs_bootstrap_glm, bootstrap_cov, pairs_inactive_score_glm, glm_greedy, glm_group_lasso
+from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso, glm_greedy_step, pairs_inactive_score_glm
 
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
@@ -17,7 +14,7 @@ from . import wait_for_return_value, logistic_instance
 def test_overall_null_two_views():
     s, n, p = 5, 200, 20 
 
-    randomization = base.laplace((p,), scale=0.5)
+    randomizer = randomization.laplace((p,), scale=0.5)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
 
     nonzero = np.where(beta)[0]
@@ -34,7 +31,7 @@ def test_overall_null_two_views():
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     # first randomization
 
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
 
@@ -42,12 +39,12 @@ def test_overall_null_two_views():
 
     active_groups = M_est1.active_groups + M_est1.unpenalized_groups
     inactive_groups = ~active_groups
-    inactive_randomization = base.laplace((inactive_groups.sum(),), scale=0.5)
+    inactive_randomizer = randomization.laplace((inactive_groups.sum(),), scale=0.5)
 
-    step = glm_greedy(loss, penalty,
-                      active_groups,
-                      inactive_groups,
-                      inactive_randomization)
+    step = glm_greedy_step(loss, penalty,
+                           active_groups,
+                           inactive_groups,
+                           inactive_randomizer)
     step.solve()
     bootstrap_score2 = step.setup_sampler()
 
