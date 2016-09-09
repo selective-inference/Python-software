@@ -148,7 +148,7 @@ class targeted_sampler(object):
         assumes setup_sampler has been called
         """
         if stepsize is None:
-            stepsize = .5 / self.observed_state.shape[0]
+            stepsize = 2. / self.observed_state.shape[0]
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,
                                              self.projection,
@@ -166,7 +166,7 @@ class targeted_sampler(object):
     def hypothesis_test(self, 
                         test_stat, 
                         observed_target, 
-                        ndraw=10000,
+                        ndraw=8000,
                         burnin=2000,
                         stepsize=None,
                         alternative='twosided'):
