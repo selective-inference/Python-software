@@ -2,7 +2,7 @@ import numpy as np
 import mpmath as mp
 from scipy.stats import norm
 
-from ..truncated import truncated_chi, truncated_chi2, truncated_F
+from ..truncated.api import truncated_chi, truncated_chi2, truncated_F
 from .intervals import intervals
 from .base import constraint as base_constraint
 

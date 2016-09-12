@@ -84,10 +84,8 @@ def main(**extra_args):
                           'selection.algorithms.tests',
                           'selection.sampling',
                           'selection.sampling.tests',
-                          'selection.sampling.randomized',
-                          'selection.sampling.randomized.norms',
-                          'selection.sampling.randomized.losses',
-                          'selection.sampling.randomized.tests',
+                          'selection.randomized',
+                          'selection.randomized.tests',
                           'selection.tests'
                           ],
           ext_modules = EXTS,
