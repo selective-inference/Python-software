@@ -7,20 +7,24 @@ from scipy.stats import laplace, probplot, uniform
 from selection.algorithms.lasso import instance
 import regreg.api as rr
 from matplotlib import pyplot as plt
+import statsmodels.api as sm
+
 
 plt.figure()
 plt.ion()
 
 
 def joint_Gaussian_parameters(X, y, active, signs, j, epsilon, lam, sigma, tau):
-
+    """
+    Sigma_inv_mu computed for beta_{E,j}^*=0
+    """
     n, p = X.shape
     nactive = np.sum(active)
     ninactive = p-nactive
 
     mat = np.linalg.pinv(X[:, active])
     eta = mat[j, :]
-    eta_norm_sq = np.linalg.norm(eta) **2
+    eta_norm_sq = np.linalg.norm(eta)**2
 
     #from Snigdha's R code:
     #XE = X[:,active]
@@ -123,23 +127,17 @@ def compute_mle(observed_vector, Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
     return res_mle.x
 
 
-
-def intervals(n=50, p=10, s=0, alpha=0.1):
+def intervals(n=200, p=20, s=0, alpha=0.1):
 
     X, y, true_beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, snr =2, sigma=1., rho=0)
-    #print sigma
-    #print true_beta
     random_Z = np.random.standard_normal(p)
 
-    lam, epsilon, active, betaE, cube = selection(X,y, random_Z)
+    lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
     if lam < 0:
         print "no active covariates"
-        return -1, -1
+        return -1, -1, [-1], [-1]
 
     nactive = np.sum(active)
-    #print 'size of the active set', nactive
-    #print 'active set', active
-
     tau = 1.
     inactive = ~active
     signs = np.sign(betaE)
@@ -173,10 +171,15 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
 
     print "MLE", beta_mle
 
+    #beta_mle = np.zeros(nactive)+0.5
+
     _, _, all_observed, all_variances, all_samples = test_lasso(X, y, nonzero, sigma, lam, epsilon, active, betaE,
-                                                                cube, random_Z,
-                                                                beta_reference=beta_mle,
-                                                                randomization_distribution="normal")
+                                                             cube, random_Z, beta_reference=beta_mle.copy(),
+                                                             randomization_distribution="normal",
+                                                             Langevin_steps=20000, burning=2000)
+    true_pvalues = []
+    mle_pvalues = []
+
 
     if set(nonzero).issubset(active_set):
         for j, idx in enumerate(active_set):
@@ -186,86 +189,138 @@ def intervals(n=50, p=10, s=0, alpha=0.1):
             eta_norm_sq = np.linalg.norm(eta)**2
             observed_vector[0] = np.inner(eta, y)
 
-            param_values = np.linspace(-20, 20, num=300)
-            log_sel_prob_param = np.zeros(param_values.shape[0])
-
+            grid_length = 400
+            truth_index = grid_length/2 # index of zero
+            param_values = np.linspace(-10, 10, num=grid_length)
+            param_values[truth_index] = 0
+            log_sel_prob_grid = np.zeros(param_values.shape[0])
             #for i in range(param_values.shape[0]):
-            #     log_sel_prob_param[i] = log_selection_probability(param_values[i], Sigma_full, Sigma_inv, Sigma_inv_mu, sigma,
-            #                                                     nactive, ninactive, signs, betaE, eta_norm_sq)
-            plt.clf()
+            #     log_sel_prob_grid[i] = log_selection_probability(param_values[i], Sigma_full[j], Sigma_inv[j],
+            #                                    Sigma_inv_mu[j], sigma, nactive, ninactive, signs, betaE, eta_norm_sq)
+
+            log_sel_prob_grid[truth_index] = log_selection_probability(param_values[truth_index], Sigma_full[j], Sigma_inv[j],
+                                                                       Sigma_inv_mu[j], sigma, nactive, ninactive,
+                                                                       signs, betaE, eta_norm_sq)
+
+            #plt.clf()
             #plt.title("Log of selection probabilities")
-            #plt.plot(param_values, log_sel_prob_param)
+            #plt.plot(param_values, log_sel_prob_grid)
             #plt.pause(0.01)
 
             obs = np.inner(eta, y) # same as np.inner(eta, y)
             sd = np.linalg.norm(eta)*sigma
+
             indicator = np.array(all_samples[j,:]<all_observed[j], dtype =int)
+            #indicator = np.array(np.abs(all_samples[j, :]) > all_observed[j], dtype=int)
+            mle_pvalue = np.sum(indicator)/float(indicator.shape[0])
+            #mle_pvalue = 2*min(mle_pvalue, 1-mle_pvalue)
+            print "pvalue at mle", mle_pvalue
+            mle_pvalues.append(mle_pvalue)
 
             pop = all_samples[j,:]
             variance = all_variances[j]
+            #print "variance", variance
+            #print (np.linalg.norm(eta)**2)*sigma
             log_sel_prob_ref = log_selection_probability(beta_mle[j].copy(), Sigma_full[j].copy(), Sigma_inv[j].copy(), Sigma_inv_mu[j].copy(),
-                                                         sigma,
-                                                         nactive, ninactive, signs, betaE, eta_norm_sq)
+                                         sigma, nactive, ninactive, signs, betaE, eta_norm_sq)
 
-            def pvalue_by_tilting(param_value, variance=variance, pop=pop, indicator=indicator):
-                 log_sel_prob_param = log_selection_probability(param_value, Sigma_full[j], Sigma_inv[j], Sigma_inv_mu[j],
-                                                                sigma,
-                                                                nactive, ninactive, signs, betaE, eta_norm_sq)
-                 log_LR = pop*param_value/(2*variance)-param_value**2/(2*variance)
+            def pvalue_by_tilting(i, variance=variance, pop=pop, indicator=indicator,
+                                  ref_param = beta_mle[j]):
+                 param_value = param_values[i]
+                 log_sel_prob_param = log_sel_prob_grid[i]
+                 log_LR = np.true_divide(2*pop*(param_value-ref_param)-(param_value**2-(ref_param**2)), 2*variance)
                  log_LR += log_sel_prob_ref - log_sel_prob_param
-                 return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ indicator.shape[0], 0,1)
+                 return np.clip(np.sum(np.multiply(indicator, np.exp(log_LR)))/ float(indicator.shape[0]), 0,1)
 
-            # #print 'pvalue at the truth', pvalue_by_tilting(0)
-            # #print 'pvalue at the truth', pvalue_by_tilting(0)
-            #
-            # #print 'param value', param_values
 
-            pvalues = [pvalue_by_tilting(param_values[i]) for i in range(param_values.shape[0])]
-            pvalues = np.asarray(pvalues, dtype=np.float32)
+            pvalue_at_0 = pvalue_by_tilting(truth_index)
+            #pvalue_at_0 = 2 * min(pvalue_at_0, 1 - pvalue_at_0)
+            print 'pvalue at the truth', pvalue_at_0
+            true_pvalues.append(pvalue_at_0)
+
+
+            #pvalues = [pvalue_by_tilting(i) for i in range(param_values.shape[0])]
+            #pvalues = np.asarray(pvalues, dtype=np.float32)
             #print pvalues
-            plt.title("Tilted p-values")
-            plt.plot(param_values, pvalues)
-            plt.pause(0.01)
-
+            #plt.title("Tilted p-values")
+            #plt.plot(param_values, pvalues)
+            #plt.pause(0.01)
             #accepted_indices = np.multiply(np.array(pvalues>alpha/2), np.array(pvalues<1.-alpha/2))
-            accepted_indices = np.array(pvalues > alpha)
+            #accepted_indices = np.array(pvalues > alpha)
 
-            if np.sum(accepted_indices)==0:
-                 L=0
-                 U=0
-            else:
-                 L = np.min(param_values[accepted_indices])
-                 U = np.max(param_values[accepted_indices])
+            #if np.sum(accepted_indices)==0:
+            #     L, U = 0, 0
+            #else:
+            #     L = np.min(param_values[accepted_indices])
+            #     U = np.max(param_values[accepted_indices])
 
             #L = param_values[np.argmin(np.abs(pvalues-(alpha/2)))]
             #U = param_values[np.argmin(np.abs(pvalues-1.+(alpha/2)))]
             #print "truth", truth
-            if (L<truth) and (U> truth):
-                 coverage +=1
-            if (U < truth) and (L > truth):
-                 coverage += 1
-            print "interval", L, U
+            #if (L<truth) and (U> truth):
+            #     coverage +=1
+            #if (U < truth) and (L > truth):
+            #     coverage += 1
+            #print "interval", L, U
 
-    return coverage, nactive
+    return coverage, nactive, true_pvalues, mle_pvalues
+
 
 total_coverage = 0
 total_number = 0
-
-
+true_pvalues_all = []
+mle_pvalues_all = []
 for i in range(50):
     print "\n"
     print "iteration", i
-    coverage, nactive = intervals()
+    coverage, nactive, true_pvalues, mle_pvalues = intervals()
     if coverage>=0:
         total_coverage += coverage
         total_number += nactive
+        true_pvalues_all.extend(true_pvalues)
+        mle_pvalues_all.extend(mle_pvalues)
+
+
 print "number covered out of", total_coverage, total_number
 print "total coverage", np.true_divide(total_coverage, total_number)
 
+# plotting the pvalues under the truth
+#    plt.figure()
+#    probplot(true_pvalues, dist=uniform, sparams=(0, 1), plot=plt, fit=True)
+#    plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
+#    plt.savefig("P values at the truth")
 
-while True:
-    plt.pause(0.05)
+fig = plt.figure()
+plot_pvalues = fig.add_subplot(121)
+plot_pvalues1 = fig.add_subplot(122)
+
+true_pvalues_all = np.asarray(true_pvalues_all, dtype=np.float32)
+ecdf = sm.distributions.ECDF(true_pvalues_all)
+x = np.linspace(min(true_pvalues_all), max(true_pvalues_all))
+y = ecdf(x)
+plot_pvalues.plot(x, y, '-o', lw=2)
+plot_pvalues.plot([0, 1], [0, 1], 'k-', lw=2)
+plot_pvalues.set_title("P values at the truth")
+plot_pvalues.set_xlim([0,1])
+plot_pvalues.set_ylim([0,1])
+
+
+mle_pvalues_all = np.asarray(mle_pvalues_all, dtype=np.float32)
+ecdf = sm.distributions.ECDF(mle_pvalues_all)
+x = np.linspace(min(mle_pvalues_all), max(mle_pvalues_all))
+y = ecdf(x)
+plot_pvalues1.plot(x, y, '-o', lw=2)
+plot_pvalues1.plot([0, 1], [0, 1], 'k-', lw=2)
+plot_pvalues1.set_title("P values at the MLE")
+plot_pvalues1.set_xlim([0,1])
+plot_pvalues1.set_ylim([0,1])
+
 plt.show()
+plt.savefig("P values.png")
+
+#while True:
+#    plt.pause(0.05)
+#plt.show()
 
 
 
