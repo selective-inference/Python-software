@@ -65,6 +65,69 @@ def pairs_bootstrap_glm(glm_loss,
 
     return _boot_score, observed
 
+
+
+def _parametric_cov_glm(glm_loss,
+                        active,
+                        beta_full=None,
+                        inactive=None,
+                        solve_args={'min_its': 50, 'tol': 1.e-10}):
+    X, Y = glm_loss.data
+    n, p = X.shape
+
+    if beta_full is None:
+        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        beta_full = np.zeros(glm_loss.shape)
+        beta_full[active] = beta_active
+    else:
+        beta_active = beta_full[active]
+
+    X_active = X[:, active]
+
+    nactive = active.sum()
+    ntotal = nactive
+
+    if inactive is not None:
+        X_inactive = X[:, inactive]
+        ntotal += inactive.sum()
+
+    _bootW = np.diag(glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
+    _bootQ = X_active.T.dot(_bootW.dot(X_active))
+    _bootQinv = np.linalg.inv(_bootQ)
+    if inactive is not None:
+        _bootC = X_inactive.T.dot(_bootW.dot(X_active))
+        _bootI = _bootC.dot(_bootQinv)
+
+    nactive = active.sum()
+    if inactive is not None:
+        X_full = np.hstack([X_active, X_inactive])
+        beta_overall = np.zeros(X_full.shape[1])
+        beta_overall[:nactive] = beta_active
+    else:
+        X_full = X_active
+        beta_overall = beta_active
+
+    mat = np.zeros((p, n))
+    mat[:nactive, :] = _bootQinv.dot(X_active.T)
+    if ntotal>nactive:
+        mat1 = np.dot(np.dot(_bootW, X_active), np.dot(_bootQinv, X_active.T))
+        mat[nactive:, :] = X[:, inactive].T.dot(np.identity(n) - mat1)
+
+    Sigma_full = np.dot(mat, np.dot(_bootW, mat.T))
+    return Sigma_full
+
+
+
+def _parametric_cov(target_indices, param_cov, cross_terms):
+    parametric_cov = []
+    parametric_cov.append(param_cov[target_indices,:][:,target_indices])
+
+    parametric_cov.extend([Sigma[target_indices, :] for Sigma in cross_terms])
+    return parametric_cov
+
+
+
+
 def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     """
     m out of n bootstrap
@@ -102,6 +165,7 @@ def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     _cov_target = _outer_target - np.multiply.outer(_mean_target, _mean_target)
     return [_cov_target] + [_o - np.multiply.outer(_mean_target, _m) for _m, _o in zip(_mean_cross, _outer_cross)]
 
+
 def pairs_inactive_score_glm(glm_loss, active, beta_active):
 
     """
@@ -128,11 +192,18 @@ class glm_group_lasso(M_estimator):
     def setup_sampler(self):
         M_estimator.setup_sampler(self)
 
-        bootstrap_score = pairs_bootstrap_glm(self.loss, 
+        bootstrap_score = pairs_bootstrap_glm(self.loss,
                                               self.overall, 
                                               beta_full=self._beta_full,
                                               inactive=self.inactive)[0]
-        return bootstrap_score
+
+        parametric_cov = _parametric_cov_glm(self.loss,
+                                             self.overall,
+                                             beta_full=self._beta_full,
+                                             inactive=self.inactive)
+
+        return bootstrap_score, parametric_cov
+
 
 class glm_greedy_step(greedy_score_step):
 
@@ -181,6 +252,7 @@ def resid_bootstrap(gaussian_loss,
         return result
 
     return _boot_score, observed
+
 
 class fixedX_group_lasso(M_estimator):
 

@@ -1,10 +1,15 @@
+import numpy as np
+import regreg.api as rr
+from regreg.smooth.glm import glm as regreg_glm, logistic_loglike
+import selection.sampling.randomized.api as randomized
+from selection.algorithms.randomized import logistic_instance
+from selection.distributions.discrete_family import discrete_family
 from itertools import product
 import numpy as np
+from .glm_boot import bootstrap_cov
 
 from ..distributions.discrete_family import discrete_family
 from ..sampling.langevin import projected_langevin
-from .glm import bootstrap_cov, _parametric_cov
-
 
 class multiple_views(object):
 
@@ -21,20 +26,16 @@ class multiple_views(object):
     def setup_sampler(self, sampler):
 
         self.sampler = sampler # this should be a callable that generates an argument to all of our bootstrap callables
-        self.bootstrap_cov = True
 
         nviews = self.nviews = len(self.objectives)
 
         self.num_opt_var = 0
         self.opt_slice = []
         self.score_bootstrap = []
-        self.parametric_cov = []
 
         for objective in self.objectives:
-            score_bootstrap, parametric_cov = objective.setup_sampler() # shouldn't have to refit all the time as this function does
+            score_bootstrap = objective.setup_sampler() # shouldn't have to refit all the time as this function does
             self.score_bootstrap.append(score_bootstrap)
-            self.parametric_cov.append(parametric_cov)
-
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
 
@@ -44,24 +45,16 @@ class multiple_views(object):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
-                     target_indices,
-                     param_cov,
                      target_bootstrap,
                      observed_target_state,
-                     boot_cov,
                      target_set=None,
                      reference=None):
 
-
         return targeted_sampler(self,
-                                target_indices,
-                                param_cov,
                                 target_bootstrap,
                                 observed_target_state,
-                                boot_cov,
                                 target_set=target_set,
                                 reference=reference)
-
 
 class targeted_sampler(object):
 
@@ -69,11 +62,8 @@ class targeted_sampler(object):
 
     def __init__(self,
                  multi_view,
-                 target_indices,
-                 param_cov,
                  target_bootstrap,
                  observed_target_state,
-                 boot_cov,
                  target_set=None,
                  reference=None):
 
@@ -94,19 +84,15 @@ class targeted_sampler(object):
 
         self.observed_target_state = observed_target_state
 
-        if boot_cov:
-            covariances = bootstrap_cov(multi_view.sampler, target_bootstrap, cross_terms=multi_view.score_bootstrap)
-        else:
-            covariances = _parametric_cov(target_indices, param_cov, cross_terms=multi_view.parametric_cov)
-
-
+        covariances = bootstrap_cov(multi_view.sampler, target_bootstrap, cross_terms=multi_view.score_bootstrap)
         self.target_cov = np.atleast_2d(covariances[0])
+
         # zero out some coordinates of target_cov
         # to enforce independence of target and null statistics
 
         if target_set is not None:
             null_set = set(range(self.target_cov.shape[0])).difference(target_set)
-            
+
             for t, n in product(target_set, null_set):
                 self.target_cov[t, n] = 0.
                 self.target_cov[n, t] = 0.
@@ -115,7 +101,7 @@ class targeted_sampler(object):
 
         self.target_transform = []
         for i in range(self.nviews):
-            self.target_transform.append(self.objectives[i].condition(self.score_cov[i], 
+            self.target_transform.append(self.objectives[i].condition(self.score_cov[i],
                                                                       self.target_cov,
                                                                       self.observed_target_state))
         self.target_inv_cov = np.linalg.inv(self.target_cov)
@@ -136,7 +122,7 @@ class targeted_sampler(object):
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
     def projection(self, state):
-        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
+        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
         new_opt_state = np.zeros_like(opt_state)
         for i in range(self.nviews):
             new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
@@ -145,7 +131,7 @@ class targeted_sampler(object):
 
     def gradient(self, state):
 
-        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
+        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
         target_grad, opt_grad = np.zeros_like(target_state), np.zeros_like(opt_state)
         full_grad = np.zeros_like(state)
 
@@ -183,9 +169,9 @@ class targeted_sampler(object):
 
         return samples
 
-    def hypothesis_test(self, 
-                        test_stat, 
-                        observed_target, 
+    def hypothesis_test(self,
+                        test_stat,
+                        observed_target,
                         ndraw=8000,
                         burnin=2000,
                         stepsize=None,
@@ -207,4 +193,3 @@ class targeted_sampler(object):
             return pval
         else:
             return 2 * min(pval, 1 - pval)
-

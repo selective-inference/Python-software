@@ -2,16 +2,20 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin
-from selection.randomized.tests import logistic_instance #, wait_for_return_value
-from selection.randomized.glm import _parametric_cov_glm
+from selection.randomized.randomization import base
+from selection.randomized.glm_boot import glm_group_lasso, pairs_bootstrap_glm
+from selection.randomized.multiple_views import multiple_views
 
+from selection.distributions.discrete_family import discrete_family
+from selection.sampling.langevin import projected_langevin
 
-#@wait_for_return_value
+from . import logistic_instance, wait_for_return_value
+
+@wait_for_return_value
 def test_multiple_views():
     s, n, p = 5, 200, 20
 
-    randomizer = randomization.laplace((p,), scale=0.5)
+    randomization = base.laplace((p,), scale=0.5)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
 
     nonzero = np.where(beta)[0]
@@ -27,9 +31,9 @@ def test_multiple_views():
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomization)
     # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomization)
 
     mv = multiple_views([M_est1, M_est2])
     mv.solve()
@@ -41,40 +45,30 @@ def test_multiple_views():
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
 
-        #nactive = np.sum(active)
-        #inactive_indices = np.zeros(nactive, dtype=bool)
-        #for i in range(p):
-        #    if active[i] and i not in nonzero:
-        #        inactive_indices[
-
-
-        sampler = lambda: np.random.choice(n, size=(n,), replace=True)
-        mv.setup_sampler(sampler)
-
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
         inactive_observed = target_observed[inactive_selected]
-        param_cov = _parametric_cov_glm(loss, active)
-        target_sampler = mv.setup_target(inactive_selected, param_cov, inactive_target, inactive_observed, boot_cov=False)
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
+        mv.setup_sampler(sampler)
+        target_sampler = mv.setup_target(inactive_target, inactive_observed)
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat, inactive_observed, alternative='greater')
 
+        pval = target_sampler.hypothesis_test(test_stat, inactive_observed, alternative='greater')
         return pval
 
 
 if __name__ == "__main__":
 
     pvalues = []
-    for i in range(10):
+    for i in range(50):
         print "iteration", i
-        pval = test_multiple_views()
+        pval = test()
         if pval >-1:
             pvalues.append(pval)
             print np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05)
 
     import matplotlib.pyplot as plt
-    from scipy.stats import probplot, uniform
 
     plt.clf()
     plt.xlim([0, 1])
@@ -86,4 +80,3 @@ if __name__ == "__main__":
     while True:
         plt.pause(0.05)
     plt.show()
-
