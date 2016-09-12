@@ -2,11 +2,7 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.randomized.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views
-
-from selection.distributions.discrete_family import discrete_family
-from selection.sampling.langevin import projected_langevin
-
+from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin
 from . import logistic_instance, wait_for_return_value
 
 @wait_for_return_value

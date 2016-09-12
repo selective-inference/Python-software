@@ -1,9 +1,9 @@
 from itertools import product
 import numpy as np
-from .glm_boot import bootstrap_cov
 
 from ..distributions.discrete_family import discrete_family
 from ..sampling.langevin import projected_langevin
+from .glm import bootstrap_cov
 
 class multiple_views(object):
 

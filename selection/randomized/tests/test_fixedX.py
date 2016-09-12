@@ -5,7 +5,7 @@ import regreg.api as rr
 
 from selection.randomized.randomization import randomization
 from selection.randomized.multiple_views import multiple_views
-from selection.randomized.glm_boot import resid_bootstrap, fixedX_group_lasso
+from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso
 from selection.algorithms.lasso import instance
 
 from . import wait_for_return_value

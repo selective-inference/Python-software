@@ -19,9 +19,9 @@ import numpy as np
 
 from ..distributions.pvalue import truncnorm_cdf, norm_interval
 from ..truncated.gaussian import truncated_gaussian, truncated_gaussian_old
-from ..sampling.truncnorm import (sample_truncnorm_white, 
-                                  sample_truncnorm_white_sphere,
-                                  sample_truncnorm_white_ball)
+from ..sampling.api import (sample_truncnorm_white, 
+                            sample_truncnorm_white_sphere,
+                            sample_truncnorm_white_ball)
 from ..distributions.chain import (reversible_markov_chain,
                                    parallel_test,
                                    serial_test)

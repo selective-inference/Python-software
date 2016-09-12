@@ -411,7 +411,7 @@ def goodness_of_fit(lasso_obj, statistic,
     """
 
     L = lasso_obj # shorthand
-    if not isinstance(L.loglike.loss, gaussian_loglike):
+    if not isinstance(L.loglike.saturated_loss, gaussian_loglike):
         raise ValueError('goodness of fit test assumes response is Gaussian')
 
     X, Y = L.loglike.data

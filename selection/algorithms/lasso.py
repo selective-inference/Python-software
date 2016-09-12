@@ -758,7 +758,8 @@ class lasso(object):
                 sd = _bounds[-1]
                 lower_trunc, est, upper_trunc = sorted(_bounds[:3] * self.active_signs[i])
 
-                result.append((_pval,
+                result.append((self.active[i],
+                               _pval,
                                self.lasso_solution[self.active[i]],
                                one_step[i],
                                _interval[0],
@@ -768,7 +769,8 @@ class lasso(object):
                                sd))
                 
         df = pd.DataFrame(index=self.active,
-                          data=dict([(n, d) for n, d in zip(['pval', 
+                          data=dict([(n, d) for n, d in zip(['variable',
+                                                             'pval', 
                                                              'lasso', 
                                                              'onestep', 
                                                              'lower_confidence', 
