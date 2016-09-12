@@ -7,7 +7,7 @@ from selection.randomized.api import randomization, multiple_views, pairs_bootst
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
-from . import wait_for_return_value, logistic_instance
+from selection.randomized.tests import wait_for_return_value, logistic_instance
 
 @wait_for_return_value
 def test_overall_null_two_views():
@@ -31,13 +31,13 @@ def test_overall_null_two_views():
 
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     M_est1.solve()
-    bootstrap_score1 = M_est1.setup_sampler()
+    bootstrap_score1 = M_est1.setup_sampler(scaling=2.)
 
     # second randomization
 
     M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     M_est2.solve()
-    bootstrap_score2 = M_est2.setup_sampler()
+    bootstrap_score2 = M_est2.setup_sampler(scaling=2.)
 
     # we take target to be union of two active sets
 
@@ -269,6 +269,8 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
     active = M_est1.overall
     nactive = active.sum()
+    scaling = np.linalg.svd(X)[1].max()**2
+
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
         active_set = np.nonzero(active)[0]
@@ -293,10 +295,10 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
-        mv.setup_sampler(sampler)
+        mv.setup_sampler(sampler, scaling=scaling)
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000, stepsize=1./scaling) # twosided by default
         return pval
 
 @wait_for_return_value
@@ -512,6 +514,14 @@ def test_logistic_many_targets():
     active = M_est.overall
     nactive = active.sum()
 
+    global_scaling = np.linalg.svd(X)[1].max()**2
+
+    def crude_target_scaling(_target_sampler):
+        result = np.linalg.svd(_target_sampler.target_inv_cov)[1].max()
+        for transform, objective in zip(_target_sampler.target_transform, _target_sampler.objectives):
+            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
+            result += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
+        return result
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -526,7 +536,7 @@ def test_logistic_many_targets():
         boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est.inactive)
 
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-        mv.setup_sampler(sampler)
+        mv.setup_sampler(sampler, scaling=global_scaling)
 
         # null saturated
 
@@ -538,9 +548,10 @@ def test_logistic_many_targets():
         null_observed[0] = target_observed[idx]
 
         target_sampler = mv.setup_target(null_target, null_observed)
+        #target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=2000, ndraw=8000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=8000, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         # null selected
@@ -554,9 +565,10 @@ def test_logistic_many_targets():
         null_observed[1:] = target_observed[nactive:]
 
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
+        target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=2000, ndraw=8000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=8000, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -573,9 +585,10 @@ def test_logistic_many_targets():
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
         target_sampler = mv.setup_target(active_target, active_observed)
+        target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=8000, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         # true selected
@@ -589,9 +602,10 @@ def test_logistic_many_targets():
         active_observed[1:] = target_observed[nactive:]
 
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
+        target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2 # should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=8000, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         return pvalues

@@ -109,7 +109,7 @@ class M_estimator(object):
                                                   initial_subgrad], axis=0)
 
 
-    def setup_sampler(self, solve_args={'min_its':50, 'tol':1.e-10}):
+    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
 
         """
         Should return a bootstrap_score
@@ -134,6 +134,8 @@ class M_estimator(object):
                                self.unpenalized,
                                self.active_groups,
                                self.active_directions)
+
+        # scaling should be chosen to be Lipschitz constant for gradient of Gaussian part
 
         # we are implicitly assuming that
         # loss is a pairs model
@@ -189,10 +191,11 @@ class M_estimator(object):
             _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions)
 
         # subgrad piece
+        _sqrt_scaling = np.sqrt(scaling)
         subgrad_idx = range(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         subgrad_slice = slice(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         for _i, _s in zip(inactive_idx, subgrad_idx):
-            _opt_linear_term[_i,_s] = 1.
+            _opt_linear_term[_i,_s] = _sqrt_scaling
 
         # form affine part
 
@@ -219,8 +222,10 @@ class M_estimator(object):
 
         self.scaling_slice = scaling_slice
 
+        # weights are scaled here because the linear terms scales them by _sqrt_scaling
+
         new_groups = penalty.groups[inactive]
-        new_weights = dict([(g,penalty.weights[g]) for g in penalty.weights.keys() if g in np.unique(new_groups)])
+        new_weights = dict([(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
 
         # we form a dual group lasso object
         # to do the projection

@@ -17,7 +17,8 @@ class multiple_views(object):
             # randomize first?
             objective.solve()
 
-    def setup_sampler(self, sampler): 
+    def setup_sampler(self, sampler, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}): 
+        # scaling should be chosen to be Lipschitz constant for gradient of Gaussian part
 
         self.sampler = sampler # this should be a callable that generates an argument to all of our bootstrap callables
 
@@ -28,7 +29,7 @@ class multiple_views(object):
         self.score_bootstrap = []
 
         for objective in self.objectives:
-            score_bootstrap = objective.setup_sampler() # shouldn't have to refit all the time as this function does
+            score_bootstrap = objective.setup_sampler(scaling=scaling, solve_args=solve_args) # shouldn't have to refit all the time as this function does
             self.score_bootstrap.append(score_bootstrap)
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
@@ -174,6 +175,7 @@ class targeted_sampler(object):
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
+        print stepsize, 'step'
         samples = self.sample(ndraw, burnin, stepsize=stepsize)
         observed_stat = test_stat(observed_target)
         sample_test_stat = np.array([test_stat(x) for x in samples])

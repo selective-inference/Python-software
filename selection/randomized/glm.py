@@ -125,8 +125,8 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active):
 
 class glm_group_lasso(M_estimator):
 
-    def setup_sampler(self):
-        M_estimator.setup_sampler(self)
+    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
+        M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss, 
                                               self.overall, 
@@ -136,8 +136,8 @@ class glm_group_lasso(M_estimator):
 
 class glm_greedy_step(greedy_score_step):
 
-    def setup_sampler(self):
-        greedy_score_step.setup_sampler(self)
+    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
+        greedy_score_step.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
@@ -192,8 +192,8 @@ class fixedX_group_lasso(M_estimator):
                              penalty, 
                              randomization, solve_args=solve_args)
 
-    def setup_sampler(self):
-        M_estimator.setup_sampler(self)
+    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
+        M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         X, Y = self.loss.data
 

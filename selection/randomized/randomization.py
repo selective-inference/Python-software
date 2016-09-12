@@ -18,6 +18,7 @@ class randomization(rr.smooth_atom):
         self._density = density
         self._grad_negative_log_density = grad_negative_log_density
         self._sampler = sampler
+        self.lipschitz = 1.
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
         """
