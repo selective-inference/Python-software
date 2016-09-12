@@ -9,7 +9,7 @@ hypothesis tests and confidence intervals.
 import numpy as np
 import warnings
 
-from ..truncated import find_root
+from ..truncated.api import find_root
 
 def crit_func(test_statistic, left_cut, right_cut):
     """

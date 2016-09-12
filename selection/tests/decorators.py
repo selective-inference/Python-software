@@ -54,7 +54,7 @@ def set_seed_for_test(seed=10):
 
     return set_seed_decorator
 
-def set_sampling_params_iftrue(condition, nsim=2, burnin=2, ndraw=2):
+def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
     """
     Fix the seed for random test.
 
