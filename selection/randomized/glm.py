@@ -8,6 +8,7 @@ def pairs_bootstrap_glm(glm_loss,
                         active, 
                         beta_full=None, 
                         inactive=None, 
+                        scaling=1.,
                         solve_args={'min_its':50, 'tol':1.e-10}):
     """
     pairs bootstrap of (beta_hat_active, -grad_inactive(beta_hat_active))
@@ -53,6 +54,9 @@ def pairs_bootstrap_glm(glm_loss,
     else:
         observed = beta_active
 
+    # scaling is a lipschitz constant for a gradient squared
+    _sqrt_scaling = np.sqrt(scaling)
+
     def _boot_score(indices):
         X_star = X_full[indices]
         Y_star = Y[indices]
@@ -60,8 +64,13 @@ def pairs_bootstrap_glm(glm_loss,
         result = np.zeros(ntotal)
         result[:nactive] = _bootQinv.dot(score[:nactive])
         if ntotal > nactive:
-            result[nactive:] = score[nactive:] + _bootI.dot(result[:nactive])
+            result[nactive:] = score[nactive:] - _bootI.dot(score[:nactive])
+        result[:nactive] *= _sqrt_scaling
+        result[nactive:] /= _sqrt_scaling
         return result
+
+    observed[:nactive] *= _sqrt_scaling
+    observed[nactive:] /= _sqrt_scaling
 
     return _boot_score, observed
 
@@ -102,7 +111,7 @@ def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     _cov_target = _outer_target - np.multiply.outer(_mean_target, _mean_target)
     return [_cov_target] + [_o - np.multiply.outer(_mean_target, _m) for _m, _o in zip(_mean_cross, _outer_cross)]
 
-def pairs_inactive_score_glm(glm_loss, active, beta_active):
+def pairs_inactive_score_glm(glm_loss, active, beta_active, scaling=1.):
 
     """
     Bootstrap inactive score at \bar{\beta}_E
@@ -116,7 +125,8 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active):
     _full_boot_score = pairs_bootstrap_glm(glm_loss, 
                                            active, 
                                            beta_full=beta_full,
-                                           inactive=inactive)[0]
+                                           inactive=inactive,
+                                           scaling=scaling)[0]
     nactive = active.sum()
     def _boot_score(indices):
         return _full_boot_score(indices)[nactive:]
@@ -126,12 +136,14 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active):
 class glm_group_lasso(M_estimator):
 
     def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
+        print scaling, 'scaling'
         M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss, 
                                               self.overall, 
                                               beta_full=self._beta_full,
-                                              inactive=self.inactive)[0]
+                                              inactive=self.inactive,
+                                              scaling=scaling)[0]
         return bootstrap_score
 
 class glm_greedy_step(greedy_score_step):
@@ -141,12 +153,14 @@ class glm_greedy_step(greedy_score_step):
 
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
-                                                   self.beta_active)
+                                                   self.beta_active,
+                                                   scaling=scaling)
         return bootstrap_score
 
 def resid_bootstrap(gaussian_loss,
                     active,
-                    inactive=None):
+                    inactive=None,
+                    scaling=1.):
 
     X, Y = gaussian_loss.data
     X_active = X[:,active]
@@ -172,12 +186,16 @@ def resid_bootstrap(gaussian_loss,
         X_inactive = X[:,inactive]
         X_inactive_resid = X_inactive - X_active.dot(X_active_inv.dot(X_inactive))
 
+    _sqrt_scaling = np.sqrt(scaling)
+
     def _boot_score(Y_star):
         beta_hat = X_active_inv.dot(Y_star)
         result = np.zeros(ntotal)
         result[:nactive] = beta_hat
         if ntotal > nactive:
             result[nactive:] = X_inactive_resid.T.dot(Y_star)
+        result[:nactive] *= _sqrt_scaling
+        result[nactive:] /= _sqrt_scaling
         return result
 
     return _boot_score, observed
@@ -199,5 +217,6 @@ class fixedX_group_lasso(M_estimator):
 
         bootstrap_score = resid_bootstrap(self.loss,
                                           self.overall, 
-                                          self.inactive)[0]
+                                          self.inactive,
+                                          scaling=scaling)[0]
         return bootstrap_score
