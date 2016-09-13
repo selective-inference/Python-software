@@ -10,12 +10,12 @@ from selection.sampling.langevin import projected_langevin
 from selection.randomized.tests import wait_for_return_value, logistic_instance
 
 #@wait_for_return_value
-def test_logistic_many_targets(scaling=4., burnin=15000, ndraw=10000):
+def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000):
     DEBUG = False
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=scaling)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=10)
     X *= scaling
 
     nonzero = np.where(beta)[0]
@@ -51,7 +51,7 @@ def test_logistic_many_targets(scaling=4., burnin=15000, ndraw=10000):
                 print(transform[0][0,0], 'transform')
                 print(_boot(sampler()), 'boot')
                 print(objective.score_transform[0][0,0], 'score')
-        return result * 2
+        return result 
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -89,7 +89,7 @@ def test_logistic_many_targets(scaling=4., burnin=15000, ndraw=10000):
         print crude_target_scaling(target_sampler), 'crude'
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         # null selected
@@ -102,13 +102,13 @@ def test_logistic_many_targets(scaling=4., burnin=15000, ndraw=10000):
         null_observed[0] = target_observed[idx]
         null_observed[1:] = target_observed[nactive:] 
 
-        target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
+        target_sampler = mv.setup_target(null_target, null_observed)#, target_set=[0])
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         print crude_target_scaling(target_sampler), 'crude'
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -128,7 +128,7 @@ def test_logistic_many_targets(scaling=4., burnin=15000, ndraw=10000):
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         # true selected
@@ -141,11 +141,11 @@ def test_logistic_many_targets(scaling=4., burnin=15000, ndraw=10000):
         active_observed[0] = target_observed[idx] 
         active_observed[1:] = target_observed[nactive:]
 
-        target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
+        target_sampler = mv.setup_target(active_target, active_observed)#, target_set=[0])
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2 # should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=1./crude_target_scaling(target_sampler)) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
         pvalues.append(pval)
 
         return pvalues
