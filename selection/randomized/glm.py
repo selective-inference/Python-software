@@ -117,12 +117,36 @@ def _parametric_cov_glm(glm_loss,
     return Sigma_full
 
 
+def _parametric_cov(glm_loss,
+                    active_union, active_individual,
+                    target_indices, param_cov, cross_terms,
+                    solve_args={'min_its': 50, 'tol': 1.e-10}):
 
-def _parametric_cov(target_indices, param_cov, cross_terms):
     parametric_cov = []
     parametric_cov.append(param_cov[target_indices,:][:,target_indices])
 
-    parametric_cov.extend([Sigma[target_indices, :] for Sigma in cross_terms])
+    X, Y = glm_loss.data
+    n, p = X.shape
+    def _WQ(active):
+        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        W = np.diag(glm_loss.saturated_loss.hessian(X[:,active].dot(beta_active)))
+        Q = np.dot(X[:, active].T, W.dot(X[:, active]))
+        Q_inv = np.linalg.inv(Q)
+
+        return W, Q, Q_inv, Q_inv.dot(X[:, active].T)
+
+    W_E, Q_E, Q_E_inv, mat_E = _WQ(active_union)
+
+    for active in active_individual:
+        W_E1, Q_E1, Q_E1_inv, mat_E1 = _WQ(active)
+        C_E1 = np.dot(X[:, ~active].T, W_E1.dot(X[:, active]))
+        I_E1 = C_E1.dot(Q_E1_inv)
+        null_E1 = X[:, ~active].T - np.dot(I_E1, X[:, active].T)
+
+        second_term = np.concatenate((mat_E1, null_E1), axis=0)
+        cov = np.dot(mat_E, W_E.dot(second_term.T))
+        parametric_cov.append(cov[target_indices, :])
+
     return parametric_cov
 
 

@@ -34,28 +34,23 @@ def test_multiple_views():
     mv = multiple_views([M_est1, M_est2])
     mv.solve()
 
-    active = M_est1.overall + M_est2.overall
+    active_union = M_est1.overall + M_est2.overall
+    active_individual = [M_est1.overall, M_est2.overall]
 
-    if set(nonzero).issubset(np.nonzero(active)[0]):
+    if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
-        active_set = np.nonzero(active)[0]
+        active_set = np.nonzero(active_union)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-
-        #nactive = np.sum(active)
-        #inactive_indices = np.zeros(nactive, dtype=bool)
-        #for i in range(p):
-        #    if active[i] and i not in nonzero:
-        #        inactive_indices[
-
 
         sampler = lambda: np.random.choice(n, size=(n,), replace=True)
         mv.setup_sampler(sampler)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
         inactive_observed = target_observed[inactive_selected]
-        param_cov = _parametric_cov_glm(loss, active)
-        target_sampler = mv.setup_target(inactive_selected, param_cov, inactive_target, inactive_observed, boot_cov=False)
+        param_cov = _parametric_cov_glm(loss, active_union)
+        target_sampler = mv.setup_target(loss, active_union, active_individual, inactive_selected, param_cov,
+                                         inactive_target, inactive_observed, boot_cov=False)
 
         test_stat = lambda x: np.linalg.norm(x)
         pval = target_sampler.hypothesis_test(test_stat, inactive_observed, alternative='greater')
@@ -66,7 +61,7 @@ def test_multiple_views():
 if __name__ == "__main__":
 
     pvalues = []
-    for i in range(10):
+    for i in range(100):
         print "iteration", i
         pval = test_multiple_views()
         if pval >-1:

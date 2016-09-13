@@ -44,6 +44,9 @@ class multiple_views(object):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
+                     glm_loss,
+                     active_union,
+                     active_individual,
                      target_indices,
                      param_cov,
                      target_bootstrap,
@@ -54,6 +57,9 @@ class multiple_views(object):
 
 
         return targeted_sampler(self,
+                                glm_loss,
+                                active_union,
+                                active_individual,
                                 target_indices,
                                 param_cov,
                                 target_bootstrap,
@@ -69,6 +75,9 @@ class targeted_sampler(object):
 
     def __init__(self,
                  multi_view,
+                 glm_loss,
+                 active_union,
+                 active_individual,
                  target_indices,
                  param_cov,
                  target_bootstrap,
@@ -97,7 +106,7 @@ class targeted_sampler(object):
         if boot_cov:
             covariances = bootstrap_cov(multi_view.sampler, target_bootstrap, cross_terms=multi_view.score_bootstrap)
         else:
-            covariances = _parametric_cov(target_indices, param_cov, cross_terms=multi_view.parametric_cov)
+            covariances = _parametric_cov(glm_loss, active_union, active_individual, target_indices, param_cov, cross_terms=multi_view.parametric_cov)
 
 
         self.target_cov = np.atleast_2d(covariances[0])
