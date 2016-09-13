@@ -9,10 +9,10 @@ from selection.randomized.glm import _parametric_cov_glm
 
 #@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 5, 200, 20
+    s, n, p = 3, 200, 20
 
-    randomizer = randomization.laplace((p,), scale=0.5)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    randomizer = randomization.laplace((p,), scale=1)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -61,7 +61,7 @@ def test_multiple_views():
 if __name__ == "__main__":
 
     pvalues = []
-    for i in range(100):
+    for i in range(200):
         print "iteration", i
         pval = test_multiple_views()
         if pval >-1:

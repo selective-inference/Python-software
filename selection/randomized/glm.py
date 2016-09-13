@@ -99,13 +99,6 @@ def _parametric_cov_glm(glm_loss,
         _bootI = _bootC.dot(_bootQinv)
 
     nactive = active.sum()
-    if inactive is not None:
-        X_full = np.hstack([X_active, X_inactive])
-        beta_overall = np.zeros(X_full.shape[1])
-        beta_overall[:nactive] = beta_active
-    else:
-        X_full = X_active
-        beta_overall = beta_active
 
     mat = np.zeros((p, n))
     mat[:nactive, :] = _bootQinv.dot(X_active.T)
@@ -133,7 +126,7 @@ def _parametric_cov(glm_loss,
         Q = np.dot(X[:, active].T, W.dot(X[:, active]))
         Q_inv = np.linalg.inv(Q)
 
-        return W, Q, Q_inv, Q_inv.dot(X[:, active].T)
+        return W.copy(), Q.copy(), Q_inv.copy(), Q_inv.dot(X[:, active].T).copy()
 
     W_E, Q_E, Q_E_inv, mat_E = _WQ(active_union)
 
