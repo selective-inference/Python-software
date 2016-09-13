@@ -140,6 +140,8 @@ class M_estimator(object):
         # we are implicitly assuming that
         # loss is a pairs model
 
+        _sqrt_scaling = np.sqrt(scaling)
+
         _beta_unpenalized = restricted_Mest(loss, overall, solve_args=solve_args)
 
         beta_full = np.zeros(overall.shape)
@@ -149,8 +151,8 @@ class M_estimator(object):
 
         # observed state for score
 
-        self.observed_score_state = np.hstack([_beta_unpenalized,
-                                               -loss.smooth_objective(beta_full, 'grad')[inactive]])
+        self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
+                                               -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
         # form linear part
 
@@ -168,34 +170,40 @@ class M_estimator(object):
 
         Mest_slice = slice(0, overall.sum())
         _Mest_hessian = _hessian[:,overall]
-        _score_linear_term[:,Mest_slice] = -_Mest_hessian
+        _score_linear_term[:,Mest_slice] = -_Mest_hessian / _sqrt_scaling
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
         null_idx = range(overall.sum(), p)
         inactive_idx = np.nonzero(inactive)[0]
         for _i, _n in zip(inactive_idx, null_idx):
-            _score_linear_term[_i,_n] = -1.
+            _score_linear_term[_i,_n] = -_sqrt_scaling
 
         # c_E piece 
 
         scaling_slice = slice(0, active_groups.sum())
         _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
-        _opt_linear_term[:,scaling_slice] = _opt_hessian
+        _opt_linear_term[:,scaling_slice] = _opt_hessian / _sqrt_scaling
+
+        self.observed_opt_state[scaling_slice] *= _sqrt_scaling
 
         # beta_U piece
 
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions)
+            _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
+
+        self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
 
         # subgrad piece
-        _sqrt_scaling = np.sqrt(scaling)
+
         subgrad_idx = range(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         subgrad_slice = slice(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         for _i, _s in zip(inactive_idx, subgrad_idx):
             _opt_linear_term[_i,_s] = _sqrt_scaling
+
+        self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
 
         # form affine part
 
@@ -222,7 +230,7 @@ class M_estimator(object):
 
         self.scaling_slice = scaling_slice
 
-        # weights are scaled here because the linear terms scales them by _sqrt_scaling
+        # weights are scaled here because the linear terms scales them by scaling
 
         new_groups = penalty.groups[inactive]
         new_weights = dict([(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
@@ -267,7 +275,7 @@ class M_estimator(object):
         randomization_derivative = self.randomization.gradient(full_state)
         data_grad = data_linear.T.dot(randomization_derivative)
         opt_grad = opt_linear.T.dot(randomization_derivative)
-        return data_grad, opt_grad + self.grad_log_jacobian(opt_state)
+        return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
 
     def grad_log_jacobian(self, opt_state):
         """
