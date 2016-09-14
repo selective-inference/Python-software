@@ -1,21 +1,21 @@
 import numpy as np
 from scipy.stats import norm as ndist
+import statsmodels.api as sm
 
 import regreg.api as rr
 
 from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso
+from selection.randomized.multiple_views import conditional_targeted_sampler
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
 from selection.randomized.tests import wait_for_return_value, logistic_instance
 
 #@wait_for_return_value
-def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000):
+def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000, snr=7, s=5, n=200, p=20, rho=0.1):
     DEBUG = False
-    s, n, p = 5, 200, 20 
-
     randomizer = randomization.laplace((p,), scale=scaling)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=10)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False)
     X *= scaling
 
     nonzero = np.where(beta)[0]
@@ -40,18 +40,6 @@ def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000):
     global_scaling = np.linalg.svd(X)[1].max()**2 # Lipschitz constant for gradient
     global_scaling = 1.
     sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-
-    def crude_target_scaling(_target_sampler):
-        result = np.linalg.svd(_target_sampler.target_inv_cov)[1].max()
-        for transform, objective, _boot in zip(_target_sampler.target_transform, _target_sampler.objectives, mv.score_bootstrap):
-            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
-            result += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
-            print np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz, 'score'
-            if DEBUG:
-                print(transform[0][0,0], 'transform')
-                print(_boot(sampler()), 'boot')
-                print(objective.score_transform[0][0,0], 'score')
-        return result 
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -86,29 +74,10 @@ def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000):
 
         #target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
-        print crude_target_scaling(target_sampler), 'crude'
+        print target_sampler.crude_lipschitz(), 'crude'
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
-        pvalues.append(pval)
-
-        # null selected
-
-        def null_target(indices):
-            result = boot_target(indices)
-            return np.hstack([result[idx], result[nactive:]])
-
-        null_observed = np.zeros_like(null_target(range(n)))
-        null_observed[0] = target_observed[idx]
-        null_observed[1:] = target_observed[nactive:] 
-
-        target_sampler = mv.setup_target(null_target, null_observed)#, target_set=[0])
-        target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
-
-        print crude_target_scaling(target_sampler), 'crude'
-
-        test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -128,10 +97,33 @@ def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000):
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pvalues.append(pval)
+
+        # null selected
+
+        idx = I[0]
+
+        def null_target(indices):
+            result = boot_target(indices)
+            return np.hstack([result[idx], result[nactive:]])
+
+        null_observed = np.zeros_like(null_target(range(n)))
+        null_observed[0] = target_observed[idx]
+        null_observed[1:] = target_observed[nactive:] 
+
+        target_sampler = mv.setup_target(null_target, null_observed)#, target_set=[0])
+        target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
+
+        print target_sampler.crude_lipschitz(), 'crude'
+
+        test_stat = lambda x: x[0]
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # true selected
+
+        idx = A[0]
 
         def active_target(indices):
             result = boot_target(indices)
@@ -142,10 +134,81 @@ def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000):
         active_observed[1:] = target_observed[nactive:]
 
         target_sampler = mv.setup_target(active_target, active_observed)#, target_set=[0])
-        target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2 # should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/crude_target_scaling(target_sampler)) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
+        # condition on opt variables
+
+        # null saturated
+
+        idx = I[0]
+
+        def null_target(indices):
+            result = boot_target(indices)
+            return result[idx]
+
+        null_observed = np.zeros(1)
+        null_observed[0] = target_observed[idx]
+
+        target_sampler = mv.setup_target(null_target, null_observed, constructor=conditional_targeted_sampler)
+
+        print target_sampler.crude_lipschitz(), 'crude'
+
+        test_stat = lambda x: x[0]
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pvalues.append(pval)
+
+        # true saturated
+
+        idx = A[0]
+
+        def active_target(indices):
+            result = boot_target(indices)
+            return result[idx]
+
+        active_observed = np.zeros(1)
+        active_observed[0] = target_observed[idx]
+
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+
+        target_sampler = mv.setup_target(active_target, active_observed, constructor=conditional_targeted_sampler)
+
+        test_stat = lambda x: x[0]
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pvalues.append(pval)
+
+        # true selected
+
+        # oracle p-value -- draws a new data set
+
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X_E = X[:,active_set]
+
+        model = sm.GLM(y, X_E, family=sm.families.Binomial())
+        model_results = model.fit()
+
+        pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
+
+        # data splitting-ish p-value -- draws a new data set of smaller size
+
+        X, y, beta, _ = logistic_instance(n=int(0.3*n), p=p, s=s, rho=rho, snr=snr)
+        X_E = X[:,active_set]
+
+        model = sm.GLM(y, X_E, family=sm.families.Binomial())
+        model_results = model.fit()
+
+        pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
+
         return pvalues
+
+def main(scaling=4., burnin=20000, ndraw=30000, snr=7, s=5, n=200, p=20, rho=0.1, nsample=2000):
+    P = []
+    while len(P) < nsample:
+        p = test_logistic_many_targets(scaling=1)
+        if p is not None: P.append(p)
+        print np.mean(P, 0), 'mean', len(P)
+        print np.std(P, 0), 'std'
+        print np.mean(np.array(P) < 0.05, 0), 'rejection'
+        

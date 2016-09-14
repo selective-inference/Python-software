@@ -43,13 +43,17 @@ class multiple_views(object):
                      target_bootstrap, 
                      observed_target_state, 
                      target_set=None,
-                     reference=None):
+                     reference=None,
+                     constructor=None):
 
-        return targeted_sampler(self,
-                                target_bootstrap,
-                                observed_target_state,
-                                target_set=target_set,
-                                reference=reference)
+        if constructor is None:
+            constructor = targeted_sampler
+
+        return constructor(self,
+                           target_bootstrap,
+                           observed_target_state,
+                           target_set=target_set,
+                           reference=reference)
 
 class targeted_sampler(object):
 
@@ -109,6 +113,7 @@ class targeted_sampler(object):
 
         self.overall_opt_slice = slice(0, multi_view.num_opt_var)
         self.target_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.reference_inv.shape[0])
+        self.keep_slice = self.target_slice
 
         # set the observed state
 
@@ -160,7 +165,7 @@ class targeted_sampler(object):
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[self.target_slice].copy())
+                samples.append(target_langevin.state[self.keep_slice].copy())
 
         return samples
 
@@ -175,7 +180,6 @@ class targeted_sampler(object):
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
-        print stepsize, 'step'
         samples = self.sample(ndraw, burnin, stepsize=stepsize)
         observed_stat = test_stat(observed_target)
         sample_test_stat = np.array([test_stat(x) for x in samples])
@@ -190,3 +194,46 @@ class targeted_sampler(object):
         else:
             return 2 * min(pval, 1 - pval)
 
+    def crude_lipschitz(self):
+        result = np.linalg.svd(self.target_inv_cov)[1].max()
+        for transform, objective in zip(self.target_transform, self.objectives):
+            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
+            result += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
+        return result 
+
+class conditional_targeted_sampler(targeted_sampler):
+    # condition on the optimization variables -- don't move them...
+
+    def __init__(self,
+                 multi_view,
+                 target_bootstrap,
+                 observed_target_state,
+                 target_set=None,
+                 reference=None):
+        targeted_sampler.__init__(self,
+                                  multi_view,
+                                  target_bootstrap,
+                                  observed_target_state,
+                                  target_set=target_set,
+                                  reference=reference)
+
+        # this is a hacky way to do things
+
+        self._full_state = self.observed_state.copy()
+        self._opt_state = self.observed_state[self.overall_opt_slice]
+        self.observed_state = self.observed_state[self.target_slice]
+        self.keep_slice = slice(None, None, None)
+
+    def gradient(self, state):
+        self._full_state[self.target_slice] = state
+        full_grad = targeted_sampler.gradient(self, self._full_state)
+        return full_grad[self.target_slice]
+
+    def projection(self, state):
+        return state
+
+    def crude_lipschitz(self):
+        result = np.linalg.svd(self.target_inv_cov)[1].max()
+        for transform, objective in zip(self.target_transform, self.objectives):
+            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
+        return result 
