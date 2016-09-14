@@ -146,6 +146,31 @@ class glm_group_lasso(M_estimator):
                                               scaling=scaling)[0]
         return bootstrap_score
 
+    def data_splitting(self, stage_one, solve_args={'min_its':50, 'tol':1.e-10}):
+        # fit model with a fraction of data
+        # if X has IID rows scaled by n^{-1/2} then the
+        # penalty does not need to be adjusted!
+
+        # needs a covariance estimate
+
+        X, Y = self.loss.data
+        n, p = X.shape
+        stage_two = np.ones(n, np.bool)
+        stage_two[stage_one] = False
+
+        n2 = stage_two.sum()
+        n1 = n - n2
+
+        stage_one = 1 - stage_two # now boolean
+
+        old_weights = self.loss.saturated_loss.case_weights
+        self.loss.saturated_loss.case_weights = stage_one
+
+        problem = rr.simple_problem(self.loss, penalty)
+        initial_soln = problem.solve(self._random_term, **solve_args)
+        
+
+
 class glm_greedy_step(greedy_score_step):
 
     def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):

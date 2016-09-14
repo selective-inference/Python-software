@@ -11,18 +11,41 @@ from selection.sampling.langevin import projected_langevin
 
 from selection.randomized.tests import wait_for_return_value, logistic_instance
 
+instance_opts = {'snr':15,
+                 's':5,
+                 'p':20,
+                 'n':200,
+                 'rho':0.1}
+
 #@wait_for_return_value
-def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000, snr=7, s=5, n=200, p=20, rho=0.1):
+
+def generate_data(s=5, 
+                  n=200, 
+                  p=20, 
+                  rho=0.1, 
+                  snr=15):
+
+    return logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
+
+def test_logistic_many_targets(snr=15, 
+                               s=5, 
+                               n=200, 
+                               p=20, 
+                               rho=0.1, 
+                               burnin=20000, 
+                               ndraw=30000, 
+                               scale=0.9,
+                               frac=0.5): # 0.9 has roughly same screening probability as 50% data splitting, i.e. around 10%
+
     DEBUG = False
-    randomizer = randomization.laplace((p,), scale=scaling)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False)
-    X *= scaling
+    randomizer = randomization.laplace((p,), scale=scale)
+    X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
     loss = rr.glm.logistic(X, y)
-    epsilon = scaling**2
+    epsilon = 1. / np.sqrt(n)
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
@@ -37,8 +60,6 @@ def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000, snr=7, s=5
     active = M_est.overall
     nactive = active.sum()
 
-    global_scaling = np.linalg.svd(X)[1].max()**2 # Lipschitz constant for gradient
-    global_scaling = 1.
     sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
@@ -54,12 +75,12 @@ def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000, snr=7, s=5
         if not I:
             return None
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est.inactive, scaling=global_scaling)
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est.inactive)
 
         if DEBUG:
             print(boot_target(sampler())[-3:], 'boot target')
 
-        mv.setup_sampler(sampler, scaling=global_scaling)
+        mv.setup_sampler(sampler)
 
         # null saturated
 
@@ -183,32 +204,101 @@ def test_logistic_many_targets(scaling=4., burnin=20000, ndraw=30000, snr=7, s=5
 
         # oracle p-value -- draws a new data set
 
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
         X_E = X[:,active_set]
 
-        model = sm.GLM(y, X_E, family=sm.families.Binomial())
-        model_results = model.fit()
+        try:
+            model = sm.GLM(y, X_E, family=sm.families.Binomial())
+            model_results = model.fit()
+            pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
 
-        pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
+        except sm.tools.sm_exceptions.PerfectSeparationError:
+            pvalues.extend([np.nan, np.nan])
 
         # data splitting-ish p-value -- draws a new data set of smaller size
+        # frac is presumed to be how much data was used in stage 1, we get (1-frac)*n for stage 2
+        # frac defaults to 0.5
 
-        X, y, beta, _ = logistic_instance(n=int(0.3*n), p=p, s=s, rho=rho, snr=snr)
-        X_E = X[:,active_set]
+        Xs, ys, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
+        Xs = Xs[:int((1-frac)*n)]
+        ys = ys[:int((1-frac)*n)]
+        X_Es = Xs[:,active_set]
 
-        model = sm.GLM(y, X_E, family=sm.families.Binomial())
-        model_results = model.fit()
+        try:
+            model = sm.GLM(ys, X_Es, family=sm.families.Binomial())
+            model_results = model.fit()
+            pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
 
-        pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
+        except sm.tools.sm_exceptions.PerfectSeparationError:
+            pvalues.extend([np.nan, np.nan])
 
         return pvalues
 
-def main(scaling=4., burnin=20000, ndraw=30000, snr=7, s=5, n=200, p=20, rho=0.1, nsample=2000):
+def data_splitting_screening(frac=0.5, snr=10, s=5, n=200, p=20, rho=0.1):
+
+    count = 0
+    
+    while True:
+        count += 1
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
+
+        n2 = int(frac * n)
+        X = X[:n2]
+        y = y[:n2]
+
+        nonzero = np.where(beta)[0]
+        lam_frac = 1.
+
+        loss = rr.glm.logistic(X, y)
+        epsilon = 1. / np.sqrt(n2)
+
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n2, 10000)))).max(0))
+        W = np.ones(p)*lam
+        penalty = rr.group_lasso(np.arange(p),
+                                 weights=dict(zip(np.arange(p), W)), lagrange=1.)
+
+        problem = rr.simple_problem(loss, penalty)
+        quadratic = rr.identity_quadratic(epsilon, 0, 0, 0)
+
+        soln = problem.solve(quadratic)
+        active_set = np.nonzero(soln != 0)[0]
+        if set(nonzero).issubset(active_set):
+            return count
+
+def randomization_screening(scale=1., snr=15, s=5, n=200, p=20, rho=0.1):
+
+    count = 0
+
+    randomizer = randomization.laplace((p,), scale=scale)
+
+    while True:
+        count += 1
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
+
+        nonzero = np.where(beta)[0]
+        lam_frac = 1.
+
+        loss = rr.glm.logistic(X, y)
+        epsilon = 1. / np.sqrt(n)
+
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+        W = np.ones(p)*lam
+        penalty = rr.group_lasso(np.arange(p),
+                                 weights=dict(zip(np.arange(p), W)), lagrange=1.)
+
+        M_est = glm_group_lasso(loss, epsilon, penalty, randomizer)
+        M_est.solve()
+
+        active_set = np.nonzero(M_est.initial_soln != 0)[0]
+        if set(nonzero).issubset(active_set):
+            return count
+
+def main(nsample=2000):
     P = []
     while len(P) < nsample:
-        p = test_logistic_many_targets(scaling=1)
+        p = test_logistic_many_targets(**instance_opts)
         if p is not None: P.append(p)
-        print np.mean(P, 0), 'mean', len(P)
-        print np.std(P, 0), 'std'
-        print np.mean(np.array(P) < 0.05, 0), 'rejection'
+        print np.nanmean(P, 0), 'mean', len(P)
+        print np.nanstd(P, 0), 'std'
+        print np.nanmean(np.array(P) < 0.05, 0), 'rejection'
         
