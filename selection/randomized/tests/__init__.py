@@ -11,10 +11,10 @@ def wait_for_return_value(test, max_tries=50):
         while True:
             v = test()
             if v is not None:
-                return v
+                return count, v
             count += 1
             if count >= max_tries:
-                break
+                return np.inf, None
     return make_decorator(test)(_new_test)
 
 def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=14,
