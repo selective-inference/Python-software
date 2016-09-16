@@ -3,7 +3,7 @@ import numpy as np
 import regreg.api as rr
 
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin
-from . import logistic_instance, wait_for_return_value
+from selection.randomized.tests import logistic_instance, wait_for_return_value
 
 @wait_for_return_value
 def test_multiple_views():

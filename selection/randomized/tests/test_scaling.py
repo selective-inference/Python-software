@@ -234,13 +234,13 @@ def test_logistic_many_targets(snr=15,
 
         return pvalues
 
-def data_splitting_screening(frac=0.5, snr=10, s=5, n=200, p=20, rho=0.1):
+def data_splitting_screening(frac=0.5, snr=15, s=5, n=200, p=20, rho=0.1):
 
     count = 0
     
     while True:
         count += 1
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
+        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
 
         n2 = int(frac * n)
         X = X[:n2]
@@ -273,7 +273,7 @@ def randomization_screening(scale=1., snr=15, s=5, n=200, p=20, rho=0.1):
 
     while True:
         count += 1
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
+        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
 
         nonzero = np.where(beta)[0]
         lam_frac = 1.
@@ -293,10 +293,10 @@ def randomization_screening(scale=1., snr=15, s=5, n=200, p=20, rho=0.1):
         if set(nonzero).issubset(active_set):
             return count
 
-def main(nsample=2000):
+def main(nsample=2000, frac=0.6, scale=0.9):
     P = []
     while len(P) < nsample:
-        p = test_logistic_many_targets(**instance_opts)
+        p = test_logistic_many_targets(frac=frac, scale=scale, **instance_opts)
         if p is not None: P.append(p)
         print np.nanmean(P, 0), 'mean', len(P)
         print np.nanstd(P, 0), 'std'
