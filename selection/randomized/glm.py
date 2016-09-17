@@ -1,3 +1,5 @@
+import functools # for bootstrap partial mapping
+
 import numpy as np
 
 from .M_estimator import restricted_Mest, M_estimator
@@ -65,8 +67,6 @@ def pairs_bootstrap_glm(glm_loss,
 
     return _boot_score, observed
 
-
-
 def _parametric_cov_glm(glm_loss,
                         active,
                         beta_full=None,
@@ -109,41 +109,80 @@ def _parametric_cov_glm(glm_loss,
     Sigma_full = np.dot(mat, np.dot(_bootW, mat.T))
     return Sigma_full
 
+def pairs_inactive_score_glm(glm_loss, active, beta_active):
 
-def _parametric_cov(glm_loss,
-                    active_union, active_individual,
-                    target_indices, param_cov, cross_terms,
-                    solve_args={'min_its': 50, 'tol': 1.e-10}):
+    """
+    Bootstrap inactive score at \bar{\beta}_E
 
-    parametric_cov = []
-    parametric_cov.append(param_cov[target_indices,:][:,target_indices])
+    Will be used with forward stepwise.
+    """
+    inactive = ~active
+    beta_full = np.zeros(glm_loss.shape)
+    beta_full[active] = beta_active
 
-    X, Y = glm_loss.data
-    n, p = X.shape
-    def _WQ(active):
-        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
-        W = np.diag(glm_loss.saturated_loss.hessian(X[:,active].dot(beta_active)))
-        Q = np.dot(X[:, active].T, W.dot(X[:, active]))
-        Q_inv = np.linalg.inv(Q)
+    _full_boot_score = pairs_bootstrap_glm(glm_loss, 
+                                           active, 
+                                           beta_full=beta_full,
+                                           inactive=inactive)[0]
+    nactive = active.sum()
+    def _boot_score(indices):
+        return _full_boot_score(indices)[nactive:]
 
-        return W.copy(), Q.copy(), Q_inv.copy(), Q_inv.dot(X[:, active].T).copy()
+    return _boot_score
 
-    W_E, Q_E, Q_E_inv, mat_E = _WQ(active_union)
+class glm_group_lasso(M_estimator):
 
-    for active in active_individual:
-        W_E1, Q_E1, Q_E1_inv, mat_E1 = _WQ(active)
-        C_E1 = np.dot(X[:, ~active].T, W_E1.dot(X[:, active]))
-        I_E1 = C_E1.dot(Q_E1_inv)
-        null_E1 = X[:, ~active].T - np.dot(I_E1, X[:, active].T)
+    def setup_sampler(self):
+        M_estimator.setup_sampler(self)
 
-        second_term = np.concatenate((mat_E1, null_E1), axis=0)
-        cov = np.dot(mat_E, W_E.dot(second_term.T))
-        parametric_cov.append(cov[target_indices, :])
+        bootstrap_score = pairs_bootstrap_glm(self.loss,
+                                              self.overall, 
+                                              beta_full=self._beta_full,
+                                              inactive=self.inactive)[0]
 
-    return parametric_cov
+        return bootstrap_score
+
+class glm_group_lasso_parametric(M_estimator):
+
+    # this setup_sampler returns only the active set
+
+    def setup_sampler(self):
+        M_estimator.setup_sampler(self)
+        return self.overall
 
 
+class glm_greedy_step(greedy_score_step):
 
+    def setup_sampler(self):
+        greedy_score_step.setup_sampler(self)
+
+        bootstrap_score = pairs_inactive_score_glm(self.loss, 
+                                                   self.active,
+                                                   self.beta_active)
+        return bootstrap_score
+
+
+class fixedX_group_lasso(M_estimator):
+
+    def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
+        loss = glm.gaussian(X, Y)
+        M_estimator.__init__(self,
+                             loss, 
+                             epsilon, 
+                             penalty, 
+                             randomization, solve_args=solve_args)
+
+    def setup_sampler(self):
+        M_estimator.setup_sampler(self)
+
+        X, Y = self.loss.data
+
+        bootstrap_score = resid_bootstrap(self.loss,
+                                          self.overall, 
+                                          self.inactive)[0]
+        return bootstrap_score
+
+# Methods to form appropriate covariances
 
 def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     """
@@ -182,55 +221,11 @@ def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     _cov_target = _outer_target - np.multiply.outer(_mean_target, _mean_target)
     return [_cov_target] + [_o - np.multiply.outer(_mean_target, _m) for _m, _o in zip(_mean_cross, _outer_cross)]
 
-
-def pairs_inactive_score_glm(glm_loss, active, beta_active):
-
+def glm_nonparametric_bootstrap(m, n):
     """
-    Bootstrap inactive score at \bar{\beta}_E
-
-    Will be used with forward stepwise.
+    The m out of n bootstrap.
     """
-    inactive = ~active
-    beta_full = np.zeros(glm_loss.shape)
-    beta_full[active] = beta_active
-
-    _full_boot_score = pairs_bootstrap_glm(glm_loss, 
-                                           active, 
-                                           beta_full=beta_full,
-                                           inactive=inactive)[0]
-    nactive = active.sum()
-    def _boot_score(indices):
-        return _full_boot_score(indices)[nactive:]
-
-    return _boot_score
-
-class glm_group_lasso(M_estimator):
-
-    def setup_sampler(self):
-        M_estimator.setup_sampler(self)
-
-        bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.overall, 
-                                              beta_full=self._beta_full,
-                                              inactive=self.inactive)[0]
-
-        parametric_cov = _parametric_cov_glm(self.loss,
-                                             self.overall,
-                                             beta_full=self._beta_full,
-                                             inactive=self.inactive)
-
-        return bootstrap_score, parametric_cov
-
-
-class glm_greedy_step(greedy_score_step):
-
-    def setup_sampler(self):
-        greedy_score_step.setup_sampler(self)
-
-        bootstrap_score = pairs_inactive_score_glm(self.loss, 
-                                                   self.active,
-                                                   self.beta_active)
-        return bootstrap_score
+    return functools.partial(bootstrap_cov, lambda: np.random.choice(n, size=(m,), replace=True))
 
 def resid_bootstrap(gaussian_loss,
                     active,
@@ -270,23 +265,44 @@ def resid_bootstrap(gaussian_loss,
 
     return _boot_score, observed
 
+def parametric_cov(glm_loss, target_with_linear_func, cross_terms=(),
+                   solve_args={'min_its':50, 'tol':1.e-10}):
+    # cross_terms are different active sets
 
-class fixedX_group_lasso(M_estimator):
+    target, linear_func = target_with_linear_func
+    linear_funcT = linear_func.T
 
-    def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
-        loss = glm.gaussian(X, Y)
-        M_estimator.__init__(self,
-                             loss, 
-                             epsilon, 
-                             penalty, 
-                             randomization, solve_args=solve_args)
+    X, Y = glm_loss.data
+    n, p = X.shape
 
-    def setup_sampler(self):
-        M_estimator.setup_sampler(self)
+    def _WQ(active):
+        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        W = glm_loss.saturated_loss.hessian(X[:,active].dot(beta_active))
+        return W
 
-        X, Y = self.loss.data
+    # weights and Q at the target
+    W_T = _WQ(target)
+    X_T = X[:,target]
+    XW_T = W_T[:, None] * X_T
+    Q_T_inv = np.linalg.inv(X_T.T.dot(XW_T))
 
-        bootstrap_score = resid_bootstrap(self.loss,
-                                          self.overall, 
-                                          self.inactive)[0]
-        return bootstrap_score
+    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT)]
+
+    for cross in cross_terms:
+        # the covariances are for (\bar{\beta}_{C}, N_C) -- C for cross
+        X_C = X[:, cross]
+        X_IT = X[:, ~cross].T
+        Q_C_inv = np.linalg.inv(X_C.T.dot(W_T[:, None] * X_C))
+        beta_block = Q_C_inv.dot(X[:, cross].T.dot(XW_T)).dot(Q_T_inv)
+        null_block = X_IT.dot(XW_T) - X_IT.dot(W_T[:, None] * X_C).dot(Q_C_inv).dot(X[:, cross].T.dot(XW_T))
+        null_block = null_block.dot(Q_T_inv)
+
+        covariances.append(np.vstack([beta_block, null_block]).dot(linear_funcT).T)
+
+    return covariances
+
+def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10}):
+    """
+    The m out of n bootstrap.
+    """
+    return functools.partial(parametric_cov, glm_loss, solve_args=solve_args)

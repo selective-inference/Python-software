@@ -14,7 +14,7 @@ def wait_for_return_value(test, max_tries=50):
                 return v
             count += 1
             if count >= max_tries:
-                break
+                raise ValueError('test has not returned anything after %d tries' % max_tries)
     return make_decorator(test)(_new_test)
 
 def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=14,

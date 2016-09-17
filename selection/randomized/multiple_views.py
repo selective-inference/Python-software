@@ -3,8 +3,6 @@ import numpy as np
 
 from ..distributions.discrete_family import discrete_family
 from ..sampling.langevin import projected_langevin
-from .glm import bootstrap_cov, _parametric_cov
-
 
 class multiple_views(object):
 
@@ -18,23 +16,17 @@ class multiple_views(object):
             # randomize first?
             objective.solve()
 
-    def setup_sampler(self, sampler):
-
-        self.sampler = sampler # this should be a callable that generates an argument to all of our bootstrap callables
-        self.bootstrap_cov = True
+    def setup_sampler(self, form_covariance):
 
         nviews = self.nviews = len(self.objectives)
 
         self.num_opt_var = 0
         self.opt_slice = []
-        self.score_bootstrap = []
-        self.parametric_cov = []
+        self.score_info = []
 
         for objective in self.objectives:
-            score_bootstrap, parametric_cov = objective.setup_sampler() # shouldn't have to refit all the time as this function does
-            self.score_bootstrap.append(score_bootstrap)
-            self.parametric_cov.append(parametric_cov)
-
+            score_ = objective.setup_sampler() # shouldn't have to refit all the time as this function does
+            self.score_info.append(score_)
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
 
@@ -44,27 +36,17 @@ class multiple_views(object):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
-                     glm_loss,
-                     active_union,
-                     active_individual,
-                     target_indices,
-                     param_cov,
-                     target_bootstrap,
-                     observed_target_state,
-                     boot_cov,
+                     target_info,
+                     observed_target_state, 
+                     form_covariances,
                      target_set=None,
                      reference=None):
 
 
         return targeted_sampler(self,
-                                glm_loss,
-                                active_union,
-                                active_individual,
-                                target_indices,
-                                param_cov,
-                                target_bootstrap,
+                                target_info,
                                 observed_target_state,
-                                boot_cov,
+                                form_covariances,
                                 target_set=target_set,
                                 reference=reference)
 
@@ -75,14 +57,9 @@ class targeted_sampler(object):
 
     def __init__(self,
                  multi_view,
-                 glm_loss,
-                 active_union,
-                 active_individual,
-                 target_indices,
-                 param_cov,
-                 target_bootstrap,
+                 target_info,
                  observed_target_state,
-                 boot_cov,
+                 form_covariances,
                  target_set=None,
                  reference=None):
 
@@ -103,11 +80,7 @@ class targeted_sampler(object):
 
         self.observed_target_state = observed_target_state
 
-        if boot_cov:
-            covariances = bootstrap_cov(multi_view.sampler, target_bootstrap, cross_terms=multi_view.score_bootstrap)
-        else:
-            covariances = _parametric_cov(glm_loss, active_union, active_individual, target_indices, param_cov, cross_terms=multi_view.parametric_cov)
-
+        covariances = form_covariances(target_info, cross_terms=multi_view.score_info)
 
         self.target_cov = np.atleast_2d(covariances[0])
         # zero out some coordinates of target_cov
