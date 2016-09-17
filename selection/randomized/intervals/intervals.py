@@ -50,19 +50,25 @@ class intervals():
     def pvalues_param_all(self, param_vec):
         pvalues = []
         for j in range(self.nactive):
-            pvalues.append(self.pvalue_by_tilting(j, param_vec[j]))
+            pval = self.pvalue_by_tilting(j, param_vec[j])
+            pval = 2 * min(pval, 1 - pval)
+            pvalues.append(pval)
         return pvalues
 
     def pvalues_ref_all(self):
         pvalues = []
         for j in range(self.nactive):
             indicator = np.array(self.samples[j, :] < self.observed[j], dtype=int)
-            pvalues.append(np.sum(indicator)/float(self.nsamples))
+            pval = np.sum(indicator)/float(self.nsamples)
+            pval = 2*min(pval, 1-pval)
+            pvalues.append(pval)
+
         return pvalues
 
 
     def pvalues_grid(self, j):
         pvalues_at_grid = [self.pvalue_by_tilting(j, self.param_values_at_grid[i]) for i in range(self.grid_length)]
+        pvalues_at_grid = [2*min(pval, 1-pval) for pval in pvalues_at_grid]
         pvalues_at_grid = np.asarray(pvalues_at_grid, dtype=np.float32)
         return pvalues_at_grid
 
@@ -70,6 +76,7 @@ class intervals():
     def construct_intervals(self, j, alpha=0.1):
         pvalues_at_grid = self.pvalues_grid(j)
         accepted_indices = np.array(pvalues_at_grid > alpha)
+        #accepted_indices = np.multiply(accepted_indices, np.array(pvalues_at_grid<1-alpha))
         if np.sum(accepted_indices)>0:
             self.L = np.min(self.param_values_at_grid[accepted_indices])
             self.U = np.max(self.param_values_at_grid[accepted_indices])
@@ -178,7 +185,7 @@ if __name__ == "__main__":
     ncovered_total = 0
     nparams_total = 0
 
-    for i in range(50):
+    for i in range(100):
         print "\n"
         print "iteration", i
         pvals_ints = test_intervals()
