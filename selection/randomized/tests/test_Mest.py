@@ -3,7 +3,8 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso
+from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
+from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
@@ -271,6 +272,8 @@ def test_logistic_selected_inactive_coordinate(seed=None):
     nactive = active.sum()
     scaling = np.linalg.svd(X)[1].max()**2
 
+    form_covariances = glm_nonparametric_bootstrap(n, n)
+
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
         active_set = np.nonzero(active)[0]
@@ -280,7 +283,6 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         idx = I[0]
         boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
-
 
         def null_target(indices):
             result = boot_target(indices)
@@ -293,9 +295,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
         # the null_observed[1:] is only used as a
         # starting point for chain -- could be 0
 
-        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-
-        mv.setup_sampler(sampler, scaling=scaling)
+        mv.setup_sampler(form_covariances)
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000, stepsize=1./scaling) # twosided by default
@@ -355,9 +355,8 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
         # starting point for chain -- could be 0
         # null_observed[1:] = target_observed[nactive:]
 
-        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-
-        mv.setup_sampler(sampler)
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        mv.setup_sampler(form_covariances)
         target_sampler = mv.setup_target(null_target, null_observed)
 
         test_stat = lambda x: x[0]
@@ -418,9 +417,8 @@ def test_logistic_selected_active_coordinate(seed=None):
         # starting point for chain -- could be 0
         # active_observed[1:] = target_observed[nactive:]
 
-        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-
-        mv.setup_sampler(sampler)
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        mv.setup_sampler(form_covariances)
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
@@ -479,9 +477,9 @@ def test_logistic_saturated_active_coordinate(seed=None):
         # starting point for chain -- could be 0
         # active_observed[1:] = target_observed[nactive:]
 
-        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        form_covariances = glm_nonparametric_bootstrap(n, n)
 
-        mv.setup_sampler(sampler)
+        mv.setup_sampler(form_covariances)
         target_sampler = mv.setup_target(active_target, active_observed)
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default

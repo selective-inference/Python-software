@@ -1,5 +1,12 @@
+import numpy as np
+import regreg.api as rr
+from regreg.smooth.glm import glm as regreg_glm, logistic_loglike
+import selection.sampling.randomized.api as randomized
+from selection.algorithms.randomized import logistic_instance
+from selection.distributions.discrete_family import discrete_family
 from itertools import product
 import numpy as np
+from .glm_boot import bootstrap_cov
 
 from ..distributions.discrete_family import discrete_family
 from ..sampling.langevin import projected_langevin
@@ -16,17 +23,19 @@ class multiple_views(object):
             # randomize first?
             objective.solve()
 
-    def setup_sampler(self, form_covariances):
+    def setup_sampler(self, sampler):
+
+        self.sampler = sampler # this should be a callable that generates an argument to all of our bootstrap callables
 
         nviews = self.nviews = len(self.objectives)
 
         self.num_opt_var = 0
         self.opt_slice = []
-        self.score_info = []
+        self.score_bootstrap = []
 
         for objective in self.objectives:
-            score_ = objective.setup_sampler() # shouldn't have to refit all the time as this function does
-            self.score_info.append(score_)
+            score_bootstrap = objective.setup_sampler() # shouldn't have to refit all the time as this function does
+            self.score_bootstrap.append(score_bootstrap)
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
 
@@ -35,26 +44,17 @@ class multiple_views(object):
         for i in range(nviews):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
-        self.form_covariances = form_covariances
-
     def setup_target(self,
-                     target_info,
-                     observed_target_state, 
+                     target_bootstrap,
+                     observed_target_state,
                      target_set=None,
-                     reference=None,
-                     constructor=None):
+                     reference=None):
 
-        if constructor is None:
-            constructor = targeted_sampler
-
-        return constructor(self,
-                           target_info,
-                           observed_target_state,
-                           self.form_covariances,
-                           target_set=target_set,
-                           reference=reference)
-
-
+        return targeted_sampler(self,
+                                target_bootstrap,
+                                observed_target_state,
+                                target_set=target_set,
+                                reference=reference)
 
 class targeted_sampler(object):
 
@@ -62,9 +62,8 @@ class targeted_sampler(object):
 
     def __init__(self,
                  multi_view,
-                 target_info,
+                 target_bootstrap,
                  observed_target_state,
-                 form_covariances,
                  target_set=None,
                  reference=None):
 
@@ -85,15 +84,15 @@ class targeted_sampler(object):
 
         self.observed_target_state = observed_target_state
 
-        covariances = form_covariances(target_info, cross_terms=multi_view.score_info)
-
+        covariances = bootstrap_cov(multi_view.sampler, target_bootstrap, cross_terms=multi_view.score_bootstrap)
         self.target_cov = np.atleast_2d(covariances[0])
+
         # zero out some coordinates of target_cov
         # to enforce independence of target and null statistics
 
         if target_set is not None:
             null_set = set(range(self.target_cov.shape[0])).difference(target_set)
-            
+
             for t, n in product(target_set, null_set):
                 self.target_cov[t, n] = 0.
                 self.target_cov[n, t] = 0.
@@ -102,7 +101,7 @@ class targeted_sampler(object):
 
         self.target_transform = []
         for i in range(self.nviews):
-            self.target_transform.append(self.objectives[i].condition(self.score_cov[i], 
+            self.target_transform.append(self.objectives[i].condition(self.score_cov[i],
                                                                       self.target_cov,
                                                                       self.observed_target_state))
         self.target_inv_cov = np.linalg.inv(self.target_cov)
@@ -115,7 +114,6 @@ class targeted_sampler(object):
 
         self.overall_opt_slice = slice(0, multi_view.num_opt_var)
         self.target_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.reference_inv.shape[0])
-        self.keep_slice = self.target_slice
 
         # set the observed state
 
@@ -124,7 +122,7 @@ class targeted_sampler(object):
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
     def projection(self, state):
-        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
+        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
         new_opt_state = np.zeros_like(opt_state)
         for i in range(self.nviews):
             new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
@@ -133,7 +131,7 @@ class targeted_sampler(object):
 
     def gradient(self, state):
 
-        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
+        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
         target_grad, opt_grad = np.zeros_like(target_state), np.zeros_like(opt_state)
         full_grad = np.zeros_like(state)
 
@@ -156,7 +154,7 @@ class targeted_sampler(object):
         assumes setup_sampler has been called
         """
         if stepsize is None:
-            stepsize = 1. / self.observed_state.shape[0]
+            stepsize = 2. / self.observed_state.shape[0]
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,
                                              self.projection,
@@ -167,14 +165,14 @@ class targeted_sampler(object):
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[self.keep_slice].copy())
+                samples.append(target_langevin.state[self.target_slice].copy())
 
         return samples
 
-    def hypothesis_test(self, 
-                        test_stat, 
-                        observed_target, 
-                        ndraw=10000,
+    def hypothesis_test(self,
+                        test_stat,
+                        observed_target,
+                        ndraw=8000,
                         burnin=2000,
                         stepsize=None,
                         alternative='twosided'):
@@ -195,47 +193,3 @@ class targeted_sampler(object):
             return pval
         else:
             return 2 * min(pval, 1 - pval)
-
-    def crude_lipschitz(self):
-        result = np.linalg.svd(self.target_inv_cov)[1].max()
-        for transform, objective in zip(self.target_transform, self.objectives):
-            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
-            result += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
-        return result 
-
-class conditional_targeted_sampler(targeted_sampler):
-    # condition on the optimization variables -- don't move them...
-
-    def __init__(self,
-                 multi_view,
-                 target_bootstrap,
-                 observed_target_state,
-                 target_set=None,
-                 reference=None):
-        targeted_sampler.__init__(self,
-                                  multi_view,
-                                  target_bootstrap,
-                                  observed_target_state,
-                                  target_set=target_set,
-                                  reference=reference)
-
-        # this is a hacky way to do things
-
-        self._full_state = self.observed_state.copy()
-        self._opt_state = self.observed_state[self.overall_opt_slice]
-        self.observed_state = self.observed_state[self.target_slice]
-        self.keep_slice = slice(None, None, None)
-
-    def gradient(self, state):
-        self._full_state[self.target_slice] = state
-        full_grad = targeted_sampler.gradient(self, self._full_state)
-        return full_grad[self.target_slice]
-
-    def projection(self, state):
-        return state
-
-    def crude_lipschitz(self):
-        result = np.linalg.svd(self.target_inv_cov)[1].max()
-        for transform, objective in zip(self.target_transform, self.objectives):
-            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
-        return result 

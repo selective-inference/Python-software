@@ -4,7 +4,7 @@ import statsmodels.api as sm
 
 import regreg.api as rr
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso
+from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.randomized.multiple_views import conditional_targeted_sampler
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
@@ -17,8 +17,6 @@ instance_opts = {'snr':15,
                  'n':200,
                  'rho':0.1}
 
-#@wait_for_return_value
-
 def generate_data(s=5, 
                   n=200, 
                   p=20, 
@@ -27,6 +25,7 @@ def generate_data(s=5,
 
     return logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
 
+@wait_for_return_value
 def test_logistic_many_targets(snr=15, 
                                s=5, 
                                n=200, 
@@ -60,8 +59,6 @@ def test_logistic_many_targets(snr=15,
     active = M_est.overall
     nactive = active.sum()
 
-    sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
         if DEBUG:
@@ -78,9 +75,11 @@ def test_logistic_many_targets(snr=15,
         boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est.inactive)
 
         if DEBUG:
+            sampler = lambda : np.random.choice(n, size=(n,), replace=True)
             print(boot_target(sampler())[-3:], 'boot target')
 
-        mv.setup_sampler(sampler)
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        mv.setup_sampler(form_covariances)
 
         # null saturated
 
@@ -111,8 +110,6 @@ def test_logistic_many_targets(snr=15,
 
         active_observed = np.zeros(1)
         active_observed[0] = target_observed[idx]
-
-        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
         target_sampler = mv.setup_target(active_target, active_observed)
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
