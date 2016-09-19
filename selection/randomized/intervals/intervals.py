@@ -136,18 +136,33 @@ def Langevin_samples(solve_args={'min_its':50, 'tol':1.e-10}):
     all_variances = np.zeros(nactive)
 
     if set(nonzero).issubset(active_set):
+
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+        target = lambda indices: boot_target(indices)[:nactive]
+        observed = target_observed[:nactive]
+        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        mv.setup_sampler(sampler)
+        target_sampler = mv.setup_target(target, observed, reference = unpenalized_mle)
+        samples = target_sampler.sample(ndraw = nsamples, burnin = 2000)
+        samples  = np.asarray(samples, dtype=np.float32)
+        print samples.shape
         for j in range(nactive):
+            all_variances[j] = target_sampler.target_cov[j,j]
+            all_samples[j,:] = samples[:,j]
 
-            boot_target, target_observed = pairs_bootstrap_glm(loss, active)
-            inactive_target = lambda indices: boot_target(indices)[j]
-            inactive_observed = target_observed[j]
-            sampler = lambda : np.random.choice(n, size=(n,), replace=True)
 
-            mv.setup_sampler(sampler)
-            target_sampler = mv.setup_target(inactive_target, inactive_observed, reference = unpenalized_mle[j])
-
-            all_variances[j] = target_sampler.target_cov
-            all_samples[j,:] = target_sampler.sample(ndraw = nsamples, burnin = 2000)
+        # for j in range(nactive):
+        #
+        #     boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+        #     inactive_target = lambda indices: boot_target(indices)[j]
+        #     inactive_observed = target_observed[j]
+        #     sampler = lambda : np.random.choice(n, size=(n,), replace=True)
+        #
+        #     mv.setup_sampler(sampler)
+        #     target_sampler = mv.setup_target(inactive_target, inactive_observed, reference = unpenalized_mle[j])
+        #
+        #     all_variances[j] = target_sampler.target_cov
+        #     all_samples[j,:] = target_sampler.sample(ndraw = nsamples, burnin = 2000)
 
         return beta, active, unpenalized_mle, all_samples, all_variances
 

@@ -144,7 +144,8 @@ class targeted_sampler(object):
 
         #target_state = np.atleast_2d(target_state)
         target_grad = - target_grad
-        target_grad += self.reference_inv.reshape(1,) - self.target_inv_cov.dot(target_state).reshape(1,)
+        target_grad += self.reference_inv - self.target_inv_cov.dot(target_state)
+        #target_grad += self.reference_inv.reshape(1,) - self.target_inv_cov.dot(target_state).reshape(1,)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
