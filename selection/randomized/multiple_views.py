@@ -102,9 +102,9 @@ class targeted_sampler(object):
 
         self.target_transform = []
         for i in range(self.nviews):
-            self.target_transform.append(self.objectives[i].condition(self.score_cov[i], 
-                                                                      self.target_cov,
-                                                                      self.observed_target_state))
+            self.target_transform.append(self.objectives[i].linear_decomposition(self.score_cov[i], 
+                                                                                 self.target_cov,
+                                                                                 self.observed_target_state))
         self.target_inv_cov = np.linalg.inv(self.target_cov)
         # size of reference? should it only be target_set?
         if reference is None:

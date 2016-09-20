@@ -219,7 +219,8 @@ class M_estimator(object):
         # two transforms that encode score and optimization
         # variable roles 
 
-        # later, conditioning will modify `score_transform`
+        # later, we will modify `score_transform`
+        # in `linear_decomposition`
 
         self.opt_transform = (_opt_linear_term, _opt_affine_term)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
@@ -286,12 +287,17 @@ class M_estimator(object):
         # needs to be implemented for group lasso
         return 0. 
 
-    def condition(self, target_score_cov, target_cov, observed_target_state):
+    def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
-        condition the score on the target,
-        return a new score_transform
-        that is composition of `self.score_transform`
-        with the affine map from conditioning
+        Compute out the linear decomposition
+        of the score based on the target. This decomposition
+        writes the (limiting CLT version) of the data in the score as linear in the 
+        target and in some independent Gaussian error.
+        
+        This second independent piece is conditioned on, resulting
+        in a reconstruction of the score as an affine function of the target
+        where the offset is the part related to this independent
+        Gaussian error.
         """
 
         target_score_cov = np.atleast_2d(target_score_cov) 
