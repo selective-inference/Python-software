@@ -39,7 +39,9 @@ class multiple_views(object):
 
     def setup_target(self,
                      target_info,
-                     observed_target_state, 
+                     observed_target_state,
+                     boot_size,
+                     target_alpha,
                      target_set=None,
                      reference=None,
                      constructor=None):
@@ -51,6 +53,8 @@ class multiple_views(object):
                            target_info,
                            observed_target_state,
                            self.form_covariances,
+                           boot_size,
+                           target_alpha,
                            target_set=target_set,
                            reference=reference)
 
@@ -65,6 +69,8 @@ class targeted_sampler(object):
                  target_info,
                  observed_target_state,
                  form_covariances,
+                 boot_size,
+                 target_alpha,
                  target_set=None,
                  reference=None):
 
@@ -83,6 +89,9 @@ class targeted_sampler(object):
         self.opt_slice = multi_view.opt_slice
         self.objectives = multi_view.objectives
 
+        # n for bootstrap
+        self.boot_size = boot_size
+
         self.observed_target_state = observed_target_state
 
         covariances = form_covariances(target_info, cross_terms=multi_view.score_info)
@@ -100,15 +109,26 @@ class targeted_sampler(object):
 
         self.score_cov = covariances[1:]
 
+        self.target_inv_cov = np.linalg.inv(self.target_cov)
+
+        # size of reference? should it only be target_set?
+        if reference is None:
+            reference = np.zeros(self.target_inv_cov.shape[0])
+
         self.target_transform = []
+        self.boot_transform = [] # bootstrap
+
         for i in range(self.nviews):
             self.target_transform.append(self.objectives[i].linear_decomposition(self.score_cov[i], 
                                                                                  self.target_cov,
                                                                                  self.observed_target_state))
-        self.target_inv_cov = np.linalg.inv(self.target_cov)
-        # size of reference? should it only be target_set?
-        if reference is None:
-            reference = np.zeros(self.target_inv_cov.shape[0])
+
+            self.boot_transform.append(self.objectives[i].boot_decomposition(target_alpha,
+                                                                             reference,
+                                                                             self.score_cov[i],
+                                                                             self.target_cov,
+                                                                             self.observed_target_state))
+
         self.reference_inv = self.target_inv_cov.dot(reference)
 
         # need to vectorize the state for Langevin
@@ -123,6 +143,15 @@ class targeted_sampler(object):
         self.observed_state[self.target_slice] = self.observed_target_state
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
+        # set the observed state for bootstrap
+
+        self.boot_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.boot_size)
+        self.boot_observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
+        self.boot_observed_state[self.boot_slice] = np.zeros(self.boot_size)
+        self.boot_observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+
+
+
     def projection(self, state):
         target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
         new_opt_state = np.zeros_like(opt_state)
@@ -130,6 +159,7 @@ class targeted_sampler(object):
             new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
         state[self.overall_opt_slice] = new_opt_state
         return state
+
 
     def gradient(self, state):
 
@@ -151,7 +181,38 @@ class targeted_sampler(object):
 
         return full_grad
 
-    def sample(self, ndraw, burnin, stepsize=None):
+
+    def boot_projection(self, state):
+        boot_state, opt_state = state[self.boot_slice], state[self.overall_opt_slice]
+        new_opt_state = np.zeros_like(opt_state)
+        for i in range(self.nviews):
+            new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
+        state[self.overall_opt_slice] = new_opt_state
+        return state
+
+    def boot_gradient(self, state):
+
+        boot_state, opt_state = state[self.boot_slice], state[self.overall_opt_slice]
+        boot_grad, opt_grad = np.zeros_like(boot_state), np.zeros_like(opt_state)
+        full_grad = np.zeros_like(state)
+
+        # randomization_gradient are gradients of a CONVEX function
+
+        for i in range(self.nviews):
+            boot_grad_curr, opt_grad[self.opt_slice[i]] = \
+                self.objectives[i].randomization_gradient(boot_state, self.boot_transform[i],
+                                                          opt_state[self.opt_slice[i]])
+            boot_grad += boot_grad_curr.copy()
+
+        boot_grad = - boot_grad
+        boot_grad -= boot_state
+        full_grad[self.boot_slice] = boot_grad
+        full_grad[self.overall_opt_slice] = -opt_grad
+
+        return full_grad
+
+
+    def sample(self, ndraw, burnin, stepsize = None):
         """
         assumes setup_sampler has been called
         """
@@ -162,12 +223,16 @@ class targeted_sampler(object):
                                              self.projection,
                                              stepsize)
 
+        bootstrap_langevin = projected_langevin(self.boot_observed_state.copy(),
+                                                self.boot_gradient,
+                                                self.boot_projection,
+                                                stepsize)
 
         samples = []
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[self.keep_slice].copy())
+                samples.append(bootstrap_langevin.state[self.boot_slice].copy())
 
         return samples
 
@@ -195,6 +260,33 @@ class targeted_sampler(object):
             return pval
         else:
             return 2 * min(pval, 1 - pval)
+
+
+    def boot_hypothesis_test(self,
+                        test_stat,
+                        observed_value,
+                        ndraw=10000,
+                        burnin=2000,
+                        stepsize=None,
+                        alternative='twosided'):
+
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        samples = self.sample(ndraw, burnin, stepsize=stepsize)
+        sample_test_stat = np.array([test_stat(x) for x in samples])
+
+        family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
+        pval = family.cdf(0, observed_value)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * min(pval, 1 - pval)
+
 
     def crude_lipschitz(self):
         result = np.linalg.svd(self.target_inv_cov)[1].max()

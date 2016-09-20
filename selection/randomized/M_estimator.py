@@ -109,6 +109,7 @@ class M_estimator(object):
                                                   initial_subgrad], axis=0)
 
 
+
     def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
 
         """
@@ -278,6 +279,7 @@ class M_estimator(object):
         opt_grad = opt_linear.T.dot(randomization_derivative)
         return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
 
+
     def grad_log_jacobian(self, opt_state):
         """
         log_jacobian depends only on data through
@@ -285,7 +287,8 @@ class M_estimator(object):
         assume is close to Hessian at \bar{\beta}_E^*
         """
         # needs to be implemented for group lasso
-        return 0. 
+        return 0.
+
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
@@ -317,6 +320,18 @@ class M_estimator(object):
         composition_offset = score_linear.dot(offset) + score_offset
 
         return (composition_linear_part, composition_offset)
+
+
+    def boot_decomposition(self, target_alpha, reference_param,
+                                      target_score_cov, target_cov, observed_target_state):
+
+        composition_linear_part, composition_offset = self.linear_decomposition(target_score_cov, target_cov, observed_target_state)
+        boot_linear_part = np.dot(composition_linear_part, target_alpha)
+        boot_offset = composition_offset + np.dot(composition_linear_part, reference_param)
+
+        return (boot_linear_part, boot_offset)
+
+
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 

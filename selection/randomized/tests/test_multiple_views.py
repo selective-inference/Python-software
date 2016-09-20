@@ -4,11 +4,11 @@ import regreg.api as rr
 
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.tests import logistic_instance, wait_for_return_value
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest
+from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 @wait_for_return_value
 def test_multiple_views():
-    s, n, p = 3, 200, 20
+    s, n, p = 0, 200, 20
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
@@ -34,12 +34,17 @@ def test_multiple_views():
     mv.solve()
 
     active_union = M_est1.overall + M_est2.overall
+    nactive = np.sum(active_union)
     active_individual = [M_est1.overall, M_est2.overall]
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
         active_set = np.nonzero(active_union)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+        inactive_indicators = np.zeros(nactive)
+        for i in range(nactive):
+            if active_set[i] not in nonzero:
+                inactive_indicators[i] = 1
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
@@ -47,18 +52,23 @@ def test_multiple_views():
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
         inactive_observed = target_observed[inactive_selected]
-        #param_cov = _parametric_cov_glm(loss, active_union)
-        target_sampler = mv.setup_target(inactive_target, inactive_observed)
+        # param_cov = _parametric_cov_glm(loss, active_union)
+
+        alpha_mat = set_alpha_matrix(loss, active_union)
+        target_alpha = np.dot(np.diag(inactive_indicators), alpha_mat)
+
+        target_sampler = mv.setup_target(inactive_target, inactive_observed, n, target_alpha)
 
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat, inactive_observed, alternative='greater')
+        test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
+        pval = target_sampler.boot_hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='greater')
 
         return pval
 
 
 @wait_for_return_value
 def test_parametric_covariance():
-    s, n, p = 5, 200, 30
+    s, n, p = 5, 100, 30
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=8)
@@ -133,3 +143,5 @@ def make_a_plot():
         plt.pause(0.05)
     plt.show()
 
+
+make_a_plot()
