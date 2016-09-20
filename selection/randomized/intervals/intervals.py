@@ -6,7 +6,7 @@ import regreg.api as rr
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin
 from selection.randomized.tests import logistic_instance
 from selection.randomized.M_estimator import restricted_Mest
-
+from scipy.stats import norm
 from selection.randomized.intervals.estimation import estimation, instance
 
 
@@ -93,6 +93,21 @@ class intervals():
                 nparam +=1
                 if (L <= truth_vec[j]) and (U >= truth_vec[j]):
                      ncovered +=1
+        return ncovered, nparam
+
+    def construct_naive_intervals(self, truth_vec, alpha=0.1):
+        ncovered = 0
+        nparam = 0
+        quantile = -norm.ppf(alpha/float(2))
+        #print "quantile", quantile
+        for j in range(self.nactive):
+            sigma = np.sqrt(self.variances[j])
+            L = self.ref_vec[j]-sigma*quantile
+            U = self.ref_vec[j]+sigma*quantile
+            print "naive interval", L, U
+            nparam += 1
+            if (L <= truth_vec[j]) and (U >= truth_vec[j]):
+                ncovered += 1
         return ncovered, nparam
 
 
@@ -186,6 +201,7 @@ def test_intervals():
 
         ncovered, nparam = int_class.construct_intervals_all(param_vec)
 
+        #ncovered, nparam = int_class.construct_naive_intervals(param_vec)
         print "pvalue(s) at the truth", pvalues_param
         return np.copy(pvalues_ref), np.copy(pvalues_param), ncovered, nparam
 
