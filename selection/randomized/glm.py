@@ -114,9 +114,8 @@ def set_alpha_matrix(glm_loss,
         X_full = X_active
         beta_overall = beta_active
 
-    _boot_mu = lambda X_full: glm_loss.saturated_loss.smooth_objective(X_full.dot(beta_overall), 'grad') + Y
-
-    obs_residuals = Y-_boot_mu(X_full)
+    # self.loss.loss(X.dot(beta)) == np.exp(X.dot(beta)) / (1 + np.exp(X.dot(beta))) - Y
+    obs_residuals = - glm_loss.saturated_loss.smooth_objective(X_full.dot(beta_overall), 'grad')
 
     return np.dot(np.dot(_Qinv, X_active.T), np.diag(obs_residuals))
 
