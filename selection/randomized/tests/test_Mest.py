@@ -13,7 +13,7 @@ from selection.randomized.tests import wait_for_return_value, logistic_instance
 
 @wait_for_return_value
 def test_overall_null_two_views():
-    s, n, p = 5, 200, 20 
+    s, n, p = 5, 200, 20
 
     randomizer = randomization.laplace((p,), scale=0.5)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
