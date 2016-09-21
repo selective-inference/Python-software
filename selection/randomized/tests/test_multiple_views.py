@@ -8,7 +8,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 #@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 2, 100, 10
+    s, n, p = 1, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -28,17 +28,15 @@ def test_multiple_views():
     # first randomization
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
-    #M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    #mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
+    mv = multiple_views([M_est1, M_est2])
+    #mv = multiple_views([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = M_est1.overall + M_est2.overall
     nactive = np.sum(active_union)
     print "nactive",nactive
-    #active_individual = [M_est1.overall, M_est2.overall]
-    #active_individual = [M_est1.overall, M_est2.overall]
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -155,7 +153,7 @@ def make_a_plot():
 
     pvalues = []
     pvalues_gn = []
-    for i in range(200):
+    for i in range(100):
         print "iteration", i
         pvals = test_multiple_views()
         if pvals is not None:
@@ -201,7 +199,7 @@ def make_a_plot():
     for label in legend.get_lines():
         label.set_linewidth(1.5)  # the legend line width
 
-    plt.savefig("Bootstrap after GLM")
+    plt.savefig("Bootstrap after GLM two views")
 
     #while True:
     #    plt.pause(0.05)
