@@ -8,7 +8,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 #@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 2, 200, 20
+    s, n, p = 2, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -149,13 +149,13 @@ import statsmodels.api as sm
 
 def make_a_plot():
 
-    np.random.seed(1)
+    np.random.seed(2)
     fig = plt.figure()
     fig.suptitle('Pivots for the simple example wild bootstrap')
 
     pvalues = []
     pvalues_gn = []
-    for i in range(300):
+    for i in range(200):
         print "iteration", i
         pvals = test_multiple_views()
         if pvals is not None:
