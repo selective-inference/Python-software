@@ -8,10 +8,10 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 #@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 0, 200, 20
+    s, n, p = 2, 200, 20
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=0)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -36,7 +36,7 @@ def test_multiple_views():
 
     active_union = M_est1.overall #+ M_est2.overall
     nactive = np.sum(active_union)
-
+    print "nactive",nactive
     #active_individual = [M_est1.overall, M_est2.overall]
     #active_individual = [M_est1.overall, M_est2.overall]
 
@@ -49,6 +49,13 @@ def test_multiple_views():
             if active_set[i] not in nonzero:
                 inactive_indicators[i] = 1
 
+        inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
+        j=0
+        for i in range(nactive):
+            if active_set[i] not in nonzero:
+                inactive_indicators_mat[j,i]=1
+                j+=1
+
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
 
@@ -58,16 +65,28 @@ def test_multiple_views():
         # param_cov = _parametric_cov_glm(loss, active_union)
 
         alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha = np.dot(np.diag(inactive_indicators), alpha_mat) # target = target_alpha\times alpha+reference_vec
+        target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
 
-        #print target_alpha
         target_sampler = mv.setup_target(inactive_target, inactive_observed, n, target_alpha)
 
         test_stat = lambda x: np.linalg.norm(x)
         test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
         pval = target_sampler.boot_hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='greater')
-        print "pvalue", pval
-        return pval
+
+
+        # testing the global null
+        all_selected = np.arange(active_set.shape[0])
+        target_gn = lambda indices: boot_target(indices)[:nactive]
+        target_observed_gn = target_observed[:nactive]
+
+        target_alpha_gn = alpha_mat
+
+        target_sampler_gn = mv.setup_target(target_gn, target_observed_gn, n, target_alpha_gn)
+        test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
+        pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, np.linalg.norm(target_observed_gn), alternative='greater')
+
+
+        return pval, pval_gn
 
 
 @wait_for_return_value
@@ -75,7 +94,7 @@ def test_parametric_covariance():
     s, n, p = 3, 100, 30
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=8)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -123,40 +142,72 @@ def test_parametric_covariance():
 
         return pval
 
+
+import matplotlib.pyplot as plt
+from scipy.stats import probplot, uniform
+import statsmodels.api as sm
+
 def make_a_plot():
 
+    np.random.seed(1)
+    fig = plt.figure()
+    fig.suptitle('Pivots for the simple example wild bootstrap')
+
     pvalues = []
-    for i in range(10):
+    pvalues_gn = []
+    for i in range(300):
         print "iteration", i
-        pval = test_multiple_views()
-        if pval >-1:
+        pvals = test_multiple_views()
+        if pvals is not None:
+            pval, pval_gn = pvals
             pvalues.append(pval)
+            pvalues_gn.append(pval_gn)
             print "pvalue", pval
             print np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05)
-
-    import matplotlib.pyplot as plt
-    from scipy.stats import probplot, uniform
-    import statsmodels.api as sm
 
     ecdf = sm.distributions.ECDF(pvalues)
     x = np.linspace(min(pvalues), max(pvalues))
     y = ecdf(x)
+
+    #plt.xlim([0, 1])
+    #plt.ylim([0, 1])
+    #plt.title("Testing false discoveries")
+    #plt.plot(x, y, '-o', lw=2)
+    #plt.plot([0, 1], [0, 1], 'k-', lw=1)
+
+    ecdf_gn = sm.distributions.ECDF(pvalues_gn)
+    x_gn = np.linspace(min(pvalues_gn), max(pvalues_gn))
+    y_gn = ecdf_gn(x_gn)
+    #plt.xlim([0, 1])
+    #plt.ylim([0, 1])
+    #plt.plot(x, y, '-o', lw=2)
+    #plt.plot([0, 1], [0, 1], 'k-', lw=1)
+
+    plt.title("Logistic")
+    fig, ax = plt.subplots()
+    ax.plot(x, y, label="False discoveries", marker='o', lw=2, markersize=8)
+    ax.plot(x_gn, y_gn, label="Global null", marker ='o', lw=2, markersize=8)
     plt.xlim([0,1])
     plt.ylim([0,1])
-    plt.plot(x, y, '-o', lw=2)
     plt.plot([0, 1], [0, 1], 'k-', lw=1)
 
 
-    #plt.clf()
-    #plt.xlim([0, 1])
-    #plt.ylim([0, 1])
-    #probplot(pvalues, dist=uniform, sparams=(0, 1), plot=plt, fit=False)
-    #plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
-    #plt.pause(0.01)
+    legend = ax.legend(loc='upper center', shadow=True)
+    frame = legend.get_frame()
+    frame.set_facecolor('0.90')
+    for label in legend.get_texts():
+        label.set_fontsize('large')
 
-    while True:
-        plt.pause(0.05)
+    for label in legend.get_lines():
+        label.set_linewidth(1.5)  # the legend line width
+
+    plt.savefig("Bootstrap after GLM")
+
+    #while True:
+    #    plt.pause(0.05)
     plt.show()
+
+
 
 
 make_a_plot()

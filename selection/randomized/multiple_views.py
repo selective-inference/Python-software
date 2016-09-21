@@ -92,7 +92,7 @@ class targeted_sampler(object):
         #for bootstrap
         self.boot_size = boot_size
         self.target_alpha = target_alpha
-        self.inv_mat = np.linalg.inv(np.dot(self.target_alpha, self.target_alpha.T))
+        #self.inv_mat = np.linalg.inv(np.dot(self.target_alpha, self.target_alpha.T))
 
 
         self.observed_target_state = observed_target_state
