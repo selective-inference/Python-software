@@ -6,9 +6,9 @@ from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, m
 from selection.randomized.tests import logistic_instance, wait_for_return_value
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@wait_for_return_value
+#@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 3, 200, 20
+    s, n, p = 0, 200, 20
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=0)
@@ -28,14 +28,17 @@ def test_multiple_views():
     # first randomization
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    #M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1, M_est2])
+    #mv = multiple_views([M_est1, M_est2])
+    mv = multiple_views([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall + M_est2.overall
+    active_union = M_est1.overall #+ M_est2.overall
     nactive = np.sum(active_union)
-    active_individual = [M_est1.overall, M_est2.overall]
+
+    #active_individual = [M_est1.overall, M_est2.overall]
+    #active_individual = [M_est1.overall, M_est2.overall]
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -63,13 +66,13 @@ def test_multiple_views():
         test_stat = lambda x: np.linalg.norm(x)
         test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
         pval = target_sampler.boot_hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='greater')
-
+        print "pvalue", pval
         return pval
 
 
 @wait_for_return_value
 def test_parametric_covariance():
-    s, n, p = 5, 100, 30
+    s, n, p = 3, 100, 30
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=8)
@@ -123,22 +126,33 @@ def test_parametric_covariance():
 def make_a_plot():
 
     pvalues = []
-    for i in range(100):
+    for i in range(10):
         print "iteration", i
         pval = test_multiple_views()
         if pval >-1:
             pvalues.append(pval)
+            print "pvalue", pval
             print np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05)
 
     import matplotlib.pyplot as plt
     from scipy.stats import probplot, uniform
+    import statsmodels.api as sm
 
-    plt.clf()
-    plt.xlim([0, 1])
-    plt.ylim([0, 1])
-    probplot(pvalues, dist=uniform, sparams=(0, 1), plot=plt, fit=False)
-    plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
-    plt.pause(0.01)
+    ecdf = sm.distributions.ECDF(pvalues)
+    x = np.linspace(min(pvalues), max(pvalues))
+    y = ecdf(x)
+    plt.xlim([0,1])
+    plt.ylim([0,1])
+    plt.plot(x, y, '-o', lw=2)
+    plt.plot([0, 1], [0, 1], 'k-', lw=1)
+
+
+    #plt.clf()
+    #plt.xlim([0, 1])
+    #plt.ylim([0, 1])
+    #probplot(pvalues, dist=uniform, sparams=(0, 1), plot=plt, fit=False)
+    #plt.plot([0, 1], color='k', linestyle='-', linewidth=2)
+    #plt.pause(0.01)
 
     while True:
         plt.pause(0.05)

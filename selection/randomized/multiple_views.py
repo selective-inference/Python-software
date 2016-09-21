@@ -89,8 +89,11 @@ class targeted_sampler(object):
         self.opt_slice = multi_view.opt_slice
         self.objectives = multi_view.objectives
 
-        # n for bootstrap
+        #for bootstrap
         self.boot_size = boot_size
+        self.target_alpha = target_alpha
+        self.inv_mat = np.linalg.inv(np.dot(self.target_alpha, self.target_alpha.T))
+
 
         self.observed_target_state = observed_target_state
 
@@ -206,6 +209,9 @@ class targeted_sampler(object):
 
         boot_grad = -boot_grad
         boot_grad -= boot_state
+        #boot_grad -= np.dot(np.dot(self.target_alpha.T, self.inv_mat), self.target_alpha.dot(boot_state))
+        #boot_grad -= np.dot(np.dot(self.target_alpha.T, self.target_inv_cov), self.target_alpha.dot(boot_state))
+
         full_grad[self.boot_slice] = boot_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
@@ -217,6 +223,7 @@ class targeted_sampler(object):
         assumes setup_sampler has been called
         """
         if stepsize is None:
+            #stepsize = 1. /self.boot_size
             stepsize = 1. / self.observed_state.shape[0]
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,
@@ -265,8 +272,8 @@ class targeted_sampler(object):
     def boot_hypothesis_test(self,
                         test_stat,
                         observed_value,
-                        ndraw=10000,
-                        burnin=2000,
+                        ndraw = 10000,
+                        burnin = 2000,
                         stepsize=None,
                         alternative='twosided'):
 
@@ -280,6 +287,7 @@ class targeted_sampler(object):
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.cdf(0, observed_value)
 
+        print pval
         if alternative == 'greater':
             return 1 - pval
         elif alternative == 'less':
