@@ -204,7 +204,7 @@ class targeted_sampler(object):
                                                           opt_state[self.opt_slice[i]])
             boot_grad += boot_grad_curr.copy()
 
-        boot_grad = - boot_grad
+        boot_grad = -boot_grad
         boot_grad -= boot_state
         full_grad[self.boot_slice] = boot_grad
         full_grad[self.overall_opt_slice] = -opt_grad
@@ -230,7 +230,7 @@ class targeted_sampler(object):
 
         samples = []
         for i in range(ndraw + burnin):
-            target_langevin.next()
+            bootstrap_langevin.next()
             if (i >= burnin):
                 samples.append(bootstrap_langevin.state[self.boot_slice].copy())
 

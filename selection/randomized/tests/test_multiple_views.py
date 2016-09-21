@@ -8,10 +8,10 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 @wait_for_return_value
 def test_multiple_views():
-    s, n, p = 0, 200, 20
+    s, n, p = 3, 200, 20
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=0)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -55,8 +55,9 @@ def test_multiple_views():
         # param_cov = _parametric_cov_glm(loss, active_union)
 
         alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha = np.dot(np.diag(inactive_indicators), alpha_mat)
+        target_alpha = np.dot(np.diag(inactive_indicators), alpha_mat) # target = target_alpha\times alpha+reference_vec
 
+        #print target_alpha
         target_sampler = mv.setup_target(inactive_target, inactive_observed, n, target_alpha)
 
         test_stat = lambda x: np.linalg.norm(x)
@@ -122,7 +123,7 @@ def test_parametric_covariance():
 def make_a_plot():
 
     pvalues = []
-    for i in range(200):
+    for i in range(100):
         print "iteration", i
         pval = test_multiple_views()
         if pval >-1:
