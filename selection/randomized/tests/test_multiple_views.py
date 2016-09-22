@@ -8,7 +8,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 #@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 3, 200, 10
+    s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -36,7 +36,7 @@ def test_multiple_views():
 
     active_union = M_est1.overall + M_est2.overall
     nactive = np.sum(active_union)
-    print "nactive",nactive
+    print "nactive", nactive
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -48,10 +48,10 @@ def test_multiple_views():
                 inactive_indicators[i] = 1
 
         inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
-        j=0
+        j = 0
         for i in range(nactive):
             if active_set[i] not in nonzero:
-                inactive_indicators_mat[j,i]=1
+                inactive_indicators_mat[j,i] = 1
                 j+=1
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
@@ -79,10 +79,9 @@ def test_multiple_views():
 
         target_alpha_gn = alpha_mat
 
-        target_sampler_gn = mv.setup_target(target_gn, target_observed_gn, n, target_alpha_gn)
+        target_sampler_gn = mv.setup_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
         test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
         pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, np.linalg.norm(target_observed_gn), alternative='twosided')
-
 
         return pval, pval_gn
 
@@ -108,13 +107,13 @@ def test_multiple_views_individual_coeff():
     # first randomization
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
-    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    #mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
+    mv = multiple_views([M_est1, M_est2])
+    #mv = multiple_views([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = M_est1.overall + M_est2.overall
     nactive = np.sum(active_union)
     print "nactive",nactive
     active_set = np.nonzero(active_union)[0]
@@ -205,15 +204,16 @@ import matplotlib.pyplot as plt
 from scipy.stats import probplot, uniform
 import statsmodels.api as sm
 
+
 def make_a_plot():
 
-    np.random.seed(2)
+    np.random.seed(22)
     fig = plt.figure()
     fig.suptitle('Pivots for the simple example wild bootstrap')
 
     pvalues = []
     pvalues_gn = []
-    for i in range(50):
+    for i in range(100):
         print "iteration", i
         pvals = test_multiple_views()
         if pvals is not None:
@@ -309,6 +309,6 @@ def make_a_plot_individual_coeff():
 
 
 
-#make_a_plot()
+make_a_plot()
 
-make_a_plot_individual_coeff()
+#make_a_plot_individual_coeff()

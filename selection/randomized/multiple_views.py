@@ -89,7 +89,7 @@ class targeted_sampler(object):
         self.opt_slice = multi_view.opt_slice
         self.objectives = multi_view.objectives
 
-        #for bootstrap
+        # for bootstrap
         self.boot_size = boot_size
         self.target_alpha = target_alpha
         #self.inv_mat = np.linalg.inv(np.dot(self.target_alpha, self.target_alpha.T))

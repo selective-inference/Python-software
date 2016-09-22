@@ -330,7 +330,7 @@ class M_estimator(object):
 
         composition_linear_part, composition_offset = self.linear_decomposition(target_score_cov, target_cov, observed_target_state)
         boot_linear_part = np.dot(composition_linear_part, target_alpha)
-        boot_offset = composition_offset + np.dot(composition_linear_part, reference_param).flatten()
+        boot_offset = composition_offset - np.dot(composition_linear_part, reference_param).flatten()
         return (boot_linear_part, boot_offset)
 
 
