@@ -183,7 +183,10 @@ class M_estimator(object):
         # c_E piece 
 
         scaling_slice = slice(0, active_groups.sum())
-        _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
+        if len(active_directions)==0:
+            _opt_hessian=0
+        else:
+            _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
         _opt_linear_term[:,scaling_slice] = _opt_hessian / _sqrt_scaling
 
         self.observed_opt_state[scaling_slice] *= _sqrt_scaling
@@ -327,8 +330,7 @@ class M_estimator(object):
 
         composition_linear_part, composition_offset = self.linear_decomposition(target_score_cov, target_cov, observed_target_state)
         boot_linear_part = np.dot(composition_linear_part, target_alpha)
-        boot_offset = composition_offset + np.dot(composition_linear_part, reference_param)
-
+        boot_offset = composition_offset + np.dot(composition_linear_part, reference_param).flatten()
         return (boot_linear_part, boot_offset)
 
 

@@ -8,7 +8,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 #@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 1, 100, 10
+    s, n, p = 3, 200, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -69,7 +69,7 @@ def test_multiple_views():
 
         test_stat = lambda x: np.linalg.norm(x)
         test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
-        pval = target_sampler.boot_hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='greater')
+        pval = target_sampler.boot_hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='twosided')
 
 
         # testing the global null
@@ -81,10 +81,70 @@ def test_multiple_views():
 
         target_sampler_gn = mv.setup_target(target_gn, target_observed_gn, n, target_alpha_gn)
         test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
-        pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, np.linalg.norm(target_observed_gn), alternative='greater')
+        pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, np.linalg.norm(target_observed_gn), alternative='twosided')
 
 
         return pval, pval_gn
+
+
+def test_multiple_views_individual_coeff():
+    s, n, p = 0, 100, 10
+
+    randomizer = randomization.laplace((p,), scale=1)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
+
+    nonzero = np.where(beta)[0]
+    lam_frac = 1.
+
+    loss = rr.glm.logistic(X, y)
+    epsilon = 1.
+
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    W = np.ones(p)*lam
+    W[0] = 0 # use at least some unpenalized
+    penalty = rr.group_lasso(np.arange(p),
+                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
+
+    # first randomization
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    # second randomization
+    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+
+    #mv = multiple_views([M_est1, M_est2])
+    mv = multiple_views([M_est1])
+    mv.solve()
+
+    active_union = M_est1.overall #+ M_est2.overall
+    nactive = np.sum(active_union)
+    print "nactive",nactive
+    active_set = np.nonzero(active_union)[0]
+
+    pvalues = []
+    true_beta = beta[active_union]
+    if set(nonzero).issubset(np.nonzero(active_union)[0]):
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        mv.setup_sampler(form_covariances)
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
+        alpha_mat = set_alpha_matrix(loss, active_union)
+
+        for j in range(nactive):
+
+            individual_target = lambda indices: boot_target(indices)[j]
+            individual_observed = target_observed[j]
+            # param_cov = _parametric_cov_glm(loss, active_union)
+
+            target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
+
+            target_sampler = mv.setup_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
+
+            test_stat_boot = lambda x: np.inner(target_alpha, x)
+            pval = target_sampler.boot_hypothesis_test(test_stat_boot, individual_observed, alternative='twosided')
+            pvalues.append(pval)
+
+
+        return pvalues
+
+
 
 
 @wait_for_return_value
@@ -153,7 +213,7 @@ def make_a_plot():
 
     pvalues = []
     pvalues_gn = []
-    for i in range(100):
+    for i in range(50):
         print "iteration", i
         pvals = test_multiple_views()
         if pvals is not None:
@@ -183,7 +243,7 @@ def make_a_plot():
 
     plt.title("Logistic")
     fig, ax = plt.subplots()
-    ax.plot(x, y, label="False discoveries", marker='o', lw=2, markersize=8)
+    ax.plot(x, y, label="Selected zeros", marker='o', lw=2, markersize=8)
     ax.plot(x_gn, y_gn, label="Global null", marker ='o', lw=2, markersize=8)
     plt.xlim([0,1])
     plt.ylim([0,1])
@@ -206,6 +266,49 @@ def make_a_plot():
     plt.show()
 
 
+def make_a_plot_individual_coeff():
+
+    np.random.seed(2)
+    fig = plt.figure()
+    fig.suptitle('Pivots for the simple example wild bootstrap')
+
+    pvalues = []
+    for i in range(50):
+        print "iteration", i
+        pvals = test_multiple_views_individual_coeff()
+        if pvals is not None:
+            pvalues.extend(pvals)
+            print "pvalues", pvals
+            print np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05)
+
+    ecdf = sm.distributions.ECDF(pvalues)
+    x = np.linspace(min(pvalues), max(pvalues))
+    y = ecdf(x)
+
+    plt.title("Logistic")
+    fig, ax = plt.subplots()
+    ax.plot(x, y, label="Individual coefficients", marker='o', lw=2, markersize=8)
+    plt.xlim([0,1])
+    plt.ylim([0,1])
+    plt.plot([0, 1], [0, 1], 'k-', lw=1)
 
 
-make_a_plot()
+    legend = ax.legend(loc='upper center', shadow=True)
+    frame = legend.get_frame()
+    frame.set_facecolor('0.90')
+    for label in legend.get_texts():
+        label.set_fontsize('large')
+
+    for label in legend.get_lines():
+        label.set_linewidth(1.5)  # the legend line width
+
+    plt.savefig("Bootstrap after GLM two views")
+    #while True:
+    #    plt.pause(0.05)
+    plt.show()
+
+
+
+#make_a_plot()
+
+make_a_plot_individual_coeff()
