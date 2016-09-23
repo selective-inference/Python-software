@@ -8,7 +8,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 #@wait_for_return_value
 def test_multiple_views():
-    s, n, p = 3, 100, 10
+    s, n, p = 2, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -28,9 +28,9 @@ def test_multiple_views():
     # first randomization
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
-    #M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    #mv = multiple_views([M_est1, M_est2])
+    # mv = multiple_views([M_est1, M_est2])
     mv = multiple_views([M_est1])
     mv.solve()
 
@@ -94,7 +94,7 @@ def test_multiple_views():
 
 
 def test_multiple_views_individual_coeff():
-    s, n, p = 0, 100, 10
+    s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -122,7 +122,7 @@ def test_multiple_views_individual_coeff():
 
     active_union = M_est1.overall + M_est2.overall
     nactive = np.sum(active_union)
-    print "nactive",nactive
+    print "nactive", nactive
     active_set = np.nonzero(active_union)[0]
 
     pvalues = []
@@ -155,7 +155,7 @@ def test_multiple_views_individual_coeff():
 
 @wait_for_return_value
 def test_parametric_covariance():
-    s, n, p = 3, 100, 30
+    s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
@@ -250,8 +250,8 @@ def make_a_plot():
 
     plt.title("Logistic")
     fig, ax = plt.subplots()
-    ax.plot(x, y, label="Selected zeros", marker='o', lw=2, markersize=8)
-    ax.plot(x_gn, y_gn, label="Global null", marker ='o', lw=2, markersize=8)
+    ax.plot(x, y, label="Selected zeros", marker='o', lw=2, markersize=6)
+    ax.plot(x_gn, y_gn, label="Global", marker ='o', lw=2, markersize=6)
     plt.xlim([0,1])
     plt.ylim([0,1])
     plt.plot([0, 1], [0, 1], 'k-', lw=1)
@@ -275,12 +275,12 @@ def make_a_plot():
 
 def make_a_plot_individual_coeff():
 
-    np.random.seed(2)
+    np.random.seed(3)
     fig = plt.figure()
     fig.suptitle('Pivots for glm wild bootstrap')
 
     pvalues = []
-    for i in range(50):
+    for i in range(100):
         print "iteration", i
         pvals = test_multiple_views_individual_coeff()
         if pvals is not None:
@@ -316,6 +316,6 @@ def make_a_plot_individual_coeff():
 
 
 
-make_a_plot()
+#make_a_plot()
 
-#make_a_plot_individual_coeff()
+make_a_plot_individual_coeff()
