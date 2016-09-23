@@ -219,7 +219,7 @@ class targeted_sampler(object):
         return full_grad
 
 
-    def sample(self, ndraw, burnin, stepsize = None):
+    def sample(self, ndraw, burnin, bootstrap=False, stepsize = None):
         """
         assumes setup_sampler has been called
         """
@@ -237,12 +237,18 @@ class targeted_sampler(object):
                                                 stepsize)
 
         samples = []
-        for i in range(ndraw + burnin):
-            bootstrap_langevin.next()
-            if (i >= burnin):
-                samples.append(bootstrap_langevin.state[self.boot_slice].copy())
-
-        return samples
+        if bootstrap:
+            for i in range(ndraw + burnin):
+                bootstrap_langevin.next()
+                if (i >= burnin):
+                    samples.append(bootstrap_langevin.state[self.boot_slice].copy())
+            return samples
+        else:
+            for i in range(ndraw + burnin):
+                target_langevin.next()
+                if (i >= burnin):
+                    samples.append(target_langevin.state[self.keep_slice].copy())
+            return samples
 
     def hypothesis_test(self, 
                         test_stat, 
@@ -282,7 +288,7 @@ class targeted_sampler(object):
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
-        samples = self.sample(ndraw, burnin, stepsize=stepsize)
+        samples = self.sample(ndraw, burnin, bootstrap=True, stepsize=stepsize)
         sample_test_stat = np.array([test_stat(x) for x in samples])
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))

@@ -81,7 +81,11 @@ def test_multiple_views():
 
         target_sampler_gn = mv.setup_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
         test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
-        pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, np.linalg.norm(target_observed_gn), alternative='twosided')
+        #pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, np.linalg.norm(target_observed_gn), alternative='twosided')
+
+        test_stat_gn = lambda x: np.linalg.norm(x)
+        pval_gn = target_sampler_gn.hypothesis_test(test_stat_gn, target_observed_gn,
+                                                         alternative='twosided')
 
         return pval, pval_gn
 
