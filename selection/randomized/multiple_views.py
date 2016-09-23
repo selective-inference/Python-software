@@ -24,7 +24,7 @@ class multiple_views(object):
 
         Each element of `objectives` must
         have a `setup_sampler` method that returns
-        a description of the distribution of the 
+        a description of the distribution of the
         data implicated in the objective function,
         typically through the score or gradient
         of the objective function.
@@ -47,7 +47,7 @@ class multiple_views(object):
         Ensure that each objective has been solved.
         '''
         for objective in self.objectives:
-            if not objected._solved:
+            if not objective._solved:
                 objective.solve()
 
     def setup_sampler(self, form_covariances):
@@ -68,7 +68,7 @@ class multiple_views(object):
         variables in each view.
 
         We also store a reference to `form_covariances`
-        which is called in the 
+        which is called in the
         construction of `targeted_sampler`.
 
         Returns
@@ -85,7 +85,7 @@ class multiple_views(object):
         self.score_info = []
 
         for objective in self.objectives:
-            score_ = objective.setup_sampler() # shouldn't have to refit all the time as this function does
+            score_ = objective.setup_sampler()
             self.score_info.append(score_)
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
@@ -99,7 +99,7 @@ class multiple_views(object):
 
     def setup_target(self,
                      target_info,
-                     observed_target_state, 
+                     observed_target_state,
                      reference=None,
                      target_set=None):
 
@@ -109,7 +109,7 @@ class multiple_views(object):
 
         target_info : object
            Passed as first argument to `self.form_covariances`.
-           
+
         observed_target_state : np.float
            Observed value of the target estimator.
 
@@ -121,7 +121,7 @@ class multiple_views(object):
            Which coordinates of target are really
            of interest. If not None, then coordinates
            not in target_set are assumed to have 0
-           mean in the sampler. 
+           mean in the sampler.
 
         Notes
         -----
@@ -177,7 +177,7 @@ class targeted_sampler(object):
 
         target_info : object
            Passed as first argument to `self.form_covariances`.
-           
+
         observed_target_state : np.float
            Observed value of the target estimator.
 
@@ -193,7 +193,7 @@ class targeted_sampler(object):
            Which coordinates of target are really
            of interest. If not None, then coordinates
            not in target_set are assumed to have 0
-           mean in the sampler. 
+           mean in the sampler.
 
         Notes
         -----
@@ -203,12 +203,12 @@ class targeted_sampler(object):
         and a keyword argument `cross_terms` which
         correspond to the `score_info` of each
         objective of `multi_view`. This used in
-        a linear decomposition of each score into 
-        a piece correlated with `target` and 
-        an independent piece. 
+        a linear decomposition of each score into
+        a piece correlated with `target` and
+        an independent piece.
 
-        The independent piece is treated as a 
-        nuisance parameter and conditioned on 
+        The independent piece is treated as a
+        nuisance parameter and conditioned on
         (i.e. is fixed within the sampler).
 
         '''
@@ -216,9 +216,11 @@ class targeted_sampler(object):
         # sampler will draw samples for bootstrap
         # these are arguments to target_bootstrap and score_bootstrap
         # nonparamteric bootstrap is np.random.choice(n, size=(n,), replace=True)
-        # residual bootstrap might be X_E.dot(\bar{\beta}_E) + np.random.choice(resid, size=(n,), replace=True)
+        # residual bootstrap might be X_E.dot(\bar{\beta}_E)
+        # + np.random.choice(resid, size=(n,), replace=True)
 
-        # if target_set is not None, we assume that these coordinates (specified by a list of coordinates) of target
+        # if target_set is not None, we assume that
+        # these coordinates (specified by a list of coordinates) of target
         # is assumed to be independent of the rest
         # the corresponding block of `target_cov` is zeroed out
 
@@ -238,7 +240,6 @@ class targeted_sampler(object):
 
         if target_set is not None:
             null_set = set(range(self.target_cov.shape[0])).difference(target_set)
-            
             for t, n in product(target_set, null_set):
                 self.target_cov[t, n] = 0.
                 self.target_cov[n, t] = 0.
@@ -247,9 +248,11 @@ class targeted_sampler(object):
 
         self.target_transform = []
         for i in range(self.nviews):
-            self.target_transform.append(self.objectives[i].linear_decomposition(self.score_cov[i], 
-                                                                                 self.target_cov,
-                                                                                 self.observed_target_state))
+            self.target_transform.append(
+                self.objectives[i].linear_decomposition(self.score_cov[i],
+                                                        self.target_cov,
+                                                        self.observed_target_state))
+
         self.target_inv_cov = np.linalg.inv(self.target_cov)
         # size of reference? should it only be target_set?
         if reference is None:
@@ -259,7 +262,8 @@ class targeted_sampler(object):
         # need to vectorize the state for Langevin
 
         self.overall_opt_slice = slice(0, multi_view.num_opt_var)
-        self.target_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.reference_inv.shape[0])
+        self.target_slice = slice(multi_view.num_opt_var, 
+                                  multi_view.num_opt_var + self.reference_inv.shape[0])
         self.keep_slice = self.target_slice
 
         # set the observed state
@@ -277,7 +281,7 @@ class targeted_sampler(object):
 
         state : np.float
            State of sampler made up of `(target, opt_vars)`.
-           Typically, the projection will only act on 
+           Typically, the projection will only act on
            `opt_vars`.
 
         Returns
@@ -286,8 +290,8 @@ class targeted_sampler(object):
         projected_state : np.float
 
         '''
-        
-        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
+
+        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
         new_opt_state = np.zeros_like(opt_state)
         for i in range(self.nviews):
             new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
@@ -311,7 +315,7 @@ class targeted_sampler(object):
 
         '''
 
-        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
+        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
         target_grad, opt_grad = np.zeros_like(target_state), np.zeros_like(opt_state)
         full_grad = np.zeros_like(state)
 
@@ -322,10 +326,8 @@ class targeted_sampler(object):
                 self.objectives[i].randomization_gradient(target_state, self.target_transform[i], opt_state[self.opt_slice[i]])
             target_grad += target_grad_curr.copy()
 
-        #target_state = np.atleast_2d(target_state)
         target_grad = - target_grad
         target_grad += self.reference_inv - self.target_inv_cov.dot(target_state)
-        #target_grad += self.reference_inv.reshape(1,) - self.target_inv_cov.dot(target_state).reshape(1,)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
@@ -335,7 +337,7 @@ class targeted_sampler(object):
         '''
         Sample `target` from selective density
         using projected Langevin sampler with
-        gradient map `self.gradient` and 
+        gradient map `self.gradient` and
         projection map `self.projection`.
 
         Parameters
@@ -370,14 +372,14 @@ class targeted_sampler(object):
         samples = []
         for i in range(ndraw + burnin):
             target_langevin.next()
-            if (i >= burnin):
+            if i >= burnin:
                 samples.append(target_langevin.state[self.keep_slice].copy())
 
         return samples
 
-    def hypothesis_test(self, 
-                        test_stat, 
-                        observed_target, 
+    def hypothesis_test(self,
+                        test_stat,
+                        observed_target,
                         ndraw=10000,
                         burnin=2000,
                         stepsize=None,
@@ -386,7 +388,7 @@ class targeted_sampler(object):
         '''
         Sample `target` from selective density
         using projected Langevin sampler with
-        gradient map `self.gradient` and 
+        gradient map `self.gradient` and
         projection map `self.projection`.
 
         Parameters
@@ -453,7 +455,7 @@ class targeted_sampler(object):
         for transform, objective in zip(self.target_transform, self.objectives):
             lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
             lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
-        return lipschitz 
+        return lipschitz
 
 # class conditional_targeted_sampler(targeted_sampler):
 #     # condition on the optimization variables -- don't move them...
