@@ -6,17 +6,77 @@ from ..sampling.langevin import projected_langevin
 
 class multiple_views(object):
 
+    '''
+    Combine several views of a given data
+    through randomized algorithms.
+    '''
+
     def __init__(self, objectives):
+        '''
+        Parameters
+        ----------
+
+        objectives : sequence
+           A sequences of randomized objective functions.
+
+        Notes
+        -----
+
+        Each element of `objectives` must
+        have a `setup_sampler` method that returns
+        a description of the distribution of the 
+        data implicated in the objective function,
+        typically through the score or gradient
+        of the objective function.
+
+        These descriptions are passed to a function
+        `form_covariances` to linearly decompose
+        each score in terms of a target
+        and an asymptotically independent piece.
+
+        Returns
+        -------
+
+        None
+        '''
 
         self.objectives = objectives
 
     def solve(self):
+        '''
+        Ensure that each objective has been solved.
+        '''
         for objective in self.objectives:
-            # maybe just check if they have been solved
-            # randomize first?
-            objective.solve()
+            if not objected._solved:
+                objective.solve()
 
     def setup_sampler(self, form_covariances):
+        '''
+        Parameters
+        ----------
+
+        form_covariances : callable
+           A callable used to decompose
+           target of inference and the score
+           of each objective.
+
+        Notes
+        -----
+
+        This function sets the initial
+        `opt_state` of all optimization
+        variables in each view.
+
+        We also store a reference to `form_covariances`
+        which is called in the 
+        construction of `targeted_sampler`.
+
+        Returns
+        -------
+
+        None
+
+        '''
 
         nviews = self.nviews = len(self.objectives)
 
@@ -40,33 +100,118 @@ class multiple_views(object):
     def setup_target(self,
                      target_info,
                      observed_target_state, 
-                     target_set=None,
                      reference=None,
-                     constructor=None):
+                     target_set=None):
 
-        if constructor is None:
-            constructor = targeted_sampler
+        '''
+        Parameters
+        ----------
 
-        return constructor(self,
-                           target_info,
-                           observed_target_state,
-                           self.form_covariances,
-                           target_set=target_set,
-                           reference=reference)
+        target_info : object
+           Passed as first argument to `self.form_covariances`.
+           
+        observed_target_state : np.float
+           Observed value of the target estimator.
+
+        reference : np.float (optional)
+           Reference parameter for Gaussian approximation
+           of target.
+
+        target_set : sequence (optional)
+           Which coordinates of target are really
+           of interest. If not None, then coordinates
+           not in target_set are assumed to have 0
+           mean in the sampler. 
+
+        Notes
+        -----
+
+        The variable `target_set` can be used for
+        a selected model test when some functionals
+        are assumed to have 0 mean in the limiting
+        Gaussian approximation. This can
+        sometimes mean an increase in power.
+
+        Returns
+        -------
+
+        target : targeted_sampler
+            An instance of `targeted_sampler` that
+            can be used to sample, test hypotheses,
+            form intervals.
+
+        '''
+
+        return targeted_sampler(self,
+                                target_info,
+                                observed_target_state,
+                                self.form_covariances,
+                                target_set=target_set,
+                                reference=reference)
 
 
 
 class targeted_sampler(object):
 
-    # make one of these for each hypothesis test
+    '''
+    Object to sample from target of a selective sampler.
+    '''
 
     def __init__(self,
                  multi_view,
                  target_info,
                  observed_target_state,
                  form_covariances,
-                 target_set=None,
-                 reference=None):
+                 reference=None,
+                 target_set=None):
+
+        '''
+        Parameters
+        ----------
+
+        multi_view : `multiple_views`
+           Instance of `multiple_views`. Attributes
+           `objectives`, `score_info` are key
+           attributed. (Should maybe change constructor
+           to reflect only what is needed.)
+
+        target_info : object
+           Passed as first argument to `self.form_covariances`.
+           
+        observed_target_state : np.float
+           Observed value of the target estimator.
+
+        form_covariances : callable
+           Used in linear decomposition of each score
+           and the target.
+
+        reference : np.float (optional)
+           Reference parameter for Gaussian approximation
+           of target.
+
+        target_set : sequence (optional)
+           Which coordinates of target are really
+           of interest. If not None, then coordinates
+           not in target_set are assumed to have 0
+           mean in the sampler. 
+
+        Notes
+        -----
+
+        The callable `form_covariances`
+        should accept `target_info` as first argument
+        and a keyword argument `cross_terms` which
+        correspond to the `score_info` of each
+        objective of `multi_view`. This used in
+        a linear decomposition of each score into 
+        a piece correlated with `target` and 
+        an independent piece. 
+
+        The independent piece is treated as a 
+        nuisance parameter and conditioned on 
+        (i.e. is fixed within the sampler).
+
+        '''
 
         # sampler will draw samples for bootstrap
         # these are arguments to target_bootstrap and score_bootstrap
@@ -124,6 +269,24 @@ class targeted_sampler(object):
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
     def projection(self, state):
+        '''
+        Projection map of projected Langevin sampler.
+
+        Parameters
+        ----------
+
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Typically, the projection will only act on 
+           `opt_vars`.
+
+        Returns
+        -------
+
+        projected_state : np.float
+
+        '''
+        
         target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
         new_opt_state = np.zeros_like(opt_state)
         for i in range(self.nviews):
@@ -132,6 +295,21 @@ class targeted_sampler(object):
         return state
 
     def gradient(self, state):
+        '''
+        Gradient of log-density at current state.
+
+        Parameters
+        ----------
+
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+
+        Returns
+        -------
+
+        gradient : np.float
+
+        '''
 
         target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice] 
         target_grad, opt_grad = np.zeros_like(target_state), np.zeros_like(opt_state)
@@ -154,11 +332,35 @@ class targeted_sampler(object):
         return full_grad
 
     def sample(self, ndraw, burnin, stepsize=None):
-        """
-        assumes setup_sampler has been called
-        """
+        '''
+        Sample `target` from selective density
+        using projected Langevin sampler with
+        gradient map `self.gradient` and 
+        projection map `self.projection`.
+
+        Parameters
+        ----------
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : int
+           How many samples to discard?
+
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+
+        Returns
+        -------
+
+        gradient : np.float
+
+        '''
+
         if stepsize is None:
-            stepsize = 1. / self.observed_state.shape[0]
+            stepsize = 1. / self.crude_lipschitz()
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,
                                              self.projection,
@@ -181,6 +383,44 @@ class targeted_sampler(object):
                         stepsize=None,
                         alternative='twosided'):
 
+        '''
+        Sample `target` from selective density
+        using projected Langevin sampler with
+        gradient map `self.gradient` and 
+        projection map `self.projection`.
+
+        Parameters
+        ----------
+
+        test_stat : callable
+           Test statistic to evaluate on sample from
+           selective distribution.
+
+        observed_target : np.float
+           Observed value of target estimate.
+           Used in p-value calculation.
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : int
+           How many samples to discard?
+
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+
+        gradient : np.float
+
+        '''
+
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
@@ -199,45 +439,55 @@ class targeted_sampler(object):
             return 2 * min(pval, 1 - pval)
 
     def crude_lipschitz(self):
-        result = np.linalg.svd(self.target_inv_cov)[1].max()
+        """
+        A crude Lipschitz constant for the
+        gradient of the log-density.
+
+        Returns
+        -------
+
+        lipschitz : float
+             
+        """
+        lipschitz = np.linalg.svd(self.target_inv_cov)[1].max()
         for transform, objective in zip(self.target_transform, self.objectives):
-            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
-            result += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
-        return result 
+            lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
+            lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
+        return lipschitz 
 
-class conditional_targeted_sampler(targeted_sampler):
-    # condition on the optimization variables -- don't move them...
+# class conditional_targeted_sampler(targeted_sampler):
+#     # condition on the optimization variables -- don't move them...
 
-    def __init__(self,
-                 multi_view,
-                 target_bootstrap,
-                 observed_target_state,
-                 target_set=None,
-                 reference=None):
-        targeted_sampler.__init__(self,
-                                  multi_view,
-                                  target_bootstrap,
-                                  observed_target_state,
-                                  target_set=target_set,
-                                  reference=reference)
+#     def __init__(self,
+#                  multi_view,
+#                  target_bootstrap,
+#                  observed_target_state,
+#                  target_set=None,
+#                  reference=None):
+#         targeted_sampler.__init__(self,
+#                                   multi_view,
+#                                   target_bootstrap,
+#                                   observed_target_state,
+#                                   target_set=target_set,
+#                                   reference=reference)
 
-        # this is a hacky way to do things
+#         # this is a hacky way to do things
 
-        self._full_state = self.observed_state.copy()
-        self._opt_state = self.observed_state[self.overall_opt_slice]
-        self.observed_state = self.observed_state[self.target_slice]
-        self.keep_slice = slice(None, None, None)
+#         self._full_state = self.observed_state.copy()
+#         self._opt_state = self.observed_state[self.overall_opt_slice]
+#         self.observed_state = self.observed_state[self.target_slice]
+#         self.keep_slice = slice(None, None, None)
 
-    def gradient(self, state):
-        self._full_state[self.target_slice] = state
-        full_grad = targeted_sampler.gradient(self, self._full_state)
-        return full_grad[self.target_slice]
+#     def gradient(self, state):
+#         self._full_state[self.target_slice] = state
+#         full_grad = targeted_sampler.gradient(self, self._full_state)
+#         return full_grad[self.target_slice]
 
-    def projection(self, state):
-        return state
+#     def projection(self, state):
+#         return state
 
-    def crude_lipschitz(self):
-        result = np.linalg.svd(self.target_inv_cov)[1].max()
-        for transform, objective in zip(self.target_transform, self.objectives):
-            result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
-        return result 
+#     def crude_lipschitz(self):
+#         result = np.linalg.svd(self.target_inv_cov)[1].max()
+#         for transform, objective in zip(self.target_transform, self.objectives):
+#             result += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
+#         return result 
