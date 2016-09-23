@@ -28,24 +28,26 @@ def test_multiple_views():
     # first randomization
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    #M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1, M_est2])
-    #mv = multiple_views([M_est1])
+    #mv = multiple_views([M_est1, M_est2])
+    mv = multiple_views([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall + M_est2.overall
+    active_union = M_est1.overall #+ M_est2.overall
     nactive = np.sum(active_union)
     print "nactive", nactive
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
+        if nactive==s:
+            return None
 
         active_set = np.nonzero(active_union)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-        inactive_indicators = np.zeros(nactive)
-        for i in range(nactive):
-            if active_set[i] not in nonzero:
-                inactive_indicators[i] = 1
+        #inactive_indicators = np.zeros(nactive)
+        #for i in range(nactive):
+        #    if active_set[i] not in nonzero:
+        #        inactive_indicators[i] = 1
 
         inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
         j = 0
@@ -81,11 +83,12 @@ def test_multiple_views():
 
         target_sampler_gn = mv.setup_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
         test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
-        #pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, np.linalg.norm(target_observed_gn), alternative='twosided')
+        observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
+        pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, observed_test_value, alternative='twosided')
 
-        test_stat_gn = lambda x: np.linalg.norm(x)
-        pval_gn = target_sampler_gn.hypothesis_test(test_stat_gn, target_observed_gn,
-                                                         alternative='twosided')
+        #test_stat_gn = lambda x: np.linalg.norm(x)
+        #pval_gn = target_sampler_gn.hypothesis_test(test_stat_gn, target_observed_gn,
+        #                                                 alternative='twosided')
 
         return pval, pval_gn
 
@@ -141,7 +144,7 @@ def test_multiple_views_individual_coeff():
             target_sampler = mv.setup_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
 
             test_stat_boot = lambda x: np.inner(target_alpha, x)
-            pval = target_sampler.boot_hypothesis_test(test_stat_boot, individual_observed, alternative='twosided')
+            pval = target_sampler.boot_hypothesis_test(test_stat_boot, individual_observed-true_beta[j], alternative='twosided')
             pvalues.append(pval)
 
 
@@ -211,13 +214,13 @@ import statsmodels.api as sm
 
 def make_a_plot():
 
-    np.random.seed(22)
+    np.random.seed(2)
     fig = plt.figure()
-    fig.suptitle('Pivots for the simple example wild bootstrap')
+    fig.suptitle('Pivots for glm via wild bootstrap')
 
     pvalues = []
     pvalues_gn = []
-    for i in range(100):
+    for i in range(200):
         print "iteration", i
         pvals = test_multiple_views()
         if pvals is not None:
@@ -274,7 +277,7 @@ def make_a_plot_individual_coeff():
 
     np.random.seed(2)
     fig = plt.figure()
-    fig.suptitle('Pivots for the simple example wild bootstrap')
+    fig.suptitle('Pivots for glm wild bootstrap')
 
     pvalues = []
     for i in range(50):

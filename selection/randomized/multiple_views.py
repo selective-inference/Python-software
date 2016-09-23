@@ -150,8 +150,8 @@ class targeted_sampler(object):
 
         self.boot_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.boot_size)
         self.boot_observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
-        #self.boot_observed_state[self.boot_slice] = np.ones(self.boot_size)
-        self.boot_observed_state[self.boot_slice] = np.random.normal(size=self.boot_size)
+        self.boot_observed_state[self.boot_slice] = np.ones(self.boot_size)
+        #self.boot_observed_state[self.boot_slice] = np.random.normal(size=self.boot_size)
         self.boot_observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
 
