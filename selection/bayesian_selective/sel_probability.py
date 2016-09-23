@@ -12,56 +12,69 @@ X, y, true_beta, nonzero, sigma = data_instance.generate_response()
 
 random_Z = np.random.standard_normal(p)
 lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
+#V=-X
+#B_E=np.zeros((p,p))
+#B_E[:]
 
 #########################################################
 #####defining a class for computing selection probability
 class selection_probability(object):
 
     #defining class variables
-    def __init__(self, V,B_E,gamma_E,sigma,tau,lam):
+    def __init__(self, V,B_E,gamma_E,sigma,tau,lam,y,betaE,subgrad):
 
-        (self.V, self.B_E,self.gamma_E,self.sigma,self.tau,self.lam) = (V,B_E,gamma_E,sigma,tau,lam)
+        (self.V, self.B_E,self.gamma_E,self.sigma,self.tau,self.lam,self.y,self.betaE,self.subgrad) = (V,
+                                                                                                       B_E,gamma_E,
+                                                                                                       sigma,tau,lam,y,
+                                                                                                       betaE,subgrad)
         self.sigma_sq = self.sigma ** 2
         self.tau_sq = self.tau ** 2
         self.signs = np.sign(self.betaE)
-        self.n, self.p = V.shape
-        self.nactive = betaE.shape[0]
+        self.n= self.y.shape[0]
+        self.p=self.B_E.shape[0]
+        self.nactive = self.betaE.shape[0]
         self.ninactive=self.p-self.nactive
-        #be careful here to permute the active columns
+        #for lasso, V=-X, B_E=\begin{pmatrix} X_E^T X_E+\epsilon I & 0 \\ X_{-E}^T X_E & I \end{pmatrix}, gamma_E=
+        #\begin{pmatrix} \lambda* s_E \\ 0\end{pamtrix}
+
+        # be careful here to permute the active columns beforehand as code
+        # assumes the active columns in the first |E| positions
         self.V_E = self.V[:,:self.nactive]
         self.V_E_comp=self.V[:,self.nactive:]
         self.C_E=self.B_E[:self.nactive,:self.nactive]
         self.D_E=self.B_E.T[:self.nactive,self.nactive:]
+        self.Sigma = np.true_divide(np.identity(self.n), self.sigma_sq) + np.true_divide(
+            np.dot(self.V, self.V.T),self.tau_sq)
+        self.Sigma_inv=np.linalg.inv(self.Sigma)
+        self.Sigma_inter=np.identity(self.p)-np.true_divide(np.dot(np.dot(self.V.T,self.Sigma_inv),self.V),
+                                                            self.tau_sq ** 2)
+
+    #in case of Lasso, the below should return the mean of generative selected model
+    def mean_generative(self,param):
+        return -np.dot(self.V_E,param)
 
     def optimization(self,param):
 
         # defining barrier function on betaE
-        def barrier_sel(z):
-            # A_1 beta_E\leq 0
-            A_1 = np.zeros((self.nactive, self.nactive))
-            A_1 = -np.diag(self.signs)
-            if all(- np.dot(A_1, z) >= np.power(10, -9)):
-                return np.sum(np.log(1 + np.true_divide(1, - np.dot(A_1, z))))
+        def barrier_sel(z2):
+            # A_betaE beta_E\leq 0
+#           # A_betaE = np.zeros((self.nactive, self.nactive))
+            A_betaE = -np.diag(self.signs)
+            if all(- np.dot(A_betaE, z2) >= np.power(10, -9)):
+                return np.sum(np.log(1 + np.true_divide(1, - np.dot(A_betaE, z2))))
             return self.nactive * np.log(1 + 10 ** 9)
 
         # defining barrier function on u_{-E}
-        def barrier_subgrad(z):
+        def barrier_subgrad(z3):
 
             # A_2 beta_E\leq b
-            A_2 = np.zeros(((2 * self.ninactive), (self.ninactive)))
-            A_2[:self.ninactive, :] = np.identity(self.ninactive)
-            A_2[self.ninactive:, :] = -np.identity(self.ninactive)
+            A_subgrad = np.zeros(((2 * self.ninactive), (self.ninactive)))
+            A_subgrad[:self.ninactive, :] = np.identity(self.ninactive)
+            A_subgrad[self.ninactive:, :] = -np.identity(self.ninactive)
             b = np.ones((2 * self.ninactive))
-            if all(b - np.dot(A_2, z) >= np.power(10, -9)):
-                return np.sum(np.log(1 + np.true_divide(1, b - np.dot(A_2, z))))
+            if all(b - np.dot(A_subgrad, z3) >= np.power(10, -9)):
+                return np.sum(np.log(1 + np.true_divide(1, b - np.dot(A_subgrad, z3))))
             return b.shape[0] * np.log(1 + 10 ** 9)
-
-        Sigma=np.true_divide(np.identity((self.n,self.n)),self.sigma_sq)+np.true_divide(np.dot(self.V,self.V.T),
-                                                                                        self.tau_sq)
-        Sigma_inv=np.linalg.inv(Sigma)
-        Sigma_inter=np.identity(self.p)-np.true_divide(np.dot(np.dot(self.V.T,Sigma_inv),self.V),self.tau_sq ** 2)
-        def mean(param):
-            return np.dot(-self.V[:,:self.nactive],param)
 
         mat_inter=np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), Sigma_inv)
         vec_inter=np.true_divide(np.dot(self.B_E.T,self.gamma_E),self.tau_sq)

@@ -1,0 +1,134 @@
+import numpy as np
+from initial_soln import instance, selection
+from scipy.optimize import minimize
+
+n=100
+p=20
+s=5
+snr=5
+data_instance = instance(n, p, s, snr)
+X, y, true_beta, nonzero, sigma = data_instance.generate_response()
+#print true_beta
+
+random_Z = np.random.standard_normal(p)
+lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
+#print betaE
+
+nactive=np.sum(active)
+ninactive=p-nactive
+signs = np.sign(betaE)
+tau=1
+
+
+###permuting the columns of X to have the active set followed by the inactive ones:
+X_perm=np.zeros((n,p))
+X_perm[:,0:nactive]=X[:,active]
+X_perm[:,nactive:p]=X[:,-active]
+X=X_perm
+
+
+####say we work with the selected model for now
+#param=5*np.ones(nactive)
+
+####For Gaussian data and noise, define function that outputs Gaussian mean and Covariance
+def Gaussian_mean_var(param):
+
+    #initialize A_E:
+    A_E = np.zeros((p, p + n))
+    #define entries of A_E
+    A_E[:, 0:n]=-X.T
+    A_E[:, n:(n+nactive)] = np.dot(X.T, X[:,0:nactive])
+    A_E[:nactive, n:(n+nactive)] += epsilon * np.identity(nactive)
+    A_E[nactive:, (n+nactive):] = lam * np.identity(ninactive)
+    gamma_E=np.zeros(p)
+    gamma_E[:nactive] += lam * signs
+
+    V=np.zeros((n,n+p))
+    V[:,0:n]=np.identity(n)
+
+    Sigma_inv=np.true_divide(np.dot(A_E.T, A_E),tau ** 2) + np.true_divide(np.dot(V.T,V),sigma ** 2)
+ #   Sigma=np.linalg.inv(Sigma_inv)
+    add_mean=np.zeros(n+p)
+    add_mean[:n]=np.true_divide(np.dot(X[:,0:nactive],param),sigma ** 2)
+    Sigma_inv_mu = np.true_divide(np.dot(A_E.T, gamma_E), tau ** 2)+add_mean
+
+    return Sigma_inv, Sigma_inv_mu
+
+#defining the p dimensional optimization
+def optimization(param):
+
+    Sigma_inv,Sigma_inv_mu=Gaussian_mean_var(param)
+    Sigma_2=Sigma_inv[n:,n:]
+    Sigma_1_inv=np.linalg.inv(Sigma_inv[:n,:n])
+    Sigma_12=Sigma_inv[:n,n:]
+
+    mu_1=Sigma_inv_mu[:n]
+    mu_2=Sigma_inv_mu[n:]
+    Sigma_tilde=Sigma_2-np.dot(np.dot(Sigma_12.T,Sigma_1_inv),Sigma_12)
+    mu_tilde=mu_2-np.dot(np.dot(Sigma_12.T,Sigma_1_inv),mu_1)
+
+    def barrier(z):
+        # Az\leq b
+        A = np.zeros(((p+ninactive),p))
+        A[:nactive,:nactive] = -np.diag(signs)
+        A[nactive:p,nactive:] = np.identity(ninactive)
+        A[p:, nactive:] = -np.identity(ninactive)
+        b = np.zeros(p + ninactive)
+        b[nactive:] = 1
+
+        if all(b - np.dot(A, z) >= np.power(10, -9)):
+            return np.sum(np.log(1 + np.true_divide(1, b - np.dot(A, z))))
+        return b.shape[0] * np.log(1 + 10 ** 9)
+
+    def objective(z):
+        return np.inner(z,np.dot(Sigma_tilde,z)) / 2 - np.inner(z,mu_tilde) + barrier(z)
+
+    initial_sol = np.zeros(p)
+    initial_sol[:nactive] = betaE
+    initial_sol[nactive:] = np.random.uniform(-1, 1,ninactive)
+    res = minimize(objective, x0=initial_sol)
+    return -res.fun, res.x
+
+###work to be done is to choose between two different optimization objectives to be solved depending
+# upon the fact if p or n+nactive is smaller
+
+
+###computing selective MAP:
+def selective_map_objective(param):
+    value, argsup=optimization(param)
+    def log_prior(param):
+        return -np.true_divide(np.linalg.norm(param),2)
+
+    return -log_prior(param)-np.true_divide(np.dot(y,np.dot(X[:,0:nactive],param)),sigma ** 2)-value
+
+initial_sol_map = np.zeros(nactive)
+res_map = minimize(selective_map_objective, x0=initial_sol_map)
+res_map.x
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
