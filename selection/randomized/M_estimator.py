@@ -325,15 +325,6 @@ class M_estimator(object):
         return (composition_linear_part, composition_offset)
 
 
-    def boot_decomposition(self, target_alpha, reference_param,
-                                 target_score_cov, target_cov, observed_target_state):
-
-        composition_linear_part, composition_offset = self.linear_decomposition(target_score_cov, target_cov, observed_target_state)
-        boot_linear_part = np.dot(composition_linear_part, target_alpha)
-        boot_offset = composition_offset - np.dot(composition_linear_part, reference_param).flatten()
-        return (boot_linear_part, boot_offset)
-
-
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 

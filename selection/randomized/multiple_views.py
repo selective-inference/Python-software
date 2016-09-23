@@ -3,6 +3,8 @@ import numpy as np
 
 from ..distributions.discrete_family import discrete_family
 from ..sampling.langevin import projected_langevin
+from .bootstrap_target import bootstrapped_target_sampler
+
 
 class multiple_views(object):
 
@@ -38,6 +40,23 @@ class multiple_views(object):
         self.form_covariances = form_covariances
 
     def setup_target(self,
+                    target_bootstrap,
+                    observed_target_state,
+                    target_set=None,
+                    reference=None,
+                    constructor=None):
+
+
+        if constructor is None:
+            constructor = targeted_sampler
+
+            return constructor(self,
+                   target_bootstrap,
+                   observed_target_state,
+                   target_set=target_set,
+                   reference=reference)
+
+    def setup_bootstrapped_target(self,
                      target_info,
                      observed_target_state,
                      boot_size,
@@ -47,7 +66,7 @@ class multiple_views(object):
                      constructor=None):
 
         if constructor is None:
-            constructor = targeted_sampler
+            constructor = bootstrapped_target_sampler
 
         return constructor(self,
                            target_info,

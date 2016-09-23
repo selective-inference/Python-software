@@ -67,7 +67,7 @@ def test_multiple_views():
         alpha_mat = set_alpha_matrix(loss, active_union)
         target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
 
-        target_sampler = mv.setup_target(inactive_target, inactive_observed, n, target_alpha)
+        target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
 
         test_stat = lambda x: np.linalg.norm(x)
         test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
@@ -81,7 +81,7 @@ def test_multiple_views():
 
         target_alpha_gn = alpha_mat
 
-        target_sampler_gn = mv.setup_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
+        target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
         test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
         observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
         pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, observed_test_value, alternative='twosided')
@@ -141,7 +141,7 @@ def test_multiple_views_individual_coeff():
 
             target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
 
-            target_sampler = mv.setup_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
+            target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
 
             test_stat_boot = lambda x: np.inner(target_alpha, x)
             pval = target_sampler.boot_hypothesis_test(test_stat_boot, individual_observed-true_beta[j], alternative='twosided')
@@ -220,7 +220,7 @@ def make_a_plot():
 
     pvalues = []
     pvalues_gn = []
-    for i in range(200):
+    for i in range(400):
         print "iteration", i
         pvals = test_multiple_views()
         if pvals is not None:
