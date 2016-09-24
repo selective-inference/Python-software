@@ -178,7 +178,6 @@ class targeted_sampler(object):
                                              self.projection,
                                              stepsize)
 
-
         samples = []
         for i in range(ndraw + burnin):
             target_langevin.next()
@@ -226,16 +225,7 @@ class bootstrapped_target_sampler(targeted_sampler):
                  target_set=None,
                  reference=None):
 
-        # sampler will draw samples for bootstrap
-        # these are arguments to target_bootstrap and score_bootstrap
-        # nonparamteric bootstrap is np.random.choice(n, size=(n,), replace=True)
-        # residual bootstrap might be X_E.dot(\bar{\beta}_E) + np.random.choice(resid, size=(n,), replace=True)
-
-        # if target_set is not None, we assume that these coordinates (specified by a list of coordinates) of target
-        # is assumed to be independent of the rest
-        # the corresponding block of `target_cov` is zeroed out
-
-        # we need these attributes of multi_view
+        # sampler will draw bootstrapped weights for the target
 
         targeted_sampler.__init__(self, multi_view,
                                   target_bootstrap,
@@ -268,6 +258,7 @@ class bootstrapped_target_sampler(targeted_sampler):
         #self.boot_observed_state[self.boot_slice] = np.random.normal(size=self.boot_size)
         self.boot_observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
+        self.gradient = self.boot_gradient
 
     def boot_gradient(self, state):
 
@@ -294,12 +285,8 @@ class bootstrapped_target_sampler(targeted_sampler):
         return full_grad
 
 
-    def sample(self, ndraw, burnin, bootstrap=False, stepsize = None):
-        """
-        assumes setup_sampler has been called
-        """
+    def sample(self, ndraw, burnin, stepsize = None):
         if stepsize is None:
-            #stepsize = 1. /self.boot_size
             stepsize = 1. / self.observed_state.shape[0]
 
         bootstrap_langevin = projected_langevin(self.boot_observed_state.copy(),

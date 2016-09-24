@@ -143,6 +143,7 @@ def test_multiple_views_individual_coeff():
             target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
 
             test_stat_boot = lambda x: np.inner(target_alpha, x)
+
             pval = target_sampler.hypothesis_test(test_stat_boot, individual_observed-true_beta[j], alternative='twosided')
             pvalues.append(pval)
 
@@ -219,7 +220,7 @@ def make_a_plot():
 
     pvalues = []
     pvalues_gn = []
-    for i in range(400):
+    for i in range(200):
         print "iteration", i
         pvals = test_multiple_views()
         if pvals is not None:
@@ -315,6 +316,6 @@ def make_a_plot_individual_coeff():
 
 
 
-make_a_plot()
+#make_a_plot()
 
-#make_a_plot_individual_coeff()
+make_a_plot_individual_coeff()
