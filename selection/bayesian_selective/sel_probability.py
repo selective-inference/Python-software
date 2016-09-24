@@ -120,7 +120,7 @@ class selection_probability(object):
         else:
             initial_data_noise=np.zeros(self.p+self.n)
             initial_data_noise[self.n:]=self.betaE
-            res=minimize(objective_data_noise,x0=initial_data_noise)
+            res=minimize(objective_data_coef,x0=initial_data_noise)
             return -res.fun
 
 
