@@ -49,65 +49,67 @@ class selection_probability(object):
         self.Sigma_inter=np.identity(self.p)-np.true_divide(np.dot(np.dot(self.V.T,self.Sigma_inv),self.V),
                                                             self.tau_sq ** 2)
 
-    #in case of Lasso, the below should return the mean of generative selected model
+    # in case of Lasso, the below should return the mean of generative selected model
     def mean_generative(self,param):
-        return -np.dot(self.V_E,param)
+        return -np.dot(self.V_E, param)
+
 
     def optimization(self,param):
 
         # defining barrier function on betaE
-        def barrier_sel(z2):
+        def barrier_sel(z_2):
             # A_betaE beta_E\leq 0
 #           # A_betaE = np.zeros((self.nactive, self.nactive))
             A_betaE = -np.diag(self.signs)
-            if all(- np.dot(A_betaE, z2) >= np.power(10, -9)):
-                return np.sum(np.log(1 + np.true_divide(1, - np.dot(A_betaE, z2))))
+            if all(- np.dot(A_betaE, z_2) >= np.power(10, -9)):
+                return np.sum(np.log(1 + np.true_divide(1, - np.dot(A_betaE, z_2))))
             return self.nactive * np.log(1 + 10 ** 9)
 
         # defining barrier function on u_{-E}
-        def barrier_subgrad(z3):
+        def barrier_subgrad(z_3):
 
             # A_2 beta_E\leq b
             A_subgrad = np.zeros(((2 * self.ninactive), (self.ninactive)))
             A_subgrad[:self.ninactive, :] = np.identity(self.ninactive)
             A_subgrad[self.ninactive:, :] = -np.identity(self.ninactive)
             b = np.ones((2 * self.ninactive))
-            if all(b - np.dot(A_subgrad, z3) >= np.power(10, -9)):
-                return np.sum(np.log(1 + np.true_divide(1, b - np.dot(A_subgrad, z3))))
+            if all(b - np.dot(A_subgrad, z_3) >= np.power(10, -9)):
+                return np.sum(np.log(1 + np.true_divide(1, b - np.dot(A_subgrad, z_3))))
             return b.shape[0] * np.log(1 + 10 ** 9)
 
-        mat_inter=np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), Sigma_inv)
-        vec_inter=np.true_divide(np.dot(self.B_E.T,self.gamma_E),self.tau_sq)
-        mu_tilde=-np.dot(mat_inter,np.true_divide(mean(param),self.sigma_sq)-np.true_divide(np.dot(self.V,self.gamma_E),
-                                                                                    self.tau_sq))-vec_inter
-        Sigma_tilde=np.dot(np.dot(self.B_E.T,Sigma_inter),self.B_E)
 
         def objective_noise(z):
 
-            z_1=z[1:self.nactive]
-            z_2=z[self.nactive:]
-            return np.true_divide(np.dot(np.dot(z.T,Sigma_tilde),z),2)+ barrier_sel(z_1)\
-                   +barrier_subgrad(z_2)-np.dot(z.T,mu_tilde)
+            z_2=z[1:self.nactive]
+            z_3=z[self.nactive:]
+            Sigma_noise = np.dot(np.dot(self.B_E.T, self.Sigma_inter), self.B_E)
+            mat_inter = -np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), self.Sigma_inv)
+            vec_inter = np.true_divide(np.dot(self.B_E.T, self.gamma_E), self.tau_sq)
+            mu_noise = np.dot(mat_inter, np.true_divide(self.mean_generative(param), self.sigma_sq) - np.true_divide
+            (np.dot(self.V, self.gamma_E), self.tau_sq)) - vec_inter
+            return np.true_divide(np.dot(np.dot(z.T,Sigma_noise),z),2)+ barrier_sel(z_2)\
+                   +barrier_subgrad(z_3)-np.dot(z.T,mu_noise)
 
         def objective_subgrad(z_3,z_1,z_2):
 
-            mu_z3=np.true_divide(np.dot(self.V_E_comp.T,z_1)-np.dot(self.D_E.T,z_2),self.tau_sq)
-            return -np.dot(z_3.T,mu_z3)+np.true_divide(np.inner(z_3.T,z_3),self.tau_sq)+barrier_subgrad(z_3)
+            mu_subgrad=np.true_divide(-np.dot(self.V_E_comp.T,z_1)-np.dot(self.D_E.T,z_2),self.tau_sq)
+            return -np.dot(z_3.T,mu_subgrad)+np.true_divide(np.inner(z_3.T,z_3),2*self.tau_sq)+barrier_subgrad(z_3)
 
         def value_subgrad(z_1,z_2):
             initial_subgrad=np.random.uniform(-1, 1, self.ninactive)
             res = minimize(objective_subgrad, x0=initial_subgrad,args=(z_1,z_2))
             return -res.fun
 
-        def objective_data_noise(z):
+        def objective_data_coef(z):
             z_1=z[:self.n]
             z_2=z[self.n:]
-            Sigma_z2=np.true_divide(np.dot(self.C_E,self.C_E)+np.dot(self.D_E,self.D_E.T),2*self.tau_sq)
-            mu_z2=-self.lam*np.dot(self.C_E,self.signs)-np.dot((np.true_divide(np.dot(self.C_E,self.V_E.T),self.tau_sq)\
-                  +np.true_divide(self.D_E,self.V_E.T)),z_1)
-            mu_z1=np.true_divide(mean(param),self.sigma_sq) - np.true_divide(np.dot(self.V, self.gamma_E),self.tau_sq)
-            return -np.dot(z_1.T,mu_z1)+np.true_divide(np.dot(np.dot(z_1.T,Sigma),z_1),2)-value_subgrad(z_1,z_2)-\
-                   np.dot(z_2.T,mu_z2)+np.dot(np.dot(z_2.T,Sigma_z2),z_2)
+            Sigma_coef=np.true_divide(np.dot(self.C_E,self.C_E)+np.dot(self.D_E,self.D_E.T),self.tau_sq)
+            mu_coef=np.true_divide(-self.lam*np.dot(self.C_E,self.signs)-np.dot(np.dot(self.C_E,self.V_E.T)+np.dot(
+                self.D_E,self.V_E.T),z_1),self.tau_sq)
+            mu_data=np.true_divide(self.mean_generative(param),self.sigma_sq) - \
+                    np.true_divide(np.dot(self.V, self.gamma_E),self.tau_sq)
+            return -np.dot(z_1.T,mu_data)+np.true_divide(np.dot(np.dot(z_1.T,self.Sigma),z_1),2)-value_subgrad(z_1,z_2)-\
+                   np.dot(z_2.T,mu_coef)+np.true_divide(np.dot(np.dot(z_2.T,Sigma_coef),z_2),2)
 
         if self.p< self.n+self.nactive:
             initial_noise = np.zeros(self.p)
