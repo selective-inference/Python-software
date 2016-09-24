@@ -44,10 +44,7 @@ def test_multiple_views():
 
         active_set = np.nonzero(active_union)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-        #inactive_indicators = np.zeros(nactive)
-        #for i in range(nactive):
-        #    if active_set[i] not in nonzero:
-        #        inactive_indicators[i] = 1
+
 
         inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
         j = 0
@@ -56,8 +53,8 @@ def test_multiple_views():
                 inactive_indicators_mat[j,i] = 1
                 j+=1
 
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
+        sampler = lambda: np.random.choice(n, size=(n,), replace=True)
+        mv.setup_sampler(sampler)
 
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
@@ -71,7 +68,7 @@ def test_multiple_views():
 
         test_stat = lambda x: np.linalg.norm(x)
         test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
-        pval = target_sampler.boot_hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='twosided')
+        pval = target_sampler.hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='twosided')
 
 
         # testing the global null
@@ -84,7 +81,7 @@ def test_multiple_views():
         target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
         test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
         observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
-        pval_gn = target_sampler_gn.boot_hypothesis_test(test_stat_boot_gn, observed_test_value, alternative='twosided')
+        pval_gn = target_sampler_gn.hypothesis_test(test_stat_boot_gn, observed_test_value, alternative='twosided')
 
         #test_stat_gn = lambda x: np.linalg.norm(x)
         #pval_gn = target_sampler_gn.hypothesis_test(test_stat_gn, target_observed_gn,
@@ -128,8 +125,10 @@ def test_multiple_views_individual_coeff():
     pvalues = []
     true_beta = beta[active_union]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
+        #form_covariances = glm_nonparametric_bootstrap(n, n)
+        sampler = lambda: np.random.choice(n, size=(n,), replace=True)
+        mv.setup_sampler(sampler)
+
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
         alpha_mat = set_alpha_matrix(loss, active_union)
 
@@ -144,7 +143,7 @@ def test_multiple_views_individual_coeff():
             target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
 
             test_stat_boot = lambda x: np.inner(target_alpha, x)
-            pval = target_sampler.boot_hypothesis_test(test_stat_boot, individual_observed-true_beta[j], alternative='twosided')
+            pval = target_sampler.hypothesis_test(test_stat_boot, individual_observed-true_beta[j], alternative='twosided')
             pvalues.append(pval)
 
 
@@ -316,6 +315,6 @@ def make_a_plot_individual_coeff():
 
 
 
-#make_a_plot()
+make_a_plot()
 
-make_a_plot_individual_coeff()
+#make_a_plot_individual_coeff()
