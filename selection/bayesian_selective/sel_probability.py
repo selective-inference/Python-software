@@ -12,9 +12,19 @@ X, y, true_beta, nonzero, sigma = data_instance.generate_response()
 
 random_Z = np.random.standard_normal(p)
 lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
-#V=-X
-#B_E=np.zeros((p,p))
-#B_E[:]
+
+nactive=betaE.shape[0]
+X_perm=np.zeros((n,p))
+X_perm[:,:nactive]=X[:,active]
+X_perm[:,nactive:]=X[:,-active]
+X=X_perm
+V=-X
+B_E=np.zeros((p,p))
+B_E[,:nactive]=np.dot(X.T,X[,:nactive])
+B_E[:nactive,:nactive]+=+epsilon*np.identity(nactive)
+B_E[nactive:, nactive:]=np.identity((p-nactive))
+gamma_E=np.zeros(p)
+gamma_E[:nactive]=lam* np.signs(beta_E)
 
 #########################################################
 #####defining a class for computing selection probability
@@ -80,7 +90,7 @@ class selection_probability(object):
 
         def objective_noise(z):
 
-            z_2=z[1:self.nactive]
+            z_2=z[:self.nactive]
             z_3=z[self.nactive:]
             Sigma_noise = np.dot(np.dot(self.B_E.T, self.Sigma_inter), self.B_E)
             mat_inter = -np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), self.Sigma_inv)
