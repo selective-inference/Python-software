@@ -115,11 +115,11 @@ class selection_probability(object):
             z_2=z[self.n:]
             Sigma_coef=np.true_divide(np.dot(self.C_E,self.C_E)+np.dot(self.D_E,self.D_E.T),self.tau_sq)
             mu_coef=np.true_divide(-self.lam*np.dot(self.C_E,self.signs)-np.dot(np.dot(self.C_E,self.V_E.T)+np.dot(
-                self.D_E,self.V_E.T),z_1),self.tau_sq)
+                self.D_E,self.V_E_comp.T),z_1),self.tau_sq)
             mu_data=np.true_divide(self.mean_generative(param),self.sigma_sq) - \
                     np.true_divide(np.dot(self.V, self.gamma_E),self.tau_sq)
             return -np.dot(z_1.T,mu_data)+np.true_divide(np.dot(np.dot(z_1.T,self.Sigma),z_1),2)-value_subgrad(z_1,z_2)-\
-                   np.dot(z_2.T,mu_coef)+np.true_divide(np.dot(np.dot(z_2.T,Sigma_coef),z_2),2)
+                   np.dot(z_2.T,mu_coef)+np.true_divide(np.dot(np.dot(z_2.T,Sigma_coef),z_2),2)+barrier_sel(z_2)
 
         if self.p< self.n+self.nactive:
             initial_noise = np.zeros(self.p)
@@ -128,7 +128,7 @@ class selection_probability(object):
             res=minimize(objective_noise,x0=initial_noise)
             return -res.fun
         else:
-            initial_data_coef=np.zeros(self.p+self.n)
+            initial_data_coef=np.zeros(self.nactive+self.n)
             initial_data_coef[self.n:]=self.betaE
             res=minimize(objective_data_coef,x0=initial_data_coef)
             return -res.fun
