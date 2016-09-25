@@ -50,6 +50,9 @@ class selection_probability(object):
     def mean_generative(self,param):
         return -np.dot(self.V_E, param)
 
+    #defining log prior to be the Gaussian prior
+    def log_prior(self,param,gamma):
+        return -np.true_divide(np.linalg.norm(param)**2,gamma**2)
 
     def optimization(self,param):
 
@@ -157,6 +160,13 @@ class selection_probability(object):
             initial_data_coef[self.n:]=self.betaE
             res=minimize(objective_data_coef,x0=initial_data_coef)
             return -res.fun
+
+    def selective_map(self,y,param,prior_sd):
+        return np.true_divide(np.dot(y.T,self.mean_generative(param)),
+                              self.sigma_sq)-self.log_prior(param,prior_sd)-self.optimization(param)
+        
+
+
 
 
 
