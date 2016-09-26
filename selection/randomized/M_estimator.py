@@ -43,6 +43,8 @@ class M_estimator(object):
                              randomization,
                              solve_args)
          
+        self._solved = False
+
     def solve(self):
 
         (loss,
@@ -109,6 +111,8 @@ class M_estimator(object):
                                                   initial_unpenalized,
                                                   initial_subgrad], axis=0)
 
+
+        self._solved = True
 
     def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
 
@@ -183,7 +187,10 @@ class M_estimator(object):
         # c_E piece 
 
         scaling_slice = slice(0, active_groups.sum())
-        _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
+        if len(active_directions)==0:
+            _opt_hessian=0
+        else:
+            _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
         _opt_linear_term[:,scaling_slice] = _opt_hessian / _sqrt_scaling
 
         self.observed_opt_state[scaling_slice] *= _sqrt_scaling
@@ -289,6 +296,7 @@ class M_estimator(object):
 
         return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
 
+
     def grad_log_jacobian(self, opt_state):
         """
         log_jacobian depends only on data through
@@ -296,7 +304,8 @@ class M_estimator(object):
         assume is close to Hessian at \bar{\beta}_E^*
         """
         # needs to be implemented for group lasso
-        return 0. 
+        return 0.
+
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
@@ -328,6 +337,8 @@ class M_estimator(object):
         composition_offset = score_linear.dot(offset) + score_offset
 
         return (composition_linear_part, composition_offset)
+
+
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 

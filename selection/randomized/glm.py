@@ -76,6 +76,52 @@ def pairs_bootstrap_glm(glm_loss,
 
     return _boot_score, observed
 
+
+def set_alpha_matrix(glm_loss,
+                     active,
+                     beta_full=None,
+                     inactive=None,
+                     scaling=1.,
+                     solve_args={'min_its': 50, 'tol': 1.e-10}):
+
+    X, Y = glm_loss.data
+
+    if beta_full is None:
+        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        beta_full = np.zeros(glm_loss.shape)
+        beta_full[active] = beta_active
+    else:
+        beta_active = beta_full[active]
+
+    X_active = X[:,active]
+
+    nactive = active.sum()
+    ntotal = nactive
+
+    if inactive is not None:
+        X_inactive = X[:,inactive]
+        ntotal += inactive.sum()
+
+    _W = np.diag(glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
+    _Q = X_active.T.dot(_W.dot(X_active))
+    _Qinv = np.linalg.inv(_Q)
+    nactive = active.sum()
+    if inactive is not None:
+        X_full = np.hstack([X_active, X_inactive])
+        beta_overall = np.zeros(X_full.shape[1])
+        beta_overall[:nactive] = beta_active
+    else:
+        X_full = X_active
+        beta_overall = beta_active
+
+    # self.loss.loss(X.dot(beta)) == np.exp(X.dot(beta)) / (1 + np.exp(X.dot(beta))) - Y
+    obs_residuals = - glm_loss.saturated_loss.smooth_objective(X_full.dot(beta_overall), 'grad')
+
+    return np.dot(np.dot(_Qinv, X_active.T), np.diag(obs_residuals))
+
+
+
+
 def _parametric_cov_glm(glm_loss,
                         active,
                         beta_full=None,
