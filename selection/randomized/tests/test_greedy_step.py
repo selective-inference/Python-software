@@ -3,8 +3,13 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso, glm_greedy_step, pairs_inactive_score_glm
-
+from selection.randomized.api import (randomization, 
+                                      multiple_views, 
+                                      pairs_bootstrap_glm, 
+                                      glm_group_lasso, 
+                                      glm_greedy_step, 
+                                      pairs_inactive_score_glm)
+from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
@@ -66,8 +71,8 @@ def test_overall_null_two_views():
         # is it enough only to bootstrap the inactive ones?
         # seems so...
 
-        A1, b1 = M_est1.condition(cov1[I], target_cov[I][:,I], target_observed[I])
-        A2, b2 = step.condition(cov2[I], target_cov[I][:,I], target_observed[I])
+        A1, b1 = M_est1.linear_decomposition(cov1[I], target_cov[I][:,I], target_observed[I])
+        A2, b2 = step.linear_decomposition(cov2[I], target_cov[I][:,I], target_observed[I])
 
         target_inv_cov = np.linalg.inv(target_cov[I][:,I])
 

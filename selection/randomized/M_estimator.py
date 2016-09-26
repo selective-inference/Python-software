@@ -97,7 +97,8 @@ class M_estimator(object):
         self.active_groups = np.array(active_groups, np.bool)
         self.unpenalized_groups = np.array(unpenalized_groups, np.bool)
 
-        self.selection_variable = (self.active_groups, self.active_directions)
+        self.selection_variable = {'groups':self.active_groups, 
+                                   'directions':self.active_directions}
 
         # initial state for opt variables
 
@@ -242,7 +243,6 @@ class M_estimator(object):
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
 
-
     def projection(self, opt_state):
         """
         Full projection for Langevin.
@@ -267,15 +267,26 @@ class M_estimator(object):
         if not hasattr(self, "opt_transform"):
             raise ValueError('setup_sampler should be called before using this function')
 
-        # omega
+        # reconstruction of randoimzation omega
+
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
         data_piece = data_linear.dot(data_state) + data_offset
         opt_piece = opt_linear.dot(opt_state) + opt_offset
-        full_state = (data_piece + opt_piece)
+
+        # value of the randomization omega
+
+        full_state = (data_piece + opt_piece) 
+
+        # gradient of negative log density of randomization at omega
+
         randomization_derivative = self.randomization.gradient(full_state)
+
+        # chain rule for data, optimization parts
+
         data_grad = data_linear.T.dot(randomization_derivative)
         opt_grad = opt_linear.T.dot(randomization_derivative)
+
         return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
 
     def grad_log_jacobian(self, opt_state):

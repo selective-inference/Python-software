@@ -164,13 +164,11 @@ class glm_group_lasso_parametric(M_estimator):
 
 class glm_greedy_step(greedy_score_step):
 
-    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
-        greedy_score_step.setup_sampler(self, scaling=scaling, solve_args=solve_args)
-
+    def setup_sampler(self):
+        greedy_score_step.setup_sampler(self)
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
-                                                   self.beta_active,
-                                                   scaling=scaling)
+                                                   self.beta_active)
         return bootstrap_score
 
 
