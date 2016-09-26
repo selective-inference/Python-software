@@ -389,7 +389,7 @@ class targeted_sampler(object):
         samples = []
         for i in range(ndraw + burnin):
             target_langevin.next()
-            if i >= burnin:
+            if (i >= burnin):
                 samples.append(target_langevin.state[self.keep_slice].copy())
 
         return samples
