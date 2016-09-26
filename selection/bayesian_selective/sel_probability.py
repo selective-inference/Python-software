@@ -1,6 +1,7 @@
 import numpy as np
 from initial_soln import instance, selection
 from scipy.optimize import minimize
+from scipy.stats import norm as ndist
 
 #####for debugging currently; need to change this part
 n=100
@@ -169,7 +170,7 @@ class selection_probability(object):
         map_prob=minimize(objective,x0=np.zeros(self.nactive),args=(y,prior_sd))
         return -map_prob.x
 
-    def gradient(self,param,y):
+    def gradient(self,y,param,prior_sd):
         if self.p< self.n+self.nactive:
             grad_sel_prob= np.dot(np.dot(self.mat_inter, -np.true_divide(self.V_E, self.sigma_sq)).T,
                                   self.optimization(param)[1])
@@ -178,6 +179,32 @@ class selection_probability(object):
 
         return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)+grad_sel_prob
 
+
+
+##############sampling from posterior
+class langevin_rw(object):
+    def __init__(self,initial_state,gradient_map,stepsize):
+        (self.state,
+         self.gradient_map,
+         self.stepsize) = (np.copy(initial_state),gradient_map,stepsize)
+        self._shape = self.state.shape[0]
+        self._sqrt_step = np.sqrt(self.stepsize)
+        self._noise = ndist(loc=0, scale=1)
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        while True:
+            candidate = (self.state
+                        + 0.5 * self.stepsize * self.gradient_map(self.state)
+                        + self._noise.rvs(self._shape) * self._sqrt_step)
+            if not np.all(np.isfinite(self.gradient_map(candidate))):
+                print candidate, self._sqrt_step
+                self._sqrt_step *= 0.8
+            else:
+                self.state[:] = candidate
+                break
 
 
 
