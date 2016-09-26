@@ -132,7 +132,7 @@ class targeted_sampler(object):
 
         self.overall_opt_slice = slice(0, multi_view.num_opt_var)
         self.target_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.reference_inv.shape[0])
-
+        self.keep_slice = self.target_slice
         # set the observed state
 
         self.observed_state = np.zeros(multi_view.num_opt_var + self.reference_inv.shape[0])
@@ -182,7 +182,7 @@ class targeted_sampler(object):
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[self.target_slice].copy())
+                samples.append(target_langevin.state[self.keep_slice].copy())
 
         return samples
 
