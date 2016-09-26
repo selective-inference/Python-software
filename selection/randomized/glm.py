@@ -189,7 +189,6 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active, scaling=1.):
 class glm_group_lasso(M_estimator):
 
     def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
-        print scaling, 'scaling'
         M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss,

@@ -6,7 +6,7 @@ from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, m
 from selection.randomized.tests import logistic_instance
 from selection.randomized.M_estimator import restricted_Mest
 from selection.randomized.glm import glm_nonparametric_bootstrap
-from selection.randomized.intervals.intervals import intervals
+from selection.randomized.intervals import intervals
 
 def Langevin_samples(solve_args={'min_its':50, 'tol':1.e-10}):
     s, n, p = 3, 200, 10
