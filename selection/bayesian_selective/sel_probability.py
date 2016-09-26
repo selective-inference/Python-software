@@ -169,16 +169,14 @@ class selection_probability(object):
         map_prob=minimize(objective,x0=np.zeros(self.nactive),args=(y,prior_sd))
         return -map_prob.x
 
-    def langevin(self,y,prior_sd):
-        def gradient(param,y):
-            if self.p< self.n+self.nactive:
-                grad_sel_prob= np.dot(np.dot(self.mat_inter,
-                                            -np.true_divide(self.V_E, self.sigma_sq)).T,
-                                            self.optimization(param)[1])
-            else:
-                grad_sel_prob= np.dot(-np.true_divide(self.V_E.T, self.sigma_sq),self.optimization(param)[1])
+    def gradient(self,param,y):
+        if self.p< self.n+self.nactive:
+            grad_sel_prob= np.dot(np.dot(self.mat_inter, -np.true_divide(self.V_E, self.sigma_sq)).T,
+                                  self.optimization(param)[1])
+        else:
+            grad_sel_prob= np.dot(-np.true_divide(self.V_E.T, self.sigma_sq),self.optimization(param)[1])
 
-            return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)+grad_sel_prob
+        return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)+grad_sel_prob
 
 
 
