@@ -45,6 +45,7 @@ class selection_probability(object):
         self.Sigma_inv=np.linalg.inv(self.Sigma)
         self.Sigma_inter=np.identity(self.p)-np.true_divide(np.dot(np.dot(self.V.T,self.Sigma_inv),self.V),
                                                             self.tau_sq ** 2)
+        self.mat_inter = -np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), self.Sigma_inv)
 
     # in case of Lasso, the below should return the mean of generative selected model
     def mean_generative(self,param):
@@ -92,9 +93,8 @@ class selection_probability(object):
             z_2=z[:self.nactive]
             z_3=z[self.nactive:]
             Sigma_noise = np.dot(np.dot(self.B_E.T, self.Sigma_inter), self.B_E)
-            mat_inter = -np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), self.Sigma_inv)
             vec_inter = np.true_divide(np.dot(self.B_E.T, self.gamma_E), self.tau_sq)
-            mu_noise = np.dot(mat_inter, np.true_divide(self.mean_generative(param), self.sigma_sq) - np.true_divide
+            mu_noise = np.dot(self.mat_inter, np.true_divide(self.mean_generative(param), self.sigma_sq) - np.true_divide
             (np.dot(self.V, self.gamma_E), self.tau_sq)) - vec_inter
             return np.true_divide(np.dot(np.dot(z.T,Sigma_noise),z),2)+ barrier_sel(z_2)\
                    +barrier_subgrad(z_3)-np.dot(z.T,mu_noise)
@@ -133,20 +133,22 @@ class selection_probability(object):
 #                    np.true_divide(np.dot(self.V, self.gamma_E),self.tau_sq)
 #            return -np.dot(z_1.T,mu_data)+np.true_divide(np.dot(np.dot(z_1.T,self.Sigma),z_1),2)-value_subgrad(z_1,z_2)-\
 #                   np.dot(z_2.T,mu_coef)+np.true_divide(np.dot(np.dot(z_2.T,Sigma_coef),z_2),2)+barrier_sel(z_2)
-
-        def objective_data_coef(z):
-            z_1 = z[:self.n]
-            z_2 = z[self.n:]
-            Sigma_coef = np.true_divide(np.dot(self.C_E, self.C_E) + np.dot(self.D_E, self.D_E.T), self.tau_sq)
+        def objective_coef(z_2,z_1):
             mu_coef = np.true_divide(
                 -self.lam * np.dot(self.C_E, self.signs) - np.dot(np.dot(self.C_E, self.V_E.T) + np.dot(
                     self.D_E, self.V_E_comp.T), z_1), self.tau_sq)
+            Sigma_coef = np.true_divide(np.dot(self.C_E, self.C_E) + np.dot(self.D_E, self.D_E.T), self.tau_sq)
+            return - np.dot(z_2.T,
+                            mu_coef) + np.true_divide(np.dot(np.dot(z_2.T,Sigma_coef),
+                                                             z_2),2)+barrier_sel(z_2)-value_subgrad_coordinate(z_1, z_2)
+
+
+        def objective_data(z_1):
+            value_coef=minimize(objective_coef,x0=self.betaE,args=z_1)
             mu_data = np.true_divide(self.mean_generative(param), self.sigma_sq) - np.true_divide(np.dot
                                                                                                   (self.V, self.gamma_E)
                                                                                                   , self.tau_sq)
-            return -np.dot(z_1.T, mu_data) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1), 2) - \
-                   value_subgrad_coordinate(z_1, z_2) - np.dot(z_2.T,mu_coef) + np.true_divide(
-                np.dot(np.dot(z_2.T, Sigma_coef), z_2),2)+barrier_sel(z_2)
+            return -np.dot(z_1.T, mu_data) + np.true_divide(np.dot(np.dot(z_1.T,self.Sigma), z_1), 2)-value_coef.fun
 
 
         if self.p< self.n+self.nactive:
@@ -154,21 +156,34 @@ class selection_probability(object):
             initial_noise[:self.nactive] = self.betaE
             initial_noise[self.nactive:] = np.random.uniform(-1, 1, self.ninactive)
             res=minimize(objective_noise,x0=initial_noise)
-            return -res.fun
+            return -res.fun, res.x
         else:
-            initial_data_coef=np.zeros(self.nactive+self.n)
-            initial_data_coef[self.n:]=self.betaE
-            res=minimize(objective_data_coef,x0=initial_data_coef)
-            return -res.fun
+            initial_data=np.zeros(self.n)
+            res=minimize(objective_data,x0=initial_data)
+            return -res.fun, res.x
 
     def selective_map(self,y,prior_sd):
         def objective(param,y,prior_sd):
             return -np.true_divide(np.dot(y.T,self.mean_generative(param)),
-                              self.sigma_sq)-self.log_prior(param,prior_sd)+self.optimization(param)
-        map_prob=minimize(objective,x0=np.zeros(param.shape[0]),args=(y,prior_sd))
+                              self.sigma_sq)-self.log_prior(param,prior_sd)+self.optimization(param)[0]
+        map_prob=minimize(objective,x0=np.zeros(self.nactive),args=(y,prior_sd))
         return -map_prob.x
 
-    
+    def langevin(self,y,prior_sd):
+        def gradient(param,y):
+            if self.p< self.n+self.nactive:
+                grad_sel_prob= np.dot(np.dot(self.mat_inter,
+                                            -np.true_divide(self.V_E, self.sigma_sq)).T,
+                                            self.optimization(param)[1])
+            else:
+                grad_sel_prob= np.dot(-np.true_divide(self.V_E.T, self.sigma_sq),self.optimization(param)[1])
+
+            return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)+grad_sel_prob
+
+
+
+
+
 
 
 
