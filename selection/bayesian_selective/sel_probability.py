@@ -161,10 +161,15 @@ class selection_probability(object):
             res=minimize(objective_data_coef,x0=initial_data_coef)
             return -res.fun
 
-    def selective_map(self,y,param,prior_sd):
-        return np.true_divide(np.dot(y.T,self.mean_generative(param)),
-                              self.sigma_sq)-self.log_prior(param,prior_sd)-self.optimization(param)
-        
+    def selective_map(self,y,prior_sd):
+        def objective(param,y,prior_sd):
+            return -np.true_divide(np.dot(y.T,self.mean_generative(param)),
+                              self.sigma_sq)-self.log_prior(param,prior_sd)+self.optimization(param)
+        map_prob=minimize(objective,x0=np.zeros(param.shape[0]),args=(y,prior_sd))
+        return -map_prob.x
+
+    
+
 
 
 
