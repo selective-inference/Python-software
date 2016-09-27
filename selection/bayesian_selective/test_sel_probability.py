@@ -1,33 +1,41 @@
 import numpy as np
-from initial_soln import instance, selection
+from initial_soln import selection
 from scipy.optimize import minimize
+from selection.algorithms.lasso import instance
 #from matplotlib import pyplot as plt
-
 #####for debugging currently; need to change this part
+
 n=100
 p=20
-s=5
+s=3
 snr=5
-data_instance = instance(n, p, s, snr)
-X_1, y, true_beta, nonzero, sigma = data_instance.generate_response()
+#data_instance = instance(n, p, s, snr)
+#X_1, y, true_beta, nonzero, sigma = data_instance.generate_response()
+
+X_1, y, true_beta, nonzero, sigma = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+
+print true_beta
 
 random_Z = np.random.standard_normal(p)
-lam, epsilon, active, betaE, cube, initial_soln = selection(X_1,y, random_Z)
+sel = selection(X_1,y, random_Z)
+if sel is not None:
+    lam, epsilon, active, betaE, cube, initial_soln = sel
 
-nactive=betaE.shape[0]
-print nactive
-tau=1
-X_perm=np.zeros((n,p))
-X_perm[:,:nactive]=X_1[:,active]
-X_perm[:,nactive:]=X_1[:,-active]
-X=X_perm
-V=-X
-B_E=np.zeros((p,p))
-B_E[:,:nactive]=np.dot(X.T,X[:,:nactive])
-B_E[:nactive, :nactive]+= epsilon*np.identity(nactive)
-B_E[nactive:, nactive:]=np.identity((p-nactive))
-gamma_E=np.zeros(p)
-gamma_E[:nactive]=lam* np.sign(betaE)
+    nactive=betaE.shape[0]
+    print nactive
+    tau=1
+    X_perm=np.zeros((n,p))
+    X_perm[:,:nactive]=X_1[:,active]
+    X_perm[:,nactive:]=X_1[:,~active]
+    X=X_perm
+    V=-X
+    X_E=X[:,:nactive]
+    B_E=np.zeros((p,p))
+    B_E[:,:nactive]=np.dot(X.T,X[:,:nactive])
+    B_E[:nactive, :nactive]+= epsilon*np.identity(nactive)
+    B_E[nactive:, nactive:]=np.identity((p-nactive))
+    gamma_E=np.zeros(p)
+    gamma_E[:nactive]=lam* np.sign(betaE)
 
 class selection_probability(object):
 
@@ -58,14 +66,16 @@ class selection_probability(object):
         self.Sigma_inter=np.true_divide(np.identity(self.p),self.tau_sq)-np.true_divide(np.dot(np.dot(
             self.V.T,self.Sigma_inv),self.V),self.tau_sq ** 2)
         self.mat_inter = -np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), self.Sigma_inv)
+        self.Sigma_noise = np.dot(np.dot(self.B_E.T, self.Sigma_inter), self.B_E)
+        self.vec_inter = np.true_divide(np.dot(self.B_E.T, self.gamma_E), self.tau_sq)
 
     # in case of Lasso, the below should return the mean of generative selected model
-    def mean_generative(self,param):
-        return -np.dot(self.V_E, param)
+    #def mean_generative(self,param):
+    #    return -np.dot(self.V_E, param)
 
     # defining log prior to be the Gaussian prior
-    def log_prior(self, param, gamma):
-        return -np.true_divide(np.linalg.norm(param) ** 2, 2*(gamma ** 2))
+    #def log_prior(self, param, gamma):
+    #    return -np.true_divide(np.linalg.norm(param) ** 2, 2*(gamma ** 2))
 
     def optimization(self, param):
 
@@ -101,12 +111,10 @@ class selection_probability(object):
 
             z_2 = z[:self.nactive]
             z_3 = z[self.nactive:]
-            Sigma_noise = np.dot(np.dot(self.B_E.T, self.Sigma_inter), self.B_E)
-            vec_inter = np.true_divide(np.dot(self.B_E.T, self.gamma_E), self.tau_sq)
             mu_noise = np.dot(self.mat_inter,
-                              np.true_divide(self.mean_generative(param), self.sigma_sq) - np.true_divide
-                              (np.dot(self.V, self.gamma_E), self.tau_sq)) - vec_inter
-            return np.true_divide(np.dot(np.dot(z.T, Sigma_noise), z), 2) + barrier_sel(z_2) \
+                              np.true_divide(-np.dot(self.V_E, param), self.sigma_sq) - np.true_divide
+                              (np.dot(self.V, self.gamma_E), self.tau_sq)) - self.vec_inter
+            return np.true_divide(np.dot(np.dot(z.T, self.Sigma_noise), z), 2) + barrier_sel(z_2) \
                    + barrier_subgrad(z_3) - np.dot(z.T, mu_noise)
 
         # defining the objective for subgradient coordinate wise
@@ -144,18 +152,18 @@ class selection_probability(object):
             initial_noise[:self.nactive] = self.betaE
             initial_noise[self.nactive:] = np.random.uniform(-1, 1, self.ninactive)
             res=minimize(objective_noise,x0=initial_noise)
-            return -res.fun, res.x
+            return -res.fun
         else:
             initial_data = np.zeros(self.n)
             res = minimize(objective_data, x0=initial_data)
-            return -res.fun, res.x
+            return -res.fun
 
     def selective_map(self,response):
         def objective_map(param,response):
-            return -np.true_divide(np.dot(response.T,self.mean_generative(param)),
-                              self.sigma_sq)+self.optimization(param)[0]
-        map_prob=minimize(objective_map,x0=np.zeros(self.nactive),args=response)
-        return map_prob.x
+            return -np.true_divide(np.dot(response.T,-np.dot(self.V_E, param)),
+                              self.sigma_sq)+self.optimization(param)
+        map_prob=minimize(objective_map,x0=self.betaE,args=response)
+        return map_prob.x,map_prob.fun
 
 
 
@@ -206,12 +214,11 @@ if nactive==1:
 #print sel.optimization(param)(5*np.ones(n),betaE)
 #print sel.optimization(param)(5*np.ones(n),betaE)
 #checking output of objective_data_coef
-#print sel.optimization(param)(np.append(5*np.ones(n),betaE))
+#print sel.optimization(param)
 #check output of optimization of objective_data_coef
 print sel.selective_map(y)
 print true_beta
 print active
-X_E=X[:,:nactive]
 print np.dot(np.dot(np.dot(X_E.T,X_E),X_E.T),y)
 
 
