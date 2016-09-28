@@ -2,49 +2,53 @@
 language: python
 python:
   - 2.7
-  - 3.4
+  - 3.3
 notifications:
   email: false
-
-# Setup anaconda
+env:
+    global:
+        # Maximal dependencies
+        - DEPENDS="cython numpy scipy matplotlib"
 before_install:
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b
-  - export PATH=/home/travis/miniconda2/bin:$PATH
-  - conda update --yes conda
-  # The next couple lines fix a crash with multiprocessing on Travis and are not specific to using Miniconda
-  - sudo rm -rf /dev/shm
-  - sudo ln -s /run/shm /dev/shm
-# Install packages
-install:
-  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose dateutil pandas statsmodels scikit-learn 
-  # Coverage packages are on my binstar channel
-  - conda install --yes -c dan_blanchard python-coveralls nose-cov
-  # Install R and rpy2
-  - conda install --yes -c r r-essentials
-  - pip install rpy2
+  - source travis-tools/utils.sh
+  - travis_before_install
+  # Install intervals -- hacky!!
+  - python -c "import rpy2.robjects as rpy; rpy.r('''install.packages('intervals', repos='http://cload.r-project.org')''')"
+  - R CMD INSTALL selectiveInference
+  - cd ..
   # Install selectiveInference
   - git clone https://github.com/selective-inference/R-software.git
   - cd R-software
-  # Install intervals -- hacky!!
-  - python -c "import rpy2.robjects as rpy; rpy.r('''install.packages('intervals', repos='http://cran.r-project.org')''')"
-  - R CMD INSTALL selectiveInference
-  - cd ..
   # Install regreg 
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
   - pip install -r requirements.txt
   - pip install -e .
   - cd ..
+  - pip install rpy2
+install:
+install:
   # Install selection
   - pip install -r requirements.txt
   - pip install -e .
-
-# Run test
+    - travis_install $INSTALL_TYPE
+# command to run tests, e.g. python setup.py test
 script:
-  - ./tools/noseall_with_coverage
-
-# Calculate coverage
+    - pip install nose
+    # Change into an innocuous directory and find tests from installation
+    - mkdir for_testing
+    - cd for_testing
+    # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
+    - 'echo "backend : agg" > matplotlibrc'
+    # Doctests only on platforms that have compatible fp output
+    - if [ `uname` == "Darwin" ] ||
+      [ "${TRAVIS_PYTHON_VERSION:0:1}" == "3" ]; then
+      DOCTEST_ARGS="--with-doctest";
+      fi
+    - if [ "${COVERAGE}" == "1" ]; then
+      cp ../.coveragerc .;
+      COVER_ARGS="--with-coverage --cover-package regreg";
+      fi
+    - nosetests $DOCTEST_ARGS --verbose $COVER_ARGS regreg
 after_success:
     - if [ "${COVERAGE}" == "1" ]; then coveralls; fi
