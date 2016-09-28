@@ -37,11 +37,6 @@ install:
   - pip install -r requirements.txt
   - pip install -e .
   - cd ..
-  # Install choldate -- hopefully we can drop this dependency
-  - git clone https://github.com/jcrudy/choldate.git
-  - cd choldate
-  - pip install -e .
-  - cd ..
   # Install selection
   - pip install -r requirements.txt
   - pip install -e .
