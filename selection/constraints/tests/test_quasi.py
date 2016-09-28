@@ -41,7 +41,7 @@ def test_sqrt_solver():
     for x in np.linspace(-20, 20):
         hold = (func(x, a, b, c, n) <= 0)
         in_interval = any([contains(x, I) for I in intervals])
-        yield np.testing.assert_almost_equal, hold, in_interval
+        yield np.testing.assert_almost_equal, np.array(hold, np.float), np.array(in_interval, np.float)
 
 
 def contains(x, I):
