@@ -64,8 +64,8 @@ class truncated(object):
         dps = 15
         not_precise = True
         while not_precise:
-            dps *= 2.
             Q = [self._cdf_notTruncated(a, b, dps) for a, b in intervals]
+            dps *= 2
             not_precise = (fsum(Q) == 0.)
 
         self._sumQ = fsum(Q)

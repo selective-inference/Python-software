@@ -445,40 +445,9 @@ class constraints(base_constraints):
     def p_value(self, X_s, y, sigma=1.):
         """
 
-        Examples
-        --------
-        The constraints are : 
-        (x - 1)^2 + y ^ 2    < 4
-        10 * x^2  - 10 * y^2 < -1
-        (x + 1)^2 + y ^ 2    < 4
-
-        >>> q1, lin1, off1 = np.identity(2), np.array([2., 0.]), 3.
-        >>> q2, lin2, off2 = np.array([[10., 0], [0, -10.]]), np.zeros(2), -1.
-        >>> q3, lin3, off3 = np.identity(2), np.array([-2., 0.]), 3.
-        >>> cons = constraints(np.array([q1, q2, q3]), \
-                                    np.array([lin1, lin2, lin3]), \
-                                    np.array([off1, off2, off3]))
-
-        
-        >>> data = cons.sample_dum(100)
-        
-        >>> X_s1 = np.random.multivariate_normal(np.zeros(2), \
-                                                 np.identity(2), 1).T
-        >>> p_values1 = [float(cons.p_value(X_s1, y)) for y in data]
-        >>> #test_uniform(p_values1)
-        
-        >>> X_s2 = np.random.multivariate_normal(np.zeros(2), \
-                                                 np.identity(2), 2).T
-        >>> p_values2 = [float(cons.p_value(X_s2, y)) for y in data]
-        >>> #test_uniform(p_values2)
-
-        >>> X_s3 = np.random.multivariate_normal(np.zeros(2), \
-                                                 np.identity(2), 3).T
-        >>> p_values3 = [float(cons.p_value(X_s3, y)) for y in data]
-        >>> #test_uniform(p_values3)
-        
+       
         """
-        
+        #X_s = full_rank(X_s) -- not sure what this function was
         k = min(X_s.shape)
         if not(self(y)):
             raise ValueError("y does not satisfies the constraints")
@@ -486,11 +455,6 @@ class constraints(base_constraints):
         distr = self.distr_norm(X_s, y, sigma)
         x = np.linalg.norm(np.dot(X_s.T, y))
         return distr.sf(x)
-
-
-
-
-
 
 
 class constraints_vecnorm(constraints):

@@ -12,7 +12,7 @@ addons:
 env:
     global:
         # Maximal dependencies
-        - DEPENDS="cython numpy scipy matplotlib"
+        - DEPENDS="cython numpy scipy matplotlib ipython"
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
