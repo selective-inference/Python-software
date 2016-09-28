@@ -1,8 +1,8 @@
 import numpy as np
 from initial_soln import selection
-from scipy.optimize import minimize
-from scipy.stats import norm as ndist
 from selection.algorithms.lasso import instance
+from scipy.stats import norm as ndist
+from sel_probability import selection_probability
 
 n=100
 p=10
@@ -59,10 +59,20 @@ class langevin_rw(object):
                 self.state[:] = candidate
                 break
 
-ini=betaE
-stepsize=np.true_divide(1,np.sqrt(p))
+ini = betaE
+stepsize = np.true_divide(1,np.sqrt(p))
+sel = selection_probability(V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube)
+
 def gradient_map(param):
-    sel = selection_probability(V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube)
     return sel.gradient(param, y, 1)
 
-langevin=langevin_rw(ini,gradient_map,stepsize)
+target=langevin_rw(ini,gradient_map,stepsize)
+langevin_steps = 10000
+burnin = 1000
+samples = []
+for i in range(langevin_steps):
+    target.next()
+    if (i>=burnin):
+        samples.append(target.state.copy())
+
+#print samples[1:10]

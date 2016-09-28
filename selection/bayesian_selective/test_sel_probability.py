@@ -9,8 +9,6 @@ n=100
 p=10
 s=3
 snr=5
-#data_instance = instance(n, p, s, snr)
-#X_1, y, true_beta, nonzero, sigma = data_instance.generate_response()
 
 X_1, y, true_beta, nonzero, sigma = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 

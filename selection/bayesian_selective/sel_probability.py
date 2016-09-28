@@ -4,17 +4,6 @@ from scipy.optimize import minimize
 from scipy.stats import norm as ndist
 from selection.algorithms.lasso import instance
 
-#####for debugging currently; need to change this part
-n=100
-p=20
-s=5
-snr=5
-data_instance = instance(n, p, s, snr)
-X, y, true_beta, nonzero, sigma = data_instance.generate_response()
-
-random_Z = np.random.standard_normal(p)
-lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
-
 #########################################################
 #####defining a class for computing selection probability: also returns selective_map and gradient of posterior
 class selection_probability(object):
