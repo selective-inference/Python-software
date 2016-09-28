@@ -1,9 +1,7 @@
 import numpy as np
-from scipy.stats import laplace, probplot, uniform
+from scipy.stats import laplace, uniform
 
 from selection.algorithms.lasso import instance
-import selection.sampling.randomized.api as randomized
-from matplotlib import pyplot as plt
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
@@ -60,7 +58,6 @@ def projection_cone(p, max_idx, max_sign):
 
     return _projection
 
-<<<<<<< HEAD
 def projection_cone_nosign(p, max_idx):
     """
 
@@ -196,7 +193,7 @@ def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, burning=2000, condition_o
     return pval
 
 
-if __name__ == "__main__":
+def main():
 
     P0 = []
     for i in range(100):
