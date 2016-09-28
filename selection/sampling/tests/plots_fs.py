@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy as np
-from test_fstep_langevin import test_fstep
-from test_kfstep import test_kfstep
+from .test_fstep_langevin import test_fstep
+from .test_kfstep import test_kfstep
 from matplotlib import pyplot as plt
 from scipy.stats import probplot, uniform
 import random
