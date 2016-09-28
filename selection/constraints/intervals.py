@@ -101,7 +101,7 @@ class intervals(object):
         >>> I = intervals.intersection(intervals((-1, 6)), \
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
-        >>> print ~I
+        >>> print(~I)
         [(-inf, 0), (1, 4), (6, inf)]
         """
 
@@ -132,8 +132,7 @@ class intervals(object):
     def __getitem__(self,index):
         return self._U[index]
 
-
-        
+       
     @staticmethod
     def union(*interv):
         """
@@ -151,7 +150,7 @@ class intervals(object):
         >>> I = intervals.union(intervals((-np.inf, 0)), \
                                 intervals((-1, 1)), \
                                 intervals((3, 6)))
-        >>> print I
+        >>> print(I)
         [(-inf, 1), (3, 6)]
         """
         ## Define the union of an empty family as an empty set
@@ -160,10 +159,7 @@ class intervals(object):
             return interv
 
         interv_merged_gen = merge(*interv)
-        try:
-            inf, sup = interv_merged_gen.next()
-        except StopIteration:
-            return intervals()
+
         for I in interv_merged_gen:
             a, b = I
             if a < sup:
@@ -175,7 +171,6 @@ class intervals(object):
         union._U.append((inf, sup))
 
         return union
-
 
     @staticmethod
     def intersection(*interv):
@@ -195,7 +190,7 @@ class intervals(object):
         >>> I = intervals.intersection(intervals((-1, 6)), \
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
-        >>> print I
+        >>> print(I)
         [(0, 1), (4, 6)]
         
         """
@@ -203,8 +198,6 @@ class intervals(object):
             I = intervals()
             return ~I
         return ~(intervals.union(*(~I for I in interv)))
-
-
 
     def __add__(self, offset):
         """
@@ -226,7 +219,7 @@ class intervals(object):
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
         >>> J = I+2
-        >>> print J
+        >>> print(J)
         [(2, 3), (6, 8)]
 
         """

@@ -18,6 +18,7 @@ def main():
 
     P0 = []
     for i in range(300):
+
         print("iteration", i)
         p0 = test_fstep(Langevin_steps=10000, burning=2000)
         P0.append(p0)

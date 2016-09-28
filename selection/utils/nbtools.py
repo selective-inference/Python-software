@@ -1,6 +1,7 @@
 '''
 Some functions used in publishing notebooks
 '''
+from __future__ import print_function
 
 import os, sys
 from glob import glob
@@ -32,11 +33,11 @@ def run_cell(kc, cell, collect_outputs=True):
 
     reply = msg['content']
     if reply['status'] == 'error':
-        print "\nFAILURE:"
-        print cell.input
-        print '-----'
-        print "raised:"
-        print '\n'.join(reply['traceback'])
+        print("\nFAILURE:")
+        print(cell.input)
+        print('-----')
+        print("raised:")
+        print('\n'.join(reply['traceback']))
 
     if collect_outputs:
         outputs = []
@@ -72,7 +73,7 @@ def run_cell(kc, cell, collect_outputs=True):
                 out.evalue = content['evalue']
                 out.traceback = content['traceback']
             else:
-                print "unhandled iopub msg:", msg_type
+                print("unhandled iopub msg:", msg_type)
 
             outputs.append(out)
         return outputs

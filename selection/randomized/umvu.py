@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from scipy.optimize import minimize
 from matplotlib import pyplot as plt
@@ -105,19 +106,18 @@ def MSE_three(snr=5, n=100, p=10, s=0):
     tau = 1.
     for i in range(ninstance):
         X, y, true_beta, nonzero, sigma = data_instance.generate_response()
-        # print "true param value", true_beta[0]
         random_Z = np.random.standard_normal(p)
         lam, epsilon, active, betaE, cube, initial_soln = selection(X, y, random_Z)
 
         if lam < 0:
-            print "no active covariates"
+            print("no active covariates")
         else:
             est = umvu(X, y, active, betaE, cube, epsilon, lam, sigma, tau)
             est.compute_unbiased_all()
             true_vec = true_beta[active]
 
-            print "true vector", true_vec
-            print "MLE", est.mle, "Unbiased", est.unbiased, "UMVU", est.umvu
+            print("true vector", true_vec)
+            print("MLE", est.mle, "Unbiased", est.unbiased, "UMVU", est.umvu)
             total_mse_mle += est.mse_mle(true_vec)
 
             mse = est.mse_unbiased(true_vec)
@@ -135,7 +135,7 @@ def test_estimation_three():
     mse_mle_seq, mse_unbiased_seq, mse_umvu_seq = [], [], []
 
     for i in range(snr_seq.shape[0]):
-            print "parameter value", snr_seq[i]
+            print("parameter value", snr_seq[i])
             mse = MSE_three(snr_seq[i])
             if mse is not None:
                 mse_mle, mse_unbiased, mse_umvu = mse
