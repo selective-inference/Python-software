@@ -1,7 +1,8 @@
 import numpy as np
-from initial_soln import instance, selection
+from initial_soln import selection
 from scipy.optimize import minimize
 from scipy.stats import norm as ndist
+from selection.algorithms.lasso import instance
 
 #####for debugging currently; need to change this part
 n=100
@@ -19,11 +20,13 @@ lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
 class selection_probability(object):
 
     # defining class variables
-    def __init__(self, V, B_E, gamma_E, sigma, tau, lam, y, betaE):
+    def __init__(self, V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube):
 
-        (self.V, self.B_E, self.gamma_E, self.sigma, self.tau, self.lam, self.y, self.betaE) = (V, B_E, gamma_E,
-                                                                                                sigma, tau, lam, y,
-                                                                                                betaE)
+        (self.V, self.B_E, self.gamma_E, self.sigma, self.tau, self.lam, self.y, self.betaE, self.cube) = (V, B_E,
+                                                                                                           gamma_E,
+                                                                                                           sigma, tau,
+                                                                                                           lam, y,betaE,
+                                                                                                           cube)
         self.sigma_sq = self.sigma ** 2
         self.tau_sq = self.tau ** 2
         self.signs = np.sign(self.betaE)
@@ -43,13 +46,17 @@ class selection_probability(object):
         self.Sigma = np.true_divide(np.identity(self.n), self.sigma_sq) + np.true_divide(
             np.dot(self.V, self.V.T), self.tau_sq)
         self.Sigma_inv = np.linalg.inv(self.Sigma)
-        self.Sigma_inter = np.identity(self.p) - np.true_divide(np.dot(np.dot(self.V.T, self.Sigma_inv), self.V),
-                                                                self.tau_sq ** 2)
+        self.Sigma_inter = np.true_divide(np.identity(self.p), self.tau_sq) - np.true_divide(np.dot(np.dot(
+            self.V.T, self.Sigma_inv), self.V), self.tau_sq ** 2)
+        self.constant=np.true_divide(np.dot(np.dot(self.V_E.T, self.Sigma_inv), self.V_E), self.sigma_sq**2)
         self.mat_inter = -np.dot(np.true_divide(np.dot(self.B_E.T, self.V.T), self.tau_sq), self.Sigma_inv)
-
-    # in case of Lasso, the below should return the mean of generative selected model
-    def mean_generative(self, param):
-        return -np.dot(self.V_E, param)
+        self.Sigma_noise = np.dot(np.dot(self.B_E.T, self.Sigma_inter), self.B_E)
+        self.vec_inter = np.true_divide(np.dot(self.B_E.T, self.gamma_E), self.tau_sq)
+        self.mu_noise = np.dot(self.mat_inter, - np.true_divide(np.dot(self.V, self.gamma_E),
+                                                                self.tau_sq)) - self.vec_inter
+        self.mu_coef = np.true_divide(-self.lam * np.dot(self.C_E, self.signs), self.tau_sq)
+        self.Sigma_coef = np.true_divide(np.dot(self.C_E, self.C_E) + np.dot(self.D_E, self.D_E.T), self.tau_sq)
+        self.mu_data = - np.true_divide(np.dot(self.V, self.gamma_E),self.tau_sq)
 
     # defining log prior to be the Gaussian prior
     def log_prior(self, param, gamma):
@@ -85,75 +92,72 @@ class selection_probability(object):
                 return np.log(1 + np.true_divide(1, 1 - z)) + np.log(1 + np.true_divide(1, 1 + z))
             return 2 * np.log(1 + 10 ** 9)
 
+        #defining objective function in p dimensions to be optimized when p<n+|E|
         def objective_noise(z):
 
             z_2 = z[:self.nactive]
             z_3 = z[self.nactive:]
-            Sigma_noise = np.dot(np.dot(self.B_E.T, self.Sigma_inter), self.B_E)
-            vec_inter = np.true_divide(np.dot(self.B_E.T, self.gamma_E), self.tau_sq)
-            mu_noise = np.dot(self.mat_inter,
-                              np.true_divide(self.mean_generative(param), self.sigma_sq) - np.true_divide
-                              (np.dot(self.V, self.gamma_E), self.tau_sq)) - vec_inter
-            return np.true_divide(np.dot(np.dot(z.T, Sigma_noise), z), 2) + barrier_sel(z_2) \
-                   + barrier_subgrad(z_3) - np.dot(z.T, mu_noise)
+            mu_noise_mod = self.mu_noise.copy()
+            mu_noise_mod+=np.dot(self.mat_inter,np.true_divide(-np.dot(self.V_E, param), self.sigma_sq))
+            return np.true_divide(np.dot(np.dot(z.T, self.Sigma_noise), z), 2)+barrier_sel(
+                z_2)+barrier_subgrad(z_3)-np.dot(z.T, mu_noise_mod)
 
+        #defining objective in 3 steps when p>n+|E|, first optimize over u_{-E}
         # defining the objective for subgradient coordinate wise
         def obj_subgrad(z, mu_coord):
             return -(z * mu_coord) + np.true_divide(z ** 2, 2 * self.tau_sq) + barrier_subgrad_coord(z)
 
         def value_subgrad_coordinate(z_1, z_2):
-            initial_subgrad = np.random.uniform(-1, 1, self.ninactive)
             mu_subgrad = np.true_divide(-np.dot(self.V_E_comp.T, z_1) - np.dot(self.D_E.T, z_2), self.tau_sq)
-            res_seq = []
+            res_seq=[]
             for i in range(self.ninactive):
-                mu_coord = mu_subgrad[i]
-                res = minimize(obj_subgrad, x0=initial_subgrad[i], args=mu_coord)
+                mu_coord=mu_subgrad[i]
+                res=minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
                 res_seq.append(-res.fun)
-            return (np.sum(res_seq))
+            return(np.sum(res_seq))
 
-        def objective_coef(z_2, z_1):
-            mu_coef = np.true_divide(
-                -self.lam * np.dot(self.C_E, self.signs) - np.dot(np.dot(self.C_E, self.V_E.T) + np.dot(
-                    self.D_E, self.V_E_comp.T), z_1), self.tau_sq)
-            Sigma_coef = np.true_divide(np.dot(self.C_E, self.C_E) + np.dot(self.D_E, self.D_E.T), self.tau_sq)
-            return - np.dot(z_2.T,
-                            mu_coef) + np.true_divide(np.dot(np.dot(z_2.T, Sigma_coef),
-                                                             z_2), 2) + barrier_sel(z_2) - value_subgrad_coordinate(z_1,
-                                                                                                                    z_2)
+        #defining objective over z_2
+        def objective_coef(z_2,z_1):
+            mu_coef_mod=self.mu_coef.copy()- np.true_divide(np.dot(np.dot(
+                self.C_E, self.V_E.T) + np.dot(self.D_E, self.V_E_comp.T), z_1),self.tau_sq)
+            return - np.dot(z_2.T,mu_coef_mod) + np.true_divide(np.dot(np.dot(
+                z_2.T,self.Sigma_coef),z_2),2)+barrier_sel(z_2)-value_subgrad_coordinate(z_1, z_2)
 
+        #defining objectiv over z_1
         def objective_data(z_1):
+            mu_data_mod = self.mu_data.copy()+ np.true_divide(-np.dot(self.V_E, param), self.sigma_sq)
             value_coef = minimize(objective_coef, x0=self.betaE, args=z_1)
-            mu_data = np.true_divide(self.mean_generative(param), self.sigma_sq) - np.true_divide(np.dot
-                                                                                                  (self.V, self.gamma_E)
-                                                                                                  , self.tau_sq)
-            return -np.dot(z_1.T, mu_data) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1), 2) + value_coef.fun
+            return -np.dot(z_1.T, mu_data_mod) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1),
+                                                                2) + value_coef.fun
 
         if self.p < self.n + self.nactive:
             initial_noise = np.zeros(self.p)
             initial_noise[:self.nactive] = self.betaE
-            initial_noise[self.nactive:] = np.random.uniform(-1, 1, self.ninactive)
+            initial_noise[self.nactive:] = self.cube
             res = minimize(objective_noise, x0=initial_noise)
-            return -res.fun, res.x
+            const_param = np.dot(np.dot(param.T,self.constant),param)
+            return -res.fun+const_param, res.x
         else:
-            initial_data = np.zeros(self.n)
+            initial_data = self.y
             res = minimize(objective_data, x0=initial_data)
             return -res.fun, res.x
 
     def selective_map(self,y,prior_sd):
         def objective(param,y,prior_sd):
-            return -np.true_divide(np.dot(y.T,self.mean_generative(param)),
+            return -np.true_divide(np.dot(y.T,-np.dot(self.V_E, param)),
                               self.sigma_sq)-self.log_prior(param,prior_sd)+self.optimization(param)[0]
-        map_prob=minimize(objective,x0=np.zeros(self.nactive),args=(y,prior_sd))
+        map_prob=minimize(objective,x0=self.betaE,args=(y,prior_sd))
         return map_prob.x
 
-    def gradient(self,y,param,prior_sd):
+    def gradient(self,param,y,prior_sd):
         if self.p< self.n+self.nactive:
+            func_param=np.dot(self.constant,param)
             grad_sel_prob= np.dot(np.dot(self.mat_inter, -np.true_divide(self.V_E, self.sigma_sq)).T,
-                                  self.optimization(param)[1])
+                                  self.optimization(param)[1])+func_param
         else:
             grad_sel_prob= np.dot(-np.true_divide(self.V_E.T, self.sigma_sq),self.optimization(param)[1])
 
-        return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)+grad_sel_prob
+        return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)-grad_sel_prob
 
 
 

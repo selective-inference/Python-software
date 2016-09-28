@@ -32,11 +32,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="initial_soln.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="initial_soln.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bayesian_selective/initial_soln.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="401">
-              <caret line="65" column="0" selection-start-line="65" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+            <state relative-caret-position="180">
+              <caret line="28" column="58" selection-start-line="0" selection-start-column="0" selection-end-line="28" selection-end-column="58" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -56,11 +56,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="sel_probability.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="sel_probability.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/bayesian_selective/sel_probability.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="870">
-              <caret line="58" column="0" selection-start-line="58" selection-start-column="0" selection-end-line="58" selection-end-column="0" />
+            <state relative-caret-position="360">
+              <caret line="162" column="0" selection-start-line="162" selection-start-column="0" selection-end-line="162" selection-end-column="0" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -71,8 +71,8 @@
       <file leaf-file-name="test_sel_probability.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bayesian_selective/test_sel_probability.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="45">
-              <caret line="3" column="47" selection-start-line="3" selection-start-column="47" selection-end-line="3" selection-end-column="47" />
+            <state relative-caret-position="-1680">
+              <caret line="9" column="3" selection-start-line="9" selection-start-column="3" selection-end-line="9" selection-end-column="3" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
@@ -102,9 +102,9 @@
         <option value="$PROJECT_DIR$/bayesian_selective/__init__.py" />
         <option value="$PROJECT_DIR$/bayesian_selective/api.py" />
         <option value="$PROJECT_DIR$/bayesian_selective/selection_probability" />
-        <option value="$PROJECT_DIR$/bayesian_selective/sel_probability.py" />
-        <option value="$PROJECT_DIR$/bayesian_selective/test_sel_probability.py" />
         <option value="$PROJECT_DIR$/bayesian_selective/initial_soln.py" />
+        <option value="$PROJECT_DIR$/bayesian_selective/test_sel_probability.py" />
+        <option value="$PROJECT_DIR$/bayesian_selective/sel_probability.py" />
       </list>
     </option>
   </component>
@@ -706,16 +706,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bayesian_selective/test_sel_probability.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="45">
-          <caret line="3" column="47" selection-start-line="3" selection-start-column="47" selection-end-line="3" selection-end-column="47" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/bayesian_selective/selection_probability">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="390">
@@ -726,20 +716,30 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bayesian_selective/sel_probability.py">
+    <entry file="file://$PROJECT_DIR$/bayesian_selective/initial_soln.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="870">
-          <caret line="58" column="0" selection-start-line="58" selection-start-column="0" selection-end-line="58" selection-end-column="0" />
+        <state relative-caret-position="180">
+          <caret line="28" column="58" selection-start-line="0" selection-start-column="0" selection-end-line="28" selection-end-column="58" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bayesian_selective/initial_soln.py">
+    <entry file="file://$PROJECT_DIR$/bayesian_selective/test_sel_probability.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="401">
-          <caret line="65" column="0" selection-start-line="65" selection-start-column="0" selection-end-line="65" selection-end-column="0" />
+        <state relative-caret-position="-1680">
+          <caret line="9" column="3" selection-start-line="9" selection-start-column="3" selection-end-line="9" selection-end-column="3" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/bayesian_selective/sel_probability.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="360">
+          <caret line="162" column="0" selection-start-line="162" selection-start-column="0" selection-end-line="162" selection-end-column="0" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
           </folding>
