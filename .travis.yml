@@ -13,6 +13,7 @@ before_install:
   - source travis-tools/utils.sh
   - travis_before_install
   # Install intervals -- hacky!!
+  - pip install rpy2
   - python -c "import rpy2.robjects as rpy; rpy.r('''install.packages('intervals', repos='http://cload.r-project.org')''')"
   - R CMD INSTALL selectiveInference
   - cd ..
@@ -25,7 +26,6 @@ before_install:
   - pip install -r requirements.txt
   - pip install -e .
   - cd ..
-  - pip install rpy2
 install:
 install:
   # Install selection
