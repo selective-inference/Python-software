@@ -13,7 +13,7 @@ for $\beta \in \mathbb{R}^{n \times p}$.
 """
 
 import numpy as np
-from .pvalue import general_pvalue
+from ..distributions.pvalue import general_pvalue
 
 def pvalue(X, sigma=1, nsim=5000):
     n, p = X.shape

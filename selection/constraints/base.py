@@ -3,7 +3,7 @@ import mpmath as mp
 
 from abc import ABCMeta, abstractmethod
 
-from intervals import intervals
+from .intervals import intervals
 
 from ..truncated.api import truncated_chi, truncated_chi2
 from scipy.stats import norm
