@@ -8,7 +8,7 @@ from .intervals import intervals
 from ..truncated.api import truncated_chi, truncated_chi2
 from scipy.stats import norm
 
-import quadratic
+from .quadratic import quad_constraints
 
 class constraint(object):
     ## Means that constraint is a Meta Class
@@ -74,7 +74,7 @@ class constraint(object):
                                + np.linalg.norm(nu)**2 * z_norm) \
                     ])
 
-        cons_eta = quadratic.quad_constraints(q, lin, off)
+        cons_eta = quad_constraints(q, lin, off)
 
         cons_inter = cons_op.intersection(self, cons_eta)
 
@@ -152,11 +152,11 @@ class cons_op(constraint):
             raise TypeError("Not a constraint : "+ repr(t))
 
         cons = [c for c in cons if not isinstance(c, noConstraint)]
-        if all(isinstance(c, quadratic.quad_constraints) for c in cons):
+        if all(isinstance(c, quad_constraints) for c in cons):
             q = np.vstack([c.quad_part for c in cons])
             l = np.vstack([c.lin_part  for c in cons])
             o = np.hstack([c.offset    for c in cons])
-            intersection = quadratic.quad_constraints(q, l, o)
+            intersection = quad_constraints(q, l, o)
             return intersection
         intersection = cons_op()
         intersection._cons_list = list(cons)
