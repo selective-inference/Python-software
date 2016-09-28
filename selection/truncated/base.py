@@ -101,7 +101,7 @@ class truncated(object):
 
 
 
-    def _quantile_notTruncated(self, q, tol=1.e-6):
+    def _quantile_notTruncated(self, q, dps, tol=1.e-6):
         """
         Compute the quantile for the non truncated distribution
 
@@ -125,7 +125,8 @@ class truncated(object):
         warnings.warn("""Deprecated to use the general quantile_notTruncated 
         method : it should be overrriden""", DeprecationWarning)
 
-        dps = self._dps
+        if dps is None:
+            dps = self._dps
         f = lambda x: cdf_notTruncated(-np.inf, x, dps)
 
         lb, ub = -1.e8, 1.e8

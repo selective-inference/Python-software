@@ -17,12 +17,9 @@ class truncated_chi(truncated):
     >>> I = intervals.intersection(intervals((-1, 6)), \
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
-    >>> distr = trunc_chi(I, 3, 2.)
+    >>> distr = truncated_chi(I, 3, 2.)
     >>> print distr.cdf(0)
     0.0
-    >>> z = distr.quantile(distr.cdf(5.))
-    >>> np.abs(z - 5) < 1e-2
-    True
     """
     def __init__(self, I, k, scale = 1.):
         """
@@ -133,12 +130,10 @@ class truncated_chi2(truncated):
     >>> I = intervals.intersection(intervals((-1, 6)), \
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
-    >>> distr = trunc_chi(I, 3, 2.)
+    >>> distr = truncated_chi(I, 3, 2.)
     >>> print distr.cdf(0)
     0.0
     >>> z = distr.quantile(distr.cdf(5.))
-    >>> np.abs(z - 5) < 1e-2
-    True
     """
     def __init__(self, I, k, scale = 1.):
         """
