@@ -154,21 +154,24 @@ class intervals(object):
         [(-inf, 1), (3, 6)]
         """
         ## Define the union of an empty family as an empty set
+
         union = intervals()
         if len(interv) == 0:
             return interv
 
         interv_merged_gen = merge(*interv)
 
-        for I in interv_merged_gen:
-            a, b = I
-            if a < sup:
-                sup = max(sup, b)
+        for new_a, new_b in interv_merged_gen:
+            if old_b is not None and new_a < old_b: # check to see if union of (old_a, old_b) and 
+                                                    # (new_a, new_b) is (old_a, new_b) 
+                old_b = max(old_b, new_b)
+            elif old_b is None: # first interval
+                old_a, old_b = new_a, new_b
             else:
-                union._U.append((inf, sup))
-                inf, sup = a, b
+                union._U.append((old_a, old_b))
+                old_a, old_b = new_a, new_b
 
-        union._U.append((inf, sup))
+        union._U.append((old_a, old_b))
 
         return union
 
