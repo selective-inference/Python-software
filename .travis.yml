@@ -1,4 +1,4 @@
-language: python
+language: r
 dist: trusty
 python:
   - 2.7
