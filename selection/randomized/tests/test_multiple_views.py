@@ -3,11 +3,14 @@ import numpy as np
 import regreg.api as rr
 
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
-from selection.randomized.tests import logistic_instance, wait_for_return_value
+from selection.tests.instance import logistic_instance
+from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-#@wait_for_return_value
-def test_multiple_views():
+@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
+@set_seed_for_test()
+@wait_for_return_value()
+def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -68,7 +71,11 @@ def test_multiple_views():
 
         test_stat = lambda x: np.linalg.norm(x)
         test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
-        pval = target_sampler.hypothesis_test(test_stat_boot, np.linalg.norm(inactive_observed), alternative='twosided')
+        pval = target_sampler.hypothesis_test(test_stat_boot, 
+                                              np.linalg.norm(inactive_observed), 
+                                              alternative='twosided',
+                                              ndraw=ndraw,
+                                              burnin=burnin)
 
 
         # testing the global null
@@ -81,16 +88,19 @@ def test_multiple_views():
         target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
         test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
         observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
-        pval_gn = target_sampler_gn.hypothesis_test(test_stat_boot_gn, observed_test_value, alternative='twosided')
-
-        #test_stat_gn = lambda x: np.linalg.norm(x)
-        #pval_gn = target_sampler_gn.hypothesis_test(test_stat_gn, target_observed_gn,
-        #                                                 alternative='twosided')
+        pval_gn = target_sampler_gn.hypothesis_test(test_stat_boot_gn, 
+                                                    observed_test_value, 
+                                                    alternative='twosided',
+                                                    ndraw=ndraw,
+                                                    burnin=burnin)
 
         return pval, pval_gn
 
 
-def test_multiple_views_individual_coeff():
+@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
+@set_seed_for_test()
+@wait_for_return_value()
+def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -143,21 +153,24 @@ def test_multiple_views_individual_coeff():
 
             test_stat_boot = lambda x: np.inner(target_alpha, x)
 
-            pval = target_sampler.hypothesis_test(test_stat_boot, individual_observed-true_beta[j], alternative='twosided')
+            pval = target_sampler.hypothesis_test(test_stat_boot, 
+                                                  individual_observed-true_beta[j], 
+                                                  alternative='twosided',
+                                                  ndraw=ndraw,
+                                                  burnin=burnin)
             pvalues.append(pval)
 
 
         return pvalues
 
-
-
-
-@wait_for_return_value
-def test_parametric_covariance():
+@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
+@set_seed_for_test()
+@wait_for_return_value()
+def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -201,17 +214,22 @@ def test_parametric_covariance():
         target_sampler = mv.setup_target((target, linear_func), target_observed)
 
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat, target_observed, alternative='greater')
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(target_observed), 
+                                              alternative='greater',
+                                              ndraw=ndraw,
+                                              burnin=burnin)
 
         return pval
 
 
-import matplotlib.pyplot as plt
-from scipy.stats import probplot, uniform
-import statsmodels.api as sm
 
 
 def make_a_plot():
+
+    import matplotlib.pyplot as plt
+    from scipy.stats import probplot, uniform
+    import statsmodels.api as sm
 
     np.random.seed(2)
     fig = plt.figure()
@@ -315,6 +333,6 @@ def make_a_plot_individual_coeff():
 
 
 
-#make_a_plot()
-
-make_a_plot_individual_coeff()
+if __name__ == "__main__":
+    #make_a_plot()
+    make_a_plot_individual_coeff()

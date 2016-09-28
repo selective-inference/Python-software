@@ -95,8 +95,6 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_arg
     quadratic : `regreg.identity_quadratic`
         A quadratic term added to objective function.
     """
-
-    #X = rr.astransform(X)
     n, p = X.shape
     if n > p:
         return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)
@@ -137,8 +135,6 @@ def solve_sqrt_lasso_fat(X, Y, weights=None, initial=None, quadratic=None, solve
         A quadratic term added to objective function.
 
     """
-    #X = rr.astransform(X)
-    #n, p = X.output_shape[0], X.input_shape[0]
     n, p = X.shape
     if weights is None:
         lam = choose_lambda(X)
@@ -262,7 +258,19 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, so
     problem.coefs[-1] = np.linalg.norm(Y)
     if initial is not None:
         problem.coefs[:-1] = initial
-    soln = problem.solve(quadratic, **solve_args)
+
+    if quadratic is not None:
+        collapsed = quadratic.collapsed()
+        new_linear_term = np.zeros(p+1)
+        new_linear_term[:p] = collapsed.linear_term
+        new_quadratic = rr.identity_quadratic(collapsed.coef, 
+                                              0., 
+                                              new_linear_term, 
+                                              collapsed.constant_term)
+    else:
+        new_quadratic = None
+
+    soln = problem.solve(new_quadratic, **solve_args)
     _loss = sqlasso_objective(X, Y)
     return soln[:-1], _loss
 

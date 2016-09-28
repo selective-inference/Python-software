@@ -50,7 +50,7 @@ class M_estimator(object):
 
         if not self._randomized:
             self._randomZ = self.randomization.sample()
-            self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
+            self._random_term = rr.identity_quadratic(self.epsilon, 0, -self._randomZ, 0)
 
         # set the _randomized bit
 

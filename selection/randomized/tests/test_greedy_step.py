@@ -12,11 +12,15 @@ from selection.randomized.api import (randomization,
 from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
+from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 
-from . import wait_for_return_value, logistic_instance
+from selection.tests.instance import logistic_instance
 
-@wait_for_return_value
-def test_overall_null_two_views():
+
+@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
+@set_seed_for_test()
+@wait_for_return_value()
+def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)
@@ -117,12 +121,10 @@ def test_overall_null_two_views():
                                              .5 / (2*p + 1))
 
 
-        Langevin_steps = 10000
-        burning = 2000
         samples = []
-        for i in range(Langevin_steps):
+        for i in range(ndraw + burnin):
             target_langevin.next()
-            if (i>=burning):
+            if i >= burnin:
                 samples.append(target_langevin.state[target_slice].copy())
                 
         test_stat = lambda x: np.linalg.norm(x)

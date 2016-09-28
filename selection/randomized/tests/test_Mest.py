@@ -58,8 +58,8 @@ def test_overall_null_two_views():
         # is it enough only to bootstrap the inactive ones?
         # seems so...
 
-        A1, b1 = M_est1.condition(cov1[I], target_cov[I][:,I], target_observed[I])
-        A2, b2 = M_est2.condition(cov2[I], target_cov[I][:,I], target_observed[I])
+        A1, b1 = M_est1.linear_decomposition(cov1[I], target_cov[I][:,I], target_observed[I])
+        A2, b2 = M_est2.linear_decomposition(cov2[I], target_cov[I][:,I], target_observed[I])
 
         target_inv_cov = np.linalg.inv(target_cov[I][:,I])
 
@@ -175,7 +175,7 @@ def test_one_inactive_coordinate_handcoded(seed=None):
 
         # take the first inactive one
         I = I[:1]
-        A1, b1 = M_est1.condition(cov1[I], target_cov[I][:,I], target_observed[I])
+        A1, b1 = M_est1.linear_decomposition(cov1[I], target_cov[I][:,I], target_observed[I])
 
         print I, 'I', target_observed[I]
         target_inv_cov = np.linalg.inv(target_cov[I][:,I])

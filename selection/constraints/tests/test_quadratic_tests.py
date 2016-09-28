@@ -2,6 +2,7 @@ import numpy as np
 from selection.distributions import chisq 
 from scipy.stats import chi
 import nose.tools as nt
+import numpy.testing.decorators as dec
 
 from selection.tests.decorators import set_sampling_params_iftrue
 import selection.constraints.affine as AC
@@ -9,13 +10,17 @@ import selection.constraints.affine as AC
 
 # we use R's chisq
 
-from rpy2.robjects.packages import importr
-import rpy2.robjects as ro
-from rpy2.robjects.numpy2ri import numpy2ri
-ro.conversion.py2ri = numpy2ri
-ro.numpy2ri.activate()
+try:
+    from rpy2.robjects.packages import importr
+    import rpy2.robjects as ro
+    from rpy2.robjects.numpy2ri import numpy2ri
+    ro.conversion.py2ri = numpy2ri
+    ro.numpy2ri.activate()
+    R_available = True
+except ImportError:
+    R_available = False
 
-@set_sampling_params_iftrue(True, ndraw=5000)
+@set_sampling_params_iftrue(True, ndraw=20000)
 def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
 
     n, p = 4, 10
@@ -33,18 +38,11 @@ def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
     for i in range(Z.shape[0]/10):
         P.append(chisq.quadratic_test(Z[10*i], S, con))
 
-#     no plots in the test!
-#     ecdf = sm.distributions.ECDF(P)
-
-#     plt.clf()
-#     x = np.linspace(0,1,101)
-#     plt.plot(x, ecdf(x), c='red')
-#     plt.plot([0,1],[0,1], c='blue', linewidth=2)
-
     nt.assert_true(np.fabs(np.mean(P)-0.5) < 0.03)
     nt.assert_true(np.fabs(np.std(P)-1/np.sqrt(12)) < 0.03)
     
 
+@dec.skipif(not R_available, "needs rpy2")
 @set_sampling_params_iftrue(True)
 def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
 
@@ -90,13 +88,6 @@ def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
     P = P[P > 0]
     P = P[P < 1]
 
-#     no plots in the tests!
-#     ecdf = sm.distributions.ECDF(P)
-
-#     plt.clf()
-#     x = np.linspace(0,1,101)
-#     plt.plot(x, ecdf(x), c='red')
-#     plt.plot([0,1],[0,1], c='blue', linewidth=2)
 
 @set_sampling_params_iftrue(True)
 def main(nsim=1000, burnin=None, ndraw=None):
