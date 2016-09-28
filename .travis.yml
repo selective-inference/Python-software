@@ -17,6 +17,7 @@ before_install:
   - source travis-tools/utils.sh
   - travis_before_install
   # Install regreg 
+  - python -c "import numpy; print(numpy.version.version)"
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
   - pip install -r requirements.txt
