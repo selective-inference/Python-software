@@ -1,9 +1,8 @@
+from __future__ import print_function
 import numpy as np
-from scipy.stats import laplace, probplot, uniform
+from scipy.stats import laplace, uniform
 
-from selection.algorithms.lasso import instance
-import selection.sampling.randomized.api as randomized
-from matplotlib import pyplot as plt
+from selection.tests.instance import gaussian_instance
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
@@ -60,7 +59,6 @@ def projection_cone(p, max_idx, max_sign):
 
     return _projection
 
-<<<<<<< HEAD
 def projection_cone_nosign(p, max_idx):
     """
 
@@ -123,7 +121,7 @@ def projection_cone_nosign(p, max_idx):
 
 def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, burning=2000, condition_on_sign=True):
 
-    X, y, _, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
+    X, y, _, nonzero, sigma = gaussian_instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
     epsilon = 0.
     randomization = laplace(loc=0, scale=1.)
 
@@ -192,21 +190,21 @@ def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, burning=2000, condition_o
 
     #stop
 
-    print 'pvalue:', pval
+    print('pvalue:', pval)
     return pval
 
 
-if __name__ == "__main__":
+def main():
 
     P0 = []
     for i in range(100):
-        print "iteration", i
+        print("iteration", i)
         #print form_Ab(1,4)
         pval = test_fstep(condition_on_sign=True)
 
         P0.append(pval)
 
-    print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
+    print("done! mean: ", np.mean(P0), "std: ", np.std(P0))
 
     import statsmodels.api as sm
     U = np.linspace(0, 1, 101)

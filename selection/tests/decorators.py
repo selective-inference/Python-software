@@ -1,6 +1,7 @@
 from copy import copy
 import collections
 import numpy as np
+import nose.tools
 
 def set_seed_for_test(seed=10):
     """
@@ -123,3 +124,22 @@ def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
 
     return set_params_decorator
 
+def wait_for_return_value(max_tries=50):
+    """
+    Decorate a test to make it wait until the test
+    returns something.
+    """
+
+    def wait_for_decorator(test):
+        def _new_test(*args, **kwargs):
+            count = 0
+            while True:
+                v = test(*args, **kwargs)
+                if v is not None:
+                    return count, v
+                count += 1
+                if count >= max_tries:
+                    raise ValueError('test has not returned anything after %d tries' % max_tries)
+        return nose.tools.make_decorator(test)(_new_test)
+
+    return wait_for_decorator

@@ -1,6 +1,7 @@
 """
 Projected Langevin sampler of `http://arxiv.org/abs/1507.02564`_
 """
+from __future__ import print_function
 
 import numpy as np
 from scipy.stats import norm as ndist
@@ -34,7 +35,7 @@ class projected_langevin(object):
                         + self._noise.rvs(self._shape) * self._sqrt_step)
             candidate = self.projection_map(proj_arg)
             if not np.all(np.isfinite(self.gradient_map(candidate))):
-                print candidate, self._sqrt_step
+                print(candidate, self._sqrt_step)
                 self._sqrt_step *= 0.8
             else:
                 self.state[:] = candidate

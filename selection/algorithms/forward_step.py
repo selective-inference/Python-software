@@ -212,6 +212,8 @@ class forward_step(object):
         if compute_pval:
             return pval
 
+    __next__ = next # Python3 compatibility
+
     def constraints(self, step=np.inf, identify_last_variable=True):
         default_step = len(self.variables)
         if default_step > 0 and not identify_last_variable:

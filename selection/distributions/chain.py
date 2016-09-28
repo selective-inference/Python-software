@@ -47,6 +47,7 @@ class markov_chain(object):
     def next(self):
         return self.forward_step()
 
+    __next__ = next # Python3 compatibility
 
 class reversible_markov_chain(markov_chain):
 

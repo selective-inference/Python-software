@@ -213,10 +213,10 @@ def kfold_CV(Y,
 
     n, p = X.shape
 
-    kfold = cross_validation.KFold(n=n, 
-                                   n_folds=K, 
-                                   shuffle=shuffle,
-                                   random_state=random_state)
+    kfold = sklearn.cross_validation.KFold(n=n, 
+                                           n_folds=K, 
+                                           shuffle=shuffle,
+                                           random_state=random_state)
     error = {}
 
     for train_index, test_index in kfold:
@@ -648,6 +648,8 @@ class lasso_tuned(object):
         # move Y_sample
         self.step_sample()
         
+    __next__ = next # Python3 compatibility
+
     def pvalue(self, which_var,
                ndraw=2000,
                burnin=500):

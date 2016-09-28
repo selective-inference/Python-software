@@ -1,8 +1,7 @@
 from __future__ import print_function
 import numpy as np
-from statsmodels.distributions import ECDF
 
-from selection.algorithms.lasso import instance as data_instance
+from selection.tests.instance import gaussian_instance 
 from selection.algorithms.cross_valid import lasso_tuned, lasso_tuned_conditional 
 from selection.distributions.discrete_family import discrete_family
 
@@ -15,7 +14,7 @@ def test_CV(ndraw=500, sigma_known=True,
     # generate a null and alternative pvalue
     # from a particular model
 
-    X, Y, beta, active, sigma = data_instance(n=500, p=100, s=s, rho=rho, snr=snr)
+    X, Y, beta, active, sigma = gaussian_instance(n=500, p=100, s=s, rho=rho, snr=snr)
     if sigma_known:
         sigma = sigma
     else:
@@ -56,6 +55,7 @@ def test_CV(ndraw=500, sigma_known=True,
 
 def plot_fig():
 
+    from statsmodels.distributions import ECDF
     import matplotlib.pyplot as plt
     f = plt.figure(num=1)
 

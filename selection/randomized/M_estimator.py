@@ -43,6 +43,19 @@ class M_estimator(object):
                              randomization,
                              solve_args)
          
+        self._solved = False
+        self._randomized = False
+
+    def randomize(self):
+
+        if not self._randomized:
+            self._randomZ = self.randomization.sample()
+            self._random_term = rr.identity_quadratic(self.epsilon, 0, -self._randomZ, 0)
+
+        # set the _randomized bit
+
+        self._randomized = True
+
     def solve(self):
 
         (loss,
@@ -58,8 +71,8 @@ class M_estimator(object):
         # initial solution
 
         problem = rr.simple_problem(loss, penalty)
-        self._randomZ = self.randomization.sample()
-        self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
+
+        self.randomize()
         self.initial_soln = problem.solve(self._random_term, **solve_args)
 
         # find the active groups and their direction vectors
@@ -97,7 +110,8 @@ class M_estimator(object):
         self.active_groups = np.array(active_groups, np.bool)
         self.unpenalized_groups = np.array(unpenalized_groups, np.bool)
 
-        self.selection_variable = (self.active_groups, self.active_directions)
+        self.selection_variable = {'groups':self.active_groups, 
+                                   'directions':self.active_directions}
 
         # initial state for opt variables
 
@@ -108,8 +122,13 @@ class M_estimator(object):
                                                   initial_unpenalized,
                                                   initial_subgrad], axis=0)
 
+        # set the _solved bit
 
-    def setup_sampler(self, solve_args={'min_its':50, 'tol':1.e-10}):
+        self._solved = True
+
+        self._solved = True
+
+    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
 
         """
         Should return a bootstrap_score
@@ -135,8 +154,12 @@ class M_estimator(object):
                                self.active_groups,
                                self.active_directions)
 
+        # scaling should be chosen to be Lipschitz constant for gradient of Gaussian part
+
         # we are implicitly assuming that
         # loss is a pairs model
+
+        _sqrt_scaling = np.sqrt(scaling)
 
         _beta_unpenalized = restricted_Mest(loss, overall, solve_args=solve_args)
 
@@ -147,8 +170,8 @@ class M_estimator(object):
 
         # observed state for score
 
-        self.observed_score_state = np.hstack([_beta_unpenalized,
-                                               -loss.smooth_objective(beta_full, 'grad')[inactive]])
+        self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
+                                               -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
         # form linear part
 
@@ -166,33 +189,43 @@ class M_estimator(object):
 
         Mest_slice = slice(0, overall.sum())
         _Mest_hessian = _hessian[:,overall]
-        _score_linear_term[:,Mest_slice] = -_Mest_hessian
+        _score_linear_term[:,Mest_slice] = -_Mest_hessian / _sqrt_scaling
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
         null_idx = range(overall.sum(), p)
         inactive_idx = np.nonzero(inactive)[0]
         for _i, _n in zip(inactive_idx, null_idx):
-            _score_linear_term[_i,_n] = -1.
+            _score_linear_term[_i,_n] = -_sqrt_scaling
 
         # c_E piece 
 
         scaling_slice = slice(0, active_groups.sum())
-        _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
-        _opt_linear_term[:,scaling_slice] = _opt_hessian
+        if len(active_directions)==0:
+            _opt_hessian=0
+        else:
+            _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
+        _opt_linear_term[:,scaling_slice] = _opt_hessian / _sqrt_scaling
+
+        self.observed_opt_state[scaling_slice] *= _sqrt_scaling
 
         # beta_U piece
 
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions)
+            _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
+
+        self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
 
         # subgrad piece
+
         subgrad_idx = range(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         subgrad_slice = slice(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         for _i, _s in zip(inactive_idx, subgrad_idx):
-            _opt_linear_term[_i,_s] = 1.
+            _opt_linear_term[_i,_s] = _sqrt_scaling
+
+        self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
 
         # form affine part
 
@@ -208,7 +241,8 @@ class M_estimator(object):
         # two transforms that encode score and optimization
         # variable roles 
 
-        # later, conditioning will modify `score_transform`
+        # later, we will modify `score_transform`
+        # in `linear_decomposition`
 
         self.opt_transform = (_opt_linear_term, _opt_affine_term)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
@@ -219,15 +253,16 @@ class M_estimator(object):
 
         self.scaling_slice = scaling_slice
 
+        # weights are scaled here because the linear terms scales them by scaling
+
         new_groups = penalty.groups[inactive]
-        new_weights = dict([(g,penalty.weights[g]) for g in penalty.weights.keys() if g in np.unique(new_groups)])
+        new_weights = dict([(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
 
         # we form a dual group lasso object
         # to do the projection
 
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
-
 
     def projection(self, opt_state):
         """
@@ -253,16 +288,28 @@ class M_estimator(object):
         if not hasattr(self, "opt_transform"):
             raise ValueError('setup_sampler should be called before using this function')
 
-        # omega
+        # reconstruction of randoimzation omega
+
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
         data_piece = data_linear.dot(data_state) + data_offset
         opt_piece = opt_linear.dot(opt_state) + opt_offset
-        full_state = (data_piece + opt_piece)
+
+        # value of the randomization omega
+
+        full_state = (data_piece + opt_piece) 
+
+        # gradient of negative log density of randomization at omega
+
         randomization_derivative = self.randomization.gradient(full_state)
+
+        # chain rule for data, optimization parts
+
         data_grad = data_linear.T.dot(randomization_derivative)
         opt_grad = opt_linear.T.dot(randomization_derivative)
-        return data_grad, opt_grad + self.grad_log_jacobian(opt_state)
+
+        return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
+
 
     def grad_log_jacobian(self, opt_state):
         """
@@ -271,14 +318,20 @@ class M_estimator(object):
         assume is close to Hessian at \bar{\beta}_E^*
         """
         # needs to be implemented for group lasso
-        return 0. 
+        return 0.
 
-    def condition(self, target_score_cov, target_cov, observed_target_state):
+
+    def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
-        condition the score on the target,
-        return a new score_transform
-        that is composition of `self.score_transform`
-        with the affine map from conditioning
+        Compute out the linear decomposition
+        of the score based on the target. This decomposition
+        writes the (limiting CLT version) of the data in the score as linear in the 
+        target and in some independent Gaussian error.
+        
+        This second independent piece is conditioned on, resulting
+        in a reconstruction of the score as an affine function of the target
+        where the offset is the part related to this independent
+        Gaussian error.
         """
 
         target_score_cov = np.atleast_2d(target_score_cov) 
@@ -298,6 +351,8 @@ class M_estimator(object):
         composition_offset = score_linear.dot(offset) + score_offset
 
         return (composition_linear_part, composition_offset)
+
+
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 

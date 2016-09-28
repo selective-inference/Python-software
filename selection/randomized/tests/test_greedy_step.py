@@ -3,15 +3,24 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, bootstrap_cov, glm_group_lasso, glm_greedy_step, pairs_inactive_score_glm
-
+from selection.randomized.api import (randomization, 
+                                      multiple_views, 
+                                      pairs_bootstrap_glm, 
+                                      glm_group_lasso, 
+                                      glm_greedy_step, 
+                                      pairs_inactive_score_glm)
+from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
+from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 
-from . import wait_for_return_value, logistic_instance
+from selection.tests.instance import logistic_instance
 
-@wait_for_return_value
-def test_overall_null_two_views():
+
+@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
+@set_seed_for_test()
+@wait_for_return_value()
+def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)
@@ -66,8 +75,8 @@ def test_overall_null_two_views():
         # is it enough only to bootstrap the inactive ones?
         # seems so...
 
-        A1, b1 = M_est1.condition(cov1[I], target_cov[I][:,I], target_observed[I])
-        A2, b2 = step.condition(cov2[I], target_cov[I][:,I], target_observed[I])
+        A1, b1 = M_est1.linear_decomposition(cov1[I], target_cov[I][:,I], target_observed[I])
+        A2, b2 = step.linear_decomposition(cov2[I], target_cov[I][:,I], target_observed[I])
 
         target_inv_cov = np.linalg.inv(target_cov[I][:,I])
 
@@ -112,12 +121,10 @@ def test_overall_null_two_views():
                                              .5 / (2*p + 1))
 
 
-        Langevin_steps = 10000
-        burning = 2000
         samples = []
-        for i in range(Langevin_steps):
+        for i in range(ndraw + burnin):
             target_langevin.next()
-            if (i>=burning):
+            if i >= burnin:
                 samples.append(target_langevin.state[target_slice].copy())
                 
         test_stat = lambda x: np.linalg.norm(x)

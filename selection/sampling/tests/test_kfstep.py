@@ -1,12 +1,8 @@
+from __future__ import print_function
 import numpy as np
+from scipy.stats import laplace, uniform
 
-
-
-from scipy.stats import laplace, probplot, uniform
-
-from selection.algorithms.lasso import instance
-import selection.sampling.randomized.api as randomized
-from matplotlib import pyplot as plt
+from selection.tests.instance import gaussian_instance
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
@@ -66,7 +62,7 @@ def projection_cone(p, max_idx, max_sign):
 
 def test_kfstep(k=4, s=3, n=100, p=10, Langevin_steps=10000, burning=2000):
 
-    X, y, beta, nonzero, sigma = instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0, snr=10)
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0, snr=10)
     epsilon = 0.
 
     randomization = laplace(loc=0, scale=1.)
@@ -196,18 +192,19 @@ def test_kfstep(k=4, s=3, n=100, p=10, Langevin_steps=10000, burning=2000):
 
     #stop
 
-    print 'pvalue:', pval
+    print('pvalue:', pval)
     return pval
 
 
-if __name__ == "__main__":
+def main():
+    import matplotlib.pyplot as plt
     P0 = []
     for i in range(100):
-        print "iteration", i
+        print("iteration", i)
         pval = test_kfstep()
         P0.append(pval)
 
-    print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
+    print("done! mean: ", np.mean(P0), "std: ", np.std(P0))
     probplot(P0, dist=uniform, sparams=(0, 1), plot=plt, fit=True)
     plt.show()
 

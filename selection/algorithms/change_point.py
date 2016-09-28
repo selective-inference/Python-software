@@ -67,7 +67,6 @@ class change_point(object):
 
             full_con = constraints(full_lin, full_offset, covariance=L._sigma_hat**2 * np.identity(p))
 
-            print full_con(Y - Y.mean())
             fit = X.dot(coef[active]) + Y.mean()
 
             segments = np.array([jumps[:-1],jumps[1:]]).T

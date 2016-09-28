@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import nose
 import numpy as np
@@ -177,9 +177,9 @@ def test_optimal_tilt():
     eta = np.array([1,0,0,0.])
 
     tilt = optimal_tilt(con, eta)
-    print tilt.smooth_objective(np.zeros(5), mode='both')
+    print(tilt.smooth_objective(np.zeros(5), mode='both'))
     opt_tilt = tilt.fit(max_its=20)
-    print con.mean + opt_tilt
+    print(con.mean + opt_tilt)
 
     A = np.vstack([-np.identity(4),
                     np.identity(4)])
@@ -189,7 +189,7 @@ def test_optimal_tilt():
     eta = np.array([1,0,0,0.])
 
     tilt = optimal_tilt(con, eta)
-    print tilt.smooth_objective(np.zeros(5), mode='both')
+    print(tilt.smooth_objective(np.zeros(5), mode='both'))
     opt_tilt = tilt.fit(max_its=20)
-    print con.mean + opt_tilt
+    print(con.mean + opt_tilt)
 

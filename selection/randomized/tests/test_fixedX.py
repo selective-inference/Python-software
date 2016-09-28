@@ -5,17 +5,18 @@ import regreg.api as rr
 
 from selection.randomized.randomization import randomization
 from selection.randomized.multiple_views import multiple_views
-from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso
-from selection.algorithms.lasso import instance
+from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso, glm_nonparametric_bootstrap 
+from selection.tests.instance import gaussian_instance
+from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 
-from . import wait_for_return_value
-
-@wait_for_return_value
-def test_gaussian_many_targets():
+@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
+@set_seed_for_test()
+@wait_for_return_value()
+def test_gaussian_many_targets(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, Y, beta, nonzero, sigma = instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    X, Y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.1, snr=7)
 
     lam_frac = 1.
     lam = lam_frac * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 50000)))).max(0)) * sigma
@@ -46,8 +47,8 @@ def test_gaussian_many_targets():
         X_active = X[:,active]
         beta_hat = np.linalg.pinv(X_active).dot(Y)
         resid_hat = Y - X_active.dot(beta_hat)
-        sampler = lambda : X_active.dot(beta_hat) + np.random.choice(resid_hat, size=(n,), replace=True)
-        mv.setup_sampler(sampler)
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        mv.setup_sampler(form_covariances)
 
         # null saturated
 
@@ -61,7 +62,7 @@ def test_gaussian_many_targets():
         target_sampler = mv.setup_target(null_target, null_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw) # twosided by default
         pvalues.append(pval)
 
         # null selected
@@ -77,7 +78,7 @@ def test_gaussian_many_targets():
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -96,7 +97,7 @@ def test_gaussian_many_targets():
         target_sampler = mv.setup_target(active_target, active_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw) # twosided by default
         pvalues.append(pval)
 
         # true selected
@@ -112,7 +113,7 @@ def test_gaussian_many_targets():
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw) # twosided by default
         pvalues.append(pval)
 
         return pvalues

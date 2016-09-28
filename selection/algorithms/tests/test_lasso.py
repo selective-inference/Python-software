@@ -6,19 +6,25 @@ from itertools import product
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
                                         data_splitting,
-                                        instance, 
                                         split_model, 
                                         standard_lasso,
-                                        instance, 
                                         nominal_intervals,
                                         gaussian_sandwich_estimator,
                                         gaussian_parametric_estimator)
 
+from selection.tests.decorators import set_seed_for_test
+from selection.tests.instance import gaussian_instance as instance
 from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, choose_lambda)
 
 import regreg.api as rr
 
 from selection.tests.decorators import set_sampling_params_iftrue
+
+try:
+    import statsmodels.api
+    statsmodels_available = True
+except ImportError:
+    statsmodels_available = False
 
 def test_gaussian(n=100, p=20):
 
@@ -129,6 +135,7 @@ def test_poisson():
 
     return L, C, P
 
+@dec.skipif(not statsmodels_available, "needs statsmodels")
 def test_coxph():
 
     Q = rr.identity_quadratic(0.01, 0, np.ones(5), 0)
@@ -483,6 +490,7 @@ def test_data_carving_poisson(n=200,
         
     return return_value
 
+@dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(False)
 def test_data_carving_coxph(n=100,
                             p=20,

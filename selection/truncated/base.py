@@ -64,8 +64,8 @@ class truncated(object):
         dps = 15
         not_precise = True
         while not_precise:
-            dps *= 2.
             Q = [self._cdf_notTruncated(a, b, dps) for a, b in intervals]
+            dps *= 2
             not_precise = (fsum(Q) == 0.)
 
         self._sumQ = fsum(Q)
@@ -101,7 +101,7 @@ class truncated(object):
 
 
 
-    def _quantile_notTruncated(self, q, tol=1.e-6):
+    def _quantile_notTruncated(self, q, dps, tol=1.e-6):
         """
         Compute the quantile for the non truncated distribution
 
@@ -125,7 +125,8 @@ class truncated(object):
         warnings.warn("""Deprecated to use the general quantile_notTruncated 
         method : it should be overrriden""", DeprecationWarning)
 
-        dps = self._dps
+        if dps is None:
+            dps = self._dps
         f = lambda x: cdf_notTruncated(-np.inf, x, dps)
 
         lb, ub = -1.e8, 1.e8
@@ -307,7 +308,7 @@ def find_root(f, y, lb, ub, tol=1e-6):
         
 
     # bisect (slow but sure) until solution is obtained
-    for _ in xrange(max_iter):
+    for _ in range(max_iter):
         try:
             c, fc  = (a+b)/2, f((a+b)/2)
             if fc > y: a = c

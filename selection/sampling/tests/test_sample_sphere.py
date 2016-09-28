@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 import nose
 import nose.tools as nt
 import numpy as np
@@ -131,7 +131,7 @@ def test_distribution_sphere(n=15, p=10, sigma=1.,
             if (count + 1) % int(nsim / 10) == 0:
 
                 pvalues.extend([family.cdf(0, t) for t in true_sample])
-                print np.mean(pvalues), np.std(pvalues)
+                print(np.mean(pvalues), np.std(pvalues))
 
                 if sample_constraints:
                     con, y = _generate_constraints()[:2]

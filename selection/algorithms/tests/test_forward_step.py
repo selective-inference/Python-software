@@ -1,13 +1,8 @@
 import numpy as np
 
-
-# used for ECDF
-
-import statsmodels.api as sm
-
-from selection.algorithms.lasso import instance
+from selection.tests.instance import gaussian_instance
 from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
-from selection.tests.decorators import set_sampling_params_iftrue
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
 
 @set_sampling_params_iftrue(True)
 def test_FS(k=10, ndraw=5000, burnin=5000, nsim=None):
@@ -85,7 +80,7 @@ def test_subset(k=10, ndraw=5000, burnin=5000, nsim=None):
 def test_BIC(do_sample=True, ndraw=8000, burnin=2000, nsim=None,
              force=False):
 
-    X, Y, beta, active, sigma = instance()
+    X, Y, beta, active, sigma = gaussian_instance()
     n, p = X.shape
     FS = info_crit_stop(Y, X, sigma, cost=np.log(n))
     final_model = len(FS.variables) 
@@ -130,8 +125,7 @@ def test_ecdf(nsim=1000, BIC=False,
             P.extend(test_BIC(do_sample=True, ndraw=ndraw, burnin=burnin))
     P = np.array(P)
 
-    ecdf = sm.distributions.ECDF(P)
-
+@set_seed_for_test()
 @set_sampling_params_iftrue(True)
 def test_data_carving_IC(nsim=500,
                          n=100,
@@ -151,7 +145,7 @@ def test_data_carving_IC(nsim=500,
 
     while counter < nsim:
         counter += 1
-        X, y, beta, active, sigma = instance(n=n, 
+        X, y, beta, active, sigma = gaussian_instance(n=n, 
                                              p=p, 
                                              s=s, 
                                              sigma=sigma, 
@@ -176,8 +170,9 @@ def test_data_carving_IC(nsim=500,
                                           compute_intervals=compute_intervals,
                                           cost=np.log(n))
 
-            carve = [r[1] for r in results]
-            split = [r[3] for r in results]
+            carve_split = [(r[1], r[3]) for r in results]
+            carve = np.array(carve_split)[:,0]
+            split = np.array(carve_split)[:,1]
 
             Xa = X[:,FS.variables[:-1]]
             truth = np.dot(np.linalg.pinv(Xa), mu) 
@@ -189,6 +184,9 @@ def test_data_carving_IC(nsim=500,
                 carve_coverage.append((ci[0] < t) * (t < ci[1]))
                 split_coverage.append((si[0] < t) * (t < si[1]))
 
+            print(carve, 'carve')
+            print(split, 'split')
+            print(results, 'results')
             return ([carve[j] for j, i in enumerate(FS.active) if i >= s], 
                     [split[j] for j, i in enumerate(FS.active) if i >= s], 
                     [carve[j] for j, i in enumerate(FS.active) if i < s], 
@@ -200,7 +198,7 @@ def test_data_carving_IC(nsim=500,
 def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000,
                     nsim=None):
 
-    X, y, beta, active, sigma = instance(n=n, p=p, snr=snr, rho=rho)
+    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, snr=snr, rho=rho)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     from scipy.stats import norm as ndist
@@ -236,7 +234,7 @@ def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
                     nstep=200,
                     method='serial'):
 
-    X, y, beta, active, sigma = instance(n=n, p=p, snr=snr, rho=rho, s=s)
+    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, snr=snr, rho=rho, s=s)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     extra_steps = 4
@@ -269,7 +267,7 @@ def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, snr=5,
                                 nstep=200,
                                 method='serial'):
 
-    X, y, beta, active, sigma = instance(n=n, p=p, snr=snr, rho=rho, s=s)
+    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, snr=snr, rho=rho, s=s)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     extra_steps = 4

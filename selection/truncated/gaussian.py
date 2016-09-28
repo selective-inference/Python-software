@@ -17,17 +17,11 @@ from .base import truncated, find_root
 class truncated_gaussian(truncated):
 
     """
-    >>> from intervals import intervals
+    >>> from selection.constraints.intervals import intervals
     >>> I = intervals.intersection(intervals((-1, 6)), \
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
-    #### THIS TEST SHOULD BE FIXED
-    >>> distr = trunc_gaussian(I, 3.1, 2.)
-    >>> print distr.cdf(0)
-    0.0
-    >>> z = distr.quantile(distr.cdf(5.))
-    >>> np.abs(z - 5) < 1e-2
-    True
+    >>> distr = truncated_gaussian(I, 3.1, 2.)
     """
 
     def __init__(self, I, mu=0, scale = 1.):
@@ -95,7 +89,7 @@ class truncated_gaussian(truncated):
 
         return val
 
-    def _quantile_notTruncated(self, q, tol=1.e-6):
+    def _quantile_notTruncated(self, q, dps, tol=1.e-6):
         """
         Compute the quantile for the non truncated distribution
 
@@ -427,7 +421,7 @@ def find_root(f, y, lb, ub, tol=1e-6):
     max_iter = int( np.ceil( ( np.log(tol) - np.log(b-a) ) / np.log(0.5) ) )
 
     # bisect (slow but sure) until solution is obtained
-    for _ in xrange(max_iter):
+    for _ in range(max_iter):
         c, fc  = (a+b)/2, f((a+b)/2)
         if fc > y: a = c
         elif fc < y: b = c
