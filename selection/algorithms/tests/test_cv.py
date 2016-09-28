@@ -1,6 +1,5 @@
 from __future__ import print_function
 import numpy as np
-from statsmodels.distributions import ECDF
 
 from selection.tests.instance import gaussian_instance 
 from selection.algorithms.cross_valid import lasso_tuned, lasso_tuned_conditional 
@@ -56,6 +55,7 @@ def test_CV(ndraw=500, sigma_known=True,
 
 def plot_fig():
 
+    from statsmodels.distributions import ECDF
     import matplotlib.pyplot as plt
     f = plt.figure(num=1)
 

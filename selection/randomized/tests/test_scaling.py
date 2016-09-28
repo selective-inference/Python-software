@@ -1,6 +1,4 @@
 import numpy as np
-from scipy.stats import norm as ndist
-import statsmodels.api as sm
 
 import regreg.api as rr
 
@@ -9,6 +7,12 @@ from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 from selection.tests.instance import logistic_instance
+
+try:
+    import statsmodels.api as sm
+    statsmodels_available = True
+except ImportError:
+    statsmodels_available = False
 
 instance_opts = {'snr':15,
                  's':5,
@@ -210,12 +214,15 @@ def test_logistic_many_targets(snr=15,
         X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
         X_E = X[:,active_set]
 
-        try:
-            model = sm.GLM(y, X_E, family=sm.families.Binomial())
-            model_results = model.fit()
-            pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
+        if statsmodels_available:
+            try:
+                model = sm.GLM(y, X_E, family=sm.families.Binomial())
+                model_results = model.fit()
+                pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
 
-        except sm.tools.sm_exceptions.PerfectSeparationError:
+            except sm.tools.sm_exceptions.PerfectSeparationError:
+                pvalues.extend([np.nan, np.nan])
+        else:
             pvalues.extend([np.nan, np.nan])
 
         # data splitting-ish p-value -- draws a new data set of smaller size
@@ -227,12 +234,15 @@ def test_logistic_many_targets(snr=15,
         ys = ys[:int((1-frac)*n)]
         X_Es = Xs[:,active_set]
 
-        try:
-            model = sm.GLM(ys, X_Es, family=sm.families.Binomial())
-            model_results = model.fit()
-            pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
+        if statsmodels_available:
+            try:
+                model = sm.GLM(ys, X_Es, family=sm.families.Binomial())
+                model_results = model.fit()
+                pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
 
-        except sm.tools.sm_exceptions.PerfectSeparationError:
+            except sm.tools.sm_exceptions.PerfectSeparationError:
+                pvalues.extend([np.nan, np.nan])
+        else:
             pvalues.extend([np.nan, np.nan])
 
         return pvalues

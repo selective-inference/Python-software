@@ -1,10 +1,5 @@
 import numpy as np
 
-
-# used for ECDF
-
-import statsmodels.api as sm
-
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
 from selection.tests.decorators import set_sampling_params_iftrue
@@ -130,7 +125,6 @@ def test_ecdf(nsim=1000, BIC=False,
             P.extend(test_BIC(do_sample=True, ndraw=ndraw, burnin=burnin))
     P = np.array(P)
 
-    ecdf = sm.distributions.ECDF(P)
 
 @set_sampling_params_iftrue(True)
 def test_data_carving_IC(nsim=500,
