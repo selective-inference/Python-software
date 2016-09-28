@@ -18,8 +18,6 @@ class truncated_chi(truncated):
     ...                            intervals(( 0, 7)),
     ...                           ~intervals((1, 4)))
     >>> distr = truncated_chi(I, 3, 2.)
-    >>> print(distr.cdf(0))
-    0.0
     >>> print(abs(distr.cdf(distr.quantile(0.9)) - 0.9) < 0.01)
     True
     """
@@ -133,8 +131,6 @@ class truncated_chi2(truncated):
     ...                            intervals(( 0, 7)),
     ...                           ~intervals((1, 4)))
     >>> distr = truncated_chi2(I, 3, 2.)
-    >>> print(distr.cdf(0))
-    0.0
     >>> print(abs(distr.cdf(distr.quantile(0.9)) - 0.9) < 0.01)
     True
     """

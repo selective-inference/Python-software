@@ -22,8 +22,6 @@ class truncated_gaussian(truncated):
                                        intervals(( 0, 7)), \
                                        ~intervals((1, 4)))
     >>> distr = truncated_gaussian(I, 3.1, 2.)
-    >>> print(distr.cdf(0))
-    0.0
     """
 
     def __init__(self, I, mu=0, scale = 1.):
