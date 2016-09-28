@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import mpmath as mp
 from scipy.stats import norm
@@ -326,8 +327,6 @@ class constraint(base_constraint):
                                offset_lin)
 
         samples = [v.reshape((len(v), 1)) for v in samples]
-        # for v in samples:
-        #     print v
         
         if not all(self(v) for v in samples):
             raise ValueError("The samples are not correct")
@@ -355,7 +354,6 @@ class constraint(base_constraint):
         """
         samples = self.sample(n_samples, y)
         observed_values = np.sort([f(z) for z in samples])
-        print observed_values
         obs = f(y)
         k = max([i for i in range(n_samples) if observed_values[i] < obs])
 
