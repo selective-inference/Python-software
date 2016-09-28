@@ -44,6 +44,17 @@ class M_estimator(object):
                              solve_args)
          
         self._solved = False
+        self._randomized = False
+
+    def randomize(self):
+
+        if not self._randomized:
+            self._randomZ = self.randomization.sample()
+            self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
+
+        # set the _randomized bit
+
+        self._randomized = True
 
     def solve(self):
 
@@ -60,8 +71,8 @@ class M_estimator(object):
         # initial solution
 
         problem = rr.simple_problem(loss, penalty)
-        self._randomZ = self.randomization.sample()
-        self._random_term = rr.identity_quadratic(epsilon, 0, -self._randomZ, 0)
+
+        self.randomize()
         self.initial_soln = problem.solve(self._random_term, **solve_args)
 
         # find the active groups and their direction vectors
@@ -111,6 +122,9 @@ class M_estimator(object):
                                                   initial_unpenalized,
                                                   initial_subgrad], axis=0)
 
+        # set the _solved bit
+
+        self._solved = True
 
         self._solved = True
 
