@@ -213,10 +213,10 @@ def kfold_CV(Y,
 
     n, p = X.shape
 
-    kfold = cross_validation.KFold(n=n, 
-                                   n_folds=K, 
-                                   shuffle=shuffle,
-                                   random_state=random_state)
+    kfold = sklearn.cross_validation.KFold(n=n, 
+                                           n_folds=K, 
+                                           shuffle=shuffle,
+                                           random_state=random_state)
     error = {}
 
     for train_index, test_index in kfold:
