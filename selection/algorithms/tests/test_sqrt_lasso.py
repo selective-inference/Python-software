@@ -42,20 +42,23 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         if (~np.isnan(np.array(Pa))).sum() >= nsim:
             break
 
-    # make any plots not use display
+    plot = False
 
-    from matplotlib import use
-    use('Agg')
-    import matplotlib.pyplot as plt
+    if plot:
+        # make any plots not use display
 
-    # used for ECDF
+        from matplotlib import use
+        use('Agg')
+        import matplotlib.pyplot as plt
 
-    import statsmodels.api as sm
+        # used for ECDF
 
-    U = np.linspace(0,1,101)
-    plt.plot(U, sm.distributions.ECDF(Pa)(U))
-    plt.plot([0,1], [0,1])
-    plt.savefig("goodness_of_fit_uniform", format="pdf")
+        import statsmodels.api as sm
+
+        U = np.linspace(0,1,101)
+        plt.plot(U, sm.distributions.ECDF(Pa)(U))
+        plt.plot([0,1], [0,1])
+        plt.savefig("goodness_of_fit_uniform", format="pdf")
     
 @set_seed_for_test(10)
 def test_skinny_fat():
