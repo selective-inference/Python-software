@@ -1,8 +1,8 @@
 cython
 pandas
 numpy
-scikit-learn
 scipy
 mpmath
 pyinter
 statsmodels
+sklearn
