@@ -1,7 +1,7 @@
 import numpy as np
 from selection.algorithms.change_point import one_jump_instance, change_point
 
-def test_change_point(delta, p=60, sigma=1, plot=False):
+def test_change_point(delta=0.1, p=60, sigma=1, plot=False):
 
     y, signal = one_jump_instance(delta, p, sigma)
     CP = change_point(y)

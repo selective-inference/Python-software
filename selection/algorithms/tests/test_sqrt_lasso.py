@@ -14,7 +14,8 @@ from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso,
                                              solve_sqrt_lasso_fat,
                                              solve_sqrt_lasso_skinny)
 
-from selection.algorithms.lasso import instance, lasso
+from selection.tests.instance import gaussian_instance as instance
+from selection.algorithms.lasso import lasso
 from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
 
 @set_sampling_params_iftrue(True)
