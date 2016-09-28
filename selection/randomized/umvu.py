@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 from scipy.optimize import minimize
 
-from selection.sampling.randomized.intervals.estimation import estimation, instance
+from selection.randomized.estimation import estimation, instance
 
 class umvu(estimation):
 
