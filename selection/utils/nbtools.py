@@ -6,7 +6,10 @@ from __future__ import print_function
 import os, sys
 from glob import glob
 
-from Queue import Empty
+try:
+    from Queue import Empty
+except ImportError: # renamed in python3
+    from queue import Empty
 
 try:
     from IPython.kernel import KernelManager

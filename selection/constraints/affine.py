@@ -55,14 +55,13 @@ class constraints(object):
     to the *reference measure* that is being truncated. It is not the
     mean of the truncated Gaussian.
 
-    >>> import numpy as np, selection.affine as affine
-    >>> positive = affine.constraints(-np.identity(2), np.zeros(2))
+    >>> positive = constraints(-np.identity(2), np.zeros(2))
     >>> Y = np.array([3,4.4])
     >>> eta = np.array([1,1])
     >>> positive.interval(eta, Y)
     array([  4.6212814 ,  10.17180724])
     >>> positive.pivot(eta, Y)
-    No
+    5.187823627350596e-07
     >>> positive.bounds(eta, Y)
     (1.3999999999999988, 7.4000000000000004, inf, 1.4142135623730951)
     >>> 
@@ -126,16 +125,17 @@ class constraints(object):
         self.mean = mean
 
     def _repr_latex_(self):
-        """
-        >>> A = np.array([[ 0.32,  0.27,  0.19],
-       [ 0.59,  0.98,  0.71],
-       [ 0.34,  0.15,  0.17 ,  0.25], 
+        r"""
+        >>> A = np.array([[0.32,0.27,0.19],
+        ... [0.59,0.98,0.71],
+        ... [0.34,0.15,0.17,0.25],
+        ... [0.34,0.15,0.17,0.25]])
         >>> B = np.array([ 0.51,  0.74,  0.72 ,  0.82])
         >>> C = constraints(A, B)
-        >>> C._repr_latex
-        "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
+        >>> C._repr_latex_()
+        '$$Z \\sim N(\\mu,\\Sigma) | AZ \\leq b$$'
         """
-        return """$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
+        return r"""$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"""
 
     def __copy__(self):
         r"""

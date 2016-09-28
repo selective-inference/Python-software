@@ -115,15 +115,6 @@ class constraints(object):
         self.mean = mean
 
     def _repr_latex_(self):
-        """
-        >>> A = np.array([[ 0.32,  0.27,  0.19],
-       [ 0.59,  0.98,  0.71],
-       [ 0.34,  0.15,  0.17 ,  0.25], 
-        >>> B = np.array([ 0.51,  0.74,  0.72 ,  0.82])
-        >>> C = constraints(A, B)
-        >>> C._repr_latex
-        "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
-        """
         return """$$Z \sim N(\mu,\Sigma) | AZ + u \leq \|PZ\|_2 b$$"""
 
     def __copy__(self):
@@ -150,16 +141,6 @@ class constraints(object):
         return V1
 
     def __call__(self, Y, tol=1.e-3):
-        r"""
-        Check whether Y satisfies the linear
-        inequality constraints.
-        >>> A = np.array([[1., -1.], [1., -1.]])
-        >>> B = np.array([1., 1.])
-        >>> con = constraints(A, B)
-        >>> Y = np.array([-1., 1.])
-        >>> con(Y)
-        True
-        """
         sqrt_RSS = np.linalg.norm(np.dot(self.residual_projector, Y))
         V1 = np.dot(self.linear_part, Y) + self.LHS_offset - self.RHS_offset * sqrt_RSS
         return np.all(V1 < tol * np.fabs(V1).max())
@@ -466,15 +447,6 @@ class orthogonal(constraints):
         self.mean = mean
 
     def _repr_latex_(self):
-        """
-        >>> A = np.array([[ 0.32,  0.27,  0.19],
-       [ 0.59,  0.98,  0.71],
-       [ 0.34,  0.15,  0.17 ,  0.25], 
-        >>> B = np.array([ 0.51,  0.74,  0.72 ,  0.82])
-        >>> C = constraints(A, B)
-        >>> C._repr_latex
-        "$$Z \sim N(\mu,\Sigma) | AZ \leq b$$"
-        """
         return """$$Z \sim N(\mu,\Sigma) | AZ + u \leq \|PZ\|_2 b$$"""
 
     def __copy__(self):
@@ -497,16 +469,6 @@ class orthogonal(constraints):
         return con
 
     def __call__(self, Y, tol=1.e-3):
-        r"""
-        Check whether Y satisfies the linear
-        inequality constraints.
-        >>> A = np.array([[1., -1.], [1., -1.]])
-        >>> B = np.array([1., 1.])
-        >>> con = constraints(A, B)
-        >>> Y = np.array([-1., 1.])
-        >>> con(Y)
-        True
-        """
         V1 = np.dot(self.linear_part, Y) + self.LHS_offset - self.RHS_offset * np.sqrt(self.RSS)
         return np.all(V1 < tol * np.fabs(V1).max())
 

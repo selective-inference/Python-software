@@ -161,6 +161,7 @@ class intervals(object):
 
         interv_merged_gen = merge(*interv)
 
+        old_a, old_b = None, None
         for new_a, new_b in interv_merged_gen:
             if old_b is not None and new_a < old_b: # check to see if union of (old_a, old_b) and 
                                                     # (new_a, new_b) is (old_a, new_b) 
