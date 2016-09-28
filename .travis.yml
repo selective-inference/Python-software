@@ -1,5 +1,4 @@
-language: r
-dist: trusty
+language: python
 python:
   - 2.7
   - 3.3
@@ -10,7 +9,6 @@ addons:
     packages:
         - libblas-dev
         - liblapack-dev
-        - r-base-dev
 env:
     global:
         # Maximal dependencies
@@ -18,15 +16,6 @@ env:
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
-  # Install intervals -- hacky!!
-  - R --version
-  - pip install rpy2
-  - python -c "import rpy2.robjects as rpy; rpy.r('''install.packages('intervals', repos='http://cload.r-project.org')''')"
-  - R CMD INSTALL selectiveInference
-  - cd ..
-  # Install selectiveInference
-  - git clone https://github.com/selective-inference/R-software.git
-  - cd R-software
   # Install regreg 
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
@@ -34,11 +23,10 @@ before_install:
   - pip install -e .
   - cd ..
 install:
-install:
   # Install selection
   - pip install -r requirements.txt
   - pip install -e .
-    - travis_install $INSTALL_TYPE
+  - travis_install $INSTALL_TYPE
 # command to run tests, e.g. python setup.py test
 script:
     - pip install nose
