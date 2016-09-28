@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from test_fstep_langevin import test_fstep
 from test_kfstep import test_kfstep
@@ -17,11 +18,11 @@ def main():
 
     P0 = []
     for i in range(300):
-        print "iteration", i
+        print("iteration", i)
         p0 = test_fstep(Langevin_steps=10000, burning=2000)
         P0.append(p0)
 
-    print "one step FS done! mean: ", np.mean(P0), "std: ", np.std(P0)
+    print("one step FS done! mean: ", np.mean(P0), "std: ", np.std(P0))
     #probplot(P0, dist=uniform, sparams=(0,1), plot=plot_1step, fit=False)
     #plot_1step.plot([0, 1], color='k', linestyle='-', linewidth=2)
 
@@ -38,11 +39,11 @@ def main():
 
     P0 = []
     for i in range(300):
-        print "iteration", i
+        print("iteration", i)
         p0 = test_kfstep(Langevin_steps=10000, burning=2000)
         P0.append(p0)
 
-    print "k steps FS done done! mean: ", np.mean(P0), "std: ", np.std(P0)
+    print("k steps FS done done! mean: ", np.mean(P0), "std: ", np.std(P0))
     #probplot(P0, dist=uniform, sparams=(0,1), plot=plot_kstep, fit=False)
     #plot_kstep.plot([0, 1], color='k', linestyle='-', linewidth=2)
 
