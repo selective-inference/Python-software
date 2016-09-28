@@ -1,10 +1,9 @@
 import numpy as np
 
-from selection.algorithms.lasso import instance as lasso_instance
 from selection.algorithms.randomized import randomized_lasso, randomized_logistic
 from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
-
-from selection.randomized.tests import logistic_instance, wait_for_return_value
+from selection.tests.instance import logistic_instance, gaussian_instance
+from selection.tests.decorators import wait_for_return_value
 
 @wait_for_return_value
 @set_seed_for_test()
@@ -59,11 +58,11 @@ def test_gaussian(n=200, p=30, burnin=2000, ndraw=8000,
                   snr=7,
                   nsim=None):
 
-    X, y, beta, lasso_active, sigma = lasso_instance(n=n, 
-                                                     p=p,
-                                                     snr=snr,
-                                                     s=s,
-                                                     rho=0.1)
+    X, y, beta, lasso_active, sigma = gaussian_instance(n=n, 
+                                                        p=p,
+                                                        snr=snr,
+                                                        s=s,
+                                                        rho=0.1)
     n, p = X.shape
 
     lam = 2. * sigma * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
