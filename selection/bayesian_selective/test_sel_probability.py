@@ -1,7 +1,7 @@
 import numpy as np
 from initial_soln import selection
 from scipy.optimize import minimize
-from selection.algorithms.lasso import instance
+from selection.tests.instance import gaussian_instance as instance
 #from matplotlib import pyplot as plt
 #####for debugging currently; need to change this part
 
