@@ -5,6 +5,12 @@ python:
   - 3.3
 notifications:
   email: false
+addons:
+  apt:
+    packages:
+        - libblas-dev
+        - liblapack-dev
+	- r-base-dev
 env:
     global:
         # Maximal dependencies
