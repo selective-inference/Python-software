@@ -576,7 +576,7 @@ def interval_constraints(support_directions,
 
     U = A.dot(X) - b
     if not np.all(U  < tol * np.fabs(U).max()) and WARNINGS:
-        warn('constraints not satisfied: %s' % `U`)
+        warn('constraints not satisfied: %s' % repr(U))
 
     Sw = S.dot(w)
     sigma = np.sqrt((w*Sw).sum())

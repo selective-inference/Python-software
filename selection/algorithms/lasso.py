@@ -836,7 +836,7 @@ def gaussian_sandwich_estimator(X, Y, B=1000):
         second_moment_A = second_moment[:n_active]
         second_moment_I = second_moment[n_active:]
 
-        for b in xrange(B):
+        for b in range(B):
             idx_star = np.random.choice(idx, n, replace=True)
             X_star = X[idx_star]
             Y_star = Y[idx_star]

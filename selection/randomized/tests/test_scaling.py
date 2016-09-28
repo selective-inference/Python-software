@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
@@ -68,7 +69,7 @@ def test_logistic_many_targets(snr=15,
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
         if DEBUG:
-            print M_est.initial_soln[:3] * scaling, scaling, 'first nonzero scaled'
+            print(M_est.initial_soln[:3] * scaling, scaling, 'first nonzero scaled')
 
         pvalues = []
         active_set = np.nonzero(active)[0]
@@ -100,7 +101,7 @@ def test_logistic_many_targets(snr=15,
 
         #target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
-        print target_sampler.crude_lipschitz(), 'crude'
+        print(target_sampler.crude_lipschitz(), 'crude')
 
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
@@ -139,7 +140,7 @@ def test_logistic_many_targets(snr=15,
         target_sampler = mv.setup_target(null_target, null_observed)#, target_set=[0])
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
-        print target_sampler.crude_lipschitz(), 'crude'
+        print(target_sampler.crude_lipschitz(), 'crude')
 
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
@@ -182,7 +183,7 @@ def test_logistic_many_targets(snr=15,
 
             target_sampler = mv.setup_target(null_target, null_observed)
 
-            print target_sampler.crude_lipschitz(), 'crude'
+            print(target_sampler.crude_lipschitz(), 'crude')
 
             test_stat = lambda x: x[0]
             pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
@@ -311,7 +312,7 @@ def main(nsample=2000, frac=0.6, scale=0.9):
     while len(P) < nsample:
         p = test_logistic_many_targets(frac=frac, scale=scale, **instance_opts)
         if p is not None: P.append(p)
-        print np.nanmean(P, 0), 'mean', len(P)
-        print np.nanstd(P, 0), 'std'
-        print np.nanmean(np.array(P) < 0.05, 0), 'rejection'
+        print(np.nanmean(P, 0), 'mean', len(P))
+        print(np.nanstd(P, 0), 'std')
+        print(np.nanmean(np.array(P) < 0.05, 0), 'rejection')
         

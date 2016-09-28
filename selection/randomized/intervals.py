@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from scipy.stats import norm as ndist
 
@@ -80,7 +81,7 @@ class intervals(object):
             LU = self.construct_intervals(j, alpha=alpha)
             if LU is not None:
                 L, U = LU
-                print "interval", L, U
+                print("interval", L, U)
                 nparam += 1
                 if (L <= truth_vec[j]) and (U >= truth_vec[j]):
                     ncovered += 1
@@ -90,12 +91,11 @@ class intervals(object):
         ncovered = 0
         nparam = 0
         quantile = -ndist.ppf(alpha/float(2))
-        #print "quantile", quantile
         for j in range(self.nactive):
             sigma = np.sqrt(self.variances[j])
             L = self.ref_vec[j]-sigma*quantile
             U = self.ref_vec[j]+sigma*quantile
-            print "naive interval", L, U
+            print("naive interval", L, U)
             nparam += 1
             if (L <= truth_vec[j]) and (U >= truth_vec[j]):
                 ncovered += 1

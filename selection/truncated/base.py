@@ -307,7 +307,7 @@ def find_root(f, y, lb, ub, tol=1e-6):
         
 
     # bisect (slow but sure) until solution is obtained
-    for _ in xrange(max_iter):
+    for _ in range(max_iter):
         try:
             c, fc  = (a+b)/2, f((a+b)/2)
             if fc > y: a = c

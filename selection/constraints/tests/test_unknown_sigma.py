@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import selection.constraints.affine
 from selection.constraints.quasi_affine import constraints_unknown_sigma
@@ -55,7 +56,7 @@ def instance(theta=0, A=None, R=None, eta=None):
     sf = truncT.sf(obs)
     pval = 2 * min(sf, 1.-sf)
     if pval < 1.e-6:
-        print sf, obs, intervals
+        print(sf, obs, intervals)
     return float(pval)
 
 if __name__ == "__main__":
@@ -82,7 +83,7 @@ if __name__ == "__main__":
 
     for i in range(1000):
         P.append(instance(theta=3.,R=R, A=A, eta=eta))
-        print i, np.mean(P), np.std(P)
+        print(i, np.mean(P), np.std(P))
     U = np.linspace(0,1,51)
 
     # make any plots not use display

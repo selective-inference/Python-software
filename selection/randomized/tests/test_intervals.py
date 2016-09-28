@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
@@ -39,8 +40,8 @@ def Langevin_samples(solve_args={'min_its':50, 'tol':1.e-10}):
     active = M_est1.overall
     nactive = np.sum(active)
     active_set = np.nonzero(active)[0]
-    print "true beta", beta[:s]
-    print "active set", active_set
+    print("true beta", beta[:s])
+    print("active set", active_set)
     unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
     nsamples = 10000
@@ -58,7 +59,7 @@ def Langevin_samples(solve_args={'min_its':50, 'tol':1.e-10}):
         target_sampler = mv.setup_target(target, observed, reference = unpenalized_mle)
         samples = target_sampler.sample(ndraw = nsamples, burnin = 2000)
         samples  = np.asarray(samples, dtype=np.float32)
-        print samples.shape
+        print(samples.shape)
         for j in range(nactive):
             all_variances[j] = target_sampler.target_cov[j,j]
             all_samples[j,:] = samples[:,j]
@@ -100,7 +101,7 @@ def test_intervals():
         ncovered, nparam = int_class.construct_intervals_all(param_vec)
 
         #ncovered, nparam = int_class.construct_naive_intervals(param_vec)
-        print "pvalue(s) at the truth", pvalues_param
+        print("pvalue(s) at the truth", pvalues_param)
         return np.copy(pvalues_ref), np.copy(pvalues_param), ncovered, nparam
 
 
@@ -115,8 +116,8 @@ if __name__ == "__main__":
     nparams_total = 0
 
     for i in range(100):
-        print "\n"
-        print "iteration", i
+        print("\n")
+        print("iteration", i)
         pvals_ints = test_intervals()
         if pvals_ints is not None:
             # print pvalues
@@ -130,8 +131,8 @@ if __name__ == "__main__":
                 ncovered_total += ncovered
                 nparams_total += nparam
 
-    print "number of intervals", nparams_total
-    print "coverage", ncovered_total/float(nparams_total)
+    print("number of intervals", nparams_total)
+    print("coverage", ncovered_total/float(nparams_total))
 
 
 

@@ -648,6 +648,8 @@ class lasso_tuned(object):
         # move Y_sample
         self.step_sample()
         
+    __next__ = next # Python3 compatibility
+
     def pvalue(self, which_var,
                ndraw=2000,
                burnin=500):

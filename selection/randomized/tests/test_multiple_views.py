@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
@@ -39,7 +40,7 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
 
     active_union = M_est1.overall #+ M_est2.overall
     nactive = np.sum(active_union)
-    print "nactive", nactive
+    print("nactive", nactive)
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
         if nactive==s:
@@ -129,7 +130,7 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
 
     active_union = M_est1.overall + M_est2.overall
     nactive = np.sum(active_union)
-    print "nactive", nactive
+    print("nactive", nactive)
     active_set = np.nonzero(active_union)[0]
 
     pvalues = []
@@ -238,14 +239,14 @@ def make_a_plot():
     pvalues = []
     pvalues_gn = []
     for i in range(200):
-        print "iteration", i
+        print("iteration", i)
         pvals = test_multiple_views()
         if pvals is not None:
             pval, pval_gn = pvals
             pvalues.append(pval)
             pvalues_gn.append(pval_gn)
-            print "pvalue", pval
-            print np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05)
+            print("pvalue", pval)
+            print(np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05))
 
     ecdf = sm.distributions.ECDF(pvalues)
     x = np.linspace(min(pvalues), max(pvalues))
@@ -298,12 +299,12 @@ def make_a_plot_individual_coeff():
 
     pvalues = []
     for i in range(100):
-        print "iteration", i
+        print("iteration", i)
         pvals = test_multiple_views_individual_coeff()
         if pvals is not None:
             pvalues.extend(pvals)
-            print "pvalues", pvals
-            print np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05)
+            print("pvalues", pvals)
+            print(np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05))
 
     ecdf = sm.distributions.ECDF(pvalues)
     x = np.linspace(min(pvalues), max(pvalues))

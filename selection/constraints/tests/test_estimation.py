@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
@@ -60,8 +61,8 @@ def test_softmax_sigma_not1():
 
     np.testing.assert_allclose(loss.smooth_objective(simple_estimator/sigma**2, 'grad'), observed)
 
-    print loss.smooth_objective(coefs, 'both')[0]
-    print est2, simple_estimator
+    print(loss.smooth_objective(coefs, 'both')[0])
+    print(est2, simple_estimator)
 
     G1 = softmax_loss.smooth_objective(observed, 'grad')
     np.testing.assert_allclose(loss.smooth_objective(G1, 'grad'), observed)

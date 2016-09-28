@@ -35,7 +35,7 @@ def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
     S = np.identity(p)[:3]
     Z = AC.sample_from_constraints(con, z, ndraw=ndraw, burnin=burnin)
     P = []
-    for i in range(Z.shape[0]/10):
+    for i in range(int(Z.shape[0]/10)):
         P.append(chisq.quadratic_test(Z[10*i], S, con))
 
     nt.assert_true(np.fabs(np.mean(P)-0.5) < 0.03)

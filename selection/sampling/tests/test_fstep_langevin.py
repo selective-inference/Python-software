@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from scipy.stats import laplace, uniform
 
@@ -189,7 +190,7 @@ def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, burning=2000, condition_o
 
     #stop
 
-    print 'pvalue:', pval
+    print('pvalue:', pval)
     return pval
 
 
@@ -197,13 +198,13 @@ def main():
 
     P0 = []
     for i in range(100):
-        print "iteration", i
+        print("iteration", i)
         #print form_Ab(1,4)
         pval = test_fstep(condition_on_sign=True)
 
         P0.append(pval)
 
-    print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
+    print("done! mean: ", np.mean(P0), "std: ", np.std(P0))
 
     import statsmodels.api as sm
     U = np.linspace(0, 1, 101)

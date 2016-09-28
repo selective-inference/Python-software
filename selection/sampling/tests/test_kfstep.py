@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from scipy.stats import laplace, uniform
 
@@ -191,7 +192,7 @@ def test_kfstep(k=4, s=3, n=100, p=10, Langevin_steps=10000, burning=2000):
 
     #stop
 
-    print 'pvalue:', pval
+    print('pvalue:', pval)
     return pval
 
 
@@ -199,11 +200,11 @@ def main():
     import matplotlib.pyplot as plt
     P0 = []
     for i in range(100):
-        print "iteration", i
+        print("iteration", i)
         pval = test_kfstep()
         P0.append(pval)
 
-    print "done! mean: ", np.mean(P0), "std: ", np.std(P0)
+    print("done! mean: ", np.mean(P0), "std: ", np.std(P0))
     probplot(P0, dist=uniform, sparams=(0, 1), plot=plt, fit=True)
     plt.show()
 

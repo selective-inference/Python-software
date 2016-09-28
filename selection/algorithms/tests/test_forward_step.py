@@ -2,7 +2,7 @@ import numpy as np
 
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
-from selection.tests.decorators import set_sampling_params_iftrue
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
 
 @set_sampling_params_iftrue(True)
 def test_FS(k=10, ndraw=5000, burnin=5000, nsim=None):
@@ -125,7 +125,7 @@ def test_ecdf(nsim=1000, BIC=False,
             P.extend(test_BIC(do_sample=True, ndraw=ndraw, burnin=burnin))
     P = np.array(P)
 
-
+@set_seed_for_test()
 @set_sampling_params_iftrue(True)
 def test_data_carving_IC(nsim=500,
                          n=100,
@@ -170,8 +170,9 @@ def test_data_carving_IC(nsim=500,
                                           compute_intervals=compute_intervals,
                                           cost=np.log(n))
 
-            carve = [r[1] for r in results]
-            split = [r[3] for r in results]
+            carve_split = [(r[1], r[3]) for r in results]
+            carve = np.array(carve_split)[:,0]
+            split = np.array(carve_split)[:,1]
 
             Xa = X[:,FS.variables[:-1]]
             truth = np.dot(np.linalg.pinv(Xa), mu) 
@@ -183,6 +184,9 @@ def test_data_carving_IC(nsim=500,
                 carve_coverage.append((ci[0] < t) * (t < ci[1]))
                 split_coverage.append((si[0] < t) * (t < si[1]))
 
+            print(carve, 'carve')
+            print(split, 'split')
+            print(results, 'results')
             return ([carve[j] for j, i in enumerate(FS.active) if i >= s], 
                     [split[j] for j, i in enumerate(FS.active) if i >= s], 
                     [carve[j] for j, i in enumerate(FS.active) if i < s], 

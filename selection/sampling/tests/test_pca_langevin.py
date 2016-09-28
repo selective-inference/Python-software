@@ -1,5 +1,4 @@
 import numpy as np
-from sklearn.isotonic import IsotonicRegression
 
 from selection.sampling.langevin import projected_langevin
 
@@ -53,6 +52,7 @@ def _grad_log_wishart_white(eigenvals, n):
 
 def main(n=50):
 
+    from sklearn.isotonic import IsotonicRegression
     import matplotlib.pyplot as plt
     initial = np.ones(n) + 0.01 * np.random.standard_normal(n)
     grad_map = lambda val: _grad_log_wishart_white(val, n)

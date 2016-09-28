@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from scipy.stats import norm as ndist
 
@@ -143,7 +144,7 @@ def test_one_inactive_coordinate_handcoded(seed=None):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    print lam
+    print(lam)
     # our randomization
 
     np.random.seed(seed)
@@ -177,7 +178,7 @@ def test_one_inactive_coordinate_handcoded(seed=None):
         I = I[:1]
         A1, b1 = M_est1.linear_decomposition(cov1[I], target_cov[I][:,I], target_observed[I])
 
-        print I, 'I', target_observed[I]
+        print(I , 'I', target_observed[I])
         target_inv_cov = np.linalg.inv(target_cov[I][:,I])
 
         initial_state = np.hstack([target_observed[I],
@@ -259,7 +260,7 @@ def test_logistic_selected_inactive_coordinate(seed=None):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    print lam
+    print(lam)
     # our randomization
 
     np.random.seed(seed)
@@ -323,7 +324,7 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    print lam
+    print(lam)
     # our randomization
 
     np.random.seed(seed)
@@ -385,7 +386,7 @@ def test_logistic_selected_active_coordinate(seed=None):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    print lam
+    print(lam)
     # our randomization
 
     np.random.seed(seed)
@@ -446,7 +447,7 @@ def test_logistic_saturated_active_coordinate(seed=None):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    print lam
+    print(lam)
     # our randomization
 
     np.random.seed(seed)

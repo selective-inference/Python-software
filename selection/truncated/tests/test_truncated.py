@@ -1,3 +1,4 @@
+from __future__ import print_function
 import nose.tools as nt
 import numpy as np
 
@@ -39,7 +40,7 @@ def test_equal_tailed_coverage(burnin=None,
         L, U = tg.equal_tailed_interval(Z, alpha)
         coverage += (U > 0) * (L < 0)
     SE = np.sqrt(alpha*(1-alpha)*nsim)
-    print coverage
+    print(coverage)
     nt.assert_true(np.fabs(coverage - (1-alpha)*nsim) < 2*SE)
 
 @set_seed_for_test()
@@ -59,5 +60,5 @@ def test_UMAU_coverage(burnin=None,
         L, U = tg.UMAU_interval(Z, alpha)
         coverage += (U > 0) * (L < 0)
     SE = np.sqrt(alpha*(1-alpha)*nsim)
-    print coverage
+    print(coverage)
     nt.assert_true(np.fabs(coverage - (1-alpha)*nsim) < 2*SE)

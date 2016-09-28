@@ -250,7 +250,7 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, so
         weights = lam * np.ones((p,))
     weight_dict = dict(zip(np.arange(p),
                            2 * weights))
-    penalty = rr.mixed_lasso(range(p) + [rr.NONNEGATIVE], lagrange=1.,
+    penalty = rr.mixed_lasso(list(np.arange(p)) + [rr.NONNEGATIVE], lagrange=1.,
                              weights=weight_dict)
 
     loss = sqlasso_objective_skinny(X, Y)
