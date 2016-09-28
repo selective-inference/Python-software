@@ -16,7 +16,7 @@ random_Z = np.random.standard_normal(p)
 lam, epsilon, active, betaE, cube, initial_soln = selection(X,y, random_Z)
 
 #########################################################
-#####defining a class for computing selection probability
+#####defining a class for computing selection probability: also returns selective_map and gradient of posterior
 class selection_probability(object):
 
     # defining class variables
@@ -159,32 +159,6 @@ class selection_probability(object):
 
         return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)-grad_sel_prob
 
-
-
-##############langevin random walk to sample from posterior
-class langevin_rw(object):
-    def __init__(self,initial_state,gradient_map,stepsize):
-        (self.state,
-         self.gradient_map,
-         self.stepsize) = (np.copy(initial_state),gradient_map,stepsize)
-        self._shape = self.state.shape[0]
-        self._sqrt_step = np.sqrt(self.stepsize)
-        self._noise = ndist(loc=0, scale=1)
-
-    def __iter__(self):
-        return self
-
-    def next(self):
-        while True:
-            candidate = (self.state
-                        + 0.5 * self.stepsize * self.gradient_map(self.state)
-                        + self._noise.rvs(self._shape) * self._sqrt_step)
-            if not np.all(np.isfinite(self.gradient_map(candidate))):
-                print candidate, self._sqrt_step
-                self._sqrt_step *= 0.8
-            else:
-                self.state[:] = candidate
-                break
 
 
 

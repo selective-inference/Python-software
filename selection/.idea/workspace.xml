@@ -56,14 +56,24 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="sel_probability.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="sel_probability.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/bayesian_selective/sel_probability.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="360">
-              <caret line="162" column="0" selection-start-line="162" selection-start-column="0" selection-end-line="162" selection-end-column="0" />
+            <state relative-caret-position="270">
+              <caret line="18" column="111" selection-start-line="18" selection-start-column="111" selection-end-line="18" selection-end-column="111" />
               <folding>
                 <element signature="e#0#18#0" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="credible_intervals.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/bayesian_selective/credible_intervals.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="345">
+              <caret line="23" column="21" selection-start-line="23" selection-start-column="21" selection-end-line="23" selection-end-column="21" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -105,6 +115,7 @@
         <option value="$PROJECT_DIR$/bayesian_selective/initial_soln.py" />
         <option value="$PROJECT_DIR$/bayesian_selective/test_sel_probability.py" />
         <option value="$PROJECT_DIR$/bayesian_selective/sel_probability.py" />
+        <option value="$PROJECT_DIR$/bayesian_selective/credible_intervals.py" />
       </list>
     </option>
   </component>
@@ -726,6 +737,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/bayesian_selective/sel_probability.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="270">
+          <caret line="18" column="111" selection-start-line="18" selection-start-column="111" selection-end-line="18" selection-end-column="111" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/bayesian_selective/test_sel_probability.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1680">
@@ -736,13 +757,11 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/bayesian_selective/sel_probability.py">
+    <entry file="file://$PROJECT_DIR$/bayesian_selective/credible_intervals.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="360">
-          <caret line="162" column="0" selection-start-line="162" selection-start-column="0" selection-end-line="162" selection-end-column="0" />
-          <folding>
-            <element signature="e#0#18#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="345">
+          <caret line="23" column="21" selection-start-line="23" selection-start-column="21" selection-end-line="23" selection-end-column="21" />
+          <folding />
         </state>
       </provider>
     </entry>
