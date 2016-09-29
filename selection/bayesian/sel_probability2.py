@@ -2,7 +2,6 @@ import numpy as np
 from initial_soln import selection
 from scipy.optimize import minimize
 from scipy.stats import norm as ndist
-from selection.algorithms.lasso import instance
 
 #########################################################
 #####defining a class for computing selection probability: also returns selective_map and gradient of posterior
@@ -83,7 +82,94 @@ class selection_probability(object):
 
         return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)-grad_sel_prob
 
+def subgradient_subproblem(conjugate_argument, randomization_variance, lagrange, nstep=20,
+                           initial=None):
+    '''
+    Solve the subproblem
+    $$
+    \text{minimize}_{z} -z^Tv + \frac{1}{2 \tau^2} \|z\|^2_2 + b(z)
+    $$
+    where $v$ is `conjugate_argument`, $\tau$ is `randomization_variance`, 
+    $b$ is a barrier approximation to
+    the cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+    '''
+    k = conjugate_argument.shape[0]
+    if initial is None:
+        current = np.zeros(k, np.float)
+    else:
+        current = initial # no copy
 
+    randomization_inv_variance = 1. / randomization_variance
+
+    step = np.ones(k, np.float)
+    for _ in range(nstep):
+        newton_step = ((cube_gradient(current, lagrange) - 
+                        conjugate_argument + 
+                        current * randomization_inv_variance) / 
+                       (cube_hessian(current, lagrange) + randomization_inv_variance))
+        count = 0
+        while True:
+            count += 1
+            proposal = current - step * newton_step
+            failing = (proposal > lagrange) + (proposal < - lagrange)
+            if not failing.sum():
+                break
+            step *= 0.5**failing
+
+            if count >= 10:
+                raise ValueError('not finding a feasible point')
+
+        current = proposal
+    return current
+
+def cube_barrier(argument, lagrange):
+    '''
+    Barrier approximation to the
+    cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+
+    The function is
+    $$
+    z \mapsto \log(1 + 1 / (\lambda - z)) + \log(1 + 1 / (z + \lambda))
+    $$
+    with $z$ being `argument`
+    '''
+    _diff = argument - lagrange # z - \lambda < 0
+    _sum = argument + lagrange  # z + \lambda > 0
+    return np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum))
+
+def cube_gradient(argument, lagrange):
+    """
+    Gradient of approximation to the
+    cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+
+    The function is
+    $$
+    z \mapsto \frac{2}{\lambda - z} - \frac{1}{\lambda - z + 1} + 
+    \frac{1}{z - \lambda + 1} 
+    $$
+    with $z$ being `argument`
+    """
+    _diff = argument - lagrange # z - \lambda < 0
+    _sum = argument + lagrange  # z + \lambda > 0
+    return 1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum
+
+def cube_hessian(argument, lagrange):
+    """
+    (Diagonal) Heissian of approximation to the
+    cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+
+    The function is
+    $$
+    z \mapsto \frac{2}{\lambda - z} - \frac{1}{\lambda - z + 1} + 
+    \frac{1}{z - \lambda + 1} 
+    $$
+    with $z$ being `argument`
+    """
+    _diff = argument - lagrange # z - \lambda < 0
+    _sum = argument + lagrange  # z + \lambda > 0
+    return 1. / _diff**2 - 1. / (_diff - 1)**2 + 1. / _sum**2 - 1. / (_sum + 1)**2
+
+class nonnegative_barrier(
 
 # defining barrier function on betaE
 def barrier_sel(z_2):
