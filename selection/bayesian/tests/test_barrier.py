@@ -1,22 +1,77 @@
 from __future__ import print_function
+from scipy.optimize import minimize
 import numpy as np
+import regreg.api as rr
 
 import selection.bayesian.sel_probability2; 
 from imp import reload
 reload(selection.bayesian.sel_probability2)
-from selection.bayesian.sel_probability2 import subgradient_subproblem, cube_gradient, cube_barrier
+from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
 
-def test_subgradient_subproblem():
+def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
 
-    k = 10
+    k = 100
     randomization_variance = 0.5
     lagrange = 2
-    conjugate_argument = 5 * np.random.standard_normal(k)
+    conjugate_argument = 0.5 * np.random.standard_normal(k)
+    conjugate_argument[5:] *= 2
 
-    soln = subgradient_subproblem(conjugate_argument,
-                                  randomization_variance,
-                                  lagrange)
+    soln, val = cube_subproblem(conjugate_argument,
+                                randomization_variance,
+                                lagrange, nstep=10)
 
-    print(cube_gradient(soln, lagrange) - 
-          conjugate_argument + 
-          soln / randomization_variance)
+    if do_scipy:
+        objective = lambda x: cube_barrier(x, lagrange) + (x**2).sum() / (2 * randomization_variance) - (x * conjugate_argument).sum()
+        scipy_soln = minimize(objective, x0=np.zeros(k)).x
+
+        if verbose:
+            print('scipy soln', scipy_soln)
+            print('newton soln', soln)
+
+            print('scipy val', objective(scipy_soln))
+            print('newton val', objective(soln))
+
+            print('scipy grad', cube_gradient(scipy_soln, lagrange) + 
+                  scipy_soln / randomization_variance -
+                  conjugate_argument)
+            print('newton grad', cube_gradient(soln, lagrange) + 
+                  soln / randomization_variance -
+                  conjugate_argument)
+        if (objective(soln) > objective(scipy_soln) + 0.01 * np.fabs(objective(soln))):
+            raise ValueError('scipy won!')
+
+def test_selection_probability():
+
+    n, p, s = 50, 20, 5
+
+    X = np.random.standard_normal((n, p))
+
+    scalings = np.ones(s)
+
+    active = np.zeros(p, np.bool)
+    active[:s] = 1
+    np.random.shuffle(active)
+
+    active_signs = ((-1)**np.arange(p))
+    np.random.shuffle(active_signs)
+    active_signs = active_signs[:s]
+
+    lagrange = np.ones(p) + np.linspace(-0.1,0.1,p)
+
+    parameter = np.ones(s) 
+
+    noise_variance = 1.5
+    randomization_variance = 0.5
+
+    sel_prob = selection_probability_objective(X,
+                                               scalings,
+                                               active,
+                                               active_signs,
+                                               lagrange,
+                                               parameter,
+                                               noise_variance,
+                                               randomization_variance)
+
+    sel_prob.solve()
+
+

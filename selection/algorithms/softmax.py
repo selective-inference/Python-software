@@ -105,7 +105,8 @@ class softmax_objective(smooth_atom):
         if mode in ['both', 'func']:
             f = (mean_param**2).sum() + np.log((slack + 1.) / slack).sum()
             f = self.scale(f)
-        elif mode in ['both', 'grad']:
+
+        if mode in ['both', 'grad']:
             dslack = 1. / (slack + 1.) - 1. / slack
             g = mean_param - con.linear_part.T.dot(dslack)
             g = self.scale(g)
@@ -157,3 +158,81 @@ class softmax_objective(smooth_atom):
     data = property(get_data, set_data)
 
     # End loss API
+
+
+class nonnegative_softmax(smooth_atom):
+
+    """
+    The nonnegative softmax objective
+
+    .. math::
+
+         \mu \mapsto
+         \sum_{i=1}^{m} \log \left(1 + 
+         \frac{1}{\mu_i} \right)
+
+    """
+
+    objective_template = r"""\text{nonneg_softmax}\left(%(var)s\right)"""
+
+    def __init__(self, 
+                 shape,
+                 coef=1., 
+                 offset=None,
+                 quadratic=None,
+                 initial=None):
+
+        smooth_atom.__init__(self,
+                             shape,
+                             offset=offset,
+                             quadratic=quadratic,
+                             initial=initial,
+                             coef=coef)
+
+        # a feasible point
+        self.coefs[:] = np.ones(shape)
+
+
+    def smooth_objective(self, mean_param, mode='both', check_feasibility=False):
+        """
+
+        Evaluate the smooth objective, computing its value, gradient or both.
+
+        Parameters
+        ----------
+
+        mean_param : ndarray
+            The current parameter values.
+
+        mode : str
+            One of ['func', 'grad', 'both']. 
+
+        check_feasibility : bool
+            If True, return `np.inf` when
+            point is not feasible, i.e. when `mean_param` is not
+            in the domain.
+
+        Returns
+        -------
+
+        If `mode` is 'func' returns just the objective value 
+        at `mean_param`, else if `mode` is 'grad' returns the gradient
+        else returns both.
+        """
+        
+        slack = self.apply_offset(mean_param)
+
+        if mode in ['both', 'func']:
+            f = self.scale(np.log((slack + 1.) / slack).sum())
+        if mode in ['both', 'grad']:
+            g = self.scale(1. / (slack + 1.) - 1. / slack)
+
+        if mode == 'both':
+            return f, g
+        elif mode == 'grad':
+            return g
+        elif mode == 'func':
+            return f
+        else:
+            raise ValueError("mode incorrectly specified")
+
