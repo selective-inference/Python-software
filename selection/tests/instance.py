@@ -216,4 +216,4 @@ def HIV_NRTI(drug='3TC',
     if standardize:
         Y -= Y.mean()
         X_NRTI -= X_NRTI.mean(0)[None, :]; X_NRTI /= X_NRTI.std(0)[None,:]
-    return X_NRTI, Y
+    return X_NRTI, Y, np.array(NRTI_muts)
