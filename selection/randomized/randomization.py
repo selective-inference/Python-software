@@ -12,7 +12,13 @@ from scipy.stats import laplace, norm as ndist
 
 class randomization(rr.smooth_atom):
 
-    def __init__(self, shape, density, grad_negative_log_density, sampler, lipschitz=1):
+    def __init__(self, 
+                 shape, 
+                 density, 
+                 grad_negative_log_density, 
+                 sampler, 
+                 lipschitz=1):
+
         rr.smooth_atom.__init__(self,
                                 shape)
         self._density = density
