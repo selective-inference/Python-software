@@ -1,5 +1,5 @@
 import numpy as np
-from initial_soln import selection
+
 from scipy.optimize import minimize
 from scipy.stats import norm as ndist
 
@@ -162,39 +162,45 @@ def objective_data(z_1):
 ### we need at least the gradient of the
 ### CGF 
 
-def cube_subproblem(conjugate_argument, randomization_variance, lagrange, nstep=30,
-                    initial=None):
+def cube_subproblem(argument, 
+                    randomization_CGF_conjugate,
+                    lagrange, nstep=30,
+                    initial=None,
+                    lipschitz=0):
     '''
     Solve the subproblem
     $$
-    \text{maximize}_{z} z^Tv - \frac{1}{2 \tau^2} \|z\|^2_2 - b(z)
+    \text{minimize}_{z} \Lambda_{-E}^*(u + z_{-E}) + b_{-E}(z)
     $$
-    where $v$ is `conjugate_argument`, $\tau$ is `randomization_variance`, 
-    $b$ is a barrier approximation to
-    the cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+    where $u$ is `argument`, $\Lambda_{-E}^*$ is the
+    conjvex conjugate of the $-E$ coordinates of the
+    randomization (assumes that randomization has independent
+    coordinates) and
+    $b_{-E}$ is a barrier approximation to
+    the cube $\prod_{j \in -E} [-\lambda_j,\lambda_j]$ with 
+    $\lambda$ being `lagrange`.
 
     Returns the maximizer and the value of the convex conjugate.
 
     '''
-    k = conjugate_argument.shape[0]
+    k = argument.shape[0]
     if initial is None:
         current = np.zeros(k, np.float)
     else:
         current = initial # no copy
 
     current_value = np.inf
-    randomization_inv_variance = 1. / randomization_variance # we could take this to be
-                                                             # 1. / randomization.scale**2
+
+    conj_value, conj_grad = randomization_CGF_conjugate
+
     step = np.ones(k, np.float)
 
-    objective = lambda u: cube_barrier(u, lagrange) + (u**2).sum() / (2 * randomization_variance) - (u * conjugate_argument).sum()
+    objective = lambda u: cube_barrier(u, lagrange) + conj_value(argument + u)
         
     for _ in range(nstep):
-        newton_step = ((cube_gradient(current, lagrange) - 
-                        conjugate_argument + 
-                        current * randomization_inv_variance) / # this would be gradient
-                                                                # of randomization CGF
-                       (cube_hessian(current, lagrange) + randomization_inv_variance))
+        newton_step = ((cube_gradient(current, lagrange) +
+                        conj_grad(argument + current)) / 
+                       (cube_hessian(current, lagrange) + lipschitz))
 
         # make sure proposal is feasible
 
@@ -222,9 +228,7 @@ def cube_subproblem(conjugate_argument, randomization_variance, lagrange, nstep=
 
         current = proposal
 
-    value = ((current * conjugate_argument).sum() - 
-             (current**2).sum() * 0.5 * randomization_inv_variance - 
-             cube_barrier(current, lagrange))
+    value = objective(current)
     return current, value
 
 def cube_barrier(argument, lagrange):

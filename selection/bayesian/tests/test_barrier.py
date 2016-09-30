@@ -7,6 +7,7 @@ import selection.bayesian.sel_probability2;
 from imp import reload
 reload(selection.bayesian.sel_probability2)
 from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
+from selection.randomized.api import randomization
 
 def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
 
@@ -16,12 +17,17 @@ def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
     conjugate_argument = 0.5 * np.random.standard_normal(k)
     conjugate_argument[5:] *= 2
 
+    randomizer = randomization.isotropic_gaussian((k,), 2.)
+
+    conj_value, conj_grad = randomizer.CGF_conjugate
+
     soln, val = cube_subproblem(conjugate_argument,
-                                randomization_variance,
-                                lagrange, nstep=10)
+                                randomizer.CGF_conjugate,
+                                lagrange, nstep=10,
+                                lipschitz=randomizer.lipschitz)
 
     if do_scipy:
-        objective = lambda x: cube_barrier(x, lagrange) + (x**2).sum() / (2 * randomization_variance) - (x * conjugate_argument).sum()
+        objective = lambda x: cube_barrier(x, lagrange) + conj_value(conjugate_argument + x)
         scipy_soln = minimize(objective, x0=np.zeros(k)).x
 
         if verbose:
@@ -32,11 +38,44 @@ def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
             print('newton val', objective(soln))
 
             print('scipy grad', cube_gradient(scipy_soln, lagrange) + 
-                  scipy_soln / randomization_variance -
-                  conjugate_argument)
+                  conj_grad(conjugate_argument + scipy_soln))
             print('newton grad', cube_gradient(soln, lagrange) + 
-                  soln / randomization_variance -
-                  conjugate_argument)
+                  conj_grad(conjugate_argument + soln))
+        if (objective(soln) > objective(scipy_soln) + 0.01 * np.fabs(objective(soln))):
+            raise ValueError('scipy won!')
+
+def test_cube_laplace(k=100, do_scipy=True, verbose=False):
+
+    k = 100
+    randomization_variance = 0.5
+    lagrange = 2
+    conjugate_argument = 0.5 * np.random.standard_normal(k)
+    conjugate_argument[5:] *= 2
+
+    randomizer = randomization.laplace((k,), 2.)
+
+    conj_value, conj_grad = randomizer.CGF_conjugate
+
+    soln, val = cube_subproblem(conjugate_argument,
+                                randomizer.CGF_conjugate,
+                                lagrange, nstep=10,
+                                lipschitz=randomizer.lipschitz)
+
+    if do_scipy:
+        objective = lambda x: cube_barrier(x, lagrange) + conj_value(conjugate_argument + x)
+        scipy_soln = minimize(objective, x0=np.zeros(k)).x
+
+        if verbose:
+            print('scipy soln', scipy_soln)
+            print('newton soln', soln)
+
+            print('scipy val', objective(scipy_soln))
+            print('newton val', objective(soln))
+
+            print('scipy grad', cube_gradient(scipy_soln, lagrange) + 
+                  conj_grad(conjugate_argument + scipy_soln))
+            print('newton grad', cube_gradient(soln, lagrange) + 
+                  conj_grad(conjugate_argument + soln))
         if (objective(soln) > objective(scipy_soln) + 0.01 * np.fabs(objective(soln))):
             raise ValueError('scipy won!')
 
