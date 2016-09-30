@@ -81,7 +81,7 @@ def test_cube_laplace(k=100, do_scipy=True, verbose=False):
 
 def test_selection_probability():
 
-    n, p, s = 50, 20, 5
+    n, p, s = 50, 100, 5
 
     X = np.random.standard_normal((n, p))
 
@@ -100,17 +100,49 @@ def test_selection_probability():
     parameter = np.ones(s) 
 
     noise_variance = 1.5
-    randomization_variance = 0.5
 
     sel_prob = selection_probability_objective(X,
                                                scalings,
                                                active,
                                                active_signs,
                                                lagrange,
-                                               parameter,
+                                               X[:,active].dot(parameter),
                                                noise_variance,
-                                               randomization_variance)
+                                               randomization.laplace((p,), 2.))
 
-    sel_prob.solve()
+    sel_prob.minimize()
+
+def test_selection_probability_gaussian():
+
+    n, p, s = 50, 100, 5
+
+    X = np.random.standard_normal((n, p))
+
+    scalings = np.ones(s)
+
+    active = np.zeros(p, np.bool)
+    active[:s] = 1
+    np.random.shuffle(active)
+
+    active_signs = ((-1)**np.arange(p))
+    np.random.shuffle(active_signs)
+    active_signs = active_signs[:s]
+
+    lagrange = np.ones(p) + np.linspace(-0.1,0.1,p)
+
+    parameter = np.ones(s) 
+
+    noise_variance = 1.5
+
+    sel_prob = selection_probability_objective(X,
+                                               scalings,
+                                               active,
+                                               active_signs,
+                                               lagrange,
+                                               X[:,active].dot(parameter),
+                                               noise_variance,
+                                               randomization.isotropic_gaussian((p,), 2.))
+
+    sel_prob.minimize()
 
 

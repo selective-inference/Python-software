@@ -197,7 +197,7 @@ def cube_subproblem(argument,
 
     objective = lambda u: cube_barrier(u, lagrange) + conj_value(argument + u)
         
-    for _ in range(nstep):
+    for itercount in range(nstep):
         newton_step = ((cube_gradient(current, lagrange) +
                         conj_grad(argument + current)) / 
                        (cube_hessian(current, lagrange) + lipschitz))
@@ -222,11 +222,22 @@ def cube_subproblem(argument,
         while True:
             proposal = current - step * newton_step
             proposed_value = objective(proposal)
-            if proposed_value < current_value:
+            if proposed_value <= current_value:
                 break
             step *= 0.5
+        
+        # stop if relative decrease is small
+
+        if np.fabs(current_value - proposed_value) < 1.e-6 * np.fabs(current_value):
+            current = proposal
+            current_value = proposed_value
+            break
 
         current = proposal
+        current_value = proposed_value
+
+        if itercount % 4 == 0:
+            step *= 2
 
     value = objective(current)
     return current, value
@@ -289,10 +300,11 @@ class selection_probability_objective(rr.smooth_atom):
                  active,
                  active_signs,
                  lagrange,
-                 parameter,
+                 mean_parameter, # in R^n
                  noise_variance,
-                 randomization_variance,
+                 randomization,
                  coef=1., 
+                 epsilon=0.,
                  offset=None,
                  quadratic=None):
 
@@ -300,10 +312,7 @@ class selection_probability_objective(rr.smooth_atom):
         Objective function for $\beta_E$ (i.e. active) with $E$ the `active_set` optimization
         variables, and data $z \in \mathbb{R}^n$ (i.e. response).
 
-        $$
-        \begin{aligned}
-        \frac{\| z-X_E\beta_{E}^{*}\|^2}{2\sigma^2} + \cfrac{\|B_E \beta_E -X^T z +\gamma_E\|^2}{2\tau^2}  + b_{\geq}(\beta_E).
-        $$
+        NEEDS UPDATING
 
         Above, $\beta_E^*$ is the `parameter`, $b_{\geq}$ is the softmax of the non-negative constraint, 
         $$
@@ -335,7 +344,7 @@ class selection_probability_objective(rr.smooth_atom):
              approximate the selection probability. 
              Has shape (active_set.sum(),)
 
-        randomization_variance : np.float
+        randomization : np.float
              Variance of IID Gaussian noise
              that was added before selection.
 
@@ -346,7 +355,11 @@ class selection_probability_objective(rr.smooth_atom):
 
         self.active = active
         self.noise_variance = noise_variance
-        self.randomization_variance = randomization_variance
+        self.randomization = randomization
+
+        self.inactive_conjugate = self.active_conjugate = randomization.CGF_conjugate
+        if self.active_conjugate is None:
+            raise ValueError('randomization must know its CGF_conjugate -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
         self.inactive_lagrange = lagrange[~active]
 
@@ -370,47 +383,32 @@ class selection_probability_objective(rr.smooth_atom):
 
         opt_selector = rr.selector(opt_vars, (n+E,))
         self.nonnegative_barrier = nonnegative.linear(opt_selector)
+        self._response_selector = rr.selector(~opt_vars, (n+E,))
 
         X_E = self.X_E = X[:,active]
-        B_E = X.T.dot(X_E) * active_signs[None,:]
+        B = X.T.dot(X_E) * active_signs[None,:]
 
-        # loglik refers to
-        # $$ \frac{1}{2 \sigma^2} \|z - X_E\beta_E^*\|^2_2
+        B_E = B[active]
+        B_mE = B[~active]
 
-        # selective_sampler refers to
-        # $$ \frac{1}{2 \tau^2} \|B_E\beta_E - X^Tz + (0,u_{-E}) + \gamma_E \|^2_2$$
-        # we do not include the u_{-E} in the linear term
-        # because it is optimized over 
+        self.A_active = np.hstack([-X[:,active].T, B_E + epsilon * np.identity(E)])
+        self.A_inactive = np.hstack([-X[:,~active].T, B_mE])
 
-        # gamma_E = \lagrange * active 
+        self.offset_active = active_signs * lagrange[active]
 
-        loglik_Q = np.diag(np.hstack([np.ones(n), np.zeros(E)]) / noise_variance)
-        selective_sampler_X = np.hstack([-X.T, B_E])
-        selective_sampler_Q = selective_sampler_X.T.dot(selective_sampler_X) / randomization_variance
-
-        # total quadratic term
-        total_Q = loglik_Q + selective_sampler_Q
-
-        self.quadratic_objective = rr.quadratic_loss.fromarray(total_Q)
-
-        # linear term
-        self.selective_sampler_linear = selective_sampler_X.T.dot(active * lagrange) / randomization_variance
-        self.set_parameter(parameter)
-
-        # (X[,-E]^T & B_E[-E,])
-
-        self.barrier_linear = -selective_sampler_X[~active] / randomization_variance
+        # defines \gamma and likelihood loss
+        self.set_parameter(mean_parameter, noise_variance)
 
         self.inactive_subgrad = np.zeros(p - E)
 
-    def set_parameter(self, parameter):
+    def set_parameter(self, mean_parameter, noise_variance):
         """
         Set $\beta_E^*$.
         """
-        E = self.active.sum()
-        loglik_linear = - np.hstack([self.X_E.dot(parameter), np.zeros(E)]) / self.noise_variance
-        total_linear = loglik_linear + self.selective_sampler_linear
-        self.linear_objective = rr.identity_quadratic(0, 0, total_linear, 0)
+        likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
+        likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0, 
+                                                          -0.5 * (mean_parameter**2).sum() / noise_variance)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """
@@ -442,41 +440,94 @@ class selection_probability_objective(rr.smooth_atom):
         param = self.apply_offset(param)
 
         # as argument to convex conjugate of
-        # cube barrier
-        conjugate_argument = self.barrier_linear.dot(param)
-        conjugate_optimizer, conjugate_value = cube_subproblem(conjugate_argument,
-                                                               self.randomization_variance,
-                                                               self.inactive_lagrange,
-                                                               initial=self.inactive_subgrad)
+        # inactive cube barrier
+        # _i for inactive
 
-        barrier_gradient = self.barrier_linear.T.dot(conjugate_optimizer)
+        conjugate_argument_i = self.A_inactive.dot(param)
+        conjugate_optimizer_i, conjugate_value_i = cube_subproblem(conjugate_argument_i,
+                                                                   self.inactive_conjugate,
+                                                                   self.inactive_lagrange,
+                                                                   initial=self.inactive_subgrad)
+
+        barrier_gradient_i = self.A_inactive.T.dot(conjugate_optimizer_i)
+
+        active_conj_value, active_conj_grad = self.active_conjugate
 
         if mode == 'func':
             f_nonneg = self.nonnegative_barrier.smooth_objective(param, 'func')
-            f_quad = self.quadratic_objective.smooth_objective(param, 'func')
-            f_linear = self.linear_objective.objective(param, 'func')
-            f = self.scale(f_nonneg + f_quad + f_linear + conjugate_value)
-            print(f, f_nonneg, f_quad, f_linear, 'value')
+            f_like = self.likelihood_loss.smooth_objective(param, 'func')
+            f_active_conj = active_conj_value(self.A_active.dot(param))
+            f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
+            #print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
             return f
         elif mode == 'grad':
             g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'grad')
-            g_quad = self.quadratic_objective.smooth_objective(param, 'grad')
-            g_linear = self.linear_objective.objective(param, 'grad')
-            g = self.scale(g_nonneg + g_quad + g_linear + barrier_gradient)
-            print(g, 'grad')
+            g_like = self.likelihood_loss.smooth_objective(param, 'grad')
+            g_active_conj = self.A_active.T.dot(active_conj_grad(self.A_active.dot(param)))
+            g = self.scale(g_nonneg + g_like + g_active_conj + barrier_gradient_i)
+            #print(g, 'grad')
             return g
         elif mode == 'both':
             f_nonneg, g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'both')
-            f_quad, g_quad = self.quadratic_objective.smooth_objective(param, 'both')
-            f_linear, g_linear = self.linear_objective.objective(param, 'both')
-            f = self.scale(f_nonneg + f_quad + f_linear + conjugate_value)
-            g = self.scale(g_nonneg + g_quad + g_linear + barrier_gradient)
-            print(f, g, 'both')
+            f_like, g_like = self.likelihood_loss.smooth_objective(param, 'both')
+            param_a = self.A_active.dot(param)
+            f_active_conj = active_conj_value(param_a)
+            g_active_conj = self.A_active.T.dot(active_conj_grad(param_a))
+            f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
+            g = self.scale(g_nonneg + g_like + g_active_conj + barrier_gradient_i)
+            #print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
             return f, g
         else:
             raise ValueError("mode incorrectly specified")
 
+    def minimize(self, initial=None, step=1, nstep=30):
 
+        current = self.coefs
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective(u, 'func')
+
+        for itercount in range(nstep):
+            newton_step = self.smooth_objective(current, 'grad') * self.noise_variance
+
+            # make sure proposal is feasible
+
+            count = 0
+            while True:
+                count += 1
+                proposal = current - step * newton_step
+                if np.isfinite(objective(proposal)): 
+                    break
+                step *= 0.5
+                if count >= 40:
+                    raise ValueError('not finding a feasible point')
+
+            # make sure proposal is a descent
+
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+                #print(current_value, proposed_value, 'minimize')
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < 1.e-6 * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        value = objective(current)
+        return current, value
 
 
 
