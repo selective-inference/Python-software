@@ -8,6 +8,10 @@ from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
+import matplotlib.pyplot as plt
+from scipy.stats import probplot, uniform
+import statsmodels.api as sm
+
 #@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
 #@set_seed_for_test()
 #@wait_for_return_value()
@@ -48,39 +52,13 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_it
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
         active_set = np.nonzero(active_union)[0]
-        #inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-
-        #inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
-        #j = 0
-        #for i in range(nactive):
-        #    if active_set[i] not in nonzero:
-        #        inactive_indicators_mat[j,i] = 1
-        #        j+=1
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
 
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-        #inactive_target = lambda indices: boot_target(indices)[inactive_selected]
-        #inactive_observed = target_observed[inactive_selected]
-        # param_cov = _parametric_cov_glm(loss, active_union)
 
-        #alpha_mat = set_alpha_matrix(loss, active_union)
-        # target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
-        # target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
-        # test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
-
-        # target_sampler = mv.setup_sampler(inactive_target, inactive_observed)
-
-        # test_stat = lambda x: np.linalg.norm(x)
-
-        # pval = target_sampler.hypothesis_test(test_stat_boot,
-        #                                      np.linalg.norm(inactive_observed),
-        #                                      alternative='twosided',
-        #                                      ndraw=ndraw,
-        #                                      burnin=burnin)
-
-        # testing the global null
+        # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
         all_selected = np.arange(active_set.shape[0])
         target_gn = lambda indices: boot_target(indices)[:nactive]
         target_observed_gn = target_observed[:nactive]
@@ -89,39 +67,44 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_it
 
         unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
-        #target_alpha_gn = alpha_mat
+        alpha_mat = set_alpha_matrix(loss, active_union)
+        target_alpha_gn = alpha_mat
 
-        #bootstrapped_target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-        #                                                              target_observed_gn,
-        #                                                              n, target_alpha_gn,
-        #                                                              reference = unpenalized_mle)
+        #boot_target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
+        #                                                      target_observed_gn,
+        #                                                      n, target_alpha_gn,
+        #                                                      reference = unpenalized_mle)
 
-        #test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
-        #boot_pval_gn = bootstrapped_target_sampler_gn.hypothesis_test(test_stat_boot_gn,
+        #pvalues_mle, pvalues_truth, LU = \
+        # boot_target_sampler_gn.construct_intervals(unpenalized_mle,beta[active_union], boot=True)
+
+        target_sampler_gn = mv.setup_target(target_gn,
+                                            target_observed_gn,
+                                            reference = unpenalized_mle)
+        pvalues_mle, pvalues_truth, LU = target_sampler_gn.construct_intervals(unpenalized_mle, beta[active_union])
+
+
+        L, U = LU
+        true_vec = beta[active_union]
+
+        ncovered = 0
+        for j in range(nactive):
+            if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
+                ncovered += 1
+
+        # test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
+        # boot_pval_gn = bootstrapped_target_sampler_gn.hypothesis_test(test_stat_boot_gn,
         #                                                        observed_test_value,
         #                                                        alternative='twosided',
         #                                                        ndraw=ndraw,
         #                                                        burnin=burnin)
 
-        target_sampler_gn = mv.setup_target(target_gn,
-                                            target_observed_gn,
-                                            reference = unpenalized_mle)
-
-        #test_stat_gn = lambda x: np.linalg.norm(x-beta[active_union])
-
-        #pval_gn = target_sampler_gn.hypothesis_test(test_stat_gn,
+        # test_stat_gn = lambda x: np.linalg.norm(x-beta[active_union])
+        # pval_gn = target_sampler_gn.hypothesis_test(test_stat_gn,
         #                                            observed_test_value,
         #                                            alternative='twosided',
         #                                            ndraw=ndraw,
         #                                            burnin=burnin)
-
-        pvalues_mle, pvalues_truth, LU = target_sampler_gn.construct_intervals(unpenalized_mle, beta[active_union])
-        L, U = LU
-        true_vec = beta[active_union]
-        ncovered = 0
-        for j in range(nactive):
-            if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
-                ncovered += 1
 
         return pvalues_mle, pvalues_truth, ncovered, nactive
 
@@ -256,10 +239,6 @@ def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim need
 
 def make_a_plot():
 
-    import matplotlib.pyplot as plt
-    from scipy.stats import probplot, uniform
-    import statsmodels.api as sm
-
     np.random.seed(2)
 
     _pvalues_mle = []
@@ -277,7 +256,7 @@ def make_a_plot():
             _ncovered += ncovered
             print(np.mean(_pvalues_truth), np.std(_pvalues_truth), np.mean(np.array(_pvalues_truth) < 0.05))
 
-    print("coverage", _ncovered/float(_nparam))
+    print("number of parameters", _nparam,"coverage", _ncovered/float(_nparam))
     fig = plt.figure()
     fig.suptitle('Pivots at the reference (MLE) and the truth')
     plot_pvalues_mle = fig.add_subplot(121)
@@ -288,7 +267,7 @@ def make_a_plot():
     y = ecdf_mle(x)
     plot_pvalues_mle.plot(x, y, '-o', lw=2)
     plot_pvalues_mle.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_mle.set_title("P values at the unpenalized MLE")
+    plot_pvalues_mle.set_title("Pivots at the unpenalized MLE")
     plot_pvalues_mle.set_xlim([0, 1])
     plot_pvalues_mle.set_ylim([0, 1])
 
@@ -297,14 +276,13 @@ def make_a_plot():
     y = ecdf_truth(x)
     plot_pvalues_truth.plot(x, y, '-o', lw=2)
     plot_pvalues_truth.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_truth.set_title("P values at the truth")
+    plot_pvalues_truth.set_title("Pivots at the truth (by tilting)")
     plot_pvalues_truth.set_xlim([0, 1])
     plot_pvalues_truth.set_ylim([0, 1])
 
     #while True:
     #    plt.pause(0.05)
     plt.show()
-
 
 
 def make_a_plot_individual_coeff():

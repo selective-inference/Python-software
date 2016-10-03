@@ -460,12 +460,18 @@ class targeted_sampler(object):
     def construct_intervals(self,
                   observed,
                   true_vec,
+                  boot=None,
                   ndraw=10000,
                   burnin=2000,
                   stepsize=None,
                   alternative='twosided'):
 
         samples = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        if boot:
+            samples = [np.dot(self.target_alpha,x)+self.reference for x in samples]
+
+
         samples  = np.asarray(samples, dtype=np.float32)
         nactive = observed.shape[0]
         from selection.randomized.intervals import intervals
