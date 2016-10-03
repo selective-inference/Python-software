@@ -469,11 +469,11 @@ class targeted_sampler(object):
         else:
             return 2 * min(pval, 1 - pval)
 
-
     def confidence_intervals(self,
                              observed,
                              ndraw=10000,
                              burnin=2000,
+                             boot=False,
                              stepsize=None,
                              sample=None):
         '''
