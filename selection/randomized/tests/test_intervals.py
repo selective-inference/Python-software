@@ -8,10 +8,6 @@ from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-#@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-#@set_seed_for_test()
-#@wait_for_return_value()
-
 def test_multiple_views(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
     s, n, p = 0, 100, 10
 
@@ -127,133 +123,6 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_it
 
 
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
-@wait_for_return_value()
-def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 3, 100, 10
-
-    randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
-
-    nonzero = np.where(beta)[0]
-    lam_frac = 1.
-
-    loss = rr.glm.logistic(X, y)
-    epsilon = 1.
-
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-    W = np.ones(p)*lam
-    W[0] = 0 # use at least some unpenalized
-    penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
-
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-
-    mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
-    mv.solve()
-
-    active_union = M_est1.overall + M_est2.overall
-    nactive = np.sum(active_union)
-    print("nactive", nactive)
-    active_set = np.nonzero(active_union)[0]
-
-    pvalues = []
-    true_beta = beta[active_union]
-    if set(nonzero).issubset(np.nonzero(active_union)[0]):
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
-
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-        alpha_mat = set_alpha_matrix(loss, active_union)
-
-        for j in range(nactive):
-
-            individual_target = lambda indices: boot_target(indices)[j]
-            individual_observed = target_observed[j]
-            # param_cov = _parametric_cov_glm(loss, active_union)
-
-            target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
-
-            target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
-
-            test_stat_boot = lambda x: np.inner(target_alpha, x)
-
-            pval = target_sampler.hypothesis_test(test_stat_boot,
-                                                  individual_observed-true_beta[j],
-                                                  alternative='twosided',
-                                                  ndraw=ndraw,
-                                                  burnin=burnin)
-            pvalues.append(pval)
-
-        return pvalues
-
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
-@wait_for_return_value()
-def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 3, 100, 10
-
-    randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
-
-    nonzero = np.where(beta)[0]
-    lam_frac = 1.
-
-    loss = rr.glm.logistic(X, y)
-    epsilon = 1.
-
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-    W = np.ones(p)*lam
-    W[0] = 0 # use at least some unpenalized
-    penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
-
-    # first randomization
-    M_est1 = glm_group_lasso_parametric(loss, epsilon, penalty, randomizer)
-    # second randomization
-    M_est2 = glm_group_lasso_parametric(loss, epsilon, penalty, randomizer)
-
-    mv = multiple_views([M_est1, M_est2])
-    mv.solve()
-
-    target = M_est1.overall.copy()
-    if target[-1] or M_est2.overall[-1]:
-        return None
-    if target[-2] or M_est2.overall[-2]:
-        return None
-    # we should check they are different sizes
-    target[-2:] = 1
-
-    if set(nonzero).issubset(np.nonzero(target)[0]):
-
-        form_covariances = glm_parametric_covariance(loss)
-        mv.setup_sampler(form_covariances)
-
-        target_observed = restricted_Mest(loss, target)
-        linear_func = np.zeros((2,target_observed.shape[0]))
-        linear_func[0,-1] = 1. # we know this one is null
-        linear_func[1,-2] = 1. # also null
-
-        target_observed = linear_func.dot(target_observed)
-        target_sampler = mv.setup_target((target, linear_func), target_observed)
-
-        test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat,
-                                              test_stat(target_observed),
-                                              alternative='greater',
-                                              ndraw=ndraw,
-                                              burnin=burnin)
-
-        return pval
-
-
-
-
 def make_a_plot():
 
     import matplotlib.pyplot as plt
@@ -277,7 +146,8 @@ def make_a_plot():
             _ncovered += ncovered
             print(np.mean(_pvalues_truth), np.std(_pvalues_truth), np.mean(np.array(_pvalues_truth) < 0.05))
 
-    print("coverage", _ncovered/float(_nparam))
+        print("coverage", _ncovered/float(_nparam))
+
     fig = plt.figure()
     fig.suptitle('Pivots at the reference (MLE) and the truth')
     plot_pvalues_mle = fig.add_subplot(121)
