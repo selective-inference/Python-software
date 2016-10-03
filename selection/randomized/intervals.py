@@ -5,9 +5,9 @@ from scipy.stats import norm as ndist
 class intervals(object):
 
     def __init__(self):
-        self.grid_length = 400
-        self.param_values_at_grid = np.linspace(-10, 10, num=self.grid_length)
-
+        self.grid_length = 1000
+        # this grid should surely use the variance somewhere...
+        self.param_values_at_grid = np.linspace(-20, 20, num=self.grid_length)
 
     def setup_samples(self, ref_vec, samples, observed, variances):
         (self.ref_vec,
@@ -21,13 +21,11 @@ class intervals(object):
         self.nactive = ref_vec.shape[0]
         self.nsamples = self.samples.shape[1]
 
-
     def empirical_exp(self, j, param):
         ref = self.ref_vec[j]
         factor = np.true_divide(param-ref, self.variances[j])
         tilted_samples = np.exp(self.samples[j, :]*factor)
         return np.sum(tilted_samples)/float(self.nsamples)
-
 
     def pvalue_by_tilting(self, j, param):
         ref = self.ref_vec[j]
@@ -38,25 +36,12 @@ class intervals(object):
         LR = np.true_divide(np.exp(log_gaussian_tilt), emp_exp)
         return np.clip(np.sum(np.multiply(indicator, LR)) / float(self.nsamples), 0, 1)
 
-
     def pvalues_param_all(self, param_vec):
         pvalues = []
         for j in range(self.nactive):
             pval = self.pvalue_by_tilting(j, param_vec[j])
-            pval = 2 * min(pval, 1 - pval)
             pvalues.append(pval)
-        return pvalues
-
-    def pvalues_ref_all(self):
-        pvalues = []
-        for j in range(self.nactive):
-            indicator = np.array(self.samples[j, :] < self.observed[j], dtype=int)
-            pval = np.sum(indicator)/float(self.nsamples)
-            pval = 2*min(pval, 1-pval)
-            pvalues.append(pval)
-
-        return pvalues
-
+        return np.array(pvalues)
 
     def pvalues_grid(self, j):
         pvalues_at_grid = [self.pvalue_by_tilting(j, self.param_values_at_grid[i]) 
@@ -65,15 +50,13 @@ class intervals(object):
         pvalues_at_grid = np.asarray(pvalues_at_grid, dtype=np.float32)
         return pvalues_at_grid
 
-
     def construct_intervals(self, j, alpha=0.1):
         pvalues_at_grid = self.pvalues_grid(j)
         accepted_indices = np.array(pvalues_at_grid > alpha)
         if np.sum(accepted_indices) > 0:
-            self.L = np.min(self.param_values_at_grid[accepted_indices])
-            self.U = np.max(self.param_values_at_grid[accepted_indices])
-            return self.L, self.U
-
+            L = np.min(self.param_values_at_grid[accepted_indices])
+            U = np.max(self.param_values_at_grid[accepted_indices])
+            return L, U
 
     def construct_intervals_all(self, alpha=0.1):
         L, U = np.zeros(self.nactive), np.zeros(self.nactive)
@@ -81,13 +64,5 @@ class intervals(object):
             LU = self.construct_intervals(j, alpha=alpha)
             if LU is not None:
                 L[j], U[j] = LU
-        return L, U
+        return np.array([L, U])
 
-    def construct_naive_intervals(self, alpha=0.1):
-        quantile = -ndist.ppf(alpha/float(2))
-        L, U = np.zeros(self.nactive), np.zeros(self.nactive)
-        for j in range(self.nactive):
-            sigma = np.sqrt(self.variances[j])
-            L[j] = self.ref_vec[j]-sigma*quantile
-            U[j] = self.ref_vec[j]+sigma*quantile
-        return L, U
