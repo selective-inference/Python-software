@@ -344,7 +344,7 @@ class targeted_sampler(object):
             target_grad += target_grad_curr.copy()
 
         target_grad = - target_grad
-        target_grad += self.reference_inv - self.target_inv_cov.dot(target_state)
+        target_grad += self.reference_inv.flatten() - self.target_inv_cov.dot(target_state)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
@@ -455,6 +455,37 @@ class targeted_sampler(object):
             return pval
         else:
             return 2 * min(pval, 1 - pval)
+
+
+    def construct_intervals(self,
+                  observed,
+                  true_vec,
+                  ndraw=10000,
+                  burnin=2000,
+                  stepsize=None,
+                  alternative='twosided'):
+
+        samples = self.sample(ndraw, burnin, stepsize=stepsize)
+        samples  = np.asarray(samples, dtype=np.float32)
+        nactive = observed.shape[0]
+        from selection.randomized.intervals import intervals
+        int_class = intervals()
+        all_samples = np.zeros((nactive, ndraw))
+        all_variances = np.zeros(nactive)
+
+        for j in range(nactive):
+            all_variances[j] =self.target_cov[j, j]
+            all_samples[j, :] = samples[:, j]
+
+        int_class.setup_samples(self.reference, all_samples, observed, all_variances)
+
+        pvalues_ref = int_class.pvalues_ref_all()
+        pvalues_truth = int_class.pvalues_param_all(true_vec)
+
+        return pvalues_ref, pvalues_truth, int_class.construct_intervals_all()
+
+
+
 
     def crude_lipschitz(self):
         """

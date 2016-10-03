@@ -74,29 +74,20 @@ class intervals(object):
             self.U = np.max(self.param_values_at_grid[accepted_indices])
             return self.L, self.U
 
-    def construct_intervals_all(self, truth_vec, alpha=0.1):
-        ncovered = 0
-        nparam = 0
+
+    def construct_intervals_all(self, alpha=0.1):
+        L, U = np.zeros(self.nactive), np.zeros(self.nactive)
         for j in range(self.nactive):
             LU = self.construct_intervals(j, alpha=alpha)
             if LU is not None:
-                L, U = LU
-                print("interval", L, U)
-                nparam += 1
-                if (L <= truth_vec[j]) and (U >= truth_vec[j]):
-                    ncovered += 1
-        return ncovered, nparam
+                L[j], U[j] = LU
+        return L, U
 
-    def construct_naive_intervals(self, truth_vec, alpha=0.1):
-        ncovered = 0
-        nparam = 0
+    def construct_naive_intervals(self, alpha=0.1):
         quantile = -ndist.ppf(alpha/float(2))
+        L, U = np.zeros(self.nactive), np.zeros(self.nactive)
         for j in range(self.nactive):
             sigma = np.sqrt(self.variances[j])
-            L = self.ref_vec[j]-sigma*quantile
-            U = self.ref_vec[j]+sigma*quantile
-            print("naive interval", L, U)
-            nparam += 1
-            if (L <= truth_vec[j]) and (U >= truth_vec[j]):
-                ncovered += 1
-        return ncovered, nparam
+            L[j] = self.ref_vec[j]-sigma*quantile
+            U[j] = self.ref_vec[j]+sigma*quantile
+        return L, U
