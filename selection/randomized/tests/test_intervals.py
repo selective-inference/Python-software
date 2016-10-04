@@ -11,10 +11,10 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 from selection.randomized.multiple_views import naive_confidence_intervals
 
 def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 5, 200, 50
+    s, n, p = 2, 200, 10
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=20)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -60,32 +60,33 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
         unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
-        #alpha_mat = set_alpha_matrix(loss, active_union)
-        #target_alpha_gn = alpha_mat
+        alpha_mat = set_alpha_matrix(loss, active_union)
+        target_alpha_gn = alpha_mat
 
-        #boot_target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-        #                                                      target_observed_gn,
-        #                                                      n, target_alpha_gn,
-        #                                                      reference = unpenalized_mle)
+        ## bootstrap
+        target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
+                                                              target_observed_gn,
+                                                              n, target_alpha_gn,
+                                                              reference = unpenalized_mle)
 
-        #pvalues_mle, pvalues_truth, LU = \
-        # boot_target_sampler_gn.construct_intervals(unpenalized_mle,beta[active_union], boot=True)
-
-        target_sampler_gn = mv.setup_target(target_gn,
-                                            target_observed_gn,
-                                            reference = unpenalized_mle)
+        ## CLT plugin
+        #target_sampler_gn = mv.setup_target(target_gn,
+        #                                    target_observed_gn,
+        #                                    reference = unpenalized_mle)
 
         target_sample = target_sampler_gn.sample(ndraw=ndraw,
                                                  burnin=burnin)
 
-        LU = target_sampler_gn.confidence_intervals(unpenalized_mle, 
+
+        LU = target_sampler_gn.confidence_intervals(unpenalized_mle,
                                                     sample=target_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
-        pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
+        pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
                                                             parameter=target_sampler_gn.reference,
                                                             sample=target_sample)
+
         pvalues_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
                                                               parameter=beta[active_union],
                                                               sample=target_sample)

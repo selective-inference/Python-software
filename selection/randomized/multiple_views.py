@@ -473,7 +473,6 @@ class targeted_sampler(object):
                              observed,
                              ndraw=10000,
                              burnin=2000,
-                             boot=False,
                              stepsize=None,
                              sample=None):
         '''
@@ -688,7 +687,8 @@ class bootstrapped_target_sampler(targeted_sampler):
             bootstrap_langevin.next()
             if (i >= burnin):
                 samples.append(bootstrap_langevin.state[self.boot_slice].copy())
-        return samples
+        return np.asarray([np.dot(self.target_alpha, x)+self.reference for x in samples])
+
 
 def naive_confidence_intervals(target, observed, alpha=0.1):
     """
