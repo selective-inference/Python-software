@@ -12,18 +12,43 @@ from selection.randomized.multiple_views import naive_confidence_intervals
 
 from selection.randomized.randomization import split
 
-def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
+
+class randomized_loss(object):
+    def __init__(self, X, y, subsample_size):
+        self.X = X
+        self.y = y
+        self.n, self.p = X.shape
+        subsample = np.random.choice(self.n, size=(subsample_size,), replace=True)
+        self.X1 = X[subsample]
+        self.y1 = y[subsample]
+        self.subloss = rr.glm.logistic(self.X1, self.y1)
+        self.m = subsample_size
+
+    def smooth_objective(self, beta, mode='both', check_feasibility=False):
+        linear = -(np.dot(self.X.T, self.y)*self.m/float(self.n))+np.dot(self.X1.T,self.y1)
+        if mode=='grad':
+            return self.subloss.smooth_objective(beta, 'grad') + linear
+        if mode=='func':
+            return self.subloss.smooth_objective(beta, 'func')+np.inner(linear, beta)
+        if mode=='both':
+            return self.subloss.smooth_objective(beta, 'func')+np.inner(linear, beta), self.subloss.smooth_objective(beta, 'grad') + linear
+
+
+def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
     s, n, p = 3, 100, 10
 
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
 
-    randomizer = split(X,y, n/float(2))
+    subsample_size = n/2
+
+    randomizer = split(X, y, subsample_size)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
-    loss = rr.glm.logistic(X, y)
+    loss = randomized_loss(X, y, subsample_size)
+
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
@@ -126,7 +151,7 @@ def make_a_plot():
     _naive_ncovered = 0
     for i in range(100):
         print("iteration", i)
-        test = test_intervals()
+        test = test_splits()
         if test is not None:
             pvalues_mle, pvalues_truth, ncovered, naive_ncovered, nparam = test
             _pvalues_mle.extend(pvalues_mle)
