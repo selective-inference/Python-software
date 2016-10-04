@@ -75,8 +75,7 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
 
         test_stat = lambda x: np.linalg.norm(x)
-        test_stat_boot = lambda x: np.linalg.norm(np.dot(target_alpha, x))
-        pval = target_sampler.hypothesis_test(test_stat_boot, 
+        pval = target_sampler.hypothesis_test(test_stat, 
                                               np.linalg.norm(inactive_observed), 
                                               alternative='twosided',
                                               ndraw=ndraw,
@@ -91,7 +90,7 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         target_alpha_gn = alpha_mat
 
         target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
-        test_stat_boot_gn = lambda x: np.linalg.norm(np.dot(target_alpha_gn, x))
+        test_stat_boot_gn = lambda x: np.linalg.norm(x)
         observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
         pval_gn = target_sampler_gn.hypothesis_test(test_stat_boot_gn, 
                                                     observed_test_value, 
