@@ -123,15 +123,29 @@ class split(randomization):
             return covariance/float(nboot)
 
         self.covariance = _nonparametric_covariance_estimate()
-        covariance_inv = np.linalg.inv(self.covariance)
-        print self.covariance.shape
+        print np.diag(self.covariance)
+        #covariance_inv = np.linalg.inv(self.covariance)
 
-        from scipy.stats import multivariate_normal
+        #from scipy.stats import multivariate_normal
 
-        density = lambda x: multivariate_normal.pdf(x, mean=np.zeros(p), cov=self.covariance)
-        grad_negative_log_density = lambda x: covariance_inv.dot(x)
-        sampler = lambda size: np.random.multivariate_normal(mean=np.zeros(p), cov=self.covariance, size=size)
-        randomization.__init__(self, 1, density, grad_negative_log_density, sampler)
+        #density = lambda x: multivariate_normal.pdf(x, mean=np.zeros(p), cov=self.covariance)
+        #grad_negative_log_density = lambda x: covariance_inv.dot(x)
+        #sampler = lambda size: np.random.multivariate_normal(mean=np.zeros(p), cov=self.covariance, size=size)
+
+        def gaussian(covariance):
+            precision = np.linalg.inv(covariance)
+            sqrt_precision = np.linalg.cholesky(precision)
+            _det = np.linalg.det(covariance)
+            p = covariance.shape[0]
+            _const = np.sqrt((2 * np.pi) ** p * _det)
+            density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
+            grad_negative_log_density = lambda x: precision.dot(x)
+            sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+            return randomization.__init__(self,(p,), density, grad_negative_log_density, sampler,
+                                 lipschitz=np.linalg.svd(precision)[1].max())
+
+        gaussian(self.covariance*4)
+        #randomization.__init__(self, 1, density, grad_negative_log_density, sampler)
 
 
 
