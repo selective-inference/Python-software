@@ -4,15 +4,19 @@ import numpy as np
 import regreg.api as rr
 
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
-from selection.tests.instance import logistic_instance
+from selection.tests.instance import logistic_instance, gaussian_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
+
+import matplotlib.pyplot as plt
+import statsmodels.api as sm
+
 
 @set_sampling_params_iftrue(True, ndraw=100, burnin=100)
 @set_seed_for_test()
 @wait_for_return_value()
 def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 2, 120, 10
+    s, n, p = 2, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -71,8 +75,8 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
 
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat,
-                                              np.linalg.norm(inactive_observed),
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              np.linalg.norm(inactive_observed), 
                                               alternative='twosided',
                                               ndraw=ndraw,
                                               burnin=burnin)
@@ -86,9 +90,10 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         target_alpha_gn = alpha_mat
 
         target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
+        test_stat_boot_gn = lambda x: np.linalg.norm(x)
         observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
-        pval_gn = target_sampler_gn.hypothesis_test(test_stat,
-                                                    observed_test_value,
+        pval_gn = target_sampler_gn.hypothesis_test(test_stat_boot_gn, 
+                                                    observed_test_value, 
                                                     alternative='twosided',
                                                     ndraw=ndraw,
                                                     burnin=burnin)
@@ -96,19 +101,23 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         return pval, pval_gn
 
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
-@wait_for_return_value()
+#@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
+#@set_seed_for_test()
+#@wait_for_return_value()
 def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 3, 120, 10
+    s, n, p = 5, 2000, 20
 
+    #randomizer = randomization.logistic((p,), scale=1./np.log(n))
+    #randomizer = randomization.laplace((p,), scale=2. / np.sqrt(n))
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5.)
+    # X, y, beta, _, _ = gaussian_instance(n=n, p=p, s=s, rho=0, snr=5.)
 
     nonzero = np.where(beta)[0]
-    lam_frac = 1.
+    lam_frac = 3.
 
-    loss = rr.glm.logistic(X, y)
+    # loss = rr.glm.logistic(X, y)
+    loss = rr.glm.gaussian(X,y)
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
@@ -120,19 +129,20 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
     # first randomization
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1, M_est2])
-    #mv = multiple_views([M_est1])
+    # mv = multiple_views([M_est1, M_est2])
+    mv = multiple_views([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall + M_est2.overall
+    active_union = M_est1.overall #+ M_est2.overall
     nactive = np.sum(active_union)
     print("nactive", nactive)
     active_set = np.nonzero(active_union)[0]
 
     pvalues = []
     true_beta = beta[active_union]
+
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
@@ -146,19 +156,20 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
             individual_observed = target_observed[j]
             # param_cov = _parametric_cov_glm(loss, active_union)
 
-            target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
+            #target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
+            #target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
+            #test_stat_boot = lambda x: np.inner(target_alpha, x)
 
-            target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
+            target_sampler = mv.setup_target(individual_target, individual_observed, reference=true_beta[j])
+            test_stat = lambda x: x #-true_beta[j]
 
-            test_stat = lambda x: x
 
-            pval = target_sampler.hypothesis_test(test_stat,
-                                                  individual_observed-true_beta[j],
+            pval = target_sampler.hypothesis_test(test_stat,#_boot,
+                                                  individual_observed,#-true_beta[j],
                                                   alternative='twosided',
                                                   ndraw=ndraw,
                                                   burnin=burnin)
             pvalues.append(pval)
-
 
         return pvalues
 
@@ -166,7 +177,7 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
 @set_seed_for_test()
 @wait_for_return_value()
 def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 3, 120, 10
+    s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
@@ -213,8 +224,8 @@ def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim need
         target_sampler = mv.setup_target((target, linear_func), target_observed)
 
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat,
-                                              test_stat(target_observed),
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(target_observed), 
                                               alternative='greater',
                                               ndraw=ndraw,
                                               burnin=burnin)
@@ -226,17 +237,13 @@ def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim need
 
 def make_a_plot():
 
-    import matplotlib.pyplot as plt
-    from scipy.stats import probplot, uniform
-    import statsmodels.api as sm
-
     np.random.seed(2)
     fig = plt.figure()
     fig.suptitle('Pivots for glm via wild bootstrap')
 
     pvalues = []
     pvalues_gn = []
-    for i in range(200):
+    for i in range(30):
         print("iteration", i)
         pvals = test_multiple_views()
         if pvals is not None:
@@ -296,9 +303,10 @@ def make_a_plot_individual_coeff():
     fig.suptitle('Pivots for glm wild bootstrap')
 
     pvalues = []
-    for i in range(100):
+    for i in range(30):
         print("iteration", i)
         pvals = test_multiple_views_individual_coeff()
+        print(pvals)
         if pvals is not None:
             pvalues.extend(pvals)
             print("pvalues", pvals)

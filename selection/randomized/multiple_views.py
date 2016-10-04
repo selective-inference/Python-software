@@ -1,9 +1,9 @@
 from itertools import product
 import numpy as np
+from scipy.stats import norm as ndist
 
-from ..distributions.discrete_family import discrete_family
+from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
-from .glm import bootstrap_cov
 
 class multiple_views(object):
 
@@ -246,6 +246,7 @@ class targeted_sampler(object):
         self.objectives = multi_view.objectives
 
         self.observed_target_state = observed_target_state
+        self.shape = observed_target_state.shape
 
         covariances = multi_view.form_covariances(target_info, cross_terms=multi_view.score_info)
         self.target_cov = np.atleast_2d(covariances[0])
@@ -344,7 +345,7 @@ class targeted_sampler(object):
             target_grad += target_grad_curr.copy()
 
         target_grad = - target_grad
-        target_grad += self.reference_inv - self.target_inv_cov.dot(target_state)
+        target_grad += self.reference_inv.flatten() - self.target_inv_cov.dot(target_state)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
@@ -392,7 +393,7 @@ class targeted_sampler(object):
             if (i >= burnin):
                 samples.append(target_langevin.state[self.keep_slice].copy())
 
-        return samples
+        return np.asarray(samples)
 
     def hypothesis_test(self,
                         test_stat,
@@ -400,6 +401,7 @@ class targeted_sampler(object):
                         ndraw=10000,
                         burnin=2000,
                         stepsize=None,
+                        sample=None,
                         alternative='twosided'):
 
         '''
@@ -430,6 +432,13 @@ class targeted_sampler(object):
            to a crude estimate based on the
            dimension of the problem.
 
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence 
+           intervals, hypothesis tests, etc. If not None,
+           `ndraw, burnin, stepsize` are ignored.
+
         alternative : ['greater', 'less', 'twosided']
             What alternative to use.
 
@@ -443,8 +452,10 @@ class targeted_sampler(object):
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
-        samples = self.sample(ndraw, burnin, stepsize=stepsize)
-        sample_test_stat = np.array([test_stat(x) for x in samples])
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        sample_test_stat = np.array([test_stat(x) for x in sample])
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.cdf(0, observed_value)
@@ -455,6 +466,139 @@ class targeted_sampler(object):
             return pval
         else:
             return 2 * min(pval, 1 - pval)
+
+    def confidence_intervals(self,
+                             observed,
+                             ndraw=10000,
+                             burnin=2000,
+                             stepsize=None,
+                             sample=None):
+        '''
+        Parameters
+        ----------
+
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : int
+           How many samples to discard?
+
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence 
+           intervals, hypothesis tests, etc.
+
+        Notes
+        -----
+
+        Construct selective confidence intervals
+        for each parameter of the target.
+
+        Returns
+        -------
+
+        intervals : [(float, float)]
+            List of confidence intervals.
+
+        '''
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        nactive = observed.shape[0]
+        intervals_instance = intervals_from_sample(self.reference, 
+                                                   sample, 
+                                                   observed, 
+                                                   self.target_cov)
+
+        return intervals_instance.confidence_intervals_all()
+
+    def coefficient_pvalues(self,
+                            observed,
+                            parameter=None,
+                            ndraw=10000,
+                            burnin=2000,
+                            stepsize=None,
+                            sample=None,
+                            alternative='twosided'):
+        '''
+
+        Construct selective p-values
+        for each parameter of the target.
+
+        Parameters
+        ----------
+
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+
+        parameter : np.float (optional)
+            A vector of parameters with shape `self.shape`
+            at which to evaluate p-values. Defaults
+            to `np.zeros(self.shape)`.
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : int
+           How many samples to discard?
+
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence 
+           intervals, hypothesis tests, etc.
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+
+        pvalues : np.float
+        
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        if parameter is None:
+            parameter = np.zeros(self.shape)
+
+        nactive = observed.shape[0]
+        intervals_instance = intervals_from_sample(self.reference, 
+                                                   sample, 
+                                                   observed, 
+                                                   self.target_cov)
+
+        pval = intervals_instance.pivots_all(parameter)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * np.minimum(pval, 1 - pval)
+
 
     def crude_lipschitz(self):
         """
@@ -472,8 +616,6 @@ class targeted_sampler(object):
             lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
             lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
         return lipschitz
-
-
 
 class bootstrapped_target_sampler(targeted_sampler):
 
@@ -516,14 +658,13 @@ class bootstrapped_target_sampler(targeted_sampler):
         # set the observed state for bootstrap
 
         self.boot_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.boot_size)
-        self.boot_observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
-        self.boot_observed_state[self.boot_slice] = np.ones(self.boot_size)
+        self.observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
+        self.observed_state[self.boot_slice] = np.ones(self.boot_size)
         #self.boot_observed_state[self.boot_slice] = np.random.normal(size=self.boot_size)
-        self.boot_observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+        self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
-        self.gradient = self.boot_gradient
 
-    def boot_gradient(self, state):
+    def gradient(self, state):
 
         boot_state, opt_state = state[self.boot_slice], state[self.overall_opt_slice]
         boot_grad, opt_grad = np.zeros_like(boot_state), np.zeros_like(opt_state)
@@ -552,8 +693,8 @@ class bootstrapped_target_sampler(targeted_sampler):
         if stepsize is None:
             stepsize = 1. / self.observed_state.shape[0]
 
-        bootstrap_langevin = projected_langevin(self.boot_observed_state.copy(),
-                                                self.boot_gradient,
+        bootstrap_langevin = projected_langevin(self.observed_state.copy(),
+                                                self.gradient,
                                                 self.projection,
                                                 stepsize)
 
@@ -562,6 +703,35 @@ class bootstrapped_target_sampler(targeted_sampler):
             bootstrap_langevin.next()
             if (i >= burnin):
                 samples.append(bootstrap_langevin.state[self.boot_slice].copy())
-        return samples
+        return np.asarray([np.dot(self.target_alpha, x)+self.reference for x in samples])
 
 
+def naive_confidence_intervals(target, observed, alpha=0.1):
+    """
+    Compute naive Gaussian based confidence
+    intervals for target.
+
+    Parameters
+    ----------
+    
+    target : `targeted_sampler`
+
+    observed : np.float
+        A vector of observed data of shape `target.shape`
+
+    alpha : float (optional)
+        1 - confidence level.
+
+    Returns
+    -------
+
+    intervals : np.float
+        Gaussian based confidence intervals.
+    """
+    quantile = - ndist.ppf(alpha/float(2))
+    LU = np.zeros((2, target.shape[0]))
+    for j in range(target.shape[0]):
+        sigma = np.sqrt(target.target_cov[j, j])
+        LU[0,j] = observed[j] - sigma * quantile
+        LU[1,j] = observed[j] + sigma * quantile
+    return LU
