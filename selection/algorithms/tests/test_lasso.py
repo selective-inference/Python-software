@@ -9,8 +9,8 @@ from selection.algorithms.lasso import (lasso,
                                         split_model, 
                                         standard_lasso,
                                         nominal_intervals,
-                                        gaussian_sandwich_estimator,
-                                        gaussian_parametric_estimator)
+                                        glm_sandwich_estimator,
+                                        glm_parametric_estimator)
 
 from selection.tests.decorators import set_seed_for_test
 from selection.tests.instance import gaussian_instance as instance
@@ -46,7 +46,7 @@ def test_gaussian(n=100, p=20):
         L.fit()
         C = L.constraints
 
-        sandwich = gaussian_sandwich_estimator(X, y)
+        sandwich = glm_sandwich_estimator(L.loglike, B=5000)
         L = lasso.gaussian(X, y, fw, 1., quadratic=Q, covariance_estimator=sandwich)
         L.fit()
         C = L.constraints
@@ -659,9 +659,9 @@ def test_sqrt_lasso_pvals(n=100,
             return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
 
 
-def test_gaussian_sandwich_pvals(n=100,
-                                 p=200,
-                                 s=20,
+def test_gaussian_sandwich_pvals(n=200,
+                                 p=50,
+                                 s=10,
                                  sigma=10,
                                  rho=0.3,
                                  snr=6.):
@@ -683,8 +683,9 @@ def test_gaussian_sandwich_pvals(n=100,
         y += heteroscedastic_error
 
         # two different estimators of variance
-        sandwich = gaussian_sandwich_estimator(X, y, B=1000)
-        parametric = gaussian_parametric_estimator(X, y, sigma=None)
+        loss = rr.glm.gaussian(X, y)
+        sandwich = glm_sandwich_estimator(loss, B=5000)
+        parametric = glm_parametric_estimator(loss, dispersion=None)
 
         # make sure things work with some unpenalized columns
 

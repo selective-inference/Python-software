@@ -1,10 +1,10 @@
 import functools # for bootstrap partial mapping
 
 import numpy as np
+from regreg.api import glm
 
 from .M_estimator import restricted_Mest, M_estimator
 from .greedy_step import greedy_score_step
-from regreg.api import glm
 
 def pairs_bootstrap_glm(glm_loss, 
                         active, 
@@ -59,7 +59,7 @@ def pairs_bootstrap_glm(glm_loss,
     # scaling is a lipschitz constant for a gradient squared
     _sqrt_scaling = np.sqrt(scaling)
 
-    def _boot_score(indices):
+    def _boot_score(X_full, Y, ntotal, _bootQinv, _bootI, nactive, _sqrt_scaling, indices):
         X_star = X_full[indices]
         Y_star = Y[indices]
         score = X_star.T.dot(Y_star - _boot_mu(X_star))
@@ -74,8 +74,7 @@ def pairs_bootstrap_glm(glm_loss,
     observed[:nactive] *= _sqrt_scaling
     observed[nactive:] /= _sqrt_scaling
 
-    return _boot_score, observed
-
+    return functools.partial(_boot_score, X_full, Y, ntotal, _bootQinv, _bootI, nactive, _sqrt_scaling), observed
 
 def set_alpha_matrix(glm_loss,
                      active,
@@ -118,8 +117,6 @@ def set_alpha_matrix(glm_loss,
     obs_residuals = - glm_loss.saturated_loss.smooth_objective(X_full.dot(beta_overall), 'grad')
 
     return np.dot(np.dot(_Qinv, X_active.T), np.diag(obs_residuals))
-
-
 
 
 def _parametric_cov_glm(glm_loss,
