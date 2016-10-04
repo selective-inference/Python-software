@@ -4,11 +4,6 @@ from scipy.stats import norm as ndist
 
 class intervals(object):
 
-    def __init__(self):
-        self.grid_length = 1000
-        # this grid should surely use the variance somewhere...
-        self.param_values_at_grid = np.linspace(-20, 20, num=self.grid_length)
-
     def setup_samples(self, ref_vec, samples, observed, variances):
         (self.ref_vec,
          self.samples,
@@ -44,18 +39,20 @@ class intervals(object):
         return np.array(pvalues)
 
     def pvalues_grid(self, j):
-        pvalues_at_grid = [self.pvalue_by_tilting(j, self.param_values_at_grid[i]) 
-                           for i in range(self.grid_length)]
+        sd = np.sqrt(self.variances[j])
+        grid = np.linspace(-10*sd, 10*sd, 1000) + self.ref_vec[j]
+        pvalues_at_grid = [self.pvalue_by_tilting(j, grid[i]) 
+                           for i in range(grid.shape[0])]
         pvalues_at_grid = [2*min(pval, 1-pval) for pval in pvalues_at_grid]
         pvalues_at_grid = np.asarray(pvalues_at_grid, dtype=np.float32)
-        return pvalues_at_grid
+        return pvalues_at_grid, grid
 
     def construct_intervals(self, j, alpha=0.1):
-        pvalues_at_grid = self.pvalues_grid(j)
+        pvalues_at_grid, grid = self.pvalues_grid(j)
         accepted_indices = np.array(pvalues_at_grid > alpha)
         if np.sum(accepted_indices) > 0:
-            L = np.min(self.param_values_at_grid[accepted_indices])
-            U = np.max(self.param_values_at_grid[accepted_indices])
+            L = np.min(grid[accepted_indices])
+            U = np.max(grid[accepted_indices])
             return L, U
 
     def construct_intervals_all(self, alpha=0.1):

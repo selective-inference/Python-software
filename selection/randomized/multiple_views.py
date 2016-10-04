@@ -469,7 +469,6 @@ class targeted_sampler(object):
         else:
             return 2 * min(pval, 1 - pval)
 
-
     def confidence_intervals(self,
                              observed,
                              ndraw=10000,
@@ -529,7 +528,8 @@ class targeted_sampler(object):
                             ndraw=10000,
                             burnin=2000,
                             stepsize=None,
-                            sample=None):
+                            sample=None,
+                            alternative='twosided'):
         '''
 
         Construct selective p-values
@@ -564,6 +564,8 @@ class targeted_sampler(object):
            Allows reuse of the same sample for construction of confidence 
            intervals, hypothesis tests, etc.
 
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
 
         Returns
         -------
@@ -571,6 +573,9 @@ class targeted_sampler(object):
         pvalues : np.float
         
         '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
@@ -582,7 +587,15 @@ class targeted_sampler(object):
         intervals_instance = intervals()
         intervals_instance.setup_samples(self.reference, sample.T, observed, np.diag(self.target_cov))
 
-        return intervals_instance.pvalues_param_all(parameter)
+        pval = intervals_instance.pvalues_param_all(parameter)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * np.minimum(pval, 1 - pval)
+
 
     def crude_lipschitz(self):
         """
