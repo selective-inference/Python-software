@@ -39,6 +39,8 @@ def pairs_bootstrap_glm(glm_loss,
     if inactive is not None:
         _bootC = X_inactive.T.dot(_bootW.dot(X_active))
         _bootI = _bootC.dot(_bootQinv)
+    else:
+        _bootI = None
 
     nactive = active.sum()
     if inactive is not None:
