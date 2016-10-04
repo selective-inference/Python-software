@@ -518,9 +518,9 @@ class targeted_sampler(object):
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
         nactive = observed.shape[0]
-        intervals_instance = intervals()
-        intervals_instance.setup_samples(self.reference, sample.T, observed, np.diag(self.target_cov))
-        return intervals_instance.construct_intervals_all()
+        intervals_instance = intervals(self.reference, sample.T, observed, self.target_cov)
+
+        return intervals_instance.confidence_intervals_all()
 
     def coefficient_pvalues(self,
                             observed,
@@ -584,10 +584,9 @@ class targeted_sampler(object):
             parameter = np.zeros(self.shape)
 
         nactive = observed.shape[0]
-        intervals_instance = intervals()
-        intervals_instance.setup_samples(self.reference, sample.T, observed, np.diag(self.target_cov))
+        intervals_instance = intervals(self.reference, sample.T, observed, self.target_cov)
 
-        pval = intervals_instance.pvalues_param_all(parameter)
+        pval = intervals_instance.pivots_all(parameter)
 
         if alternative == 'greater':
             return 1 - pval

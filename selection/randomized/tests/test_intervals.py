@@ -10,6 +10,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 from selection.randomized.multiple_views import naive_confidence_intervals
 
+@wait_for_return_value()
 def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
     s, n, p = 3, 100, 10
 
@@ -91,7 +92,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
                                                               parameter=beta[active_union],
                                                               sample=target_sample)
 
-        L, U = LU
+        L, U = LU.T
         true_vec = beta[active_union]
 
         ncovered = 0
@@ -122,7 +123,7 @@ def make_a_plot():
     _naive_ncovered = 0
     for i in range(100):
         print("iteration", i)
-        test = test_intervals()
+        test = test_intervals()[1] # first value is a count
         if test is not None:
             pvalues_mle, pvalues_truth, ncovered, naive_ncovered, nparam = test
             _pvalues_mle.extend(pvalues_mle)

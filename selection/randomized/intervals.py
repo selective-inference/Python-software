@@ -1,65 +1,174 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import numpy as np
-from scipy.stats import norm as ndist
 
 class intervals(object):
 
-    def setup_samples(self, ref_vec, samples, observed, variances):
-        (self.ref_vec,
-         self.samples,
+    """
+    Construct confidence intervals 
+    for real-valued parameters by tilting
+    a multiparameter exponential family.
+
+    The exponential family is assumed to
+    be derived from a Gaussian with
+    some selective weight and the
+    parameters are linear functionals of the
+    mean parameter of the Gaussian.
+    
+    """
+    def __init__(self, reference, sample, observed, covariance):
+        '''
+
+        Parameters
+        ----------
+
+        reference : np.float(k)
+            Reference value of mean parameter. Often
+            taken to be an unpenalized MLE or perhaps
+            (approximate) selective MLE / MAP.
+
+        sample : np.float(s, k)
+            A Monte Carlo sample drawn from selective distribution.
+
+        observed : np.float(k)
+            Observed value of Gaussian estimator.
+            Often an unpenalized MLE.
+
+        covariance : np.float(k, k)
+            Covariance of original Gaussian.
+            Used only to compute unselective
+            variance of linear functionals of the 
+            (approximately) Gaussian estimator.
+
+        '''
+
+        (self.reference,
+         self.sample,
          self.observed,
-         self.variances) = (ref_vec,
-                            samples,
-                            observed,
-                            variances)
+         self.covariance) = (np.asarray(reference),
+                            np.asarray(sample),
+                            np.asarray(observed),
+                            covariance)
 
-        self.nactive = ref_vec.shape[0]
-        self.nsamples = self.samples.shape[1]
+        self.shape = reference.shape
+        self.nsample = self.sample.shape[1]
 
-    def empirical_exp(self, j, param):
-        ref = self.ref_vec[j]
-        factor = np.true_divide(param-ref, self.variances[j])
-        tilted_samples = np.exp(self.samples[j, :]*factor)
-        return np.sum(tilted_samples)/float(self.nsamples)
+    def pivots_all(self, parameter=None):
+        '''
 
-    def pvalue_by_tilting(self, j, param):
-        ref = self.ref_vec[j]
-        indicator = np.array(self.samples[j, :] < self.observed[j], dtype =int)
-        log_gaussian_tilt = np.array(self.samples[j, :]) * (param - ref)
-        log_gaussian_tilt /= self.variances[j]
-        emp_exp = self.empirical_exp(j, param)
-        LR = np.true_divide(np.exp(log_gaussian_tilt), emp_exp)
-        return np.clip(np.sum(np.multiply(indicator, LR)) / float(self.nsamples), 0, 1)
+        Compute pivotal quantities, i.e.
+        the selective distribution function
+        under $H_{0,k}:\theta_k=\theta_{0,k}$
+        where $\theta_0$ is `parameter`.
 
-    def pvalues_param_all(self, param_vec):
-        pvalues = []
-        for j in range(self.nactive):
-            pval = self.pvalue_by_tilting(j, param_vec[j])
-            pvalues.append(pval)
-        return np.array(pvalues)
+        Parameters
+        ----------
 
-    def pvalues_grid(self, j):
-        sd = np.sqrt(self.variances[j])
-        grid = np.linspace(-10*sd, 10*sd, 1000) + self.ref_vec[j]
-        pvalues_at_grid = [self.pvalue_by_tilting(j, grid[i]) 
-                           for i in range(grid.shape[0])]
-        pvalues_at_grid = [2*min(pval, 1-pval) for pval in pvalues_at_grid]
-        pvalues_at_grid = np.asarray(pvalues_at_grid, dtype=np.float32)
-        return pvalues_at_grid, grid
+        parameter : np.float(k) (optional)
+            Value of mean parameter under 
+            coordinate null hypotheses.
+            Defaults to `np.zeros(k)`
 
-    def construct_intervals(self, j, alpha=0.1):
-        pvalues_at_grid, grid = self.pvalues_grid(j)
+        Returns
+        -------
+
+        pivots : np.float(k)
+            Pivotal quantites. Each is
+            (asymptotically) uniformly
+            distributed on [0,1] under 
+            corresponding $H_{0,k}$.
+            
+            
+        '''
+        pivots = np.zeros(self.shape)
+        for j in range(self.shape[0]):
+            pivots[j] = self._pivot_by_tilting(j, parameter[j])
+        return pivots
+
+    def confidence_interval(self, j, alpha=0.1):
+        '''
+
+        Construct a `(1-alpha)*100`% confidence
+        interval for $\theta_j$ the
+        $j$-th coordinate of the mean parameter
+        of the underlying Gaussian.
+
+        Parameters
+        ----------
+
+        j : int
+            Coordinate index in range(self.shape[0])
+
+        alpha : float (optional)
+            Specify the (complement of the)
+            confidence level.
+
+        Returns
+        -------
+
+        L, U : float
+            Lower and upper limits of confidence
+            interval.
+            
+        '''
+        pvalues_at_grid, grid = self._pvalues_grid(j)
         accepted_indices = np.array(pvalues_at_grid > alpha)
         if np.sum(accepted_indices) > 0:
             L = np.min(grid[accepted_indices])
             U = np.max(grid[accepted_indices])
             return L, U
 
-    def construct_intervals_all(self, alpha=0.1):
-        L, U = np.zeros(self.nactive), np.zeros(self.nactive)
-        for j in range(self.nactive):
-            LU = self.construct_intervals(j, alpha=alpha)
+    def confidence_intervals_all(self, alpha=0.1):
+        '''
+
+        Construct a `(1-alpha)*100`% confidence
+        interval for each $\theta_j$ 
+        of the mean parameter
+        of the underlying Gaussian.
+
+        Parameters
+        ----------
+
+        alpha : float (optional)
+            Specify the (complement of the)
+            confidence level.
+
+        Returns
+        -------
+
+        LU : np.float(k,2)
+            Array with lower and upper confidence limits.
+            
+        '''
+
+        L, U = np.zeros(self.shape), np.zeros(self.shape)
+        for j in range(self.shape[0]):
+            LU = self.confidence_interval(j, alpha=alpha)
             if LU is not None:
                 L[j], U[j] = LU
-        return np.array([L, U])
+        return np.array([L, U]).T
 
+    # Private methods
+
+    def _pivot_by_tilting(self, j, param):
+        ref = self.reference[j]
+        indicator = np.array(self.sample[:, j] < self.observed[j], dtype =int)
+        log_gaussian_tilt = np.array(self.sample[:, j]) * (param - ref)
+        log_gaussian_tilt /= self.covariance[j, j]
+        emp_exp = self._empirical_exp(j, param)
+        LR = np.true_divide(np.exp(log_gaussian_tilt), emp_exp)
+        return np.clip(np.sum(np.multiply(indicator, LR)) / float(self.nsample), 0, 1)
+
+    def _pvalues_grid(self, j):
+        sd = np.sqrt(self.covariance[j, j])
+        grid = np.linspace(-10*sd, 10*sd, 1000) + self.reference[j]
+        pvalues_at_grid = [self._pivot_by_tilting(j, grid[i]) 
+                           for i in range(grid.shape[0])]
+        pvalues_at_grid = [2*min(pval, 1-pval) for pval in pvalues_at_grid]
+        pvalues_at_grid = np.asarray(pvalues_at_grid, dtype=np.float32)
+        return pvalues_at_grid, grid
+
+    def _empirical_exp(self, j, param):
+        ref = self.reference[j]
+        factor = (param - ref) / self.covariance[j, j]
+        tilted_sample = np.exp(self.sample[:, j] * factor)
+        return np.sum(tilted_sample)/float(self.nsample)
