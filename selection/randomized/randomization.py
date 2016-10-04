@@ -89,3 +89,50 @@ class randomization(rr.smooth_atom):
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
         return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=.25/scale**2)
+
+
+class split(randomization):
+
+    def __init__(self,X,Y,m):
+
+        n, p = X.shape
+
+        def _boot_covariance(indices):
+            X_star = X[indices]
+            Y_star = Y[indices]
+            subsample = np.random.choice(n, size=(m,), replace=True)
+            result = np.dot(X_star[subsample].T, Y_star[subsample]) - ((m/float(n))*np.dot(X_star.T, Y_star))
+            return result
+
+        def _nonparametric_covariance_estimate(nboot=10000):
+            results = []
+            for i in range(nboot):
+                indices = np.random.choice(n, size=(n,), replace=True)
+                results.append(_boot_covariance(indices))
+
+            mean_results = np.zeros(p)
+            for i in range(nboot):
+                mean_results = np.add(mean_results, results[i])
+
+            mean_results /= nboot
+
+            covariance = np.zeros((p,p))
+            for i in range(nboot):
+                covariance = np.add(covariance, np.outer(results[i]-mean_results, results[i]-mean_results))
+
+            return covariance/float(nboot)
+
+        self.covariance = _nonparametric_covariance_estimate()
+        covariance_inv = np.linalg.inv(self.covariance)
+        print self.covariance.shape
+
+        from scipy.stats import multivariate_normal
+
+        density = lambda x: multivariate_normal.pdf(x, mean=np.zeros(p), cov=self.covariance)
+        grad_negative_log_density = lambda x: covariance_inv.dot(x)
+        sampler = lambda size: np.random.multivariate_normal(mean=np.zeros(p), cov=self.covariance, size=size)
+        randomization.__init__(self, 1, density, grad_negative_log_density, sampler)
+
+
+
+

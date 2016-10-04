@@ -10,11 +10,15 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 from selection.randomized.multiple_views import naive_confidence_intervals
 
+from selection.randomized.randomization import split
+
 def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
     s, n, p = 3, 100, 10
 
-    randomizer = randomization.laplace((p,), scale=1.)
+    #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
+
+    randomizer = split(X,y, n/float(2))
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -87,7 +91,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
                                                             parameter=target_sampler_gn.reference,
                                                             sample=target_sample)
 
-        pvalues_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
+        pvalues_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
                                                               parameter=beta[active_union],
                                                               sample=target_sample)
 
@@ -96,7 +100,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
         ncovered = 0
         naive_ncovered = 0
-        
+
         for j in range(nactive):
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                 ncovered += 1
@@ -120,7 +124,7 @@ def make_a_plot():
     _nparam = 0
     _ncovered = 0
     _naive_ncovered = 0
-    for i in range(300):
+    for i in range(100):
         print("iteration", i)
         test = test_intervals()
         if test is not None:
