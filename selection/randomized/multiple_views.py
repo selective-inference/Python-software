@@ -641,14 +641,13 @@ class bootstrapped_target_sampler(targeted_sampler):
         # set the observed state for bootstrap
 
         self.boot_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.boot_size)
-        self.boot_observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
-        self.boot_observed_state[self.boot_slice] = np.ones(self.boot_size)
+        self.observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
+        self.observed_state[self.boot_slice] = np.ones(self.boot_size)
         #self.boot_observed_state[self.boot_slice] = np.random.normal(size=self.boot_size)
-        self.boot_observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+        self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
-        self.gradient = self.boot_gradient
 
-    def boot_gradient(self, state):
+    def gradient(self, state):
 
         boot_state, opt_state = state[self.boot_slice], state[self.overall_opt_slice]
         boot_grad, opt_grad = np.zeros_like(boot_state), np.zeros_like(opt_state)
@@ -677,8 +676,8 @@ class bootstrapped_target_sampler(targeted_sampler):
         if stepsize is None:
             stepsize = 1. / self.observed_state.shape[0]
 
-        bootstrap_langevin = projected_langevin(self.boot_observed_state.copy(),
-                                                self.boot_gradient,
+        bootstrap_langevin = projected_langevin(self.observed_state.copy(),
+                                                self.gradient,
                                                 self.projection,
                                                 stepsize)
 
