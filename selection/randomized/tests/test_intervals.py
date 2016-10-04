@@ -11,10 +11,10 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 from selection.randomized.multiple_views import naive_confidence_intervals
 
 def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 5, 200, 50
+    s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=20)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -23,7 +23,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-    W = np.ones(p)*lam * 1.2
+    W = np.ones(p)*lam
     W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -53,32 +53,47 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
 
         # testing the global null
+        # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
         all_selected = np.arange(active_set.shape[0])
         target_gn = lambda indices: boot_target(indices)[:nactive]
         target_observed_gn = target_observed[:nactive]
 
         unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
-        target_sampler_gn = mv.setup_target(target_gn,
-                                            target_observed_gn,
-                                            reference = unpenalized_mle)
+        alpha_mat = set_alpha_matrix(loss, active_union)
+        target_alpha_gn = alpha_mat
+
+        ## bootstrap
+        target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
+                                                              target_observed_gn,
+                                                              n, target_alpha_gn,
+                                                              reference = unpenalized_mle)
+
+        ## CLT plugin
+        #target_sampler_gn = mv.setup_target(target_gn,
+        #                                    target_observed_gn,
+        #                                    reference = unpenalized_mle)
 
         target_sample = target_sampler_gn.sample(ndraw=ndraw,
                                                  burnin=burnin)
 
-        LU = target_sampler_gn.confidence_intervals(unpenalized_mle, 
+
+        LU = target_sampler_gn.confidence_intervals(unpenalized_mle,
                                                     sample=target_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
-        pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
+        pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
                                                             parameter=target_sampler_gn.reference,
                                                             sample=target_sample)
+
         pvalues_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
                                                               parameter=beta[active_union],
                                                               sample=target_sample)
+
         L, U = LU
         true_vec = beta[active_union]
+
         ncovered = 0
         naive_ncovered = 0
         
@@ -92,8 +107,8 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
 
 
-def make_a_plot():
 
+def make_a_plot():
     import matplotlib.pyplot as plt
     from scipy.stats import probplot, uniform
     import statsmodels.api as sm
@@ -105,7 +120,7 @@ def make_a_plot():
     _nparam = 0
     _ncovered = 0
     _naive_ncovered = 0
-    for i in range(300):
+    for i in range(100):
         print("iteration", i)
         test = test_intervals()
         if test is not None:
@@ -121,6 +136,8 @@ def make_a_plot():
             print("coverage", _ncovered/float(_nparam))
             print("naive coverage", _naive_ncovered/float(_nparam))
 
+    print("number of parameters", _nparam,"coverage", _ncovered/float(_nparam))
+
     fig = plt.figure()
     fig.suptitle('Pivots at the reference (MLE) and the truth')
     plot_pvalues_mle = fig.add_subplot(121)
@@ -131,7 +148,7 @@ def make_a_plot():
     y = ecdf_mle(x)
     plot_pvalues_mle.plot(x, y, '-o', lw=2)
     plot_pvalues_mle.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_mle.set_title("P values at the unpenalized MLE")
+    plot_pvalues_mle.set_title("Pivots at the unpenalized MLE")
     plot_pvalues_mle.set_xlim([0, 1])
     plot_pvalues_mle.set_ylim([0, 1])
 
@@ -140,14 +157,13 @@ def make_a_plot():
     y = ecdf_truth(x)
     plot_pvalues_truth.plot(x, y, '-o', lw=2)
     plot_pvalues_truth.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_truth.set_title("P values at the truth")
+    plot_pvalues_truth.set_title("Pivots at the truth (by tilting)")
     plot_pvalues_truth.set_xlim([0, 1])
     plot_pvalues_truth.set_ylim([0, 1])
 
     #while True:
     #    plt.pause(0.05)
     plt.show()
-
 
 
 def make_a_plot_individual_coeff():
