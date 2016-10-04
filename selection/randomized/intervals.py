@@ -81,22 +81,25 @@ class intervals(object):
         '''
         pivots = np.zeros(self.shape)
         for j in range(self.shape[0]):
-            pivots[j] = self._pivot_by_tilting(j, parameter[j])
+            linear_func = np.zeros(self.shape)
+            linear_func[j] = 1.
+            pivots[j] = self._pivot_by_tilting(linear_func, parameter[j])
         return pivots
 
-    def confidence_interval(self, j, alpha=0.1):
+    def confidence_interval(self, linear_func, alpha=0.1):
         '''
 
         Construct a `(1-alpha)*100`% confidence
-        interval for $\theta_j$ the
-        $j$-th coordinate of the mean parameter
+        interval for a linear functional
+        of the mean parameter
         of the underlying Gaussian.
 
         Parameters
         ----------
 
-        j : int
-            Coordinate index in range(self.shape[0])
+        linear_func : np.float(k)
+            Linear functional determining
+            parameter.
 
         alpha : float (optional)
             Specify the (complement of the)
@@ -110,7 +113,7 @@ class intervals(object):
             interval.
             
         '''
-        pvalues_at_grid, grid = self._pvalues_grid(j)
+        pvalues_at_grid, grid = self._pivots_grid(linear_func)
         accepted_indices = np.array(pvalues_at_grid > alpha)
         if np.sum(accepted_indices) > 0:
             L = np.min(grid[accepted_indices])
@@ -142,33 +145,61 @@ class intervals(object):
 
         L, U = np.zeros(self.shape), np.zeros(self.shape)
         for j in range(self.shape[0]):
-            LU = self.confidence_interval(j, alpha=alpha)
+            linear_func = np.zeros(self.shape)
+            linear_func[j] = 1.
+            LU = self.confidence_interval(linear_func, alpha=alpha)
             if LU is not None:
                 L[j], U[j] = LU
         return np.array([L, U]).T
 
     # Private methods
 
-    def _pivot_by_tilting(self, j, param):
-        ref = self.reference[j]
-        indicator = np.array(self.sample[:, j] < self.observed[j], dtype =int)
-        log_gaussian_tilt = np.array(self.sample[:, j]) * (param - ref)
-        log_gaussian_tilt /= self.covariance[j, j]
-        emp_exp = self._empirical_exp(j, param)
-        LR = np.true_divide(np.exp(log_gaussian_tilt), emp_exp)
-        return np.clip(np.sum(np.multiply(indicator, LR)) / float(self.nsample), 0, 1)
+    def _pivot_by_tilting(self, linear_func, param):
+        """
+        Compute pivotal quantity for the
+        quantitiy linear_func.dot(parameter)
+        at the hypothesized value param.
+        """
+        linear_func = np.atleast_1d(linear_func)
+        ref = (linear_func * self.reference).sum()
+        var = np.sum(linear_func * self.covariance.dot(linear_func))
 
-    def _pvalues_grid(self, j):
-        sd = np.sqrt(self.covariance[j, j])
-        grid = np.linspace(-10*sd, 10*sd, 1000) + self.reference[j]
-        pvalues_at_grid = [self._pivot_by_tilting(j, grid[i]) 
+        _sample = self.sample.dot(linear_func)
+        _observed = (self.observed * linear_func).sum()
+
+        indicator = _sample < _observed
+        log_gaussian_tilt = _sample  * (param - ref)
+        log_gaussian_tilt /= var
+        emp_exp = self._empirical_exp(linear_func, param)
+        LR = np.exp(log_gaussian_tilt) / emp_exp
+        return np.clip(np.mean(indicator * LR), 0, 1)
+
+    def _pivots_grid(self, linear_func, npts=1000, num_sd=10):
+        """
+        Compute pivots on a 1D grid centered at 
+        (reference*linear_func).sum() and reference.
+        """
+        linear_func = np.atleast_1d(linear_func)
+        sd = np.sqrt(np.sum(linear_func * self.covariance.dot(linear_func)))
+        grid = np.linspace(-10*sd, 10*sd, 1000) + (self.reference * linear_func).sum()
+        pivots_at_grid = [self._pivot_by_tilting(linear_func, grid[i]) 
                            for i in range(grid.shape[0])]
-        pvalues_at_grid = [2*min(pval, 1-pval) for pval in pvalues_at_grid]
-        pvalues_at_grid = np.asarray(pvalues_at_grid, dtype=np.float32)
-        return pvalues_at_grid, grid
+        pivots_at_grid = [2*min(pval, 1-pval) for pval in pivots_at_grid]
+        pivots_at_grid = np.asarray(pivots_at_grid, dtype=np.float32)
+        return pivots_at_grid, grid
 
-    def _empirical_exp(self, j, param):
-        ref = self.reference[j]
-        factor = (param - ref) / self.covariance[j, j]
-        tilted_sample = np.exp(self.sample[:, j] * factor)
-        return np.sum(tilted_sample)/float(self.nsample)
+    def _empirical_exp(self, linear_func, param):
+        """
+        Empirical expected value of the exponential.
+        """
+        linear_func = np.atleast_1d(linear_func)
+        ref = (self.reference * linear_func).sum()
+        var = np.sum(linear_func * self.covariance.dot(linear_func))
+        factor = (param - ref) / var
+
+        # we can probably save a little bit of time
+        # by caching _sample 
+        _sample = self.sample.dot(linear_func)
+
+        tilted_sample = np.exp(_sample * factor)
+        return tilted_sample.mean()

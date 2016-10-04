@@ -518,7 +518,7 @@ class targeted_sampler(object):
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
         nactive = observed.shape[0]
-        intervals_instance = intervals(self.reference, sample.T, observed, self.target_cov)
+        intervals_instance = intervals(self.reference, sample, observed, self.target_cov)
 
         return intervals_instance.confidence_intervals_all()
 
@@ -584,7 +584,7 @@ class targeted_sampler(object):
             parameter = np.zeros(self.shape)
 
         nactive = observed.shape[0]
-        intervals_instance = intervals(self.reference, sample.T, observed, self.target_cov)
+        intervals_instance = intervals(self.reference, sample, observed, self.target_cov)
 
         pval = intervals_instance.pivots_all(parameter)
 
