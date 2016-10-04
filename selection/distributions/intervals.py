@@ -1,6 +1,6 @@
 """
 
-This module contains a class for 
+This module contains a class for
 forming confindence intervals and
 testing 1-dimensional linear hypotheses
 about the underlying mean vector of
@@ -11,19 +11,19 @@ a Gaussian subjected to selection.
 from __future__ import print_function, division
 import numpy as np
 
-class intervals(object):
+class intervals_from_sample(object):
 
     """
-    Construct confidence intervals 
+    Construct confidence intervals
     for real-valued parameters by tilting
-    a multiparameter exponential family.
+    a multiparameter exponential family
+    with reference measure a Monte Carlo sample.
 
     The exponential family is assumed to
     be derived from a Gaussian with
     some selective weight and the
     parameters are linear functionals of the
     mean parameter of the Gaussian.
-    
     """
     def __init__(self, reference, sample, observed, covariance):
         '''
@@ -46,25 +46,23 @@ class intervals(object):
         covariance : np.float(k, k)
             Covariance of original Gaussian.
             Used only to compute unselective
-            variance of linear functionals of the 
+            variance of linear functionals of the
             (approximately) Gaussian estimator.
-
         '''
 
         (self.reference,
          self.sample,
          self.observed,
          self.covariance) = (np.asarray(reference),
-                            np.asarray(sample),
-                            np.asarray(observed),
-                            covariance)
+                             np.asarray(sample),
+                             np.asarray(observed),
+                             covariance)
 
         self.shape = reference.shape
         self.nsample = self.sample.shape[1]
 
     def pivots_all(self, parameter=None):
         '''
-
         Compute pivotal quantities, i.e.
         the selective distribution function
         under $H_{0,k}:\theta_k=\theta_{0,k}$
@@ -74,7 +72,7 @@ class intervals(object):
         ----------
 
         parameter : np.float(k) (optional)
-            Value of mean parameter under 
+            Value of mean parameter under
             coordinate null hypotheses.
             Defaults to `np.zeros(k)`
 
@@ -84,10 +82,8 @@ class intervals(object):
         pivots : np.float(k)
             Pivotal quantites. Each is
             (asymptotically) uniformly
-            distributed on [0,1] under 
+            distributed on [0,1] under
             corresponding $H_{0,k}$.
-            
-            
         '''
         pivots = np.zeros(self.shape)
         for j in range(self.shape[0]):
@@ -121,20 +117,18 @@ class intervals(object):
         L, U : float
             Lower and upper limits of confidence
             interval.
-            
         '''
         pvalues_at_grid, grid = self._pivots_grid(linear_func)
         accepted_indices = np.array(pvalues_at_grid > alpha)
         if np.sum(accepted_indices) > 0:
-            L = np.min(grid[accepted_indices])
-            U = np.max(grid[accepted_indices])
-            return L, U
+            lower = np.min(grid[accepted_indices])
+            upper = np.max(grid[accepted_indices])
+            return lower, upper
 
     def confidence_intervals_all(self, alpha=0.1):
         '''
-
         Construct a `(1-alpha)*100`% confidence
-        interval for each $\theta_j$ 
+        interval for each $\theta_j$
         of the mean parameter
         of the underlying Gaussian.
 
@@ -150,17 +144,16 @@ class intervals(object):
 
         LU : np.float(k,2)
             Array with lower and upper confidence limits.
-            
         '''
 
-        L, U = np.zeros(self.shape), np.zeros(self.shape)
+        lower, upper = np.zeros(self.shape), np.zeros(self.shape)
         for j in range(self.shape[0]):
             linear_func = np.zeros(self.shape)
             linear_func[j] = 1.
-            LU = self.confidence_interval(linear_func, alpha=alpha)
-            if LU is not None:
-                L[j], U[j] = LU
-        return np.array([L, U]).T
+            limits = self.confidence_interval(linear_func, alpha=alpha)
+            if limits is not None:
+                lower[j], lower[j] = limits
+        return np.array([lower, upper]).T
 
     # Private methods
 
@@ -181,21 +174,21 @@ class intervals(object):
         log_gaussian_tilt = _sample  * (param - ref)
         log_gaussian_tilt /= var
         emp_exp = self._empirical_exp(linear_func, param)
-        LR = np.exp(log_gaussian_tilt) / emp_exp
-        return np.clip(np.mean(indicator * LR), 0, 1)
+        likelihood_ratio = np.exp(log_gaussian_tilt) / emp_exp
+        return np.clip(np.mean(indicator * likelihood_ratio), 0, 1)
 
     def _pivots_grid(self, linear_func, npts=1000, num_sd=10):
         """
-        Compute pivots on a 1D grid centered at 
+        Compute pivots on a 1D grid centered at
         (reference*linear_func).sum() and reference.
         """
         linear_func = np.atleast_1d(linear_func)
-        sd = np.sqrt(np.sum(linear_func * self.covariance.dot(linear_func)))
-        grid = np.linspace(-10*sd, 10*sd, 1000) + (self.reference * linear_func).sum()
-        pivots_at_grid = [self._pivot_by_tilting(linear_func, grid[i]) 
-                           for i in range(grid.shape[0])]
+        stdev = np.sqrt(np.sum(linear_func * self.covariance.dot(linear_func)))
+        grid = np.linspace(-10*stdev, 10*stdev, 1000) + (self.reference * linear_func).sum()
+        pivots_at_grid = [self._pivot_by_tilting(linear_func, grid[i])
+                          for i in range(grid.shape[0])]
         pivots_at_grid = [2*min(pval, 1-pval) for pval in pivots_at_grid]
-        pivots_at_grid = np.asarray(pivots_at_grid, dtype=np.float32)
+        pivots_at_grid = np.asarray(pivots_at_grid)
         return pivots_at_grid, grid
 
     def _empirical_exp(self, linear_func, param):
@@ -208,7 +201,7 @@ class intervals(object):
         factor = (param - ref) / var
 
         # we can probably save a little bit of time
-        # by caching _sample 
+        # by caching _sample
         _sample = self.sample.dot(linear_func)
 
         tilted_sample = np.exp(_sample * factor)
