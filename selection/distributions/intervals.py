@@ -1,3 +1,13 @@
+"""
+
+This module contains a class for 
+forming confindence intervals and
+testing 1-dimensional linear hypotheses
+about the underlying mean vector of
+a Gaussian subjected to selection.
+
+"""
+
 from __future__ import print_function, division
 import numpy as np
 

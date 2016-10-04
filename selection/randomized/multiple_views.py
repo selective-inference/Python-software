@@ -2,10 +2,8 @@ from itertools import product
 import numpy as np
 from scipy.stats import norm as ndist
 
-from ..distributions.discrete_family import discrete_family
+from ..distributions.api import discrete_family, intervals
 from ..sampling.langevin import projected_langevin
-from .intervals import intervals
-
 
 class multiple_views(object):
 
