@@ -54,14 +54,14 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
 
-    subsample_size = n/2
+    m = n/2.
 
-    randomizer = split(X, y, subsample_size)
+    randomizer = split(X, y, m)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
-    loss = randomized_loss(X, y, subsample_size)
+    loss = randomized_loss(X, y, m)
 
     epsilon = 1.
 
@@ -93,7 +93,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss.sub_loss, active_union)
+        boot_target, target_observed = pairs_bootstrap_glm(loss.full_loss, active_union)
 
         # testing the global null
         # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
@@ -101,21 +101,21 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
         target_gn = lambda indices: boot_target(indices)[:nactive]
         target_observed_gn = target_observed[:nactive]
 
-        unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
+        unpenalized_mle = restricted_Mest(loss.sub_loss, M_est1.overall, solve_args=solve_args)
 
-        alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha_gn = alpha_mat
+        #alpha_mat = set_alpha_matrix(loss, active_union)
+        #target_alpha_gn = alpha_mat
 
         ## bootstrap
-        target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-                                                         target_observed_gn,
-                                                         n, target_alpha_gn,
-                                                         reference = unpenalized_mle)
+        #target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
+        #                                                 target_observed_gn,
+        #                                                 n, target_alpha_gn,
+        #                                                 reference = unpenalized_mle)
 
         ## CLT plugin
-        #target_sampler_gn = mv.setup_target(target_gn,
-        #                                    target_observed_gn,
-        #                                    reference = unpenalized_mle)
+        target_sampler_gn = mv.setup_target(target_gn,
+                                            target_observed_gn,
+                                            reference = unpenalized_mle)
 
         target_sample = target_sampler_gn.sample(ndraw=ndraw,
                                                  burnin=burnin)
