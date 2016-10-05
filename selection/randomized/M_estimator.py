@@ -425,7 +425,7 @@ class split_M_estimator(M_estimator):
 
         self.observed_score_state = np.dot(loss.X1.T,loss.sub_loss.saturated_loss.smooth_objective(loss.X1.dot(beta_full1), 'grad') + loss.y1)
 
-        self.observed_score_state += -np.multiply(np.dot(loss.X.T, loss.y),loss.fraction)
+        self.observed_score_state += -np.dot(loss.X.T, loss.y)*loss.fraction
 
         self.observed_score_state += -np.dot(_hessian1, beta_full1)
 
@@ -439,15 +439,17 @@ class split_M_estimator(M_estimator):
         # -E for inactive
 
         _opt_linear_term = np.zeros((p, self.active_groups.sum() + unpenalized.sum() + inactive.sum()))
-        _score_linear_term = np.zeros((p, p))
+        _score_linear_term = np.identity(p)
+
+        #_score_linear_term = np.zeros((p, p))
 
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
-        Mest_slice = slice(0, overall.sum())
-        _Mest_hessian = _hessian[:, overall]
-        _score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
+        #Mest_slice = slice(0, overall.sum())
+        #_Mest_hessian = _hessian[:, overall]
+        #_score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
 
-        _score_linear_term = np.identity(p)
+
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 

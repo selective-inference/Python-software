@@ -65,13 +65,14 @@ def split_pairs_bootstrap_glm(randomized_loss,
 
       _boot_mu1 = lambda X1: sub_glm_loss.saturated_loss.smooth_objective(X1.dot(beta_full1), 'grad') + y1
 
+
       _bootQ_full = X.T.dot(_bootW.dot(X_active))
       temp = -np.multiply(np.dot(X.T,y), randomized_loss.fraction) -_bootQ_full.dot(beta_full1[active])
 
       if ntotal > nactive:
             observed = np.hstack([(np.dot(X1.T,y1)-temp)[active], (np.dot(X1.T,_boot_mu1(X1))+temp)[inactive]])
       else:
-            observed = X1.dot(y1)-temp
+            observed = np.dot(X1.T,y1)-temp
 
         # scaling is a lipschitz constant for a gradient squared
       _sqrt_scaling = np.sqrt(scaling)
@@ -87,7 +88,7 @@ def split_pairs_bootstrap_glm(randomized_loss,
             result[:nactive] = -randomized_loss.fraction*score[:nactive]
             if ntotal > nactive:
                 score1 = X1_star.T.dot(y1_star - _boot_mu1(X1_star))
-                result[nactive:] = score1[nactive:]+_bootI.dot(score1[:nactive])-randomized_loss.fraction*score[nactive:]
+                result[nactive:] = -score1[nactive:]+_bootI.dot(score1[:nactive])-randomized_loss.fraction*score[nactive:]
                 result[:nactive] *= _sqrt_scaling
                 result[nactive:] /= _sqrt_scaling
             return result

@@ -100,7 +100,7 @@ class split(randomization):
         def _boot_covariance(indices):
             X_star = X[indices]
             Y_star = Y[indices]
-            subsample = np.random.choice(n, size=(m,), replace=True)
+            subsample = np.random.choice(n, size=(m,), replace=False)
             result = np.dot(X_star[subsample].T, Y_star[subsample]) - ((m/float(n))*np.dot(X_star.T, Y_star))
             return result
 
@@ -144,7 +144,7 @@ class split(randomization):
             return randomization.__init__(self,(p,), density, grad_negative_log_density, sampler,
                                  lipschitz=np.linalg.svd(precision)[1].max())
 
-        gaussian(self.covariance*5)
+        gaussian(self.covariance)
         #randomization.__init__(self, 1, density, grad_negative_log_density, sampler)
 
 
