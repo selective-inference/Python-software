@@ -6,8 +6,38 @@ import regreg.api as rr
 import selection.bayesian.sel_probability2;
 from imp import reload
 reload(selection.bayesian.sel_probability2)
-from bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
+from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
 from selection.randomized.api import randomization
+from selection.bayesian.barrier import barrier_conjugate
+
+def test_barrier_conjugate():
+
+    p = 10
+    cube_bool = np.zeros(p, np.bool)
+    cube_bool[:4] = 1
+    _barrier_star = barrier_conjugate(cube_bool,
+                                      np.arange(4) + 1)
+
+    arg = np.zeros(p)
+    arg[cube_bool] = np.random.standard_normal(4)
+    arg[~cube_bool] = - np.fabs(np.random.standard_normal(6))
+    print(_barrier_star.smooth_objective(arg, mode='both'))
+    
+    B1 = np.random.standard_normal((4,10))
+
+    # linear composition
+    composition1 = rr.affine_smooth(_barrier_star, B1.T)
+    print(composition1.shape)
+
+    X = np.random.standard_normal((10, 4))
+    Y = np.random.standard_normal(10)
+    A = rr.affine_transform(X, Y)
+
+    composition2 = rr.affine_smooth(_barrier_star, A)
+    print(composition2.shape)
+
+    sum_fn = rr.smooth_sum([composition1, composition2])
+    print(sum_fn.shape)
 
 def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
 
