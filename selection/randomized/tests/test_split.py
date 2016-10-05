@@ -29,7 +29,7 @@ class randomized_loss(rr.smooth_atom):
             self.X = X
             self.y = y
             self.n, self.p = X.shape
-            self.subsample = np.random.choice(self.n, size=(subsample_size,), replace=True)
+            self.subsample = np.random.choice(self.n, size=(subsample_size,), replace=False)
             self.X1 = X[self.subsample,:]
             self.y1 = y[self.subsample]
             self.sub_loss = rr.glm.logistic(self.X1, self.y1)
@@ -54,14 +54,15 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
 
-    m = n/2.
+    m = n/2
 
-    randomizer = split(X, y, m)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
     loss = randomized_loss(X, y, m)
+
+    randomizer = split(loss)
 
     epsilon = 1.
 
