@@ -409,16 +409,25 @@ class split_M_estimator(M_estimator):
 
         beta_full1 = np.zeros(overall.shape)
         beta_full1[overall] = _beta_unpenalized1
-        _hessian = loss.hessian(beta_full1)
+        _hessian1 = loss.sub_loss.hessian(beta_full1)
         self._beta_full1 = beta_full1
+
+        _beta_unpenalized = restricted_Mest(loss.full_loss, overall, solve_args=solve_args)
+        beta_full = np.zeros(overall.shape)
+        beta_full[overall] = _beta_unpenalized
+        _hessian = loss.sub_loss.hessian(beta_full)
+        self._beta_full = beta_full
 
         # observed state for score
 
         #self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
         #                                       -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
-        self.observed_score_state = loss.sub_loss.saturated_loss.smooth_objective(loss.X1.dot(beta_full1), 'grad') + loss.Y1 \
-            -loss.fraction*loss.X.T.dot(loss.y)-loss.sub_loss.hessian.dot(beta_full1)
+        self.observed_score_state = np.dot(loss.X1.T,loss.sub_loss.saturated_loss.smooth_objective(loss.X1.dot(beta_full1), 'grad') + loss.y1)
+
+        self.observed_score_state += -np.multiply(np.dot(loss.X.T, loss.y),loss.fraction)
+
+        self.observed_score_state += -np.dot(_hessian1, beta_full1)
 
         # form linear part
 

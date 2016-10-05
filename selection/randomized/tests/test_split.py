@@ -3,7 +3,7 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import randomization, split_glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
@@ -35,15 +35,16 @@ class randomized_loss(rr.smooth_atom):
             self.sub_loss = rr.glm.logistic(self.X1, self.y1)
             self.full_loss = rr.glm.logistic(self.X, self.y)
             self.m = subsample_size
+            self.fraction = self.m/float(self.n)
 
         def smooth_objective(self, beta, mode='both', check_feasibility=False):
             linear = -(np.dot(self.X.T, self.y)*self.m/float(self.n))+np.dot(self.X1.T,self.y1)
             if mode=='grad':
-                return self.subloss.smooth_objective(beta, 'grad') + linear
+                return self.sub_loss.smooth_objective(beta, 'grad') + linear
             if mode=='func':
-                return self.subloss.smooth_objective(beta, 'func')+np.inner(linear, beta)
+                return self.sub_loss.smooth_objective(beta, 'func')+np.inner(linear, beta)
             if mode=='both':
-                return self.subloss.smooth_objective(beta, 'func')+np.inner(linear, beta), self.subloss.smooth_objective(beta, 'grad') + linear
+                return self.sub_loss.smooth_objective(beta, 'func')+np.inner(linear, beta), self.sub_loss.smooth_objective(beta, 'grad') + linear
 
 
 
@@ -71,7 +72,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est1 = split_glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
@@ -92,7 +93,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
+        boot_target, target_observed = pairs_bootstrap_glm(loss.sub_loss, active_union)
 
         # testing the global null
         # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference

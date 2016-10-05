@@ -17,26 +17,24 @@ def split_pairs_bootstrap_glm(randomized_loss,
       """
         pairs bootstrap of (beta_hat_active, -grad_inactive(beta_hat_active))
       """
-      X, Y = randomized_loss.X, randomized_loss.Y
+      X, y = randomized_loss.X, randomized_loss.y
       subsample = randomized_loss.subsample
       n, p = X.shape
-      m = subsample.shape[0]
-      fraction = m/float(n)
 
-      X1, Y1 = X[subsample,:], Y[subsample]
+      X1, y1 = X[subsample,:], y[subsample]
 
-      glm_loss = randomized_loss.full_loss
+      full_glm_loss = randomized_loss.full_loss
 
       if beta_full is None:
-          beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
-          beta_full = np.zeros(glm_loss.shape)
+          beta_active = restricted_Mest(full_glm_loss, active, solve_args=solve_args)
+          beta_full = np.zeros(full_glm_loss.shape)
           beta_full[active] = beta_active
       else:
           beta_active = beta_full[active]
 
-      glm_loss1 = randomized_loss.sub_loss
-      beta_full1 = np.zeros(glm_loss1.shape)
-      beta_full1[active] = restricted_Mest(glm_loss1, active, solve_args=solve_args)
+      sub_glm_loss = randomized_loss.sub_loss
+      beta_full1 = np.zeros(sub_glm_loss.shape)
+      beta_full1[active] = restricted_Mest(sub_glm_loss, active, solve_args=solve_args)
 
       X_active = X[:, active]
 
@@ -47,7 +45,7 @@ def split_pairs_bootstrap_glm(randomized_loss,
          X_inactive = X[:, inactive]
          ntotal += inactive.sum()
 
-      _bootW = np.diag(glm_loss1.saturated_loss.hessian(X_active.dot(beta_active)))
+      _bootW = np.diag(full_glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
       _bootQ = X_active.T.dot(_bootW.dot(X_active))
       _bootQinv = np.linalg.inv(_bootQ)
       if inactive is not None:
@@ -63,15 +61,17 @@ def split_pairs_bootstrap_glm(randomized_loss,
             X_full = X_active
             beta_overall = beta_active
 
-      _boot_mu = lambda X: glm_loss.saturated_loss.smooth_objective(X.dot(beta_overall), 'grad') + Y
+      _boot_mu = lambda X: full_glm_loss.saturated_loss.smooth_objective(X.dot(beta_overall), 'grad') + y
 
-      _boot_mu1 = lambda X1: glm_loss1.saturated_loss.smooth_objective(X1.dot(beta_full1), 'grad') + Y1
+      _boot_mu1 = lambda X1: sub_glm_loss.saturated_loss.smooth_objective(X1.dot(beta_full1), 'grad') + y1
 
-      temp = -(fraction*X.dot(Y)) -_bootQ.dot(beta_full1)
+      _bootQ_full = X.T.dot(_bootW.dot(X_active))
+      temp = -np.multiply(np.dot(X.T,y), randomized_loss.fraction) -_bootQ_full.dot(beta_full1[active])
+
       if ntotal > nactive:
-            observed = np.hstack([(X1.dot(Y1)-temp)[active], (_boot_mu1(X1)+temp)[inactive]])
+            observed = np.hstack([(np.dot(X1.T,y1)-temp)[active], (np.dot(X1.T,_boot_mu1(X1))+temp)[inactive]])
       else:
-            observed = X1.dot(Y1)-temp
+            observed = X1.dot(y1)-temp
 
         # scaling is a lipschitz constant for a gradient squared
       _sqrt_scaling = np.sqrt(scaling)
@@ -79,15 +79,15 @@ def split_pairs_bootstrap_glm(randomized_loss,
 
       def _boot_score(indices):
             X_star = X[indices]
-            Y_star = Y[indices]
+            y_star = y[indices]
             X1_star = X_star[subsample,:]
-            Y1_star = Y_star[subsample]
-            score = X_star.T.dot(Y_star - _boot_mu(X_star))
+            y1_star = y_star[subsample]
+            score = X_star.T.dot(y_star - _boot_mu(X_star))
             result = np.zeros(ntotal)
-            result[:nactive] = -fraction*score[:nactive]
+            result[:nactive] = -randomized_loss.fraction*score[:nactive]
             if ntotal > nactive:
-                score1 = X1_star.T.dot(Y1_star - _boot_mu1(X1_star))
-                result[nactive:] = score1[nactive:]+_bootI.dot(score1[:nactive])-fraction*score[nactive:]
+                score1 = X1_star.T.dot(y1_star - _boot_mu1(X1_star))
+                result[nactive:] = score1[nactive:]+_bootI.dot(score1[:nactive])-randomized_loss.fraction*score[nactive:]
                 result[:nactive] *= _sqrt_scaling
                 result[nactive:] /= _sqrt_scaling
             return result
