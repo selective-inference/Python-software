@@ -28,3 +28,6 @@ selection/*/*.c
 build
 *ipynb_checkpoints
 */*ipynb_checkpoints
+.idea/*
+*/.idea/*
+*/*/.idea/*
