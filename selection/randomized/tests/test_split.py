@@ -29,11 +29,13 @@ class randomized_loss(rr.smooth_atom):
             self.X = X
             self.y = y
             self.n, self.p = X.shape
-            subsample = np.random.choice(self.n, size=(subsample_size,), replace=True)
-            self.X1 = X[subsample]
-            self.y1 = y[subsample]
-            self.subloss = rr.glm.logistic(self.X1, self.y1)
+            self.subsample = np.random.choice(self.n, size=(subsample_size,), replace=True)
+            self.X1 = X[self.subsample,:]
+            self.y1 = y[self.subsample]
+            self.sub_loss = rr.glm.logistic(self.X1, self.y1)
+            self.full_loss = rr.glm.logistic(self.X, self.y)
             self.m = subsample_size
+
         def smooth_objective(self, beta, mode='both', check_feasibility=False):
             linear = -(np.dot(self.X.T, self.y)*self.m/float(self.n))+np.dot(self.X1.T,self.y1)
             if mode=='grad':
@@ -42,6 +44,7 @@ class randomized_loss(rr.smooth_atom):
                 return self.subloss.smooth_objective(beta, 'func')+np.inner(linear, beta)
             if mode=='both':
                 return self.subloss.smooth_objective(beta, 'func')+np.inner(linear, beta), self.subloss.smooth_objective(beta, 'grad') + linear
+
 
 
 def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
@@ -104,9 +107,9 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
 
         ## bootstrap
         target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-                                                              target_observed_gn,
-                                                              n, target_alpha_gn,
-                                                              reference = unpenalized_mle)
+                                                         target_observed_gn,
+                                                         n, target_alpha_gn,
+                                                         reference = unpenalized_mle)
 
         ## CLT plugin
         #target_sampler_gn = mv.setup_target(target_gn,
