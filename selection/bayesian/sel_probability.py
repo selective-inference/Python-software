@@ -2,7 +2,7 @@ import numpy as np
 from initial_soln import selection
 from scipy.optimize import minimize
 from scipy.stats import norm as ndist
-from selection.tests.instance import gaussian_instance as instance
+#from tests.instance import gaussian_instance as instance
 
 #########################################################
 #####defining a class for computing selection probability: also returns selective_map and gradient of posterior
@@ -119,17 +119,18 @@ class selection_probability(object):
             return -np.dot(z_1.T, mu_data_mod) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1),
                                                                 2) + value_coef.fun
 
-        if self.p < self.n + self.nactive:
-            initial_noise = np.zeros(self.p)
-            initial_noise[:self.nactive] = self.betaE
-            initial_noise[self.nactive:] = self.cube
-            res = minimize(objective_noise, x0=initial_noise)
-            const_param = np.dot(np.dot(param.T,self.constant),param)
-            return -res.fun+const_param, res.x
-        else:
-            initial_data = self.y
-            res = minimize(objective_data, x0=initial_data)
-            return -res.fun, res.x
+        #if self.p < self.n + self.nactive:
+        #    initial_noise = np.zeros(self.p)
+        #    initial_noise[:self.nactive] = self.betaE
+        #    initial_noise[self.nactive:] = self.cube
+        #    res = minimize(objective_noise, x0=initial_noise)
+        #    const_param = np.dot(np.dot(param.T,self.constant),param)
+        #    return -res.fun+const_param, res.x
+        #else:
+        initial_data = self.y
+        res = minimize(objective_data, x0=initial_data)
+        return -res.fun, res.x
+        #return objective_data(self.y)
 
     def selective_map(self,y,prior_sd):
         def objective(param,y,prior_sd):

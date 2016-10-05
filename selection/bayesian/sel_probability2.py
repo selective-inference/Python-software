@@ -303,8 +303,8 @@ class selection_probability_objective(rr.smooth_atom):
                  mean_parameter, # in R^n
                  noise_variance,
                  randomization,
-                 coef=1., 
-                 epsilon=0.,
+                 epsilon,
+                 coef=1.,
                  offset=None,
                  quadratic=None):
 
@@ -386,7 +386,8 @@ class selection_probability_objective(rr.smooth_atom):
         self._response_selector = rr.selector(~opt_vars, (n+E,))
 
         X_E = self.X_E = X[:,active]
-        B = X.T.dot(X_E) * active_signs[None,:]
+        B = X.T.dot(X_E)
+            #* active_signs[None,:]
 
         B_E = B[active]
         B_mE = B[~active]
@@ -456,14 +457,14 @@ class selection_probability_objective(rr.smooth_atom):
         if mode == 'func':
             f_nonneg = self.nonnegative_barrier.smooth_objective(param, 'func')
             f_like = self.likelihood_loss.smooth_objective(param, 'func')
-            f_active_conj = active_conj_value(self.A_active.dot(param))
+            f_active_conj = active_conj_value(self.A_active.dot(param)+self.offset_active)
             f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
             #print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
             return f
         elif mode == 'grad':
             g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'grad')
             g_like = self.likelihood_loss.smooth_objective(param, 'grad')
-            g_active_conj = self.A_active.T.dot(active_conj_grad(self.A_active.dot(param)))
+            g_active_conj = self.A_active.T.dot(active_conj_grad(self.A_active.dot(param)+self.offset_active))
             g = self.scale(g_nonneg + g_like + g_active_conj + barrier_gradient_i)
             #print(g, 'grad')
             return g
@@ -471,8 +472,8 @@ class selection_probability_objective(rr.smooth_atom):
             f_nonneg, g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'both')
             f_like, g_like = self.likelihood_loss.smooth_objective(param, 'both')
             param_a = self.A_active.dot(param)
-            f_active_conj = active_conj_value(param_a)
-            g_active_conj = self.A_active.T.dot(active_conj_grad(param_a))
+            f_active_conj = active_conj_value(param_a+self.offset_active)
+            g_active_conj = self.A_active.T.dot(active_conj_grad(param_a)+self.offset_active)
             f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
             g = self.scale(g_nonneg + g_like + g_active_conj + barrier_gradient_i)
             #print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')

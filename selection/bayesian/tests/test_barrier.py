@@ -3,10 +3,10 @@ from scipy.optimize import minimize
 import numpy as np
 import regreg.api as rr
 
-import selection.bayesian.sel_probability2; 
+import selection.bayesian.sel_probability2;
 from imp import reload
 reload(selection.bayesian.sel_probability2)
-from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
+from bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
 from selection.randomized.api import randomization
 
 def test_cube_subproblem(k=100, do_scipy=True, verbose=False):

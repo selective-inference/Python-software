@@ -85,16 +85,32 @@ class appoximate_confidence(object):
         res=minimize(objective_noise,x0=self.initial)
         return -np.true_divide(np.linalg.norm((s*np.dot(self.X.T,c))-gamma),2*self.tau_sq)-res.fun
 
-    def approx_density(self,j,s,param):
-        return np.exp(np.true_divide((s-param)**2,(self.eta_norm_sq[j]*self.sigma_sq)))*np.exp(self.optimization(j,s))
-
-    def normalized_density(self,j,param):
+    def area_approx_density(self,j,param):
         s_seq = np.linspace(-15, 15, num=200)
         density_seq=[]
+        approx_conditional=self.optimization(j,s)
         for i in range(s_seq.shape[0]):
-            density_seq.append(self.approx_density(j,s_seq[i],param))
+            density_seq.append(np.exp(np.true_divide((s-param)**2,(self.eta_norm_sq
+                                                                   [j]*self.sigma_sq)))*np.exp(approx_conditional))
 
-        return np.true_divide(density_seq,np.sum(density_seq))
+        approx_density = np.true_divide(density_seq,np.sum(density_seq))
+        #getting a cumulative sum for area under density:
+        for j in range(approx.density[0])
+            area_approx=approx_density[:j]
+        ####return the 90% equi-tailed quatiles here
+
+    def intervals(self,j):
+        eta = self.XE_pinv[j, :]
+        s_observed=np.dot(eta.T,s)
+        param_seq = np.linspace(-20, 20, num=200)
+        #find the params such that s_observed lies within the computed 90% quantiles
+
+
+
+
+
+
+
 
 
 
