@@ -196,6 +196,10 @@ class lasso(object):
 
                     # make full constraints
 
+                    # A: active
+                    # I: inactive
+                    # F: full, (A,I) stacked
+
                     _cov_FA = self.covariance_estimator(self.onestep_estimator,
                                                         self.active,
                                                         self.inactive)
