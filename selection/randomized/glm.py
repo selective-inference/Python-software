@@ -2,7 +2,7 @@ import functools # for bootstrap partial mapping
 
 import numpy as np
 
-from .M_estimator import restricted_Mest, M_estimator
+from .M_estimator import restricted_Mest, M_estimator, split_M_estimator
 from .greedy_step import greedy_score_step
 from regreg.api import glm
 
@@ -289,6 +289,18 @@ class glm_group_lasso(M_estimator):
                                               inactive=self.inactive)[0]
 
         return bootstrap_score
+
+class split_glm_group_lasso(split_M_estimator):
+    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
+        split_M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
+
+        bootstrap_score = split_pairs_bootstrap_glm(self.loss,
+                                                  self.overall,
+                                                  beta_full=self._beta_full,
+                                                  inactive=self.inactive)[0]
+
+        return bootstrap_score
+
 
 class glm_group_lasso_parametric(M_estimator):
 
