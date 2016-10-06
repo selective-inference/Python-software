@@ -1,6 +1,6 @@
 from .multiple_views import multiple_views
 
-from .glm import (glm_group_lasso, 
+from .glm import (glm_group_lasso, split_glm_group_lasso,
                   glm_group_lasso_parametric,
                   glm_greedy_step, 
                   glm_threshold_score,

@@ -99,3 +99,96 @@ class randomization(rr.smooth_atom):
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
         return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=.25/scale**2)
+
+
+
+
+class split(randomization):
+
+    def __init__(self, loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
+
+        from .M_estimator import restricted_Mest
+
+        self.n, self.p = loss.X.shape
+        self.fraction = loss.fraction
+        self.subsample = loss.subsample
+        self.X, self.y = loss.X, loss.y
+        self.X1, self.y1  = self.X[self.subsample,:], self.y[self.subsample]
+
+        subsample_set = set(self.subsample)
+        total_set = set(np.arange(self.n))
+        outside_subsample = np.asarray([item for item in total_set if item not in subsample_set])
+        self.y2 = self.y[outside_subsample]
+
+        #full_glm_loss = loss.full_loss
+        #beta_overall = restricted_Mest(full_glm_loss, np.ones(self.p, dtype=bool), solve_args=solve_args)
+        sub_glm_loss1 = loss.sub_loss
+        beta_overall1 = np.zeros(self.p)
+        beta_overall1[active] = restricted_Mest(sub_glm_loss1, active, solve_args=solve_args)
+
+        beta_overall2 = np.zeros(self.p)
+        sub_glm_loss2 = rr.glm.logistic(self.X[outside_subsample], self.y[outside_subsample])
+        beta_overall2[active] = restricted_Mest(sub_glm_loss2, active, solve_args=solve_args)
+
+        def _boot_covariance(indices):
+            X_star, y_star = self.X[indices], self.y[indices]
+            X1_star, y1_star = X_star[self.subsample], y_star[self.subsample]
+            X2_star, y2_star = X_star[outside_subsample], y_star[outside_subsample]
+
+            _boot_mu1 = lambda X1: sub_glm_loss1.saturated_loss.smooth_objective(X1.dot(beta_overall1), 'grad') + self.y1
+
+            _boot_mu2 = lambda X2: sub_glm_loss2.saturated_loss.smooth_objective(X2.dot(beta_overall2), 'grad') + self.y2
+
+            #subsample = np.random.choice(n, size=(m,), replace=False)
+            score1 = X1_star.T.dot(y1_star - _boot_mu1(X1_star))
+            score2 = X2_star.T.dot(y2_star - _boot_mu2(X2_star))
+            result = (1-self.fraction)*score1 - (self.fraction*score2)
+            #result = np.dot(X_star[self.subsample].T, y_star[self.subsample]) - (self.fraction*np.dot(X_star.T, y_star))
+            return result
+
+        def _nonparametric_covariance_estimate(nboot=10000):
+            results = []
+            for i in range(nboot):
+                indices = np.random.choice(self.n, size=(self.n,), replace=True)
+                results.append(_boot_covariance(indices))
+
+            mean_results = np.zeros(self.p)
+            for i in range(nboot):
+                mean_results = np.add(mean_results, results[i])
+
+            mean_results /= nboot
+
+            covariance = np.zeros((self.p,self.p))
+            for i in range(nboot):
+                covariance = np.add(covariance, np.outer(results[i]-mean_results, results[i]-mean_results))
+
+            return covariance/float(nboot)
+
+        self.covariance = _nonparametric_covariance_estimate()
+        print np.diag(self.covariance)
+        #covariance_inv = np.linalg.inv(self.covariance)
+
+        #from scipy.stats import multivariate_normal
+
+        #density = lambda x: multivariate_normal.pdf(x, mean=np.zeros(p), cov=self.covariance)
+        #grad_negative_log_density = lambda x: covariance_inv.dot(x)
+        #sampler = lambda size: np.random.multivariate_normal(mean=np.zeros(p), cov=self.covariance, size=size)
+
+        def gaussian(covariance):
+            precision = np.linalg.inv(covariance)
+            sqrt_precision = np.linalg.cholesky(precision)
+            _det = np.linalg.det(covariance)
+            p = covariance.shape[0]
+            _const = np.sqrt((2 * np.pi) ** p * _det)
+            density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
+            grad_negative_log_density = lambda x: precision.dot(x)
+            sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+            return randomization.__init__(self,(p,), density, grad_negative_log_density, sampler,
+                                 lipschitz=np.linalg.svd(precision)[1].max())
+
+        gaussian(self.covariance)
+        #randomization.__init__(self, 1, density, grad_negative_log_density, sampler)
+
+
+
+

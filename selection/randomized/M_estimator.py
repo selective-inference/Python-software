@@ -286,3 +286,181 @@ def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
     
     return beta_E
 
+
+from .randomization import split
+
+class split_M_estimator(M_estimator):
+
+    def __init__(self,loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
+        M_estimator.__init__(self,loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10})
+
+    def randomize(self):
+
+        if not self._randomized:
+            # self._randomZ = self.randomization.sample()
+            self._randomZ = np.dot(self.loss.X1.T, self.loss.y1) - self.loss.fraction*np.dot(self.loss.X.T, self.loss.y)
+            self._random_term = rr.identity_quadratic(self.epsilon, 0, -self._randomZ, 0)
+
+        # set the _randomized bit
+
+        self._randomized = True
+
+    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
+
+        """
+        Should return a bootstrap_score
+        """
+
+        (loss,
+         epsilon,
+         penalty,
+         randomization,
+         initial_soln,
+         overall,
+         inactive,
+         unpenalized,
+         active_groups,
+         active_directions) = (self.loss,
+                               self.epsilon,
+                               self.penalty,
+                               self.randomization,
+                               self.initial_soln,
+                               self.overall,
+                               self.inactive,
+                               self.unpenalized,
+                               self.active_groups,
+                               self.active_directions)
+
+        # scaling should be chosen to be Lipschitz constant for gradient of Gaussian part
+
+        # we are implicitly assuming that
+        # loss is a pairs model
+
+        self.randomization = split(loss,overall)
+
+        _sqrt_scaling = np.sqrt(scaling)
+
+        _beta_unpenalized1 = restricted_Mest(loss.sub_loss, overall, solve_args=solve_args)
+
+        beta_full1 = np.zeros(overall.shape)
+        beta_full1[overall] = _beta_unpenalized1
+        _hessian = loss.sub_loss.hessian(beta_full1)
+        self._beta_full1 = beta_full1
+
+        _beta_unpenalized = restricted_Mest(loss.full_loss, overall, solve_args=solve_args)
+        beta_full = np.zeros(overall.shape)
+        beta_full[overall] = _beta_unpenalized
+        #_hessian = loss.sub_loss.hessian(beta_full)
+        self._beta_full = beta_full
+
+        # observed state for score
+
+        #self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
+        #                                       -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
+
+        #self.observed_score_state = np.dot(loss.X1.T,loss.sub_loss.saturated_loss.smooth_objective(loss.X1.dot(beta_full1), 'grad') + loss.y1)
+
+        #self.observed_score_state += -np.dot(loss.X.T, loss.y)*loss.fraction-np.dot(_hessian1, beta_full1)
+
+        self.observed_score_state = loss.smooth_objective(initial_soln, 'grad')
+
+        #print loss.smooth_objective(initial_soln, 'grad')
+        # form linear part
+
+        self.num_opt_var = p = loss.shape[0]  # shorthand for p
+
+        # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})
+        # E for active
+        # U for unpenalized
+        # -E for inactive
+
+        _opt_linear_term = np.zeros((p, self.active_groups.sum() + unpenalized.sum() + inactive.sum()))
+        _score_linear_term = np.identity(p)
+
+        #_score_linear_term = np.zeros((p, p))
+
+        # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
+
+        #Mest_slice = slice(0, overall.sum())
+        #_Mest_hessian = _hessian[:, overall]
+        #_score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
+
+
+
+        # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
+
+        #null_idx = range(overall.sum(), p)
+        inactive_idx = np.nonzero(inactive)[0]
+        #for _i, _n in zip(inactive_idx, null_idx):
+        #    _score_linear_term[_i, _n] = -_sqrt_scaling
+
+        # c_E piece
+
+        scaling_slice = slice(0, active_groups.sum())
+        if len(active_directions) == 0:
+            _opt_hessian = 0
+        else:
+            _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
+        _opt_linear_term[:, scaling_slice] = _opt_hessian / _sqrt_scaling
+
+        self.observed_opt_state[scaling_slice] *= _sqrt_scaling
+
+        # beta_U piece
+
+        unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
+        unpenalized_directions = np.identity(p)[:, unpenalized]
+        if unpenalized.sum():
+            _opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(
+                unpenalized_directions) / _sqrt_scaling
+
+        self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
+
+        # subgrad piece
+
+        subgrad_idx = range(active_groups.sum() + unpenalized.sum(),
+                            active_groups.sum() + inactive.sum() + unpenalized.sum())
+        subgrad_slice = slice(active_groups.sum() + unpenalized.sum(),
+                              active_groups.sum() + inactive.sum() + unpenalized.sum())
+        for _i, _s in zip(inactive_idx, subgrad_idx):
+            _opt_linear_term[_i, _s] = _sqrt_scaling
+
+        self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
+
+        # form affine part
+
+        _opt_affine_term = np.zeros(p)
+        idx = 0
+        groups = np.unique(penalty.groups)
+        for i, g in enumerate(groups):
+            if active_groups[i]:
+                group = penalty.groups == g
+                _opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
+                idx += 1
+
+        # two transforms that encode score and optimization
+        # variable roles
+
+        # later, we will modify `score_transform`
+        # in `linear_decomposition`
+
+        self.opt_transform = (_opt_linear_term, _opt_affine_term)
+        self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
+        # now store everything needed for the projections
+        # the projection acts only on the optimization
+        # variables
+
+        self.scaling_slice = scaling_slice
+
+        # weights are scaled here because the linear terms scales them by scaling
+
+        new_groups = penalty.groups[inactive]
+        new_weights = dict(
+            [(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
+
+        # we form a dual group lasso object
+        # to do the projection
+
+        self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
+        self.subgrad_slice = subgrad_slice
+
