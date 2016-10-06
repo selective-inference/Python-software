@@ -409,13 +409,13 @@ class split_M_estimator(M_estimator):
 
         beta_full1 = np.zeros(overall.shape)
         beta_full1[overall] = _beta_unpenalized1
-        _hessian1 = loss.sub_loss.hessian(beta_full1)
+        _hessian = loss.sub_loss.hessian(beta_full1)
         self._beta_full1 = beta_full1
 
         _beta_unpenalized = restricted_Mest(loss.full_loss, overall, solve_args=solve_args)
         beta_full = np.zeros(overall.shape)
         beta_full[overall] = _beta_unpenalized
-        _hessian = loss.sub_loss.hessian(beta_full)
+        #_hessian = loss.sub_loss.hessian(beta_full)
         self._beta_full = beta_full
 
         # observed state for score
@@ -423,12 +423,13 @@ class split_M_estimator(M_estimator):
         #self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
         #                                       -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
-        self.observed_score_state = np.dot(loss.X1.T,loss.sub_loss.saturated_loss.smooth_objective(loss.X1.dot(beta_full1), 'grad') + loss.y1)
+        #self.observed_score_state = np.dot(loss.X1.T,loss.sub_loss.saturated_loss.smooth_objective(loss.X1.dot(beta_full1), 'grad') + loss.y1)
 
-        self.observed_score_state += -np.dot(loss.X.T, loss.y)*loss.fraction
+        #self.observed_score_state += -np.dot(loss.X.T, loss.y)*loss.fraction-np.dot(_hessian1, beta_full1)
 
-        self.observed_score_state += -np.dot(_hessian1, beta_full1)
+        self.observed_score_state = loss.smooth_objective(initial_soln, 'grad')
 
+        #print loss.smooth_objective(initial_soln, 'grad')
         # form linear part
 
         self.num_opt_var = p = loss.shape[0]  # shorthand for p
@@ -453,10 +454,10 @@ class split_M_estimator(M_estimator):
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
-        null_idx = range(overall.sum(), p)
+        #null_idx = range(overall.sum(), p)
         inactive_idx = np.nonzero(inactive)[0]
-        for _i, _n in zip(inactive_idx, null_idx):
-            _score_linear_term[_i, _n] = -_sqrt_scaling
+        #for _i, _n in zip(inactive_idx, null_idx):
+        #    _score_linear_term[_i, _n] = -_sqrt_scaling
 
         # c_E piece
 

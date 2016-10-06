@@ -36,7 +36,7 @@ class randomized_loss(rr.smooth_atom):
             self.fraction = self.m/float(self.n)
 
         def smooth_objective(self, beta, mode='both', check_feasibility=False):
-            linear = -np.dot(self.X.T, self.y)*self.fraction#+np.dot(self.X1.T,self.y1)
+            linear = -np.dot(self.X.T, self.y)*self.fraction #+np.dot(self.X1.T,self.y1)
             if mode=='grad':
                 return self.sub_loss.smooth_objective(beta, 'grad') + linear
             if mode=='func':
@@ -47,12 +47,12 @@ class randomized_loss(rr.smooth_atom):
 
 
 def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 3, 200, 10
+    s, n, p = 3, 400, 10
 
     #randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
 
-    m = int(n/2)
+    m = int(n/1.5)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.

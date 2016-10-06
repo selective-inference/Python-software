@@ -170,7 +170,7 @@ class split(randomization):
             return randomization.__init__(self,(p,), density, grad_negative_log_density, sampler,
                                  lipschitz=np.linalg.svd(precision)[1].max())
 
-        gaussian(self.covariance*2)
+        gaussian(self.covariance)
         #randomization.__init__(self, 1, density, grad_negative_log_density, sampler)
 
 
