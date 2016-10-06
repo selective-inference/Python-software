@@ -3,7 +3,7 @@ import collections
 import numpy as np
 import nose.tools
 
-def set_seed_for_test(seed=10):
+def set_seed_iftrue(condition, seed=10):
     """
     Fix the seed for random test.
 
@@ -26,13 +26,21 @@ def set_seed_for_test(seed=10):
 
 
     """
+
     import nose
     def set_seed_decorator(f):
+
+        # Allow for both boolean or callable set conditions.
+        if isinstance(condition, collections.Callable):
+            set_val = lambda : condition()
+        else:
+            set_val = lambda : condition
 
         def skipper_func(*args, **kwargs):
             """Skipper for normal test functions."""
             old_state = np.random.get_state()
-            np.random.seed(seed)
+            if set_val:
+                np.random.seed(seed)
             value = f(*args, **kwargs)
             np.random.set_state(old_state)
             return value
@@ -40,7 +48,8 @@ def set_seed_for_test(seed=10):
         def skipper_gen(*args, **kwargs):
             """Skipper for test generators."""
             old_state = np.random.get_state()
-            np.random.seed(seed)
+            if set_val:
+                np.random.seed(seed)
             for x in f(*args, **kwargs):
                 yield x
             np.random.set_state(old_state)

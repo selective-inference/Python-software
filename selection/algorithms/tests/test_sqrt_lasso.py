@@ -6,6 +6,7 @@ import nose.tools as nt
 
 import regreg.api as rr
 
+from selection.tests import SET_SEED, SMALL_SAMPLES
 from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, 
                                              choose_lambda,
                                              goodness_of_fit,
@@ -16,9 +17,9 @@ from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso,
 
 from selection.tests.instance import gaussian_instance as instance
 from selection.algorithms.lasso import lasso
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 @dec.slow
 def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
                          nsim=1000, burnin=2000, ndraw=8000):
@@ -60,7 +61,7 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         plt.plot([0,1], [0,1])
         plt.savefig("goodness_of_fit_uniform", format="pdf")
     
-@set_seed_for_test(10)
+@set_seed_iftrue(SET_SEED)
 def test_skinny_fat():
 
     X, Y = instance()[:2]

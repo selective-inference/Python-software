@@ -1,6 +1,10 @@
-from ..algorithms import tests as truncated
-from ..distributions import tests as distributions
-from ..truncated import tests as truncated
-from ..constraints import tests as constraints
-from ..sampling import tests as sampling
+import os
 
+SMALL_SAMPLES = False
+SET_SEED = False
+
+if "USE_SMALL_SAMPLES" in os.environ:
+    SMALL_SAMPLES = True
+
+if "USE_TEST_SEED" in os.environ:
+    SET_SEED = True

@@ -3,6 +3,7 @@ import nose.tools as nt
 import numpy.testing.decorators as dec
 
 from itertools import product
+from selection.tests import SMALL_SAMPLES
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
                                         data_splitting,
@@ -12,7 +13,6 @@ from selection.algorithms.lasso import (lasso,
                                         glm_sandwich_estimator,
                                         glm_parametric_estimator)
 
-from selection.tests.decorators import set_seed_for_test
 from selection.tests.instance import gaussian_instance as instance
 from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, choose_lambda)
 
@@ -159,7 +159,7 @@ def test_coxph():
 
     return L, C, P
 
-@set_sampling_params_iftrue(False)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_gaussian(n=100,
                                p=200,
                                s=7,
@@ -244,7 +244,7 @@ def test_data_carving_gaussian(n=100,
 
     return return_value
 
-@set_sampling_params_iftrue(False)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_sqrt_lasso(n=100,
                                  p=200,
                                  s=7,
@@ -315,7 +315,7 @@ def test_data_carving_sqrt_lasso(n=100,
 
     return return_value
 
-@set_sampling_params_iftrue(False)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_logistic(n=500,
                                p=300,
                                s=5,
@@ -405,7 +405,7 @@ def test_data_carving_logistic(n=500,
 
     return return_value
 
-@set_sampling_params_iftrue(False)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_poisson(n=200,
                               p=300,
                               s=5,
@@ -491,7 +491,7 @@ def test_data_carving_poisson(n=200,
     return return_value
 
 @dec.skipif(not statsmodels_available, "needs statsmodels")
-@set_sampling_params_iftrue(False)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_coxph(n=100,
                             p=20,
                             split_frac=0.8,
@@ -568,7 +568,7 @@ def test_data_carving_coxph(n=100,
 
     return return_value
 
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 @dec.skipif(True, "needs a data_carving_coverage function to be defined")
 def test_data_carving_coverage(nsim=200, 
                                coverage=0.8,

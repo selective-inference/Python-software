@@ -3,6 +3,7 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
+from selection.tests import SMALL_SAMPLES, SET_SEED
 from selection.randomized.api import (randomization, 
                                       multiple_views, 
                                       pairs_bootstrap_glm, 
@@ -12,13 +13,13 @@ from selection.randomized.api import (randomization,
 from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
-from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
+from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 
 from selection.tests.instance import logistic_instance
 
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 5, 200, 20 

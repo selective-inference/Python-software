@@ -3,10 +3,11 @@ import numpy as np
 
 import regreg.api as rr
 
+from selection.tests import SET_SEED, SMALL_SAMPLES
 from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
-from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
+from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 from selection.tests.instance import logistic_instance
 
 try:
@@ -29,8 +30,8 @@ def generate_data(s=5,
 
     return logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_logistic_many_targets(snr=15, 
                                s=5, 

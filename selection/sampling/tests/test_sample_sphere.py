@@ -10,7 +10,8 @@ import selection.constraints.affine as AC
 from selection.algorithms.lasso import lasso
 from selection.algorithms.sqrt_lasso import choose_lambda
 from selection.distributions.discrete_family import discrete_family
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
+from selection.tests import SET_SEED, SMALL_SAMPLES
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 # generate a cone from a sqrt_lasso problem
 
@@ -36,7 +37,7 @@ def _generate_constraints(n=15, p=10, sigma=1):
     con.mean *= 0
     return con, y, L, X
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(True)
 def test_sample_ball(burnin=1000,
                        ndraw=1000,
@@ -59,7 +60,7 @@ def test_sample_ball(burnin=1000,
                                        how_often=5)
     return s
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(True)
 def test_sample_sphere(burnin=1000,
                        ndraw=1000,
@@ -90,8 +91,8 @@ def test_sample_sphere(burnin=1000,
     return s1, s2
 
 @dec.slow
-@set_seed_for_test(20)
-@set_sampling_params_iftrue(True, nsim=50)
+@set_seed_iftrue(SET_SEED, 20)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=50)
 def test_distribution_sphere(n=15, p=10, sigma=1.,
                              nsim=2000,
                              sample_constraints=False,
@@ -154,8 +155,8 @@ def test_distribution_sphere(n=15, p=10, sigma=1.,
 #     plt.plot(U, sm.distributions.ECDF(pvalues)(U))
 #     plt.plot([0,1],[0,1])
 
-@set_seed_for_test()
-@set_sampling_params_iftrue(True)
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_conditional_sampling(n=20, p=25, sigma=20,
                               ndraw=1000,
                               burnin=1000,

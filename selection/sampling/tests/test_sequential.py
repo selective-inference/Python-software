@@ -4,12 +4,12 @@ from selection.constraints.affine import constraints
 from selection.sampling.sequential import sample
 from scipy.stats import norm as ndist
 
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 @dec.slow
-@set_seed_for_test()
+@set_seed_iftrue(True)
 @set_sampling_params_iftrue(True)
-def test_sequentially_constrained(burnin=None, ndraw=1000, nsim=None):
+def test_sequentially_constrained(burnin=None, ndraw=100, nsim=None):
     S = -np.identity(10)[:3]
     b = -6 * np.ones(3)
     C = constraints(S, b)

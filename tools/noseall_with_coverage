@@ -3,5 +3,5 @@
 import os
 
 os.system("""
-nosetests --with-coverage --cover-package=selection --verbose selection
+env USE_TEST_SEED=1 USE_SMALL_SAMPLES=1 nosetests --with-coverage --cover-package=selection --verbose selection
 """)

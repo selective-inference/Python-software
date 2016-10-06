@@ -4,12 +4,13 @@ import numpy as np
 import regreg.api as rr
 
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.tests import SET_SEED, SMALL_SAMPLES
 from selection.tests.instance import logistic_instance
-from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
+from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 120, 10
@@ -96,8 +97,8 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         return pval, pval_gn
 
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 120, 10
@@ -162,8 +163,8 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
 
         return pvalues
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 120, 10
