@@ -1,15 +1,18 @@
 import numpy as np
 import regreg.api as rr
 
-from .M_estimator import M_estimator, restricted_Mest
+from .query import query
+from .M_estimator import restricted_Mest
 
-class greedy_score_step(M_estimator):
+class greedy_score_step(query):
 
     def __init__(self, loss, penalty, active_groups, inactive_groups, randomization, solve_args={'min_its':50, 'tol':1.e-10},
                  beta_active=None):
         """
         penalty is a group_lasso object that assigns weights to groups
         """
+
+        query.__init__(self, randomization)
 
         (self.loss,
          self.penalty,

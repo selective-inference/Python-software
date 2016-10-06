@@ -1,15 +1,18 @@
 import numpy as np
 import regreg.api as rr
 
-from .M_estimator import M_estimator, restricted_Mest
+from .query import query
+from .M_estimator import restricted_Mest
 
-class threshold_score(M_estimator):
+class threshold_score(query):
 
     def __init__(self, loss, threshold, randomization, active, inactive, beta_active=None,
                  solve_args={'min_its':50, 'tol':1.e-10}):
         """
         penalty is a group_lasso object that assigns weights to groups
         """
+
+        query.__init__(self, randomization)
 
         # threshold could be a vector size inactive
 
