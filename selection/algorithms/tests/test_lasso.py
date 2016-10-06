@@ -1,9 +1,11 @@
 import numpy as np
 import nose.tools as nt
 import numpy.testing.decorators as dec
-
 from itertools import product
-from selection.tests import SMALL_SAMPLES
+
+from selection.tests.flags import SMALL_SAMPLES
+from selection.tests.instance import gaussian_instance as instance
+
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
                                         data_splitting,
@@ -12,8 +14,6 @@ from selection.algorithms.lasso import (lasso,
                                         nominal_intervals,
                                         glm_sandwich_estimator,
                                         glm_parametric_estimator)
-
-from selection.tests.instance import gaussian_instance as instance
 from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, choose_lambda)
 
 import regreg.api as rr

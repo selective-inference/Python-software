@@ -1,6 +1,6 @@
 import numpy as np
 
-from selection.tests import SET_SEED, SMALL_SAMPLES
+from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
 from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue

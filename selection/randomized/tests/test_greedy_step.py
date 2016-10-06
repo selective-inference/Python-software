@@ -3,7 +3,7 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests import SMALL_SAMPLES, SET_SEED
+from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.randomized.api import (randomization, 
                                       multiple_views, 
                                       pairs_bootstrap_glm, 

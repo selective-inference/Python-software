@@ -6,7 +6,7 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-from selection.tests import SET_SEED, SMALL_SAMPLES
+from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, 
                                              choose_lambda,
                                              goodness_of_fit,

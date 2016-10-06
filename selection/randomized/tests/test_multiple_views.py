@@ -3,8 +3,8 @@ import numpy as np
 
 import regreg.api as rr
 
+from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
-from selection.tests import SET_SEED, SMALL_SAMPLES
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
@@ -14,6 +14,9 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @wait_for_return_value()
 def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 120, 10
+
+    print('burnin', burnin)
+    print('ndraw', ndraw)
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -291,6 +294,8 @@ def make_a_plot():
 
 
 def make_a_plot_individual_coeff():
+
+    import matplotlib.pyplot as plt
 
     np.random.seed(3)
     fig = plt.figure()

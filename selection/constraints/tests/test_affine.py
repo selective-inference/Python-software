@@ -7,7 +7,7 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-from selection.tests import SET_SEED
+from selection.tests.flags import SET_SEED
 import selection.constraints.affine as AC
 from selection.tests.decorators import set_seed_iftrue
 

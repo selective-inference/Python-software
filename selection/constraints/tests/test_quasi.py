@@ -9,7 +9,7 @@ import nose.tools as nt
 import numpy as np
 
 from selection.constraints.quasi_affine import (quadratic_inequality_solver, intersection, sqrt_inequality_solver)
-from selection.tests import SET_SEED
+from selection.tests.flags import SET_SEED
 from selection.tests.decorators import set_seed_iftrue
 
 def test_quadratic_solver():

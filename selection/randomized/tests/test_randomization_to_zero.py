@@ -3,10 +3,11 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.tests import SMALL_SAMPLES, SET_SEED
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.instance import logistic_instance, gaussian_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
+
+from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 import matplotlib.pyplot as plt

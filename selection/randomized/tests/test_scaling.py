@@ -3,7 +3,7 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.tests import SET_SEED, SMALL_SAMPLES
+from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
