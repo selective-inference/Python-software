@@ -47,20 +47,20 @@ class randomized_loss(rr.smooth_atom):
 
 
 def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 3, 400, 10
+    s, n, p = 0, 400, 10
 
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
 
-    m = int(n/1.5)
+    m = int(n/2)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
     loss = randomized_loss(X, y, m)
 
-    randomizer = split(loss)
-
+    #randomizer = split(loss)
+    randomizer = None
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
@@ -112,7 +112,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
 
         ## CLT plugin
         target_sampler_gn = mv.setup_target(target_gn,
-                                            target_observed_gn,
+                                            target_observed_gn, #reference=beta[active_union])
                                             reference = unpenalized_mle)
 
         target_sample = target_sampler_gn.sample(ndraw=ndraw,
@@ -161,7 +161,7 @@ def make_a_plot():
     _nparam = 0
     _ncovered = 0
     _naive_ncovered = 0
-    for i in range(100):
+    for i in range(20):
         print("iteration", i)
         test = test_splits()
         if test is not None:

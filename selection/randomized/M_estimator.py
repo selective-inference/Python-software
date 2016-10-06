@@ -367,10 +367,23 @@ def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
     return beta_E
 
 
+from .randomization import split
+
 class split_M_estimator(M_estimator):
 
     def __init__(self,loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
         M_estimator.__init__(self,loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10})
+
+    def randomize(self):
+
+        if not self._randomized:
+            # self._randomZ = self.randomization.sample()
+            self._randomZ = np.dot(self.loss.X1.T, self.loss.y1) - self.loss.fraction*np.dot(self.loss.X.T, self.loss.y)
+            self._random_term = rr.identity_quadratic(self.epsilon, 0, -self._randomZ, 0)
+
+        # set the _randomized bit
+
+        self._randomized = True
 
     def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
 
@@ -402,6 +415,8 @@ class split_M_estimator(M_estimator):
 
         # we are implicitly assuming that
         # loss is a pairs model
+
+        self.randomization = split(loss,overall)
 
         _sqrt_scaling = np.sqrt(scaling)
 

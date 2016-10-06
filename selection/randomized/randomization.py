@@ -90,11 +90,14 @@ class randomization(rr.smooth_atom):
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
         return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=.25/scale**2)
 
-from .M_estimator import restricted_Mest, M_estimator, split_M_estimator
+
+
 
 class split(randomization):
 
-    def __init__(self,loss, solve_args={'min_its':50, 'tol':1.e-10}):
+    def __init__(self, loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
+
+        from .M_estimator import restricted_Mest
 
         self.n, self.p = loss.X.shape
         self.fraction = loss.fraction
@@ -110,9 +113,12 @@ class split(randomization):
         #full_glm_loss = loss.full_loss
         #beta_overall = restricted_Mest(full_glm_loss, np.ones(self.p, dtype=bool), solve_args=solve_args)
         sub_glm_loss1 = loss.sub_loss
-        beta_overall1 = restricted_Mest(sub_glm_loss1, np.ones(self.p, dtype=bool), solve_args=solve_args)
+        beta_overall1 = np.zeros(self.p)
+        beta_overall1[active] = restricted_Mest(sub_glm_loss1, active, solve_args=solve_args)
+
+        beta_overall2 = np.zeros(self.p)
         sub_glm_loss2 = rr.glm.logistic(self.X[outside_subsample], self.y[outside_subsample])
-        beta_overall2 = restricted_Mest(sub_glm_loss2, np.ones(self.p, dtype=bool), solve_args=solve_args)
+        beta_overall2[active] = restricted_Mest(sub_glm_loss2, active, solve_args=solve_args)
 
         def _boot_covariance(indices):
             X_star, y_star = self.X[indices], self.y[indices]
