@@ -26,19 +26,17 @@ class randomized_loss(rr.smooth_atom):
                                     offset=offset,
                                     quadratic=quadratic,
                                     initial=initial)
-            self.X = X
-            self.y = y
+            self.X, self.y = X, y
             self.n, self.p = X.shape
             self.subsample = np.random.choice(self.n, size=(subsample_size,), replace=False)
-            self.X1 = X[self.subsample,:]
-            self.y1 = y[self.subsample]
+            self.X1, self.y1 = X[self.subsample,:], y[self.subsample]
             self.sub_loss = rr.glm.logistic(self.X1, self.y1)
             self.full_loss = rr.glm.logistic(self.X, self.y)
             self.m = subsample_size
             self.fraction = self.m/float(self.n)
 
         def smooth_objective(self, beta, mode='both', check_feasibility=False):
-            linear = -(np.dot(self.X.T, self.y)*self.m/float(self.n))+np.dot(self.X1.T,self.y1)
+            linear = -np.dot(self.X.T, self.y)*self.fraction#+np.dot(self.X1.T,self.y1)
             if mode=='grad':
                 return self.sub_loss.smooth_objective(beta, 'grad') + linear
             if mode=='func':
@@ -54,8 +52,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
 
-    m = n/2
-
+    m = int(n/2)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
