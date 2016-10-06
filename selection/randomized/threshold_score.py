@@ -5,70 +5,103 @@ from .M_estimator import M_estimator, restricted_Mest
 
 class threshold_score(M_estimator):
 
-    def __init__(self, loss, threshold, randomization, active_groups, inactive_groups, beta_active):
+    def __init__(self, loss, threshold, randomization, active, inactive, beta_active=None,
+                 solve_args={'min_its':50, 'tol':1.e-10}):
         """
         penalty is a group_lasso object that assigns weights to groups
         """
 
+        # threshold could be a vector size inactive
+
+        active_bool = np.zeros(loss.shape, np.bool)
+        active_bool[active] = 1
+        active = active_bool
+        inactive = ~active
+
+        if type(threshold) == type(0.):
+            threshold = np.ones(inactive.sum()) * threshold
+
+        self.epsilon = 0. # for randomized loss
+
         (self.loss,
-         self.active_groups,
-         self.inactive_groups,
+         self.threshold,
+         self.active,
+         self.inactive,
          self.beta_active,
-         self.randomization) = (loss,
-                                active_groups,
-                                inactive_groups,
-                                beta_active,
-                                randomization)
+         self.randomization,
+         self.solve_args) = (loss,
+                             threshold, 
+                             active,
+                             inactive,
+                             beta_active,
+                             randomization,
+                             solve_args)
+
+        self._solved = False
+        self._randomized = False
 
     def solve(self):
 
         (loss,
-         active_groups,
-         inactive_groups,
+         threshold,
+         active,
+         inactive,
          beta_active,
          randomization) = (self.loss,
-                           self.active_groups,
-                           self.inactive_groups,
+                           self.threshold,
+                           self.active,
+                           self.inactive,
                            self.beta_active,
                            self.randomization)
 
+        if beta_active is None:
+            beta_active = self.beta_active = restricted_Mest(self.loss, active, solve_args=self.solve_args)
+            
         self.randomize()
          
         beta_full = np.zeros(self.loss.shape)
-        beta_full[active_groups] = beta_active
+        beta_full[active] = beta_active
 
-        inactive_score = self.loss.smooth_objective(beta_full, 'grad')[inactive_groups]
+        inactive_score = self.loss.smooth_objective(beta_full, 'grad')[inactive]
  
         # find the current active group, i.e. 
-        # subset of inactive_groups that pass the threshold
+        # subset of inactive that pass the threshold
 
         # TODO: make this test use group LASSO 
 
-        self.active = np.fabs(inactive_score + self._random_term.linear) > threshold
-        self.active_signs = np.sign(inactive_score + self._random_term.linear)
-        self.inactive = ~inactive
+        self.boundary = np.fabs(inactive_score + self._random_term.linear_term) > threshold
+        self.boundary_signs = np.sign(inactive_score + self._random_term.linear_term)[self.boundary]
+        self.interior = ~self.boundary
 
-        self.observed_overshoot = self.active_signs * (inactive_score[self.active] - threshold)
-        self.observed_underthreshold = inactive_score[self.inactive]
-        self.observed_score = inactive_score
+        self.observed_overshoot = self.boundary_signs * (inactive_score[self.boundary] - threshold[self.boundary])
+        self.observed_below_thresh = inactive_score[self.interior]
+        self.observed_score_state = inactive_score
 
-        self.selection_variable = {'boundary_set':self.active,
-                                   'boundary_signs':self.active_signs}
+        self.selection_variable = {'boundary_set':self.boundary,
+                                   'boundary_signs':self.boundary_signs}
         
+        self._solved = True
+
+        self.num_opt_var = self.boundary.shape[0]
 
     def setup_sampler(self):
 
-        self.observed_opt_state = np.hstack([self.observed_underthreshold,
-                                             self.observed_overshoot])
+        # must set observed_opt_state, opt_transform and score_transform
 
-        p = self.inactive.sum() # shorthand
-        _opt_linear_term = np.zeros((p, 1 + self.observed_subgradients.shape[0]))
-        _opt_linear_term[:,:self.observed_subgradients.shape[0]] = self.losing_padding_map
-        _opt_linear_term[:,-1] = self.maximizing_subgrad
+        p = self.boundary.shape[0] # shorthand
+        self.observed_opt_state = np.zeros(p)
+        self.observed_opt_state[self.boundary] = self.observed_overshoot
+        self.observed_opt_state[self.interior] = self.observed_below_thresh
 
-        _score_linear_term = np.identity(p)
+        _opt_linear_diag = np.ones(p)
+        _opt_linear_diag[self.boundary] = self.boundary_signs
+        _opt_linear_term = np.diag(_opt_linear_diag)
+        _opt_offset = np.zeros(p)
+        _opt_offset[self.boundary] = self.boundary_signs * self.threshold[self.boundary]
 
-        self.opt_transform = (_opt_linear_term, np.zeros(_opt_linear_term.shape[0]))
+        _score_linear_term = -np.identity(p)
+
+        self.opt_transform = (_opt_linear_term, _opt_offset)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
     def projection(self, opt_state):
@@ -76,6 +109,12 @@ class threshold_score(M_estimator):
         Full projection for Langevin.
 
         The state here will be only the state of the optimization variables.
+
+        for now, groups are singletons
         """
-        return self.group_lasso_dual_epigraph.cone_prox(opt_state)
+        opt_state[self.boundary] = np.maximum(opt_state[self.boundary], 0.)
+        opt_state[self.interior] = np.clip(opt_state[self.interior], 
+                                           -self.threshold[self.interior], 
+                                           self.threshold[self.interior])
+        return opt_state
 
