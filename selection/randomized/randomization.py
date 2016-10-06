@@ -52,6 +52,16 @@ class randomization(rr.smooth_atom):
         """
         return self.smooth_objective(perturbation, mode='grad')
 
+    def randomize(self, loss, epsilon=0):
+        """
+        Randomize the loss.
+        """
+
+        randomized_loss = rr.smooth_sum([loss])
+        _randomZ = self.sample()
+        randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -_randomZ, 0)
+        return randomized_loss
+
     @staticmethod
     def isotropic_gaussian(shape, scale):
         rv = ndist(scale=scale, loc=0.)

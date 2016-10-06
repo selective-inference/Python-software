@@ -49,20 +49,20 @@ class M_estimator(object):
     def randomize(self):
 
         if not self._randomized:
-            self._randomZ = self.randomization.sample()
-            self._random_term = rr.identity_quadratic(self.epsilon, 0, -self._randomZ, 0)
-
-        # set the _randomized bit
-
+            self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
     def solve(self):
 
+        self.randomize()
+
         (loss,
+         randomized_loss,
          epsilon,
          penalty,
          randomization,
          solve_args) = (self.loss,
+                        self.randomized_loss,
                         self.epsilon,
                         self.penalty,
                         self.randomization,
@@ -70,10 +70,8 @@ class M_estimator(object):
 
         # initial solution
 
-        problem = rr.simple_problem(loss, penalty)
-
-        self.randomize()
-        self.initial_soln = problem.solve(self._random_term, **solve_args)
+        problem = rr.simple_problem(randomized_loss, penalty)
+        self.initial_soln = problem.solve(**solve_args)
 
         # find the active groups and their direction vectors
         # as well as unpenalized groups
@@ -115,7 +113,7 @@ class M_estimator(object):
 
         # initial state for opt variables
 
-        initial_subgrad = -(self.loss.smooth_objective(self.initial_soln, 'grad') + self._random_term.objective(self.initial_soln, 'grad') + epsilon * self.initial_soln)
+        initial_subgrad = -self.randomized_loss.smooth_objective(self.initial_soln, 'grad')
         initial_subgrad = initial_subgrad[self.inactive]
         initial_unpenalized = self.initial_soln[self.unpenalized]
         self.observed_opt_state = np.concatenate([initial_scalings,
@@ -123,8 +121,6 @@ class M_estimator(object):
                                                   initial_subgrad], axis=0)
 
         # set the _solved bit
-
-        self._solved = True
 
         self._solved = True
 
@@ -137,7 +133,6 @@ class M_estimator(object):
         (loss,
          epsilon,
          penalty,
-         randomization,
          initial_soln,
          overall,
          inactive,
@@ -146,7 +141,6 @@ class M_estimator(object):
          active_directions) = (self.loss,
                                self.epsilon,
                                self.penalty,
-                               self.randomization,
                                self.initial_soln,
                                self.overall,
                                self.inactive,

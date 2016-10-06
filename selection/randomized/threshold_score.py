@@ -63,14 +63,15 @@ class threshold_score(M_estimator):
         beta_full[active] = beta_active
 
         inactive_score = self.loss.smooth_objective(beta_full, 'grad')[inactive]
+        randomized_score = self.loss.smooth_objective(beta_full, 'grad')[inactive]
  
         # find the current active group, i.e. 
         # subset of inactive that pass the threshold
 
         # TODO: make this test use group LASSO 
 
-        self.boundary = np.fabs(inactive_score + self._random_term.linear_term) > threshold
-        self.boundary_signs = np.sign(inactive_score + self._random_term.linear_term)[self.boundary]
+        self.boundary = np.fabs(randomized_score) > threshold
+        self.boundary_signs = np.sign(randomized_score)[self.boundary]
         self.interior = ~self.boundary
 
         self.observed_overshoot = self.boundary_signs * (inactive_score[self.boundary] - threshold[self.boundary])
