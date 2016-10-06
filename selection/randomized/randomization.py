@@ -64,6 +64,18 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def isotropic_gaussian(shape, scale):
+        """
+        Isotropic Gaussian with SD `scale`.
+
+        Parameters
+        ----------
+
+        shape : tuple
+            Shape of noise.
+
+        scale : float
+            SD of noise.
+        """
         rv = ndist(scale=scale, loc=0.)
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: x / scale**2
@@ -72,6 +84,16 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def gaussian(covariance):
+        """
+        Gaussian noise with a given covariance.
+
+        Parameters
+        ----------
+
+        covariance : np.float((*,*))
+            Positive definite covariance matrix. Non-negative definite
+            will raise an error.
+        """
         precision = np.linalg.inv(covariance)
         sqrt_precision = np.linalg.cholesky(precision)
         _det = np.linalg.det(covariance)
@@ -84,6 +106,18 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def laplace(shape, scale):
+        """
+        Standard Laplace noise multiplied by `scale`
+
+        Parameters
+        ----------
+
+        shape : tuple
+            Shape of noise.
+
+        scale : float
+            Scale of noise.
+        """
         rv = laplace(scale=scale, loc=0.)
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: np.sign(x) / scale
@@ -92,6 +126,18 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def logistic(shape, scale):
+        """
+        Standard logistic noise multiplied by `scale`
+
+        Parameters
+        ----------
+
+        shape : tuple
+            Shape of noise.
+
+        scale : float
+            Scale of noise.
+        """
         # from http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.logistic.html
         density = lambda x: (np.exp(-x / scale) / (1 + np.exp(-x / scale))**2) / scale
         # negative log density is (with \mu=0)
@@ -99,8 +145,6 @@ class randomization(rr.smooth_atom):
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
         return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=.25/scale**2)
-
-
 
 
 class split(randomization):
@@ -190,5 +234,46 @@ class split(randomization):
         #randomization.__init__(self, 1, density, grad_negative_log_density, sampler)
 
 
+class splitJT(randomization):
+
+    def __init__(self, m, n):
+
+        self.mn = m, n # m out of n split
+
+    def set_covariance(self, covariance):
+        """
+        Once covariance has been set, then 
+        the usual API of randomization will work.
+        """
+        self._covariance = covariance
+        precision = np.linalg.inv(covariance)
+        sqrt_precision = np.linalg.cholesky(precision)
+        _det = np.linalg.det(covariance)
+        p = covariance.shape[0]
+        _const = np.sqrt((2*np.pi)**p * _det)
+        self._density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
+        self._grad_negative_log_density = lambda x: precision.dot(x)
+        self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+
+    def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
+        if not hasattr(self, "_covariance"):
+            raise ValueError('first set the covariance')
+        return randomization.smooth_objective(self, perturbation, mode=mode, check_feasibility=check_feasibility)
+
+    def sample(self, size=()):
+        if not hasattr(self, "_covariance"):
+            raise ValueError('first set the covariance')
+        return randomization.sample(self, size=size)
+
+    def gradient(self, perturbation):
+        if not hasattr(self, "_covariance"):
+            raise ValueError('first set the covariance')
+        return randomization.gradient(self, perturbation)
+
+    def randomize(self, loss, epsilon):
+        """
+        TBD
+        """
+        pass
 
 
