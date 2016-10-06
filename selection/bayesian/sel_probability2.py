@@ -386,8 +386,7 @@ class selection_probability_objective(rr.smooth_atom):
         self._response_selector = rr.selector(~opt_vars, (n+E,))
 
         X_E = self.X_E = X[:,active]
-        B = X.T.dot(X_E)
-            #* active_signs[None,:]
+        B = X.T.dot(X_E)* active_signs[None,:]
 
         B_E = B[active]
         B_mE = B[~active]
