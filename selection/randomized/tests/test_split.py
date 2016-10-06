@@ -10,8 +10,6 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 from selection.randomized.multiple_views import naive_confidence_intervals
 
-from selection.randomized.randomization import split
-
 
 class randomized_loss(rr.smooth_atom):
         def __init__(self,
@@ -36,7 +34,7 @@ class randomized_loss(rr.smooth_atom):
             self.fraction = self.m/float(self.n)
 
         def smooth_objective(self, beta, mode='both', check_feasibility=False):
-            linear = -np.dot(self.X.T, self.y)*self.fraction #+np.dot(self.X1.T,self.y1)
+            linear = -np.dot(self.X.T, self.y)*self.fraction +np.dot(self.X1.T,self.y1)
             if mode=='grad':
                 return self.sub_loss.smooth_objective(beta, 'grad') + linear
             if mode=='func':
@@ -47,7 +45,7 @@ class randomized_loss(rr.smooth_atom):
 
 
 def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 0, 400, 10
+    s, n, p = 3, 300, 10
 
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
@@ -161,7 +159,7 @@ def make_a_plot():
     _nparam = 0
     _ncovered = 0
     _naive_ncovered = 0
-    for i in range(20):
+    for i in range(200):
         print("iteration", i)
         test = test_splits()
         if test is not None:
