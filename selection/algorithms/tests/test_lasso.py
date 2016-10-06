@@ -664,7 +664,8 @@ def test_gaussian_sandwich_pvals(n=200,
                                  s=10,
                                  sigma=10,
                                  rho=0.3,
-                                 snr=6.):
+                                 snr=6.,
+                                 use_lasso_sd=False):
 
     counter = 0
 
@@ -685,12 +686,24 @@ def test_gaussian_sandwich_pvals(n=200,
         # two different estimators of variance
         loss = rr.glm.gaussian(X, y)
         sandwich = glm_sandwich_estimator(loss, B=5000)
-        parametric = glm_parametric_estimator(loss, dispersion=None)
+
 
         # make sure things work with some unpenalized columns
 
         feature_weights = np.ones(p) * 3 * sigma
         feature_weights[10:12] = 0
+
+        # try using RSS from LASSO to estimate sigma 
+
+        if use_lasso_sd:
+            L_prelim = lasso.gaussian(X, y, feature_weights)
+            L_prelim.fit()
+            beta_lasso = L_prelim.lasso_solution
+            sigma_hat = np.linalg.norm(y - X.dot(beta_lasso))**2 / (n - len(L_prelim.active))
+            parametric = glm_parametric_estimator(loss, dispersion=sigma_hat**2)
+        else:
+            parametric = glm_parametric_estimator(loss, dispersion=None)
+
         L_P = lasso.gaussian(X, y, feature_weights, covariance_estimator=parametric)
         L_P.fit()
 

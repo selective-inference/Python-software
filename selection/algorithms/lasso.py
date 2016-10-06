@@ -911,8 +911,8 @@ def glm_parametric_estimator(loglike, dispersion=None):
 
         # if no dispersion, use Pearson's X^2
 
-        eta = X[:,active].dot(beta)
         if dispersion is None:
+            eta = X[:,active].dot(beta)
             dispersion= ((loglike.saturated_loss.smooth_objective(eta, 'grad'))**2 / W).sum() / (n - nactive)
 
         _unscaled *= dispersion**2
