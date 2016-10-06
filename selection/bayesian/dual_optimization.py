@@ -59,50 +59,50 @@ class dual_selection_probability(rr.smooth_atom):
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        def set_parameter(self, mean_parameter, noise_variance):
+    def set_parameter(self, mean_parameter, noise_variance):
 
-            self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
-            self.likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
+        self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
+        self.likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
                                                               -0.5 * (mean_parameter ** 2).sum() / noise_variance)
 
-            self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, X)
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, X)
 
-        def smooth_objective(self, dual, mode='both', check_feasibility=False):
+    def smooth_objective(self, dual, mode='both', check_feasibility=False):
 
-            dual = self.apply_offset(dual)
+        dual = self.apply_offset(dual)
 
-            _barrier_star = barrier_conjugate(cube_bool,lagrange[~active])
+        _barrier_star = barrier_conjugate(cube_bool,lagrange[~active])
 
-            composition_barrier = rr.affine_smooth(_barrier_star, self.A.T)
+        composition_barrier = rr.affine_smooth(_barrier_star, self.A.T)
 
-            CGF_pert_value, CGF_pert_grad = self.CGF_perturbation
+        CGF_pert_value, CGF_pert_grad = self.CGF_perturbation
 
-            if mode == 'func':
-                f_pert_cgf = CGF_pert_value(dual)
-                f_data_cgf = self.likelihood_loss.smooth_objective(dual, 'func')
-                f_barrier_conj=composition_barrier.smooth_objective(dual, 'func')
-                f = self.scale(f_pert_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.offset)))
-                # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
-                return f
+        if mode == 'func':
+            f_pert_cgf = CGF_pert_value(dual)
+            f_data_cgf = self.likelihood_loss.smooth_objective(dual, 'func')
+            f_barrier_conj=composition_barrier.smooth_objective(dual, 'func')
+            f = self.scale(f_pert_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.offset)))
+            # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
+            return f
 
-            elif mode == 'grad':
-                g_pert_cgf = CGF_pert_grad(dual)
-                g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'grad')
-                g_barrier_conj = composition_barrier.smooth_objective(dual, 'grad')
-                g = self.scale(g_pert_cgf + g_data_cgf + g_barrier_conj-self.offset)
-                # print(g, 'grad')
-                return g
+        elif mode == 'grad':
+            g_pert_cgf = CGF_pert_grad(dual)
+            g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'grad')
+            g_barrier_conj = composition_barrier.smooth_objective(dual, 'grad')
+            g = self.scale(g_pert_cgf + g_data_cgf + g_barrier_conj-self.offset)
+            # print(g, 'grad')
+            return g
 
-            elif mode == 'both':
-                f_pert_cgf, g_pert_cgf = self.CGF_perturbation(dual)
-                f_data_cgf, g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'both')
-                f_barrier_conj, g_barrier_conj = composition_barrier.smooth_objective(dual, 'both')
-                f = self.scale(f_pert_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.offset)))
-                g = self.scale(g_pert_cgf + g_data_cgf + g_barrier_conj-self.offset)
-                # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
-                return f, g
-            else:
-                raise ValueError("mode incorrectly specified")
+        elif mode == 'both':
+            f_pert_cgf, g_pert_cgf = self.CGF_perturbation(dual)
+            f_data_cgf, g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'both')
+            f_barrier_conj, g_barrier_conj = composition_barrier.smooth_objective(dual, 'both')
+            f = self.scale(f_pert_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.offset)))
+            g = self.scale(g_pert_cgf + g_data_cgf + g_barrier_conj-self.offset)
+            # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
+            return f, g
+        else:
+            raise ValueError("mode incorrectly specified")
 
 
 
