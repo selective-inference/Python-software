@@ -54,8 +54,8 @@ class dual_selection_probability(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
-        cube_bool = np.zeros(p, np.bool)
-        cube_bool[E:] = 1
+        self.cube_bool = np.zeros(p, np.bool)
+        self.cube_bool[E:] = 1
 
         self.set_parameter(mean_parameter, noise_variance)
 
@@ -71,7 +71,7 @@ class dual_selection_probability(rr.smooth_atom):
 
         dual = self.apply_offset(dual)
 
-        _barrier_star = barrier_conjugate(cube_bool,lagrange[~active])
+        _barrier_star = barrier_conjugate(self.cube_bool,self.inactive_lagrange)
 
         composition_barrier = rr.affine_smooth(_barrier_star, self.A.T)
 
