@@ -1,0 +1,97 @@
+import numpy as np
+from selection.tests.instance import gaussian_instance
+from selection.bayesian.initial_soln import selection
+from selection.bayesian.sel_probability import selection_probability
+from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
+from selection.bayesian.dual_optimization import dual_selection_probability
+from selection.randomized.api import randomization
+
+
+#fixing n, p, true sparsity and signal strength
+n=20
+p=4
+s=2
+snr=5
+
+#sampling the Gaussian instance
+X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+random_Z = np.random.standard_normal(p)
+#getting randomized Lasso solution
+sel = selection(X_1,y, random_Z)
+
+#proceed only if selection is non-empty
+if sel is not None:
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    print epsilon, betaE
+    nactive=betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau=1
+    X_perm=np.zeros((n,p))
+    X_perm[:,:nactive]=X_1[:,active]
+    X_perm[:,nactive:]=X_1[:,~active]
+    V=-X_perm
+    X_active=X_perm[:,:nactive]
+    X_nactive=X_perm[:,nactive:]
+    B_sel=np.zeros((p,p))
+    B_sel[:,:nactive]=np.dot(X_perm.T,X_perm[:,:nactive])
+    B_sel[:nactive, :nactive]+= epsilon*np.identity(nactive)
+    B_sel[nactive:, nactive:]=lam*np.identity((p-nactive))
+    gamma_sel=np.zeros(p)
+    gamma_sel[:nactive]=lam*np.sign(betaE)
+
+    box_initial = np.random.uniform(-1, 1,(p-nactive))
+    box_grad = np.true_divide(1,1-box_initial)-np.true_divide(1,1+box_initial)
+    coef_grad = -np.true_divide(1,betaE)+np.true_divide(1,1+betaE)
+    grad_barrier = np.append(coef_grad,box_grad)
+    dual_initial = np.dot(np.linalg.inv(B_sel.T),grad_barrier)
+    print nactive, dual_initial, grad_barrier
+
+
+    parameter = np.ones(nactive)
+    mean = X_1[:, active].dot(parameter)
+
+
+    #def test_selection_probability_gaussian():
+
+    #    lagrange = lam * np.ones(p)
+
+    #   sel_prob = selection_probability_objective(X_1,
+    #                                               betaE,
+    #                                               active,
+    #                                               active_signs,
+    #                                               lagrange,
+    #                                               mean,
+    #                                               noise_variance, randomization.isotropic_gaussian((p,), 1.),epsilon)
+    #    return -sel_prob.minimize()[1],sel_prob.minimize()[0]
+
+
+    def test_my_funct():
+
+        sel = selection_probability(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)
+
+        return sel.optimization(parameter)[0]-np.true_divide(np.dot(
+            mean.T,mean),2*noise_variance)-np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),2*(tau**2)),\
+               sel.optimization(parameter)[1]
+
+    def test_dual():
+
+        lagrange = lam * np.ones(p)
+
+        sel_dual = dual_selection_probability(X_1,
+                                              dual_initial,
+                                              active,
+                                              active_signs,
+                                              lagrange,
+                                              mean,
+                                              noise_variance,
+                                              randomization.isotropic_gaussian((p,), 1.),
+                                              epsilon)
+
+        return sel_dual.minimize()[1]-np.true_divide(np.dot(mean.T,mean),2*noise_variance), sel_dual.minimize()[0]
+
+
+    print test_dual()
+
+
+
+
