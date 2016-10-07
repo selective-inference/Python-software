@@ -3,6 +3,8 @@ import numpy as np
 
 import regreg.api as rr
 
+from selection.tests.decorators import wait_for_return_value
+
 from selection.api import pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import splitJT_glm_group_lasso
 from selection.tests.instance import logistic_instance
@@ -10,6 +12,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 from selection.randomized.multiple_views import naive_confidence_intervals
 
+@wait_for_return_value()
 def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
     s, n, p = 3, 300, 10
 
@@ -111,7 +114,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
 
 
 
-def make_a_plot():
+def make_a_plot(niter=20):
     import matplotlib.pyplot as plt
     from scipy.stats import probplot, uniform
     import statsmodels.api as sm
@@ -123,9 +126,9 @@ def make_a_plot():
     _nparam = 0
     _ncovered = 0
     _naive_ncovered = 0
-    for i in range(200):
+    for i in range(niter):
         print("iteration", i)
-        test = test_splits()
+        test = test_splits()[1]
         if test is not None:
             pvalues_mle, pvalues_truth, ncovered, naive_ncovered, nparam = test
             _pvalues_mle.extend(pvalues_mle)

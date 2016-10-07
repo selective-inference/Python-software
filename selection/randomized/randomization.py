@@ -5,7 +5,7 @@ Main method used in selective sampler is the gradient method which
 should be a gradient of the negative of the log-density. For a 
 Gaussian density, this will be a convex function, not a concave function.
 """
-from __future__ import division
+from __future__ import division, print_function
 
 import numpy as np
 import regreg.api as rr
@@ -210,7 +210,7 @@ class split(randomization):
             return covariance/float(nboot)
 
         self.covariance = _nonparametric_covariance_estimate()
-        print np.diag(self.covariance)
+        print(np.diag(self.covariance))
         #covariance_inv = np.linalg.inv(self.covariance)
 
         #from scipy.stats import multivariate_normal
@@ -307,5 +307,5 @@ class splitJT(randomization):
 
         randomized_loss = loss.subsample(idx)
         randomized_loss.coef *= inv_frac
-
+        randomized_loss.quadratic = quadratic
         return randomized_loss
