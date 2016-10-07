@@ -60,7 +60,7 @@ class dual_selection_probability(rr.smooth_atom):
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        #self.coefs[:] = initial
+        self.coefs[:] = initial
 
     def set_parameter(self, mean_parameter, noise_variance):
 
