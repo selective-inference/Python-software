@@ -3,12 +3,11 @@ import functools # for bootstrap partial mapping
 import numpy as np
 from regreg.api import glm
 
-from .M_estimator import restricted_Mest, M_estimator, split_M_estimator
+from .M_estimator import restricted_Mest, M_estimator, split_M_estimator, M_estimator_splitJT
 from .greedy_step import greedy_score_step
 from .threshold_score import threshold_score
 
 from regreg.api import glm
-
 
 def split_pairs_bootstrap_glm(randomized_loss,
                               active,
@@ -101,7 +100,6 @@ def split_pairs_bootstrap_glm(randomized_loss,
 
       return _boot_score, observed
 
-
 def pairs_bootstrap_glm(glm_loss,
                         active, 
                         beta_full=None, 
@@ -147,7 +145,7 @@ def pairs_bootstrap_glm(glm_loss,
         X_full = X_active
         beta_overall = beta_active
 
-    _boot_mu = lambda X_full: glm_loss.saturated_loss.smooth_objective(X_full.dot(beta_overall), 'grad') + Y
+    _boot_mu = lambda X_full, beta_overall: glm_loss.saturated_loss.mean_function(X_full.dot(beta_overall))
 
     if ntotal > nactive:
         observed = np.hstack([beta_active, -glm_loss.smooth_objective(beta_full, 'grad')[inactive]])
@@ -157,10 +155,10 @@ def pairs_bootstrap_glm(glm_loss,
     # scaling is a lipschitz constant for a gradient squared
     _sqrt_scaling = np.sqrt(scaling)
 
-    def _boot_score(X_full, Y, ntotal, _bootQinv, _bootI, nactive, _sqrt_scaling, indices):
+    def _boot_score(X_full, Y, ntotal, _bootQinv, _bootI, nactive, _sqrt_scaling, beta_overall, indices):
         X_star = X_full[indices]
         Y_star = Y[indices]
-        score = X_star.T.dot(Y_star - _boot_mu(X_star))
+        score = X_star.T.dot(Y_star - _boot_mu(X_star, beta_overall))
         result = np.zeros(ntotal)
         result[:nactive] = _bootQinv.dot(score[:nactive])
         if ntotal > nactive:
@@ -172,7 +170,32 @@ def pairs_bootstrap_glm(glm_loss,
     observed[:nactive] *= _sqrt_scaling
     observed[nactive:] /= _sqrt_scaling
 
-    return functools.partial(_boot_score, X_full, Y, ntotal, _bootQinv, _bootI, nactive, _sqrt_scaling), observed
+    return functools.partial(_boot_score, X_full, Y, ntotal, _bootQinv, _bootI, nactive, _sqrt_scaling, beta_overall), observed
+
+def pairs_bootstrap_score(glm_loss,
+                          active, 
+                          beta_active=None, 
+                          solve_args={'min_its':50, 'tol':1.e-10}):
+    """
+    pairs bootstrap of (beta_hat_active, -grad_inactive(beta_hat_active))
+    """
+    X, Y = glm_loss.data
+
+    if beta_active is None:
+        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+    X_active = X[:,active]
+
+    _bootW = np.diag(glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
+
+    _boot_mu = lambda X_active, beta_active: glm_loss.saturated_loss.mean_function(X_active.dot(beta_active))
+
+    def _boot_score(X, Y, active, beta_active, indices):
+        X_star = X[indices]
+        Y_star = Y[indices]
+        score = -X_star.T.dot(Y_star - _boot_mu(X_star[:,active], beta_active))
+        return score
+
+    return functools.partial(_boot_score, X, Y, active, beta_active)
 
 def set_alpha_matrix(glm_loss,
                      active,
@@ -294,13 +317,26 @@ class glm_group_lasso(M_estimator):
         return bootstrap_score
 
 class split_glm_group_lasso(split_M_estimator):
+
     def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
         split_M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = split_pairs_bootstrap_glm(self.loss,
-                                                  self.overall,
-                                                  beta_full=self._beta_full,
-                                                  inactive=self.inactive)[0]
+                                                    self.overall,
+                                                    beta_full=self._beta_full,
+                                                    inactive=self.inactive)[0]
+
+        return bootstrap_score
+
+class splitJT_glm_group_lasso(M_estimator_splitJT):
+
+    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
+        M_estimator_splitJT.setup_sampler(self, scaling=scaling, solve_args=solve_args)
+
+        bootstrap_score = pairs_bootstrap_glm(self.loss,
+                                              self.overall,
+                                              beta_full=self._beta_full,
+                                              inactive=self.inactive)[0]
 
         return bootstrap_score
 

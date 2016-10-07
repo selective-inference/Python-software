@@ -2,6 +2,7 @@ import numpy as np
 import regreg.api as rr
 
 from .query import query
+from .randomization import split, splitJT
 
 class M_estimator(query):
 
@@ -287,12 +288,10 @@ def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
     return beta_E
 
 
-from .randomization import split
-
 class split_M_estimator(M_estimator):
 
     def __init__(self,loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
-        M_estimator.__init__(self,loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10})
+        M_estimator.__init__(self,loss, epsilon, penalty, randomization, solve_args=solve_args)
 
     def randomize(self):
 
@@ -464,3 +463,61 @@ class split_M_estimator(M_estimator):
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
 
+
+class M_estimator_splitJT(M_estimator):
+
+    def __init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10}):
+        total_size = loss.saturated_loss.shape[0]
+        self.randomization = splitJT(loss.shape, subsample_size, total_size)
+        M_estimator.__init__(self,loss, epsilon, penalty, self.randomization, solve_args=solve_args)
+
+        total_size = loss.saturated_loss.shape[0]
+        if subsample_size > total_size:
+            raise ValueError('subsample size must be smaller than total sample size')
+
+        self.total_size, self.subsample_size = total_size, subsample_size
+
+    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}, B=2000):
+
+        M_estimator.setup_sampler(self, 
+                                  scaling=scaling,
+                                  solve_args=solve_args)
+        
+        # now we need to estimate covariance of
+        # loss.grad(\beta_E^*) - 1/pi * randomized_loss.grad(\beta_E^*)
+
+        m, n, p = self.subsample_size, self.total_size, self.loss.shape[0] # shorthand
+        
+        from .glm import pairs_bootstrap_score # need to correct these imports!!!
+
+        print(self._beta_full)
+        bootstrap_score = pairs_bootstrap_score(self.loss,
+                                                self.overall,
+                                                beta_active=self._beta_full[self.overall],
+                                                solve_args=solve_args)
+
+        inv_frac = n / m
+        
+        def subsample_diff(m, n, indices):
+            subsample = np.random.choice(indices, size=m, replace=False)
+            full_score = bootstrap_score(indices) # a sum of n terms
+            randomized_score = bootstrap_score(subsample) # a sum of m terms
+            return full_score - randomized_score * inv_frac
+
+        first_moment = np.zeros(p)
+        second_moment = np.zeros((p, p))
+        
+        _n = np.arange(n)
+        for _ in range(B):
+            indices = np.random.choice(_n, size=n, replace=True)
+            randomized_score = subsample_diff(m, n, indices)
+            first_moment += randomized_score
+            second_moment += np.multiply.outer(randomized_score, randomized_score)
+
+        first_moment /= B
+        second_moment /= B
+
+        cov = second_moment - np.multiply.outer(first_moment,
+                                                first_moment)
+
+        self.randomization.set_covariance(cov)

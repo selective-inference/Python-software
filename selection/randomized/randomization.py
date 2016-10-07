@@ -5,6 +5,7 @@ Main method used in selective sampler is the gradient method which
 should be a gradient of the negative of the log-density. For a 
 Gaussian density, this will be a convex function, not a concave function.
 """
+from __future__ import division
 
 import numpy as np
 import regreg.api as rr
@@ -236,9 +237,13 @@ class split(randomization):
 
 class splitJT(randomization):
 
-    def __init__(self, m, n):
+    def __init__(self, shape, subsample_size, total_size):
 
-        self.mn = m, n # m out of n split
+        self.subsample_size = subsample_size
+        self.total_size = total_size
+
+        rr.smooth_atom.__init__(self,
+                                shape)
 
     def set_covariance(self, covariance):
         """
@@ -254,6 +259,7 @@ class splitJT(randomization):
         self._density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         self._grad_negative_log_density = lambda x: precision.dot(x)
         self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+        self.lipschitz = np.linalg.svd(precision)[1].max()
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
         if not hasattr(self, "_covariance"):
@@ -272,8 +278,34 @@ class splitJT(randomization):
 
     def randomize(self, loss, epsilon):
         """
-        TBD
+        Parameters
+        ----------
+
+        loss : rr.glm
+            A glm loss with a `subsample` method.
+
+        epsilon : float
+            Coefficient in front of quadratic term
+
+        Returns
+        -------
+        
+        Subsampled loss multiplied by `n / m` where
+        m is the subsample size out of a total 
+        sample size of n.
+
+        The quadratic term is not multiplied by `n / m`
+
         """
-        pass
+        n, m = self.total_size, self.subsample_size
+        inv_frac = n / m
+        quadratic = rr.identity_quadratic(epsilon, 0, 0, 0)
+        m, n = self.subsample_size, self.total_size # shorthand
+        idx = np.zeros(n, np.bool)
+        idx[:m] = 1
+        np.random.shuffle(idx)
 
+        randomized_loss = loss.subsample(idx)
+        randomized_loss.coef *= inv_frac
 
+        return randomized_loss
