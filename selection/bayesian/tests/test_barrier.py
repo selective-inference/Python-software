@@ -181,10 +181,11 @@ def test_selection_probability_gaussian():
 
 class understand(rr.smooth_atom):
 
-    def __init__(self, X, mean_parameter, scale, coef=1.,offset=None,quadratic=None):
+    def __init__(self, X, off, mean_parameter, scale, coef=1.,offset=None,quadratic=None):
 
         self.scale = scale
         self.X = X
+        self.off=off
         #self.Y = Y
 
         initial = np.ones(2)
@@ -210,20 +211,21 @@ class understand(rr.smooth_atom):
         u = self.apply_offset(u)
 
         if mode == 'func':
-            f = self.likelihood_loss.smooth_objective(u, 'func')
+            f = self.likelihood_loss.smooth_objective(u, 'func')- u.T.dot(self.off)
             return f
         elif mode == 'grad':
-            g = self.likelihood_loss.smooth_objective(u, 'grad')
+            g = self.likelihood_loss.smooth_objective(u, 'grad')- self.off
             return g
         elif mode == 'both':
-            f, g = self.likelihood_loss.smooth_objective(u, 'both')
+            f = self.likelihood_loss.smooth_objective(u, 'func') - u.T.dot(self.off)
+            g = self.likelihood_loss.smooth_objective(u, 'grad') - self.off
             return f,g
         else:
             raise ValueError("mode incorrectly specified")
 
 
 
-my_funct = understand(np.array([[2,2,1],[2,3,4]]),np.array([3, 4]),1.)
+my_funct = understand(np.array([[2,2,1],[2,3,4]]),2*np.ones(3),np.array([3, 4]),1.)
 
 print (my_funct.smooth_objective(u=2*np.ones(3), mode='both'))
 

@@ -13,8 +13,8 @@ class dual_selection_probability(rr.smooth_atom):
                  mean_parameter,
                  noise_variance,
                  randomization,
+                 epsilon,
                  coef=1.,
-                 epsilon=0.,
                  offset=None,
                  quadratic=None):
 
@@ -42,9 +42,9 @@ class dual_selection_probability(rr.smooth_atom):
 
         self.A_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :],np.zeros((E,p-E))])
         self.A_inactive = np.hstack([B_mE * active_signs[None, :],np.identity((p-E))])
-        self.A=np.vstack(self.A_active,self.A_inactive)
-        self.offset = np.zeros(p)
-        self.offset[:E] = -active_signs * lagrange[active]
+        self.A=np.vstack((self.A_active,self.A_inactive))
+        self.dual_arg = np.zeros(p)
+        self.dual_arg[:E] = -active_signs * lagrange[active]
 
         initial=feasible_point
 
@@ -60,7 +60,7 @@ class dual_selection_probability(rr.smooth_atom):
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        self.coefs[:] = initial
+        #self.coefs[:] = initial
 
     def set_parameter(self, mean_parameter, noise_variance):
 
@@ -84,7 +84,7 @@ class dual_selection_probability(rr.smooth_atom):
             f_rand_cgf = CGF_rand_value(dual)
             f_data_cgf = self.likelihood_loss.smooth_objective(dual, 'func')
             f_barrier_conj=composition_barrier.smooth_objective(dual, 'func')
-            f = self.scale(f_rand_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.offset)))
+            f = self.scale(f_rand_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.dual_arg)))
             # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
             return f
 
@@ -92,7 +92,7 @@ class dual_selection_probability(rr.smooth_atom):
             g_rand_cgf = CGF_rand_grad(dual)
             g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'grad')
             g_barrier_conj = composition_barrier.smooth_objective(dual, 'grad')
-            g = self.scale(g_rand_cgf + g_data_cgf + g_barrier_conj-self.offset)
+            g = self.scale(g_rand_cgf + g_data_cgf + g_barrier_conj-self.dual_arg)
             # print(g, 'grad')
             return g
 
@@ -100,8 +100,8 @@ class dual_selection_probability(rr.smooth_atom):
             f_rand_cgf, g_rand_cgf = self.CGF_randomization(dual)
             f_data_cgf, g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'both')
             f_barrier_conj, g_barrier_conj = composition_barrier.smooth_objective(dual, 'both')
-            f = self.scale(f_rand_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.offset)))
-            g = self.scale(g_rand_cgf + g_data_cgf + g_barrier_conj-self.offset)
+            f = self.scale(f_rand_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.dual_arg)))
+            g = self.scale(g_rand_cgf + g_data_cgf + g_barrier_conj-self.dual_arg)
             # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
             return f, g
         else:
