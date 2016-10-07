@@ -386,7 +386,7 @@ class selection_probability_objective(rr.smooth_atom):
         self._response_selector = rr.selector(~opt_vars, (n+E,))
 
         X_E = self.X_E = X[:,active]
-        B = X.T.dot(X_E)* active_signs[None,:]
+        B = X.T.dot(X_E)#* active_signs[None,:]
 
         B_E = B[active]
         B_mE = B[~active]
@@ -406,8 +406,8 @@ class selection_probability_objective(rr.smooth_atom):
         Set $\beta_E^*$.
         """
         likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
-        likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0, 
-                                                          -0.5 * (mean_parameter**2).sum() / noise_variance)
+        #likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
+                                                         # -0.5 * (mean_parameter**2).sum() / noise_variance)
         self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
