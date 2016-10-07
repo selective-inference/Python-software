@@ -65,10 +65,10 @@ class dual_selection_probability(rr.smooth_atom):
     def set_parameter(self, mean_parameter, noise_variance):
 
         self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
-        self.likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
-                                                              -0.5 * (mean_parameter ** 2).sum() / noise_variance)
+        #self.likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
+                                                             # -0.5 * (mean_parameter ** 2).sum() / noise_variance)
 
-        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X.T)
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X)
 
     def smooth_objective(self, dual, mode='both', check_feasibility=False):
 
@@ -76,7 +76,7 @@ class dual_selection_probability(rr.smooth_atom):
 
         _barrier_star = barrier_conjugate(self.cube_bool,self.inactive_lagrange)
 
-        composition_barrier = rr.affine_smooth(_barrier_star, self.A)
+        composition_barrier = rr.affine_smooth(_barrier_star, self.A.T)
 
         CGF_rand_value, CGF_rand_grad = self.CGF_randomization
 

@@ -21,23 +21,26 @@ def test_barrier_conjugate():
     arg = np.zeros(p)
     arg[cube_bool] = np.random.standard_normal(4)
     arg[~cube_bool] = - np.fabs(np.random.standard_normal(6))
-    print(_barrier_star.smooth_objective(arg, mode='both'))
+    #print(_barrier_star.smooth_objective(arg, mode='both'))
     
-    B1 = np.random.standard_normal((4,10))
+    B1 = np.fabs(np.random.standard_normal((10,10)))
 
     # linear composition
     composition1 = rr.affine_smooth(_barrier_star, B1.T)
     print(composition1.shape)
+    print(composition1.smooth_objective(arg, mode='both'))
 
     X = np.random.standard_normal((10, 4))
     Y = np.random.standard_normal(10)
     A = rr.affine_transform(X, Y)
 
     composition2 = rr.affine_smooth(_barrier_star, A)
-    print(composition2.shape)
+    #print(composition2.shape)
 
     sum_fn = rr.smooth_sum([composition1, composition2])
-    print(sum_fn.shape)
+    #print(sum_fn.shape)
+
+#test_barrier_conjugate()
 
 def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
 
@@ -182,6 +185,7 @@ class understand(rr.smooth_atom):
 
         self.scale = scale
         self.X = X
+        #self.Y = Y
 
         initial = np.ones(2)
 
@@ -200,6 +204,7 @@ class understand(rr.smooth_atom):
         #self.likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
                                                          # -0.5 * (mean_parameter ** 2).sum() / scale)
         self.likelihood_loss = rr.affine_smooth(likelihood_loss, self.X)
+        #self.likelihood_loss = rr.affine_smooth(likelihood_loss,rr.affine_transform(self.X, self.Y))
 
     def smooth_objective(self, u, mode='both', check_feasibility=False):
         u = self.apply_offset(u)
@@ -218,9 +223,9 @@ class understand(rr.smooth_atom):
 
 
 
-my_funct = understand(np.array([[2,1],[3,2]]),np.array([3, 4]),1.)
+my_funct = understand(np.array([[2,2,1],[2,3,4]]),np.array([3, 4]),1.)
 
-print (my_funct.smooth_objective(u=4*np.ones(2), mode='both'))
+print (my_funct.smooth_objective(u=2*np.ones(3), mode='both'))
 
 
 
