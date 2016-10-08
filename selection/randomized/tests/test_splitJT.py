@@ -14,13 +14,12 @@ from selection.randomized.multiple_views import naive_confidence_intervals
 
 @wait_for_return_value()
 def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 3, 300, 10
+    s, n, p = 5, 300, 50
 
     #randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
 
-    m = int(0.9 * n)
-
+    m = int(0.5 * n)
     nonzero = np.where(beta)[0]
     lam_frac = 1.
 
@@ -113,8 +112,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
 
 
 
-
-def make_a_plot(niter=20):
+def make_a_plot(niter=50):
     import matplotlib.pyplot as plt
     from scipy.stats import probplot, uniform
     import statsmodels.api as sm
