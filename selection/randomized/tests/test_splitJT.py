@@ -14,7 +14,7 @@ from selection.randomized.multiple_views import naive_confidence_intervals
 
 @wait_for_return_value()
 def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 5, 300, 50
+    s, n, p = 0, 200, 10
 
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
@@ -65,19 +65,19 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
 
         unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
-        #alpha_mat = set_alpha_matrix(loss, active_union)
-        #target_alpha_gn = alpha_mat
+        alpha_mat = set_alpha_matrix(loss, active_union)
+        target_alpha_gn = alpha_mat
 
         ## bootstrap
-        #target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-        #                                                 target_observed_gn,
-        #                                                 n, target_alpha_gn,
-        #                                                 reference = unpenalized_mle)
+        target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
+                                                         target_observed_gn,
+                                                         n, target_alpha_gn,
+                                                         reference = unpenalized_mle)
 
         ## CLT plugin
-        target_sampler_gn = mv.setup_target(target_gn,
-                                            target_observed_gn, #reference=beta[active_union])
-                                            reference = unpenalized_mle)
+        #target_sampler_gn = mv.setup_target(target_gn,
+        #                                    target_observed_gn, #reference=beta[active_union])
+        #                                    reference = unpenalized_mle)
 
         target_sample = target_sampler_gn.sample(ndraw=ndraw,
                                                  burnin=burnin)
