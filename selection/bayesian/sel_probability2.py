@@ -246,7 +246,6 @@ def cube_barrier(argument, lagrange):
     '''
     Barrier approximation to the
     cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
-
     The function is
     $$
     z \mapsto \log(1 + 1 / (\lambda - z)) + \log(1 + 1 / (z + \lambda))
@@ -386,13 +385,13 @@ class selection_probability_objective(rr.smooth_atom):
         self._response_selector = rr.selector(~opt_vars, (n+E,))
 
         X_E = self.X_E = X[:,active]
-        B = X.T.dot(X_E)#* active_signs[None,:]
+        B = X.T.dot(X_E)
 
         B_E = B[active]
         B_mE = B[~active]
 
-        self.A_active = np.hstack([-X[:,active].T, B_E + epsilon * np.identity(E)])
-        self.A_inactive = np.hstack([-X[:,~active].T, B_mE])
+        self.A_active = np.hstack([-X[:,active].T, (B_E + epsilon * np.identity(E)) * active_signs[None,:]])
+        self.A_inactive = np.hstack([-X[:,~active].T, (B_mE * active_signs[None,:])])
 
         self.offset_active = active_signs * lagrange[active]
 
@@ -444,10 +443,13 @@ class selection_probability_objective(rr.smooth_atom):
         # _i for inactive
 
         conjugate_argument_i = self.A_inactive.dot(param)
+
         conjugate_optimizer_i, conjugate_value_i = cube_subproblem(conjugate_argument_i,
                                                                    self.inactive_conjugate,
                                                                    self.inactive_lagrange,
                                                                    initial=self.inactive_subgrad)
+
+        constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i),2)
 
         barrier_gradient_i = self.A_inactive.T.dot(conjugate_optimizer_i)
 
@@ -459,7 +461,7 @@ class selection_probability_objective(rr.smooth_atom):
             f_active_conj = active_conj_value(self.A_active.dot(param)+self.offset_active)
             f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
             #print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
-            return f
+            return f_nonneg + f_like + f_active_conj + constant, -conjugate_value_i + constant
         elif mode == 'grad':
             g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'grad')
             g_like = self.likelihood_loss.smooth_objective(param, 'grad')
@@ -480,7 +482,7 @@ class selection_probability_objective(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize(self, initial=None, step=1, nstep=30):
+    def minimize(self, initial=None, step=1, nstep=100):
 
         current = self.coefs
         current_value = np.inf

@@ -1,12 +1,7 @@
 import numpy as np
-from initial_soln import selection
 from scipy.optimize import minimize
-from scipy.stats import norm as ndist
-#from tests.instance import gaussian_instance as instance
 
-#########################################################
-#####defining a class for computing selection probability: also returns selective_map and gradient of posterior
-class selection_probability(object):
+class no_scale_selection_probability(object):
 
     # defining class variables
     def __init__(self, V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube):
@@ -78,7 +73,7 @@ class selection_probability(object):
             # a = np.array([1,-1])
             # b = np.ones(2)
             if -1 + np.power(10, -9) < z < 1 - np.power(10, -9):
-                return np.log(1 + np.true_divide(1, (self.lam*(1 - z)))) + np.log(1 + np.true_divide(1,(self.lam*(1 + z))))
+                return np.log(1 + np.true_divide(1, (1 - z))) + np.log(1 + np.true_divide(1,(1 + z)))
             return 2 * np.log(1 + np.true_divide(10 ** 9,self.lam))
 
         #defining objective function in p dimensions to be optimized when p<n+|E|
@@ -153,58 +148,3 @@ class selection_probability(object):
             grad_sel_prob= np.dot(-np.true_divide(self.V_E.T, self.sigma_sq),self.optimization(param)[1])
 
         return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)-grad_sel_prob
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

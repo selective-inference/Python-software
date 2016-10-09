@@ -45,6 +45,7 @@ class dual_selection_probability(rr.smooth_atom):
         self.A=np.vstack((self.A_active,self.A_inactive))
         self.dual_arg = np.zeros(p)
         self.dual_arg[:E] = -active_signs * lagrange[active]
+        self.feasible_point=feasible_point
 
         initial=feasible_point
 
@@ -60,7 +61,7 @@ class dual_selection_probability(rr.smooth_atom):
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        self.coefs[:] = initial
+        #self.coefs[:] = initial
 
     def set_parameter(self, mean_parameter, noise_variance):
 
@@ -109,7 +110,7 @@ class dual_selection_probability(rr.smooth_atom):
 
     def minimize(self, initial=None, step=1, nstep=30):
 
-        current = self.coefs
+        current = self.feasible_point
         current_value = np.inf
 
         objective = lambda u: self.smooth_objective(u, 'func')
