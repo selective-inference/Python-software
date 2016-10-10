@@ -7,8 +7,8 @@ from selection.bayesian.objective_functions import my_selection_probability_only
 
 #fixing n, p, true sparsity and signal strength
 n=30
-p=3
-s=1
+p=20
+s=5
 snr=5
 
 #sampling the Gaussian instance
@@ -65,7 +65,7 @@ if sel is not None:
     #test_one_sparse_compare()
 
     def test_objectives_compare():
-        parameter = -np.fabs(np.random.standard_normal(nactive))
+        parameter = np.fabs(np.random.standard_normal(nactive))
         lagrange = lam * np.ones(p)
         mean = X_1[:, active].dot(parameter)
         sel = my_selection_probability_only_objective(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)

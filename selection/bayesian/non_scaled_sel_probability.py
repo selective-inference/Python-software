@@ -89,7 +89,8 @@ class no_scale_selection_probability(object):
         #defining objective in 3 steps when p>n+|E|, first optimize over u_{-E}
         # defining the objective for subgradient coordinate wise
         def obj_subgrad(z, mu_coord):
-            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq)) + barrier_subgrad_coord(z)
+            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq)) \
+                   + barrier_subgrad_coord(z)
 
         def value_subgrad_coordinate(z_1, z_2):
             mu_subgrad = np.true_divide(-np.dot(self.V_E_comp.T, z_1) - np.dot(self.D_E.T, z_2), self.tau_sq)
@@ -111,11 +112,8 @@ class no_scale_selection_probability(object):
         def objective_data(z_1):
             mu_data_mod = self.mu_data.copy()+ np.true_divide(-np.dot(self.V_E, param), self.sigma_sq)
             value_coef = minimize(objective_coef, x0=self.betaE, args=z_1)
-            #value_coef = objective_coef(self.betaE,z_1)
             return -np.dot(z_1.T, mu_data_mod) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1),
                                                                 2) + value_coef.fun
-            #return -np.dot(z_1.T, mu_data_mod) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1), 2) + value_coef
-
 
         #if self.p < self.n + self.nactive:
         #    initial_noise = np.zeros(self.p)
