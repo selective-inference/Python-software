@@ -449,8 +449,6 @@ class selection_probability_objective(rr.smooth_atom):
                                                                    self.inactive_lagrange,
                                                                    initial=self.inactive_subgrad)
 
-        constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i),2)
-
         barrier_gradient_i = self.A_inactive.T.dot(conjugate_optimizer_i)
 
         active_conj_value, active_conj_grad = self.active_conjugate
@@ -461,7 +459,7 @@ class selection_probability_objective(rr.smooth_atom):
             f_active_conj = active_conj_value(self.A_active.dot(param)+self.offset_active)
             f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
             #print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
-            return f_nonneg + f_like + f_active_conj + constant, -conjugate_value_i + constant
+            return f
         elif mode == 'grad':
             g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'grad')
             g_like = self.likelihood_loss.smooth_objective(param, 'grad')

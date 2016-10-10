@@ -1,12 +1,11 @@
+from selection.algorithms.softmax import nonnegative_softmax
+import regreg.api as rr
 import numpy as np
-from initial_soln import selection
 from scipy.optimize import minimize
-from scipy.stats import norm as ndist
-#from tests.instance import gaussian_instance as instance
+from selection.algorithms.softmax import nonnegative_softmax
+from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier
 
-#########################################################
-#####defining a class for computing selection probability: also returns selective_map and gradient of posterior
-class selection_probability(object):
+class my_selection_probability_only_objective(object):
 
     # defining class variables
     def __init__(self, V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube):
@@ -94,8 +93,7 @@ class selection_probability(object):
         #defining objective in 3 steps when p>n+|E|, first optimize over u_{-E}
         # defining the objective for subgradient coordinate wise
         def obj_subgrad(z, mu_coord):
-            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq))\
-                   + barrier_subgrad_coord(z)
+            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq)) + barrier_subgrad_coord(z)
 
         def value_subgrad_coordinate(z_1, z_2):
             mu_subgrad = np.true_divide(-np.dot(self.V_E_comp.T, z_1) - np.dot(self.D_E.T, z_2), self.tau_sq)
@@ -111,95 +109,112 @@ class selection_probability(object):
             mu_coef_mod=self.mu_coef.copy()- np.true_divide(np.dot(np.dot(
                 self.C_E, self.V_E.T) + np.dot(self.D_E, self.V_E_comp.T), z_1),self.tau_sq)
             return - np.dot(z_2.T,mu_coef_mod) + np.true_divide(np.dot(np.dot(
-                z_2.T,self.Sigma_coef),z_2),2)+ barrier_sel(z_2)-value_subgrad_coordinate(z_1, z_2)
+                z_2.T,self.Sigma_coef),z_2),2)+ barrier_sel(z_2)
 
         #defining objective over z_1
         def objective_data(z_1):
             mu_data_mod = self.mu_data.copy()+ np.true_divide(-np.dot(self.V_E, param), self.sigma_sq)
-            value_coef = minimize(objective_coef, x0=self.betaE, args=z_1)
-            return -np.dot(z_1.T, mu_data_mod) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1),
-                                                                2) + value_coef.fun
+            value_coef = objective_coef(self.betaE,z_1)
+            return -np.dot(z_1.T, mu_data_mod) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1), 2) + value_coef
 
-        #if self.p < self.n + self.nactive:
-            #initial_noise = np.zeros(self.p)
-            #initial_noise[:self.nactive] = self.betaE
-            #initial_noise[self.nactive:] = self.cube
-            #res = minimize(objective_noise, x0=initial_noise)
-            #const_param = np.dot(np.dot(param.T,self.constant),param)
-            #return -res.fun+const_param, res.x
-        #else:
-        initial_data = self.y
-        res = minimize(objective_data, x0=initial_data)
-        return -res.fun, res.x
-
-    def selective_map(self,y,prior_sd):
-        def objective(param,y,prior_sd):
-            return -np.true_divide(np.dot(y.T,-np.dot(self.V_E, param)),
-                              self.sigma_sq)-self.log_prior(param,prior_sd)+self.optimization(param)[0]
-        map_prob=minimize(objective,x0=self.betaE,args=(y,prior_sd))
-        return map_prob.x
-
-    def gradient(self,param,y,prior_sd):
-        if self.p< self.n+self.nactive:
-            func_param=np.dot(self.constant,param)
-            grad_sel_prob= np.dot(np.dot(self.mat_inter, -np.true_divide(self.V_E, self.sigma_sq)).T,
-                                  self.optimization(param)[1])+func_param
-        else:
-            grad_sel_prob= np.dot(-np.true_divide(self.V_E.T, self.sigma_sq),self.optimization(param)[1])
-
-        return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)-grad_sel_prob
+        return objective_data(self.y), value_subgrad_coordinate(self.y, self.betaE)
 
 
+class selection_probability_only_objective(rr.smooth_atom):
+    def __init__(self,
+                 X,
+                 feasible_point,
+                 active,
+                 active_signs,
+                 lagrange,
+                 mean_parameter,  # in R^n
+                 noise_variance,
+                 randomization,
+                 epsilon,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
 
+        n, p = X.shape
+        E = active.sum()
 
+        self.active = active
+        self.noise_variance = noise_variance
+        self.randomization = randomization
 
+        self.inactive_conjugate = self.active_conjugate = randomization.CGF_conjugate
+        if self.active_conjugate is None:
+            raise ValueError(
+                'randomization must know its CGF_conjugate -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
+        self.inactive_lagrange = lagrange[~active]
 
+        initial = np.zeros(n + E, )
+        initial[n:] = feasible_point
 
+        rr.smooth_atom.__init__(self,
+                                (n + E,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
 
+        self.coefs[:] = initial
 
+        self.active = active
+        nonnegative = nonnegative_softmax(E)  # should there be a
+        # scale to our softmax?
+        opt_vars = np.zeros(n + E, bool)
+        opt_vars[n:] = 1
 
+        opt_selector = rr.selector(opt_vars, (n + E,))
+        self.nonnegative_barrier = nonnegative.linear(opt_selector)
+        self._response_selector = rr.selector(~opt_vars, (n + E,))
 
+        X_E = self.X_E = X[:, active]
+        B = X.T.dot(X_E)
 
+        B_E = B[active]
+        B_mE = B[~active]
 
+        self.A_active = np.hstack([-X[:, active].T, (B_E + epsilon * np.identity(E)) * active_signs[None, :]])
+        self.A_inactive = np.hstack([-X[:, ~active].T, (B_mE * active_signs[None, :])])
 
+        self.offset_active = active_signs * lagrange[active]
 
+        # defines \gamma and likelihood loss
+        self.set_parameter(mean_parameter, noise_variance)
 
+        self.inactive_subgrad = np.zeros(p - E)
 
+    def set_parameter(self, mean_parameter, noise_variance):
+        """
+        Set $\beta_E^*$.
+        """
+        likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
 
+    def smooth_objective(self, param, mode='func', check_feasibility=False):
 
+        param = self.apply_offset(param)
 
+        conjugate_argument_i = self.A_inactive.dot(param)
 
+        conjugate_optimizer_i, conjugate_value_i = cube_subproblem(conjugate_argument_i,
+                                                                   self.inactive_conjugate,
+                                                                   self.inactive_lagrange,
+                                                                   initial=self.inactive_subgrad)
 
+        constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i), 2)
 
+        barrier_gradient_i = self.A_inactive.T.dot(conjugate_optimizer_i)
 
+        active_conj_value, active_conj_grad = self.active_conjugate
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+        if mode == 'func':
+            f_nonneg = self.nonnegative_barrier.smooth_objective(param, 'func')
+            f_like = self.likelihood_loss.smooth_objective(param, 'func')
+            f_active_conj = active_conj_value(self.A_active.dot(param) + self.offset_active)
+            return f_nonneg + f_like + f_active_conj + constant, -conjugate_value_i + constant
 
 
