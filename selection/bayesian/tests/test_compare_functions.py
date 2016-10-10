@@ -7,8 +7,8 @@ from selection.bayesian.objective_functions import my_selection_probability_only
 
 #fixing n, p, true sparsity and signal strength
 n=30
-p=20
-s=5
+p=30
+s=20
 snr=5
 
 #sampling the Gaussian instance

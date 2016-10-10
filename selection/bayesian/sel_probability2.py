@@ -480,7 +480,7 @@ class selection_probability_objective(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize(self, initial=None, step=1, nstep=100):
+    def minimize(self, initial=None, step=1, nstep=30):
 
         current = self.coefs
         current_value = np.inf
