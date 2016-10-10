@@ -13,7 +13,12 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 from selection.randomized.multiple_views import naive_confidence_intervals
 
 @wait_for_return_value()
-def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
+def test_splits(ndraw=20000, 
+                burnin=10000, 
+                nsim=None, 
+                bootstrap=True,
+                solve_args={'min_its':50, 'tol':1.e-10},
+                pretend_known=True): # nsim needed for decorator
     s, n, p = 0, 400, 50
 
     #randomizer = randomization.laplace((p,), scale=1.)
@@ -69,15 +74,22 @@ def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 
         target_alpha_gn = alpha_mat
 
         ## bootstrap
-        target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-                                                         target_observed_gn,
-                                                         n, target_alpha_gn,
-                                                         reference = unpenalized_mle)
+        pretend_known = False
+        if pretend_known:
+            reference = beta[active_union] + 5. * np.random.standard_normal(beta[active_union].shape) / np.sqrt(n)
+        else:
+            reference = unpenalized_mle
 
-        ## CLT plugin
-        #target_sampler_gn = mv.setup_target(target_gn,
-        #                                    target_observed_gn, #reference=beta[active_union])
-        #                                    reference = unpenalized_mle)
+        if bootstrap:
+            target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
+                                                             target_observed_gn,
+                                                             n, target_alpha_gn,
+                                                             reference=reference) 
+
+        else:
+            target_sampler_gn = mv.setup_target(target_gn,
+                                                target_observed_gn, #reference=beta[active_union])
+                                                reference = unpenalized_mle)
 
         target_sample = target_sampler_gn.sample(ndraw=ndraw,
                                                  burnin=burnin)
@@ -136,7 +148,7 @@ def make_a_plot(niter=20):
             _nparam += nparam
             _ncovered += ncovered
             _naive_ncovered += naive_ncovered
-            print(np.mean(_pvalues_truth), np.std(_pvalues_truth), np.mean(np.array(_pvalues_truth) < 0.05))
+            print(np.nanmean(_pvalues_truth), np.nanstd(_pvalues_truth), np.mean(_pvalues_truth < 0.05))
 
         if _nparam > 0:
             print("coverage", _ncovered/float(_nparam))
