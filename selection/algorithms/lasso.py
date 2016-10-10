@@ -552,6 +552,7 @@ class lasso(object):
                    Y, 
                    feature_weights, 
                    quadratic=None,
+                   covariance='parametric',
                    solve_args={'min_its':200}):
         r"""
         Use sqrt-LASSO to choose variables.
@@ -584,6 +585,11 @@ class lasso(object):
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
             coefficient to 0.
+
+        covariance : str
+            One of 'parametric' or 'sandwich'. Method
+            used to estimate covariance for inference
+            in second stage.
 
         solve_args : dict
             Arguments passed to solver.
@@ -681,7 +687,12 @@ class lasso(object):
 
         loglike = glm.gaussian(X, Y, quadratic=quadratic)
 
-        cov_est = glm_parametric_estimator(loglike, dispersion=_sigma_hat)
+        if covariance == 'parametric':
+            cov_est = glm_parametric_estimator(loglike, dispersion=_sigma_hat)
+        elif covariance == 'sandwich':
+            cov_est = glm_sandwich_estimator(loglike, B=2000)
+        else:
+            raise ValueError('covariance must be one of ["parametric", "sandwich"]')
 
         L = lasso(loglike, feature_weights * multiplier * sigma_E,
                   covariance_estimator=cov_est,
