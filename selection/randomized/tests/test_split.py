@@ -3,62 +3,27 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.api import randomization, split_glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.tests.decorators import wait_for_return_value
+
+from selection.api import pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.randomized.glm import split_glm_group_lasso
 from selection.tests.instance import logistic_instance
-from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 from selection.randomized.multiple_views import naive_confidence_intervals
 
-
-class randomized_loss(rr.smooth_atom):
-        def __init__(self,
-                    X, y,
-                    subsample_size,
-                    quadratic=None,
-                    initial=None,
-                    offset=None):
-            rr.smooth_atom.__init__(self,
-                                    X.shape[1],
-                                    coef=1.,
-                                    offset=offset,
-                                    quadratic=quadratic,
-                                    initial=initial)
-            self.X, self.y = X, y
-            self.n, self.p = X.shape
-            self.subsample = np.random.choice(self.n, size=(subsample_size,), replace=False)
-            self.X1, self.y1 = X[self.subsample,:], y[self.subsample]
-            self.sub_loss = rr.glm.logistic(self.X1, self.y1)
-            self.full_loss = rr.glm.logistic(self.X, self.y)
-            self.m = subsample_size
-            self.fraction = self.m/float(self.n)
-
-        def smooth_objective(self, beta, mode='both', check_feasibility=False):
-            linear = -np.dot(self.X.T, self.y)*self.fraction +np.dot(self.X1.T,self.y1)
-            if mode=='grad':
-                return self.sub_loss.smooth_objective(beta, 'grad') + linear
-            if mode=='func':
-                return self.sub_loss.smooth_objective(beta, 'func')+np.inner(linear, beta)
-            if mode=='both':
-                return self.sub_loss.smooth_objective(beta, 'func')+np.inner(linear, beta), self.sub_loss.smooth_objective(beta, 'grad') + linear
-
-
-
-def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 3, 300, 10
+@wait_for_return_value()
+def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
+    s, n, p = 0, 400, 50
 
     #randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
 
-    m = int(n/2)
-
+    m = int(0.8 * n)
     nonzero = np.where(beta)[0]
-    lam_frac = 1.
+    lam_frac = 0.8
 
-    loss = randomized_loss(X, y, m)
-
-    #randomizer = split(loss)
-    randomizer = None
+    loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
@@ -68,7 +33,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     # first randomization
-    M_est1 = split_glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est1 = split_glm_group_lasso(loss, epsilon, m, penalty)
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
@@ -89,36 +54,37 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss.full_loss, active_union)
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
 
         # testing the global null
         # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
+
         all_selected = np.arange(active_set.shape[0])
         target_gn = lambda indices: boot_target(indices)[:nactive]
         target_observed_gn = target_observed[:nactive]
 
-        unpenalized_mle = restricted_Mest(loss.full_loss, M_est1.overall, solve_args=solve_args)
+        unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
-        #alpha_mat = set_alpha_matrix(loss, active_union)
-        #target_alpha_gn = alpha_mat
+        alpha_mat = set_alpha_matrix(loss, active_union)
+        target_alpha_gn = alpha_mat
 
         ## bootstrap
-        #target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-        #                                                 target_observed_gn,
-        #                                                 n, target_alpha_gn,
-        #                                                 reference = unpenalized_mle)
+        target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
+                                                         target_observed_gn,
+                                                         n, target_alpha_gn,
+                                                         reference = unpenalized_mle)
 
         ## CLT plugin
-        target_sampler_gn = mv.setup_target(target_gn,
-                                            target_observed_gn, #reference=beta[active_union])
-                                            reference = unpenalized_mle)
+        #target_sampler_gn = mv.setup_target(target_gn,
+        #                                    target_observed_gn, #reference=beta[active_union])
+        #                                    reference = unpenalized_mle)
 
         target_sample = target_sampler_gn.sample(ndraw=ndraw,
                                                  burnin=burnin)
 
 
         LU = target_sampler_gn.confidence_intervals(unpenalized_mle,
-                                                    sample=target_sample)
+                                                    sample=target_sample).T
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
@@ -136,6 +102,8 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
         ncovered = 0
         naive_ncovered = 0
 
+        print(LU, 'selective')
+        print(LU_naive, 'naive')
         for j in range(nactive):
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                 ncovered += 1
@@ -146,8 +114,7 @@ def test_splits(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, '
 
 
 
-
-def make_a_plot():
+def make_a_plot(niter=20):
     import matplotlib.pyplot as plt
     from scipy.stats import probplot, uniform
     import statsmodels.api as sm
@@ -159,9 +126,9 @@ def make_a_plot():
     _nparam = 0
     _ncovered = 0
     _naive_ncovered = 0
-    for i in range(200):
+    for i in range(niter):
         print("iteration", i)
-        test = test_splits()
+        test = test_splits()[1]
         if test is not None:
             pvalues_mle, pvalues_truth, ncovered, naive_ncovered, nparam = test
             _pvalues_mle.extend(pvalues_mle)
