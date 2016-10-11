@@ -8,13 +8,10 @@ from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, 
 class my_selection_probability_only_objective(object):
 
     # defining class variables
-    def __init__(self, V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube):
+    def __init__(self, V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube, vec, active_coef):
 
-        (self.V, self.B_E, self.gamma_E, self.sigma, self.tau, self.lam, self.y, self.betaE, self.cube) = (V, B_E,
-                                                                                                           gamma_E,
-                                                                                                           sigma, tau,
-                                                                                                           lam, y,betaE,
-                                                                                                           cube)
+        (self.V, self.B_E, self.gamma_E, self.sigma, self.tau, self.lam, self.y, self.betaE, self.cube, self.vec,
+         self.active_coef) = (V, B_E, gamma_E, sigma, tau, lam, y,betaE, cube, vec, active_coef)
         self.sigma_sq = self.sigma ** 2
         self.tau_sq = self.tau ** 2
         self.signs = np.sign(self.betaE)
@@ -93,7 +90,8 @@ class my_selection_probability_only_objective(object):
         #defining objective in 3 steps when p>n+|E|, first optimize over u_{-E}
         # defining the objective for subgradient coordinate wise
         def obj_subgrad(z, mu_coord):
-            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq)) + barrier_subgrad_coord(z)
+            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq))\
+                   + barrier_subgrad_coord(z)
 
         def value_subgrad_coordinate(z_1, z_2):
             mu_subgrad = np.true_divide(-np.dot(self.V_E_comp.T, z_1) - np.dot(self.D_E.T, z_2), self.tau_sq)
@@ -114,10 +112,10 @@ class my_selection_probability_only_objective(object):
         #defining objective over z_1
         def objective_data(z_1):
             mu_data_mod = self.mu_data.copy()+ np.true_divide(-np.dot(self.V_E, param), self.sigma_sq)
-            value_coef = objective_coef(self.betaE,z_1)
+            value_coef = objective_coef(self.active_coef,z_1)
             return -np.dot(z_1.T, mu_data_mod) + np.true_divide(np.dot(np.dot(z_1.T, self.Sigma), z_1), 2) + value_coef
 
-        return objective_data(self.y), value_subgrad_coordinate(self.y, self.betaE)
+        return objective_data(self.vec), value_subgrad_coordinate(self.vec, self.active_coef)
 
 
 class selection_probability_only_objective(rr.smooth_atom):
@@ -206,8 +204,6 @@ class selection_probability_only_objective(rr.smooth_atom):
                                                                    initial=self.inactive_subgrad)
 
         constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i), 2)
-
-        barrier_gradient_i = self.A_inactive.T.dot(conjugate_optimizer_i)
 
         active_conj_value, active_conj_grad = self.active_conjugate
 

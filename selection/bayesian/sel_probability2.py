@@ -164,7 +164,7 @@ def objective_data(z_1):
 
 def cube_subproblem(argument, 
                     randomization_CGF_conjugate,
-                    lagrange, nstep=30,
+                    lagrange, nstep=100,
                     initial=None,
                     lipschitz=0):
     '''

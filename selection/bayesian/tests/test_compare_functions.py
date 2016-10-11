@@ -78,5 +78,25 @@ if sel is not None:
         sel_prob_breakup = sel_prob.smooth_objective(np.append(y, np.fabs(betaE)), mode='func', check_feasibility=False)
         return sel_breakup, sel_prob_breakup
 
-    print test_objectives_compare()
+    #print test_objectives_compare()
+
+    def test_objectives_compare_0():
+        parameter = np.fabs(np.random.standard_normal(nactive))
+        lagrange = lam * np.ones(p)
+        vec = np.random.standard_normal(n)
+        active_coef = np.dot(np.diag(active_signs),np.fabs(np.random.standard_normal(nactive)))
+        mean = X_1[:, active].dot(parameter)
+        sel = my_selection_probability_only_objective(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube, vec,
+                                                      active_coef)
+        sel_breakup = sel.optimization(parameter)[0] + np.true_divide(np.dot(mean.T, mean), 2 * noise_variance) + \
+                      np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]), 2 * (tau ** 2)), \
+                      sel.optimization(parameter)[1]
+        sel_prob = selection_probability_only_objective(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                   noise_variance, randomization.isotropic_gaussian((p,), 1.),
+                                                   epsilon)
+        sel_prob_breakup = sel_prob.smooth_objective(np.append(vec,np.fabs(active_coef)), mode='func', check_feasibility=False)
+        return sel_breakup, sel_prob_breakup
+
+    print test_objectives_compare_0()
+
 
