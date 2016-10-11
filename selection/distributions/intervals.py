@@ -152,7 +152,9 @@ class intervals_from_sample(object):
             linear_func[j] = 1.
             limits = self.confidence_interval(linear_func, alpha=alpha)
             if limits is not None:
-                lower[j], lower[j] = limits
+                lower[j], upper[j] = limits
+            else:
+                lower[j], upper[j] = np.nan, np.nan # bad reference -- all pvalues less then alpha
         return np.array([lower, upper]).T
 
     # Private methods

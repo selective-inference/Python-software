@@ -1,9 +1,13 @@
-import numpy as np
+import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
+from selection.tests.decorators import (wait_for_return_value, 
+                                        set_seed_iftrue, 
+                                        set_sampling_params_iftrue,
+                                        register_report)
+import selection.tests.reports as reports
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 
 from selection.randomized.api import (randomization, 
@@ -19,6 +23,7 @@ from selection.sampling.langevin import projected_langevin
 from selection.tests.instance import logistic_instance
 
 
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
@@ -59,6 +64,8 @@ def test_threshold_score(ndraw=10000, burnin=2000, nsim=None): # nsim needed for
         nactive = active_set.shape[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
 
+        if not I:
+            return None
 
         inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
         j = 0
@@ -83,4 +90,21 @@ def test_threshold_score(ndraw=10000, burnin=2000, nsim=None): # nsim needed for
                                               alternative='twosided',
                                               ndraw=ndraw,
                                               burnin=burnin)
-        return pval
+        return pval, False
+
+def report(niter=50, **kwargs):
+    # these are all our null tests
+    fn_names = ['test_threshold_score']
+
+    dfs = []
+    for fn in fn_names:
+        fn = reports.reports[fn]
+        dfs.append(reports.collect_multiple_runs(fn['test'],
+                                                 fn['columns'],
+                                                 niter,
+                                                 reports.summarize_all))
+    dfs = pd.concat(dfs)
+
+    fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
+
+    fig.savefig('threshold_pvalues.pdf') # will have both bootstrap and CLT on plot

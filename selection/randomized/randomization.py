@@ -5,6 +5,7 @@ Main method used in selective sampler is the gradient method which
 should be a gradient of the negative of the log-density. For a 
 Gaussian density, this will be a convex function, not a concave function.
 """
+from __future__ import division, print_function
 
 import numpy as np
 import regreg.api as rr
@@ -64,6 +65,18 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def isotropic_gaussian(shape, scale):
+        """
+        Isotropic Gaussian with SD `scale`.
+
+        Parameters
+        ----------
+
+        shape : tuple
+            Shape of noise.
+
+        scale : float
+            SD of noise.
+        """
         rv = ndist(scale=scale, loc=0.)
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: x / scale**2
@@ -72,6 +85,16 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def gaussian(covariance):
+        """
+        Gaussian noise with a given covariance.
+
+        Parameters
+        ----------
+
+        covariance : np.float((*,*))
+            Positive definite covariance matrix. Non-negative definite
+            will raise an error.
+        """
         precision = np.linalg.inv(covariance)
         sqrt_precision = np.linalg.cholesky(precision)
         _det = np.linalg.det(covariance)
@@ -84,6 +107,18 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def laplace(shape, scale):
+        """
+        Standard Laplace noise multiplied by `scale`
+
+        Parameters
+        ----------
+
+        shape : tuple
+            Shape of noise.
+
+        scale : float
+            Scale of noise.
+        """
         rv = laplace(scale=scale, loc=0.)
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: np.sign(x) / scale
@@ -92,6 +127,18 @@ class randomization(rr.smooth_atom):
 
     @staticmethod
     def logistic(shape, scale):
+        """
+        Standard logistic noise multiplied by `scale`
+
+        Parameters
+        ----------
+
+        shape : tuple
+            Shape of noise.
+
+        scale : float
+            Scale of noise.
+        """
         # from http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.logistic.html
         density = lambda x: (np.exp(-x / scale) / (1 + np.exp(-x / scale))**2) / scale
         # negative log density is (with \mu=0)
@@ -99,3 +146,78 @@ class randomization(rr.smooth_atom):
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
         return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=.25/scale**2)
+
+class split(randomization):
+
+    def __init__(self, shape, subsample_size, total_size):
+
+        self.subsample_size = subsample_size
+        self.total_size = total_size
+
+        rr.smooth_atom.__init__(self,
+                                shape)
+
+    def set_covariance(self, covariance):
+        """
+        Once covariance has been set, then 
+        the usual API of randomization will work.
+        """
+        self._covariance = covariance
+        precision = np.linalg.inv(covariance)
+        sqrt_precision = np.linalg.cholesky(precision)
+        _det = np.linalg.det(covariance)
+        p = covariance.shape[0]
+        _const = np.sqrt((2*np.pi)**p * _det)
+        self._density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
+        self._grad_negative_log_density = lambda x: precision.dot(x)
+        self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+        self.lipschitz = np.linalg.svd(precision)[1].max()
+
+    def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
+        if not hasattr(self, "_covariance"):
+            raise ValueError('first set the covariance')
+        return randomization.smooth_objective(self, perturbation, mode=mode, check_feasibility=check_feasibility)
+
+    def sample(self, size=()):
+        if not hasattr(self, "_covariance"):
+            raise ValueError('first set the covariance')
+        return randomization.sample(self, size=size)
+
+    def gradient(self, perturbation):
+        if not hasattr(self, "_covariance"):
+            raise ValueError('first set the covariance')
+        return randomization.gradient(self, perturbation)
+
+    def randomize(self, loss, epsilon):
+        """
+        Parameters
+        ----------
+
+        loss : rr.glm
+            A glm loss with a `subsample` method.
+
+        epsilon : float
+            Coefficient in front of quadratic term
+
+        Returns
+        -------
+        
+        Subsampled loss multiplied by `n / m` where
+        m is the subsample size out of a total 
+        sample size of n.
+
+        The quadratic term is not multiplied by `n / m`
+
+        """
+        n, m = self.total_size, self.subsample_size
+        inv_frac = n / m
+        quadratic = rr.identity_quadratic(epsilon, 0, 0, 0)
+        m, n = self.subsample_size, self.total_size # shorthand
+        idx = np.zeros(n, np.bool)
+        idx[:m] = 1
+        np.random.shuffle(idx)
+
+        randomized_loss = loss.subsample(idx)
+        randomized_loss.coef *= inv_frac
+        randomized_loss.quadratic = quadratic
+        return randomized_loss

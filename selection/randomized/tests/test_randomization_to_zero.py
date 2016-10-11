@@ -5,19 +5,33 @@ import regreg.api as rr
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
+from selection.tests.decorators import (wait_for_return_value, 
+                                        set_seed_iftrue, 
+                                        set_sampling_params_iftrue,
+                                        register_report)
+import selection.tests.reports as reports
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
+from selection.api import (randomization, 
+                           glm_group_lasso, 
+                           pairs_bootstrap_glm, 
+                           multiple_views, 
+                           discrete_family, 
+                           projected_langevin, 
+                           glm_group_lasso_parametric)
+
+from selection.randomized.glm import (glm_parametric_covariance, 
+                                      glm_nonparametric_bootstrap, 
+                                      restricted_Mest, 
+                                      set_alpha_matrix)
 
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
 
-
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_views_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -55,6 +69,8 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         active_set = np.nonzero(active_union)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
 
+        if not I:
+            return None
 
         inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
         j = 0
@@ -100,13 +116,14 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
                                                     ndraw=ndraw,
                                                     burnin=burnin)
 
-        return pval, pval_gn
+        return [pval, pval_gn], [False, False]
 
 
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value(max_tries=100)
-def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_views_individual_coeff_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 100, 20
 
     #randomizer = randomization.logistic((p,), scale=1./np.log(n))
@@ -155,15 +172,11 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
 
             individual_target = lambda indices: boot_target(indices)[j]
             individual_observed = target_observed[j]
-            # param_cov = _parametric_cov_glm(loss, active_union)
-
-            #target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
-            #target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
-            #test_stat_boot = lambda x: np.inner(target_alpha, x)
 
             target_sampler = mv.setup_target(individual_target, individual_observed, reference=true_beta[j])
+            #XXX we could also look at pivots
             test_stat = lambda x: x #-true_beta[j]
-
+            
 
             pval = target_sampler.hypothesis_test(test_stat,#_boot,
                                                   individual_observed,#-true_beta[j],
@@ -171,17 +184,17 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
                                                   ndraw=ndraw,
                                                   burnin=burnin)
             pvalues.append(pval)
+        return pvalues, [active_set[j] in nonzero for j in range(nactive)]
 
-        return pvalues
-
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_parametric_covariance_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=10)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -231,116 +244,23 @@ def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim need
                                               ndraw=ndraw,
                                               burnin=burnin)
 
-        return pval
+        return pval, False
 
+def report(niter=50, **kwargs):
+    # these are all our null tests
+    fn_names = ['test_parametric_covariance_small',
+                'test_multiple_views_small',
+                'test_multiple_views_individual_coeff_small']
 
+    dfs = []
+    for fn in fn_names:
+        fn = reports.reports[fn]
+        dfs.append(reports.collect_multiple_runs(fn['test'],
+                                                 fn['columns'],
+                                                 niter,
+                                                 reports.summarize_all))
+    dfs = pd.concat(dfs)
 
+    fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
 
-def make_a_plot():
-
-    np.random.seed(2)
-    fig = plt.figure()
-    fig.suptitle('Pivots for glm via wild bootstrap')
-
-    pvalues = []
-    pvalues_gn = []
-    for i in range(30):
-        print("iteration", i)
-        pvals = test_multiple_views()
-        if pvals is not None:
-            pval, pval_gn = pvals
-            pvalues.append(pval)
-            pvalues_gn.append(pval_gn)
-            print("pvalue", pval)
-            print(np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05))
-
-    ecdf = sm.distributions.ECDF(pvalues)
-    x = np.linspace(min(pvalues), max(pvalues))
-    y = ecdf(x)
-
-    #plt.xlim([0, 1])
-    #plt.ylim([0, 1])
-    #plt.title("Testing false discoveries")
-    #plt.plot(x, y, '-o', lw=2)
-    #plt.plot([0, 1], [0, 1], 'k-', lw=1)
-
-    ecdf_gn = sm.distributions.ECDF(pvalues_gn)
-    x_gn = np.linspace(min(pvalues_gn), max(pvalues_gn))
-    y_gn = ecdf_gn(x_gn)
-    #plt.xlim([0, 1])
-    #plt.ylim([0, 1])
-    #plt.plot(x, y, '-o', lw=2)
-    #plt.plot([0, 1], [0, 1], 'k-', lw=1)
-
-    plt.title("Logistic")
-    fig, ax = plt.subplots()
-    ax.plot(x, y, label="Selected zeros", marker='o', lw=2, markersize=6)
-    ax.plot(x_gn, y_gn, label="Global", marker ='o', lw=2, markersize=6)
-    plt.xlim([0,1])
-    plt.ylim([0,1])
-    plt.plot([0, 1], [0, 1], 'k-', lw=1)
-
-
-    legend = ax.legend(loc='upper center', shadow=True)
-    frame = legend.get_frame()
-    frame.set_facecolor('0.90')
-    for label in legend.get_texts():
-        label.set_fontsize('large')
-
-    for label in legend.get_lines():
-        label.set_linewidth(1.5)  # the legend line width
-
-    plt.savefig("Bootstrap after GLM two views")
-
-    #while True:
-    #    plt.pause(0.05)
-    plt.show()
-
-
-def make_a_plot_individual_coeff():
-
-    np.random.seed(3)
-    fig = plt.figure()
-    fig.suptitle('Pivots for glm wild bootstrap')
-
-    pvalues = []
-    for i in range(30):
-        print("iteration", i)
-        pvals = test_multiple_views_individual_coeff()
-        print(pvals)
-        if pvals is not None:
-            pvalues.extend(pvals)
-            print("pvalues", pvals)
-            print(np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05))
-
-    ecdf = sm.distributions.ECDF(pvalues)
-    x = np.linspace(min(pvalues), max(pvalues))
-    y = ecdf(x)
-
-    plt.title("Logistic")
-    fig, ax = plt.subplots()
-    ax.plot(x, y, label="Individual coefficients", marker='o', lw=2, markersize=8)
-    plt.xlim([0,1])
-    plt.ylim([0,1])
-    plt.plot([0, 1], [0, 1], 'k-', lw=1)
-
-
-    legend = ax.legend(loc='upper center', shadow=True)
-    frame = legend.get_frame()
-    frame.set_facecolor('0.90')
-    for label in legend.get_texts():
-        label.set_fontsize('large')
-
-    for label in legend.get_lines():
-        label.set_linewidth(1.5)  # the legend line width
-
-    plt.savefig("Bootstrap after GLM two views")
-    #while True:
-    #    plt.pause(0.05)
-    plt.show()
-
-
-
-if __name__ == "__main__":
-    #make_a_plot()
-    make_a_plot_individual_coeff()
+    fig.savefig('randomization_to_zero_pvalues.pdf') # will have both bootstrap and CLT on plot

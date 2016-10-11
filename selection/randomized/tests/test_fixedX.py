@@ -4,16 +4,20 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
+from selection.tests.instance import gaussian_instance
+from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+import selection.tests.reports as reports
+
 from selection.randomized.randomization import randomization
 from selection.randomized.multiple_views import multiple_views
 from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso, glm_nonparametric_bootstrap 
-from selection.tests.instance import gaussian_instance
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 
+
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_gaussian_many_targets(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_fixedX(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
@@ -42,6 +46,9 @@ def test_gaussian_many_targets(ndraw=10000, burnin=2000, nsim=None): # nsim need
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
         active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
 
+        if not I:
+            return None
+     
         idx = I[0]
         boot_target, target_observed = resid_bootstrap(M_est.loss, active)
 
@@ -117,4 +124,17 @@ def test_gaussian_many_targets(ndraw=10000, burnin=2000, nsim=None): # nsim need
         pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw) # twosided by default
         pvalues.append(pval)
 
-        return pvalues
+        return pvalues, [False, False, True, True]
+
+def report(niter=50, **kwargs):
+
+    fixedX_report = reports.reports['test_fixedX']
+    runs = reports.collect_multiple_runs(fixedX_report['test'],
+                                         fixedX_report['columns'],
+                                         niter,
+                                         reports.summarize_all,
+                                         **kwargs)
+
+    fig = reports.pvalue_plot(runs)
+    fig.savefig('fixedX_pivots.pdf') # will have both bootstrap and CLT on plot
+
