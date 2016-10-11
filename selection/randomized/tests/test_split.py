@@ -16,10 +16,10 @@ from selection.randomized.multiple_views import naive_confidence_intervals
 def test_splits(ndraw=10000, 
                 burnin=2000, 
                 nsim=None, # nsim needed for decorator
-                bootstrap=False,
+                bootstrap=True,
                 solve_args={'min_its':50, 'tol':1.e-10},
                 reference_known=False): 
-    s, n, p = 3, 1000, 200
+    s, n, p = 3, 200, 50
 
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
@@ -228,5 +228,5 @@ def make_a_plot_individual_coeff():
 
 
 if __name__ == "__main__":
-    make_a_plot()
+    make_a_plot(niter=50)
     #make_a_plot_individual_coeff()

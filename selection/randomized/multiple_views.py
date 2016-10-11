@@ -151,12 +151,12 @@ class multiple_views(object):
                                 reference=reference)
 
     def setup_bootstrapped_target(self,
-                     target_bootstrap,
-                     observed_target_state,
-                     boot_size,
-                     target_alpha,
-                     target_set=None,
-                     reference=None):
+                                  target_bootstrap,
+                                  observed_target_state,
+                                  boot_size,
+                                  target_alpha,
+                                  target_set=None,
+                                  reference=None):
 
         return bootstrapped_target_sampler(self,
                                            target_bootstrap,
@@ -250,6 +250,8 @@ class targeted_sampler(object):
 
         covariances = multi_view.form_covariances(target_info, cross_terms=multi_view.score_info)
         self.target_cov = np.atleast_2d(covariances[0])
+
+        # XXX we're not really using this target_set in our tests
 
         # zero out some coordinates of target_cov
         # to enforce independence of target and null statistics
@@ -646,10 +648,10 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         for i in range(self.nviews):
             composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
-                                                                                 self.target_cov,
-                                                                                 self.observed_target_state)
+                                                                                                  self.target_cov,
+                                                                                                  self.observed_target_state)
             boot_linear_part = np.dot(composition_linear_part, target_alpha)
-            boot_offset = composition_offset - np.dot(composition_linear_part, self.reference).flatten()
+            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
             self.boot_transform.append((boot_linear_part, boot_offset))
 
 
