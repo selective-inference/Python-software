@@ -645,15 +645,13 @@ class bootstrapped_target_sampler(targeted_sampler):
         self.boot_transform = []
         #self.inv_mat = np.linalg.inv(np.dot(self.target_alpha, self.target_alpha.T))
 
-
         for i in range(self.nviews):
             composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
                                                                                                   self.target_cov,
                                                                                                   self.observed_target_state)
             boot_linear_part = np.dot(composition_linear_part, target_alpha)
-            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
+            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).reshape(-1)
             self.boot_transform.append((boot_linear_part, boot_offset))
-
 
         self.reference_inv = self.target_inv_cov.dot(self.reference)
 
