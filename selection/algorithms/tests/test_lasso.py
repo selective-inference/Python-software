@@ -1,10 +1,12 @@
-import numpy as np
+import numpy as np, pandas as pd
 import nose.tools as nt
 import numpy.testing.decorators as dec
 from itertools import product
 
 from selection.tests.flags import SMALL_SAMPLES
 from selection.tests.instance import gaussian_instance as instance
+from selection.tests.decorators import set_sampling_params_iftrue, wait_for_return_value, register_report
+import selection.tests.reports as reports
 
 from selection.algorithms.lasso import (lasso, 
                                         data_carving, 
@@ -18,7 +20,6 @@ from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, choose_lambda)
 
 import regreg.api as rr
 
-from selection.tests.decorators import set_sampling_params_iftrue, wait_for_return_value
 
 try:
     import statsmodels.api
@@ -159,6 +160,7 @@ def test_coxph():
 
     return L, C, P
 
+@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value(max_tries=100)
 @set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_gaussian(n=100,
@@ -172,19 +174,18 @@ def test_data_carving_gaussian(n=100,
                                ndraw=8000,
                                burnin=2000, 
                                df=np.inf,
-                               coverage=0.90,
                                compute_intervals=True,
                                nsim=None,
                                use_full_cov=True,
                                return_only_screening=True):
 
-    X, y, beta, active, sigma = instance(n=n, 
-                                         p=p, 
-                                         s=s, 
-                                         sigma=sigma, 
-                                         rho=rho, 
-                                         snr=snr, 
-                                         df=df)
+    X, y, beta, true_active, sigma = instance(n=n, 
+                                              p=p, 
+                                              s=s, 
+                                              sigma=sigma, 
+                                              rho=rho, 
+                                              snr=snr, 
+                                              df=df)
     mu = np.dot(X, beta)
 
     idx = np.arange(n)
@@ -210,7 +211,7 @@ def test_data_carving_gaussian(n=100,
         print(DC.active)
         data_split = False
 
-    if set(range(s)).issubset(DC.active):
+    if set(true_active).issubset(DC.active):
         carve = []
         split = []
         for var in DC.active:
@@ -223,18 +224,12 @@ def test_data_carving_gaussian(n=100,
         Xa = X[:,DC.active]
         truth = np.dot(np.linalg.pinv(Xa), mu) 
 
-        split_coverage = np.nan
-        carve_coverage = np.nan
-
-        TP = s
-        FP = DC.active.shape[0] - TP
-        v = (carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage, TP, FP)
+        active = np.zeros_like(DC.active, np.bool)
+        active[true_active] = 1
+        v = (carve, split, active)
         return v
 
-    elif not return_only_screening:
-        v = (None, None, None, None, np.nan, np.nan, TP, FP)
-        return v
-
+@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_sqrt_lasso(n=100,
@@ -248,12 +243,11 @@ def test_data_carving_sqrt_lasso(n=100,
                                  ndraw=8000,
                                  burnin=2000, 
                                  df=np.inf,
-                                 coverage=0.90,
                                  compute_intervals=True,
                                  nsim=None,
                                  return_only_screening=True):
     
-    X, y, beta, active, sigma = instance(n=n, 
+    X, y, beta, true_active, sigma = instance(n=n, 
                                          p=p, 
                                          s=s, 
                                          sigma=sigma, 
@@ -272,35 +266,39 @@ def test_data_carving_sqrt_lasso(n=100,
                                  stage_one=stage_one)
 
     DC.fit()
-    DS = data_splitting.sqrt_lasso(X, y, feature_weights=lam_theor,
-                                   stage_one=stage_one)
-    DS.fit()
 
-    if set(range(s)).issubset(DC.active):
+    if len(DC.active) < n - int(n*split_frac):
+        DS = data_splitting.sqrt_lasso(X, y, feature_weights=lam_theor,
+                                       stage_one=stage_one)
+        DS.fit(use_full_cov=True)
+        data_split = True
+    else:
+        print('not enough data for second stage data splitting')
+        print(DC.active)
+        data_split = False
+
+
+    if set(true_active).issubset(DC.active):
         carve = []
         split = []
         for var in DC.active:
             carve.append(DC.hypothesis_test(var, burnin=burnin, ndraw=ndraw))
-            split.append(DS.hypothesis_test(var))
+            if data_split:
+                split.append(DS.hypothesis_test(var))
+            else:
+                split.append(np.random.sample())
+                
 
         Xa = X[:,DC.active]
         truth = np.dot(np.linalg.pinv(Xa), mu) 
 
-        split_coverage = np.nan
-        carve_coverage = np.nan
-
-        TP = s
-        FP = DC.active.shape[0] - TP
-        v = (carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage, TP, FP)
-        return v
-
-    elif not return_only_screening:
-        TP = len(set(DC.active).intersection(range(s)))
-        FP = DC.active.shape[0] - TP
-        v = (None, None, None, None, np.nan, np.nan, TP, FP)
+        active = np.zeros_like(DC.active, np.bool)
+        active[true_active] = 1
+        v = (carve, split, active)
         return v
 
 
+@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_logistic(n=500,
@@ -313,13 +311,12 @@ def test_data_carving_logistic(n=500,
                                ndraw=8000,
                                burnin=2000, 
                                df=np.inf,
-                               coverage=0.90,
                                compute_intervals=True,
                                nsim=None,
                                use_full_cov=False,
                                return_only_screening=True):
     
-    X, y, beta, active, sigma = instance(n=n, 
+    X, y, beta, true_active, sigma = instance(n=n, 
                                          p=p, 
                                          s=s, 
                                          sigma=sigma, 
@@ -333,10 +330,11 @@ def test_data_carving_logistic(n=500,
 
     X = np.hstack([np.ones((n,1)), X])
     z = np.random.binomial(1, prob)
-    active = np.array(active)
+    active = np.array(true_active)
     active += 1
     s += 1
     active = [0] + list(active)
+    true_active = np.nonzero(active)[0]
 
     idx = np.arange(n)
     np.random.shuffle(idx)
@@ -353,14 +351,14 @@ def test_data_carving_logistic(n=500,
     if len(DC.active) < n - int(n*split_frac):
         DS = data_splitting.logistic(X, z, feature_weights=lam_theor,
                                      stage_one=stage_one)
-        DS.fit(use_full_cov=use_full_cov)
+        DS.fit(use_full_cov=True)
         data_split = True
     else:
         print('not enough data for data splitting second stage')
         print(DC.active)
         data_split = False
 
-    if set(range(s)).issubset(DC.active):
+    if set(true_active).issubset(DC.active):
         carve = []
         split = []
         for var in DC.active:
@@ -372,22 +370,14 @@ def test_data_carving_logistic(n=500,
 
         Xa = X[:,DC.active]
 
-        split_coverage = np.nan
-        carve_coverage = np.nan
-
-        TP = s
-        FP = DC.active.shape[0] - TP
-        v = (carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage, TP, FP)
-        return v
-
-    elif not return_only_screening:
-        TP = len(set(DC.active).intersection(range(s)))
-        FP = DC.active.shape[0] - TP
-        v = (None, None, None, None, np.nan, np.nan, TP, FP)
+        active = np.zeros_like(DC.active, np.bool)
+        active[true_active] = 1
+        v = (carve, split, active)
         return v
 
     return return_value
 
+@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES)
 def test_data_carving_poisson(n=200,
@@ -395,35 +385,35 @@ def test_data_carving_poisson(n=200,
                               s=5,
                               sigma=5,
                               rho=0.3,
-                              snr=9.,
+                              snr=12.,
                               split_frac=0.8,
                               lam_frac=1.2,
                               ndraw=8000,
                               burnin=2000, 
                               df=np.inf,
-                              coverage=0.90,
                               compute_intervals=True,
                               nsim=None,
                               use_full_cov=True,
                               return_only_screening=True):
     
-    X, y, beta, active, sigma = instance(n=n, 
-                                         p=p, 
-                                         s=s, 
-                                         sigma=sigma, 
-                                         rho=rho, 
-                                         snr=snr, 
-                                         df=df)
+    X, y, beta, true_active, sigma = instance(n=n, 
+                                              p=p, 
+                                              s=s, 
+                                              sigma=sigma, 
+                                              rho=rho, 
+                                              snr=snr, 
+                                              df=df)
     X = np.hstack([np.ones((n,1)), X])
     y = np.random.poisson(10, size=y.shape)
     s = 1
+    true_active = [0]
 
     idx = np.arange(n)
     np.random.shuffle(idx)
     stage_one = idx[:int(n*split_frac)]
     n1 = len(stage_one)
 
-    lam_theor = 6. * np.ones(p+1)
+    lam_theor = 3. * np.ones(p+1)
     lam_theor[0] = 0.
     DC = data_carving.poisson(X, y, feature_weights=lam_theor,
                               stage_one=stage_one)
@@ -433,7 +423,7 @@ def test_data_carving_poisson(n=200,
     if len(DC.active) < n - int(n*split_frac):
         DS = data_splitting.poisson(X, y, feature_weights=lam_theor,
                                      stage_one=stage_one)
-        DS.fit(use_full_cov=use_full_cov)
+        DS.fit(use_full_cov=True)
         data_split = True
     else:
         print('not enough data for data splitting second stage')
@@ -441,7 +431,7 @@ def test_data_carving_poisson(n=200,
         data_split = False
 
     print(DC.active)
-    if set(range(s)).issubset(DC.active):
+    if set(true_active).issubset(DC.active):
         carve = []
         split = []
         for var in DC.active:
@@ -453,22 +443,14 @@ def test_data_carving_poisson(n=200,
 
         Xa = X[:,DC.active]
 
-        split_coverage = np.nan
-        carve_coverage = np.nan
-
-        TP = s
-        FP = DC.active.shape[0] - TP
-        v = (carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage, TP, FP)
+        active = np.zeros_like(DC.active, np.bool)
+        active[true_active] = 1
+        v = (carve, split, active)
         return v
-
-    else:
-        TP = len(set(DC.active).intersection(range(s)))
-        FP = DC.active.shape[0] - TP
-        v = (None, None, None, None, np.nan, np.nan, TP, FP)
-        return v
-        
+       
 
 
+@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(SMALL_SAMPLES)
@@ -479,7 +461,6 @@ def test_data_carving_coxph(n=100,
                             ndraw=8000,
                             burnin=2000, 
                             df=np.inf,
-                            coverage=0.90,
                             compute_intervals=True,
                             nsim=None,
                             return_only_screening=True):
@@ -489,9 +470,9 @@ def test_data_carving_coxph(n=100,
     T = np.random.standard_exponential(n)
     S = np.random.binomial(1, 0.5, size=(n,))
 
-    active = []
+    true_active = []
     s = 0
-    active = np.array(active)
+    active = np.array(true_active)
 
     idx = np.arange(n)
     np.random.shuffle(idx)
@@ -508,14 +489,14 @@ def test_data_carving_coxph(n=100,
     if len(DC.active) < n - int(n*split_frac):
         DS = data_splitting.coxph(X, T, S, feature_weights=lam_theor,
                                      stage_one=stage_one)
-        DS.fit()
+        DS.fit(use_full_cov=True)
         data_split = True
     else:
         print('not enough data for data splitting second stage')
         print(DC.active)
         data_split = False
 
-    if set(range(s)).issubset(DC.active):
+    if set(true_active).issubset(DC.active):
         carve = []
         split = []
         for var in DC.active:
@@ -527,43 +508,14 @@ def test_data_carving_coxph(n=100,
 
         Xa = X[:,DC.active]
 
-        split_coverage = np.nan
-        carve_coverage = np.nan
-
-        TP = s
-        FP = DC.active.shape[0] - TP
-        v = (carve[s:], split[s:], carve[:s], split[:s], carve_coverage, split_coverage, TP, FP)
+        active = np.zeros_like(DC.active, np.bool)
+        active[true_active] = 1
+        v = (carve, split, active)
         return v
-
-    else:
-        TP = len(set(DC.active).intersection(range(s)))
-        FP = DC.active.shape[0] - TP
-        v = (None, None, None, None, np.nan, np.nan, TP, FP)
-        return v
-
-
-@set_sampling_params_iftrue(SMALL_SAMPLES)
-@dec.skipif(True, "needs a data_carving_coverage function to be defined")
-def test_data_carving_coverage(nsim=200, 
-                               coverage=0.8,
-                               ndraw=8000,
-                               burnin=2000):
-    C = []
-    SE = np.sqrt(coverage * (1 - coverage) / nsim)
-
-    while True:
-        C.extend(data_carving_coverage(ndraw=ndraw, burnin=burnin)[-1])
-        if len(C) > nsim:
-            break
-
-    if np.fabs(np.mean(C) - coverage) > 3 * SE:
-        raise ValueError('coverage not within 3 SE of where it should be')
-
-    return C
 
 def test_intervals(n=100, p=20, s=5):
     t = []
-    X, y, beta, active, sigma = instance(n=n, p=p, s=s)
+    X, y, beta, true_active, sigma = instance(n=n, p=p, s=s)
     las = lasso.gaussian(X, y, 4., sigma=sigma)
     las.fit()
 
@@ -574,6 +526,7 @@ def test_intervals(n=100, p=20, s=5):
     S = las.summary(compute_intervals=True)
     nominal_intervals(las)
     
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_gaussian_pvals(n=100,
                         p=500,
@@ -582,7 +535,7 @@ def test_gaussian_pvals(n=100,
                         rho=0.3,
                         snr=8.):
 
-    X, y, beta, active, sigma = instance(n=n, 
+    X, y, beta, true_active, sigma = instance(n=n, 
                                          p=p, 
                                          s=s, 
                                          sigma=sigma, 
@@ -591,11 +544,12 @@ def test_gaussian_pvals(n=100,
     L = lasso.gaussian(X, y, 20., sigma=sigma)
     L.fit()
     L.fit(L.lasso_solution)
-    if set(active).issubset(L.active):
+    if set(true_active).issubset(L.active):
         S = L.summary('onesided')
         S = L.summary('twosided')
-        return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+        return S['pval'], [v in true_active for v in S['variable']]
 
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_sqrt_lasso_pvals(n=100,
                           p=200,
@@ -604,7 +558,7 @@ def test_sqrt_lasso_pvals(n=100,
                           rho=0.3,
                           snr=7.):
 
-    X, y, beta, active, sigma = instance(n=n, 
+    X, y, beta, true_active, sigma = instance(n=n, 
                                          p=p, 
                                          s=s, 
                                          sigma=sigma, 
@@ -620,13 +574,13 @@ def test_sqrt_lasso_pvals(n=100,
     lasso.sqrt_lasso(X, y, weights_with_zeros, covariance='parametric')
     L = lasso.sqrt_lasso(X, y, weights_with_zeros)
     L.fit()
-    v = {1:'twosided',
-         0:'onesided'}[counter % 2]
-    if set(active).issubset(L.active):
-        S = L.summary(v)
-        return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+    if set(true_active).issubset(L.active):
+        S = L.summary('onesided')
+        S = L.summary('twosided')
+        return S['pval'], [v in true_active for v in S['variable']]
 
 
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_sqrt_lasso_sandwich_pvals(n=200,
                                    p=50,
@@ -636,7 +590,7 @@ def test_sqrt_lasso_sandwich_pvals(n=200,
                                    snr=6.,
                                    use_lasso_sd=False):
 
-    X, y, beta, active, sigma = instance(n=n, 
+    X, y, beta, true_active, sigma = instance(n=n, 
                                          p=p, 
                                          s=s, 
                                          sigma=sigma, 
@@ -654,11 +608,11 @@ def test_sqrt_lasso_sandwich_pvals(n=200,
     L_SQ = lasso.sqrt_lasso(X, y, feature_weights, covariance='sandwich')
     L_SQ.fit()
 
-    if set(active).issubset(L_SQ.active):
+    if set(true_active).issubset(L_SQ.active):
         S = L_SQ.summary('twosided')
-        P_SQ = [p for p, v in zip(S['pval'], S['variable']) if v not in active]
-        return P_SQ
+        return S['pval'], [v in true_active for v in S['variable']]
 
+@register_report(['pvalue', 'parametric_pvalue', 'active'])
 @wait_for_return_value()
 def test_gaussian_sandwich_pvals(n=200,
                                  p=50,
@@ -668,7 +622,7 @@ def test_gaussian_sandwich_pvals(n=200,
                                  snr=6.,
                                  use_lasso_sd=False):
 
-    X, y, beta, active, sigma = instance(n=n, 
+    X, y, beta, true_active, sigma = instance(n=n, 
                                          p=p, 
                                          s=s, 
                                          sigma=sigma, 
@@ -704,7 +658,7 @@ def test_gaussian_sandwich_pvals(n=200,
     L_P = lasso.gaussian(X, y, feature_weights, covariance_estimator=parametric)
     L_P.fit()
 
-    if set(active).issubset(L_P.active):
+    if set(true_active).issubset(L_P.active):
 
         S = L_P.summary('twosided')
         P_P = [p for p, v in zip(S['pval'], S['variable']) if v not in active]
@@ -715,8 +669,10 @@ def test_gaussian_sandwich_pvals(n=200,
         S = L_S.summary('twosided')
         P_S = [p for p, v in zip(S['pval'], S['variable']) if v not in active]
 
-        return P_P, P_S
+        return P_P, P_S, [v in true_active for v in S['variable']]
 
+
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_logistic_pvals(n=500,
                         p=200,
@@ -725,7 +681,7 @@ def test_logistic_pvals(n=500,
                         rho=0.3,
                         snr=7.):
 
-    X, y, beta, active, sigma = instance(n=n, 
+    X, y, beta, true_active, sigma = instance(n=n, 
                                          p=p, 
                                          s=s, 
                                          sigma=sigma, 
@@ -735,7 +691,7 @@ def test_logistic_pvals(n=500,
     z = (y > 0)
     X = np.hstack([np.ones((n,1)), X])
 
-    active = np.array(active)
+    active = np.array(true_active)
     active += 1
     active = [0] + list(active)
 
@@ -743,12 +699,13 @@ def test_logistic_pvals(n=500,
     L.fit()
     S = L.summary('onesided')
 
-    if set(active).issubset(L.active) > 0:
-        return [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+    true_active = np.nonzero(active)[0]
+    if set(true_active).issubset(L.active) > 0:
+        return S['pval'], [v in true_active for v in S['variable']]
 
 def test_adding_quadratic_lasso():
 
-    X, y, beta, active, sigma = instance(n=300, p=200)
+    X, y, beta, true_active, sigma = instance(n=300, p=200)
     Q = rr.identity_quadratic(0.01, 0, np.random.standard_normal(X.shape[1]), 0)
 
     L1 = lasso.gaussian(X, y, 20, quadratic=Q)
@@ -806,3 +763,29 @@ def test_equivalence_sqrtlasso(n=200, p=400, s=10, sigma=3.):
     np.testing.assert_allclose(G1[3:], G2[3:])
     np.testing.assert_allclose(soln1, soln2)
     
+def report(niter=50, **kwargs):
+
+    # these are all our null tests
+    fn_names = ['test_gaussian_pvals',
+                'test_logistic_pvals',
+                'test_data_carving_gaussian',
+                'test_data_carving_sqrt_lasso',
+                'test_data_carving_logistic',
+                'test_data_carving_poisson',
+                'test_data_carving_coxph'
+                ]
+
+    dfs = []
+    for fn in fn_names:
+        fn = reports.reports[fn]
+        dfs.append(reports.collect_multiple_runs(fn['test'],
+                                                 fn['columns'],
+                                                 niter,
+                                                 reports.summarize_all))
+    dfs = pd.concat(dfs)
+
+    fig = reports.pvalue_plot(dfs)
+    fig.savefig('algorithms_pvalues.pdf') 
+
+    fig = reports.split_pvalue_plot(dfs)
+    fig.savefig('algorithms_split_pvalues.pdf') 
