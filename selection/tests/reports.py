@@ -35,6 +35,7 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
 
         for col, v in zip(columns, result):
             df_i.loc[:,col] = np.atleast_1d(v)
+        df_i['func'] = [str(test_fn)] * len(df_i)
         dfs.append(df_i)
         if summary_fn is not None:
             summary_fn(pd.concat(dfs))
@@ -103,6 +104,56 @@ def naive_pvalue_plot(multiple_results, screening=False, fig=None, colors=['r', 
         ecdfA = sm.distributions.ECDF(PA)
         FA = ecdfA(grid)
         ax.plot(grid, FA, '--o', c=colors[1], lw=2, label=r'$H_A$ naive')
+
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+    ax.legend(loc='lower right')
+
+    if screening:
+        screen = 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])
+        ax.set_title('Screening: %0.2f' % screen)
+
+    return fig
+
+def split_pvalue_plot(multiple_results, screening=False, fig=None):
+    """
+    Compare pvalues where we have a split_pvalue
+    """
+
+    have_split = ~pd.isnull(multiple_results['split_pvalue'])
+    multiple_results = multiple_results.loc[have_split]
+
+    P0_s = multiple_results['split_pvalue'][~multiple_results['active']]
+    PA_s = multiple_results['split_pvalue'][multiple_results['active']]
+
+    # presumes we also have a pvalue
+    P0 = multiple_results['pvalue'][~multiple_results['active']]
+    PA = multiple_results['pvalue'][multiple_results['active']]
+
+    if fig is None:
+        fig = plt.figure()
+    ax = fig.gca()
+
+    fig.suptitle('Null and alternative p-values')
+
+    grid = np.linspace(0, 1, 51)
+
+    if len(P0) > 0:
+        ecdf0 = sm.distributions.ECDF(P0)
+        F0 = ecdf0(grid)
+        ax.plot(grid, F0, '--o', c='r', lw=2, label=r'$H_0$')
+    if len(PA) > 0:
+        ecdfA = sm.distributions.ECDF(PA)
+        FA = ecdfA(grid)
+        ax.plot(grid, FA, '--o', c='g', lw=2, label=r'$H_A$')
+
+    if len(P0_s) > 0:
+        ecdf0 = sm.distributions.ECDF(P0_s)
+        F0 = ecdf0(grid)
+        ax.plot(grid, F0, '-+', c='r', lw=2, label=r'$H_0$ split')
+    if len(PA) > 0:
+        ecdfA = sm.distributions.ECDF(PA_s)
+        FA = ecdfA(grid)
+        ax.plot(grid, FA, '-+', c='g', lw=2, label=r'$H_A$ split')
 
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
     ax.legend(loc='lower right')
