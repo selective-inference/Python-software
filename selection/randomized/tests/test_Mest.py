@@ -1,16 +1,20 @@
 from __future__ import print_function
-import numpy as np
+import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
+
+from selection.tests.decorators import wait_for_return_value, register_report
+import selection.tests.reports as reports
 
 from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
-from selection.randomized.tests import wait_for_return_value, logistic_instance
+from selection.randomized.tests import logistic_instance
 
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_overall_null_two_views():
     s, n, p = 5, 200, 20 
@@ -58,6 +62,9 @@ def test_overall_null_two_views():
 
         # is it enough only to bootstrap the inactive ones?
         # seems so...
+
+        if not I:
+            return None
 
         A1, b1 = M_est1.linear_decomposition(cov1[I], target_cov[I][:,I], target_observed[I])
         A2, b2 = M_est2.linear_decomposition(cov2[I], target_cov[I][:,I], target_observed[I])
@@ -119,8 +126,9 @@ def test_overall_null_two_views():
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.ccdf(0, observed)
-        return pval
+        return pval, False
 
+@register_report(['pvalue', 'naive_pvalue', 'active'])
 @wait_for_return_value()
 def test_one_inactive_coordinate_handcoded():
     s, n, p = 5, 200, 20 
@@ -166,7 +174,7 @@ def test_one_inactive_coordinate_handcoded():
         # seems so...
 
         if not I:
-            return None, None
+            return None
 
         # take the first inactive one
         I = I[:1]
@@ -228,10 +236,10 @@ def test_one_inactive_coordinate_handcoded():
         _i = I[0]
         naive_Z = target_observed[_i] / np.sqrt(target_cov[_i,_i])
         naive_pval = ndist.sf(np.fabs(naive_Z))
-        return pval, naive_pval
-    else:
-        return None, None
+        print('naive Z', naive_Z, naive_pval)
+        return pval, naive_pval, False
 
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_logistic_selected_inactive_coordinate():
     s, n, p = 5, 200, 20 
@@ -292,8 +300,9 @@ def test_logistic_selected_inactive_coordinate():
         print(null_observed)
         pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=1000, ndraw=1000) # twosided by default
 
-        return pval
+        return pval, False
 
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_logistic_saturated_inactive_coordinate():
     s, n, p = 5, 200, 20 
@@ -349,8 +358,9 @@ def test_logistic_saturated_inactive_coordinate():
 
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=10000, ndraw=10000) # twosided by default
-        return pval
+        return pval, False
 
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_logistic_selected_active_coordinate():
     s, n, p = 5, 200, 20 
@@ -405,8 +415,9 @@ def test_logistic_selected_active_coordinate():
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=10000, ndraw=10000) # twosided by default
-        return pval
+        return pval, True
 
+@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_logistic_saturated_active_coordinate():
     s, n, p = 5, 200, 20 
@@ -461,5 +472,28 @@ def test_logistic_saturated_active_coordinate():
         target_sampler = mv.setup_target(active_target, active_observed)
         test_stat = lambda x: x[0]
         pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=10000, ndraw=10000) # twosided by default
-        return pval
+        return pval, True
 
+def report(niter=50):
+    
+    # these are all our null tests
+    fn_names = ['test_overall_null_two_views',
+                'test_one_inactive_coordinate_handcoded',
+                'test_logistic_selected_inactive_coordinate',
+                'test_logistic_saturated_inactive_coordinate',
+                'test_logistic_selected_active_coordinate',
+                'test_logistic_saturated_active_coordinate']
+
+    dfs = []
+    for fn in fn_names:
+        fn = reports.reports[fn]
+        dfs.append(reports.collect_multiple_runs(fn['test'],
+                                                 fn['columns'],
+                                                 niter,
+                                                 reports.summarize_all))
+    dfs = pd.concat(dfs)
+
+    fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
+    fig = reports.naive_pvalue_plot(dfs, fig=fig, colors=['k', 'b'])
+
+    fig.savefig('Mest_pvalues.pdf') # will have both bootstrap and CLT on plot

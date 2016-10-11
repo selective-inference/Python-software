@@ -4,6 +4,13 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
+from selection.tests.decorators import (wait_for_return_value, 
+                                        set_seed_iftrue, 
+                                        set_sampling_params_iftrue, 
+                                        register_report)
+from selection.tests.instance import logistic_instance
+import selection.tests.reports as reports
+
 from selection.randomized.api import (randomization, 
                                       multiple_views, 
                                       pairs_bootstrap_glm, 
@@ -13,11 +20,8 @@ from selection.randomized.api import (randomization,
 from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 
-from selection.tests.instance import logistic_instance
-
-
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
@@ -72,6 +76,9 @@ def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+
+        if not I:
+            return None
 
         # is it enough only to bootstrap the inactive ones?
         # seems so...
@@ -134,4 +141,4 @@ def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.ccdf(0, observed)
-        return pval
+        return pval, False

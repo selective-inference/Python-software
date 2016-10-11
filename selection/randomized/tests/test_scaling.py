@@ -4,11 +4,15 @@ import numpy as np
 import regreg.api as rr
 
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
+from selection.tests.decorators import (wait_for_return_value, 
+                                        set_seed_iftrue, 
+                                        set_sampling_params_iftrue,
+                                        register_report)
+from selection.tests.instance import logistic_instance
+
 from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
-from selection.tests.instance import logistic_instance
 
 try:
     import statsmodels.api as sm
@@ -30,19 +34,20 @@ def generate_data(s=5,
 
     return logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
 
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_logistic_many_targets(snr=15, 
-                               s=5, 
-                               n=200, 
-                               p=20, 
-                               rho=0.1, 
-                               burnin=20000, 
-                               ndraw=30000, 
-                               scale=0.9,
-                               nsim=None, # needed for decorator
-                               frac=0.5): # 0.9 has roughly same screening probability as 50% data splitting, i.e. around 10%
+def test_scaling(snr=15, 
+                 s=5, 
+                 n=200, 
+                 p=20, 
+                 rho=0.1, 
+                 burnin=20000, 
+                 ndraw=30000, 
+                 scale=0.9,
+                 nsim=None, # needed for decorator
+                 frac=0.5): # 0.9 has roughly same screening probability as 50% data splitting, i.e. around 10%
 
     DEBUG = False
     randomizer = randomization.laplace((p,), scale=scale)
@@ -216,16 +221,18 @@ def test_logistic_many_targets(snr=15,
         X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
         X_E = X[:,active_set]
 
+        active_var = [False, True, False, True]
+
         if statsmodels_available:
             try:
                 model = sm.GLM(y, X_E, family=sm.families.Binomial())
                 model_results = model.fit()
                 pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
-
+                active_var.extend([False, True])
             except sm.tools.sm_exceptions.PerfectSeparationError:
-                pvalues.extend([np.nan, np.nan])
+                pass
         else:
-            pvalues.extend([np.nan, np.nan])
+            pass
 
         # data splitting-ish p-value -- draws a new data set of smaller size
         # frac is presumed to be how much data was used in stage 1, we get (1-frac)*n for stage 2
@@ -236,18 +243,19 @@ def test_logistic_many_targets(snr=15,
         ys = ys[:int((1-frac)*n)]
         X_Es = Xs[:,active_set]
 
+
         if statsmodels_available:
             try:
                 model = sm.GLM(ys, X_Es, family=sm.families.Binomial())
                 model_results = model.fit()
                 pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
-
+                active_var.extend([False, False])
             except sm.tools.sm_exceptions.PerfectSeparationError:
-                pvalues.extend([np.nan, np.nan])
+                pass
         else:
-            pvalues.extend([np.nan, np.nan])
+            pass
 
-        return pvalues
+        return pvalues, active_var
 
 def data_splitting_screening(frac=0.5, snr=15, s=5, n=200, p=20, rho=0.1):
 
@@ -307,13 +315,20 @@ def randomization_screening(scale=1., snr=15, s=5, n=200, p=20, rho=0.1):
         active_set = np.nonzero(M_est.initial_soln != 0)[0]
         if set(nonzero).issubset(active_set):
             return count
-
-def main(nsample=2000, frac=0.6, scale=0.9):
-    P = []
-    while len(P) < nsample:
-        p = test_logistic_many_targets(frac=frac, scale=scale, **instance_opts)
-        if p is not None: P.append(p)
-        print(np.nanmean(P, 0), 'mean', len(P))
-        print(np.nanstd(P, 0), 'std')
-        print(np.nanmean(np.array(P) < 0.05, 0), 'rejection')
         
+def report(niter=50, **kwargs):
+    # these are all our null tests
+    fn_names = ['test_scaling']
+
+    dfs = []
+    for fn in fn_names:
+        fn = reports.reports[fn]
+        dfs.append(reports.collect_multiple_runs(fn['test'],
+                                                 fn['columns'],
+                                                 niter,
+                                                 reports.summarize_all))
+    dfs = pd.concat(dfs)
+
+    fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
+
+    fig.savefig('scaling_pvalues.pdf') # will have both bootstrap and CLT on plot
