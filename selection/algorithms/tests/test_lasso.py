@@ -163,7 +163,7 @@ def test_coxph():
 @register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value(max_tries=100)
 @set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_data_carving_gaussian(n=100,
+def test_data_carving_gaussian(n=200,
                                p=200,
                                s=7,
                                sigma=5,
@@ -232,7 +232,7 @@ def test_data_carving_gaussian(n=100,
 @register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_data_carving_sqrt_lasso(n=100,
+def test_data_carving_sqrt_lasso(n=200,
                                  p=200,
                                  s=7,
                                  sigma=5,
@@ -301,7 +301,7 @@ def test_data_carving_sqrt_lasso(n=100,
 @register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_data_carving_logistic(n=500,
+def test_data_carving_logistic(n=700,
                                p=300,
                                s=5,
                                sigma=5,
@@ -380,7 +380,7 @@ def test_data_carving_logistic(n=500,
 @register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_data_carving_poisson(n=200,
+def test_data_carving_poisson(n=500,
                               p=300,
                               s=5,
                               sigma=5,
@@ -454,7 +454,7 @@ def test_data_carving_poisson(n=200,
 @wait_for_return_value()
 @dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_data_carving_coxph(n=100,
+def test_data_carving_coxph(n=400,
                             p=20,
                             split_frac=0.8,
                             lam_frac=1.2,
