@@ -13,23 +13,23 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 from selection.randomized.multiple_views import naive_confidence_intervals
 
 @wait_for_return_value()
-def test_splits(ndraw=20000, 
-                burnin=10000, 
-                nsim=None, 
-                bootstrap=True,
+def test_splits(ndraw=10000, 
+                burnin=2000, 
+                nsim=None, # nsim needed for decorator
+                bootstrap=False,
                 solve_args={'min_its':50, 'tol':1.e-10},
-                pretend_known=True): # nsim needed for decorator
-    s, n, p = 0, 400, 50
+                reference_known=False): 
+    s, n, p = 3, 1000, 200
 
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
 
     m = int(0.8 * n)
     nonzero = np.where(beta)[0]
-    lam_frac = 0.8
+    lam_frac = 0.7
 
     loss = rr.glm.logistic(X, y)
-    epsilon = 1.
+    epsilon = 1. / np.sqrt(n)
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
@@ -74,9 +74,9 @@ def test_splits(ndraw=20000,
         target_alpha_gn = alpha_mat
 
         ## bootstrap
-        pretend_known = False
-        if pretend_known:
-            reference = beta[active_union] + 5. * np.random.standard_normal(beta[active_union].shape) / np.sqrt(n)
+        reference_known = False
+        if reference_known:
+            reference = beta[active_union] 
         else:
             reference = unpenalized_mle
 
