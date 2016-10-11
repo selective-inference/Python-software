@@ -1,4 +1,5 @@
 from copy import copy
+from functools import wraps
 import collections
 import numpy as np
 import nose
@@ -38,6 +39,7 @@ def set_seed_iftrue(condition, seed=10):
         else:
             set_val = lambda : condition
 
+        @wraps(f)
         def skipper_func(*args, **kwargs):
             """Skipper for normal test functions."""
             if set_val():
@@ -48,6 +50,7 @@ def set_seed_iftrue(condition, seed=10):
                 np.random.set_state(old_state)
             return value
 
+        @wraps(f)
         def skipper_gen(*args, **kwargs):
             """Skipper for test generators."""
             if set_val():
@@ -104,6 +107,7 @@ def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
         else:
             set_val = lambda : condition
 
+        @wraps(f)
         def modified_func(*args, **kwargs):
             """Modified for normal test functions."""
             if set_val():
@@ -117,6 +121,7 @@ def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
                 value = f(*args, **kwargs)
             return value
 
+        @wraps(f)
         def modified_gen(*args, **kwargs):
             """Modified for test generators."""
             if set_val():
@@ -145,6 +150,8 @@ def wait_for_return_value(max_tries=50):
     """
 
     def wait_for_decorator(test):
+
+        @wraps(test)
         def _new_test(*args, **kwargs):
             count = 0
             while True:
@@ -165,11 +172,17 @@ def register_report(columns):
     """
 
     def register_decorator(test):
+
+        @wraps(test)
         def _new_test(*args, **kwargs):
             return test(*args, **kwargs)
-        if test.func_name in reports:
-            print('Overwriting existing report %s' % test.func_name)
-        reports[test.func_name] = {'test':_new_test, 'columns':columns}
+        if hasattr(test, 'func_name'): # Py2.*
+            name = test.func_name
+        else:
+            name = test.__name__       # Py3.*
+        if name in reports:
+            print('Overwriting existing report %s' % name)
+        reports[name] = {'test':_new_test, 'columns':columns}
         return nose.tools.make_decorator(test)(_new_test)
 
     return register_decorator
