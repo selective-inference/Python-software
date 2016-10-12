@@ -14,7 +14,7 @@ class query(object):
     def randomize(self):
 
         if not self._randomized:
-            self.randomized_loss, self.leftout_loss = self.randomization.randomize(self.loss, self.epsilon)
+            self.randomized_loss, self.leftout_indices = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
     def randomization_gradient(self, data_state, data_transform, opt_state):

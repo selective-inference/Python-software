@@ -7,15 +7,16 @@ from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import randomization, split_glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
+from selection.randomized.glm import standard_ci, standard_ci_sm, glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 from selection.randomized.multiple_views import naive_confidence_intervals
+
 
 #@set_seed_iftrue(SET_SEED)
 #@set_sampling_params_iftrue(SMALL_SAMPLES)
 #@wait_for_return_value()
 def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 0, 300, 10
+    s, n, p = 0, 200, 10
 
     randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
@@ -48,7 +49,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
     if nactive==0:
         return None
 
-    leftout_indices = M_est1.leftout_loss
+    leftout_indices = M_est1.leftout_indices
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -58,10 +59,11 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
         mv.setup_sampler(form_covariances)
 
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-
+        #print("target",target_observed)
+        #print(pairs_bootstrap_glm(loss, active_union))
         # testing the global null
         # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
-        all_selected = np.arange(active_set.shape[0])
+
         target_gn = lambda indices: boot_target(indices)[:nactive]
         target_observed_gn = target_observed[:nactive]
 
@@ -100,32 +102,10 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
-        XE = X[:, active_union]
-        X2, y2  = XE[leftout_indices,:], y[leftout_indices]
-        print(X2.shape)
-        import statsmodels.discrete.discrete_model as sm
-        logit = sm.Logit(y2, X2)
-        result = logit.fit()
-        LU_split = result.conf_int(alpha=0.1)
-
-        #boot_leftout_target, leftout_target_observed = pairs_bootstrap_glm(leftout_loss, active_union)
-        #leftout_size = n-m
-        #print(leftout_size)
-        #sampler = lambda: np.random.choice(leftout_size, size=(leftout_size,), replace=True)
-        #from selection.randomized.glm import bootstrap_cov
-        #leftout_target_cov = bootstrap_cov(sampler, boot_leftout_target)
-
-        def split_confidence_intervals(observed, cov, alpha=0.1):
-            from scipy.stats import norm as ndist
-            quantile = - ndist.ppf(alpha / float(2))
-            LU = np.zeros((2, observed.shape[0]))
-            for j in range(observed.shape[0]):
-                sigma = np.sqrt(cov[j, j])
-                LU[0, j] = observed[j] - sigma * quantile
-                LU[1, j] = observed[j] + sigma * quantile
-            return LU.T
-
-        #LU_split = split_confidence_intervals(leftout_target_observed, leftout_target_cov)
+        LU_split = standard_ci(X, y, active_union, leftout_indices)
+        LU_split_sm = standard_ci_sm(X, y, active_union, leftout_indices)
+        print("split", LU_split)
+        print("sm", LU_split_sm)
 
         #pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
         #                                                    parameter=target_sampler_gn.reference,

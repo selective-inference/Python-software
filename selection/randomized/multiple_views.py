@@ -735,3 +735,4 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
     return LU.T
+

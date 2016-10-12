@@ -218,11 +218,12 @@ class split(randomization):
         np.random.shuffle(idx)
 
         randomized_loss = loss.subsample(idx)
+        #print(randomized_loss.data[0])
         randomized_loss.coef *= inv_frac
 
         randomized_loss.quadratic = quadratic
 
-        leftout_loss = loss.subsample(~idx)
+        #leftout_loss = loss.subsample(~idx)
         leftout_indices = ~idx
 
         return randomized_loss, leftout_indices
