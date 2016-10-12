@@ -15,7 +15,7 @@ from selection.randomized.multiple_views import naive_confidence_intervals
 #@set_sampling_params_iftrue(SMALL_SAMPLES)
 #@wait_for_return_value()
 def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 0, 200, 10
+    s, n, p = 0, 300, 10
 
     randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
@@ -48,7 +48,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
     if nactive==0:
         return None
 
-    leftout_loss = M_est1.leftout_loss
+    leftout_indices = M_est1.leftout_loss
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -100,18 +100,20 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
-        X2, y2  = leftout_loss.data
+        XE = X[:, active_union]
+        X2, y2  = XE[leftout_indices,:], y[leftout_indices]
+        print(X2.shape)
         import statsmodels.discrete.discrete_model as sm
         logit = sm.Logit(y2, X2)
         result = logit.fit()
         LU_split = result.conf_int(alpha=0.1)
 
-        boot_leftout_target, leftout_target_observed = pairs_bootstrap_glm(leftout_loss, active_union)
-        leftout_size = n-m
-        print(leftout_size)
-        sampler = lambda: np.random.choice(leftout_size, size=(leftout_size,), replace=True)
-        from selection.randomized.glm import bootstrap_cov
-        leftout_target_cov = bootstrap_cov(sampler, boot_leftout_target)
+        #boot_leftout_target, leftout_target_observed = pairs_bootstrap_glm(leftout_loss, active_union)
+        #leftout_size = n-m
+        #print(leftout_size)
+        #sampler = lambda: np.random.choice(leftout_size, size=(leftout_size,), replace=True)
+        #from selection.randomized.glm import bootstrap_cov
+        #leftout_target_cov = bootstrap_cov(sampler, boot_leftout_target)
 
         def split_confidence_intervals(observed, cov, alpha=0.1):
             from scipy.stats import norm as ndist
@@ -169,7 +171,7 @@ def make_a_plot():
     _ncovered, _ncovered_boot, _ncovered_split = 0, 0, 0
     _ci_length, _ci_length_boot, _ci_length_split = 0, 0, 0
 
-    for i in range(30):
+    for i in range(100):
         print("iteration", i)
         test = test_intervals() # first value is a count
         if test is not None:

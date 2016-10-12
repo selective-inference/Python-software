@@ -223,5 +223,6 @@ class split(randomization):
         randomized_loss.quadratic = quadratic
 
         leftout_loss = loss.subsample(~idx)
+        leftout_indices = ~idx
 
-        return randomized_loss, leftout_loss
+        return randomized_loss, leftout_indices
