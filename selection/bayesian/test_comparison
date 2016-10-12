@@ -118,15 +118,15 @@ if sel is not None:
                                                                         randomization.isotropic_gaussian((p,), 1.),
                                                                         epsilon)
 
-                sel_non_scaled_val = sel_non_scaled.optimization(parameter * np.ones(nactive))[0] - np.true_divide(
-                    np.dot(mean.T, mean), 2 * noise_variance) - np.true_divide(
-                    np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]),2 * (tau ** 2))
+                #sel_non_scaled_val = sel_non_scaled.optimization(parameter * np.ones(nactive))[0] - np.true_divide(
+                #    np.dot(mean.T, mean), 2 * noise_variance) - np.true_divide(
+                #    np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]),2 * (tau ** 2))
 
-                sel_scaled_val = sel_scaled.optimization(parameter*np.ones(nactive))[0]-np.true_divide(np.dot(
+                sel_scaled_val = sel.optimization(parameter*np.ones(nactive),method="softmax_barrier")[0]-np.true_divide(np.dot(
                     mean.T,mean),2*noise_variance)-np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),
                                                                   2*(tau**2))
 
-                print "log selection probability", sel_non_scaled_val, sel_scaled_val, -sel_prob_grad_descent.minimize()[1]
+                print "log selection probability", sel_scaled_val, -sel_prob_grad_descent.minimize()[1]
 
                 sel_non_scaled_seq.append(sel_non_scaled_val)
                 sel_scaled_seq.append(sel_scaled_val)
@@ -137,16 +137,16 @@ if sel is not None:
             print np.shape(sel_non_scaled_seq), np.shape(sel_scaled_seq), np.shape(sel_grad_descent)
 
             #plt.clf()
-            plt.title("sel_prob")
-            plt.plot(snr_seq, sel_non_scaled_seq, color="b")
-            plt.plot(snr_seq, sel_scaled_seq, color="r")
+            #plt.title("sel_prob")
+            #plt.plot(snr_seq, sel_non_scaled_seq, color="b")
+            #plt.plot(snr_seq, sel_scaled_seq, color="r")
             #plt.plot(snr_seq, sel_grad_descent, color="m")
-            plt.savefig('/Users/snigdhapanigrahi/Python_Plots/my_sel_prob.png')
-            plt.close()
+            #plt.savefig('/Users/snigdhapanigrahi/Python_Plots/my_sel_prob.png')
+            #plt.close()
 
-    test_one_sparse()
+    #test_one_sparse()
 
-    def test_sel_probs():
+    def test_sel_probs_scalings():
         parameter = np.fabs(np.random.standard_normal(nactive))
         lagrange = lam * np.ones(p)
         mean = X_1[:, active].dot(parameter)
@@ -168,7 +168,44 @@ if sel is not None:
         print "log selection probability", sel_non_scaled_val, sel_scaled_val, -sel_prob_grad_descent.minimize()[1]
 
 
-    #test_sel_probs()
+    #test_sel_probs_scalings()
+
+    def test_sel_barrier_method():
+        parameter = np.random.standard_normal(nactive)
+        mean = X_1[:, active].dot(parameter)
+        sel = selection_probability(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)
+        sel_val_log = sel.optimization(parameter * np.ones(nactive),method="log_barrier")[0] - np.true_divide(np.dot(
+            mean.T, mean), 2 * noise_variance) - np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]),
+                                                                2 * (tau ** 2))
+        sel_val_softmax = sel.optimization(parameter * np.ones(nactive),method="softmax_barrier")[0] - np.true_divide(np.dot(
+            mean.T, mean), 2 * noise_variance) - np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]),
+                                                                2 * (tau ** 2))
+
+        print "log selection probability", sel_val_log, sel_val_softmax
+
+
+    #test_sel_barrier_method()
+
+    def test_different_barriers():
+        if nactive==1:
+            snr_seq = np.linspace(0, 10, num=10)
+            for i in range(snr_seq.shape[0]):
+                parameter = snr_seq[i]
+                mean = X_1[:, active].dot(parameter)
+                print "parameter value", parameter
+                sel = selection_probability(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)
+                sel_log_val = sel.optimization(parameter*np.ones(nactive),method="log_barrier")[0]-\
+                              np.true_divide(np.dot(mean.T,mean),2*noise_variance)\
+                              -np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),2*(tau**2))
+                sel_softmax_val = sel.optimization(parameter*np.ones(nactive),method="softmax_barrier")[0]\
+                                  -np.true_divide(np.dot(mean.T,mean),2*noise_variance)\
+                                  -np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),2*(tau**2))
+                print "log selection probability", sel_log_val, sel_softmax_val
+
+
+    test_different_barriers()
+
+
 
 
 
