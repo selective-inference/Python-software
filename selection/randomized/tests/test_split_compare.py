@@ -100,6 +100,11 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
+        X2, y2  = leftout_loss.data
+        import statsmodels.discrete.discrete_model as sm
+        logit = sm.Logit(y2, X2)
+        result = logit.fit()
+        LU_split = result.conf_int(alpha=0.1)
 
         boot_leftout_target, leftout_target_observed = pairs_bootstrap_glm(leftout_loss, active_union)
         leftout_size = n-m
@@ -118,7 +123,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
                 LU[1, j] = observed[j] + sigma * quantile
             return LU.T
 
-        LU_split = split_confidence_intervals(leftout_target_observed, leftout_target_cov)
+        #LU_split = split_confidence_intervals(leftout_target_observed, leftout_target_cov)
 
         #pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
         #                                                    parameter=target_sampler_gn.reference,
@@ -164,7 +169,7 @@ def make_a_plot():
     _ncovered, _ncovered_boot, _ncovered_split = 0, 0, 0
     _ci_length, _ci_length_boot, _ci_length_split = 0, 0, 0
 
-    for i in range(100):
+    for i in range(30):
         print("iteration", i)
         test = test_intervals() # first value is a count
         if test is not None:
