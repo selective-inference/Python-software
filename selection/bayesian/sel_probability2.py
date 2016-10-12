@@ -381,8 +381,8 @@ class selection_probability_objective(rr.smooth_atom):
         opt_vars = np.zeros(n+E, bool)
         opt_vars[n:] = 1
 
-        opt_selector = rr.selector(opt_vars, (n+E,))
-        self.nonnegative_barrier = nonnegative.linear(opt_selector)
+        self._opt_selector = rr.selector(opt_vars, (n+E,))
+        self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
         self._response_selector = rr.selector(~opt_vars, (n+E,))
 
         X_E = self.X_E = X[:,active]
@@ -530,11 +530,18 @@ class selection_probability_objective(rr.smooth_atom):
         return current, value
 
 
+    def minimize2(self, initial=None):
 
+        nonneg_con = self._opt_selector.output_shape[0]
+        constraint = rr.separable(self.shape,
+                                  [rr.nonnegative((nonneg_con,), offset=1.e-6 * np.ones(nonneg_con))],
+                                  [self._opt_selector.index_obj])
 
-
-
-
+        problem = rr.separable_problem.fromatom(constraint, self)
+        problem.coefs[self._opt_selector.index_obj] = 0.5
+        soln = problem.solve(min_its=50, tol=1.e-10)
+        value = problem.objective(soln)
+        return soln, value
 
 
 
