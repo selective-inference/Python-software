@@ -71,8 +71,12 @@ class dual_selection_probability_func():
         return barrier_conjugate_func(self.cube_bool, self.inactive_lagrange, self.A.T.dot(u))
 
     def data_CGF(self,u):
-        dev = self.X.dot(u)-self.mean_parameter
-        return np.true_divide(dev.T.dot(dev),2)
+        if self.mean_parameter.shape[1] ==1:
+            dev = np.dot(self.X,u)[:,None]-self.mean_parameter
+            return  np.asscalar(np.true_divide(dev.T.dot(dev),2))
+        else :
+            dev = np.dot(self.X,u)-self.mean_parameter
+            return np.true_divide(dev.T.dot(dev),2)
 
     #def barrier_implicit(self,u):
     #    if all(self.A_E.dot(u) <= -0.00000000000001):

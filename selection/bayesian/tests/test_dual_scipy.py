@@ -81,11 +81,12 @@ if sel is not None:
 
     def test_dual_compare_one_sparse():
         if nactive==1:
-            snr_seq = np.linspace(0, 10, num=10)
+            snr_seq = np.linspace(-10, 10, num=20)
             lagrange = lam * np.ones(p)
-            #feasible = np.append(-np.fabs(np.random.standard_normal(nactive)),
-                                 #np.random.standard_normal((p - nactive)))
-            #dual_feasible = np.dot(np.linalg.inv(B_sel_1.T), feasible)
+            feasible = np.append(-np.fabs(np.random.standard_normal(nactive)),
+                                 np.random.standard_normal((p - nactive)))
+            dual_feasible = np.dot(np.linalg.inv(B_sel_1.T), feasible)
+            print dual_feasible
             for i in range(snr_seq.shape[0]):
                 parameter = snr_seq[i]
                 mean = X_1[:, active].dot(parameter)
@@ -94,14 +95,13 @@ if sel is not None:
                 sel_log_val = sel.optimization(parameter*np.ones(nactive),method="log_barrier")[0]-\
                               np.true_divide(np.dot(mean.T,mean),2*noise_variance)\
                               -np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),2*(tau**2))
-                #sel_prob = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
-                #                                           noise_variance, tau,
-                #                                           epsilon)
-                #sel_prob_min = sel_prob.minimize_opt()
+                sel_prob = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
+                sel_prob_min = sel_prob.minimize_opt()[0]-np.true_divide(np.dot(mean.T,mean),2*noise_variance)
 
-                print "log selection probability", sel_log_val
+                print "log selection probability", sel_log_val, sel_prob_min
 
-    print test_dual_compare_one_sparse()
+    test_dual_compare_one_sparse()
 
 
     def compare_objectives_dual():
