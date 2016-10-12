@@ -17,7 +17,8 @@ def barrier_conjugate_func(cube_bool, lagrange, arg):
         return np.power(10,10)
     else:
         orthant_maximizer = - 0.5 + np.sqrt(0.25 - 1. / orthant_arg)
-        cube_val = np.sum(cube_maximizer * cube_arg + np.log(lagrange - cube_maximizer) + np.log(lagrange + cube_maximizer))
+        cube_val = np.sum(cube_maximizer * cube_arg + np.log(lagrange - cube_maximizer)
+                          + np.log(lagrange + cube_maximizer)-(2*np.log(lagrange)))
         orthant_val = np.sum(orthant_maximizer * orthant_arg - np.log(1 + 1. / orthant_maximizer))
         return cube_val + orthant_val
 
@@ -73,10 +74,10 @@ class dual_selection_probability_func():
         dev = self.X.dot(u)-self.mean_parameter
         return np.true_divide(dev.T.dot(dev),2)
 
-    def barrier_implicit(self,u):
-        if all(self.A_E.dot(u) <= -0.00000000000001):
-            return np.sum(np.log(1 + np.true_divide(1, -self.A_E.dot(u))))
-        return self.A_E.shape[0] * np.log(1 + 10 ** 14)
+    #def barrier_implicit(self,u):
+    #    if all(self.A_E.dot(u) <= -0.00000000000001):
+    #        return np.sum(np.log(1 + np.true_divide(1, -self.A_E.dot(u))))
+    #    return self.A_E.shape[0] * np.log(1 + 10 ** 14)
 
     def dual_objective(self,u):
         return self.rand_CGF(u)+self.data_CGF(u)+ self.composed_barrier_conjugate(u)-u.T.dot(self.dual_arg)

@@ -2,12 +2,13 @@ import numpy as np
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection
 from selection.bayesian.dual_scipy import barrier_conjugate_func, dual_selection_probability_func
+from selection.bayesian.sel_probability import selection_probability
 from selection.bayesian.objective_functions import dual_selection_probability_only_objective
 from selection.randomized.api import randomization
 
 n=20
-p=10
-s=5
+p=5
+s=1
 snr=5
 
 #sampling the Gaussian instance
@@ -51,12 +52,57 @@ if sel is not None:
                                                    noise_variance, tau,
                                                    epsilon)
         sel_prob_min = sel_prob.minimize_opt()
+
+        sel = selection_probability(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)
+        sel_log_val = sel.optimization(parameter * np.ones(nactive), method="log_barrier")[0] - \
+                      np.true_divide(np.dot(mean.T, mean), 2 * noise_variance) \
+                      - np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]), 2 * (tau ** 2))
         #sel_prob_obj = sel_prob.dual_objective(dual_feasible)
         #return sel_prob.rand_CGF(dual_feasible), sel_prob.composed_barrier_conjugate(dual_feasible),\
         #       sel_prob.data_CGF(dual_feasible),sel_prob.barrier_implicit(dual_feasible),sel_prob.dual_objective(dual_feasible)
-        return sel_prob_min[0]- np.true_divide(np.dot(mean.T, mean), 2 * noise_variance)
+        return sel_prob_min[0]- np.true_divide(np.dot(mean.T, mean), 2 * noise_variance), sel_log_val
 
     #print test_dual()
+
+    def test_minimizer_dual():
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+        feasible = np.append(-np.fabs(np.random.standard_normal(nactive)), np.random.standard_normal((p - nactive)))
+        dual_feasible = np.dot(np.linalg.inv(B_sel_1.T), feasible)
+        sel_prob = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                   noise_variance, tau,
+                                                   epsilon)
+        sel_prob_min = sel_prob.minimize_opt()
+        return sel_prob_min[0] - np.true_divide(np.dot(mean.T, mean), 2 * noise_variance), \
+               np.dot(B_sel_1.T, sel_prob_min[1])
+
+    #print test_minimizer_dual()
+
+    def test_dual_compare_one_sparse():
+        if nactive==1:
+            snr_seq = np.linspace(0, 10, num=10)
+            lagrange = lam * np.ones(p)
+            #feasible = np.append(-np.fabs(np.random.standard_normal(nactive)),
+                                 #np.random.standard_normal((p - nactive)))
+            #dual_feasible = np.dot(np.linalg.inv(B_sel_1.T), feasible)
+            for i in range(snr_seq.shape[0]):
+                parameter = snr_seq[i]
+                mean = X_1[:, active].dot(parameter)
+                print "parameter value", parameter
+                sel = selection_probability(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)
+                sel_log_val = sel.optimization(parameter*np.ones(nactive),method="log_barrier")[0]-\
+                              np.true_divide(np.dot(mean.T,mean),2*noise_variance)\
+                              -np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),2*(tau**2))
+                #sel_prob = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                #                                           noise_variance, tau,
+                #                                           epsilon)
+                #sel_prob_min = sel_prob.minimize_opt()
+
+                print "log selection probability", sel_log_val
+
+    print test_dual_compare_one_sparse()
+
 
     def compare_objectives_dual():
         parameter = np.random.standard_normal(nactive)
