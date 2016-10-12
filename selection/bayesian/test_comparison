@@ -101,7 +101,7 @@ if sel is not None:
         if nactive==1:
             snr_seq = np.linspace(-10, 10, num=100)
             num = snr_seq.shape[0]
-            sel_non_scaled_seq = []
+            #sel_non_scaled_seq = []
             sel_scaled_seq = []
             sel_grad_descent = []
             lagrange = lam * np.ones(p)
@@ -122,13 +122,13 @@ if sel is not None:
                 #    np.dot(mean.T, mean), 2 * noise_variance) - np.true_divide(
                 #    np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]),2 * (tau ** 2))
 
-                sel_scaled_val = sel.optimization(parameter*np.ones(nactive),method="softmax_barrier")[0]-np.true_divide(np.dot(
-                    mean.T,mean),2*noise_variance)-np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),
-                                                                  2*(tau**2))
+                sel_scaled_val = sel_scaled.optimization(parameter*np.ones(nactive),method="softmax_barrier")[0]\
+                                 -np.true_divide(np.dot(mean.T,mean),2*noise_variance)\
+                                 -np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),2*(tau**2))
 
                 print "log selection probability", sel_scaled_val, -sel_prob_grad_descent.minimize()[1]
 
-                sel_non_scaled_seq.append(sel_non_scaled_val)
+                #sel_non_scaled_seq.append(sel_non_scaled_val)
                 sel_scaled_seq.append(sel_scaled_val)
                 sel_grad_descent.append(-sel_prob_grad_descent.minimize()[1])
 
