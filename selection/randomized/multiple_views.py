@@ -649,7 +649,7 @@ class bootstrapped_target_sampler(targeted_sampler):
                                                                                  self.target_cov,
                                                                                  self.observed_target_state)
             boot_linear_part = np.dot(composition_linear_part, target_alpha)
-            boot_offset = composition_offset - np.dot(composition_linear_part, self.reference).flatten()
+            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
             self.boot_transform.append((boot_linear_part, boot_offset))
 
 
@@ -734,4 +734,4 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         sigma = np.sqrt(target.target_cov[j, j])
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
-    return LU
+    return LU.T

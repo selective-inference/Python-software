@@ -326,6 +326,8 @@ def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
         _outer_cross[i] /= nsample
 
     _cov_target = _outer_target - np.multiply.outer(_mean_target, _mean_target)
+    if len(cross_terms) == 0:
+        return _cov_target
     return [_cov_target] + [_o - np.multiply.outer(_mean_target, _m) for _m, _o in zip(_mean_cross, _outer_cross)]
 
 def glm_nonparametric_bootstrap(m, n):

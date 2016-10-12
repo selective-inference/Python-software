@@ -219,5 +219,9 @@ class split(randomization):
 
         randomized_loss = loss.subsample(idx)
         randomized_loss.coef *= inv_frac
+
         randomized_loss.quadratic = quadratic
-        return randomized_loss
+
+        leftout_loss = loss.subsample(~idx)
+
+        return randomized_loss, leftout_loss

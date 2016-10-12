@@ -21,7 +21,7 @@ def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 
 
     m = int(0.8 * n)
     nonzero = np.where(beta)[0]
-    lam_frac = 0.8
+    lam_frac = 0.5
 
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
@@ -47,6 +47,8 @@ def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 
     if nactive==0:
         return None
 
+    leftout_loss = M_est1.leftout_loss
+
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
         active_set = np.nonzero(active_union)[0]
@@ -71,7 +73,7 @@ def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 
         ## bootstrap
         target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
                                                          target_observed_gn,
-                                                         n, target_alpha_gn,
+                                                         n, target_alpha_gn, #reference=beta[active_union])
                                                          reference = unpenalized_mle)
 
         ## CLT plugin
@@ -105,6 +107,7 @@ def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 
         print(LU, 'selective')
         print(LU_naive, 'naive')
         for j in range(nactive):
+            print(L[j], U[j])
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                 ncovered += 1
             if (LU_naive[0,j] <= true_vec[j]) and (LU_naive[1,j] >= true_vec[j]):
@@ -142,7 +145,7 @@ def make_a_plot(niter=20):
             print("coverage", _ncovered/float(_nparam))
             print("naive coverage", _naive_ncovered/float(_nparam))
 
-    print("number of parameters", _nparam,"coverage", _ncovered/float(_nparam))
+    print("number of parameters", _nparam, "coverage", _ncovered/float(_nparam))
 
     fig = plt.figure()
     fig.suptitle('Pivots at the reference (MLE) and the truth')

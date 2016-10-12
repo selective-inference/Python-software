@@ -55,12 +55,12 @@ class M_estimator(query):
         self.randomize()
 
         (loss,
-         randomized_loss,
+         randomized_loss, leftout_loss,
          epsilon,
          penalty,
          randomization,
          solve_args) = (self.loss,
-                        self.randomized_loss,
+                        self.randomized_loss, self.leftout_loss,
                         self.epsilon,
                         self.penalty,
                         self.randomization,

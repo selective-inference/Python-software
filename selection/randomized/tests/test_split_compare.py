@@ -4,7 +4,7 @@ import numpy as np
 import regreg.api as rr
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import randomization, split_glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
@@ -15,7 +15,7 @@ from selection.randomized.multiple_views import naive_confidence_intervals
 #@set_sampling_params_iftrue(SMALL_SAMPLES)
 #@wait_for_return_value()
 def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 3, 100, 10
+    s, n, p = 0, 200, 10
 
     randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
@@ -32,8 +32,9 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
+    m = int(0.8 * n)
     # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est1 = split_glm_group_lasso(loss, epsilon, m, penalty)
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
@@ -46,6 +47,8 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
     print("nactive", nactive)
     if nactive==0:
         return None
+
+    leftout_loss = M_est1.leftout_loss
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -97,6 +100,26 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
+
+        boot_leftout_target, leftout_target_observed = pairs_bootstrap_glm(leftout_loss, active_union)
+        leftout_size = n-m
+        print(leftout_size)
+        sampler = lambda: np.random.choice(leftout_size, size=(leftout_size,), replace=True)
+        from selection.randomized.glm import bootstrap_cov
+        leftout_target_cov = bootstrap_cov(sampler, boot_leftout_target)
+
+        def split_confidence_intervals(observed, cov, alpha=0.1):
+            from scipy.stats import norm as ndist
+            quantile = - ndist.ppf(alpha / float(2))
+            LU = np.zeros((2, observed.shape[0]))
+            for j in range(observed.shape[0]):
+                sigma = np.sqrt(cov[j, j])
+                LU[0, j] = observed[j] - sigma * quantile
+                LU[1, j] = observed[j] + sigma * quantile
+            return LU.T
+
+        LU_split = split_confidence_intervals(leftout_target_observed, leftout_target_cov)
+
         #pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
         #                                                    parameter=target_sampler_gn.reference,
         #                                                    sample=target_sample)
@@ -112,7 +135,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
             print(L,U)
             ncovered = 0
             ci_length = 0
-        
+
             for j in range(nactive):
                 if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                     ncovered += 1
@@ -121,9 +144,10 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
 
         ncovered, ci_length = coverage(LU)
         ncovered_boot, ci_length_boot = coverage(LU_boot)
-        ncovered_naive, _ = coverage(LU_naive)
+        ncovered_split, ci_length_split = coverage(LU_split)
 
-        return pvalues_truth, pvalues_truth_boot, ncovered, ci_length, ncovered_boot, ci_length_boot, ncovered_naive, nactive
+        return pvalues_truth, pvalues_truth_boot, ncovered, ci_length, ncovered_boot, ci_length_boot, \
+               ncovered_split, ci_length_split, nactive
 
 
 
@@ -137,33 +161,37 @@ def make_a_plot():
 
     _pvalues_truth, _pvalues_truth_boot = [], []
     _nparam = 0
-    _ncovered, _ncovered_boot, _ncovered_naive = 0, 0, 0
-    _ci_length, _ci_length_boot = 0, 0
+    _ncovered, _ncovered_boot, _ncovered_split = 0, 0, 0
+    _ci_length, _ci_length_boot, _ci_length_split = 0, 0, 0
 
     for i in range(100):
         print("iteration", i)
         test = test_intervals() # first value is a count
         if test is not None:
-            pvalues_truth, pvalues_truth_boot, ncovered, ci_length, ncovered_boot, ci_length_boot, ncovered_naive, nactive = test
+            pvalues_truth, pvalues_truth_boot, ncovered, ci_length, ncovered_boot, ci_length_boot, \
+            ncovered_split, ci_length_split, nactive = test
             _pvalues_truth.extend(pvalues_truth)
             _pvalues_truth_boot.extend(pvalues_truth_boot)
             _nparam += nactive
             _ncovered += ncovered
             _ncovered_boot += ncovered_boot
-            _ncovered_naive += ncovered_naive
+            _ncovered_split += ncovered_split
             _ci_length += ci_length
             _ci_length_boot += ci_length_boot
+            _ci_length_split += ci_length_split
             print("plugin CLT pvalues", np.mean(_pvalues_truth), np.std(_pvalues_truth), np.mean(np.array(_pvalues_truth) < 0.05))
             print("boot pvalues", np.mean(_pvalues_truth_boot), np.std(_pvalues_truth_boot), np.mean(np.array(_pvalues_truth_boot) < 0.05))
 
         if _nparam > 0:
             print("coverage", _ncovered/float(_nparam))
             print("boot coverage", _ncovered_boot/float(_nparam))
-            print("naive coverage", _ncovered_naive/float(_nparam))
+            print("split coverage", _ncovered_split/float(_nparam))
 
     print("number of parameters", _nparam,"coverage", _ncovered/float(_nparam))
     print("ci length plugin CLT", _ci_length/float(_nparam))
     print("ci length boot", _ci_length_boot / float(_nparam))
+    print("ci length split", _ci_length_split / float(_nparam))
+
 
     fig = plt.figure()
     fig.suptitle("Pivots at the truth by tilting the samples")
