@@ -51,7 +51,7 @@ class selection_probability(object):
     def log_prior(self, param, gamma):
         return -np.true_divide(np.linalg.norm(param) ** 2, 2*(gamma ** 2))
 
-    def optimization(self, param):
+    def optimization(self, param, method="log_barrier"):
 
         # defining barrier function on betaE
         def barrier_sel(z_2):
@@ -73,13 +73,21 @@ class selection_probability(object):
                 return np.sum(np.log(1 + np.true_divide(1, b - np.dot(A_subgrad, z_3))))
             return b.shape[0] * np.log(1 + 10 ** 9)
 
-        def barrier_subgrad_coord(z):
+        def softmax_barrier_subgrad_coord(z):
             # A_2 beta_E\leq b
             # a = np.array([1,-1])
             # b = np.ones(2)
             if -1 + np.power(10, -9) < z < 1 - np.power(10, -9):
                 return np.log(1 + np.true_divide(1, (self.lam*(1 - z)))) + np.log(1 + np.true_divide(1,(self.lam*(1 + z))))
             return 2 * np.log(1 + np.true_divide(10 ** 9,self.lam))
+
+        def log_barrier_subgrad_coord(z):
+            # A_2 beta_E\leq b
+            # a = np.array([1,-1])
+            # b = np.ones(2)
+            if -1 + np.power(10, -9) < z < 1 - np.power(10, -9):
+                return -np.log((1 - z)) - np.log((1 + z))
+            return 2 * np.log(np.true_divide(10 ** 9,1))
 
         #defining objective function in p dimensions to be optimized when p<n+|E|
         def objective_noise(z):
@@ -93,18 +101,35 @@ class selection_probability(object):
 
         #defining objective in 3 steps when p>n+|E|, first optimize over u_{-E}
         # defining the objective for subgradient coordinate wise
-        def obj_subgrad(z, mu_coord):
-            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq))\
-                   + barrier_subgrad_coord(z)
 
         def value_subgrad_coordinate(z_1, z_2):
             mu_subgrad = np.true_divide(-np.dot(self.V_E_comp.T, z_1) - np.dot(self.D_E.T, z_2), self.tau_sq)
             res_seq=[]
-            for i in range(self.ninactive):
-                mu_coord=mu_subgrad[i]
-                res=minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
-                res_seq.append(-res.fun)
-            return np.sum(res_seq)
+            if method =="log_barrier":
+                def obj_subgrad(z, mu_coord):
+                    return -(self.lam * (z * mu_coord)) + ((self.lam ** 2) * np.true_divide(z ** 2, 2 * self.tau_sq)) \
+                           + log_barrier_subgrad_coord(z)
+
+                for i in range(self.ninactive):
+                    mu_coord=mu_subgrad[i]
+                    res=minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
+                    res_seq.append(-res.fun)
+                    return np.sum(res_seq)
+
+            elif method == "softmax_barrier":
+                def obj_subgrad(z, mu_coord):
+                    return -(self.lam * (z * mu_coord)) + ((self.lam ** 2) * np.true_divide(z ** 2, 2 * self.tau_sq)) \
+                           + softmax_barrier_subgrad_coord(z)
+
+                for i in range(self.ninactive):
+                    mu_coord = mu_subgrad[i]
+                    res = minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
+                    res_seq.append(-res.fun)
+                    return np.sum(res_seq)
+
+            else:
+                raise ValueError('wrong method')
+
 
         #defining objective over z_2
         def objective_coef(z_2,z_1):

@@ -2,13 +2,13 @@ import numpy as np
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection
 from selection.randomized.api import randomization
-from selection.bayesian.objective_functions import my_selection_probability_only_objective, selection_probability_only_objective
-
+from selection.bayesian.objective_functions import my_selection_probability_only_objective, \
+    selection_probability_only_objective, dual_selection_probability_only_objective
 
 #fixing n, p, true sparsity and signal strength
-n=30
-p=30
-s=20
+n=10
+p=5
+s=2
 snr=5
 
 #sampling the Gaussian instance
@@ -38,6 +38,10 @@ if sel is not None:
     gamma_sel=np.zeros(p)
     gamma_sel[:nactive]=lam*np.sign(betaE)
 
+    B_sel_1 = np.zeros((p, p))
+    B_sel_1[:, :nactive] = np.dot(X_perm.T, X_perm[:, :nactive])* active_signs[None, :]
+    B_sel_1[:nactive, :nactive] += (epsilon * np.identity(nactive))* active_signs[None, :]
+    B_sel_1[nactive:, nactive:] = np.identity((p - nactive))
 
     def test_one_sparse_compare():
         if nactive==1:
@@ -81,7 +85,7 @@ if sel is not None:
     #print test_objectives_compare()
 
     def test_objectives_compare_0():
-        parameter = np.fabs(np.random.standard_normal(nactive))
+        parameter = np.random.standard_normal(nactive)
         lagrange = lam * np.ones(p)
         vec = np.random.standard_normal(n)
         active_coef = np.dot(np.diag(active_signs),np.fabs(np.random.standard_normal(nactive)))
@@ -97,6 +101,31 @@ if sel is not None:
         sel_prob_breakup = sel_prob.smooth_objective(np.append(vec,np.fabs(active_coef)), mode='func', check_feasibility=False)
         return sel_breakup, sel_prob_breakup
 
-    print test_objectives_compare_0()
+    #print test_objectives_compare_0()
+
+
+    def test_dual():
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+        feasible = np.append(-np.fabs(np.random.standard_normal(nactive)), np.random.standard_normal((p-nactive)))
+        dual_feasible = np.dot(np.linalg.inv(B_sel_1.T), feasible)
+        #check = np.dot(B_sel_1.T, dual_feasible)
+        sel_prob = dual_selection_probability_only_objective(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                   noise_variance, randomization.isotropic_gaussian((p,), 1.),
+                                                   epsilon)
+        sel_prob_obj = sel_prob.objective(dual_feasible)
+        #deviation = mean - np.dot(X_1, dual_feasible)
+        #check = (dual_feasible.T.dot(dual_feasible)/2), (deviation.T.dot(deviation)/2), dual_feasible.T.dot(gamma_sel)
+        sel_prob_min = sel_prob.opt_minimize()[0]- np.true_divide(np.dot(mean.T, mean), 2 * noise_variance)
+        #check = sel_prob.objective(dual_feasible)
+        return sel_prob_min
+
+
+    print test_dual()
+
+
+
+
 
 

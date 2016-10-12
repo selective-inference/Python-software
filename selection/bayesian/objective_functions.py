@@ -4,6 +4,7 @@ import numpy as np
 from scipy.optimize import minimize
 from selection.algorithms.softmax import nonnegative_softmax
 from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier
+from selection.bayesian.barrier import barrier_conjugate
 
 class my_selection_probability_only_objective(object):
 
@@ -212,5 +213,133 @@ class selection_probability_only_objective(rr.smooth_atom):
             f_like = self.likelihood_loss.smooth_objective(param, 'func')
             f_active_conj = active_conj_value(self.A_active.dot(param) + self.offset_active)
             return f_nonneg + f_like + f_active_conj + constant, -conjugate_value_i + constant
+
+
+class dual_selection_probability_only_objective(rr.smooth_atom):
+
+    def __init__(self,
+                 X,
+                 feasible_point,
+                 active,
+                 active_signs,
+                 lagrange,
+                 mean_parameter,
+                 noise_variance,
+                 randomization,
+                 epsilon,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+
+        self.X=X
+        self.feasible_point = feasible_point
+        n, p = X.shape
+        E = active.sum()
+
+        self.active = active
+        self.noise_variance = noise_variance
+        self.randomization = randomization
+
+        self.CGF_randomization = randomization.CGF
+
+        if self.CGF_randomization is None:
+            raise ValueError('randomization must know its cgf -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
+
+        self.inactive_lagrange = lagrange[~active]
+
+        X_E = self.X_E = X[:,active]
+        B = X.T.dot(X_E)
+
+        B_E = B[active]
+        B_mE = B[~active]
+
+        self.A_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :],np.zeros((E,p-E))])
+        self.A_inactive = np.hstack([B_mE * active_signs[None, :],np.identity((p-E))])
+        self.A=np.vstack((self.A_active,self.A_inactive))
+        self.A_E = self.A.T[:E,:]
+        self.dual_arg = np.zeros(p)
+        self.dual_arg[:E] = -active_signs * lagrange[active]
+        self.feasible_point=feasible_point
+
+
+        initial=feasible_point
+
+        rr.smooth_atom.__init__(self,
+                                (p,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        self.cube_bool = np.zeros(p, np.bool)
+        self.cube_bool[E:] = 1
+
+        self.set_parameter(mean_parameter, noise_variance)
+
+        self.coefs[:] = initial
+
+    def set_parameter(self, mean_parameter, noise_variance):
+
+        self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X)
+
+    def smooth_objective(self, dual, mode='func', check_feasibility=False):
+
+        dual = self.apply_offset(dual)
+
+        _barrier_star = barrier_conjugate(self.cube_bool,self.inactive_lagrange)
+
+        composition_barrier = rr.affine_smooth(_barrier_star, self.A.T)
+
+        CGF_rand_value, CGF_rand_grad = self.CGF_randomization
+
+        if mode == 'func':
+            f_rand_cgf = CGF_rand_value(dual)
+            f_data_cgf = self.likelihood_loss.smooth_objective(dual, 'func')
+            f_barrier_conj=composition_barrier.smooth_objective(dual, 'func')
+            f = self.scale(f_rand_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.dual_arg)))
+            #print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
+            return f_rand_cgf, f_barrier_conj, f_data_cgf
+
+        elif mode == 'grad':
+            g_rand_cgf = CGF_rand_grad(dual)
+            g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'grad')
+            g_barrier_conj = composition_barrier.smooth_objective(dual, 'grad')
+            g = self.scale(g_rand_cgf + g_data_cgf + g_barrier_conj-self.dual_arg)
+            # print(g, 'grad')
+            return g
+
+        else:
+            raise ValueError("mode incorrectly specified")
+
+    #def objective_grad(self,u):
+    #    return self.smooth_objective(u, 'grad')
+
+    #def constraint_check(self, check_point):
+    #    return self.A_E.dot(check_point)
+
+    #def constraint_ineq(self,u):
+    #    return -self.A_E.dot(u)
+
+    def barrier_implicit(self,u):
+        if all(self.A_E.dot(u) <= -np.power(10, -20)):
+            return np.sum(np.log(1 + np.true_divide(1, -self.A_E.dot(u))))
+        return self.A_E.shape[0] * np.log(1 + 10 ** 20)
+
+    def objective(self,u):
+        return self.smooth_objective(u,'func') + self.barrier_implicit(u)
+
+    def opt_minimize(self):
+        res = minimize(self.objective, x0=self.feasible_point)
+        return res.fun, res.x
+
+        #def opt_minimize(self):python test_compare_functions.py
+    #    res = fmin_cobyla(self.objective, x0=self.feasible_point, cons=self.constraint_ineq)
+    #    return res
+
+
+
+
+
 
 
