@@ -30,7 +30,7 @@ import statsmodels.api as sm
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
+@wait_for_return_value(max_tries=200)
 def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 100, 10
 
@@ -38,7 +38,7 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
 
     nonzero = np.where(beta)[0]
-    lam_frac = 1.
+    lam_frac = .6
 
     loss = rr.glm.logistic(X, y)
     epsilon = 1.

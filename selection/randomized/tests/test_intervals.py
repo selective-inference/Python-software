@@ -119,7 +119,7 @@ def test_intervals(s=3,
         for j in range(nactive):
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                 covered[j] = 1
-            if (LU_naive[0,j] <= true_vec[j]) and (LU_naive[1,j] >= true_vec[j]):
+            if (LU_naive[j,0] <= true_vec[j]) and (LU_naive[j,1] >= true_vec[j]):
                 naive_covered[j] = 1
             active_var[j] = active_set[j] in nonzero
 
