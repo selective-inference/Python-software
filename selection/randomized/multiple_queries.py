@@ -353,7 +353,7 @@ class targeted_sampler(object):
 
         return full_grad
 
-    def sample(self, ndraw, burnin, stepsize=None):
+    def sample(self, ndraw, burnin, stepsize=None, keep_opt=False):
         '''
         Sample `target` from selective density
         using projected Langevin sampler with
@@ -374,6 +374,10 @@ class targeted_sampler(object):
            to a crude estimate based on the
            dimension of the problem.
 
+        keep_opt : bool
+           Should we return optimization variables
+           as well as the target?
+
         Returns
         -------
 
@@ -384,6 +388,11 @@ class targeted_sampler(object):
         if stepsize is None:
             stepsize = 1. / self.crude_lipschitz()
 
+        if keep_opt:
+            keep_slice = slice(None, None, None)
+        else:
+            keep_slice = self.keep_slice
+
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,
                                              self.projection,
@@ -393,7 +402,7 @@ class targeted_sampler(object):
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[self.keep_slice].copy())
+                samples.append(target_langevin.state[keep_slice].copy())
 
         return np.asarray(samples)
 
@@ -735,3 +744,41 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
     return LU
+
+class intervals(intervals_from_sample):
+
+    """
+
+    Location family based intervals... (cryptic)
+
+    randomization density should be `g` composed with the affine
+    mapping and take an argument like one row of sample
+
+    target_linear is the linear part of the affine mapping with
+    respect to target
+
+    weights for a given candidate will look like
+
+          randomization_density(sample + (candidate, 0, 0) - (reference, 0, 0)) /
+          randomization_density(sample)
+
+    if the samples are samples of \bar{\beta}. if we have samples of
+    \Delta from our reference, then the weights will look like
+
+    randomization_density(sample + (candidate, 0, 0))
+    randomization_density(sample + (reference, 0, 0))
+    """
+
+    def __init__(self, 
+                 reference, 
+                 sample, 
+                 observed, 
+                 covariance, 
+                 randomization_density,
+                 target_linear,
+                 offset):
+        intervals_from_sample.__init__(self, reference, sample, observed, covariance)
+
+        self.randomization_density = randomization_density
+        self.target_linear = target_linear
+        self.offset = offset
