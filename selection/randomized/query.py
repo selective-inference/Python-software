@@ -18,44 +18,25 @@ class query(object):
             self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
-    def reconstruction_map(self, data_state, data_transform, opt_state):
-
-        if not self._setup:
-            raise ValueError('setup_sampler should be called before using this function')
-        
-        # reconstruction of randoimzation omega
-
-        opt_linear, opt_offset = self.opt_transform
-        data_linear, data_offset = data_transform
-        data_piece = data_linear.dot(data_state) + data_offset
-        opt_piece = opt_linear.dot(opt_state) + opt_offset
-
-        # value of the randomization omega
-
-        return data_piece + opt_piece 
-
-    def log_density(self, data_state, data_transform, opt_state):
-
-        full_data = self.reconstruction_map(data_state, data_transform, opt_state)
-        return self.randomization.log_density(full_data)
-
     def randomization_gradient(self, data_state, data_transform, opt_state):
         """
         Randomization derivative at full state.
         """
 
-        full_data = self.reconstruction_map(data_state, data_transform, opt_state)
+        opt_linear, opt_offset = self.opt_transform
+        data_linear, data_offset = data_transform
+
+        # value of the randomization omega
+
+        full_state = self.reconstruction_map(data_state, data_transform, opt_state)
 
         # gradient of negative log density of randomization at omega
 
-        randomization_derivative = self.randomization.gradient(full_data)
+        randomization_derivative = self.randomization.gradient(full_state)
 
         # chain rule for data, optimization parts
 
-        data_linear, data_offset = data_transform
         data_grad = data_linear.T.dot(randomization_derivative)
-
-        opt_linear, opt_offset = self.opt_transform
         opt_grad = opt_linear.T.dot(randomization_derivative)
 
         return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
@@ -90,6 +71,27 @@ class query(object):
         composition_offset = score_linear.dot(offset) + score_offset
 
         return (composition_linear_part, composition_offset)
+
+    def reconstruction_map(self, data_state, data_transform, opt_state):
+
+        if not self._setup:
+            raise ValueError('setup_sampler should be called before using this function')
+        
+        # reconstruction of randoimzation omega
+
+        opt_linear, opt_offset = self.opt_transform
+        data_linear, data_offset = data_transform
+        data_piece = data_linear.dot(data_state) + data_offset
+        opt_piece = opt_linear.dot(opt_state) + opt_offset
+
+        # value of the randomization omega
+
+        return data_piece + opt_piece 
+
+    def log_density(self, data_state, data_transform, opt_state):
+
+        full_data = self.reconstruction_map(data_state, data_transform, opt_state)
+        return self.randomization.log_density(full_data)
 
     # Abstract methods to be
     # implemented by subclasses

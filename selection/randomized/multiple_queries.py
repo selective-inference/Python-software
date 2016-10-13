@@ -819,7 +819,7 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         LU[1,j] = observed[j] + sigma * quantile
     return LU
 
-class intervals(intervals_from_sample):
+class translate_intervals(intervals_from_sample):
 
     """
 
