@@ -9,14 +9,14 @@ from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
-@set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
+#@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+#@set_seed_iftrue(SET_SEED)
+#@wait_for_return_value()
 def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 2, 120, 10
+    s, n, p = 0, 500, 10
 
-    print('burnin', burnin)
-    print('ndraw', ndraw)
+    #print('burnin', burnin)
+    #print('ndraw', ndraw)
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -33,16 +33,19 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    view = []
+    nview = 5
+    for i in range(nview):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
     # mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
+    mv = multiple_views(view)
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = np.zeros(p, np.bool)
+    for i in range(nview):
+        active_union += view[i].overall
+
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
@@ -100,11 +103,11 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
         return pval, pval_gn
 
 
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
-@set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
+#@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+#@set_seed_iftrue(SET_SEED)
+#@wait_for_return_value()
 def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 3, 120, 10
+    s, n, p = 3, 500, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -121,16 +124,18 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    view = []
+    nview = 5
+    for i in range(nview):
+        view.add(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
-    mv = multiple_views([M_est1, M_est2])
-    #mv = multiple_views([M_est1])
+    mv = multiple_views(view)
     mv.solve()
 
-    active_union = M_est1.overall + M_est2.overall
+    active_union = np.zeros(p, np.bool)
+    for i in range(nview):
+        active_union += view[i].overall
+
     nactive = np.sum(active_union)
     print("nactive", nactive)
     active_set = np.nonzero(active_union)[0]
@@ -240,7 +245,7 @@ def make_a_plot():
 
     pvalues = []
     pvalues_gn = []
-    for i in range(200):
+    for i in range(10):
         print("iteration", i)
         pvals = test_multiple_views()
         if pvals is not None:
@@ -339,5 +344,5 @@ def make_a_plot_individual_coeff():
 
 
 if __name__ == "__main__":
-    #make_a_plot()
-    make_a_plot_individual_coeff()
+    make_a_plot()
+    #make_a_plot_individual_coeff()

@@ -61,7 +61,7 @@ class randomization(rr.smooth_atom):
         randomized_loss = rr.smooth_sum([loss])
         _randomZ = self.sample()
         randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -_randomZ, 0)
-        return randomized_loss
+        return randomized_loss, np.zeros(loss.data[0].shape[1], np.bool)
 
     @staticmethod
     def isotropic_gaussian(shape, scale):
