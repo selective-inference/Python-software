@@ -23,17 +23,25 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
     dfs = []
     for i in range(nrun):
         count, result = test_fn(*args, **kwargs)
+        #print(result)
+        #print(len(np.atleast_1d(result[0])))
+        if hasattr(result, "__len__"):
+            df_i = pd.DataFrame(index=np.arange(len(np.atleast_1d(result[0]))),
+                                columns=columns + ['count', 'run'])
+        else:
+            df_i = pd.DataFrame(index=np.arange(1),
+                                columns=columns + ['count', 'run'])
 
-        df_i = pd.DataFrame(index=np.arange(len(np.atleast_1d(result[0]))),
-                            columns=columns + ['count', 'run'])
-        print(result[0])
-        print(len(df_i))
 
         df_i.loc[:,'count'] = count
         df_i.loc[:,'run'] = i
 
-        for col, v in zip(columns, result):
-            df_i.loc[:,col] = np.atleast_1d(v)
+        if hasattr(result, "__len__"):
+            for col, v in zip(columns, result):
+                df_i.loc[:,col] = np.atleast_1d(v)
+        else:
+            df_i.loc[:, columns] = np.atleast_1d(result)
+
         dfs.append(df_i)
         if summary_fn is not None:
             summary_fn(pd.concat(dfs))
@@ -112,6 +120,32 @@ def naive_pvalue_plot(multiple_results, screening=False, fig=None, colors=['r', 
 
     return fig
 
+def pivot_plot_simple(multiple_results, coverage=True, color='b', label=None, fig=None):
+    """
+    Extract pivots at truth and mle.
+    """
+
+    if fig is None:
+        fig, _ = plt.subplots(nrows=1, ncols=2)
+        plot_pivots, _ = fig.axes
+        plot_pivots.set_title("CLT Pivots")
+    else:
+        _, plot_pivots = fig.axes
+        plot_pivots.set_title("Bootstrap Pivots")
+
+    ecdf_clt = sm.distributions.ECDF(multiple_results['pivot'])
+    G = np.linspace(0, 1)
+    F_pivot = ecdf_clt(G)
+    #print(color)
+    plot_pivots.plot(G, F_pivot, '-o', c=color, lw=2, label=label)
+    plot_pivots.plot([0, 1], [0, 1], 'k-', lw=2)
+    plot_pivots.set_xlim([0, 1])
+    plot_pivots.set_ylim([0, 1])
+
+    return fig
+
+
+
 def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None):
     """
     Extract pivots at truth and mle.
@@ -159,6 +193,10 @@ def compute_pivots(multiple_results):
     if 'pivots_boot' in multiple_results.columns:
         pivots_boot = multiple_results['pivots_boot']
         pivot_summary['pivots_boot'] = {'Bootstrap pivots (mean, SD, type I):': (np.mean(pivots_boot), np.std(pivots_boot), np.mean(pivots_boot < 0.05))}
+    if 'pivot' in multiple_results.columns:
+        pivots = multiple_results['pivot']
+        pivot_summary['pivots'] = {'pivots (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
+
     return pivot_summary
 
 

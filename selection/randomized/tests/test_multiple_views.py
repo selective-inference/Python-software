@@ -2,21 +2,20 @@ from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
+import selection.tests.reports as reports
+
 
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.tests.instance import logistic_instance
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
+from selection.tests.decorators import wait_for_return_value, register_report
+
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-#@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
-#@set_seed_iftrue(SET_SEED)
-#@wait_for_return_value()
-def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 0, 500, 10
-
-    #print('burnin', burnin)
-    #print('ndraw', ndraw)
+@register_report(['pivot'])
+@wait_for_return_value()
+def test_multiple_views(ndraw=10000, burnin=2000, nsim=None, bootstrap=True, test = 'selected zeros'): # nsim needed for decorator
+    s, n, p = 0, 600, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -38,7 +37,6 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
     for i in range(nview):
         view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
-    # mv = multiple_views([M_est1, M_est2])
     mv = multiple_views(view)
     mv.solve()
 
@@ -54,60 +52,77 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
             return None
 
         active_set = np.nonzero(active_union)[0]
-        inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-
-
-        inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
-        j = 0
-        for i in range(nactive):
-            if active_set[i] not in nonzero:
-                inactive_indicators_mat[j,i] = 1
-                j+=1
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
 
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-        inactive_target = lambda indices: boot_target(indices)[inactive_selected]
-        inactive_observed = target_observed[inactive_selected]
-        # param_cov = _parametric_cov_glm(loss, active_union)
+        if bootstrap==True:
+            alpha_mat = set_alpha_matrix(loss, active_union)
 
-        alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
+        if test == 'selected zeros':
+            inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+            inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
+            j = 0
+            for i in range(nactive):
+                if active_set[i] not in nonzero:
+                    inactive_indicators_mat[j,i] = 1
+                    j+=1
+            target = lambda indices: boot_target(indices)[inactive_selected]
+            target_observed = target_observed[inactive_selected]
+            if bootstrap==True:
+                target_alpha = np.dot(inactive_indicators_mat, alpha_mat)
+            observed_test_value = np.linalg.norm(target_observed[inactive_selected]
+)
+        if test == 'global null':
+            target = lambda indices: boot_target(indices)[:nactive]
+            target_observed = target_observed[:nactive]
+            if bootstrap==True:
+                target_alpha = alpha_mat
+            observed_test_value = np.linalg.norm(target_observed - beta[active_union])
 
-        target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
+        #target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
+
+        if bootstrap==True:
+            target_sampler = mv.setup_bootstrapped_target(target, target_observed, n, target_alpha)
+        else:
+            target_sampler = mv.setup_target(target, target_observed)
 
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat,
-                                              np.linalg.norm(inactive_observed),
+        pivot = target_sampler.hypothesis_test(test_stat,
+                                              observed_test_value,
                                               alternative='twosided',
                                               ndraw=ndraw,
                                               burnin=burnin)
 
+        return pivot
 
-        # testing the global null
-        all_selected = np.arange(active_set.shape[0])
-        target_gn = lambda indices: boot_target(indices)[:nactive]
-        target_observed_gn = target_observed[:nactive]
+def report(niter=50, **kwargs):
 
-        target_alpha_gn = alpha_mat
+    split_report = reports.reports['test_multiple_views']
+    CLT_runs = reports.collect_multiple_runs(split_report['test'],
+                                             split_report['columns'],
+                                             niter,
+                                             reports.summarize_all,
+                                             **kwargs)
+    kwargs['bootstrap'] = True
+    fig = reports.pivot_plot_simple(CLT_runs, color='b', label='Bootstrap')
 
-        target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
-        observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
-        pval_gn = target_sampler_gn.hypothesis_test(test_stat,
-                                                    observed_test_value,
-                                                    alternative='twosided',
-                                                    ndraw=ndraw,
-                                                    burnin=burnin)
+    kwargs['bootstrap'] = False
+    bootstrap_runs = reports.collect_multiple_runs(split_report['test'],
+                                                   split_report['columns'],
+                                                   niter,
+                                                   reports.summarize_all,
+                                                   **kwargs)
 
-        return pval, pval_gn
-
+    fig = reports.pivot_plot_simple(bootstrap_runs, color='g', label='CLT', fig=fig)
+    fig.savefig('multiple_views_pivots.pdf') # will have both bootstrap and CLT on plot
 
 #@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 #@set_seed_iftrue(SET_SEED)
 #@wait_for_return_value()
 def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 3, 500, 10
+    s, n, p = 0, 500, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -127,7 +142,7 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
     view = []
     nview = 5
     for i in range(nview):
-        view.add(glm_group_lasso(loss, epsilon, penalty, randomizer))
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
     mv = multiple_views(view)
     mv.solve()
@@ -171,8 +186,8 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
 
         return pvalues
 
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
-@set_seed_iftrue(SET_SEED)
+#@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+#@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 120, 10
@@ -245,7 +260,7 @@ def make_a_plot():
 
     pvalues = []
     pvalues_gn = []
-    for i in range(10):
+    for i in range(50):
         print("iteration", i)
         pvals = test_multiple_views()
         if pvals is not None:
@@ -301,13 +316,13 @@ def make_a_plot():
 def make_a_plot_individual_coeff():
 
     import matplotlib.pyplot as plt
-
+    import statsmodels.api as sm
     np.random.seed(3)
     fig = plt.figure()
     fig.suptitle('Pivots for glm wild bootstrap')
 
     pvalues = []
-    for i in range(100):
+    for i in range(50):
         print("iteration", i)
         pvals = test_multiple_views_individual_coeff()
         if pvals is not None:
@@ -344,5 +359,6 @@ def make_a_plot_individual_coeff():
 
 
 if __name__ == "__main__":
-    make_a_plot()
+    report()
+    #make_a_plot()
     #make_a_plot_individual_coeff()
