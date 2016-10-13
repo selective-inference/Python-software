@@ -16,7 +16,7 @@ from selection.randomized.multiple_views import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot', 'covered_clt', 'ci_length_clt', 'covered_boot', 'ci_length_boot', 'covered_split', 'ci_length_split', 'active_var'])
 @wait_for_return_value()
-def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
+def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True): # nsim needed for decorator
     s, n, p = 0, 200, 10
 
     randomizer = randomization.laplace((p,), scale=1.)
@@ -52,8 +52,12 @@ def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 't
 
     leftout_indices = M_est1.leftout_indices
 
-    if set(nonzero).issubset(np.nonzero(active_union)[0]):
+    screen = set(nonzero).issubset(np.nonzero(active_union)[0])
 
+    if check_screen and not screen:
+        return None
+
+    if True:
         active_set = np.nonzero(active_union)[0]
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
@@ -118,13 +122,16 @@ def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 't
 
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]
-            covered = np.zeros(nactive, np.bool)
+            covered = np.zeros(nactive)
             ci_length = np.zeros(nactive)
 
             for j in range(nactive):
-                if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
+                if check_screen:
+                  if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                     covered[j] = 1
-                    ci_length[j] = U[j]-L[j]
+                else:
+                    covered[j] = None
+                ci_length[j] = U[j]-L[j]
             return covered, ci_length
 
         covered, ci_length = coverage(LU)
@@ -139,7 +146,7 @@ def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 't
                covered_split, ci_length_split, active_var
 
 
-def report(niter=10, **kwargs):
+def report(niter=50, **kwargs):
 
     split_report = reports.reports['test_split']
     screened_results = reports.collect_multiple_runs(split_report['test'],

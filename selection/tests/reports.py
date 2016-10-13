@@ -176,13 +176,19 @@ def compute_coverage(multiple_results):
 def compute_lengths(multiple_results):
     result = {}
     if 'ci_length_clt' in multiple_results.columns:
-        print(multiple_results['ci_length_clt'])
         result['ci_length_clt'] = np.mean(multiple_results['ci_length_clt'])
     if 'ci_length_boot' in multiple_results.columns:
         result['ci_length_boot'] = np.mean(multiple_results['ci_length_boot'])
-    if 'ci_length_clt' in multiple_results.columns:
+    if 'ci_length_split' in multiple_results.columns:
         result['ci_length_split'] = np.mean(multiple_results['ci_length_split'])
+    return result
 
+def compute_length_frac(multiple_results):
+    result = {}
+    if 'ci_length_clt' and 'ci_length_split' in multiple_results.columns:
+        result['clt/split'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_clt']))
+    if 'ci_length_boot' and 'ci_length_split' in multiple_results.columns:
+        result['boot/split'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_boot']))
     return result
 
 
@@ -195,7 +201,9 @@ def summarize_all(multiple_results):
     result.update(compute_coverage(multiple_results))
     result.update(compute_screening(multiple_results))
     result.update(compute_lengths(multiple_results))
-    print(result)
+    result.update(compute_length_frac(multiple_results))
+    for i in result:
+        print(i, result[i])
 reports = {}
 
 # if __name__ == "__main__":
