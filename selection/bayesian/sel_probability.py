@@ -114,7 +114,7 @@ class selection_probability(object):
                     mu_coord=mu_subgrad[i]
                     res=minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
                     res_seq.append(-res.fun)
-                    return np.sum(res_seq)
+                return np.sum(res_seq)
 
             elif method == "softmax_barrier":
                 def obj_subgrad(z, mu_coord):
@@ -125,7 +125,7 @@ class selection_probability(object):
                     mu_coord = mu_subgrad[i]
                     res = minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
                     res_seq.append(-res.fun)
-                    return np.sum(res_seq)
+                return np.sum(res_seq)
 
             else:
                 raise ValueError('wrong method')

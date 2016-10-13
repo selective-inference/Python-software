@@ -4,11 +4,12 @@ from selection.bayesian.initial_soln import selection
 from selection.randomized.api import randomization
 from selection.bayesian.objective_functions import my_selection_probability_only_objective, \
     selection_probability_only_objective, dual_selection_probability_only_objective
+from selection.bayesian.selection_probability import selection_probability_methods
 
 #fixing n, p, true sparsity and signal strength
-n=10
-p=5
-s=2
+n=30
+p=10
+s=5
 snr=5
 
 #sampling the Gaussian instance
@@ -122,7 +123,32 @@ if sel is not None:
         return sel_prob_min
 
 
-    print test_dual()
+    #print test_dual()
+
+
+    def test_new_function():
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+        vec = np.random.standard_normal(n)
+        active_coef = np.dot(np.diag(active_signs), np.fabs(np.random.standard_normal(nactive)))
+        sel = my_selection_probability_only_objective(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube,
+                                                      vec,
+                                                      active_coef)
+        sel_breakup = sel.optimization(parameter)[0] + np.true_divide(np.dot(mean.T, mean), 2 * noise_variance) + \
+                      np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]), 2 * (tau ** 2)), \
+                      sel.optimization(parameter)[1]
+
+        sel_prob = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                   noise_variance, tau, epsilon)
+
+        sel_breakup_1 = sel_prob.objective(np.append(vec,np.fabs(active_coef)))
+
+        print sel_breakup, sel_breakup_1
+
+
+    test_new_function()
+
 
 
 
