@@ -8,10 +8,10 @@ from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 import selection.tests.reports as reports
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-from selection.randomized.multiple_views import naive_confidence_intervals
+from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @set_seed_iftrue(SET_SEED)
@@ -48,8 +48,8 @@ def test_intervals(s=3,
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    # mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
+    # mv = multiple_queries([M_est1, M_est2])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active_union = M_est1.overall #+ M_est2.overall

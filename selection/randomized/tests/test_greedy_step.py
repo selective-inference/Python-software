@@ -12,7 +12,7 @@ from selection.tests.instance import logistic_instance
 import selection.tests.reports as reports
 
 from selection.randomized.api import (randomization, 
-                                      multiple_views, 
+                                      multiple_queries, 
                                       pairs_bootstrap_glm, 
                                       glm_group_lasso, 
                                       glm_greedy_step, 
@@ -25,7 +25,7 @@ from selection.sampling.langevin import projected_langevin
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_overall_null_two_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)

@@ -14,7 +14,7 @@ import selection.tests.reports as reports
 from selection.api import (randomization, 
                            glm_group_lasso, 
                            pairs_bootstrap_glm, 
-                           multiple_views, 
+                           multiple_queries, 
                            discrete_family, 
                            projected_langevin, 
                            glm_group_lasso_parametric)
@@ -31,7 +31,7 @@ import statsmodels.api as sm
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_views_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -54,8 +54,8 @@ def test_multiple_views_small(ndraw=10000, burnin=2000, nsim=None): # nsim neede
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    # mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
+    # mv = multiple_queries([M_est1, M_est2])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active_union = M_est1.overall #+ M_est2.overall
@@ -123,7 +123,7 @@ def test_multiple_views_small(ndraw=10000, burnin=2000, nsim=None): # nsim neede
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value(max_tries=100)
-def test_multiple_views_individual_coeff_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 100, 20
 
     #randomizer = randomization.logistic((p,), scale=1./np.log(n))
@@ -150,8 +150,8 @@ def test_multiple_views_individual_coeff_small(ndraw=10000, burnin=2000, nsim=No
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    # mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
+    # mv = multiple_queries([M_est1, M_est2])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active_union = M_est1.overall #+ M_est2.overall
@@ -213,7 +213,7 @@ def test_parametric_covariance_small(ndraw=10000, burnin=2000, nsim=None): # nsi
     # second randomization
     M_est2 = glm_group_lasso_parametric(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1, M_est2])
+    mv = multiple_queries([M_est1, M_est2])
     mv.solve()
 
     target = M_est1.overall.copy()
@@ -249,8 +249,8 @@ def test_parametric_covariance_small(ndraw=10000, burnin=2000, nsim=None): # nsi
 def report(niter=50, **kwargs):
     # these are all our null tests
     fn_names = ['test_parametric_covariance_small',
-                'test_multiple_views_small',
-                'test_multiple_views_individual_coeff_small']
+                'test_multiple_queries_small',
+                'test_multiple_queries_individual_coeff_small']
 
     dfs = []
     for fn in fn_names:

@@ -7,7 +7,7 @@ import regreg.api as rr
 from selection.tests.decorators import wait_for_return_value, register_report
 import selection.tests.reports as reports
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
+from selection.randomized.api import randomization, multiple_queries, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
@@ -16,7 +16,7 @@ from selection.randomized.tests import logistic_instance
 
 @register_report(['pvalue', 'active'])
 @wait_for_return_value()
-def test_overall_null_two_views():
+def test_overall_null_two_queries():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)
@@ -263,7 +263,7 @@ def test_logistic_selected_inactive_coordinate():
 
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active = M_est1.overall
@@ -326,7 +326,7 @@ def test_logistic_saturated_inactive_coordinate():
 
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active = M_est1.overall
@@ -384,7 +384,7 @@ def test_logistic_selected_active_coordinate():
 
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active = M_est1.overall
@@ -441,7 +441,7 @@ def test_logistic_saturated_active_coordinate():
 
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active = M_est1.overall
@@ -477,7 +477,7 @@ def test_logistic_saturated_active_coordinate():
 def report(niter=50):
     
     # these are all our null tests
-    fn_names = ['test_overall_null_two_views',
+    fn_names = ['test_overall_null_two_queries',
                 'test_one_inactive_coordinate_handcoded',
                 'test_logistic_selected_inactive_coordinate',
                 'test_logistic_saturated_inactive_coordinate',

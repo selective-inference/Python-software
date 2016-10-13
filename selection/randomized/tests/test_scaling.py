@@ -10,7 +10,7 @@ from selection.tests.decorators import (wait_for_return_value,
                                         register_report)
 from selection.tests.instance import logistic_instance
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
+from selection.randomized.api import randomization, multiple_queries, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
@@ -66,7 +66,7 @@ def test_scaling(snr=15,
 
     M_est = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est])
+    mv = multiple_queries([M_est])
     mv.solve()
 
     active = M_est.overall

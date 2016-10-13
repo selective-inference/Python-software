@@ -5,10 +5,10 @@ from scipy.stats import norm as ndist
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
 
-class multiple_views(object):
+class multiple_queries(object):
 
     '''
-    Combine several views of a given data
+    Combine several queries of a given data
     through randomized algorithms.
     '''
 
@@ -81,7 +81,7 @@ class multiple_views(object):
 
         self.form_covariances = form_covariances
 
-        nviews = self.nviews = len(self.objectives)
+        nqueries = self.nqueries = len(self.objectives)
 
         self.num_opt_var = 0
         self.opt_slice = []
@@ -95,7 +95,7 @@ class multiple_views(object):
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
 
-        for i in range(nviews):
+        for i in range(nqueries):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
@@ -184,8 +184,8 @@ class targeted_sampler(object):
         Parameters
         ----------
 
-        multi_view : `multiple_views`
-           Instance of `multiple_views`. Attributes
+        multi_view : `multiple_queries`
+           Instance of `multiple_queries`. Attributes
            `objectives`, `score_info` are key
            attributed. (Should maybe change constructor
            to reflect only what is needed.)
@@ -241,7 +241,7 @@ class targeted_sampler(object):
 
         # we need these attributes of multi_view
 
-        self.nviews = len(multi_view.objectives)
+        self.nqueries = len(multi_view.objectives)
         self.opt_slice = multi_view.opt_slice
         self.objectives = multi_view.objectives
 
@@ -265,7 +265,7 @@ class targeted_sampler(object):
         self.score_cov = covariances[1:]
 
         self.target_transform = []
-        for i in range(self.nviews):
+        for i in range(self.nqueries):
             self.target_transform.append(
                 self.objectives[i].linear_decomposition(self.score_cov[i],
                                                         self.target_cov,
@@ -313,7 +313,7 @@ class targeted_sampler(object):
 
         opt_state = state[self.overall_opt_slice]
         new_opt_state = np.zeros_like(opt_state)
-        for i in range(self.nviews):
+        for i in range(self.nqueries):
             new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
         state[self.overall_opt_slice] = new_opt_state
         return state
@@ -341,7 +341,7 @@ class targeted_sampler(object):
 
         # randomization_gradient are gradients of a CONVEX function
 
-        for i in range(self.nviews):
+        for i in range(self.nqueries):
             target_grad_curr, opt_grad[self.opt_slice[i]] = \
                 self.objectives[i].randomization_gradient(target_state, self.target_transform[i], opt_state[self.opt_slice[i]])
             target_grad += target_grad_curr.copy()
@@ -645,7 +645,7 @@ class bootstrapped_target_sampler(targeted_sampler):
         self.boot_transform = []
         #self.inv_mat = np.linalg.inv(np.dot(self.target_alpha, self.target_alpha.T))
 
-        for i in range(self.nviews):
+        for i in range(self.nqueries):
             composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
                                                                                                   self.target_cov,
                                                                                                   self.observed_target_state)
@@ -672,7 +672,7 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         # randomization_gradient are gradients of a CONVEX function
 
-        for i in range(self.nviews):
+        for i in range(self.nqueries):
             boot_grad_curr, opt_grad[self.opt_slice[i]] = \
                 self.objectives[i].randomization_gradient(boot_state, self.boot_transform[i],
                                                           opt_state[self.opt_slice[i]])

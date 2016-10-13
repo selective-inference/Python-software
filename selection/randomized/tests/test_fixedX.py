@@ -9,7 +9,7 @@ from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, s
 import selection.tests.reports as reports
 
 from selection.randomized.randomization import randomization
-from selection.randomized.multiple_views import multiple_views
+from selection.randomized.multiple_queries import multiple_views
 from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso, glm_nonparametric_bootstrap 
 
 
@@ -33,7 +33,7 @@ def test_fixedX(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorato
 
     M_est = fixedX_group_lasso(X, Y, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est])
+    mv = multiple_queries([M_est])
     mv.solve()
 
     active = M_est.overall

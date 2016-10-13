@@ -11,7 +11,7 @@ import selection.tests.reports as reports
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 
 from selection.randomized.api import (randomization, 
-                                      multiple_views, 
+                                      multiple_queries, 
                                       pairs_bootstrap_glm, 
                                       glm_nonparametric_bootstrap,
                                       glm_threshold_score)
@@ -50,7 +50,7 @@ def test_threshold_score(ndraw=10000, burnin=2000, nsim=None): # nsim needed for
                                  randomizer,
                                  active_bool,
                                  inactive_bool)
-    mv = multiple_views([thresh])
+    mv = multiple_queries([thresh])
     mv.solve()
 
     boundary = thresh.boundary

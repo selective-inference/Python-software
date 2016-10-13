@@ -11,14 +11,14 @@ from selection.tests.decorators import (wait_for_return_value,
                                         register_report)
 import selection.tests.reports as reports
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 120, 10
 
     print('burnin', burnin)
@@ -44,8 +44,8 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    # mv = multiple_views([M_est1, M_est2])
-    mv = multiple_views([M_est1])
+    # mv = multiple_queries([M_est1, M_est2])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     active_union = M_est1.overall #+ M_est2.overall
@@ -111,7 +111,7 @@ def test_multiple_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -134,8 +134,8 @@ def test_multiple_views_individual_coeff(ndraw=10000, burnin=2000, nsim=None): #
     # second randomization
     M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1, M_est2])
-    #mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1, M_est2])
+    #mv = multiple_queries([M_est1])
     mv.solve()
 
     active_union = M_est1.overall + M_est2.overall
@@ -203,7 +203,7 @@ def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim need
     # second randomization
     M_est2 = glm_group_lasso_parametric(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1, M_est2])
+    mv = multiple_queries([M_est1, M_est2])
     mv.solve()
 
     target = M_est1.overall.copy()
@@ -240,8 +240,8 @@ def report(niter=50):
     
     # these are all our null tests
     fn_names = ['test_parametric_covariance',
-                'test_multiple_views',
-                'test_multiple_views_individual_coeff']
+                'test_multiple_queries',
+                'test_multiple_queries_individual_coeff']
 
     dfs = []
     for fn in fn_names:
@@ -254,6 +254,6 @@ def report(niter=50):
 
     fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
 
-    fig.savefig('multiple_views_pvalues.pdf') # will have both bootstrap and CLT on plot
+    fig.savefig('multiple_queries_pvalues.pdf') # will have both bootstrap and CLT on plot
 
 

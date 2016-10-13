@@ -6,12 +6,12 @@ import regreg.api as rr
 from selection.tests.decorators import wait_for_return_value, register_report
 import selection.tests.reports as reports
 
-from selection.api import pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import split_glm_group_lasso
 from selection.tests.instance import logistic_instance
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-from selection.randomized.multiple_views import naive_confidence_intervals
+from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @wait_for_return_value()
@@ -43,7 +43,7 @@ def test_split(s=3,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     M_est = split_glm_group_lasso(loss, epsilon, m, penalty)
-    mv = multiple_views([M_est])
+    mv = multiple_queries([M_est])
     mv.solve()
 
     M_est.overall = M_est.overall
