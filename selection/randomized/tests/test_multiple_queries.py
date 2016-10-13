@@ -18,7 +18,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True): 
     s, n, p = 2, 120, 10
 
     print('burnin', burnin)
@@ -80,7 +80,14 @@ def test_multiple_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed fo
         alpha_mat = set_alpha_matrix(loss, active_union)
         target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
 
-        target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
+        if bootstrap:
+            target_sampler = mv.setup_bootstrapped_target(inactive_target,
+                                                          inactive_observed,
+                                                          n, target_alpha) 
+
+        else:
+            target_sampler = mv.setup_target(inactive_target,
+                                             inactive__observed)
 
         test_stat = lambda x: np.linalg.norm(x)
         pval = target_sampler.hypothesis_test(test_stat,

@@ -259,6 +259,8 @@ class M_estimator(query):
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
 
+        self._setup = True
+
     def projection(self, opt_state):
         """
         Full projection for Langevin.

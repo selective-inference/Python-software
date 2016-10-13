@@ -8,6 +8,7 @@ class query(object):
         self.randomization = randomization
         self._solved = False
         self._randomized = False
+        self._setup = False
 
     # Methods reused by subclasses
          
@@ -17,14 +18,11 @@ class query(object):
             self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
-    def randomization_gradient(self, data_state, data_transform, opt_state):
-        """
-        Randomization derivative at full state.
-        """
+    def reconstruction_map(self, data_state, data_transform, opt_state):
 
-        if not hasattr(self, "opt_transform"):
+        if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
-
+        
         # reconstruction of randoimzation omega
 
         opt_linear, opt_offset = self.opt_transform
@@ -34,15 +32,30 @@ class query(object):
 
         # value of the randomization omega
 
-        full_state = (data_piece + opt_piece) 
+        return data_piece + opt_piece 
+
+    def log_density(self, data_state, data_transform, opt_state):
+
+        full_data = self.reconstruction_map(data_state, data_transform, opt_state)
+        return self.randomization.log_density(full_data)
+
+    def randomization_gradient(self, data_state, data_transform, opt_state):
+        """
+        Randomization derivative at full state.
+        """
+
+        full_data = self.reconstruction_map(data_state, data_transform, opt_state)
 
         # gradient of negative log density of randomization at omega
 
-        randomization_derivative = self.randomization.gradient(full_state)
+        randomization_derivative = self.randomization.gradient(full_data)
 
         # chain rule for data, optimization parts
 
+        data_linear, data_offset = data_transform
         data_grad = data_linear.T.dot(randomization_derivative)
+
+        opt_linear, opt_offset = self.opt_transform
         opt_grad = opt_linear.T.dot(randomization_derivative)
 
         return data_grad, opt_grad - self.grad_log_jacobian(opt_state)

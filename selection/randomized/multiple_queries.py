@@ -610,7 +610,6 @@ class targeted_sampler(object):
         else:
             return 2 * np.minimum(pval, 1 - pval)
 
-
     def crude_lipschitz(self):
         """
         A crude Lipschitz constant for the
@@ -627,6 +626,69 @@ class targeted_sampler(object):
             lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
             lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
         return lipschitz
+
+
+    def reconstruction_map(self, state):
+        '''
+        Reconstruction of randomization at current state.
+
+        Parameters
+        ----------
+
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Can be array with each row a state.
+
+        Returns
+        -------
+
+        reconstructed : np.float
+           Has shape of `opt_vars` with same number of rows 
+           as `state`.
+           
+        '''
+
+        state = np.atleast_2d(state)
+        if len(state.shape) > 2:
+            raise ValueError('expecting at most 2-dimensional array')
+
+        target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
+        reconstructed = np.zeros_like(opt_state)
+
+        for i in range(self.nqueries):
+            reconstructed[:, self.opt_slice[i]] = self.objectives[i].reconstruction_map(target_state,
+                                                                                        self.target_transform[i],
+                                                                                        opt_state[self.opt_slice[i]])
+        return np.squeeze(reconstructed)
+
+    def log_density(self, state):
+        '''
+        Log-density at current state.
+
+        Parameters
+        ----------
+
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Can be two-dimensional with each row a state.
+
+        Returns
+        -------
+
+        density : np.float
+            Has number of rows as `state` if 2-dimensional.
+        '''
+
+        reconstructed = self.reconstruction_map(state)
+        value = np.zeros(reconstructed.shape[0])
+
+        target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
+        reconstructed = np.zeros_like(opt_state)
+
+        for i in range(self.nqueries):
+            log_dens = self.objectives[i].log_density
+            value += np.array([log_dens(x) for x in reconstructed[:,self.opt_slice[i]]])
+        return np.squeeze(value)
 
 class bootstrapped_target_sampler(targeted_sampler):
 
@@ -689,8 +751,6 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         boot_grad = -boot_grad
         boot_grad -= boot_state
-        #boot_grad -= np.dot(np.dot(self.target_alpha.T, self.inv_mat), self.target_alpha.dot(boot_state))
-        #boot_grad -= np.dot(np.dot(self.target_alpha.T, self.target_inv_cov), self.target_alpha.dot(boot_state))
 
         full_grad[self.boot_slice] = boot_grad
         full_grad[self.overall_opt_slice] = -opt_grad
@@ -698,7 +758,7 @@ class bootstrapped_target_sampler(targeted_sampler):
         return full_grad
 
 
-    def sample(self, ndraw, burnin, stepsize = None):
+    def sample(self, ndraw, burnin, stepsize = None, keep_opt=False):
         if stepsize is None:
             stepsize = 1. / self.observed_state.shape[0]
 
@@ -706,14 +766,28 @@ class bootstrapped_target_sampler(targeted_sampler):
                                                 self.gradient,
                                                 self.projection,
                                                 stepsize)
+        if keep_opt:
+            boot_slice = slice(None, None, None)
+        else:
+            boot_slice = self.boot_slice
 
         samples = []
         for i in range(ndraw + burnin):
             bootstrap_langevin.next()
             if (i >= burnin):
-                samples.append(bootstrap_langevin.state[self.boot_slice].copy())
-        return np.asarray([np.dot(self.target_alpha, x)+self.reference for x in samples])
+                samples.append(bootstrap_langevin.state[boot_slice].copy())
+        samples = np.asarray(samples)
 
+        if keep_opt:
+            target_samples = samples[:,self.boot_slice].dot(self.target_alpha.T) + self.reference[None, :]
+            opt_sample0 = samples[0,self.overall_opt_slice]
+            result = np.zeros((samples.shape[0], opt_sample0.shape[0] + target_samples.shape[1]))
+            result[:,self.overall_opt_slice] = samples[:,self.overall_opt_slice]
+            result[:,self.target_slice] = target_samples
+            return result
+        else:
+            target_samples = samples.dot(self.target_alpha.T) + self.reference[None, :]
+            return target_samples
 
 def naive_confidence_intervals(target, observed, alpha=0.1):
     """

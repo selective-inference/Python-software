@@ -13,13 +13,25 @@ from scipy.stats import laplace, norm as ndist
 
 class randomization(rr.smooth_atom):
 
-    def __init__(self, shape, density, grad_negative_log_density, sampler, lipschitz=1):
+    def __init__(self, 
+                 shape, 
+                 density, 
+                 grad_negative_log_density, 
+                 sampler, 
+                 lipschitz=1,
+                 log_density=None):
+
         rr.smooth_atom.__init__(self,
                                 shape)
         self._density = density
         self._grad_negative_log_density = grad_negative_log_density
         self._sampler = sampler
         self.lipschitz = lipschitz
+
+        if log_density is None:
+            log_density = lambda x: np.log(density(x))
+
+        self._log_density = log_density
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
         """
@@ -53,6 +65,22 @@ class randomization(rr.smooth_atom):
         """
         return self.smooth_objective(perturbation, mode='grad')
 
+    def log_density(self, perturbation):
+        """
+        Evaluate the log-density.
+
+        Parameters
+        ----------
+
+        perturbation : np.float
+
+        Returns
+        -------
+
+        value : float
+        """
+        return self._log_density(value)
+
     def randomize(self, loss, epsilon=0):
         """
         Randomize the loss.
@@ -81,7 +109,15 @@ class randomization(rr.smooth_atom):
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
-        return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=1./scale**2)
+
+        p = np.product(shape)
+        constant = -0.5 * p * np.log(2 * np.pi * scale**2)
+        return randomization(shape, 
+                             density, 
+                             grad_negative_log_density, 
+                             sampler, 
+                             lipschitz=1./scale**2,
+                             log_density = lambda x: -0.5 * x**2 / scale**2 + constant)
 
     @staticmethod
     def gaussian(covariance):
@@ -103,7 +139,15 @@ class randomization(rr.smooth_atom):
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         grad_negative_log_density = lambda x: precision.dot(x)
         sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
-        return randomization((p,), density, grad_negative_log_density, sampler, lipschitz=np.linalg.svd(precision)[1].max())
+
+        p = np.product(shape)
+        constant = -0.5 * p * np.log(2 * np.pi) - np.log(np.det(precision))
+        return randomization((p,), 
+                             density, 
+                             grad_negative_log_density, 
+                             sampler, 
+                             lipschitz=np.linalg.svd(precision)[1].max(),
+                             log_density = lambda x: np.linalg.norm(sqrt_precision.dot(x))**2 * 0.5 + constant)
 
     @staticmethod
     def laplace(shape, scale):
@@ -123,7 +167,14 @@ class randomization(rr.smooth_atom):
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
-        return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=1./scale**2)
+
+        constant = -np.product(shape) * np.log(2 * scale)
+        return randomization(shape, 
+                             density, 
+                             grad_negative_log_density, 
+                             sampler, 
+                             lipschitz=1./scale**2,
+                             log_density = lambda x: -np.fabs(x) / scale - np.log(scale) + constant)
 
     @staticmethod
     def logistic(shape, scale):
@@ -140,12 +191,19 @@ class randomization(rr.smooth_atom):
             Scale of noise.
         """
         # from http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.logistic.html
-        density = lambda x: (np.exp(-x / scale) / (1 + np.exp(-x / scale))**2) / scale
+        density = lambda x: (np.exp(-x / scale) / (1 + np.exp(-x / scale))**2) / scale**(np.product(x.shape))
         # negative log density is (with \mu=0)
         # x/s + log(s) + 2 \log (1 + e(-x/s))
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
-        return randomization(shape, density, grad_negative_log_density, sampler, lipschitz=.25/scale**2)
+
+        constant = - np.product(shape) * np.log(scale)
+        return randomization(shape, 
+                             density, 
+                             grad_negative_log_density, 
+                             sampler, 
+                             lipschitz=.25/scale**2,
+                             log_density = lambda x: -x / scale - 2 * np.log(1 + np.exp(-x / scale)) + constant) 
 
 class split(randomization):
 
