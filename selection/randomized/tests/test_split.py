@@ -74,7 +74,7 @@ def test_split(s=3,
         target_alpha = alpha_mat
 
         ## bootstrap
-        reference_known = False
+        reference_known = True
         if reference_known:
             reference = beta[M_est.overall] 
         else:
@@ -115,9 +115,6 @@ def test_split(s=3,
                                                      sample=target_sample)
 
         L, U = LU
-
-        ncovered = 0
-        naive_ncovered = 0
 
         covered = np.zeros(nactive, np.bool)
         naive_covered = np.zeros(nactive, np.bool)

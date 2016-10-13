@@ -23,12 +23,16 @@ class query(object):
         Randomization derivative at full state.
         """
 
+        # reconstruction of randoimzation omega
+
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
+        data_piece = data_linear.dot(data_state) + data_offset
+        opt_piece = opt_linear.dot(opt_state) + opt_offset
 
         # value of the randomization omega
 
-        full_state = self.reconstruction_map(data_state, data_transform, opt_state)
+        full_state = (data_piece + opt_piece) 
 
         # gradient of negative log density of randomization at omega
 
