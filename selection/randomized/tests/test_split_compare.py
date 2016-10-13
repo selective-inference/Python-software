@@ -105,8 +105,6 @@ def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 't
 
         LU_split = standard_ci(X, y, active_union, leftout_indices)
         LU_split_sm = standard_ci_sm(X, y, active_union, leftout_indices)
-        print("split", LU_split)
-        print("sm", LU_split_sm)
 
         #pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
         #                                                    parameter=target_sampler_gn.reference,
@@ -120,7 +118,6 @@ def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 't
 
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]
-            print(L,U)
             covered = np.zeros(nactive, np.bool)
             ci_length = np.zeros(nactive, np.bool)
 
@@ -142,7 +139,7 @@ def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 't
                covered_split, ci_length_split, active_var
 
 
-def report(niter=50, **kwargs):
+def report(niter=10, **kwargs):
 
     split_report = reports.reports['test_split']
     screened_results = reports.collect_multiple_runs(split_report['test'],
@@ -223,49 +220,6 @@ def make_a_plot():
     #while True:
     #    plt.pause(0.05)
     plt.show()
-
-
-def make_a_plot_individual_coeff():
-
-    np.random.seed(3)
-    fig = plt.figure()
-    fig.suptitle('Pivots for glm wild bootstrap')
-
-    pvalues = []
-    for i in range(100):
-        print("iteration", i)
-        pvals = test_multiple_views_individual_coeff()
-        if pvals is not None:
-            pvalues.extend(pvals)
-            print("pvalues", pvals)
-            print(np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05))
-
-    ecdf = sm.distributions.ECDF(pvalues)
-    x = np.linspace(min(pvalues), max(pvalues))
-    y = ecdf(x)
-
-    plt.title("Logistic")
-    fig, ax = plt.subplots()
-    ax.plot(x, y, label="Individual coefficients", marker='o', lw=2, markersize=8)
-    plt.xlim([0,1])
-    plt.ylim([0,1])
-    plt.plot([0, 1], [0, 1], 'k-', lw=1)
-
-
-    legend = ax.legend(loc='upper center', shadow=True)
-    frame = legend.get_frame()
-    frame.set_facecolor('0.90')
-    for label in legend.get_texts():
-        label.set_fontsize('large')
-
-    for label in legend.get_lines():
-        label.set_linewidth(1.5)  # the legend line width
-
-    plt.savefig("Bootstrap after GLM two views")
-    #while True:
-    #    plt.pause(0.05)
-    plt.show()
-
 
 
 if __name__ == "__main__":

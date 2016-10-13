@@ -124,13 +124,13 @@ def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None)
     ecdf_clt = sm.distributions.ECDF(multiple_results['pivots_clt'])
     G = np.linspace(0, 1)
     F_MLE = ecdf_clt(G)
-    print(color)
+    #print(color)
     plot_pvalues_clt.plot(G, F_MLE, '-o', c=color, lw=2, label=label)
     plot_pvalues_clt.plot([0, 1], [0, 1], 'k-', lw=2)
     plot_pvalues_clt.set_title("Pivots based on plugin CLT")
     plot_pvalues_clt.set_xlim([0, 1])
     plot_pvalues_clt.set_ylim([0, 1])
-    plot_pvalues_clt.legend(loc='lower right')
+    #plot_pvalues_clt.legend(loc='lower right')
 
     ecdf_boot = sm.distributions.ECDF(multiple_results['pivots_boot'])
     F_true = ecdf_boot(G)
@@ -139,15 +139,16 @@ def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None)
     plot_pvalues_boot.set_title("Bootstrapped Pivots")
     plot_pvalues_boot.set_xlim([0, 1])
     plot_pvalues_boot.set_ylim([0, 1])
-    plot_pvalues_boot.legend(loc='lower right')
+    #plot_pvalues_boot.legend(loc='lower right')
 
     if coverage:
-        if 'naive_cover' in multiple_results.columns:
-            fig.suptitle('CLT Coverage: %0.2f, Boot: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['cover_clt']),
-                            np.mean(multiple_results['cover_boot']), np.mean(multiple_results['cover_naive'])))
+        if 'covered_naive' in multiple_results.columns:
+            fig.suptitle('CLT Coverage: %0.2f, Boot: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['covered_clt']),
+                            np.mean(multiple_results['cover_boot']), np.mean(multiple_results['covered_naive'])))
         else:
-            fig.suptitle('Coverage: %0.2f, Boot: %0.2f' % (np.mean(multiple_results['cover_clt']),
-                                                            np.mean(multiple_results['cover_boot'])))
+            fig.suptitle('Coverage CLT: %0.2f, Bootstrap: %0.2f' % (np.mean(multiple_results['covered_clt']),
+                                                            np.mean(multiple_results['covered_boot'])))
+    fig.show()
     return fig
 
 def compute_pivots(multiple_results):
@@ -163,12 +164,12 @@ def compute_pivots(multiple_results):
 
 def compute_coverage(multiple_results):
     result = {}
-    if 'naive_cover' in multiple_results.columns:
-        result['naive coverage'] = np.mean(multiple_results['naive_cover'])
-    if 'cover_clt' in multiple_results.columns:
-        result['selective coverage (CLT)'] = np.mean(multiple_results['cover_clt'])
-    if 'cover_boot' in multiple_results.columns:
-        result['selective coverage (Bootstrap)'] = np.mean(multiple_results['cover_boot'])
+    if 'covered_naive' in multiple_results.columns:
+        result['naive coverage'] = np.mean(multiple_results['covered_naive'])
+    if 'covered_clt' in multiple_results.columns:
+        result['selective coverage (CLT)'] = np.mean(multiple_results['covered_clt'])
+    if 'covered_boot' in multiple_results.columns:
+        result['selective coverage (Bootstrap)'] = np.mean(multiple_results['covered_boot'])
     return result
 
 def compute_screening(multiple_results):
