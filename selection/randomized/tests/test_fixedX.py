@@ -9,7 +9,7 @@ from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, s
 import selection.tests.reports as reports
 
 from selection.randomized.randomization import randomization
-from selection.randomized.multiple_queries import multiple_views
+from selection.randomized.multiple_queries import multiple_queries
 from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso, glm_nonparametric_bootstrap 
 
 
