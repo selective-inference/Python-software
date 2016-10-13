@@ -325,6 +325,8 @@ def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
         _outer_cross[i] /= nsample
 
     _cov_target = _outer_target - np.multiply.outer(_mean_target, _mean_target)
+    if len(cross_terms) == 0:
+        return _cov_target
     return [_cov_target] + [_o - np.multiply.outer(_mean_target, _m) for _m, _o in zip(_mean_cross, _outer_cross)]
 
 def glm_nonparametric_bootstrap(m, n):
@@ -417,4 +419,38 @@ def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10})
     The m out of n bootstrap.
     """
     return functools.partial(parametric_cov, glm_loss, solve_args=solve_args)
+
+
+def standard_ci(X, y , active, leftout_indices, alpha=0.1):
+
+    import regreg.api as rr
+
+    loss = rr.glm.logistic(X[leftout_indices, ], y[leftout_indices])
+    boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+    nactive = np.sum(active)
+    size= np.sum(leftout_indices)
+    observed = target_observed[:nactive]
+    boot_target_restricted = lambda indices: boot_target(indices)[:nactive]
+    sampler = lambda: np.random.choice(size, size=(size,), replace=True)
+    target_cov = bootstrap_cov(sampler, boot_target_restricted)
+
+    from scipy.stats import norm as ndist
+    quantile = - ndist.ppf(alpha / float(2))
+    LU = np.zeros((2, target_observed.shape[0]))
+    for j in range(observed.shape[0]):
+        sigma = np.sqrt(target_cov[j, j])
+        LU[0, j] = observed[j] - sigma * quantile
+        LU[1, j] = observed[j] + sigma * quantile
+    return LU.T
+
+
+def standard_ci_sm(X, y, active, leftout_indices, alpha=0.1):
+    XE = X[:, active]
+    X2, y2 = XE[leftout_indices, :], y[leftout_indices]
+    import statsmodels.discrete.discrete_model as sm
+    logit = sm.Logit(y2, X2)
+    result = logit.fit(disp=0)
+    LU = result.conf_int(alpha=alpha)
+    return LU.T
+
 

@@ -1,6 +1,5 @@
 """
 special column names:
-
 mle -- pivot at unpenalized MLE
 truth -- pivot at true parameter
 pvalue -- tests of H0 for each variable
@@ -35,6 +34,7 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
 
         for col, v in zip(columns, result):
             df_i.loc[:,col] = np.atleast_1d(v)
+
         df_i['func'] = [str(test_fn)] * len(df_i)
         dfs.append(df_i)
         if summary_fn is not None:
@@ -164,7 +164,46 @@ def split_pvalue_plot(multiple_results, screening=False, fig=None):
 
     return fig
 
+
 def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None):
+    """
+    Extract pivots at truth and mle.
+    """
+
+    if fig is None:
+        fig, _ = plt.subplots(nrows=1, ncols=2)
+    plot_pvalues_mle, plot_pvalues_truth = fig.axes
+
+    ecdf_mle = sm.distributions.ECDF(multiple_results['mle'])
+    G = np.linspace(0, 1)
+    F_MLE = ecdf_mle(G)
+    print(color)
+    plot_pvalues_mle.plot(G, F_MLE, '-o', c=color, lw=2, label=label)
+    plot_pvalues_mle.plot([0, 1], [0, 1], 'k-', lw=2)
+    plot_pvalues_mle.set_title("Pivots at the unpenalized MLE")
+    plot_pvalues_mle.set_xlim([0, 1])
+    plot_pvalues_mle.set_ylim([0, 1])
+    plot_pvalues_mle.legend(loc='lower right')
+
+    ecdf_truth = sm.distributions.ECDF(multiple_results['truth'])
+    F_true = ecdf_truth(G)
+    plot_pvalues_truth.plot(G, F_true, '-o', c=color, lw=2, label=label)
+    plot_pvalues_truth.plot([0, 1], [0, 1], 'k-', lw=2)
+    plot_pvalues_truth.set_title("Pivots at the truth (by tilting)")
+    plot_pvalues_truth.set_xlim([0, 1])
+    plot_pvalues_truth.set_ylim([0, 1])
+    plot_pvalues_truth.legend(loc='lower right')
+
+    if coverage:
+        if 'naive_cover' in multiple_results.columns:
+            fig.suptitle('Coverage: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['cover']), 
+                                                            np.mean(multiple_results['naive_cover'])))
+        else:
+            fig.suptitle('Coverage: %0.2f' % np.mean(multiple_results['cover'])) 
+
+    return fig
+
+def boot_clt_plot(multiple_results, coverage=True, color='b', label=None, fig=None):
     """
     Extract pivots at truth and mle.
     """
@@ -208,6 +247,16 @@ def compute_pivots(multiple_results):
         return {'pivot (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
     return {}
 
+def boot_clt_pivots(multiple_results):
+    pivot_summary = {}
+    if 'pivots_clt' in multiple_results.columns:
+        pivots_clt = multiple_results['pivots_clt']
+        pivot_summary['pivots_clt'] = {'CLT pivots (mean, SD, type I):': (np.mean(pivots_clt), np.std(pivots_clt), np.mean(pivots_clt < 0.05))}
+    if 'pivots_boot' in multiple_results.columns:
+        pivots_boot = multiple_results['pivots_boot']
+        pivot_summary['pivots_boot'] = {'Bootstrap pivots (mean, SD, type I):': (np.mean(pivots_boot), np.std(pivots_boot), np.mean(pivots_boot < 0.05))}
+    return pivot_summary
+
 def compute_coverage(multiple_results):
     result = {}
     if 'naive_cover' in multiple_results.columns:
@@ -216,24 +265,48 @@ def compute_coverage(multiple_results):
         result['selective coverage'] = np.mean(multiple_results['cover'])
     return result
 
+def boot_clt_coverage(multiple_results):
+    result = {}
+    if 'covered_naive' in multiple_results.columns:
+        result['naive coverage'] = np.mean(multiple_results['covered_naive'])
+    if 'covered_clt' in multiple_results.columns:
+        result['selective coverage (CLT)'] = np.mean(multiple_results['covered_clt'])
+    if 'covered_boot' in multiple_results.columns:
+        result['selective coverage (Bootstrap)'] = np.mean(multiple_results['covered_boot'])
+    return result
+
+
+def compute_lengths(multiple_results):
+    result = {}
+    if 'ci_length_clt' in multiple_results.columns:
+        result['ci_length_clt'] = np.mean(multiple_results['ci_length_clt'])
+    if 'ci_length_boot' in multiple_results.columns:
+        result['ci_length_boot'] = np.mean(multiple_results['ci_length_boot'])
+    if 'ci_length_split' in multiple_results.columns:
+        result['ci_length_split'] = np.mean(multiple_results['ci_length_split'])
+    return result
+
+def compute_length_frac(multiple_results):
+    result = {}
+    if 'ci_length_clt' and 'ci_length_split' in multiple_results.columns:
+        result['clt/split'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_clt']))
+    if 'ci_length_boot' and 'ci_length_split' in multiple_results.columns:
+        result['boot/split'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_boot']))
+    return result
+
 def compute_screening(multiple_results):
     return {'screening:': 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])}
 
 def summarize_all(multiple_results):
     result = {}
+    result.update(boot_clt_pivots(multiple_results))
     result.update(compute_pivots(multiple_results))
+    result.update(boot_clt_coverage(multiple_results))
     result.update(compute_coverage(multiple_results))
     result.update(compute_screening(multiple_results))
-    print(result)
+    result.update(compute_lengths(multiple_results))
+    result.update(compute_length_frac(multiple_results))
+    for i in result:
+        print(i, result[i])
+
 reports = {}
-
-# if __name__ == "__main__":
-
-#     from selection.randomized.tests.test_split import test_split
-
-#     pvalue_plot(collect_multiple_runs(test_split, 
-#                                       ['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'],
-#                                       3,
-#                                       None,
-#                                       bootstrap=True),
-#                 screening=True)

@@ -60,7 +60,7 @@ class M_estimator(query):
          penalty,
          randomization,
          solve_args) = (self.loss,
-                        self.randomized_loss,
+                        self.randomized_loss, 
                         self.epsilon,
                         self.penalty,
                         self.randomization,
@@ -325,7 +325,7 @@ class M_estimator_split(M_estimator):
         newq, oldq = rr.identity_quadratic(0, 0, 0, 0), self.randomized_loss.quadratic
         self.randomized_loss.quadratic = newq
         beta_active_subsample = restricted_Mest(self.randomized_loss,
-                                     self.overall)
+                                                self.overall)
 
         bootstrap_score_split = pairs_bootstrap_score(self.loss,
                                                       self.overall,

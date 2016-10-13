@@ -10,25 +10,20 @@ from .reports import reports
 def set_seed_iftrue(condition, seed=10):
     """
     Fix the seed for random test.
-
     Parameters
     ----------
     seed : int
         Random seed passed to np.random.seed
-
     Returns
     -------
     decorator : function
-        Decorator which, when applied to a function, sets the 
+        Decorator which, when applied to a function, sets the
         random seed before running the test and then
         restores numpy's random state after running the test.
-
     Notes
     -----
     The decorator itself is decorated with the ``nose.tools.make_decorator``
     function in order to transmit function name, and various other metadata.
-
-
     """
 
     def set_seed_decorator(f):
@@ -74,29 +69,22 @@ def set_seed_iftrue(condition, seed=10):
 def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
     """
     Fix the seed for random test.
-
     Parameters
     ----------
-
     condition : bool or callable
         Flag to determine whether to set sampling parameters in the decorated test.
-
     seed : int
         Random seed passed to np.random.seed
-
     Returns
     -------
     decorator : function
-        Decorator which, when applied to a function, sets the 
+        Decorator which, when applied to a function, sets the
         random seed before running the test and then
         restores numpy's random state after running the test.
-
     Notes
     -----
     The decorator itself is decorated with the ``nose.tools.make_decorator``
     function in order to transmit function name, and various other metadata.
-
-
     """
 
     def set_params_decorator(f):

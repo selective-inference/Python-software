@@ -276,7 +276,7 @@ class targeted_sampler(object):
         if reference is None:
             self.reference = np.zeros(self.target_inv_cov.shape[0])
         else:
-            self.reference=reference
+            self.reference = np.atleast_1d(reference)
         self.reference_inv = self.target_inv_cov.dot(self.reference)
 
         # need to vectorize the state for Langevin
@@ -658,7 +658,7 @@ class targeted_sampler(object):
         for i in range(self.nqueries):
             reconstructed[:, self.opt_slice[i]] = self.objectives[i].reconstruction_map(target_state,
                                                                                         self.target_transform[i],
-                                                                                        opt_state[self.opt_slice[i]])
+                                                                                        opt_state[:,self.opt_slice[i]])
         return np.squeeze(reconstructed)
 
     def log_density(self, state):
@@ -682,12 +682,9 @@ class targeted_sampler(object):
         reconstructed = self.reconstruction_map(state)
         value = np.zeros(reconstructed.shape[0])
 
-        target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
-        reconstructed = np.zeros_like(opt_state)
-
         for i in range(self.nqueries):
-            log_dens = self.objectives[i].log_density
-            value += np.array([log_dens(x) for x in reconstructed[:,self.opt_slice[i]]])
+            log_dens = self.objectives[i].randomization.log_density
+            value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
 
 class bootstrapped_target_sampler(targeted_sampler):
@@ -721,7 +718,7 @@ class bootstrapped_target_sampler(targeted_sampler):
                                                                                                   self.target_cov,
                                                                                                   self.observed_target_state)
             boot_linear_part = np.dot(composition_linear_part, target_alpha)
-            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).reshape(-1)
+            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
             self.boot_transform.append((boot_linear_part, boot_offset))
 
         self.reference_inv = self.target_inv_cov.dot(self.reference)
@@ -817,7 +814,7 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         sigma = np.sqrt(target.target_cov[j, j])
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
-    return LU
+    return LU.T
 
 class translate_intervals(intervals_from_sample):
 
@@ -856,3 +853,7 @@ class translate_intervals(intervals_from_sample):
         self.randomization_density = randomization_density
         self.target_linear = target_linear
         self.offset = offset
+
+
+
+

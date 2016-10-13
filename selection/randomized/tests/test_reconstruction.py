@@ -21,8 +21,8 @@ def test_reconstruction(s=3,
                         rho=0.1,
                         split_frac=0.8,
                         lam_frac=0.7,
-                        ndraw=10000, 
-                        burnin=2000, 
+                        ndraw=100, 
+                        burnin=200, 
                         bootstrap=True,
                         solve_args={'min_its':50, 'tol':1.e-10},
                         reference_known=False): 
@@ -94,5 +94,6 @@ def test_reconstruction(s=3,
                                               burnin=burnin,
                                               keep_opt=True)
         
-        stop
-
+        reconstruction = target_sampler.reconstruction_map(target_sample)
+        logdens = target_sampler.log_density(target_sample)
+        return logdens.shape

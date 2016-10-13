@@ -21,8 +21,8 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True): 
     s, n, p = 2, 120, 10
 
-    print('burnin', burnin)
-    print('ndraw', ndraw)
+    #print('burnin', burnin)
+    #print('ndraw', ndraw)
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -39,16 +39,18 @@ def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    view = []
+    nview = 5
+    for i in range(nview):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
-    # mv = multiple_queries([M_est1, M_est2])
-    mv = multiple_queries([M_est1])
+    mv = multiple_queries(view)
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = np.zeros(p, np.bool)
+    for i in range(nview):
+        active_union += view[i].overall
+
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
@@ -136,16 +138,18 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    view = []
+    nview = 5
+    for i in range(nview):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
-    mv = multiple_queries([M_est1, M_est2])
-    #mv = multiple_queries([M_est1])
+    mv = multiple_queries(view)
     mv.solve()
 
-    active_union = M_est1.overall + M_est2.overall
+    active_union = np.zeros(p, np.bool)
+    for i in range(nview):
+        active_union += view[i].overall
+
     nactive = np.sum(active_union)
     print("nactive", nactive)
     active_set = np.nonzero(active_union)[0]
@@ -164,18 +168,18 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
 
         for j in range(nactive):
 
-            individual_target = lambda indices: boot_target(indices)[j]
-            individual_observed = target_observed[j]
+            individual_target = lambda indices: np.atleast_1d(boot_target(indices)[j])
+            individual_observed = np.atleast_1d(target_observed[j])
             # param_cov = _parametric_cov_glm(loss, active_union)
 
             target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
 
             target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
 
-            test_stat = lambda x: x
+            test_stat = lambda x: np.atleast_1d(x)
 
             pval = target_sampler.hypothesis_test(test_stat,
-                                                  individual_observed-true_beta[j],
+                                                  np.atleast_1d(individual_observed-true_beta[j]),
                                                   alternative='twosided',
                                                   ndraw=ndraw,
                                                   burnin=burnin)
@@ -262,5 +266,4 @@ def report(niter=50):
     fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
 
     fig.savefig('multiple_queries_pvalues.pdf') # will have both bootstrap and CLT on plot
-
 

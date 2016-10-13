@@ -76,6 +76,7 @@ def test_intervals(s=3,
         unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
         ## bootstrap
+
         if bootstrap:
             alpha_mat = set_alpha_matrix(loss, active_union)
             target_alpha_gn = alpha_mat
@@ -104,7 +105,6 @@ def test_intervals(s=3,
         pivots_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
                                                              parameter=beta[active_union],
                                                              sample=target_sample)
-
         true_vec = beta[active_union]
         pvalues = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
                                                         parameter=np.zeros_like(true_vec),

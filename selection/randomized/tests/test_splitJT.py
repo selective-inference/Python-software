@@ -15,15 +15,15 @@ from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @wait_for_return_value()
-def test_split(s=3,
-               n=200,
+def test_split(s=10,
+               n=800,
                p=50, 
                snr=7,
                rho=0.1,
                split_frac=0.8,
                lam_frac=0.7,
-               ndraw=10000, 
-               burnin=2000, 
+               ndraw=20000, 
+               burnin=10000, 
                bootstrap=True,
                solve_args={'min_its':50, 'tol':1.e-10},
                reference_known=False): 
@@ -74,8 +74,7 @@ def test_split(s=3,
         target_alpha = alpha_mat
 
         ## bootstrap
-
-        reference_known = True
+        reference_known = False
         if reference_known:
             reference = beta[M_est.overall] 
         else:
@@ -147,5 +146,9 @@ def report(niter=50, **kwargs):
                                                    niter,
                                                    reports.summarize_all,
                                                    **kwargs)
+
+
     fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot
+
+

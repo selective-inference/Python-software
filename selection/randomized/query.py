@@ -83,14 +83,17 @@ class query(object):
         
         # reconstruction of randoimzation omega
 
+        data_state = np.atleast_2d(data_state)
+        opt_state = np.atleast_2d(opt_state)
+
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
-        data_piece = data_linear.dot(data_state) + data_offset
-        opt_piece = opt_linear.dot(opt_state) + opt_offset
+        data_piece = data_linear.dot(data_state.T) + data_offset[:, None]
+        opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
 
         # value of the randomization omega
 
-        return data_piece + opt_piece 
+        return (data_piece + opt_piece).T
 
     def log_density(self, data_state, data_transform, opt_state):
 
