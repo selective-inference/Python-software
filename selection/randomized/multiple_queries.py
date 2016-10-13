@@ -754,7 +754,6 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         return full_grad
 
-
     def sample(self, ndraw, burnin, stepsize = None, keep_opt=False):
         if stepsize is None:
             stepsize = 1. / self.observed_state.shape[0]

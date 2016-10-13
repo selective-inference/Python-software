@@ -298,14 +298,16 @@ def compute_coverage(multiple_results):
         result['selective coverage'] = np.mean(multiple_results['cover'])
     return result
 
-def boot_clt_coverage(multiple_results):
+def boot_clt_coverage(multiple_results): #
     result = {}
     if 'covered_naive' in multiple_results.columns:
         result['naive coverage'] = np.mean(multiple_results['covered_naive'])
-    if 'covered_clt' in multiple_results.columns:
-        result['selective coverage (CLT)'] = np.mean(multiple_results['covered_clt'])
     if 'covered_boot' in multiple_results.columns:
-        result['selective coverage (Bootstrap)'] = np.mean(multiple_results['covered_boot'])
+        result['boot coverage'] = np.mean(multiple_results['covered_boot'])
+    if 'covered_clt' in multiple_results.columns:
+        result['clt coverage'] = np.mean(multiple_results['covered_clt'])
+    if 'covered_split' in multiple_results.columns:
+        result['split coverage'] = np.mean(multiple_results['covered_split'])
     return result
 
 
@@ -317,6 +319,8 @@ def compute_lengths(multiple_results):
         result['ci_length_boot'] = np.mean(multiple_results['ci_length_boot'])
     if 'ci_length_split' in multiple_results.columns:
         result['ci_length_split'] = np.mean(multiple_results['ci_length_split'])
+    if 'ci_length_naive' in multiple_results.columns:
+        result['ci_length_naive'] = np.mean(multiple_results['ci_length_naive'])
     return result
 
 def compute_length_frac(multiple_results):

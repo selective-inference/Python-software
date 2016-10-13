@@ -14,10 +14,12 @@ from selection.randomized.glm import standard_ci, standard_ci_sm, glm_parametric
 
 from selection.randomized.multiple_queries import naive_confidence_intervals
 
-@register_report(['pivots_clt', 'pivots_boot', 'covered_clt', 'ci_length_clt', 'covered_boot', 'ci_length_boot', 'covered_split', 'ci_length_split', 'active_var'])
+@register_report(['pivots_clt', 'pivots_boot', 'covered_clt', 'ci_length_clt', 'covered_boot', 'ci_length_boot', 'covered_split', 'ci_length_split', 'active_var',
+                  'covered_naive'])
 @wait_for_return_value()
 def test_split_compare(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True): # nsim needed for decorator
-    s, n, p = 0, 200, 10
+    # s, n, p = 0, 200, 10
+    s, n, p = 6, 300, 40
 
     randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
@@ -107,16 +109,15 @@ def test_split_compare(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
-        LU_split = standard_ci(X, y, active_union, leftout_indices)
-        LU_split_sm = standard_ci_sm(X, y, active_union, leftout_indices)
-
-        #pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-        #                                                    parameter=target_sampler_gn.reference,
-        #                                                    sample=target_sample)
+        if X.shape[0] - leftout_indices.sum() > nactive:
+            LU_split = standard_ci(X, y, active_union, leftout_indices)
+            LU_split_sm = standard_ci_sm(X, y, active_union, leftout_indices)
+        else:
+            LU_split = LU_split_sm = np.ones((nactive, 2)) * np.nan
 
         pivots = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                              parameter=beta[active_union],
-                                                              sample=target_sample)
+                                                       parameter=beta[active_union],
+                                                       sample=target_sample)
 
         true_vec = beta[active_union]
 
@@ -137,13 +138,14 @@ def test_split_compare(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its
         covered, ci_length = coverage(LU)
         covered_boot, ci_length_boot = coverage(LU_boot)
         covered_split, ci_length_split = coverage(LU_split)
+        covered_naive, ci_length_naive = coverage(LU_naive)
 
         active_var = np.zeros(nactive, np.bool)
         for j in range(nactive):
             active_var[j] = active_set[j] in nonzero
 
         return pivots, pivots_boot, covered, ci_length, covered_boot, ci_length_boot, \
-               covered_split, ci_length_split, active_var
+               covered_split, ci_length_split, active_var, covered_naive, ci_length_naive
 
 def report(niter=50, **kwargs):
 
