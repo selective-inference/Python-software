@@ -423,7 +423,7 @@ def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10})
     return functools.partial(parametric_cov, glm_loss, solve_args=solve_args)
 
 
-def standard_ci(X,y , active, leftout_indices, alpha=0.1):
+def standard_ci(X, y , active, leftout_indices, alpha=0.1):
 
     import regreg.api as rr
 
@@ -444,6 +444,7 @@ def standard_ci(X,y , active, leftout_indices, alpha=0.1):
         LU[0, j] = observed[j] - sigma * quantile
         LU[1, j] = observed[j] + sigma * quantile
     return LU.T
+
 
 def standard_ci_sm(X, y, active, leftout_indices, alpha=0.1):
     XE = X[:, active]

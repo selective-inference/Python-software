@@ -3,19 +3,20 @@ import numpy as np
 
 import regreg.api as rr
 
+import selection.tests.reports as reports
+
+
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import randomization, split_glm_group_lasso, pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.tests.instance import logistic_instance
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
+from selection.tests.decorators import wait_for_return_value, register_report
 from selection.randomized.glm import standard_ci, standard_ci_sm, glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 from selection.randomized.multiple_views import naive_confidence_intervals
 
-
-#@set_seed_iftrue(SET_SEED)
-#@set_sampling_params_iftrue(SMALL_SAMPLES)
-#@wait_for_return_value()
-def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
+@register_report(['pivots_clt', 'pivots_boot', 'covered_clt', 'ci_length_clt', 'covered_boot', 'ci_length_boot', 'covered_split', 'ci_length_split', 'active_var'])
+@wait_for_return_value()
+def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
     s, n, p = 0, 200, 10
 
     randomizer = randomization.laplace((p,), scale=1.)
@@ -84,7 +85,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
         LU_boot = target_sampler_gn_boot.confidence_intervals(unpenalized_mle,
                                                          sample=target_sample_boot)
 
-        pvalues_truth_boot = target_sampler_gn_boot.coefficient_pvalues(unpenalized_mle,
+        pivots_boot = target_sampler_gn_boot.coefficient_pvalues(unpenalized_mle,
                                                               parameter=beta[active_union],
                                                               sample=target_sample_boot)
 
@@ -111,7 +112,7 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
         #                                                    parameter=target_sampler_gn.reference,
         #                                                    sample=target_sample)
 
-        pvalues_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
+        pivots = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
                                                               parameter=beta[active_union],
                                                               sample=target_sample)
 
@@ -120,22 +121,38 @@ def test_intervals(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]
             print(L,U)
-            ncovered = 0
-            ci_length = 0
+            covered = np.zeros(nactive, np.bool)
+            ci_length = np.zeros(nactive, np.bool)
 
             for j in range(nactive):
                 if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
-                    ncovered += 1
-                    ci_length += U[j]-L[j]
-            return ncovered, ci_length
+                    covered[j] = 1
+                    ci_length[j] = U[j]-L[j]
+            return covered, ci_length
 
-        ncovered, ci_length = coverage(LU)
-        ncovered_boot, ci_length_boot = coverage(LU_boot)
-        ncovered_split, ci_length_split = coverage(LU_split)
+        covered, ci_length = coverage(LU)
+        covered_boot, ci_length_boot = coverage(LU_boot)
+        covered_split, ci_length_split = coverage(LU_split)
 
-        return pvalues_truth, pvalues_truth_boot, ncovered, ci_length, ncovered_boot, ci_length_boot, \
-               ncovered_split, ci_length_split, nactive
+        active_var = np.zeros(nactive, np.bool)
+        for j in range(nactive):
+            active_var[j] = active_set[j] in nonzero
 
+        return pivots, pivots_boot, covered, ci_length, covered_boot, ci_length_boot, \
+               covered_split, ci_length_split, active_var
+
+
+def report(niter=50, **kwargs):
+
+    split_report = reports.reports['test_split']
+    screened_results = reports.collect_multiple_runs(split_report['test'],
+                                             split_report['columns'],
+                                             niter,
+                                             reports.summarize_all,
+                                             **kwargs)
+
+    fig = reports.pivot_plot(screened_results, color='b', label='Bootstrap')
+    fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot
 
 
 
@@ -252,5 +269,6 @@ def make_a_plot_individual_coeff():
 
 
 if __name__ == "__main__":
-    make_a_plot()
+    report()
+    #make_a_plot()
     #make_a_plot_individual_coeff()
