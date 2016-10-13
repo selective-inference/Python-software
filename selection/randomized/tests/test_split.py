@@ -140,17 +140,18 @@ def report(niter=50, **kwargs):
                                              niter,
                                              reports.summarize_all,
                                              **kwargs)
-    kwargs['bootstrap'] = True
-    fig = reports.pivot_plot(CLT_runs, color='b', label='Bootstrap')
-
     kwargs['bootstrap'] = False
+    fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
+
+    kwargs['bootstrap'] = True
     bootstrap_runs = reports.collect_multiple_runs(split_report['test'],
                                                    split_report['columns'],
                                                    niter,
                                                    reports.summarize_all,
                                                    **kwargs)
 
-    fig = reports.pivot_plot(bootstrap_runs, color='g', label='CLT', fig=fig)
+
+    fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot
 
 
