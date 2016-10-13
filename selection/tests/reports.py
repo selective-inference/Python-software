@@ -235,37 +235,39 @@ def boot_clt_plot(multiple_results, coverage=True, color='b', label=None, fig=No
     Extract pivots at truth and mle.
     """
 
+
     if fig is None:
         fig, _ = plt.subplots(nrows=1, ncols=2)
-    plot_pvalues_mle, plot_pvalues_truth = fig.axes
+    plot_pvalues_clt, plot_pvalues_boot = fig.axes
 
-    ecdf_mle = sm.distributions.ECDF(multiple_results['mle'])
+    ecdf_clt = sm.distributions.ECDF(multiple_results['pivots_clt'])
     G = np.linspace(0, 1)
-    F_MLE = ecdf_mle(G)
-    print(color)
-    plot_pvalues_mle.plot(G, F_MLE, '-o', c=color, lw=2, label=label)
-    plot_pvalues_mle.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_mle.set_title("Pivots at the unpenalized MLE")
-    plot_pvalues_mle.set_xlim([0, 1])
-    plot_pvalues_mle.set_ylim([0, 1])
-    plot_pvalues_mle.legend(loc='lower right')
+    F_MLE = ecdf_clt(G)
+    #print(color)
+    plot_pvalues_clt.plot(G, F_MLE, '-o', c=color, lw=2, label=label)
+    plot_pvalues_clt.plot([0, 1], [0, 1], 'k-', lw=2)
+    plot_pvalues_clt.set_title("Pivots based on plugin CLT")
+    plot_pvalues_clt.set_xlim([0, 1])
+    plot_pvalues_clt.set_ylim([0, 1])
+    #plot_pvalues_clt.legend(loc='lower right')
 
-    ecdf_truth = sm.distributions.ECDF(multiple_results['truth'])
-    F_true = ecdf_truth(G)
-    plot_pvalues_truth.plot(G, F_true, '-o', c=color, lw=2, label=label)
-    plot_pvalues_truth.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_truth.set_title("Pivots at the truth (by tilting)")
-    plot_pvalues_truth.set_xlim([0, 1])
-    plot_pvalues_truth.set_ylim([0, 1])
-    plot_pvalues_truth.legend(loc='lower right')
+    ecdf_boot = sm.distributions.ECDF(multiple_results['pivots_boot'])
+    F_true = ecdf_boot(G)
+    plot_pvalues_boot.plot(G, F_true, '-o', c=color, lw=2, label=label)
+    plot_pvalues_boot.plot([0, 1], [0, 1], 'k-', lw=2)
+    plot_pvalues_boot.set_title("Bootstrapped Pivots")
+    plot_pvalues_boot.set_xlim([0, 1])
+    plot_pvalues_boot.set_ylim([0, 1])
+    #plot_pvalues_boot.legend(loc='lower right')
 
     if coverage:
-        if 'naive_cover' in multiple_results.columns:
-            fig.suptitle('Coverage: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['cover']), 
-                                                            np.mean(multiple_results['naive_cover'])))
+        if 'covered_naive' in multiple_results.columns:
+            fig.suptitle('CLT Coverage: %0.2f, Boot: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['covered_clt']),
+                            np.mean(multiple_results['cover_boot']), np.mean(multiple_results['covered_naive'])))
         else:
-            fig.suptitle('Coverage: %0.2f' % np.mean(multiple_results['cover'])) 
-
+            fig.suptitle('Coverage CLT: %0.2f, Bootstrap: %0.2f' % (np.mean(multiple_results['covered_clt']),
+                                                            np.mean(multiple_results['covered_boot'])))
+    fig.show()
     return fig
 
 def compute_pivots(multiple_results):

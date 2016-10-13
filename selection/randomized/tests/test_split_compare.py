@@ -51,6 +51,7 @@ def test_split_compare(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its
         return None
 
     leftout_indices = M_est1.randomized_loss.saturated_loss.case_weights == 0
+
     screen = set(nonzero).issubset(np.nonzero(active_union)[0])
 
     if check_screen and not screen:
@@ -144,7 +145,6 @@ def test_split_compare(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its
         return pivots, pivots_boot, covered, ci_length, covered_boot, ci_length_boot, \
                covered_split, ci_length_split, active_var
 
-
 def report(niter=50, **kwargs):
 
     split_report = reports.reports['test_split_compare']
@@ -155,7 +155,7 @@ def report(niter=50, **kwargs):
                                              **kwargs)
 
     fig = reports.boot_clt_plot(screened_results, color='b')
-    fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot
+    fig.savefig('split_compare_pivots.pdf') # will have both bootstrap and CLT on plot
 
 if __name__ == "__main__":
     report()
