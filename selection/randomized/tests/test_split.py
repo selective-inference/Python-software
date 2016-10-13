@@ -3,7 +3,8 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.tests.decorators import wait_for_return_value
+from selection.tests.decorators import wait_for_return_value, register_report
+import selection.tests.reports as reports
 
 from selection.api import pairs_bootstrap_glm, multiple_views, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import split_glm_group_lasso
@@ -12,9 +13,10 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 
 from selection.randomized.multiple_views import naive_confidence_intervals
 
+@register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @wait_for_return_value()
-def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
-    s, n, p = 0, 400, 50
+def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}): # nsim needed for decorator
+    s, n, p = 3, 400, 50
 
     #randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=7)
@@ -46,8 +48,6 @@ def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 
     print("nactive", nactive)
     if nactive==0:
         return None
-
-    leftout_loss = M_est1.leftout_loss
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -90,134 +90,46 @@ def test_splits(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 
 
         LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
 
-        pvalues_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                            parameter=target_sampler_gn.reference,
-                                                            sample=target_sample)
+        pivots_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
+                                                           parameter=target_sampler_gn.reference,
+                                                           sample=target_sample)
 
-        pvalues_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                              parameter=beta[active_union],
-                                                              sample=target_sample)
+        pivots_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
+                                                             parameter=beta[active_union],
+                                                             sample=target_sample)
+
+        pvalues = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
+                                                        parameter=np.zeros_like(beta[active_union]),
+                                                        sample=target_sample)
 
         L, U = LU
         true_vec = beta[active_union]
 
-        ncovered = 0
-        naive_ncovered = 0
+        covered = np.zeros(nactive, np.bool)
+        naive_covered = np.zeros(nactive, np.bool)
+        active_var = np.zeros(nactive, np.bool)
 
         print(LU, 'selective')
         print(LU_naive, 'naive')
+
         for j in range(nactive):
-            print(L[j], U[j])
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
-                ncovered += 1
-            if (LU_naive[0,j] <= true_vec[j]) and (LU_naive[1,j] >= true_vec[j]):
-                naive_ncovered += 1
+                covered[j] = 1
+            if (LU_naive[j,0] <= true_vec[j]) and (LU_naive[j,1] >= true_vec[j]):
+                naive_covered[j] = 1
+            active_var[j] = active_set[j] in nonzero
 
-        return pvalues_mle, pvalues_truth, ncovered, naive_ncovered, nactive
-
-
-
-def make_a_plot(niter=20):
-    import matplotlib.pyplot as plt
-    from scipy.stats import probplot, uniform
-    import statsmodels.api as sm
-
-    np.random.seed(2)
-
-    _pvalues_mle = []
-    _pvalues_truth = []
-    _nparam = 0
-    _ncovered = 0
-    _naive_ncovered = 0
-    for i in range(niter):
-        print("iteration", i)
-        test = test_splits()[1]
-        if test is not None:
-            pvalues_mle, pvalues_truth, ncovered, naive_ncovered, nparam = test
-            _pvalues_mle.extend(pvalues_mle)
-            _pvalues_truth.extend(pvalues_truth)
-            _nparam += nparam
-            _ncovered += ncovered
-            _naive_ncovered += naive_ncovered
-            print(np.mean(_pvalues_truth), np.std(_pvalues_truth), np.mean(np.array(_pvalues_truth) < 0.05))
-
-        if _nparam > 0:
-            print("coverage", _ncovered/float(_nparam))
-            print("naive coverage", _naive_ncovered/float(_nparam))
-
-    print("number of parameters", _nparam, "coverage", _ncovered/float(_nparam))
-
-    fig = plt.figure()
-    fig.suptitle('Pivots at the reference (MLE) and the truth')
-    plot_pvalues_mle = fig.add_subplot(121)
-    plot_pvalues_truth = fig.add_subplot(122)
-
-    ecdf_mle = sm.distributions.ECDF(_pvalues_mle)
-    x = np.linspace(min(_pvalues_mle), max(_pvalues_mle))
-    y = ecdf_mle(x)
-    plot_pvalues_mle.plot(x, y, '-o', lw=2)
-    plot_pvalues_mle.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_mle.set_title("Pivots at the unpenalized MLE")
-    plot_pvalues_mle.set_xlim([0, 1])
-    plot_pvalues_mle.set_ylim([0, 1])
-
-    ecdf_truth = sm.distributions.ECDF(_pvalues_truth)
-    x = np.linspace(min(_pvalues_truth), max(_pvalues_truth))
-    y = ecdf_truth(x)
-    plot_pvalues_truth.plot(x, y, '-o', lw=2)
-    plot_pvalues_truth.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_truth.set_title("Pivots at the truth (by tilting)")
-    plot_pvalues_truth.set_xlim([0, 1])
-    plot_pvalues_truth.set_ylim([0, 1])
-
-    #while True:
-    #    plt.pause(0.05)
-    plt.show()
+        return pivots_mle, pivots_truth, pvalues, covered, naive_covered, active_var
 
 
-def make_a_plot_individual_coeff():
+def report(niter=50, **kwargs):
 
-    np.random.seed(3)
-    fig = plt.figure()
-    fig.suptitle('Pivots for glm wild bootstrap')
+    split_report = reports.reports['test_split']
+    CLT_runs = reports.collect_multiple_runs(split_report['test'],
+                                             split_report['columns'],
+                                             niter,
+                                             reports.summarize_all,
+                                             **kwargs)
+    fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
 
-    pvalues = []
-    for i in range(100):
-        print("iteration", i)
-        pvals = test_multiple_views_individual_coeff()
-        if pvals is not None:
-            pvalues.extend(pvals)
-            print("pvalues", pvals)
-            print(np.mean(pvalues), np.std(pvalues), np.mean(np.array(pvalues) < 0.05))
-
-    ecdf = sm.distributions.ECDF(pvalues)
-    x = np.linspace(min(pvalues), max(pvalues))
-    y = ecdf(x)
-
-    plt.title("Logistic")
-    fig, ax = plt.subplots()
-    ax.plot(x, y, label="Individual coefficients", marker='o', lw=2, markersize=8)
-    plt.xlim([0,1])
-    plt.ylim([0,1])
-    plt.plot([0, 1], [0, 1], 'k-', lw=1)
-
-
-    legend = ax.legend(loc='upper center', shadow=True)
-    frame = legend.get_frame()
-    frame.set_facecolor('0.90')
-    for label in legend.get_texts():
-        label.set_fontsize('large')
-
-    for label in legend.get_lines():
-        label.set_linewidth(1.5)  # the legend line width
-
-    plt.savefig("Bootstrap after GLM two views")
-    #while True:
-    #    plt.pause(0.05)
-    plt.show()
-
-
-
-if __name__ == "__main__":
-    make_a_plot()
-    #make_a_plot_individual_coeff()
+    fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot

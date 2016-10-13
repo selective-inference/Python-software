@@ -155,7 +155,7 @@ def report(niter=50, **kwargs):
                                              reports.summarize_all,
                                              **kwargs)
 
-    fig = reports.pivot_plot(screened_results, color='b', label='Bootstrap')
+    fig = reports.boot_clt_plot(screened_results, color='b')
     fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot
 
 
