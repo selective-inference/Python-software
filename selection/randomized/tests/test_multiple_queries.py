@@ -2,6 +2,8 @@ from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
+import selection.tests.reports as reports
+
 
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.tests.instance import logistic_instance
@@ -14,15 +16,12 @@ import selection.tests.reports as reports
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@register_report(['pvalue', 'active'])
+@register_report(['pivot'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True): 
-    s, n, p = 2, 120, 10
-
-    #print('burnin', burnin)
-    #print('ndraw', ndraw)
+def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'selected zeros'): # nsim needed for decorator
+    s, n, p = 0, 600, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -44,6 +43,7 @@ def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True):
     for i in range(nview):
         view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
+
     mv = multiple_queries(view)
     mv.solve()
 
@@ -59,6 +59,7 @@ def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True):
             return None
 
         active_set = np.nonzero(active_union)[0]
+
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
 
         if not I:
@@ -75,46 +76,61 @@ def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True):
         mv.setup_sampler(form_covariances)
 
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
+
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
         inactive_observed = target_observed[inactive_selected]
         # param_cov = _parametric_cov_glm(loss, active_union)
 
-        alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
+        if bootstrap==True:
+            alpha_mat = set_alpha_matrix(loss, active_union)
 
-        if bootstrap:
-            target_sampler = mv.setup_bootstrapped_target(inactive_target,
-                                                          inactive_observed,
-                                                          n, target_alpha) 
+        if test == 'selected zeros':
+            inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+            inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
+            j = 0
+            for i in range(nactive):
+                if active_set[i] not in nonzero:
+                    inactive_indicators_mat[j,i] = 1
+                    j+=1
+            target = lambda indices: boot_target(indices)[inactive_selected]
+            target_observed = target_observed[inactive_selected]
+            if bootstrap==True:
+                target_alpha = np.dot(inactive_indicators_mat, alpha_mat)
+            observed_test_value = np.linalg.norm(target_observed[inactive_selected]
+)
+        if test == 'global null':
+            target = lambda indices: boot_target(indices)[:nactive]
+            target_observed = target_observed[:nactive]
+            if bootstrap==True:
+                target_alpha = alpha_mat
+            observed_test_value = np.linalg.norm(target_observed - beta[active_union])
 
+        #target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
+
+        if bootstrap==True:
+            target_sampler = mv.setup_bootstrapped_target(target, target_observed, n, target_alpha)
         else:
-            target_sampler = mv.setup_target(inactive_target,
-                                             inactive__observed)
+            target_sampler = mv.setup_target(target, target_observed)
 
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat,
-                                              np.linalg.norm(inactive_observed),
+        pivot = target_sampler.hypothesis_test(test_stat,
+                                              observed_test_value,
                                               alternative='twosided',
                                               ndraw=ndraw,
                                               burnin=burnin)
 
+        return pivot
 
-        # testing the global null
-        all_selected = np.arange(active_set.shape[0])
-        target_gn = lambda indices: boot_target(indices)[:nactive]
-        target_observed_gn = target_observed[:nactive]
+def report(niter=50, **kwargs):
 
-        target_alpha_gn = alpha_mat
-
-        target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
-        observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
-        pval_gn = target_sampler_gn.hypothesis_test(test_stat,
-                                                    observed_test_value,
-                                                    alternative='twosided',
-                                                    ndraw=ndraw,
-                                                    burnin=burnin)
-
-        return [pval, pval_gn], [False, False]
+    split_report = reports.reports['test_multiple_views']
+    CLT_runs = reports.collect_multiple_runs(split_report['test'],
+                                             split_report['columns'],
+                                             niter,
+                                             reports.summarize_all,
+                                             **kwargs)
+    kwargs['bootstrap'] = True
+    fig = reports.pivot_plot_simple(CLT_runs, color='b', label='Bootstrap')
 
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
@@ -186,6 +202,7 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
             pvalues.append(pval)
 
         return pvalues, [active_set[j] in nonzero for j in range(nactive)]
+
 
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
