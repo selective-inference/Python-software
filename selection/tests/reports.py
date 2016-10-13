@@ -172,6 +172,20 @@ def compute_coverage(multiple_results):
         result['selective coverage (Bootstrap)'] = np.mean(multiple_results['covered_boot'])
     return result
 
+
+def compute_lengths(multiple_results):
+    result = {}
+    if 'ci_length_clt' in multiple_results.columns:
+        print(multiple_results['ci_length_clt'])
+        result['ci_length_clt'] = np.mean(multiple_results['ci_length_clt'])
+    if 'ci_length_boot' in multiple_results.columns:
+        result['ci_length_boot'] = np.mean(multiple_results['ci_length_boot'])
+    if 'ci_length_clt' in multiple_results.columns:
+        result['ci_length_split'] = np.mean(multiple_results['ci_length_split'])
+
+    return result
+
+
 def compute_screening(multiple_results):
     return {'screening:': 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])}
 
@@ -180,6 +194,7 @@ def summarize_all(multiple_results):
     result.update(compute_pivots(multiple_results))
     result.update(compute_coverage(multiple_results))
     result.update(compute_screening(multiple_results))
+    result.update(compute_lengths(multiple_results))
     print(result)
 reports = {}
 

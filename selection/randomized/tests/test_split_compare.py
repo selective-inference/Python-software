@@ -119,7 +119,7 @@ def test_split(ndraw=10000, burnin=2000, nsim=None, solve_args={'min_its':50, 't
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]
             covered = np.zeros(nactive, np.bool)
-            ci_length = np.zeros(nactive, np.bool)
+            ci_length = np.zeros(nactive)
 
             for j in range(nactive):
                 if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
