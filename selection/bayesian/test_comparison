@@ -122,19 +122,21 @@ if sel is not None:
                 #    np.dot(mean.T, mean), 2 * noise_variance) - np.true_divide(
                 #    np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]),2 * (tau ** 2))
 
-                sel_scaled_val = sel_scaled.optimization(parameter*np.ones(nactive),method="softmax_barrier")[0]\
+                sel_scaled_prob = sel_scaled.optimization(parameter*np.ones(nactive),method="softmax_barrier")
+                sel_scaled_prob_min = sel_scaled_prob[0]\
                                  -np.true_divide(np.dot(mean.T,mean),2*noise_variance)\
                                  -np.true_divide(np.dot(gamma_sel[:nactive].T,gamma_sel[:nactive]),2*(tau**2))
+                                      #sel_scaled_prob[1]
 
-                print "log selection probability", sel_scaled_val, -sel_prob_grad_descent.minimize()[1]
+                print "log selection probability", sel_scaled_prob_min, -sel_prob_grad_descent.minimize()[1]
 
                 #sel_non_scaled_seq.append(sel_non_scaled_val)
-                sel_scaled_seq.append(sel_scaled_val)
+                sel_scaled_seq.append(sel_scaled_prob_min)
                 sel_grad_descent.append(-sel_prob_grad_descent.minimize()[1])
 
-            sel_non_scaled_seq = np.reshape(sel_non_scaled_seq, num)
-            sel_scaled_seq = np.reshape(sel_scaled_seq, num)
-            print np.shape(sel_non_scaled_seq), np.shape(sel_scaled_seq), np.shape(sel_grad_descent)
+            #sel_non_scaled_seq = np.reshape(sel_non_scaled_seq, num)
+            #sel_scaled_seq = np.reshape(sel_scaled_seq, num)
+            #print np.shape(sel_non_scaled_seq), np.shape(sel_scaled_seq), np.shape(sel_grad_descent)
 
             #plt.clf()
             #plt.title("sel_prob")
@@ -144,7 +146,7 @@ if sel is not None:
             #plt.savefig('/Users/snigdhapanigrahi/Python_Plots/my_sel_prob.png')
             #plt.close()
 
-    #test_one_sparse()
+    test_one_sparse()
 
     def test_sel_probs_scalings():
         parameter = np.fabs(np.random.standard_normal(nactive))
@@ -203,7 +205,7 @@ if sel is not None:
                 print "log selection probability", sel_log_val, sel_softmax_val
 
 
-    test_different_barriers()
+    #test_different_barriers()
 
 
 
