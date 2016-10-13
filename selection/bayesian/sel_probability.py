@@ -51,7 +51,7 @@ class selection_probability(object):
     def log_prior(self, param, gamma):
         return -np.true_divide(np.linalg.norm(param) ** 2, 2*(gamma ** 2))
 
-    def optimization(self, param, method="log_barrier"):
+    def optimization(self, param, method="softmax_barrier"):
 
         # defining barrier function on betaE
         def barrier_sel(z_2):
@@ -153,7 +153,7 @@ class selection_probability(object):
             #const_param = np.dot(np.dot(param.T,self.constant),param)
             #return -res.fun+const_param, res.x
         #else:
-        initial_data = self.y
+        initial_data = np.zeros(self.n)
         res = minimize(objective_data, x0=initial_data)
         return -res.fun, res.x
 

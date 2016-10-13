@@ -46,8 +46,8 @@ class selection_probability_methods():
 
         self.rand_variance = rand_variance
         self.inactive_lagrange = lagrange[~active]
-        initial = np.zeros(n + E, )
-        initial[n:] = feasible_point
+        self.initial = np.zeros(n + E, )
+        self.initial[n:] = feasible_point
         self.active = active
 
         self.opt_vars = np.zeros(n + E, bool)
@@ -78,7 +78,7 @@ class selection_probability_methods():
                 for i in range(arg.shape[0]):
                     mu = arg[i]
                     res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
-                    res_seq.append(-res.fun)
+                    res_seq.append(res.fun)
 
                 return np.sum(res_seq)
 
@@ -90,13 +90,17 @@ class selection_probability_methods():
                 for i in range(arg.shape[0]):
                     mu = arg[i]
                     res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
-                    res_seq.append(-res.fun)
+                    res_seq.append(res.fun)
 
                 return np.sum(res_seq)
 
+        if self.active.sum()==1 :
+            f_like = np.true_divide(np.linalg.norm((param[~self.opt_vars])[:,None] - self.mean_parameter) ** 2,
+                                    2 * self.noise_variance)
 
-        f_like = np.true_divide(np.linalg.norm(param[~self.opt_vars]-self.mean_parameter)**2,
-                                     2 * self.noise_variance)
+        else:
+            f_like = np.true_divide(np.linalg.norm(param[~self.opt_vars] - self.mean_parameter) ** 2,
+                                    2 * self.noise_variance)
 
         f_nonneg = nonnegative_barrier(param[self.opt_vars])
 
@@ -107,11 +111,19 @@ class selection_probability_methods():
 
         conjugate_value_i = cube_problem(conjugate_argument_i, method="softmax_barrier")
 
-        constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i), 2)
+        #constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i), 2)
 
-        #return f_nonneg + f_like + f_active_conj + constant, -conjugate_value_i + constant
+        return f_nonneg + f_like + f_active_conj + conjugate_value_i
 
-        return f_nonneg + f_like + f_active_conj + constant, conjugate_value_i+ constant
+        #return f_nonneg, f_like, f_active_conj, constant, -conjugate_value_i+ constant
+
+
+    def minimize_scipy(self):
+
+        res = minimize(self.objective, x0=self.initial)
+
+        return res.fun, res.x
+
 
 
 

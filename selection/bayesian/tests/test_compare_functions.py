@@ -7,9 +7,9 @@ from selection.bayesian.objective_functions import my_selection_probability_only
 from selection.bayesian.selection_probability import selection_probability_methods
 
 #fixing n, p, true sparsity and signal strength
-n=30
-p=10
-s=5
+n=20
+p=3
+s=1
 snr=5
 
 #sampling the Gaussian instance
@@ -147,8 +147,37 @@ if sel is not None:
         print sel_breakup, sel_breakup_1
 
 
-    test_new_function()
+    #test_new_function()
 
+    def test_objective_new_function():
+        if nactive==1:
+            snr_seq = np.linspace(-10, 10, num=100)
+            num = snr_seq.shape[0]
+            lagrange = lam * np.ones(p)
+            for i in range(snr_seq.shape[0]):
+                parameter = snr_seq[i]
+                print "parameter value", parameter
+                mean = X_1[:, active].dot(parameter)
+                vec = np.random.standard_normal(n)
+                active_coef = np.dot(np.diag(active_signs), np.fabs(np.random.standard_normal(nactive)))
+                sel = my_selection_probability_only_objective(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE,
+                                                              cube,
+                                                              vec,
+                                                              active_coef)
+                sel_breakup = sel.optimization(parameter*np.ones(nactive))[0] + np.true_divide(np.dot(mean.T, mean),
+                                                                              2 * noise_variance) + \
+                              np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]), 2 * (tau ** 2)), \
+                              sel.optimization(parameter*np.ones(nactive))[1]
+
+                sel_prob = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                        noise_variance, tau, epsilon)
+
+                sel_breakup_1 = sel_prob.objective(np.append(vec, np.fabs(active_coef)))
+
+                print sel_breakup, sel_breakup_1
+
+
+    test_objective_new_function()
 
 
 
