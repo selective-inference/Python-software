@@ -10,6 +10,7 @@ from selection.algorithms.covtest import covtest, selected_covtest
 from selection.constraints.affine import gibbs_test
 from selection.tests.decorators import set_sampling_params_iftrue
 
+@set_seed(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_covtest(nsim=None, ndraw=8000, burnin=2000):
 
@@ -32,6 +33,7 @@ def test_covtest(nsim=None, ndraw=8000, burnin=2000):
 
     return pval
 
+@set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=5, ndraw=10, burnin=20)
 def test_tilting(nsim=100, ndraw=50000, burnin=10000):
 
