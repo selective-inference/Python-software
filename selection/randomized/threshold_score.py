@@ -40,9 +40,6 @@ class threshold_score(query):
                              randomization,
                              solve_args)
 
-        self._solved = False
-        self._randomized = False
-
     def solve(self):
 
         (loss,
@@ -107,6 +104,8 @@ class threshold_score(query):
 
         self.opt_transform = (_opt_linear_term, _opt_offset)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
+        self._setup = True
 
     def projection(self, opt_state):
         """

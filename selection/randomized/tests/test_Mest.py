@@ -236,6 +236,7 @@ def test_one_inactive_coordinate_handcoded():
         _i = I[0]
         naive_Z = target_observed[_i] / np.sqrt(target_cov[_i,_i])
         naive_pval = ndist.sf(np.fabs(naive_Z))
+        naive_pval = 2 * min(naive_pval, 1 - naive_pval)
         print('naive Z', naive_Z, naive_pval)
         return pval, naive_pval, False
 

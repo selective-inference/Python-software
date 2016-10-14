@@ -83,19 +83,22 @@ class multiple_queries(object):
 
         nqueries = self.nqueries = len(self.objectives)
 
-        self.num_opt_var = 0
-        self.opt_slice = []
         self.score_info = []
 
         for objective in self.objectives:
             score_ = objective.setup_sampler()
             self.score_info.append(score_)
+
+    def setup_opt_state(self):
+        self.num_opt_var = 0
+        self.opt_slice = []
+        
+        for objective in self.objectives:
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
-
-        for i in range(nqueries):
+        for i in range(len(self.objectives)):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
@@ -143,6 +146,8 @@ class multiple_queries(object):
 
         '''
 
+        self.setup_opt_state()
+
         return targeted_sampler(self,
                                 target_info,
                                 observed_target_state,
@@ -157,6 +162,8 @@ class multiple_queries(object):
                                   target_alpha,
                                   target_set=None,
                                   reference=None):
+
+        self.setup_opt_state()
 
         return bootstrapped_target_sampler(self,
                                            target_bootstrap,
@@ -276,7 +283,7 @@ class targeted_sampler(object):
         if reference is None:
             self.reference = np.zeros(self.target_inv_cov.shape[0])
         else:
-            self.reference=reference
+            self.reference = np.atleast_1d(reference)
         self.reference_inv = self.target_inv_cov.dot(self.reference)
 
         # need to vectorize the state for Langevin
@@ -353,7 +360,7 @@ class targeted_sampler(object):
 
         return full_grad
 
-    def sample(self, ndraw, burnin, stepsize=None):
+    def sample(self, ndraw, burnin, stepsize=None, keep_opt=False):
         '''
         Sample `target` from selective density
         using projected Langevin sampler with
@@ -374,6 +381,10 @@ class targeted_sampler(object):
            to a crude estimate based on the
            dimension of the problem.
 
+        keep_opt : bool
+           Should we return optimization variables
+           as well as the target?
+
         Returns
         -------
 
@@ -384,6 +395,11 @@ class targeted_sampler(object):
         if stepsize is None:
             stepsize = 1. / self.crude_lipschitz()
 
+        if keep_opt:
+            keep_slice = slice(None, None, None)
+        else:
+            keep_slice = self.keep_slice
+
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,
                                              self.projection,
@@ -393,7 +409,7 @@ class targeted_sampler(object):
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[self.keep_slice].copy())
+                samples.append(target_langevin.state[keep_slice].copy())
 
         return np.asarray(samples)
 
@@ -601,7 +617,6 @@ class targeted_sampler(object):
         else:
             return 2 * np.minimum(pval, 1 - pval)
 
-
     def crude_lipschitz(self):
         """
         A crude Lipschitz constant for the
@@ -618,6 +633,66 @@ class targeted_sampler(object):
             lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
             lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
         return lipschitz
+
+
+    def reconstruction_map(self, state):
+        '''
+        Reconstruction of randomization at current state.
+
+        Parameters
+        ----------
+
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Can be array with each row a state.
+
+        Returns
+        -------
+
+        reconstructed : np.float
+           Has shape of `opt_vars` with same number of rows 
+           as `state`.
+           
+        '''
+
+        state = np.atleast_2d(state)
+        if len(state.shape) > 2:
+            raise ValueError('expecting at most 2-dimensional array')
+
+        target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
+        reconstructed = np.zeros_like(opt_state)
+
+        for i in range(self.nqueries):
+            reconstructed[:, self.opt_slice[i]] = self.objectives[i].reconstruction_map(target_state,
+                                                                                        self.target_transform[i],
+                                                                                        opt_state[:,self.opt_slice[i]])
+        return np.squeeze(reconstructed)
+
+    def log_density(self, state):
+        '''
+        Log-density at current state.
+
+        Parameters
+        ----------
+
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Can be two-dimensional with each row a state.
+
+        Returns
+        -------
+
+        density : np.float
+            Has number of rows as `state` if 2-dimensional.
+        '''
+
+        reconstructed = self.reconstruction_map(state)
+        value = np.zeros(reconstructed.shape[0])
+
+        for i in range(self.nqueries):
+            log_dens = self.objectives[i].randomization.log_density
+            value += log_dens(reconstructed[:,self.opt_slice[i]])
+        return np.squeeze(value)
 
 class bootstrapped_target_sampler(targeted_sampler):
 
@@ -650,7 +725,7 @@ class bootstrapped_target_sampler(targeted_sampler):
                                                                                                   self.target_cov,
                                                                                                   self.observed_target_state)
             boot_linear_part = np.dot(composition_linear_part, target_alpha)
-            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).reshape(-1)
+            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
             self.boot_transform.append((boot_linear_part, boot_offset))
 
         self.reference_inv = self.target_inv_cov.dot(self.reference)
@@ -680,16 +755,13 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         boot_grad = -boot_grad
         boot_grad -= boot_state
-        #boot_grad -= np.dot(np.dot(self.target_alpha.T, self.inv_mat), self.target_alpha.dot(boot_state))
-        #boot_grad -= np.dot(np.dot(self.target_alpha.T, self.target_inv_cov), self.target_alpha.dot(boot_state))
 
         full_grad[self.boot_slice] = boot_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
         return full_grad
 
-
-    def sample(self, ndraw, burnin, stepsize = None):
+    def sample(self, ndraw, burnin, stepsize = None, keep_opt=False):
         if stepsize is None:
             stepsize = 1. / self.observed_state.shape[0]
 
@@ -697,14 +769,28 @@ class bootstrapped_target_sampler(targeted_sampler):
                                                 self.gradient,
                                                 self.projection,
                                                 stepsize)
+        if keep_opt:
+            boot_slice = slice(None, None, None)
+        else:
+            boot_slice = self.boot_slice
 
         samples = []
         for i in range(ndraw + burnin):
             bootstrap_langevin.next()
             if (i >= burnin):
-                samples.append(bootstrap_langevin.state[self.boot_slice].copy())
-        return np.asarray([np.dot(self.target_alpha, x)+self.reference for x in samples])
+                samples.append(bootstrap_langevin.state[boot_slice].copy())
+        samples = np.asarray(samples)
 
+        if keep_opt:
+            target_samples = samples[:,self.boot_slice].dot(self.target_alpha.T) + self.reference[None, :]
+            opt_sample0 = samples[0,self.overall_opt_slice]
+            result = np.zeros((samples.shape[0], opt_sample0.shape[0] + target_samples.shape[1]))
+            result[:,self.overall_opt_slice] = samples[:,self.overall_opt_slice]
+            result[:,self.target_slice] = target_samples
+            return result
+        else:
+            target_samples = samples.dot(self.target_alpha.T) + self.reference[None, :]
+            return target_samples
 
 def naive_confidence_intervals(target, observed, alpha=0.1):
     """
@@ -734,4 +820,46 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         sigma = np.sqrt(target.target_cov[j, j])
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
-    return LU
+    return LU.T
+
+class translate_intervals(intervals_from_sample):
+
+    """
+
+    Location family based intervals... (cryptic)
+
+    randomization density should be `g` composed with the affine
+    mapping and take an argument like one row of sample
+
+    target_linear is the linear part of the affine mapping with
+    respect to target
+
+    weights for a given candidate will look like
+
+          randomization_density(sample + (candidate, 0, 0) - (reference, 0, 0)) /
+          randomization_density(sample)
+
+    if the samples are samples of \bar{\beta}. if we have samples of
+    \Delta from our reference, then the weights will look like
+
+    randomization_density(sample + (candidate, 0, 0))
+    randomization_density(sample + (reference, 0, 0))
+    """
+
+    def __init__(self, 
+                 reference, 
+                 sample, 
+                 observed, 
+                 covariance, 
+                 randomization_density,
+                 target_linear,
+                 offset):
+        intervals_from_sample.__init__(self, reference, sample, observed, covariance)
+
+        self.randomization_density = randomization_density
+        self.target_linear = target_linear
+        self.offset = offset
+
+
+
+

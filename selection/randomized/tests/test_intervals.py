@@ -15,7 +15,7 @@ from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
 def test_intervals(s=3,
                    n=200,
@@ -76,6 +76,7 @@ def test_intervals(s=3,
         unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
 
         ## bootstrap
+
         if bootstrap:
             alpha_mat = set_alpha_matrix(loss, active_union)
             target_alpha_gn = alpha_mat
@@ -104,7 +105,6 @@ def test_intervals(s=3,
         pivots_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
                                                              parameter=beta[active_union],
                                                              sample=target_sample)
-
         true_vec = beta[active_union]
         pvalues = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
                                                         parameter=np.zeros_like(true_vec),
@@ -119,7 +119,7 @@ def test_intervals(s=3,
         for j in range(nactive):
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                 covered[j] = 1
-            if (LU_naive[0,j] <= true_vec[j]) and (LU_naive[1,j] >= true_vec[j]):
+            if (LU_naive[j,0] <= true_vec[j]) and (LU_naive[j,1] >= true_vec[j]):
                 naive_covered[j] = 1
             active_var[j] = active_set[j] in nonzero
 

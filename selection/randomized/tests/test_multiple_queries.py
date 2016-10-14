@@ -2,6 +2,8 @@ from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
+import selection.tests.reports as reports
+
 
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.tests.instance import logistic_instance
@@ -14,15 +16,12 @@ import selection.tests.reports as reports
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@register_report(['pvalue', 'active'])
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@register_report(['pivot'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
-    s, n, p = 2, 120, 10
-
-    print('burnin', burnin)
-    print('ndraw', ndraw)
+def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'selected zeros'): 
+    s, n, p = 0, 600, 10
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
@@ -39,16 +38,19 @@ def test_multiple_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed fo
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    view = []
+    nview = 5
+    for i in range(nview):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
-    # mv = multiple_queries([M_est1, M_est2])
-    mv = multiple_queries([M_est1])
+
+    mv = multiple_queries(view)
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = np.zeros(p, np.bool)
+    for i in range(nview):
+        active_union += view[i].overall
+
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
@@ -57,6 +59,7 @@ def test_multiple_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed fo
             return None
 
         active_set = np.nonzero(active_union)[0]
+
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
 
         if not I:
@@ -73,45 +76,56 @@ def test_multiple_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed fo
         mv.setup_sampler(form_covariances)
 
         boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
+
         inactive_target = lambda indices: boot_target(indices)[inactive_selected]
         inactive_observed = target_observed[inactive_selected]
         # param_cov = _parametric_cov_glm(loss, active_union)
 
-        alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
+        if bootstrap==True:
+            alpha_mat = set_alpha_matrix(loss, active_union)
 
-        target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
+        if test == 'selected zeros':
+            inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+            inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
+            j = 0
+            for i in range(nactive):
+                if active_set[i] not in nonzero:
+                    inactive_indicators_mat[j,i] = 1
+                    j+=1
+            target = lambda indices: boot_target(indices)[inactive_selected]
+            target_observed = target_observed[inactive_selected]
+            if bootstrap==True:
+                target_alpha = np.dot(inactive_indicators_mat, alpha_mat)
+            observed_test_value = np.linalg.norm(target_observed[inactive_selected]
+)
+        if test == 'global null':
+            target = lambda indices: boot_target(indices)[:nactive]
+            target_observed = target_observed[:nactive]
+            if bootstrap==True:
+                target_alpha = alpha_mat
+            observed_test_value = np.linalg.norm(target_observed - beta[active_union])
+
+        #target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
+
+        if bootstrap==True:
+            target_sampler = mv.setup_bootstrapped_target(target, target_observed, n, target_alpha)
+        else:
+            target_sampler = mv.setup_target(target, target_observed)
 
         test_stat = lambda x: np.linalg.norm(x)
-        pval = target_sampler.hypothesis_test(test_stat,
-                                              np.linalg.norm(inactive_observed),
+        pivot = target_sampler.hypothesis_test(test_stat,
+                                              observed_test_value,
                                               alternative='twosided',
                                               ndraw=ndraw,
                                               burnin=burnin)
 
-
-        # testing the global null
-        all_selected = np.arange(active_set.shape[0])
-        target_gn = lambda indices: boot_target(indices)[:nactive]
-        target_observed_gn = target_observed[:nactive]
-
-        target_alpha_gn = alpha_mat
-
-        target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
-        observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
-        pval_gn = target_sampler_gn.hypothesis_test(test_stat,
-                                                    observed_test_value,
-                                                    alternative='twosided',
-                                                    ndraw=ndraw,
-                                                    burnin=burnin)
-
-        return [pval, pval_gn], [False, False]
+        return pivot
 
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -129,16 +143,18 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    view = []
+    nview = 5
+    for i in range(nview):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
-    mv = multiple_queries([M_est1, M_est2])
-    #mv = multiple_queries([M_est1])
+    mv = multiple_queries(view)
     mv.solve()
 
-    active_union = M_est1.overall + M_est2.overall
+    active_union = np.zeros(p, np.bool)
+    for i in range(nview):
+        active_union += view[i].overall
+
     nactive = np.sum(active_union)
     print("nactive", nactive)
     active_set = np.nonzero(active_union)[0]
@@ -157,18 +173,18 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
 
         for j in range(nactive):
 
-            individual_target = lambda indices: boot_target(indices)[j]
-            individual_observed = target_observed[j]
+            individual_target = lambda indices: np.atleast_1d(boot_target(indices)[j])
+            individual_observed = np.atleast_1d(target_observed[j])
             # param_cov = _parametric_cov_glm(loss, active_union)
 
             target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
 
             target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
 
-            test_stat = lambda x: x
+            test_stat = lambda x: np.atleast_1d(x)
 
             pval = target_sampler.hypothesis_test(test_stat,
-                                                  individual_observed-true_beta[j],
+                                                  np.atleast_1d(individual_observed-true_beta[j]),
                                                   alternative='twosided',
                                                   ndraw=ndraw,
                                                   burnin=burnin)
@@ -176,15 +192,16 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
 
         return pvalues, [active_set[j] in nonzero for j in range(nactive)]
 
+
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
-def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+@wait_for_return_value(max_tries=200)
+def test_parametric_covariance(ndraw=10000, burnin=2000): 
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=10)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=12)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -211,6 +228,7 @@ def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim need
         return None
     if target[-2] or M_est2.overall[-2]:
         return None
+
     # we should check they are different sizes
     target[-2:] = 1
 
@@ -255,5 +273,4 @@ def report(niter=50):
     fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
 
     fig.savefig('multiple_queries_pvalues.pdf') # will have both bootstrap and CLT on plot
-
 

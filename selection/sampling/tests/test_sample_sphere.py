@@ -40,10 +40,9 @@ def _generate_constraints(n=15, p=10, sigma=1):
     return con, y, L, X
 
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_sample_ball(burnin=1000,
-                       ndraw=1000,
-                       nsim=None):
+                     ndraw=1000):
 
     p = 10
     A = np.identity(10)[:3]
@@ -63,10 +62,9 @@ def test_sample_ball(burnin=1000,
     return s
 
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 def test_sample_sphere(burnin=1000,
-                       ndraw=1000,
-                       nsim=None):
+                       ndraw=1000):
 
     p = 10
     A = np.identity(10)[:3]
@@ -94,7 +92,7 @@ def test_sample_sphere(burnin=1000,
 
 @dec.slow
 @set_seed_iftrue(SET_SEED, 20)
-@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=50)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, ndraw=10, burnin=10)
 def test_distribution_sphere(n=15, p=10, sigma=1.,
                              nsim=2000,
                              sample_constraints=False,
@@ -158,11 +156,10 @@ def test_distribution_sphere(n=15, p=10, sigma=1.,
 #     plt.plot([0,1],[0,1])
 
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 def test_conditional_sampling(n=20, p=25, sigma=20,
                               ndraw=1000,
-                              burnin=1000,
-                              nsim=None):
+                              burnin=1000):
     """
     goodness of fit samples from
     inactive constraints intersect a sphere

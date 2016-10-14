@@ -45,6 +45,6 @@ script:
       cp ../.coveragerc .;
       COVER_ARGS="--with-coverage --cover-package selection";
       fi
-    - nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+    - env USE_SMALL_SAMPLES=1 SET_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
 after_success:
     - if [ "${COVERAGE}" == "1" ]; then coveralls; fi

@@ -5,8 +5,8 @@ from selection.tests.instance import gaussian_instance
 from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
 from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_FS(k=10, ndraw=5000, burnin=5000, nsim=None):
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+def test_FS(k=10, ndraw=5000, burnin=5000):
 
     n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -27,8 +27,8 @@ def test_FS(k=10, ndraw=5000, burnin=5000, nsim=None):
     print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
     print(FS.model_quadratic(3))
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_FS_unknown(k=10, ndraw=5000, burnin=5000, nsim=None):
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+def test_FS_unknown(k=10, ndraw=5000, burnin=5000):
 
     n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -47,8 +47,8 @@ def test_FS_unknown(k=10, ndraw=5000, burnin=5000, nsim=None):
 
     print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_subset(k=10, ndraw=5000, burnin=5000, nsim=None):
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+def test_subset(k=10, ndraw=5000, burnin=5000):
 
     n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
@@ -77,8 +77,8 @@ def test_subset(k=10, ndraw=5000, burnin=5000, nsim=None):
         FS.next()
     print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_BIC(do_sample=True, ndraw=8000, burnin=2000, nsim=None,
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+def test_BIC(do_sample=True, ndraw=8000, burnin=2000, 
              force=False):
 
     X, Y, beta, active, sigma = gaussian_instance()
@@ -112,7 +112,7 @@ def simulate_null(saturated=True, ndraw=8000, burnin=2000):
 
     return [p[-1] for p in FS.model_pivots(3, saturated=saturated, ndraw=ndraw, burnin=burnin)]
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10, nsim=10)
 def test_ecdf(nsim=1000, BIC=False,
               saturated=True,
               burnin=2000,
@@ -127,7 +127,7 @@ def test_ecdf(nsim=1000, BIC=False,
     P = np.array(P)
 
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10, nsim=10)
 def test_data_carving_IC(nsim=500,
                          n=100,
                          p=200,
@@ -195,9 +195,8 @@ def test_data_carving_IC(nsim=500,
                     counter, carve_coverage, split_coverage)
 
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
-def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000,
-                    nsim=None):
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000):
 
     X, y, beta, active, sigma = gaussian_instance(n=n, p=p, snr=snr, rho=rho)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
@@ -229,9 +228,8 @@ def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000,
 
     return X, y, beta, active, sigma, np.array(pval), completion_index
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
-                    nsim=None,
                     nstep=200,
                     method='serial'):
 
@@ -261,10 +259,9 @@ def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
 
     return null_rank, alt_rank
 
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, snr=5, 
                                 ndraw=None, burnin=2000,
-                                nsim=None,
                                 nstep=200,
                                 method='serial'):
 

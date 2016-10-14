@@ -30,7 +30,7 @@ import statsmodels.api as sm
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
+@wait_for_return_value(max_tries=200)
 def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 2, 100, 10
 
@@ -38,7 +38,7 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
 
     nonzero = np.where(beta)[0]
-    lam_frac = 1.
+    lam_frac = .6
 
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
@@ -122,21 +122,20 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
-@wait_for_return_value(max_tries=100)
-def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+@wait_for_return_value(max_tries=300)
+def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000):
     s, n, p = 3, 100, 20
 
     #randomizer = randomization.logistic((p,), scale=1./np.log(n))
     #randomizer = randomization.laplace((p,), scale=2. / np.sqrt(n))
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=8.)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=12.)
     # X, y, beta, _, _ = gaussian_instance(n=n, p=p, s=s, rho=0, snr=5.)
 
     nonzero = np.where(beta)[0]
     lam_frac = 3.
 
-    # loss = rr.glm.logistic(X, y)
-    loss = rr.glm.gaussian(X,y)
+    loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))

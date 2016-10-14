@@ -60,7 +60,7 @@ class M_estimator(query):
          penalty,
          randomization,
          solve_args) = (self.loss,
-                        self.randomized_loss,
+                        self.randomized_loss, 
                         self.epsilon,
                         self.penalty,
                         self.randomization,
@@ -259,6 +259,8 @@ class M_estimator(query):
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
         self.subgrad_slice = subgrad_slice
 
+        self._setup = True
+
     def projection(self, opt_state):
         """
         Full projection for Langevin.
@@ -266,14 +268,78 @@ class M_estimator(query):
         The state here will be only the state of the optimization variables.
         """
 
-        if not hasattr(self, "scaling_slice"):
+        if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-        new_state = opt_state.copy() # not really necessary to copy
-        new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
-        new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
 
+        if ('subgradient' not in self.selection_variable and 
+            'scaling' not in self.selection_variable): # have not conditioned on any thing else
+            new_state = opt_state.copy() # not really necessary to copy
+            new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
+            new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
+        elif ('subgradient' not in self.selection_variable and
+              'scaling' in self.selection_variable): # conditioned on the initial scalings
+                                                     # only the subgradient in opt_state
+            new_state = self.group_lasso_dual.bound_prox(opt_state)
+        elif ('subgradient' in self.selection_variable and
+              'scaling' not in self.selection_variable): # conditioned on the subgradient
+                                                         # only the scaling in opt_state
+            new_state = np.maximum(opt_state, 0)
+        else:
+            new_state = opt_state
         return new_state
+
+    # optional things to condition on
+
+    def condition_on_subgradient(self):
+        """
+        Maybe we should allow subgradients of only some variables...
+        """
+        if not self._setup:
+            raise ValueError('setup_sampler should be called before using this function')
+
+        opt_linear, opt_offset = self.opt_transform
+        
+        new_offset = opt_linear[:,self.subgrad_slice].dot(self.observed_opt_state[self.subgrad_slice]) + opt_offset
+        new_linear = opt_linear[:,self.scaling_slice]
+
+        self.opt_transform = (new_linear, new_offset)
+
+        # for group LASSO this will induce a bigger jacobian
+        self.selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
+
+        # reset variables
+
+        self.observed_opt_state = self.observed_opt_state[self.scaling_slice]
+        self.scaling_slice = slice(None, None, None)
+        self.subgrad_slice = np.zeros(new_linear.shape[1], np.bool)
+        self.num_opt_var = new_linear.shape[1]
+
+    def condition_on_scalings(self):
+        """
+        Maybe we should allow subgradients of only some variables...
+        """
+        if not self._setup:
+            raise ValueError('setup_sampler should be called before using this function')
+
+        opt_linear, opt_offset = self.opt_transform
+        
+        new_offset = opt_linear[:,self.scaling_slice].dot(self.observed_opt_state[self.scaling_slice]) + opt_offset
+        new_linear = opt_linear[:,self.subgrad_slice]
+
+        self.opt_transform = (new_linear, new_offset)
+
+        # for group LASSO this will induce a bigger jacobian
+        self.selection_variable['scalings'] = self.observed_opt_state[self.scaling_slice]
+
+        # reset slices 
+
+        self.observed_opt_state = self.observed_opt_state[self.subgrad_slice]
+        self.subgrad_slice = slice(None, None, None)
+        self.scaling_slice = np.zeros(new_linear.shape[1], np.bool)
+        self.num_opt_var = new_linear.shape[1]
+
+
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 
@@ -323,7 +389,7 @@ class M_estimator_split(M_estimator):
         newq, oldq = rr.identity_quadratic(0, 0, 0, 0), self.randomized_loss.quadratic
         self.randomized_loss.quadratic = newq
         beta_active_subsample = restricted_Mest(self.randomized_loss,
-                                     self.overall)
+                                                self.overall)
 
         bootstrap_score_split = pairs_bootstrap_score(self.loss,
                                                       self.overall,

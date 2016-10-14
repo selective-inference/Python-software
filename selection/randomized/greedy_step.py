@@ -43,9 +43,6 @@ class greedy_score_step(query):
 
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, lagrange=1.)
 
-        self._solved = False
-        self._randomized = False
-
     def solve(self):
 
         (loss,
@@ -127,6 +124,7 @@ class greedy_score_step(query):
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         self._solved = True
+        self._setup = True
 
     def projection(self, opt_state):
         """

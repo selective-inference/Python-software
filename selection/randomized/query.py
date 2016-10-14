@@ -8,6 +8,7 @@ class query(object):
         self.randomization = randomization
         self._solved = False
         self._randomized = False
+        self._setup = False
 
     # Methods reused by subclasses
          
@@ -21,9 +22,6 @@ class query(object):
         """
         Randomization derivative at full state.
         """
-
-        if not hasattr(self, "opt_transform"):
-            raise ValueError('setup_sampler should be called before using this function')
 
         # reconstruction of randoimzation omega
 
@@ -77,6 +75,30 @@ class query(object):
         composition_offset = score_linear.dot(offset) + score_offset
 
         return (composition_linear_part, composition_offset)
+
+    def reconstruction_map(self, data_state, data_transform, opt_state):
+
+        if not self._setup:
+            raise ValueError('setup_sampler should be called before using this function')
+        
+        # reconstruction of randoimzation omega
+
+        data_state = np.atleast_2d(data_state)
+        opt_state = np.atleast_2d(opt_state)
+
+        opt_linear, opt_offset = self.opt_transform
+        data_linear, data_offset = data_transform
+        data_piece = data_linear.dot(data_state.T) + data_offset[:, None]
+        opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
+
+        # value of the randomization omega
+
+        return (data_piece + opt_piece).T
+
+    def log_density(self, data_state, data_transform, opt_state):
+
+        full_data = self.reconstruction_map(data_state, data_transform, opt_state)
+        return self.randomization.log_density(full_data)
 
     # Abstract methods to be
     # implemented by subclasses

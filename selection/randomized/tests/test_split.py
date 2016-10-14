@@ -3,8 +3,9 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.tests.decorators import wait_for_return_value, register_report
+from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
 import selection.tests.reports as reports
+from selection.tests.flags import SMALL_SAMPLES
 
 from selection.api import pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import split_glm_group_lasso
@@ -14,6 +15,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
 def test_split(s=3,
                n=200,
@@ -65,58 +67,57 @@ def test_split(s=3,
         # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
 
         all_selected = np.arange(active_set.shape[0])
-        target_gn = lambda indices: boot_target(indices)[:nactive]
-        target_observed_gn = target_observed[:nactive]
+        target = lambda indices: boot_target(indices)[:nactive]
+        target_observed = target_observed[:nactive]
 
         unpenalized_mle = restricted_Mest(loss, M_est.overall, solve_args=solve_args)
 
         alpha_mat = set_alpha_matrix(loss, M_est.overall)
-        target_alpha_gn = alpha_mat
+        target_alpha = alpha_mat
 
         ## bootstrap
-        reference_known = False
+
+        reference_known = True
         if reference_known:
             reference = beta[M_est.overall] 
         else:
             reference = unpenalized_mle
 
         if bootstrap:
-            target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-                                                             target_observed_gn,
-                                                             n, target_alpha_gn,
-                                                             reference=reference) 
+            target_sampler = mv.setup_bootstrapped_target(target,
+                                                          target_observed,
+                                                          n, target_alpha,
+                                                          reference=reference) 
 
         else:
-            target_sampler_gn = mv.setup_target(target_gn,
-                                                target_observed_gn, #reference=beta[M_est.overall])
-                                                reference = unpenalized_mle)
+            target_sampler = mv.setup_target(target,
+                                             target_observed, #reference=beta[M_est.overall])
+                                             reference = unpenalized_mle)
 
-        target_sample = target_sampler_gn.sample(ndraw=ndraw,
-                                                 burnin=burnin)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
 
-        LU = target_sampler_gn.confidence_intervals(unpenalized_mle,
-                                                    sample=target_sample).T
 
-        LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
+        LU = target_sampler.confidence_intervals(unpenalized_mle,
+                                                 sample=target_sample).T
 
-        pivots_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                           parameter=target_sampler_gn.reference,
-                                                           sample=target_sample)
+        LU_naive = naive_confidence_intervals(target_sampler, unpenalized_mle)
+
+        pivots_mle = target_sampler.coefficient_pvalues(unpenalized_mle,
+                                                        parameter=target_sampler.reference,
+                                                        sample=target_sample)
         
-        pivots_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                             parameter=beta[M_est.overall],
-                                                             sample=target_sample)
-
+        pivots_truth = target_sampler.coefficient_pvalues(unpenalized_mle,
+                                                          parameter=beta[M_est.overall],
+                                                          sample=target_sample)
+        
         true_vec = beta[M_est.overall]
 
-        pvalues = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                        parameter=np.zeros_like(true_vec),
-                                                        sample=target_sample)
+        pvalues = target_sampler.coefficient_pvalues(unpenalized_mle,
+                                                     parameter=np.zeros_like(true_vec),
+                                                     sample=target_sample)
 
         L, U = LU
-
-        ncovered = 0
-        naive_ncovered = 0
 
         covered = np.zeros(nactive, np.bool)
         naive_covered = np.zeros(nactive, np.bool)
@@ -125,7 +126,7 @@ def test_split(s=3,
         for j in range(nactive):
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                 covered[j] = 1
-            if (LU_naive[0,j] <= true_vec[j]) and (LU_naive[1,j] >= true_vec[j]):
+            if (LU_naive[j,0] <= true_vec[j]) and (LU_naive[j,1] >= true_vec[j]):
                 naive_covered[j] = 1
             active_var[j] = active_set[j] in nonzero
 
@@ -139,17 +140,14 @@ def report(niter=50, **kwargs):
                                              niter,
                                              reports.summarize_all,
                                              **kwargs)
-    kwargs['bootstrap'] = True
-    fig = reports.pivot_plot(CLT_runs, color='b', label='Bootstrap')
-
     kwargs['bootstrap'] = False
+    fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
+
+    kwargs['bootstrap'] = True
     bootstrap_runs = reports.collect_multiple_runs(split_report['test'],
                                                    split_report['columns'],
                                                    niter,
                                                    reports.summarize_all,
                                                    **kwargs)
-
-    fig = reports.pivot_plot(bootstrap_runs, color='g', label='CLT', fig=fig)
+    fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot
-
-
