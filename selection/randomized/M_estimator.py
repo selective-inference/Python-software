@@ -305,7 +305,8 @@ class M_estimator(query):
 
         self.opt_transform = (new_linear, new_offset)
 
-        # for group LASSO this will induce a bigger jacobian
+        # for group LASSO this should not induce a bigger jacobian as
+        # the subgradients are in the interior of a ball
         self.selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
 
         # reset variables
