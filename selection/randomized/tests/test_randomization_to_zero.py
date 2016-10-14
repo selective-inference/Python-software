@@ -122,14 +122,14 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
-@wait_for_return_value(max_tries=200)
+@wait_for_return_value(max_tries=300)
 def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000):
     s, n, p = 3, 100, 20
 
     #randomizer = randomization.logistic((p,), scale=1./np.log(n))
     #randomizer = randomization.laplace((p,), scale=2. / np.sqrt(n))
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=10.)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=12.)
     # X, y, beta, _, _ = gaussian_instance(n=n, p=p, s=s, rho=0, snr=5.)
 
     nonzero = np.where(beta)[0]

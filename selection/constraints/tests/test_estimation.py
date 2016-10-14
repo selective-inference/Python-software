@@ -94,7 +94,7 @@ def test_gaussian_unknown():
     cumulant.coefs[:] = 1.
     MLE2 = cumulant.solve(linear, tol=1.e-12, min_its=400)
 
-    np.testing.assert_allclose(MLE2, conj.smooth_objective(sufficient_stat, 'grad'))
+    np.testing.assert_allclose(MLE2, conj.smooth_objective(sufficient_stat, 'grad'), rtol=1.e-4, atol=1.e-4)
 
     beta_hat = np.linalg.pinv(X).dot(Y)
     sigmasq_hat = np.sum(((Y - X.dot(beta_hat))**2) / n)
