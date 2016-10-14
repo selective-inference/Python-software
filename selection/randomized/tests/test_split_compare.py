@@ -9,14 +9,16 @@ import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import randomization, split_glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.tests.instance import logistic_instance
-from selection.tests.decorators import wait_for_return_value, register_report
+from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
 from selection.randomized.glm import standard_ci, standard_ci_sm, glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 from selection.randomized.multiple_queries import naive_confidence_intervals
 
-@register_report(['pivots_clt', 'pivots_boot', 'covered_clt', 'ci_length_clt', 'covered_boot', 'ci_length_boot', 'covered_split', 'ci_length_split', 'active',
-                  'covered_naive'])
-@register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
+@register_report(['pivots_clt', 'pivots_boot', 
+                  'covered_clt', 'ci_length_clt', 
+                  'covered_boot', 'ci_length_boot', 
+                  'covered_split', 'ci_length_split', 
+                  'active', 'covered_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
 def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True): 

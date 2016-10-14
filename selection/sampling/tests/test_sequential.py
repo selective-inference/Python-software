@@ -9,8 +9,8 @@ from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 
 @dec.slow
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10)
-def test_sequentially_constrained(ndraw=100):
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, nsim=10)
+def test_sequentially_constrained(ndraw=100, nsim=50):
     S = -np.identity(10)[:3]
     b = -6 * np.ones(3)
     C = constraints(S, b)

@@ -5,7 +5,7 @@ import nose.tools as nt
 import numpy.testing.decorators as dec
 
 from selection.tests.decorators import set_sampling_params_iftrue
-from selection.test.flags import SMALL_SAMPLES, SET_SEED
+from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 import selection.constraints.affine as AC
 
 

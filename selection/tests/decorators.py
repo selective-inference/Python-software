@@ -125,7 +125,7 @@ def set_sampling_params_iftrue(condition, **sampling_params):
 
     return set_params_decorator
 
-def wait_for_return_value(max_tries=50):
+def wait_for_return_value(max_tries=50, strict=True):
     """
     Decorate a test to make it wait until the test
     returns something.
