@@ -28,7 +28,7 @@ active_signs = np.sign(betaE)
 tau=1 #randomization_variance
 
 
-def test_minimzations():
+def test_minimizations():
     parameter = np.random.standard_normal(nactive)
     lagrange = lam * np.ones(p)
     mean = X_1[:, active].dot(parameter)
@@ -46,7 +46,35 @@ def test_minimzations():
 
     print "value and minimizer- grad descent", -sel_prob_grad_descent.minimize()[1], sel_prob_grad_descent.minimize()[0]
 
-test_minimzations()
+#test_minimizations()
+
+def one_sparse_minimizations():
+    if nactive == 1:
+        snr_seq = np.linspace(-10, 10, num=100)
+        lagrange = lam * np.ones(p)
+        for i in range(snr_seq.shape[0]):
+            parameter = snr_seq[i]
+            print "parameter value", parameter
+            mean = X_1[:, active].dot(parameter)
+
+            sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
+
+            sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+
+            sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs, lagrange,
+                                                                    mean,
+                                                                    noise_variance,
+                                                                    randomization.isotropic_gaussian((p,), 1.),
+                                                                    epsilon)
+
+            print "value and minimizer- scipy", -sel_prob_scipy_val[0], sel_prob_scipy_val[1]
+
+            print "value and minimizer- grad descent", -sel_prob_grad_descent.minimize()[1], \
+            sel_prob_grad_descent.minimize()[0]
+
+one_sparse_minimizations()
+
 
 
 
