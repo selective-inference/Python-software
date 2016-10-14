@@ -22,7 +22,7 @@ from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
 @register_report(['pvalue', 'active'])
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_overall_null_two_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator

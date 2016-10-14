@@ -3,8 +3,9 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.tests.decorators import wait_for_return_value, register_report
+from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
 import selection.tests.reports as reports
+from selection.tests.flags import SMALL_SAMPLES
 
 from selection.api import pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import split_glm_group_lasso
@@ -14,6 +15,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
 def test_split(s=3,
                n=200,

@@ -15,7 +15,7 @@ from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
 def test_intervals(s=3,
                    n=200,

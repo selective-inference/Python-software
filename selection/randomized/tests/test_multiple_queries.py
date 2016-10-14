@@ -17,10 +17,10 @@ from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, m
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 @register_report(['pivot'])
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'selected zeros'): # nsim needed for decorator
+def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'selected zeros'): 
     s, n, p = 0, 600, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -136,7 +136,7 @@ def report(niter=50, **kwargs):
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -208,7 +208,7 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_parametric_covariance(ndraw=10000, burnin=2000):
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)

@@ -16,8 +16,10 @@ from selection.randomized.multiple_queries import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot', 'covered_clt', 'ci_length_clt', 'covered_boot', 'ci_length_boot', 'covered_split', 'ci_length_split', 'active',
                   'covered_naive'])
+@register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
-def test_split_compare(ndraw=20000, burnin=10000, nsim=None, solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True): # nsim needed for decorator
+def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True): 
     # s, n, p = 0, 200, 10
     s, n, p = 6, 300, 40
 

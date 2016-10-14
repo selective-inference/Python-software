@@ -27,7 +27,7 @@ from selection.algorithms.lasso import lasso
 
 @register_report(['pvalue', 'active'])
 @wait_for_return_value()
-@set_sampling_params_iftrue(SMALL_SAMPLES)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, burnin=10, ndraw=10)
 @dec.slow
 def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
                          nsim=10, burnin=2000, ndraw=8000):

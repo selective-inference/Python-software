@@ -66,7 +66,7 @@ def set_seed_iftrue(condition, seed=10):
 
     return set_seed_decorator
 
-def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
+def set_sampling_params_iftrue(condition, **sampling_params):
     """
     Fix the seed for random test.
     Parameters
@@ -100,10 +100,7 @@ def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
             """Modified for normal test functions."""
             if set_val():
                 kwargs_cp = copy(kwargs)
-                for n, v in zip(['nsim', 'burnin', 'ndraw'],
-                                [nsim, burnin, ndraw]):
-                    if n in kwargs_cp:
-                        kwargs_cp[n] = v
+                kwargs_cp.update(sampling_params)
                 value = f(*args, **kwargs_cp)
             else:
                 value = f(*args, **kwargs)
@@ -114,10 +111,7 @@ def set_sampling_params_iftrue(condition, nsim=10, burnin=5, ndraw=5):
             """Modified for test generators."""
             if set_val():
                 kwargs_cp = copy(kwargs)
-                for n, v in zip(['nsim', 'burnin', 'ndraw'],
-                                [nsim, burnin, ndraw]):
-                    if n in kwargs_cp:
-                        kwargs_cp[n] = v
+                kwargs_cp.update(sampling_params)
                 for x in f(*args, **kwargs_cp):
                     yield x
 

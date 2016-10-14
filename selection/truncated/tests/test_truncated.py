@@ -4,6 +4,7 @@ import numpy as np
 
 from selection.truncated.gaussian import truncated_gaussian, truncated_gaussian_old
 from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 
 intervals = [(-np.inf,-4.),(3.,np.inf)]
 
@@ -22,11 +23,9 @@ def test_sigma():
     np.testing.assert_equal(np.around(np.array(2 * tg1.equal_tailed_interval(Z/2,0.05)), 4),
                             np.around(np.array(tg2.equal_tailed_interval(Z,0.05)), 4))
 
-@set_seed_iftrue(True)
-@set_sampling_params_iftrue(True)
-def test_equal_tailed_coverage(burnin=None, 
-                               ndraw=None,
-                               nsim=1000):
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLE, nsim=10)
+def test_equal_tailed_coverage(nsim=1000):
 
     alpha = 0.25
     tg = truncated_gaussian_old([(2.3,np.inf)], scale=2)
@@ -42,11 +41,9 @@ def test_equal_tailed_coverage(burnin=None,
     print(coverage)
     nt.assert_true(np.fabs(coverage - (1-alpha)*nsim) < 2*SE)
 
-@set_seed_iftrue(True)
-@set_sampling_params_iftrue(True)
-def test_UMAU_coverage(burnin=None, 
-                       ndraw=None,
-                       nsim=1000):
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLE, nsim=10)
+def test_UMAU_coverage(nsim=1000):
 
     alpha = 0.25
     tg = truncated_gaussian_old([(2.3,np.inf)], scale=2)

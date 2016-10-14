@@ -5,6 +5,7 @@ import nose.tools as nt
 import numpy.testing.decorators as dec
 
 from selection.tests.decorators import set_sampling_params_iftrue
+from selection.test.flags import SMALL_SAMPLES, SET_SEED
 import selection.constraints.affine as AC
 
 
@@ -20,7 +21,7 @@ try:
 except ImportError:
     R_available = False
 
-@set_sampling_params_iftrue(True, ndraw=20000)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=20000)
 def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
 
     n, p = 4, 10
@@ -43,7 +44,7 @@ def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
     
 
 @dec.skipif(not R_available, "needs rpy2")
-@set_sampling_params_iftrue(True)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, burnin=10, ndraw=10)
 def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
 
     mu = np.arange(6)
@@ -89,8 +90,8 @@ def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
     P = P[P < 1]
 
 
-@set_sampling_params_iftrue(True)
-def main(nsim=1000, burnin=None, ndraw=None):
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10)
+def main(nsim=1000):
 
 
     def full_sim(L, b, p):
