@@ -39,7 +39,7 @@ def test_minimizations():
         sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs, lagrange,
                                                                 mean,noise_variance,
                                                                 randomization.isotropic_gaussian((p,), 1.),epsilon)
-        
+
         print "value and minimizer- scipy", -sel_prob_scipy_val[0], sel_prob_scipy_val[1]
 
         print "value and minimizer- grad descent", -sel_prob_grad_descent.minimize()[1], sel_prob_grad_descent.minimize()[0]
@@ -85,6 +85,7 @@ def test_objectives_one_sparse():
             active_coef = np.dot(np.diag(active_signs), np.fabs(np.random.standard_normal(nactive)))
             sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
                                                            noise_variance, tau, epsilon)
+
             sel_scipy_objective = sel_prob_scipy.objective(np.append(vec, np.fabs(active_coef)))
 
             sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs, lagrange,
@@ -112,6 +113,7 @@ def test_objectives_not_one_sparse():
 
         sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
                                                        noise_variance, tau, epsilon)
+
         sel_scipy_objective = sel_prob_scipy.objective(np.append(vec, np.fabs(active_coef)))
 
         sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs, lagrange,
