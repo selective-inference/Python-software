@@ -44,7 +44,7 @@ def test_minimizations():
 
         print "value and minimizer- grad descent", -sel_prob_grad_descent.minimize()[1], sel_prob_grad_descent.minimize()[0]
 
-#test_minimizations()
+test_minimizations()
 
 def one_sparse_minimizations():
     if nactive == 1:
@@ -128,7 +128,7 @@ def test_objectives_not_one_sparse():
         print "objective - for scipy.optimize", sel_scipy_objective
         print "objective - for grad descent", sel_grad_objective
 
-test_objectives_not_one_sparse()
+#test_objectives_not_one_sparse()
 
 
 

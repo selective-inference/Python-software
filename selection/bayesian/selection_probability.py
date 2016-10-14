@@ -145,7 +145,7 @@ class selection_probability_methods():
 
         Sigma_inv = np.linalg.inv(Sigma)
 
-        Sigma_inter = np.true_divide(np.identity(self.X.shape[0]), self.rand_variance) - np.true_divide(np.dot(np.dot(
+        Sigma_inter = np.true_divide(np.identity(self.X.shape[1]), self.rand_variance) - np.true_divide(np.dot(np.dot(
             self.X.T, Sigma_inv), self.X), self.noise_variance ** 2)
 
         arg_constant = np.dot(np.true_divide(np.dot(self.B_p.T, self.X.T), self.rand_variance), Sigma_inv)
@@ -160,7 +160,7 @@ class selection_probability_methods():
                                     2*(self.noise_variance**2))
 
         return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2)- np.dot(param.T, linear_coef)\
-               + nonnegative_barrier(param[~self.cube_bool]) + cube_barrier_softmax(z,self.inactive_lagrange)\
+               + nonnegative_barrier(param[~self.cube_bool]) + cube_barrier_softmax(param,self.inactive_lagrange)\
                -const_coef
 
     def minimize_scipy_p(self):
@@ -168,7 +168,9 @@ class selection_probability_methods():
         initial_guess = np.zeros(self.X.shape[1])
         initial_guess[~self.cube_bool] = self.feasible_point
         res = minimize(self.objective_p, x0=initial_guess)
-        return -res.fun, res.x
+        return -res.fun - np.true_divide(np.dot(self.mean_parameter.T, self.mean_parameter), 2 * self.noise_variance)\
+               - np.true_divide(np.dot(self.offset_active.T,self.offset_active), 2 * (self.rand_variance ** 2)),\
+               res.x
 
 
 
