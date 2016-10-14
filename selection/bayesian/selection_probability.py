@@ -54,8 +54,10 @@ class selection_probability_methods():
 
         self.rand_variance = rand_variance
         self.inactive_lagrange = lagrange[~active]
+        self.active_lagrange = lagrange[active]
         self.initial = np.zeros(n + E, )
         self.initial[n:] = feasible_point
+        self.feasible_point = feasible_point
         self.active = active
 
         self.opt_vars = np.zeros(n + E, bool)
@@ -73,16 +75,27 @@ class selection_probability_methods():
         self.offset_active = active_signs * lagrange[active]
         self.inactive_subgrad = np.zeros(p - E)
 
-        self.B_p = np.vstack([self.A_active[:,n:],self.A_inactive[:,n:]])
+        append = np.zeros((p,p-E))
+        append[E:,:] = np.identity(p-E)
+        B_p = self.B_p = np.hstack([np.vstack([self.A_active[:,n:],self.A_inactive[:,n:]]),append])
         self.X = X
+
+        self.B_slice = B_p[:E,:]
 
         self.cube_bool = np.zeros(p, np.bool)
         self.cube_bool[E:] = 1
 
+        if E>1:
+            self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance)\
+                           + np.true_divide(np.dot(self.X_E, self.offset_active),self.rand_variance)
+        else:
+            self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance) \
+                               + np.true_divide(np.dot(self.X_E, self.offset_active[:,None]), self.rand_variance)
+
     def objective(self,param):
 
         def cube_problem(arg, method="softmax_barrier"):
-            lam = self.inactive_lagrange[0]
+            lam = self.active_lagrange[0]
             res_seq = []
             if method == "log_barrier":
                 def obj_subgrad(u, mu):
@@ -146,30 +159,47 @@ class selection_probability_methods():
         Sigma_inv = np.linalg.inv(Sigma)
 
         Sigma_inter = np.true_divide(np.identity(self.X.shape[1]), self.rand_variance) - np.true_divide(np.dot(np.dot(
-            self.X.T, Sigma_inv), self.X), self.noise_variance ** 2)
+            self.X.T, Sigma_inv), self.X), self.rand_variance ** 2)
 
         arg_constant = np.dot(np.true_divide(np.dot(self.B_p.T, self.X.T), self.rand_variance), Sigma_inv)
 
-        linear_coef = np.dot(arg_constant,(np.true_divide(self.mean_parameter, self.noise_variance)
-                           + np.true_divide(np.dot(self.X, self.offset_active),self.rand_variance)))\
-                    -np.true_divide(np.dot(self.B_p.T,self.offset_active),self.rand_variance)
+        if self.active.sum() ==1:
+            linear_coef = np.dot(arg_constant,self.mean_offset)\
+                          -np.true_divide(np.dot(self.B_slice.T,self.offset_active[:,None]),self.rand_variance)
+
+        else :
+            linear_coef = np.dot(arg_constant, self.mean_offset) \
+                          - np.true_divide(np.dot(self.B_slice.T, self.offset_active), self.rand_variance)
 
         quad_coef = np.dot(np.dot(self.B_p.T, Sigma_inter), self.B_p)
 
-        const_coef = np.true_divide(np.dot(np.dot(self.mean_parameter.T, Sigma_inv), self.mean_parameter),
-                                    2*(self.noise_variance**2))
+        const_coef = np.true_divide(np.dot(np.dot(self.mean_offset.T, Sigma_inv), self.mean_offset),2)
+
+        cube_barrier = 0
+        lam = self.active_lagrange[0]
+        for i in range(param[self.cube_bool].shape[0]):
+            cube_barrier+= cube_barrier_softmax_coord((param[self.cube_bool])[i], lam)
 
         return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2)- np.dot(param.T, linear_coef)\
-               + nonnegative_barrier(param[~self.cube_bool]) + cube_barrier_softmax(param,self.inactive_lagrange)\
-               -const_coef
+               + nonnegative_barrier(param[~self.cube_bool])\
+               - const_coef+ cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
+
+        #return self.B_slice.shape, self.offset_active.shape, np.dot(self.B_slice.T,self.offset_active).shape,\
+               #np.dot(arg_constant,self.mean_offset).shape, self.mean_offset.shape
+        #return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2).shape,\
+               #np.dot(param.T, linear_coef).shape, param.T.shape, linear_coef.shape, \
+               #nonnegative_barrier(param[~self.cube_bool]).shape,const_coef.shape
+               #cube_barrier.shape,\
+
 
     def minimize_scipy_p(self):
 
         initial_guess = np.zeros(self.X.shape[1])
         initial_guess[~self.cube_bool] = self.feasible_point
         res = minimize(self.objective_p, x0=initial_guess)
-        return -res.fun - np.true_divide(np.dot(self.mean_parameter.T, self.mean_parameter), 2 * self.noise_variance)\
-               - np.true_divide(np.dot(self.offset_active.T,self.offset_active), 2 * (self.rand_variance ** 2)),\
+        return res.fun\
+               + np.true_divide(np.dot(self.mean_parameter.T, self.mean_parameter), 2 * self.noise_variance)\
+               + np.true_divide(np.dot(self.offset_active.T,self.offset_active), 2 * (self.rand_variance)),\
                res.x
 
 
