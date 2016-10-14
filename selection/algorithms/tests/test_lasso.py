@@ -661,13 +661,13 @@ def test_gaussian_sandwich_pvals(n=200,
     if set(true_active).issubset(L_P.active):
 
         S = L_P.summary('twosided')
-        P_P = [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+        P_P = [p for p, v in zip(S['pval'], S['variable']) if v not in true_active]
 
         L_S = lasso.gaussian(X, y, feature_weights, covariance_estimator=sandwich)
         L_S.fit()
 
         S = L_S.summary('twosided')
-        P_S = [p for p, v in zip(S['pval'], S['variable']) if v not in active]
+        P_S = [p for p, v in zip(S['pval'], S['variable']) if v not in true_active]
 
         return P_P, P_S, [v in true_active for v in S['variable']]
 

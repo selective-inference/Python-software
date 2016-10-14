@@ -230,11 +230,18 @@ def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None)
 
     return fig
 
-def boot_clt_plot(multiple_results, coverage=True, color='b', label=None, fig=None):
+def boot_clt_plot(multiple_results, coverage=True, color='b', label=None, fig=None, active=True, inactive=True):
     """
     Extract pivots at truth and mle.
     """
 
+    test = np.zeros_like(multiple_results['active'])
+    if active:
+        test += multiple_results['active']
+    if inactive:
+        test += ~multiple_results['active']
+    multiple_results = multiple_results[test]
+    print(test.sum(), test.shape)
 
     if fig is None:
         fig, _ = plt.subplots(nrows=1, ncols=2)
@@ -263,11 +270,10 @@ def boot_clt_plot(multiple_results, coverage=True, color='b', label=None, fig=No
     if coverage:
         if 'covered_naive' in multiple_results.columns:
             fig.suptitle('CLT Coverage: %0.2f, Boot: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['covered_clt']),
-                            np.mean(multiple_results['cover_boot']), np.mean(multiple_results['covered_naive'])))
+                            np.mean(multiple_results['covered_boot']), np.mean(multiple_results['covered_naive'])))
         else:
             fig.suptitle('Coverage CLT: %0.2f, Bootstrap: %0.2f' % (np.mean(multiple_results['covered_clt']),
                                                             np.mean(multiple_results['covered_boot'])))
-    fig.show()
     return fig
 
 def compute_pivots(multiple_results):
