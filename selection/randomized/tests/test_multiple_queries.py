@@ -179,12 +179,12 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000, nsim=None):
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
-def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+@wait_for_return_value(max_itres=200)
+def test_parametric_covariance(ndraw=10000, burnin=2000): 
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=10)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=12)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -211,6 +211,7 @@ def test_parametric_covariance(ndraw=10000, burnin=2000, nsim=None): # nsim need
         return None
     if target[-2] or M_est2.overall[-2]:
         return None
+
     # we should check they are different sizes
     target[-2:] = 1
 
