@@ -29,22 +29,20 @@ tau=1 #randomization_variance
 
 
 def test_minimizations():
-    parameter = np.random.standard_normal(nactive)
-    lagrange = lam * np.ones(p)
-    mean = X_1[:, active].dot(parameter)
+    if nactive > 1:
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+        sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                       noise_variance, tau, epsilon)
+        sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+        sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs, lagrange,
+                                                                mean,noise_variance,
+                                                                randomization.isotropic_gaussian((p,), 1.),epsilon)
+        
+        print "value and minimizer- scipy", -sel_prob_scipy_val[0], sel_prob_scipy_val[1]
 
-    sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
-                                                   noise_variance, tau, epsilon)
-
-    sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
-
-    sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
-                                                            noise_variance,randomization.isotropic_gaussian((p,), 1.),
-                                                            epsilon)
-
-    print "value and minimizer- scipy", -sel_prob_scipy_val[0], sel_prob_scipy_val[1]
-
-    print "value and minimizer- grad descent", -sel_prob_grad_descent.minimize()[1], sel_prob_grad_descent.minimize()[0]
+        print "value and minimizer- grad descent", -sel_prob_grad_descent.minimize()[1], sel_prob_grad_descent.minimize()[0]
 
 #test_minimizations()
 
@@ -101,7 +99,34 @@ def test_objectives_one_sparse():
             print "objective - new function", sel_scipy_objective
             print "objective - to be debugged", sel_grad_objective
 
-test_objectives_one_sparse()
+#test_objectives_one_sparse()
+
+def test_objectives_not_one_sparse():
+    if nactive > 1:
+        parameter = np.random.standard_normal(nactive)
+        print "parameter value", parameter
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+        vec = np.random.standard_normal(n)
+        active_coef = np.dot(np.diag(active_signs), np.fabs(np.random.standard_normal(nactive)))
+
+        sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                       noise_variance, tau, epsilon)
+        sel_scipy_objective = sel_prob_scipy.objective(np.append(vec, np.fabs(active_coef)))
+
+        sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs, lagrange,
+                                                                mean,
+                                                                noise_variance,
+                                                                randomization.isotropic_gaussian((p,), 1.),
+                                                                epsilon)
+
+        sel_grad_objective = sel_prob_grad_descent.smooth_objective(np.append(vec, np.fabs(active_coef)),
+                                                                    mode='func', check_feasibility=False)
+
+        print "objective - for scipy.optimize", sel_scipy_objective
+        print "objective - for grad descent", sel_grad_objective
+
+test_objectives_not_one_sparse()
 
 
 
