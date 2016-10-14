@@ -121,17 +121,6 @@ def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'select
 
         return pivot
 
-def report(niter=50, **kwargs):
-
-    split_report = reports.reports['test_multiple_views']
-    CLT_runs = reports.collect_multiple_runs(split_report['test'],
-                                             split_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-    kwargs['bootstrap'] = True
-    fig = reports.pivot_plot_simple(CLT_runs, color='b', label='Bootstrap')
-
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)

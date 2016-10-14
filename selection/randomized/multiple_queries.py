@@ -83,19 +83,22 @@ class multiple_queries(object):
 
         nqueries = self.nqueries = len(self.objectives)
 
-        self.num_opt_var = 0
-        self.opt_slice = []
         self.score_info = []
 
         for objective in self.objectives:
             score_ = objective.setup_sampler()
             self.score_info.append(score_)
+
+    def setup_opt_state(self):
+        self.num_opt_var = 0
+        self.opt_slice = []
+        
+        for objective in self.objectives:
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
-
-        for i in range(nqueries):
+        for i in range(len(self.objectives)):
             self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
@@ -143,6 +146,8 @@ class multiple_queries(object):
 
         '''
 
+        self.setup_opt_state()
+
         return targeted_sampler(self,
                                 target_info,
                                 observed_target_state,
@@ -157,6 +162,8 @@ class multiple_queries(object):
                                   target_alpha,
                                   target_set=None,
                                   reference=None):
+
+        self.setup_opt_state()
 
         return bootstrapped_target_sampler(self,
                                            target_bootstrap,
