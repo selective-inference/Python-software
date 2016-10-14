@@ -177,7 +177,7 @@ if sel is not None:
                 print sel_breakup, sel_breakup_1
 
 
-    test_objective_new_function()
+
 
 
 
