@@ -99,15 +99,16 @@ class M_estimator(query):
 
         # solve the restricted problem
 
-        self.overall = active + unpenalized
-        self.inactive = ~self.overall
-        self.unpenalized = unpenalized
-        self.active_directions = np.array(active_directions).T
-        self.active_groups = np.array(active_groups, np.bool)
-        self.unpenalized_groups = np.array(unpenalized_groups, np.bool)
+        self._overall = active + unpenalized
+        self._inactive = ~self._overall
+        self._unpenalized = unpenalized
+        self._active_directions = np.array(active_directions).T
+        self._active_groups = np.array(active_groups, np.bool)
+        self._unpenalized_groups = np.array(unpenalized_groups, np.bool)
 
-        self.selection_variable = {'groups':self.active_groups, 
-                                   'directions':self.active_directions}
+        self.selection_variable = {'groups':self._active_groups, 
+                                   'variables':self._overall,
+                                   'directions':self._active_directions}
 
         # initial state for opt variables
 
@@ -115,8 +116,8 @@ class M_estimator(query):
                             self.randomized_loss.quadratic.objective(self.initial_soln, 'grad')) 
                           # the quadratic of a smooth_atom is not included in computing the smooth_objective
 
-        initial_subgrad = initial_subgrad[self.inactive]
-        initial_unpenalized = self.initial_soln[self.unpenalized]
+        initial_subgrad = initial_subgrad[self._inactive]
+        initial_unpenalized = self.initial_soln[self._unpenalized]
         self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized,
                                                   initial_subgrad], axis=0)
@@ -143,11 +144,11 @@ class M_estimator(query):
                                self.epsilon,
                                self.penalty,
                                self.initial_soln,
-                               self.overall,
-                               self.inactive,
-                               self.unpenalized,
-                               self.active_groups,
-                               self.active_directions)
+                               self._overall,
+                               self._inactive,
+                               self._unpenalized,
+                               self._active_groups,
+                               self._active_directions)
 
         # scaling should be chosen to be Lipschitz constant for gradient of Gaussian part
 
@@ -177,7 +178,7 @@ class M_estimator(query):
         # U for unpenalized
         # -E for inactive
 
-        _opt_linear_term = np.zeros((p, self.active_groups.sum() + unpenalized.sum() + inactive.sum()))
+        _opt_linear_term = np.zeros((p, self._active_groups.sum() + unpenalized.sum() + inactive.sum()))
         _score_linear_term = np.zeros((p, p))
 
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
@@ -381,8 +382,8 @@ class M_estimator_split(M_estimator):
         from .glm import pairs_bootstrap_score # need to correct these imports!!!
 
         bootstrap_score = pairs_bootstrap_score(self.loss,
-                                                self.overall,
-                                                beta_active=self._beta_full[self.overall],
+                                                self._overall,
+                                                beta_active=self._beta_full[self._overall],
                                                 solve_args=solve_args)
 
         # find unpenalized MLE on subsample
@@ -390,10 +391,10 @@ class M_estimator_split(M_estimator):
         newq, oldq = rr.identity_quadratic(0, 0, 0, 0), self.randomized_loss.quadratic
         self.randomized_loss.quadratic = newq
         beta_active_subsample = restricted_Mest(self.randomized_loss,
-                                                self.overall)
+                                                self._overall)
 
         bootstrap_score_split = pairs_bootstrap_score(self.loss,
-                                                      self.overall,
+                                                      self._overall,
                                                       beta_active=beta_active_subsample,
                                                       solve_args=solve_args)
         self.randomized_loss.quadratic = oldq

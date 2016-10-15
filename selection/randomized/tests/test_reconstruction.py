@@ -11,8 +11,6 @@ from selection.randomized.glm import split_glm_group_lasso
 from selection.tests.instance import logistic_instance
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-from selection.randomized.multiple_queries import naive_confidence_intervals
-
 @wait_for_return_value()
 def test_reconstruction(s=3,
                         n=200,
@@ -45,20 +43,20 @@ def test_reconstruction(s=3,
     mv = multiple_queries([M_est])
     mv.solve()
 
-    M_est.overall = M_est.overall
-    nactive = np.sum(M_est.overall)
+    M_est.selection_variable['variables'] = M_est.selection_variable['variables']
+    nactive = np.sum(M_est.selection_variable['variables'])
 
     if nactive==0:
         return None
 
-    if set(nonzero).issubset(np.nonzero(M_est.overall)[0]):
+    if set(nonzero).issubset(np.nonzero(M_est.selection_variable['variables'])[0]):
 
-        active_set = np.nonzero(M_est.overall)[0]
+        active_set = np.nonzero(M_est.selection_variable['variables'])[0]
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
         mv.setup_sampler(form_covariances)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss, M_est.overall)
+        boot_target, target_observed = pairs_bootstrap_glm(loss, M_est.selection_variable['variables'])
 
         # testing the global null
         # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
@@ -67,15 +65,15 @@ def test_reconstruction(s=3,
         target = lambda indices: boot_target(indices)[:nactive]
         target_observed = target_observed[:nactive]
 
-        unpenalized_mle = restricted_Mest(loss, M_est.overall, solve_args=solve_args)
+        unpenalized_mle = restricted_Mest(loss, M_est.selection_variable['variables'], solve_args=solve_args)
 
-        alpha_mat = set_alpha_matrix(loss, M_est.overall)
+        alpha_mat = set_alpha_matrix(loss, M_est.selection_variable['variables'])
         target_alpha = alpha_mat
 
         ## bootstrap
         reference_known = False
         if reference_known:
-            reference = beta[M_est.overall] 
+            reference = beta[M_est.selection_variable['variables']] 
         else:
             reference = unpenalized_mle
 
@@ -87,7 +85,7 @@ def test_reconstruction(s=3,
 
         else:
             target_sampler = mv.setup_target(target,
-                                             target_observed, #reference=beta[M_est.overall])
+                                             target_observed, #reference=beta[M_est.selection_variable['variables']])
                                              reference = unpenalized_mle)
             
         target_sample = target_sampler.sample(ndraw=ndraw,

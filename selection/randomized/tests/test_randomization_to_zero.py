@@ -58,7 +58,7 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = M_est1.selection_variable['variables'] #+ M_est2.selection_variable['variables']
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
@@ -153,7 +153,7 @@ def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000):
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = M_est1.selection_variable['variables'] #+ M_est2.selection_variable['variables']
     nactive = np.sum(active_union)
     active_set = np.nonzero(active_union)[0]
 
@@ -215,10 +215,10 @@ def test_parametric_covariance_small(ndraw=10000, burnin=2000, nsim=None): # nsi
     mv = multiple_queries([M_est1, M_est2])
     mv.solve()
 
-    target = M_est1.overall.copy()
-    if target[-1] or M_est2.overall[-1]:
+    target = M_est1.selection_variable['variables'].copy()
+    if target[-1] or M_est2.selection_variable['variables'][-1]:
         return None
-    if target[-2] or M_est2.overall[-2]:
+    if target[-2] or M_est2.selection_variable['variables'][-2]:
         return None
     # we should check they are different sizes
     target[-2:] = 1

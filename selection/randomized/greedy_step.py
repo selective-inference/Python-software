@@ -6,7 +6,13 @@ from .M_estimator import restricted_Mest
 
 class greedy_score_step(query):
 
-    def __init__(self, loss, penalty, active_groups, inactive_groups, randomization, solve_args={'min_its':50, 'tol':1.e-10},
+    def __init__(self, 
+                 loss, 
+                 penalty, 
+                 active_groups, 
+                 inactive_groups, 
+                 randomization, 
+                 solve_args={'min_its':50, 'tol':1.e-10},
                  beta_active=None):
         """
         penalty is a group_lasso object that assigns weights to groups
@@ -106,7 +112,8 @@ class greedy_score_step(query):
         self.maximizing_variables = padding_map.dot(winning_variables) > 0
         
         self.selection_variable = {'maximizing_group':maximizing_group, 
-                                   'maximizing_direction':self.maximizing_subgrad}
+                                   'maximizing_direction':self.maximizing_subgrad,
+                                   'variables':self.maximizing_variables}
 
     def setup_sampler(self):
 

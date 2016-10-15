@@ -53,7 +53,7 @@ def test_threshold_score(ndraw=10000, burnin=2000, nsim=None): # nsim needed for
     mv = multiple_queries([thresh])
     mv.solve()
 
-    boundary = thresh.boundary
+    boundary = thresh.selection_variable['boundary_set']
     new_active = np.nonzero(np.arange(3,20)[boundary])[0]
     active_set = np.array(sorted(set(range(3)).union(new_active)))
 

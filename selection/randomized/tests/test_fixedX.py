@@ -8,8 +8,7 @@ from selection.tests.instance import gaussian_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 import selection.tests.reports as reports
 
-from selection.randomized.randomization import randomization
-from selection.randomized.multiple_queries import multiple_queries
+from selection.randomized.api import randomization, multiple_queries
 from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso, glm_nonparametric_bootstrap 
 
 
@@ -36,7 +35,7 @@ def test_fixedX(ndraw=10000, burnin=2000): # nsim needed for decorator
     mv = multiple_queries([M_est])
     mv.solve()
 
-    active = M_est.overall
+    active = M_est.selection_variable['variables']
     nactive = active.sum()
 
     if set(nonzero).issubset(np.nonzero(active)[0]) and active.sum() > len(nonzero):

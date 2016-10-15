@@ -49,7 +49,7 @@ def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'select
 
     active_union = np.zeros(p, np.bool)
     for i in range(nview):
-        active_union += view[i].overall
+        active_union += view[i].selection_variable['variables']
 
     nactive = np.sum(active_union)
     print("nactive", nactive)
@@ -153,7 +153,7 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
 
     active_union = np.zeros(p, np.bool)
     for i in range(nview):
-        active_union += view[i].overall
+        active_union += view[i].selection_variable['variables']
 
     nactive = np.sum(active_union)
     print("nactive", nactive)
@@ -223,10 +223,10 @@ def test_parametric_covariance(ndraw=10000, burnin=2000):
     mv = multiple_queries([M_est1, M_est2])
     mv.solve()
 
-    target = M_est1.overall.copy()
-    if target[-1] or M_est2.overall[-1]:
+    target = M_est1.selection_variable['variables'].copy()
+    if target[-1] or M_est2.selection_variable['variables'][-1]:
         return None
-    if target[-2] or M_est2.overall[-2]:
+    if target[-2] or M_est2.selection_variable['variables'][-2]:
         return None
 
     # we should check they are different sizes

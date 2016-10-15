@@ -1,4 +1,4 @@
-from .multiple_queries import multiple_queries
+from .query import multiple_queries, query
 
 from .glm import (glm_group_lasso, split_glm_group_lasso,
                   glm_group_lasso_parametric,

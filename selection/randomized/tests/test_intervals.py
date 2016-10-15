@@ -11,7 +11,7 @@ import selection.tests.reports as reports
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-from selection.randomized.multiple_queries import naive_confidence_intervals
+from selection.randomized.query import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @set_seed_iftrue(SET_SEED)
@@ -52,7 +52,7 @@ def test_intervals(s=3,
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = M_est1.selection_variable['variables']
     nactive = np.sum(active_union)
 
     if nactive==0:
@@ -73,7 +73,8 @@ def test_intervals(s=3,
         target_gn = lambda indices: boot_target(indices)[:nactive]
         target_observed_gn = target_observed[:nactive]
 
-        unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
+        
+        unpenalized_mle = restricted_Mest(loss, M_est1.selection_variable['variables'], solve_args=solve_args)
 
         ## bootstrap
 

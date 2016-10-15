@@ -12,7 +12,7 @@ from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
 from selection.randomized.glm import standard_ci, standard_ci_sm, glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-from selection.randomized.multiple_queries import naive_confidence_intervals
+from selection.randomized.query import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot', 
                   'covered_clt', 'ci_length_clt', 
@@ -50,7 +50,7 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active_union = M_est1.overall #+ M_est2.overall
+    active_union = M_est1.selection_variable['variables'] #+ M_est2.selection_variable['variables']
     nactive = np.sum(active_union)
     print("nactive", nactive)
     if nactive==0:
@@ -78,7 +78,7 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
         target_gn = lambda indices: boot_target(indices)[:nactive]
         target_observed_gn = target_observed[:nactive]
 
-        unpenalized_mle = restricted_Mest(loss, M_est1.overall, solve_args=solve_args)
+        unpenalized_mle = restricted_Mest(loss, M_est1.selection_variable['variables'], solve_args=solve_args)
 
         alpha_mat = set_alpha_matrix(loss, active_union)
         target_alpha_gn = alpha_mat

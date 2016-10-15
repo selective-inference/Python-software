@@ -51,20 +51,20 @@ def test_overall_null_two_queries(ndraw=10000, burnin=2000, nsim=None): # nsim n
 
     # second randomization -- a greedy step from LASSO
 
-    active_groups = M_est1.active_groups + M_est1.unpenalized_groups
-    inactive_groups = ~active_groups
-    inactive_randomizer = randomization.laplace((inactive_groups.sum(),), scale=0.5)
+    active = M_est1.selection_variable['variables']
+    inactive = ~active
+    inactive_randomizer = randomization.laplace((inactive.sum(),), scale=0.5)
 
     step = glm_greedy_step(loss, penalty,
-                           active_groups,
-                           inactive_groups,
+                           active,
+                           inactive,
                            inactive_randomizer)
     step.solve()
     bootstrap_score2 = step.setup_sampler()
 
     # we take target to be union of two active sets
 
-    active = M_est1.overall + step.maximizing_variables
+    active = M_est1.selection_variable['variables'] + step.selection_variable['variables']
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)

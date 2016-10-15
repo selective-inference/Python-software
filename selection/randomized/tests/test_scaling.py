@@ -69,7 +69,7 @@ def test_scaling(snr=15,
     mv = multiple_queries([M_est])
     mv.solve()
 
-    active = M_est.overall
+    active = M_est.selection_variable['variables']
     nactive = active.sum()
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
@@ -85,7 +85,8 @@ def test_scaling(snr=15,
         if not I:
             return None
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est.inactive)
+        inactive = ~M_est.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         if DEBUG:
             sampler = lambda : np.random.choice(n, size=(n,), replace=True)

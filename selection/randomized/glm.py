@@ -218,9 +218,9 @@ class glm_group_lasso(M_estimator):
         M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.overall, 
+                                              self.selection_variable['groups'],
                                               beta_full=self._beta_full,
-                                              inactive=self.inactive)[0]
+                                              inactive=~self.selection_variable['groups'])[0]
 
         return bootstrap_score
 
@@ -230,9 +230,9 @@ class split_glm_group_lasso(M_estimator_split):
         M_estimator_split.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.overall,
+                                              self.selection_variable['groups'],
                                               beta_full=self._beta_full,
-                                              inactive=self.inactive)[0]
+                                              inactive=~self.selection_variable['groups'])[0]
 
         return bootstrap_score
 
@@ -243,7 +243,7 @@ class glm_group_lasso_parametric(M_estimator):
 
     def setup_sampler(self):
         M_estimator.setup_sampler(self)
-        return self.overall
+        return self.selection_variable['groups']
 
 
 class glm_greedy_step(greedy_score_step):
@@ -284,8 +284,8 @@ class fixedX_group_lasso(M_estimator):
         X, Y = self.loss.data
 
         bootstrap_score = resid_bootstrap(self.loss,
-                                          self.overall, 
-                                          self.inactive)[0]
+                                          self.selection_variable['groups'],
+                                          ~self.selection_variable['groups'])[0]
         return bootstrap_score
 
 # Methods to form appropriate covariances

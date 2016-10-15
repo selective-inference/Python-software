@@ -47,7 +47,7 @@ def test_overall_null_two_queries():
 
     # we take target to be union of two active sets
 
-    active = M_est1.overall + M_est2.overall
+    active = M_est1.selection_variable['variables'] + M_est2.selection_variable['variables']
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
@@ -156,7 +156,7 @@ def test_one_inactive_coordinate_handcoded():
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
 
@@ -267,7 +267,7 @@ def test_logistic_selected_inactive_coordinate():
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     scaling = np.linalg.svd(X)[1].max()**2
 
@@ -281,13 +281,14 @@ def test_logistic_selected_inactive_coordinate():
             return None
 
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def null_target(indices):
             result = boot_target(indices)
             return np.hstack([result[idx], result[nactive:]])
 
-        null_observed = np.zeros(M_est1.inactive.sum() + 1)
+        null_observed = np.zeros(inactive.sum() + 1)
         null_observed[0] = target_observed[idx]
         null_observed[1:] = target_observed[nactive:]
 
@@ -330,7 +331,7 @@ def test_logistic_saturated_inactive_coordinate():
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -340,7 +341,8 @@ def test_logistic_saturated_inactive_coordinate():
         if not I:
             return None
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def null_target(indices):
             result = boot_target(indices)
@@ -388,7 +390,7 @@ def test_logistic_selected_active_coordinate():
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -397,13 +399,14 @@ def test_logistic_selected_active_coordinate():
         active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
 
         idx = A[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def active_target(indices):
             result = boot_target(indices)
             return np.hstack([result[idx], result[nactive:]])
 
-        active_observed = np.zeros(M_est1.inactive.sum() + 1)
+        active_observed = np.zeros(inactive.sum() + 1)
         active_observed[0] = target_observed[idx]
         active_observed[1:] = target_observed[nactive:]
 
@@ -445,7 +448,7 @@ def test_logistic_saturated_active_coordinate():
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -454,7 +457,8 @@ def test_logistic_saturated_active_coordinate():
         active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
 
         idx = A[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def active_target(indices):
             result = boot_target(indices)

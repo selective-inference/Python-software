@@ -48,7 +48,7 @@ def test_condition(ndraw=10000, burnin=2000,
 
     active_union = np.zeros(p, np.bool)
     for i in range(nview):
-        active_union += view[i].overall
+        active_union += view[i].selection_variable['variables']
 
     nactive = np.sum(active_union)
     print("nactive", nactive)
