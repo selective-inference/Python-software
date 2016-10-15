@@ -2,10 +2,8 @@ import numpy as np
 from scipy.optimize import minimize
 
 def nonnegative_barrier(z):
-    if all(z >= 10**-10):
-        return np.log(1.+(1./z)).sum()
-    else:
-        return z.shape[0] * np.log(1 + 10 ** 10)
+    z = np.maximum(z, 10**-10)
+    return np.log(1.+(1./z)).sum()
 
 def cube_barrier_log_coord(z, lam):
     _diff = z - lam

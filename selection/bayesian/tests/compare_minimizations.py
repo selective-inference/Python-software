@@ -161,6 +161,22 @@ def test_individual_terms():
             _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
             _regreg = sel_prob_grad_descent.minimize()[::-1]
 
+            # the _regreg solution is feasible
+
+            np.testing.assert_allclose(sel_prob_scipy.likelihood(_regreg[1]),
+                                       sel_prob_grad_descent.likelihood_loss.smooth_objective(_regreg[1], 'func'))
+
+            np.testing.assert_allclose(sel_prob_scipy.cube_problem(_regreg[1], method='softmax_barrier'),
+                                       sel_prob_grad_descent.cube_objective(_regreg[1])[0])
+
+            np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(_regreg[1]),
+                                       sel_prob_grad_descent.active_conjugate_objective(_regreg[1])[0])
+
+            np.testing.assert_allclose(sel_prob_scipy.nonneg(_regreg[1]),
+                                       sel_prob_grad_descent.nonnegative_barrier.smooth_objective(_regreg[1], 'func'))
+
+            # the _scipy solution is not feasible
+
             np.testing.assert_allclose(sel_prob_scipy.likelihood(_scipy[1]),
                                        sel_prob_grad_descent.likelihood_loss.smooth_objective(_scipy[1], 'func'))
 
