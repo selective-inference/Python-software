@@ -182,7 +182,8 @@ class selection_probability_methods():
 
         return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2)- np.dot(param.T, linear_coef)\
                + nonnegative_barrier(param[~self.cube_bool])\
-               - const_coef+ cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
+               - const_coef + cube_barrier
+               #+ cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
 
         #return self.B_slice.shape, self.offset_active.shape, np.dot(self.B_slice.T,self.offset_active).shape,\
                #np.dot(arg_constant,self.mean_offset).shape, self.mean_offset.shape
