@@ -1,7 +1,8 @@
 import numpy as np
-from initial_soln import selection
 from scipy.optimize import minimize
-from selection.tests.instance import gaussian_instance as instance
+from tests.instance import gaussian_instance
+from selection.tests.instance import gaussian_instance
+from bayesian.initial_soln import selection
 #from matplotlib import pyplot as plt
 #####for debugging currently; need to change this part
 
@@ -10,7 +11,7 @@ p=10
 s=3
 snr=5
 
-X_1, y, true_beta, nonzero, sigma = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+X_1, y, true_beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
 random_Z = np.random.standard_normal(p)
 sel = selection(X_1,y, random_Z)

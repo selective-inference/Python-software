@@ -3,11 +3,44 @@ from scipy.optimize import minimize
 import numpy as np
 import regreg.api as rr
 
-import selection.bayesian.sel_probability2; 
+import selection.bayesian.sel_probability2;
 from imp import reload
 reload(selection.bayesian.sel_probability2)
 from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
 from selection.randomized.api import randomization
+from selection.bayesian.barrier import barrier_conjugate
+
+def test_barrier_conjugate():
+
+    p = 10
+    cube_bool = np.zeros(p, np.bool)
+    cube_bool[:4] = 1
+    _barrier_star = barrier_conjugate(cube_bool,
+                                      np.arange(4) + 1)
+
+    arg = np.zeros(p)
+    arg[cube_bool] = np.random.standard_normal(4)
+    arg[~cube_bool] = - np.fabs(np.random.standard_normal(6))
+    #print(_barrier_star.smooth_objective(arg, mode='both'))
+    
+    B1 = np.fabs(np.random.standard_normal((10,10)))
+
+    # linear composition
+    composition1 = rr.affine_smooth(_barrier_star, B1.T)
+    print(composition1.shape)
+    print(composition1.smooth_objective(arg, mode='both'))
+
+    X = np.random.standard_normal((10, 4))
+    Y = np.random.standard_normal(10)
+    A = rr.affine_transform(X, Y)
+
+    composition2 = rr.affine_smooth(_barrier_star, A)
+    #print(composition2.shape)
+
+    sum_fn = rr.smooth_sum([composition1, composition2])
+    #print(sum_fn.shape)
+
+#test_barrier_conjugate()
 
 def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
 
@@ -144,5 +177,64 @@ def test_selection_probability_gaussian():
                                                randomization.isotropic_gaussian((p,), 2.))
 
     sel_prob.minimize()
+
+
+class understand(rr.smooth_atom):
+
+    def __init__(self, X, off, mean_parameter, scale, coef=1.,offset=None,quadratic=None):
+
+        self.scale = scale
+        self.X = X
+        self.off=off
+        #self.Y = Y
+
+        initial = np.ones(2)
+
+        rr.smooth_atom.__init__(self,
+                                (2,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        self.set_parameter(mean_parameter, scale)
+
+    def set_parameter(self, mean_parameter, scale):
+
+        likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / scale)
+        #self.likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
+                                                         # -0.5 * (mean_parameter ** 2).sum() / scale)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self.X)
+        #self.likelihood_loss = rr.affine_smooth(likelihood_loss,rr.affine_transform(self.X, self.Y))
+
+    def smooth_objective(self, u, mode='both', check_feasibility=False):
+        u = self.apply_offset(u)
+
+        if mode == 'func':
+            f = self.likelihood_loss.smooth_objective(u, 'func')- u.T.dot(self.off)
+            return f
+        elif mode == 'grad':
+            g = self.likelihood_loss.smooth_objective(u, 'grad')- self.off
+            return g
+        elif mode == 'both':
+            f = self.likelihood_loss.smooth_objective(u, 'func') - u.T.dot(self.off)
+            g = self.likelihood_loss.smooth_objective(u, 'grad') - self.off
+            return f,g
+        else:
+            raise ValueError("mode incorrectly specified")
+
+
+
+my_funct = understand(np.array([[2,2,1],[2,3,4]]),2*np.ones(3),np.array([3, 4]),1.)
+
+print (my_funct.smooth_objective(u=2*np.ones(3), mode='both'))
+
+
+
+
+
+
+
+
 
 

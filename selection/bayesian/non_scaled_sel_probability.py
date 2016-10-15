@@ -1,12 +1,7 @@
 import numpy as np
-from initial_soln import selection
 from scipy.optimize import minimize
-from scipy.stats import norm as ndist
-#from tests.instance import gaussian_instance as instance
 
-#########################################################
-#####defining a class for computing selection probability: also returns selective_map and gradient of posterior
-class selection_probability(object):
+class no_scale_selection_probability(object):
 
     # defining class variables
     def __init__(self, V, B_E, gamma_E, sigma, tau, lam, y, betaE, cube):
@@ -51,7 +46,7 @@ class selection_probability(object):
     def log_prior(self, param, gamma):
         return -np.true_divide(np.linalg.norm(param) ** 2, 2*(gamma ** 2))
 
-    def optimization(self, param, method="softmax_barrier"):
+    def optimization(self, param):
 
         # defining barrier function on betaE
         def barrier_sel(z_2):
@@ -73,21 +68,13 @@ class selection_probability(object):
                 return np.sum(np.log(1 + np.true_divide(1, b - np.dot(A_subgrad, z_3))))
             return b.shape[0] * np.log(1 + 10 ** 9)
 
-        def softmax_barrier_subgrad_coord(z):
+        def barrier_subgrad_coord(z):
             # A_2 beta_E\leq b
             # a = np.array([1,-1])
             # b = np.ones(2)
             if -1 + np.power(10, -9) < z < 1 - np.power(10, -9):
-                return np.log(1 + np.true_divide(1, (self.lam*(1 - z)))) + np.log(1 + np.true_divide(1,(self.lam*(1 + z))))
+                return np.log(1 + np.true_divide(1, (1 - z))) + np.log(1 + np.true_divide(1,(1 + z)))
             return 2 * np.log(1 + np.true_divide(10 ** 9,self.lam))
-
-        def log_barrier_subgrad_coord(z):
-            # A_2 beta_E\leq b
-            # a = np.array([1,-1])
-            # b = np.ones(2)
-            if -1 + np.power(10, -9) < z < 1 - np.power(10, -9):
-                return -np.log((1 - z)) - np.log((1 + z))
-            return 2 * np.log(np.true_divide(10 ** 9,1))
 
         #defining objective function in p dimensions to be optimized when p<n+|E|
         def objective_noise(z):
@@ -101,35 +88,18 @@ class selection_probability(object):
 
         #defining objective in 3 steps when p>n+|E|, first optimize over u_{-E}
         # defining the objective for subgradient coordinate wise
+        def obj_subgrad(z, mu_coord):
+            return -(self.lam*(z * mu_coord)) + ((self.lam**2)*np.true_divide(z ** 2, 2 * self.tau_sq)) \
+                   + barrier_subgrad_coord(z)
 
         def value_subgrad_coordinate(z_1, z_2):
             mu_subgrad = np.true_divide(-np.dot(self.V_E_comp.T, z_1) - np.dot(self.D_E.T, z_2), self.tau_sq)
             res_seq=[]
-            if method =="log_barrier":
-                def obj_subgrad(z, mu_coord):
-                    return -(self.lam * (z * mu_coord)) + ((self.lam ** 2) * np.true_divide(z ** 2, 2 * self.tau_sq)) \
-                           + log_barrier_subgrad_coord(z)
-
-                for i in range(self.ninactive):
-                    mu_coord=mu_subgrad[i]
-                    res=minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
-                    res_seq.append(-res.fun)
-                return np.sum(res_seq)
-
-            elif method == "softmax_barrier":
-                def obj_subgrad(z, mu_coord):
-                    return -(self.lam * (z * mu_coord)) + ((self.lam ** 2) * np.true_divide(z ** 2, 2 * self.tau_sq)) \
-                           + softmax_barrier_subgrad_coord(z)
-
-                for i in range(self.ninactive):
-                    mu_coord = mu_subgrad[i]
-                    res = minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
-                    res_seq.append(-res.fun)
-                return np.sum(res_seq)
-
-            else:
-                raise ValueError('wrong method')
-
+            for i in range(self.ninactive):
+                mu_coord=mu_subgrad[i]
+                res=minimize(obj_subgrad, x0=self.cube[i], args=mu_coord)
+                res_seq.append(-res.fun)
+            return np.sum(res_seq)
 
         #defining objective over z_2
         def objective_coef(z_2,z_1):
@@ -146,16 +116,19 @@ class selection_probability(object):
                                                                 2) + value_coef.fun
 
         #if self.p < self.n + self.nactive:
-            #initial_noise = np.zeros(self.p)
-            #initial_noise[:self.nactive] = self.betaE
-            #initial_noise[self.nactive:] = self.cube
-            #res = minimize(objective_noise, x0=initial_noise)
-            #const_param = np.dot(np.dot(param.T,self.constant),param)
-            #return -res.fun+const_param, res.x
+        #    initial_noise = np.zeros(self.p)
+        #    initial_noise[:self.nactive] = self.betaE
+        #    initial_noise[self.nactive:] = self.cube
+        #    res = minimize(objective_noise, x0=initial_noise)
+        #    const_param = np.dot(np.dot(param.T,self.constant),param)
+        #    return -res.fun+const_param, res.x
         #else:
-        initial_data = np.zeros(self.n)
+        initial_data = self.y
         res = minimize(objective_data, x0=initial_data)
         return -res.fun, res.x
+
+
+        #return objective_data(self.y), value_subgrad_coordinate(self.y, self.betaE)
 
     def selective_map(self,y,prior_sd):
         def objective(param,y,prior_sd):
@@ -173,58 +146,3 @@ class selection_probability(object):
             grad_sel_prob= np.dot(-np.true_divide(self.V_E.T, self.sigma_sq),self.optimization(param)[1])
 
         return np.true_divide(-np.dot(self.V_E.T,y),self.sigma_sq) -np.true_divide(param,prior_sd**2)-grad_sel_prob
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
