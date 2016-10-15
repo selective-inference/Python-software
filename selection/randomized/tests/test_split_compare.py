@@ -7,11 +7,13 @@ import selection.tests.reports as reports
 
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.api import randomization, split_glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import (randomization, 
+                           split_glm_group_lasso, 
+                           multiple_queries, 
+                           glm_target)
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
-from selection.randomized.glm import standard_ci, standard_ci_sm, glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
-
+from selection.randomized.glm import standard_ci, standard_ci_sm 
 from selection.randomized.query import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot', 
@@ -65,53 +67,42 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
 
     if True:
         active_set = np.nonzero(active_union)[0]
-
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
-
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-        #print("target",target_observed)
-        #print(pairs_bootstrap_glm(loss, active_union))
-        # testing the global null
-        # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
-
-        target_gn = lambda indices: boot_target(indices)[:nactive]
-        target_observed_gn = target_observed[:nactive]
-
-        unpenalized_mle = restricted_Mest(loss, M_est1.selection_variable['variables'], solve_args=solve_args)
-
-        alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha_gn = alpha_mat
+        true_vec = beta[active_union]
 
         ## bootstrap
-        target_sampler_gn_boot = mv.setup_bootstrapped_target(target_gn,
-                                                              target_observed_gn,
-                                                              n, target_alpha_gn,
-                                                              reference = unpenalized_mle)
 
-        target_sample_boot = target_sampler_gn_boot.sample(ndraw=ndraw,
-                                                           burnin=burnin)
+        target_sampler_boot, target_observed = glm_target(loss,
+                                                          active_union,
+                                                          mv,
+                                                          bootstrap=True)
 
-        LU_boot = target_sampler_gn_boot.confidence_intervals(unpenalized_mle,
-                                                         sample=target_sample_boot)
+        target_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
+                                                        burnin=burnin)
 
-        pivots_boot = target_sampler_gn_boot.coefficient_pvalues(unpenalized_mle,
-                                                              parameter=beta[active_union],
+        LU_boot = target_sampler_boot.confidence_intervals(target_observed,
+                                                           sample=target_sample_boot)
+
+        pivots_boot = target_sampler_boot.coefficient_pvalues(target_observed,
+                                                              parameter=true_vec,
                                                               sample=target_sample_boot)
-
         ## CLT plugin
-        target_sampler_gn = mv.setup_target(target_gn,
-                                            target_observed_gn,
-                                            reference = unpenalized_mle)
 
-        target_sample = target_sampler_gn.sample(ndraw=ndraw,
-                                                 burnin=burnin)
+        target_sampler, _ = glm_target(loss,
+                                       active_union,
+                                       mv)
+
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
 
 
-        LU = target_sampler_gn.confidence_intervals(unpenalized_mle,
-                                                    sample=target_sample)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
 
-        LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
+
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample)
+
+        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
         if X.shape[0] - leftout_indices.sum() > nactive:
             LU_split = standard_ci(X, y, active_union, leftout_indices)
@@ -119,11 +110,9 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
         else:
             LU_split = LU_split_sm = np.ones((nactive, 2)) * np.nan
 
-        pivots = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                       parameter=beta[active_union],
-                                                       sample=target_sample)
-
-        true_vec = beta[active_union]
+        pivots = target_sampler.coefficient_pvalues(target_observed,
+                                                    parameter=true_vec,
+                                                    sample=target_sample)
 
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]

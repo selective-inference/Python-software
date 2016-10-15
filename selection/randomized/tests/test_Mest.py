@@ -1,3 +1,7 @@
+"""
+These tests exposes lower level functions than needed -- see tests_multiple_queries for simpler constructions
+using glm_target
+"""
 from __future__ import print_function
 import numpy as np, pandas as pd
 from scipy.stats import norm as ndist

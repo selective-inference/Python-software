@@ -8,9 +8,11 @@ from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 import selection.tests.reports as reports
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
-
+from selection.api import (randomization, 
+                           glm_group_lasso, 
+                           multiple_queries, 
+                           glm_target)
+from selection.randomized.M_estimator import restricted_Mest
 from selection.randomized.query import naive_confidence_intervals
 
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
@@ -61,55 +63,32 @@ def test_intervals(s=3,
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
         active_set = np.nonzero(active_union)[0]
-
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
-
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-
-        # testing the global null
-        # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
-        all_selected = np.arange(active_set.shape[0])
-        target_gn = lambda indices: boot_target(indices)[:nactive]
-        target_observed_gn = target_observed[:nactive]
-
-        
-        unpenalized_mle = restricted_Mest(loss, M_est1.selection_variable['variables'], solve_args=solve_args)
-
-        ## bootstrap
-
-        if bootstrap:
-            alpha_mat = set_alpha_matrix(loss, active_union)
-            target_alpha_gn = alpha_mat
-            target_sampler_gn = mv.setup_bootstrapped_target(target_gn,
-                                                             target_observed_gn,
-                                                             n, target_alpha_gn,
-                                                             reference = unpenalized_mle)
-        else:
-            target_sampler_gn = mv.setup_target(target_gn,
-                                                target_observed_gn,
-                                                reference = unpenalized_mle)
-
-        target_sample = target_sampler_gn.sample(ndraw=ndraw,
-                                                 burnin=burnin)
-
-
-        LU = target_sampler_gn.confidence_intervals(unpenalized_mle,
-                                                    sample=target_sample)
-
-        LU_naive = naive_confidence_intervals(target_sampler_gn, unpenalized_mle)
-
-        pivots_mle = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                           parameter=target_sampler_gn.reference,
-                                                           sample=target_sample)
-
-        pivots_truth = target_sampler_gn.coefficient_pvalues(unpenalized_mle, 
-                                                             parameter=beta[active_union],
-                                                             sample=target_sample)
         true_vec = beta[active_union]
-        pvalues = target_sampler_gn.coefficient_pvalues(unpenalized_mle,
-                                                        parameter=np.zeros_like(true_vec),
+
+        target_sampler, target_observed = glm_target(loss,
+                                                     active_union,
+                                                     mv)
+
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
+
+
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample)
+
+        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
+
+        pivots_mle = target_sampler.coefficient_pvalues(target_observed,
+                                                        parameter=target_sampler.reference,
                                                         sample=target_sample)
+
+        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
+                                                          parameter=true_vec,
+                                                          sample=target_sample)
+        pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                     parameter=np.zeros_like(true_vec),
+                                                     sample=target_sample)
+        unpenalized_mle = restricted_Mest(loss, M_est1.selection_variable['variables'], solve_args=solve_args)
 
         L, U = LU.T
 

@@ -1,6 +1,6 @@
 from __future__ import print_function
 import numpy as np
-
+import pandas as pd
 import regreg.api as rr
 import selection.tests.reports as reports
 
@@ -13,14 +13,14 @@ from selection.tests.decorators import (wait_for_return_value,
                                         register_report)
 import selection.tests.reports as reports
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric, glm_target
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@register_report(['pivot'])
+@register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'selected zeros'): 
+def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True, test = 'selected zeros'): 
     s, n, p = 0, 600, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -60,66 +60,28 @@ def test_multiple_views(ndraw=10000, burnin=2000, bootstrap=True, test = 'select
 
         active_set = np.nonzero(active_union)[0]
 
-        inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-
-        if not I:
-            return None
-
-        inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
-        j = 0
-        for i in range(nactive):
-            if active_set[i] not in nonzero:
-                inactive_indicators_mat[j,i] = 1
-                j+=1
-
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
-
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-
-        inactive_target = lambda indices: boot_target(indices)[inactive_selected]
-        inactive_observed = target_observed[inactive_selected]
-        # param_cov = _parametric_cov_glm(loss, active_union)
-
-        if bootstrap==True:
-            alpha_mat = set_alpha_matrix(loss, active_union)
-
         if test == 'selected zeros':
-            inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-            inactive_indicators_mat = np.zeros((len(inactive_selected),nactive))
-            j = 0
-            for i in range(nactive):
-                if active_set[i] not in nonzero:
-                    inactive_indicators_mat[j,i] = 1
-                    j+=1
-            target = lambda indices: boot_target(indices)[inactive_selected]
-            target_observed = target_observed[inactive_selected]
-            if bootstrap==True:
-                target_alpha = np.dot(inactive_indicators_mat, alpha_mat)
-            observed_test_value = np.linalg.norm(target_observed[inactive_selected]
-)
-        if test == 'global null':
-            target = lambda indices: boot_target(indices)[:nactive]
-            target_observed = target_observed[:nactive]
-            if bootstrap==True:
-                target_alpha = alpha_mat
-            observed_test_value = np.linalg.norm(target_observed - beta[active_union])
-
-        #target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
-
-        if bootstrap==True:
-            target_sampler = mv.setup_bootstrapped_target(target, target_observed, n, target_alpha)
+            inactive_selected = [active_union[i] and i not in nonzero for i in range(p)]
+            target_sampler, target_observed = glm_target(loss,
+                                                         active_union,
+                                                         mv,
+                                                         subset=inactive_selected,
+                                                         bootstrap=bootstrap)
         else:
-            target_sampler = mv.setup_target(target, target_observed)
+            target_sampler, target_observed = glm_target(loss,
+                                                         active_union,
+                                                         mv,
+                                                         bootstrap=bootstrap)
 
         test_stat = lambda x: np.linalg.norm(x)
+        observed_test_value = test_stat(target_observed)
         pivot = target_sampler.hypothesis_test(test_stat,
-                                              observed_test_value,
-                                              alternative='twosided',
-                                              ndraw=ndraw,
-                                              burnin=burnin)
+                                               observed_test_value,
+                                               alternative='twosided',
+                                               ndraw=ndraw,
+                                               burnin=burnin)
 
-        return pivot
+        return [pivot], [False]
 
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
@@ -162,29 +124,18 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
     pvalues = []
     true_beta = beta[active_union]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
-
-        active_set = np.nonzero(active_union)[0]
-
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
-
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
-        alpha_mat = set_alpha_matrix(loss, active_union)
-
         for j in range(nactive):
 
-            individual_target = lambda indices: np.atleast_1d(boot_target(indices)[j])
-            individual_observed = np.atleast_1d(target_observed[j])
-            # param_cov = _parametric_cov_glm(loss, active_union)
-
-            target_alpha = np.atleast_2d(alpha_mat[j,:]) # target = target_alpha\times alpha+reference_vec
-
-            target_sampler = mv.setup_bootstrapped_target(individual_target, individual_observed, n, target_alpha, reference=true_beta[j])
-
+            subset = np.zeros(p, np.bool)
+            subset[j] = True
+            target_sampler, target_observed = glm_target(loss,
+                                                         active_union,
+                                                         mv,
+                                                         subset=subset)
             test_stat = lambda x: np.atleast_1d(x)
 
             pval = target_sampler.hypothesis_test(test_stat,
-                                                  np.atleast_1d(individual_observed-true_beta[j]),
+                                                  np.atleast_1d(target_observed-true_beta[j]),
                                                   alternative='twosided',
                                                   ndraw=ndraw,
                                                   burnin=burnin)
@@ -252,7 +203,7 @@ def test_parametric_covariance(ndraw=10000, burnin=2000):
                                               ndraw=ndraw,
                                               burnin=burnin)
 
-        return pval, False
+        return [pval], [False]
 
 def report(niter=50):
     

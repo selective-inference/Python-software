@@ -7,10 +7,9 @@ from selection.tests.decorators import wait_for_return_value, register_report, s
 import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES
 
-from selection.api import pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import multiple_queries, glm_target
 from selection.randomized.glm import split_glm_group_lasso
 from selection.tests.instance import logistic_instance
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 from selection.randomized.query import naive_confidence_intervals
 
@@ -58,62 +57,45 @@ def test_split(s=3,
 
         active_set = np.nonzero(M_est.selection_variable['variables'])[0]
 
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
+        if bootstrap:
+            target_sampler, target_observed = glm_target(loss, 
+                                                         M_est.selection_variable['variables'],
+                                                         mv)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss, M_est.selection_variable['variables'])
-
-        # testing the global null
-        # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
-
-        all_selected = np.arange(active_set.shape[0])
-        target = lambda indices: boot_target(indices)[:nactive]
-        target_observed = target_observed[:nactive]
-
-        unpenalized_mle = restricted_Mest(loss, M_est.selection_variable['variables'], solve_args=solve_args)
-
-        alpha_mat = set_alpha_matrix(loss, M_est.selection_variable['variables'])
-        target_alpha = alpha_mat
-
-        ## bootstrap
+        else:
+            target_sampler, target_observed = glm_target(loss, 
+                                                         M_est.selection_variable['variables'],
+                                                         mv,
+                                                         bootstrap=True)
 
         reference_known = True
         if reference_known:
             reference = beta[M_est.selection_variable['variables']] 
         else:
-            reference = unpenalized_mle
+            reference = target_observed
 
-        if bootstrap:
-            target_sampler = mv.setup_bootstrapped_target(target,
-                                                          target_observed,
-                                                          n, target_alpha,
-                                                          reference=reference) 
-
-        else:
-            target_sampler = mv.setup_target(target,
-                                             target_observed, #reference=beta[M_est.selection_variable['variables']])
-                                             reference = unpenalized_mle)
+        target_sampler.reference = reference
 
         target_sample = target_sampler.sample(ndraw=ndraw,
                                               burnin=burnin)
 
 
-        LU = target_sampler.confidence_intervals(unpenalized_mle,
+        LU = target_sampler.confidence_intervals(target_observed,
                                                  sample=target_sample).T
 
-        LU_naive = naive_confidence_intervals(target_sampler, unpenalized_mle)
+        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
-        pivots_mle = target_sampler.coefficient_pvalues(unpenalized_mle,
+        pivots_mle = target_sampler.coefficient_pvalues(target_observed,
                                                         parameter=target_sampler.reference,
                                                         sample=target_sample)
         
-        pivots_truth = target_sampler.coefficient_pvalues(unpenalized_mle,
+        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
                                                           parameter=beta[M_est.selection_variable['variables']],
                                                           sample=target_sample)
         
         true_vec = beta[M_est.selection_variable['variables']]
 
-        pvalues = target_sampler.coefficient_pvalues(unpenalized_mle,
+        pvalues = target_sampler.coefficient_pvalues(target_observed,
                                                      parameter=np.zeros_like(true_vec),
                                                      sample=target_sample)
 

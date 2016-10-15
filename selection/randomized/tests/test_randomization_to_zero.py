@@ -22,7 +22,8 @@ from selection.api import (randomization,
 from selection.randomized.glm import (glm_parametric_covariance, 
                                       glm_nonparametric_bootstrap, 
                                       restricted_Mest, 
-                                      set_alpha_matrix)
+                                      set_alpha_matrix,
+                                      target as glm_target)
 
 import matplotlib.pyplot as plt
 import statsmodels.api as sm
@@ -90,7 +91,7 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
         alpha_mat = set_alpha_matrix(loss, active_union)
         target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
 
-        target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, n, target_alpha)
+        target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, target_alpha)
 
         test_stat = lambda x: np.linalg.norm(x)
         pval = target_sampler.hypothesis_test(test_stat, 
@@ -107,7 +108,7 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 
         target_alpha_gn = alpha_mat
 
-        target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, n, target_alpha_gn, reference = beta[active_union])
+        target_sampler_gn = mv.setup_bootstrapped_target(target_gn, target_observed_gn, target_alpha_gn, reference = beta[active_union])
         test_stat_boot_gn = lambda x: np.linalg.norm(x)
         observed_test_value = np.linalg.norm(target_observed_gn-beta[active_union])
         pval_gn = target_sampler_gn.hypothesis_test(test_stat_boot_gn, 
@@ -123,7 +124,7 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value(max_tries=300)
-def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000):
+def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000, bootstrap=True):
     s, n, p = 3, 100, 20
 
     #randomizer = randomization.logistic((p,), scale=1./np.log(n))
@@ -161,24 +162,23 @@ def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000):
     true_beta = beta[active_union]
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active_union)
         alpha_mat = set_alpha_matrix(loss, active_union)
 
         for j in range(nactive):
 
-            individual_target = lambda indices: boot_target(indices)[j]
-            individual_observed = target_observed[j]
+            subset = np.zeros(p, np.bool)
+            subset[active_set[j]] = True
+            target_sampler, target_observed = glm_target(loss,
+                                                         active_union,
+                                                         mv,
+                                                         subset=subset,
+                                                         bootstrap=bootstrap)
 
-            target_sampler = mv.setup_target(individual_target, individual_observed, reference=true_beta[j])
-            #XXX we could also look at pivots
-            test_stat = lambda x: x #-true_beta[j]
-            
+            test_stat = lambda x: x 
 
-            pval = target_sampler.hypothesis_test(test_stat,#_boot,
-                                                  individual_observed,#-true_beta[j],
+            pval = target_sampler.hypothesis_test(test_stat,
+                                                  target_observed,
                                                   alternative='twosided',
                                                   ndraw=ndraw,
                                                   burnin=burnin)

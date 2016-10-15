@@ -50,7 +50,7 @@ class M_estimator(query):
          
     # Methods needed for subclassing a query
 
-    def solve(self):
+    def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
 
         self.randomize()
 
@@ -126,11 +126,7 @@ class M_estimator(query):
 
         self._solved = True
 
-    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
-
-        """
-        Should return a bootstrap_score
-        """
+        # Now setup the pieces for linear decomposition
 
         (loss,
          epsilon,
@@ -261,6 +257,9 @@ class M_estimator(query):
         self.subgrad_slice = subgrad_slice
 
         self._setup = True
+
+    def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
+        pass
 
     def projection(self, opt_state):
         """

@@ -8,8 +8,8 @@ from selection.tests.instance import gaussian_instance
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 import selection.tests.reports as reports
 
-from selection.randomized.api import randomization, multiple_queries
-from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso, glm_nonparametric_bootstrap 
+from selection.randomized.api import randomization, multiple_queries, glm_target, glm_nonparametric_bootstrap
+from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso
 
 
 @register_report(['pvalue', 'active'])

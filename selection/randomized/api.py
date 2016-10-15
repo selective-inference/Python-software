@@ -7,7 +7,8 @@ from .glm import (glm_group_lasso, split_glm_group_lasso,
                   pairs_bootstrap_glm, 
                   pairs_inactive_score_glm,
                   glm_nonparametric_bootstrap,
-                  glm_parametric_covariance)
+                  glm_parametric_covariance,
+                  target as glm_target)
 
 from .randomization import randomization
 

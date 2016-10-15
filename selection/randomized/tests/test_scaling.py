@@ -10,10 +10,11 @@ from selection.tests.decorators import (wait_for_return_value,
                                         register_report)
 from selection.tests.instance import logistic_instance
 
-from selection.randomized.api import randomization, multiple_queries, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
-from selection.distributions.discrete_family import discrete_family
-from selection.sampling.langevin import projected_langevin
-
+from selection.randomized.api import (randomization, 
+                                      multiple_queries, 
+                                      glm_group_lasso,
+                                      glm_nonparametric_bootstrap,
+                                      pairs_bootstrap_glm)
 try:
     import statsmodels.api as sm
     statsmodels_available = True
@@ -34,6 +35,7 @@ def generate_data(s=5,
 
     return logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
 
+DEBUG = False
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
@@ -49,7 +51,6 @@ def test_scaling(snr=15,
                  nsim=None, # needed for decorator
                  frac=0.5): # 0.9 has roughly same screening probability as 50% data splitting, i.e. around 10%
 
-    DEBUG = False
     randomizer = randomization.laplace((p,), scale=scale)
     X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
 
@@ -73,9 +74,6 @@ def test_scaling(snr=15,
     nactive = active.sum()
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
-
-        if DEBUG:
-            print(M_est.initial_soln[:3] * scaling, scaling, 'first nonzero scaled')
 
         pvalues = []
         active_set = np.nonzero(active)[0]

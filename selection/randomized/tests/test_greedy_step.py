@@ -1,3 +1,7 @@
+"""
+These tests exposes lower level functions than needed -- see tests_multiple_queries for simpler constructions
+using glm_target
+"""
 import numpy as np
 from scipy.stats import norm as ndist
 

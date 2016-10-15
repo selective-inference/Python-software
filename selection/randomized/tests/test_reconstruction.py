@@ -6,10 +6,9 @@ import regreg.api as rr
 from selection.tests.decorators import wait_for_return_value, register_report
 import selection.tests.reports as reports
 
-from selection.api import pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
-from selection.randomized.glm import split_glm_group_lasso
+from selection.api import multiple_queries
+from selection.randomized.glm import split_glm_group_lasso, target as glm_target
 from selection.tests.instance import logistic_instance
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 @wait_for_return_value()
 def test_reconstruction(s=3,
@@ -53,41 +52,10 @@ def test_reconstruction(s=3,
 
         active_set = np.nonzero(M_est.selection_variable['variables'])[0]
 
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
+        target_sampler, target_observed = glm_target(loss, 
+                                                     M_est.selection_variable['variables'],
+                                                     mv)
 
-        boot_target, target_observed = pairs_bootstrap_glm(loss, M_est.selection_variable['variables'])
-
-        # testing the global null
-        # constructing the intervals based on the samples of \bar{\beta}_E at the unpenalized MLE as a reference
-
-        all_selected = np.arange(active_set.shape[0])
-        target = lambda indices: boot_target(indices)[:nactive]
-        target_observed = target_observed[:nactive]
-
-        unpenalized_mle = restricted_Mest(loss, M_est.selection_variable['variables'], solve_args=solve_args)
-
-        alpha_mat = set_alpha_matrix(loss, M_est.selection_variable['variables'])
-        target_alpha = alpha_mat
-
-        ## bootstrap
-        reference_known = False
-        if reference_known:
-            reference = beta[M_est.selection_variable['variables']] 
-        else:
-            reference = unpenalized_mle
-
-        if bootstrap:
-            target_sampler = mv.setup_bootstrapped_target(target,
-                                                          target_observed,
-                                                          n, target_alpha,
-                                                          reference=reference) 
-
-        else:
-            target_sampler = mv.setup_target(target,
-                                             target_observed, #reference=beta[M_est.selection_variable['variables']])
-                                             reference = unpenalized_mle)
-            
         target_sample = target_sampler.sample(ndraw=ndraw,
                                               burnin=burnin,
                                               keep_opt=True)

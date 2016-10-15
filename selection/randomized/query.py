@@ -116,6 +116,15 @@ class query(object):
         # needs to be implemented for group lasso
         return 0.
 
+    def jacobian(self, opt_state):
+        """
+        log_jacobian depends only on data through
+        Hessian at \bar{\beta}_E which we 
+        assume is close to Hessian at \bar{\beta}_E^*
+        """
+        # needs to be implemented for group lasso
+        return 1.
+
     def solve(self):
 
         raise NotImplementedError('abstract method')
@@ -293,20 +302,20 @@ class multiple_queries(object):
     def setup_bootstrapped_target(self,
                                   target_bootstrap,
                                   observed_target_state,
-                                  boot_size,
                                   target_alpha,
                                   target_set=None,
-                                  reference=None):
+                                  reference=None,
+                                  boot_size=None):
 
         self.setup_opt_state()
 
         return bootstrapped_target_sampler(self,
                                            target_bootstrap,
                                            observed_target_state,
-                                           boot_size,
                                            target_alpha,
                                            target_set=target_set,
-                                           reference=reference)
+                                           reference=reference,
+                                           boot_size=boot_size)
 
 class targeted_sampler(object):
 
@@ -416,23 +425,30 @@ class targeted_sampler(object):
         self.target_inv_cov = np.linalg.inv(self.target_cov)
         # size of reference? should it only be target_set?
         if reference is None:
-            self.reference = np.zeros(self.target_inv_cov.shape[0])
-        else:
-            self.reference = np.atleast_1d(reference)
-        self.reference_inv = self.target_inv_cov.dot(self.reference)
+            reference = np.zeros(self.target_inv_cov.shape[0])
+        self.reference = reference
 
         # need to vectorize the state for Langevin
 
         self.overall_opt_slice = slice(0, multi_view.num_opt_var)
         self.target_slice = slice(multi_view.num_opt_var, 
-                                  multi_view.num_opt_var + self.reference_inv.shape[0])
+                                  multi_view.num_opt_var + self._reference_inv.shape[0])
         self.keep_slice = self.target_slice
 
         # set the observed state
 
-        self.observed_state = np.zeros(multi_view.num_opt_var + self.reference_inv.shape[0])
+        self.observed_state = np.zeros(multi_view.num_opt_var + self._reference_inv.shape[0])
         self.observed_state[self.target_slice] = self.observed_target_state
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+
+    def set_reference(self, reference):
+        self._reference = np.atleast_1d(reference)
+        self._reference_inv = self.target_inv_cov.dot(self.reference)
+
+    def get_reference(self):
+        return self._reference
+
+    reference = property(get_reference, set_reference)
 
     def projection(self, state):
         '''
@@ -489,7 +505,7 @@ class targeted_sampler(object):
             target_grad += target_grad_curr.copy()
 
         target_grad = - target_grad
-        target_grad += self.reference_inv.flatten() - self.target_inv_cov.dot(target_state)
+        target_grad += self._reference_inv.flatten() - self.target_inv_cov.dot(target_state)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
@@ -837,12 +853,15 @@ class bootstrapped_target_sampler(targeted_sampler):
                  multi_view,
                  target_info,
                  observed_target_state,
-                 boot_size,
                  target_alpha,
                  target_set=None,
-                 reference=None):
+                 reference=None,
+                 boot_size=None):
 
         # sampler will draw bootstrapped weights for the target
+
+        if boot_size is None:
+            boot_size = target_alpha.shape[1]
 
         targeted_sampler.__init__(self, multi_view,
                                   target_info,
@@ -850,10 +869,11 @@ class bootstrapped_target_sampler(targeted_sampler):
                                   target_set,
                                   reference)
         # for bootstrap
+
         self.boot_size = boot_size
         self.target_alpha = target_alpha
         self.boot_transform = []
-        #self.inv_mat = np.linalg.inv(np.dot(self.target_alpha, self.target_alpha.T))
+
 
         for i in range(self.nqueries):
             composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
@@ -863,14 +883,11 @@ class bootstrapped_target_sampler(targeted_sampler):
             boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
             self.boot_transform.append((boot_linear_part, boot_offset))
 
-        self.reference_inv = self.target_inv_cov.dot(self.reference)
-
         # set the observed state for bootstrap
 
         self.boot_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.boot_size)
         self.observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
         self.observed_state[self.boot_slice] = np.ones(self.boot_size)
-        #self.boot_observed_state[self.boot_slice] = np.random.normal(size=self.boot_size)
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
 

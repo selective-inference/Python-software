@@ -13,7 +13,15 @@ from selection.tests.decorators import (wait_for_return_value,
                                         register_report)
 import selection.tests.reports as reports
 
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric
+from selection.api import (randomization, 
+                           glm_group_lasso, 
+                           pairs_bootstrap_glm, 
+                           multiple_queries, 
+                           discrete_family, 
+                           projected_langevin, 
+                           glm_group_lasso_parametric, 
+                           glm_target)
+
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 @register_report(['pvalue', 'active'])
@@ -38,17 +46,17 @@ def test_condition(ndraw=10000, burnin=2000,
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    view = []
+    views = []
     nview = 3
     for i in range(nview):
-        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
+        views.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
-    mv = multiple_queries(view)
-    mv.solve()
+    queries = multiple_queries(views)
+    queries.solve()
 
     active_union = np.zeros(p, np.bool)
-    for i in range(nview):
-        active_union += view[i].selection_variable['variables']
+    for view in views:
+        active_union += view.selection_variable['variables']
 
     nactive = np.sum(active_union)
     print("nactive", nactive)
@@ -57,22 +65,18 @@ def test_condition(ndraw=10000, burnin=2000,
         if nactive==s:
             return None
 
-        active_set = np.nonzero(active_union)[0]
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
-
         if scalings == 'tryall': # try condition on some scalings
-            view[0].condition_on_scalings()
-            view[0].condition_on_subgradient()
-            view[1].condition_on_subgradient()
-            view[2].condition_on_scalings()
+            views[0].condition_on_scalings()
+            views[0].condition_on_subgradient()
+            views[1].condition_on_subgradient()
+            views[2].condition_on_scalings()
         else:
-            view[0].condition_on_subgradient()
-            view[1].condition_on_subgradient()
-            view[2].condition_on_subgradient()
+            views[0].condition_on_subgradient()
+            views[1].condition_on_subgradient()
+            views[2].condition_on_subgradient()
 
-        target, target_observed = pairs_bootstrap_glm(loss, active_union)
-        target_sampler = mv.setup_target(target, target_observed)
+        active_set = np.nonzero(active_union)[0]
+        target_sampler, target_observed = glm_target(loss, active_union, queries)
 
         pvalues = target_sampler.coefficient_pvalues(target_observed,
                                                      alternative='twosided',
@@ -80,7 +84,8 @@ def test_condition(ndraw=10000, burnin=2000,
                                                      burnin=burnin)
 
         active_var = np.zeros_like(pvalues, np.bool)
-        active_var[nonzero] = True
+        _nonzero = [i in nonzero for i in np.nonzero(active_union)[0]]
+        active_var[_nonzero] = True
         return pvalues, active_var
 
 def report(niter=50, **kwargs):

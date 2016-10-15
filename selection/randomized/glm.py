@@ -212,6 +212,96 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active, scaling=1.):
 
     return _boot_score
 
+def target(loss, 
+           active, 
+           queries,
+           subset=None, 
+           bootstrap=False,
+           solve_args={'min_its':50, 'tol':1.e-10}):
+    """
+    Form target from self.loss
+    restricting to active variables.
+
+    If subset is not None, then target returns
+    only those coordinates of the active
+    variables. 
+
+    Parameters
+    ----------
+
+    query : `query`
+       A query with a glm loss.
+
+    active : np.bool
+       Indicators of active variables.
+
+    queries : `multiple_queries`
+       Sampler returned for this queries.
+
+    subset : np.bool
+       Indicator of subset of active variables
+       to be returned.
+
+    bootstrap : bool
+       If True, sampler returned uses bootstrap
+       otherwise uses a plugin CLT.
+
+    solve_args : dict
+       Args used to solve restricted M estimator.
+
+    Returns
+    -------
+
+    target_sampler : `targeted_sampler`
+
+    """
+
+    unpenalized_mle = restricted_Mest(loss, active, solve_args=solve_args)
+    X, Y = loss.data
+    n, _ = X.shape
+
+    # workout which inactive ones to return
+
+    if subset is None:
+        subset = active
+
+    active_subset = (active * subset)[active]
+    nactive = active.sum()
+    nactive_subset = active_subset.sum()
+    inactive = ~active * subset
+
+    boot_target, boot_target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
+
+    def _subsetter(value):
+        if nactive_subset > 0:        
+            return np.hstack([value[active_subset], value[nactive:]])
+        else:
+            return value[nactive:]
+
+    def _target(indices):
+        return _subsetter(boot_target(indices))
+    target_observed = _subsetter(boot_target_observed)
+
+    form_covariances = glm_nonparametric_bootstrap(n, n)
+    queries.setup_sampler(form_covariances)
+    queries.setup_opt_state()
+
+    if bootstrap:
+        alpha_mat = set_alpha_matrix(loss, active, inactive=inactive)
+        alpha_subset = np.ones(alpha_mat.shape[0], np.bool)
+        alpha_subset[:nactive] = active_subset
+        alpha_mat = alpha_mat[alpha_subset]
+
+        target_sampler = queries.setup_bootstrapped_target(_target,
+                                                           target_observed,
+                                                           alpha_mat,
+                                                           reference=target_observed)
+    else:
+        target_sampler = queries.setup_target(_target,
+                                              target_observed,
+                                              reference=target_observed)
+    return target_sampler, target_observed
+
 class glm_group_lasso(M_estimator):
 
     def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
@@ -246,7 +336,7 @@ class glm_group_lasso_parametric(M_estimator):
         return self.selection_variable['groups']
 
 
-class glm_greedy_step(greedy_score_step):
+class glm_greedy_step(greedy_score_step, glm):
 
     # XXX this makes the assumption that our
     # greedy_score_step maximized over ~active
