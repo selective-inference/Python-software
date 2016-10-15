@@ -92,51 +92,15 @@ class selection_probability_methods():
             self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance) \
                                + np.true_divide(np.dot(self.X_E, self.offset_active[:,None]), self.rand_variance)
 
-    def objective(self,param):
+    def objective(self, param):
 
-        def cube_problem(arg, method="softmax_barrier"):
-            lam = self.active_lagrange[0]
-            res_seq = []
-            if method == "log_barrier":
-                def obj_subgrad(u, mu):
-                    return (u * mu) + (np.true_divide(u ** 2, 2 * self.rand_variance))+\
-                           (np.true_divide(mu ** 2, 2 * self.rand_variance)) + cube_barrier_log_coord(u, lam)
+        f_like = self.likelihood(param)
 
-                for i in range(arg.shape[0]):
-                    mu = arg[i]
-                    res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
-                    res_seq.append(res.fun)
+        f_nonneg = self.nonneg(param)
 
-                return np.sum(res_seq)
+        f_active_conj = self.active_conjugate_objective(param)
 
-            elif method == "softmax_barrier":
-                def obj_subgrad(u, mu):
-                    return (u * mu) + (np.true_divide(u ** 2, 2 * self.rand_variance))+\
-                           (np.true_divide(mu ** 2, 2 * self.rand_variance)) + cube_barrier_softmax_coord(u, lam)
-
-                for i in range(arg.shape[0]):
-                    mu = arg[i]
-                    res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
-                    res_seq.append(res.fun)
-
-                return np.sum(res_seq)
-
-        if self.active.sum()==1 :
-            f_like = np.true_divide(np.linalg.norm((param[~self.opt_vars])[:,None] - self.mean_parameter) ** 2,
-                                    2 * self.noise_variance)
-
-        else:
-            f_like = np.true_divide(np.linalg.norm(param[~self.opt_vars] - self.mean_parameter) ** 2,
-                                    2 * self.noise_variance)
-
-        f_nonneg = nonnegative_barrier(param[self.opt_vars])
-
-        f_active_conj = np.true_divide(np.linalg.norm(self.A_active.dot(param) + self.offset_active)**2,
-                                           2 * self.rand_variance)
-
-        conjugate_argument_i = self.A_inactive.dot(param)
-
-        conjugate_value_i = cube_problem(conjugate_argument_i, method="softmax_barrier")
+        conjugate_value_i = self.cube_problem(param, method="softmax_barrier")
 
         #constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i), 2)
 
@@ -144,6 +108,10 @@ class selection_probability_methods():
 
         #return f_nonneg, f_like, f_active_conj, constant, -conjugate_value_i+ constant
 
+    def active_conjugate_objective(self, param):
+        f_active_conj = np.true_divide(np.linalg.norm(self.A_active.dot(param) + self.offset_active)**2,
+                                       2 * self.rand_variance)
+        return f_active_conj
 
     def minimize_scipy(self):
 
@@ -184,13 +152,6 @@ class selection_probability_methods():
                + nonnegative_barrier(param[~self.cube_bool])\
                - const_coef+ cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
 
-        #return self.B_slice.shape, self.offset_active.shape, np.dot(self.B_slice.T,self.offset_active).shape,\
-               #np.dot(arg_constant,self.mean_offset).shape, self.mean_offset.shape
-        #return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2).shape,\
-               #np.dot(param.T, linear_coef).shape, param.T.shape, linear_coef.shape, \
-               #nonnegative_barrier(param[~self.cube_bool]).shape,const_coef.shape
-               #cube_barrier.shape,\
-
 
     def minimize_scipy_p(self):
 
@@ -203,6 +164,47 @@ class selection_probability_methods():
                res.x
 
 
+    def likelihood(self, param):
+        param = param[~self.opt_vars]
+        if self.active.sum()==1 :
+            f_like = np.true_divide(np.linalg.norm(param[:,None] - self.mean_parameter) ** 2,
+                                    2 * self.noise_variance)
+
+        else:
+            f_like = np.true_divide(np.linalg.norm(param - self.mean_parameter) ** 2,
+                                    2 * self.noise_variance)
+        return f_like
+
+    def nonneg(self, param):
+        return nonnegative_barrier(param[self.opt_vars])
+
+    def cube_problem(self, param, method="softmax_barrier"):
+        arg = self.A_inactive.dot(param)
+        lam = self.active_lagrange[0]
+        res_seq = []
+        if method == "log_barrier":
+            def obj_subgrad(u, mu):
+                return (u * mu) + (np.true_divide(u ** 2, 2 * self.rand_variance))+\
+                       (np.true_divide(mu ** 2, 2 * self.rand_variance)) + cube_barrier_log_coord(u, lam)
+
+            for i in range(arg.shape[0]):
+                mu = arg[i]
+                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
+                res_seq.append(res.fun)
+
+            return np.sum(res_seq)
+
+        elif method == "softmax_barrier":
+            def obj_subgrad(u, mu):
+                return (u * mu) + (np.true_divide(u ** 2, 2 * self.rand_variance))+\
+                       (np.true_divide(mu ** 2, 2 * self.rand_variance)) + cube_barrier_softmax_coord(u, lam)
+
+            for i in range(arg.shape[0]):
+                mu = arg[i]
+                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
+                res_seq.append(res.fun)
+
+            return np.sum(res_seq)
 
 
 
