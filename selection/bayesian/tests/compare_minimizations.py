@@ -167,10 +167,10 @@ def test_individual_terms():
                                        sel_prob_grad_descent.likelihood_loss.smooth_objective(_regreg[1], 'func'))
 
             np.testing.assert_allclose(sel_prob_scipy.cube_problem(_regreg[1], method='softmax_barrier'),
-                                       sel_prob_grad_descent.cube_objective(_regreg[1])[0])
+                                       sel_prob_grad_descent.cube_objective(_regreg[1])[0], rtol=1.e-5)
 
             np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(_regreg[1]),
-                                       sel_prob_grad_descent.active_conjugate_objective(_regreg[1])[0])
+                                       sel_prob_grad_descent.active_conjugate_objective(_regreg[1])[0], rtol=1.e-5)
 
             np.testing.assert_allclose(sel_prob_scipy.nonneg(_regreg[1]),
                                        sel_prob_grad_descent.nonnegative_barrier.smooth_objective(_regreg[1], 'func'))
@@ -181,10 +181,10 @@ def test_individual_terms():
                                        sel_prob_grad_descent.likelihood_loss.smooth_objective(_scipy[1], 'func'))
 
             np.testing.assert_allclose(sel_prob_scipy.cube_problem(_scipy[1], method='softmax_barrier'),
-                                       sel_prob_grad_descent.cube_objective(_scipy[1])[0])
+                                       sel_prob_grad_descent.cube_objective(_scipy[1])[0], rtol=1.e-5)
 
             np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(_scipy[1]),
-                                       sel_prob_grad_descent.active_conjugate_objective(_scipy[1])[0])
+                                       sel_prob_grad_descent.active_conjugate_objective(_scipy[1])[0], rtol=1.e-5)
 
             np.testing.assert_allclose(sel_prob_scipy.nonneg(_scipy[1]),
                                        sel_prob_grad_descent.nonnegative_barrier.smooth_objective(_scipy[1], 'func'))
