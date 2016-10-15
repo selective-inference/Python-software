@@ -2,7 +2,7 @@ import numpy as np
 from scipy.optimize import minimize
 
 def nonnegative_barrier(z):
-    if all(z >= np.power(10, -10)):
+    if all(z >= 10**-10):
         return np.log(1.+(1./z)).sum()
     else:
         return z.shape[0] * np.log(1 + 10 ** 10)
