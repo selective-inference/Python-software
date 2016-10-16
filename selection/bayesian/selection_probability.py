@@ -82,12 +82,12 @@ class selection_probability_methods():
         self.cube_bool = np.zeros(p, np.bool)
         self.cube_bool[E:] = 1
 
-        if E>1:
-            self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance)\
+        #if E>1:
+        self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance)\
                            + np.true_divide(np.dot(self.X_E, self.offset_active),self.rand_variance)
-        else:
-            self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance) \
-                               + np.true_divide(np.dot(self.X_E, self.offset_active[:,None]), self.rand_variance)
+        #else:
+        #    self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance) \
+        #                       + np.true_divide(np.dot(self.X_E, self.offset_active[:,None]), self.rand_variance)
 
     def objective(self, param):
 
@@ -152,14 +152,21 @@ class selection_probability_methods():
 
         return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2)- np.dot(param.T, linear_coef)\
                + nonnegative_barrier(param[~self.cube_bool])\
-               - const_coef+ cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
+               - const_coef + cube_barrier
+               #cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
 
 
     def minimize_scipy_p(self):
 
         initial_guess = np.zeros(self.X.shape[1])
         initial_guess[~self.cube_bool] = self.feasible_point
-        res = minimize(self.objective_p, x0=initial_guess)
+        bounds = []
+        for i in range(self.cube_bool.shape[0]):
+            if self.cube_bool[i]:
+                bounds.append((-np.inf, np.inf))
+            else:
+                bounds.append((0, np.inf))
+        res = minimize(self.objective_p, x0=initial_guess, bounds=bounds)
         return res.fun\
                + np.true_divide(np.dot(self.mean_parameter.T, self.mean_parameter), 2 * self.noise_variance)\
                + np.true_divide(np.dot(self.offset_active.T,self.offset_active), 2 * (self.rand_variance)),\
