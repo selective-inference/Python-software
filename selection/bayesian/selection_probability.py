@@ -82,12 +82,8 @@ class selection_probability_methods():
         self.cube_bool = np.zeros(p, np.bool)
         self.cube_bool[E:] = 1
 
-        #if E>1:
         self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance)\
                            + np.true_divide(np.dot(self.X_E, self.offset_active),self.rand_variance)
-        #else:
-        #    self.mean_offset = np.true_divide(self.mean_parameter, self.noise_variance) \
-        #                       + np.true_divide(np.dot(self.X_E, self.offset_active[:,None]), self.rand_variance)
 
     def objective(self, param):
 
