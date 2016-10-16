@@ -6,11 +6,13 @@ from selection.bayesian.non_scaled_sel_probability import no_scale_selection_pro
 from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
 from selection.bayesian.dual_optimization import dual_selection_probability
 from selection.randomized.api import randomization
+from selection.bayesian.selection_probability import selection_probability_methods
+from selection.bayesian.objective_functions import selection_probability_only_objective
 from matplotlib import pyplot as plt
 
 #fixing n, p, true sparsity and signal strength
-n = 20
-p = 3
+n = 10
+p = 2
 s = 1
 snr = 5
 
@@ -146,7 +148,7 @@ if sel is not None:
             #plt.savefig('/Users/snigdhapanigrahi/Python_Plots/my_sel_prob.png')
             #plt.close()
 
-    test_one_sparse()
+    #test_one_sparse()
 
     def test_sel_probs_scalings():
         parameter = np.fabs(np.random.standard_normal(nactive))
@@ -206,6 +208,143 @@ if sel is not None:
 
 
     #test_different_barriers()
+
+    def test_new_function():
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+        sel = selection_probability(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)
+
+        sel_val_softmax = sel.optimization(parameter, method="softmax_barrier")
+        sel_val = sel_val_softmax[0] - np.true_divide(np.dot(mean.T, mean), 2 * noise_variance) - \
+                  np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]),2 * (tau ** 2))
+
+        sel_min = sel_val_softmax[1]
+
+        sel_new = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs,lagrange, mean,noise_variance,
+                                                tau, epsilon)
+
+        sel_val_new = sel_new.minimize_scipy()
+
+        #sel_prob_grad_descent = selection_probability_objective(X_1, np.fabs(betaE), active, active_signs,
+                                                                #lagrange, mean,
+                                                                #noise_variance,
+                                                                #randomization.isotropic_gaussian((p,), 1.),
+                                                                #epsilon)
+
+        print "value and minimizer--new", -sel_val_new[0], sel_val_new[1]
+
+        print "value and minimizer", sel_val, sel_min
+
+        #print "value and minimizer of original funct", -sel_prob_grad_descent.minimize()[1], \
+            #sel_prob_grad_descent.minimize()[0]
+
+    #test_new_function()
+
+
+    def test_one_sparse():
+        if nactive==1:
+            snr_seq = np.linspace(-10, 10, num=100)
+            num = snr_seq.shape[0]
+            lagrange = lam * np.ones(p)
+            for i in range(snr_seq.shape[0]):
+                parameter = snr_seq[i]
+                print "parameter value", parameter
+                mean = X_1[:, active].dot(parameter)
+                sel_new = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                        noise_variance,tau, epsilon)
+                sel_val_new = sel_new.minimize_scipy()
+
+                sel = selection_probability(V, B_sel, gamma_sel, noise_variance, tau, lam, y, betaE, cube)
+                sel_val_softmax = sel.optimization(parameter*np.ones(nactive), method="softmax_barrier")
+                sel_val = sel_val_softmax[0] - np.true_divide(np.dot(mean.T, mean), 2 * noise_variance) - \
+                          np.true_divide(np.dot(gamma_sel[:nactive].T, gamma_sel[:nactive]), 2 * (tau ** 2))
+
+                sel_min = sel_val_softmax[1]
+
+                print "value and minimizer--new", -sel_val_new[0], sel_val_new[1]
+                print "value and minimizer", sel_val, sel_min
+
+    #test_one_sparse()
+
+    def test_objectives():
+        if nactive==1:
+            snr_seq = np.linspace(-10, 10, num=100)
+            num = snr_seq.shape[0]
+            lagrange = lam * np.ones(p)
+            for i in range(snr_seq.shape[0]):
+                parameter = snr_seq[i]
+                print "parameter value", parameter
+                mean = X_1[:, active].dot(parameter)
+                vec = np.random.standard_normal(n)
+                active_coef = np.dot(np.diag(active_signs), np.fabs(np.random.standard_normal(nactive)))
+                sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                        noise_variance, tau, epsilon)
+                sel_breakup_1 = sel_prob_scipy.objective(np.append(vec, np.fabs(active_coef)))
+                sel_prob_grad =  selection_probability_only_objective(X_1, np.fabs(betaE), active, active_signs,
+                                                                      lagrange, mean, noise_variance,
+                                                                      randomization.isotropic_gaussian((p,), 1.),
+                                                                      epsilon)
+                sel_breakup_2 = sel_prob_grad.smooth_objective(np.append(vec,np.fabs(active_coef)),
+                                                               mode='func', check_feasibility=False)
+                print sel_breakup_2, sel_breakup_1
+
+
+    #test_objectives()
+
+    def test_two_optimizations():
+        sel_prob_vec=[]
+        sel_prob_vec_1=[]
+        for i in range(10):
+            parameter = np.random.standard_normal(nactive)
+            lagrange = lam * np.ones(p)
+            mean = X_1[:, active].dot(parameter)
+            #print mean
+            sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
+
+            sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+
+            sel_prob_scipy_val_1 = sel_prob_scipy.minimize_scipy_p()
+
+            sel_prob_vec.append(sel_prob_scipy_val[0])
+
+            sel_prob_vec_1.append(sel_prob_scipy_val_1[0])
+
+            print -sel_prob_scipy_val[0], -sel_prob_scipy_val_1[0]
+
+        #sel_prob_scipy_val_1 = sel_prob_scipy.objective_p(np.append(np.fabs(betaE),np.zeros(p-nactive)))
+        #print np.asarray(sel_prob_vec), np.asarray(sel_prob_vec_1)
+        #print "low dimensional", -sel_prob_scipy_val_1[0]
+        #print "high dimensional", -sel_prob_scipy_val[0]
+
+
+    #test_two_optimizations()
+
+    def test_two_optimizations_one_sparse():
+
+        if nactive == 1:
+            snr_seq = np.linspace(-10, 10, num=100)
+            lagrange = lam * np.ones(p)
+            for i in range(snr_seq.shape[0]):
+                parameter = snr_seq[i]
+                print "parameter value", parameter
+                mean = X_1[:, active].dot(parameter)
+                sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                       noise_variance, tau, epsilon)
+                sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+
+                sel_prob_scipy_val_1 = sel_prob_scipy.minimize_scipy_p()
+                print "low and high ", np.asscalar(-sel_prob_scipy_val_1[0]), -sel_prob_scipy_val[0]
+
+    test_two_optimizations_one_sparse()
+
+
+
+
+
+
+
 
 
 
