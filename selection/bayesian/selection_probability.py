@@ -133,13 +133,13 @@ class selection_probability_methods():
 
         arg_constant = np.dot(np.true_divide(np.dot(self.B_p.T, self.X.T), self.rand_variance), Sigma_inv)
 
-        if self.active.sum() ==1:
-            linear_coef = np.dot(arg_constant,self.mean_offset)\
-                          -np.true_divide(np.dot(self.B_slice.T,self.offset_active[:,None]),self.rand_variance)
+        #if self.active.sum() ==1:
+        #    linear_coef = np.dot(arg_constant,self.mean_offset)\
+        #                  -np.true_divide(np.dot(self.B_slice.T,self.offset_active[:,None]),self.rand_variance)
 
-        else :
-            linear_coef = np.dot(arg_constant, self.mean_offset) \
-                          - np.true_divide(np.dot(self.B_slice.T, self.offset_active), self.rand_variance)
+        #else :
+        linear_coef = np.dot(arg_constant, self.mean_offset) \
+                      - np.true_divide(np.dot(self.B_slice.T, self.offset_active), self.rand_variance)
 
         quad_coef = np.dot(np.dot(self.B_p.T, Sigma_inter), self.B_p)
 
