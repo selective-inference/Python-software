@@ -44,7 +44,7 @@ class selection_probability_methods():
         n, p = X.shape
         E = active.sum()
 
-        self.mean_parameter=mean_parameter
+        self.mean_parameter = np.squeeze(mean_parameter)
 
         self.active = active
         self.noise_variance = noise_variance

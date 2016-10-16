@@ -37,9 +37,18 @@ def test_minimizations():
         parameter = np.random.standard_normal(nactive)
         lagrange = lam * np.ones(p)
         mean = X_1[:, active].dot(parameter)
-        sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
-                                                       noise_variance, tau, epsilon)
+
+        sel_prob_scipy = selection_probability_methods(X_1, 
+                                                       np.fabs(betaE), 
+                                                       active, 
+                                                       active_signs, 
+                                                       lagrange, 
+                                                       mean,
+                                                       noise_variance, 
+                                                       tau, 
+                                                       epsilon)
         sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+
         sel_prob_grad_descent = selection_probability_objective(X_1, 
                                                                 np.fabs(betaE), 
                                                                 active, 
@@ -88,8 +97,15 @@ def test_one_sparse_minimizations():
             parameter = snr_seq[i]
             mean = np.squeeze(X_1[:, active].dot(parameter)) # make sure it is vector
 
-            sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
-                                                           noise_variance, tau, epsilon)
+            sel_prob_scipy = selection_probability_methods(X_1, 
+                                                           np.fabs(betaE), 
+                                                           active, 
+                                                           active_signs, 
+                                                           lagrange, 
+                                                           mean,
+                                                           noise_variance, 
+                                                           tau, 
+                                                           epsilon)
 
             sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
 
@@ -103,12 +119,12 @@ def test_one_sparse_minimizations():
                                                                     randomization.isotropic_gaussian((p,), tau),
                                                                     epsilon)
 
+            _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
+            _regreg = sel_prob_grad_descent.minimize()[::-1]
+
             obj1 = sel_prob_scipy.objective
             obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
             obj3 = lambda x : sel_prob_grad_descent.objective(x)
-
-            _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
-            _regreg = sel_prob_grad_descent.minimize()[::-1]
 
             result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]), 
                            obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1])])
