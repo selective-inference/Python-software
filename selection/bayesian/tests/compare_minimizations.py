@@ -91,7 +91,7 @@ def test_one_sparse_minimizations():
     tau = 1  # randomization_variance
 
     if nactive == 1:
-        snr_seq = np.linspace(-10, 10, num=6)
+        snr_seq = np.linspace(-10, 10, num=20)
         lagrange = lam * np.ones(p)
         result = []
         for i in range(snr_seq.shape[0]):
@@ -132,7 +132,7 @@ def test_one_sparse_minimizations():
 
         return np.array(result)
 
-print(test_one_sparse_minimizations())
+#print(test_one_sparse_minimizations())
 #@wait_for_return_value()
 
 def test_individual_terms():

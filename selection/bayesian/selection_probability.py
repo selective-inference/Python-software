@@ -160,10 +160,11 @@ class selection_probability_methods():
 
         initial_guess = np.zeros(self.X.shape[1])
         initial_guess[~self.cube_bool] = self.feasible_point
+        lam = self.active_lagrange[0]
         bounds = []
         for i in range(self.cube_bool.shape[0]):
             if self.cube_bool[i]:
-                bounds.append((-np.inf, np.inf))
+                bounds.append((-lam, lam))
             else:
                 bounds.append((0, np.inf))
         res = minimize(self.objective_p, x0=initial_guess, bounds=bounds)
@@ -192,7 +193,8 @@ class selection_probability_methods():
 
             for i in range(arg.shape[0]):
                 mu = arg[i]
-                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
+                bounds = [(-lam,lam)]
+                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu, bounds=bounds)
                 res_seq.append(res.fun)
 
             return np.sum(res_seq)
@@ -204,7 +206,8 @@ class selection_probability_methods():
 
             for i in range(arg.shape[0]):
                 mu = arg[i]
-                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
+                bounds = [(-lam, lam)]
+                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu, bounds=bounds)
                 res_seq.append(res.fun)
 
             return np.sum(res_seq)
