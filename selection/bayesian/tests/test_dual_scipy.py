@@ -77,7 +77,7 @@ if sel is not None:
         return sel_prob_min[0] - np.true_divide(np.dot(mean.T, mean), 2 * noise_variance), \
                np.dot(B_sel_1.T, sel_prob_min[1])
 
-    #print test_minimizer_dual()
+    print test_minimizer_dual()
 
     def test_dual_compare_one_sparse():
         if nactive==1:
@@ -101,7 +101,7 @@ if sel is not None:
 
                 print "log selection probability", sel_log_val, sel_prob_min
 
-    test_dual_compare_one_sparse()
+    #test_dual_compare_one_sparse()
 
 
     def compare_objectives_dual():

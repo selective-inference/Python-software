@@ -37,7 +37,7 @@ class dual_selection_probability_func():
                  epsilon):
 
         self.X=X
-        self.mean_parameter=mean_parameter
+        self.mean_parameter = np.squeeze(mean_parameter)
         self.feasible_point = feasible_point
         n, p = X.shape
         E = active.sum()
@@ -71,12 +71,8 @@ class dual_selection_probability_func():
         return barrier_conjugate_func(self.cube_bool, self.inactive_lagrange, self.A.T.dot(u))
 
     def data_CGF(self,u):
-        if self.mean_parameter.shape[1] ==1:
-            dev = np.dot(self.X,u)[:,None]-self.mean_parameter
-            return  np.asscalar(np.true_divide(dev.T.dot(dev),2))
-        else :
-            dev = np.dot(self.X,u)-self.mean_parameter
-            return np.true_divide(dev.T.dot(dev),2)
+        dev = np.dot(self.X,u)-self.mean_parameter
+        return np.true_divide(dev.T.dot(dev),2)
 
     #def barrier_implicit(self,u):
     #    if all(self.A_E.dot(u) <= -0.00000000000001):
@@ -87,6 +83,7 @@ class dual_selection_probability_func():
         return self.rand_CGF(u)+self.data_CGF(u)+ self.composed_barrier_conjugate(u)-u.T.dot(self.dual_arg)
 
     def minimize_opt(self):
+        #cons = ({'type': 'ineq', 'fun': lambda x: -self.A.T.dot(x)})
         res= minimize(self.dual_objective, x0=self.feasible_point)
         return res.fun, res.x
 

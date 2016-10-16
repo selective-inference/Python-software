@@ -105,11 +105,6 @@ class selection_probability_methods():
 
         #return f_nonneg, f_like, f_active_conj, constant, -conjugate_value_i+ constant
 
-    def active_conjugate_objective(self, param):
-        f_active_conj = np.true_divide(np.linalg.norm(self.A_active.dot(param) + self.offset_active)**2,
-                                       2 * self.rand_variance)
-        return f_active_conj
-
     def minimize_scipy(self):
 
         bounds = []
@@ -173,6 +168,10 @@ class selection_probability_methods():
                + np.true_divide(np.dot(self.offset_active.T,self.offset_active), 2 * (self.rand_variance)),\
                res.x
 
+    def active_conjugate_objective(self, param):
+        f_active_conj = np.true_divide(np.linalg.norm(self.A_active.dot(param) + self.offset_active)**2,
+                                       2 * self.rand_variance)
+        return f_active_conj
 
     def likelihood(self, param):
         param = param[~self.opt_vars]
