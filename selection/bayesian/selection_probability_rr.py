@@ -16,7 +16,8 @@ def cube_subproblem(argument,
                     randomization_CGF_conjugate,
                     lagrange, nstep=100,
                     initial=None,
-                    lipschitz=0):
+                    lipschitz=0,
+                    tol=1.e-10):
     '''
     Solve the subproblem
     $$
@@ -78,7 +79,7 @@ def cube_subproblem(argument,
         
         # stop if relative decrease is small
 
-        if np.fabs(current_value - proposed_value) < 1.e-6 * np.fabs(current_value):
+        if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
             current = proposal
             current_value = proposed_value
             break
@@ -337,13 +338,16 @@ class selection_probability_objective(rr.smooth_atom):
 
         nonneg_con = self._opt_selector.output_shape[0]
         constraint = rr.separable(self.shape,
-                                  [rr.nonnegative((nonneg_con,), offset=1.e-12 * np.ones(nonneg_con))],
+                                  #[rr.nonnegative((nonneg_con,), offset=1.e-12 * np.ones(nonneg_con))],
+                                  [rr.nonnegative((nonneg_con,))],
                                   [self._opt_selector.index_obj])
 
         problem = rr.separable_problem.fromatom(constraint, self)
         problem.coefs[self._opt_selector.index_obj] = 0.5
-        soln = problem.solve(max_its=200, min_its=20, tol=1.e-12)
+        soln = problem.solve(max_its=200, min_its=100, tol=1.e-12)
         value = problem.objective(soln)
+        if np.any(soln == 0):
+            stop
         return soln, value
 
 

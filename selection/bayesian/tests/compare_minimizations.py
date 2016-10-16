@@ -132,6 +132,9 @@ def test_one_sparse_minimizations():
             result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]), 
                            obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1])])
 
+            print('scipy gradient', sel_prob_grad_descent.smooth_objective(_scipy[1], 'grad'))
+            print('regreg gradient', sel_prob_grad_descent.smooth_objective(_regreg[1], 'grad'))
+
         return np.array(result)
 
 @wait_for_return_value()

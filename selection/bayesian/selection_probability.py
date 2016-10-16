@@ -169,13 +169,8 @@ class selection_probability_methods():
 
     def likelihood(self, param):
         param = param[~self.opt_vars]
-        if self.active.sum()==1 :
-            f_like = np.true_divide(np.linalg.norm(param[:,None] - self.mean_parameter) ** 2,
-                                    2 * self.noise_variance)
-
-        else:
-            f_like = np.true_divide(np.linalg.norm(param - self.mean_parameter) ** 2,
-                                    2 * self.noise_variance)
+        f_like = np.true_divide(np.linalg.norm(param - self.mean_parameter) ** 2,
+                                2 * self.noise_variance)
         return f_like
 
     def nonneg(self, param):
