@@ -126,6 +126,9 @@ def test_one_sparse_minimizations():
             obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
             obj3 = lambda x : sel_prob_grad_descent.objective(x)
 
+            check_two_approaches(_scipy[1], sel_prob_scipy, sel_prob_grad_descent)
+            check_two_approaches(_regreg[1], sel_prob_scipy, sel_prob_grad_descent)
+
             result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]), 
                            obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1])])
 
@@ -181,6 +184,7 @@ def test_individual_terms():
             # the _regreg solution is feasible
 
             for param in [_scipy[1], _regreg[1]]:
+
                 np.testing.assert_allclose(sel_prob_scipy.likelihood(param),
                                            sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func'))
 
@@ -205,7 +209,7 @@ def test_individual_terms():
 
                 np.testing.assert_allclose(sel_prob_scipy.objective(param),
                                            sel_prob_grad_descent.smooth_objective(param, 'func'), rtol=1.e-5)
-            
+
                 np.testing.assert_allclose(sel_prob_scipy.objective(param),
                                            sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func') + 
                                            sel_prob_grad_descent.cube_objective(param)[0] + 
@@ -214,6 +218,41 @@ def test_individual_terms():
 
 
         return np.array(result)
+
+def check_two_approaches(param, sel_prob_scipy, sel_prob_grad_descent):
+
+    np.testing.assert_allclose(sel_prob_scipy.likelihood(param),
+                               sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func'))
+
+    np.testing.assert_allclose(sel_prob_scipy.cube_problem(param, method='softmax_barrier'),
+                               sel_prob_grad_descent.cube_objective(param)[0], rtol=1.e-5)
+
+    np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(param),
+                               sel_prob_grad_descent.active_conjugate_objective(param)[0], rtol=1.e-5)
+
+    np.testing.assert_allclose(sel_prob_scipy.nonneg(param),
+                               sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'))
+
+    # check the objective is the sum of terms it's supposed to be
+
+    np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                               sel_prob_scipy.likelihood(param) +
+                               sel_prob_scipy.cube_problem(param, method='softmax_barrier') +
+                               sel_prob_scipy.active_conjugate_objective(param) +
+                               sel_prob_scipy.nonneg(param), rtol=1.e-5)
+
+    # check the objective values
+
+    np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                               sel_prob_grad_descent.smooth_objective(param, 'func'), rtol=1.e-5)
+
+    np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                               sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func') + 
+                               sel_prob_grad_descent.cube_objective(param)[0] + 
+                               sel_prob_grad_descent.active_conjugate_objective(param)[0] + 
+                               sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'), rtol=1.e-5)
+
+
 
 @wait_for_return_value()
 def test_objectives_one_sparse():

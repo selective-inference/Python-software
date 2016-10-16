@@ -1,34 +1,35 @@
 import numpy as np
 from scipy.optimize import minimize
 
+SMALL = 10**(-10)
 def nonnegative_barrier(z):
-    z = np.maximum(z, 10**-10)
+    z = np.maximum(z, SMALL)
     return np.log(1.+(1./z)).sum()
 
 def cube_barrier_log_coord(z, lam):
     _diff = z - lam
     _sum = z + lam
-    if -lam + np.power(10, -10) < z < lam - np.power(10, -10):
+    if -lam + SMALL < z < lam - SMALL:
         return -np.log(_diff)-np.log(_sum)+(2*np.log(lam))
     else:
-        return (2 * np.log(10 ** 10))+(2*np.log(lam))
+        return (2 * np.log(1. / SMALL))+(2*np.log(lam))
 
 def cube_barrier_softmax_coord(z, lam):
     _diff = z - lam
     _sum = z + lam
-    if -lam + np.power(10, -10) < z < lam - np.power(10, -10):
+    if -lam + SMALL < z < lam - SMALL:
         return np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum))
     else:
-        return 2 * np.log(1+(10 ** 10))
+        return 2 * np.log(1+1./SMALL)
 
-def cube_barrier_softmax(z,lagrange):
+def cube_barrier_softmax(z, lagrange):
     _diff = z - lagrange
     _sum = z + lagrange
     violations = ((_diff >= 0).sum() + (_sum <= 0).sum() > 0)
     if violations == 0:
         return np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum)).sum()
     else:
-        return  z.shape[0] * np.log(1 + (10 ** 10))
+        return  z.shape[0] * np.log(1 + 1. / SMALL)
 
 class selection_probability_methods():
     def __init__(self,
@@ -148,7 +149,7 @@ class selection_probability_methods():
         cube_barrier = 0
         lam = self.active_lagrange[0]
         for i in range(param[self.cube_bool].shape[0]):
-            cube_barrier+= cube_barrier_softmax_coord((param[self.cube_bool])[i], lam)
+            cube_barrier += cube_barrier_softmax_coord((param[self.cube_bool])[i], lam)
 
         return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2)- np.dot(param.T, linear_coef)\
                + nonnegative_barrier(param[~self.cube_bool])\
@@ -191,7 +192,9 @@ class selection_probability_methods():
 
             for i in range(arg.shape[0]):
                 mu = arg[i]
-                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
+                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu, bounds=[(-lam,lam)])
+                if np.fabs(res.x) > lam:
+                    stop
                 res_seq.append(res.fun)
 
             return np.sum(res_seq)
@@ -203,7 +206,9 @@ class selection_probability_methods():
 
             for i in range(arg.shape[0]):
                 mu = arg[i]
-                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu)
+                res = minimize(obj_subgrad, x0=self.inactive_subgrad[i], args=mu, bounds=[(-lam,lam)])
+                if np.fabs(res.x) > lam:
+                    stop
                 res_seq.append(res.fun)
 
             return np.sum(res_seq)
