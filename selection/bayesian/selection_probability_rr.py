@@ -318,7 +318,7 @@ class selection_probability_objective(rr.smooth_atom):
         active_conj_value, active_conj_grad = self.active_conjugate
         param_a = self.A_active.dot(param)
         f_active_conj = active_conj_value(param_a + self.offset_active)
-        g_active_conj = self.A_active.T.dot(active_conj_grad(param_a)+self.offset_active)
+        g_active_conj = self.A_active.T.dot(active_conj_grad(param_a+self.offset_active))
 
         return f_active_conj, g_active_conj
 
