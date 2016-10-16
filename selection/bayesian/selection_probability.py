@@ -30,7 +30,6 @@ def cube_barrier_softmax(z,lagrange):
     else:
         return  z.shape[0] * np.log(1 + (10 ** 10))
 
-
 class selection_probability_methods():
     def __init__(self,
                  X,
@@ -113,8 +112,13 @@ class selection_probability_methods():
 
     def minimize_scipy(self):
 
-        res = minimize(self.objective, x0=self.initial)
-
+        bounds = []
+        for i in range(self.opt_vars.shape[0]):
+            if self.opt_vars[i]:
+                bounds.append((0, np.inf))
+            else:
+                bounds.append((-np.inf, np.inf))
+        res = minimize(self.objective, x0=self.initial, bounds=bounds)
         return res.fun, res.x
 
     def objective_p(self,param):

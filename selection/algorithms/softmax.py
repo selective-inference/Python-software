@@ -223,7 +223,10 @@ class nonnegative_softmax(smooth_atom):
         slack = self.apply_offset(mean_param)
 
         if mode in ['both', 'func']:
-            f = self.scale(np.log((slack + 1.) / slack).sum())
+            if np.all(slack > 0):
+                f = self.scale(np.log((slack + 1.) / slack).sum())
+            else:
+                f = np.inf
         if mode in ['both', 'grad']:
             g = self.scale(1. / (slack + 1.) - 1. / slack)
 

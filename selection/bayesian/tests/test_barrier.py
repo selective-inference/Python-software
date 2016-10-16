@@ -40,8 +40,6 @@ def test_barrier_conjugate():
     sum_fn = rr.smooth_sum([composition1, composition2])
     #print(sum_fn.shape)
 
-#test_barrier_conjugate()
-
 def test_cube_subproblem(k=100, do_scipy=True, verbose=False):
 
     k = 100

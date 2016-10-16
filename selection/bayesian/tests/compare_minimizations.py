@@ -112,6 +112,7 @@ def test_one_sparse_minimizations():
 
             result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]), 
                            obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1])])
+
         return np.array(result)
 
 @wait_for_return_value()
@@ -163,31 +164,38 @@ def test_individual_terms():
 
             # the _regreg solution is feasible
 
-            np.testing.assert_allclose(sel_prob_scipy.likelihood(_regreg[1]),
-                                       sel_prob_grad_descent.likelihood_loss.smooth_objective(_regreg[1], 'func'))
+            for param in [_scipy[1], _regreg[1]]:
+                np.testing.assert_allclose(sel_prob_scipy.likelihood(param),
+                                           sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func'))
 
-            np.testing.assert_allclose(sel_prob_scipy.cube_problem(_regreg[1], method='softmax_barrier'),
-                                       sel_prob_grad_descent.cube_objective(_regreg[1])[0], rtol=1.e-5)
+                np.testing.assert_allclose(sel_prob_scipy.cube_problem(param, method='softmax_barrier'),
+                                           sel_prob_grad_descent.cube_objective(param)[0], rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(_regreg[1]),
-                                       sel_prob_grad_descent.active_conjugate_objective(_regreg[1])[0], rtol=1.e-5)
+                np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(param),
+                                           sel_prob_grad_descent.active_conjugate_objective(param)[0], rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.nonneg(_regreg[1]),
-                                       sel_prob_grad_descent.nonnegative_barrier.smooth_objective(_regreg[1], 'func'))
+                np.testing.assert_allclose(sel_prob_scipy.nonneg(param),
+                                           sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'))
 
-            # the _scipy solution is not feasible
+                # check the objective is the sum of terms it's supposed to be
 
-            np.testing.assert_allclose(sel_prob_scipy.likelihood(_scipy[1]),
-                                       sel_prob_grad_descent.likelihood_loss.smooth_objective(_scipy[1], 'func'))
+                np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                                           sel_prob_scipy.likelihood(param) +
+                                           sel_prob_scipy.cube_problem(param, method='softmax_barrier') +
+                                           sel_prob_scipy.active_conjugate_objective(param) +
+                                           sel_prob_scipy.nonneg(param), rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.cube_problem(_scipy[1], method='softmax_barrier'),
-                                       sel_prob_grad_descent.cube_objective(_scipy[1])[0], rtol=1.e-5)
+                # check the objective values
 
-            np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(_scipy[1]),
-                                       sel_prob_grad_descent.active_conjugate_objective(_scipy[1])[0], rtol=1.e-5)
+                np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                                           sel_prob_grad_descent.smooth_objective(param, 'func'), rtol=1.e-5)
+            
+                np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                                           sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func') + 
+                                           sel_prob_grad_descent.cube_objective(param)[0] + 
+                                           sel_prob_grad_descent.active_conjugate_objective(param)[0] + 
+                                           sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'), rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.nonneg(_scipy[1]),
-                                       sel_prob_grad_descent.nonnegative_barrier.smooth_objective(_scipy[1], 'func'))
 
         return np.array(result)
 
