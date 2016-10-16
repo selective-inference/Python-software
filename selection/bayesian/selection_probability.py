@@ -9,7 +9,7 @@ def cube_barrier_log_coord(z, lam):
     _diff = z - lam
     _sum = z + lam
     if -lam + np.power(10, -10) < z < lam - np.power(10, -10):
-        return -np.log(_diff)-np.log(_sum)+(2*np.log(lam))
+        return -np.log(-_diff)-np.log(_sum)+(2*np.log(lam))
     else:
         return (2 * np.log(10 ** 10))+(2*np.log(lam))
 
@@ -93,7 +93,7 @@ class selection_probability_methods():
 
         f_active_conj = self.active_conjugate_objective(param)
 
-        conjugate_value_i = self.cube_problem(param, method="softmax_barrier")
+        conjugate_value_i = self.cube_problem(param, method="log_barrier")
 
         #constant = np.true_divide(np.dot(conjugate_argument_i.T, conjugate_argument_i), 2)
 
@@ -139,7 +139,7 @@ class selection_probability_methods():
         cube_barrier = 0
         lam = self.active_lagrange[0]
         for i in range(param[self.cube_bool].shape[0]):
-            cube_barrier+= cube_barrier_softmax_coord((param[self.cube_bool])[i], lam)
+            cube_barrier+= cube_barrier_log_coord((param[self.cube_bool])[i], lam)
 
         return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2)- np.dot(param.T, linear_coef)\
                + nonnegative_barrier(param[~self.cube_bool])\
@@ -177,7 +177,7 @@ class selection_probability_methods():
     def nonneg(self, param):
         return nonnegative_barrier(param[self.opt_vars])
 
-    def cube_problem(self, param, method="softmax_barrier"):
+    def cube_problem(self, param, method="log_barrier"):
         arg = self.A_inactive.dot(param)
         lam = self.active_lagrange[0]
         res_seq = []

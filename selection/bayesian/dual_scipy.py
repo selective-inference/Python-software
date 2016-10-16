@@ -67,11 +67,9 @@ class dual_selection_probability_func():
         B_p = self.B_p = np.hstack([np.vstack([self.A_active[:, n:], self.A_inactive[:, n:]]), append])
         self.X = X
 
-        self.B_slice = B_p[:E, :]
-
         self.cube_bool = np.zeros(p, np.bool)
         self.cube_bool[E:] = 1
-        self.dual_arg = -np.append(self.offset_active,self.inactive_subgrad)
+        self.dual_arg = -np.linalg.inv(B_p).dot(np.append(self.offset_active,self.inactive_subgrad))
 
     def rand_CGF(self,v):
         u = (np.linalg.inv(self.B_p.T)).dot(v)
@@ -86,8 +84,7 @@ class dual_selection_probability_func():
         return np.true_divide(dev.T.dot(dev),2 * self.noise_variance)
 
     def dual_objective(self,v):
-        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)-(v.T.dot(np.linalg.inv(self.B_p)))\
-            .dot(self.dual_arg)
+        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)-v.T.dot(self.dual_arg)
 
     def minimize_dual(self):
         bounds = []
@@ -96,7 +93,7 @@ class dual_selection_probability_func():
                 bounds.append((-np.inf, np.inf))
             else:
                 bounds.append((-np.inf, 0))
-        res= minimize(self.dual_objective, x0=self.feasible_point, bounds = bounds)
+        res= minimize(self.dual_objective, x0 = self.feasible_point, bounds = bounds)
 
         return res.fun-np.true_divide(self.mean_parameter.dot(self.mean_parameter), 2 * self.noise_variance), res.x
 
