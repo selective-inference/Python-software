@@ -30,7 +30,6 @@ def cube_barrier_softmax(z,lagrange):
     else:
         return  z.shape[0] * np.log(1 + (10 ** 10))
 
-
 class selection_probability_methods():
     def __init__(self,
                  X,
@@ -45,7 +44,7 @@ class selection_probability_methods():
         n, p = X.shape
         E = active.sum()
 
-        self.mean_parameter=mean_parameter
+        self.mean_parameter = np.squeeze(mean_parameter)
 
         self.active = active
         self.noise_variance = noise_variance
@@ -113,8 +112,13 @@ class selection_probability_methods():
 
     def minimize_scipy(self):
 
-        res = minimize(self.objective, x0=self.initial)
-
+        bounds = []
+        for i in range(self.opt_vars.shape[0]):
+            if self.opt_vars[i]:
+                bounds.append((0, np.inf))
+            else:
+                bounds.append((-np.inf, np.inf))
+        res = minimize(self.objective, x0=self.initial, bounds=bounds)
         return res.fun, res.x
 
     def objective_p(self,param):
@@ -148,8 +152,7 @@ class selection_probability_methods():
 
         return np.true_divide(np.dot(np.dot(param.T, quad_coef), param), 2)- np.dot(param.T, linear_coef)\
                + nonnegative_barrier(param[~self.cube_bool])\
-               - const_coef + cube_barrier
-               #+ cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
+               - const_coef+ cube_barrier_softmax(param[self.cube_bool], self.inactive_lagrange)
 
 
     def minimize_scipy_p(self):
@@ -165,13 +168,7 @@ class selection_probability_methods():
 
     def likelihood(self, param):
         param = param[~self.opt_vars]
-        if self.active.sum()==1 :
-            f_like = np.true_divide(np.linalg.norm(param[:,None] - self.mean_parameter) ** 2,
-                                    2 * self.noise_variance)
-
-        else:
-            f_like = np.true_divide(np.linalg.norm(param - self.mean_parameter) ** 2,
-                                    2 * self.noise_variance)
+        f_like = np.true_divide(np.linalg.norm(param - self.mean_parameter) ** 2,2 * self.noise_variance)
         return f_like
 
     def nonneg(self, param):

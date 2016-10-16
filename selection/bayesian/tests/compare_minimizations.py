@@ -6,46 +6,56 @@ from selection.tests.decorators import wait_for_return_value
 from selection.bayesian.initial_soln import selection
 from selection.bayesian.sel_probability import selection_probability
 from selection.bayesian.non_scaled_sel_probability import no_scale_selection_probability
-from selection.bayesian.selection_probability_rr import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
+from selection.bayesian.selection_probability_rr import cube_subproblem, cube_gradient, cube_barrier, \
+    selection_probability_objective
 from selection.bayesian.dual_optimization import dual_selection_probability
 from selection.randomized.api import randomization
 from selection.bayesian.selection_probability import selection_probability_methods
 
-@wait_for_return_value()
-def test_minimizations():
 
-    #fixing n, p, true sparsity and signal strength
+#@wait_for_return_value()
+def test_minimizations():
+    # fixing n, p, true sparsity and signal strength
     n = 10
     p = 3
     s = 1
     snr = 5
 
-    #sampling the Gaussian instance
+    # sampling the Gaussian instance
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
-    #getting randomized Lasso solution
-    sel = selection(X_1,y, random_Z)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
     print(epsilon, lam, betaE)
     noise_variance = 1
-    nactive=betaE.shape[0]
+    nactive = betaE.shape[0]
     active_signs = np.sign(betaE)
-    tau=1 #randomization_variance
+    tau = 1  # randomization_variance
 
     if nactive > 1:
         parameter = np.random.standard_normal(nactive)
         lagrange = lam * np.ones(p)
         mean = X_1[:, active].dot(parameter)
-        sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
-                                                       noise_variance, tau, epsilon)
+
+        sel_prob_scipy = selection_probability_methods(X_1,
+                                                       np.fabs(betaE),
+                                                       active,
+                                                       active_signs,
+                                                       lagrange,
+                                                       mean,
+                                                       noise_variance,
+                                                       tau,
+                                                       epsilon)
         sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
-        sel_prob_grad_descent = selection_probability_objective(X_1, 
-                                                                np.fabs(betaE), 
-                                                                active, 
-                                                                active_signs, 
+
+        sel_prob_grad_descent = selection_probability_objective(X_1,
+                                                                np.fabs(betaE),
+                                                                active,
+                                                                active_signs,
                                                                 lagrange,
-                                                                mean, 
+                                                                mean,
                                                                 noise_variance,
                                                                 randomization.isotropic_gaussian((p,), 1.),
                                                                 epsilon)
@@ -54,31 +64,31 @@ def test_minimizations():
         _regreg = sel_prob_grad_descent.minimize()[::-1]
 
         obj1 = sel_prob_scipy.objective
-        obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
+        obj2 = lambda x: sel_prob_grad_descent.smooth_objective(x, 'func')
         print("value and minimizer- scipy", _scipy, obj1(_scipy[1]), obj2(_scipy[1]))
         print("value and minimizer- regreg", _regreg, obj1(_regreg[1]), obj2(_regreg[1]))
         return _scipy[0], _regreg[0]
 
-@wait_for_return_value()
+#test_minimizations()
+#@wait_for_return_value()
 def test_one_sparse_minimizations():
-
-    #fixing n, p, true sparsity and signal strength
+    # fixing n, p, true sparsity and signal strength
     n = 10
     p = 3
     s = 1
     snr = 5
 
-    #sampling the Gaussian instance
+    # sampling the Gaussian instance
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
-    #getting randomized Lasso solution
-    sel = selection(X_1,y, random_Z)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
     noise_variance = 1
-    nactive=betaE.shape[0]
+    nactive = betaE.shape[0]
     active_signs = np.sign(betaE)
-    tau=1 #randomization_variance
+    tau = 1  # randomization_variance
 
     if nactive == 1:
         snr_seq = np.linspace(-10, 10, num=6)
@@ -86,54 +96,63 @@ def test_one_sparse_minimizations():
         result = []
         for i in range(snr_seq.shape[0]):
             parameter = snr_seq[i]
-            mean = np.squeeze(X_1[:, active].dot(parameter)) # make sure it is vector
+            mean = np.squeeze(X_1[:, active].dot(parameter))  # make sure it is vector
 
-            sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
-                                                           noise_variance, tau, epsilon)
+            sel_prob_scipy = selection_probability_methods(X_1,
+                                                           np.fabs(betaE),
+                                                           active,
+                                                           active_signs,
+                                                           lagrange,
+                                                           mean,
+                                                           noise_variance,
+                                                           tau,
+                                                           epsilon)
 
             sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
 
-            sel_prob_grad_descent = selection_probability_objective(X_1, 
-                                                                    np.fabs(betaE), 
-                                                                    active, 
-                                                                    active_signs, 
+            sel_prob_grad_descent = selection_probability_objective(X_1,
+                                                                    np.fabs(betaE),
+                                                                    active,
+                                                                    active_signs,
                                                                     lagrange,
                                                                     mean,
                                                                     noise_variance,
                                                                     randomization.isotropic_gaussian((p,), tau),
                                                                     epsilon)
 
-            obj1 = sel_prob_scipy.objective
-            obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
-            obj3 = lambda x : sel_prob_grad_descent.objective(x)
-
             _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
             _regreg = sel_prob_grad_descent.minimize()[::-1]
 
-            result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]), 
+            obj1 = sel_prob_scipy.objective
+            obj2 = lambda x: sel_prob_grad_descent.smooth_objective(x, 'func')
+            obj3 = lambda x: sel_prob_grad_descent.objective(x)
+
+            result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]),
                            obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1])])
+
         return np.array(result)
 
-@wait_for_return_value()
-def test_individual_terms():
+print(test_one_sparse_minimizations())
+#@wait_for_return_value()
 
-    #fixing n, p, true sparsity and signal strength
+def test_individual_terms():
+    # fixing n, p, true sparsity and signal strength
     n = 10
     p = 3
     s = 1
     snr = 5
 
-    #sampling the Gaussian instance
+    # sampling the Gaussian instance
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
-    #getting randomized Lasso solution
-    sel = selection(X_1,y, random_Z)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
     noise_variance = 1
-    nactive=betaE.shape[0]
+    nactive = betaE.shape[0]
     active_signs = np.sign(betaE)
-    tau=1 #randomization_variance
+    tau = 1  # randomization_variance
 
     if nactive == 1:
         snr_seq = np.linspace(-10, 10, num=6)
@@ -148,10 +167,10 @@ def test_individual_terms():
 
             sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
 
-            sel_prob_grad_descent = selection_probability_objective(X_1, 
-                                                                    np.fabs(betaE), 
-                                                                    active, 
-                                                                    active_signs, 
+            sel_prob_grad_descent = selection_probability_objective(X_1,
+                                                                    np.fabs(betaE),
+                                                                    active,
+                                                                    active_signs,
                                                                     lagrange,
                                                                     mean,
                                                                     noise_variance,
@@ -163,56 +182,63 @@ def test_individual_terms():
 
             # the _regreg solution is feasible
 
-            np.testing.assert_allclose(sel_prob_scipy.likelihood(_regreg[1]),
-                                       sel_prob_grad_descent.likelihood_loss.smooth_objective(_regreg[1], 'func'))
+            for param in [_scipy[1], _regreg[1]]:
+                np.testing.assert_allclose(sel_prob_scipy.likelihood(param),
+                                           sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func'))
 
-            np.testing.assert_allclose(sel_prob_scipy.cube_problem(_regreg[1], method='softmax_barrier'),
-                                       sel_prob_grad_descent.cube_objective(_regreg[1])[0])
+                np.testing.assert_allclose(sel_prob_scipy.cube_problem(param, method='softmax_barrier'),
+                                           sel_prob_grad_descent.cube_objective(param)[0], rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(_regreg[1]),
-                                       sel_prob_grad_descent.active_conjugate_objective(_regreg[1])[0])
+                np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(param),
+                                           sel_prob_grad_descent.active_conjugate_objective(param)[0], rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.nonneg(_regreg[1]),
-                                       sel_prob_grad_descent.nonnegative_barrier.smooth_objective(_regreg[1], 'func'))
+                np.testing.assert_allclose(sel_prob_scipy.nonneg(param),
+                                           sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'))
 
-            # the _scipy solution is not feasible
+                # check the objective is the sum of terms it's supposed to be
 
-            np.testing.assert_allclose(sel_prob_scipy.likelihood(_scipy[1]),
-                                       sel_prob_grad_descent.likelihood_loss.smooth_objective(_scipy[1], 'func'))
+                np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                                           sel_prob_scipy.likelihood(param) +
+                                           sel_prob_scipy.cube_problem(param, method='softmax_barrier') +
+                                           sel_prob_scipy.active_conjugate_objective(param) +
+                                           sel_prob_scipy.nonneg(param), rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.cube_problem(_scipy[1], method='softmax_barrier'),
-                                       sel_prob_grad_descent.cube_objective(_scipy[1])[0])
+                # check the objective values
 
-            np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(_scipy[1]),
-                                       sel_prob_grad_descent.active_conjugate_objective(_scipy[1])[0])
+                np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                                           sel_prob_grad_descent.smooth_objective(param, 'func'), rtol=1.e-5)
 
-            np.testing.assert_allclose(sel_prob_scipy.nonneg(_scipy[1]),
-                                       sel_prob_grad_descent.nonnegative_barrier.smooth_objective(_scipy[1], 'func'))
+                np.testing.assert_allclose(sel_prob_scipy.objective(param),
+                                           sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func') +
+                                           sel_prob_grad_descent.cube_objective(param)[0] +
+                                           sel_prob_grad_descent.active_conjugate_objective(param)[0] +
+                                           sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'),
+                                           rtol=1.e-5)
 
         return np.array(result)
 
-@wait_for_return_value()
+#print(test_individual_terms())
+########################################################################################################################
+#@wait_for_return_value()
 def test_objectives_one_sparse():
-
-    #fixing n, p, true sparsity and signal strength
+    # fixing n, p, true sparsity and signal strength
     n = 10
     p = 3
     s = 1
     snr = 5
 
-    #sampling the Gaussian instance
+    # sampling the Gaussian instance
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
-    #getting randomized Lasso solution
-    sel = selection(X_1,y, random_Z)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
     print(epsilon, lam, betaE)
     noise_variance = 1
-    nactive=betaE.shape[0]
+    nactive = betaE.shape[0]
     active_signs = np.sign(betaE)
-    tau=1 #randomization_variance
-
+    tau = 1  # randomization_variance
 
     if nactive == 1:
         snr_seq = np.linspace(-10, 10, num=100)
@@ -241,27 +267,27 @@ def test_objectives_one_sparse():
             print("objective - to be debugged", sel_grad_objective)
         return True
 
-@wait_for_return_value()
-def test_objectives_not_one_sparse():
 
-    #fixing n, p, true sparsity and signal strength
+#@wait_for_return_value()
+def test_objectives_not_one_sparse():
+    # fixing n, p, true sparsity and signal strength
     n = 10
     p = 3
     s = 1
     snr = 5
 
-    #sampling the Gaussian instance
+    # sampling the Gaussian instance
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
-    #getting randomized Lasso solution
-    sel = selection(X_1,y, random_Z)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
     print(epsilon, lam, betaE)
     noise_variance = 1
-    nactive=betaE.shape[0]
+    nactive = betaE.shape[0]
     active_signs = np.sign(betaE)
-    tau=1 #randomization_variance
+    tau = 1  # randomization_variance
 
     if nactive > 1:
         parameter = np.random.standard_normal(nactive)
