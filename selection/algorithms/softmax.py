@@ -192,7 +192,6 @@ class nonnegative_softmax(smooth_atom):
         # a feasible point
         self.coefs[:] = np.ones(shape)
 
-
     def smooth_objective(self, mean_param, mode='both', check_feasibility=False):
         """
 

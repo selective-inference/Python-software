@@ -1,4 +1,5 @@
 from __future__ import print_function
+import time
 
 import numpy as np
 from selection.tests.instance import gaussian_instance
@@ -47,7 +48,10 @@ def test_minimizations():
                                                        noise_variance, 
                                                        tau, 
                                                        epsilon)
+        toc = time.time()
         sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+        tic = time.time()
+        print('scipy time', tic-toc)
 
         sel_prob_grad_descent = selection_probability_objective(X_1, 
                                                                 np.fabs(betaE), 
@@ -60,7 +64,10 @@ def test_minimizations():
                                                                 epsilon)
 
         _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
-        _regreg = sel_prob_grad_descent.minimize()[::-1]
+        toc = time.time()
+        _regreg = sel_prob_grad_descent.minimize(max_its=100, tol=1.e-12)[::-1]
+        tic = time.time()
+        print('regreg time', tic-toc)
 
         obj1 = sel_prob_scipy.objective
         obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
@@ -90,7 +97,8 @@ def test_one_sparse_minimizations():
     tau=1 #randomization_variance
 
     if nactive == 1:
-        snr_seq = np.linspace(-10, 10, num=6)
+        snr_seq = np.linspace(-10, 10, num=51)
+        snr_seq = np.hstack([snr_seq[25:], snr_seq[:25][::-1]])
         lagrange = lam * np.ones(p)
         result = []
         for i in range(snr_seq.shape[0]):
@@ -107,7 +115,10 @@ def test_one_sparse_minimizations():
                                                            tau, 
                                                            epsilon)
 
+            toc = time.time()
             sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+            tic = time.time()
+            print('scipy time', tic-toc)
 
             sel_prob_grad_descent = selection_probability_objective(X_1, 
                                                                     np.fabs(betaE), 
@@ -120,7 +131,11 @@ def test_one_sparse_minimizations():
                                                                     epsilon)
 
             _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
-            _regreg = sel_prob_grad_descent.minimize()[::-1]
+
+            toc = time.time()
+            _regreg = sel_prob_grad_descent.minimize(min_its=100, max_its=200, tol=1.e-12)[::-1]
+            tic = time.time()
+            print('regreg time', tic-toc)
 
             obj1 = sel_prob_scipy.objective
             obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
@@ -188,36 +203,7 @@ def test_individual_terms():
 
             for param in [_scipy[1], _regreg[1]]:
 
-                np.testing.assert_allclose(sel_prob_scipy.likelihood(param),
-                                           sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func'))
-
-                np.testing.assert_allclose(sel_prob_scipy.cube_problem(param, method='softmax_barrier'),
-                                           sel_prob_grad_descent.cube_objective(param)[0], rtol=1.e-5)
-
-                np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(param),
-                                           sel_prob_grad_descent.active_conjugate_objective(param)[0], rtol=1.e-5)
-
-                np.testing.assert_allclose(sel_prob_scipy.nonneg(param),
-                                           sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'))
-
-                # check the objective is the sum of terms it's supposed to be
-
-                np.testing.assert_allclose(sel_prob_scipy.objective(param),
-                                           sel_prob_scipy.likelihood(param) +
-                                           sel_prob_scipy.cube_problem(param, method='softmax_barrier') +
-                                           sel_prob_scipy.active_conjugate_objective(param) +
-                                           sel_prob_scipy.nonneg(param), rtol=1.e-5)
-
-                # check the objective values
-
-                np.testing.assert_allclose(sel_prob_scipy.objective(param),
-                                           sel_prob_grad_descent.smooth_objective(param, 'func'), rtol=1.e-5)
-
-                np.testing.assert_allclose(sel_prob_scipy.objective(param),
-                                           sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func') + 
-                                           sel_prob_grad_descent.cube_objective(param)[0] + 
-                                           sel_prob_grad_descent.active_conjugate_objective(param)[0] + 
-                                           sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'), rtol=1.e-5)
+                check_two_approaches(param, sel_prob_scipy, sel_prob_grad_descent)
 
 
         return np.array(result)
@@ -228,10 +214,10 @@ def check_two_approaches(param, sel_prob_scipy, sel_prob_grad_descent):
                                sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func'))
 
     np.testing.assert_allclose(sel_prob_scipy.cube_problem(param, method='softmax_barrier'),
-                               sel_prob_grad_descent.cube_objective(param)[0], rtol=1.e-5)
+                               sel_prob_grad_descent.cube_loss.smooth_objective(param, 'func'), rtol=1.e-5)
 
     np.testing.assert_allclose(sel_prob_scipy.active_conjugate_objective(param),
-                               sel_prob_grad_descent.active_conjugate_objective(param)[0], rtol=1.e-5)
+                               sel_prob_grad_descent.active_conj_loss.smooth_objective(param, 'func'))
 
     np.testing.assert_allclose(sel_prob_scipy.nonneg(param),
                                sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'))
@@ -251,8 +237,8 @@ def check_two_approaches(param, sel_prob_scipy, sel_prob_grad_descent):
 
     np.testing.assert_allclose(sel_prob_scipy.objective(param),
                                sel_prob_grad_descent.likelihood_loss.smooth_objective(param, 'func') + 
-                               sel_prob_grad_descent.cube_objective(param)[0] + 
-                               sel_prob_grad_descent.active_conjugate_objective(param)[0] + 
+                               sel_prob_grad_descent.cube_loss.smooth_objective(param, 'func') + 
+                               sel_prob_grad_descent.active_conj_loss.smooth_objective(param, 'func') + 
                                sel_prob_grad_descent.nonnegative_barrier.smooth_objective(param, 'func'), rtol=1.e-5)
 
 

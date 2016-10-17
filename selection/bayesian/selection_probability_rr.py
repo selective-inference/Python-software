@@ -42,7 +42,8 @@ def cube_subproblem(argument,
 
     current_value = np.inf
 
-    conj_value, conj_grad = randomization_CGF_conjugate
+    conj_value = lambda x: randomization_CGF_conjugate.smooth_objective(x, 'func')
+    conj_grad = lambda x: randomization_CGF_conjugate.smooth_objective(x, 'grad')
 
     step = np.ones(k, np.float)
 
@@ -142,6 +143,52 @@ def cube_hessian(argument, lagrange):
     _sum = argument + lagrange  # z + \lambda > 0
     return 1. / _diff**2 - 1. / (_diff - 1)**2 + 1. / _sum**2 - 1. / (_sum + 1)**2
 
+class cube_objective(rr.smooth_atom):
+
+    def __init__(self,
+                 randomization_CGF_conjugate,
+                 lagrange, 
+                 nstep=100,
+                 tol=1.e-10,
+                 initial=None,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+
+        (self.randomization_CGF_conjugate,
+         self.lagrange,
+         self.nstep,
+         self.tol) = (randomization_CGF_conjugate,
+                      lagrange,
+                      nstep,
+                      tol)
+
+        rr.smooth_atom.__init__(self,
+                                randomization_CGF_conjugate.shape,
+                                initial=initial,
+                                coef=coef,
+                                offset=offset,
+                                quadratic=quadratic)
+                                
+    def smooth_objective(self, arg, mode='both', check_feasibility=False):
+
+        arg = self.apply_offset(arg)
+
+        optimizer, value = cube_subproblem(arg,
+                                           self.randomization_CGF_conjugate,
+                                           self.lagrange,
+                                           nstep=self.nstep, 
+                                           tol=self.tol)
+
+        if mode == 'func':
+            return self.scale(value)
+        elif mode == 'grad':
+            return -self.scale(optimizer)
+        elif mode == 'both':
+            return self.scale(value), -self.scale(optimizer)
+        else:
+            raise ValueError("mode incorrectly specified")
+
 class selection_probability_objective(rr.smooth_atom):
 
     def __init__(self, 
@@ -156,7 +203,8 @@ class selection_probability_objective(rr.smooth_atom):
                  epsilon,
                  coef=1.,
                  offset=None,
-                 quadratic=None):
+                 quadratic=None,
+                 nstep=100):
 
         """
         Objective function for $\beta_E$ (i.e. active) with $E$ the `active_set` optimization
@@ -251,6 +299,19 @@ class selection_probability_objective(rr.smooth_atom):
 
         self.inactive_subgrad = np.zeros(p - E)
 
+        self.active_conj_loss = rr.affine_smooth(self.active_conjugate, rr.affine_transform(self.A_active, self.offset_active))
+
+        cube_obj = cube_objective(self.inactive_conjugate,
+                                  lagrange[~active],
+                                  nstep=nstep) 
+
+        self.cube_loss = rr.affine_smooth(cube_obj, self.A_inactive)
+
+        self.total_loss = rr.smooth_sum([self.active_conj_loss,
+                                         self.cube_loss,
+                                         self.likelihood_loss,
+                                         self.nonnegative_barrier])
+
     def set_parameter(self, mean_parameter, noise_variance):
         """
         Set $\beta_E^*$.
@@ -288,63 +349,28 @@ class selection_probability_objective(rr.smooth_atom):
         
         param = self.apply_offset(param)
 
-        # as argument to convex conjugate of
-        # inactive cube barrier
-        # _i for inactive
-
-        conjugate_value_i, barrier_gradient_i = self.cube_objective(param)
-        f_active_conj, g_active_conj = self.active_conjugate_objective(param)
-
         if mode == 'func':
-            f_nonneg = self.nonnegative_barrier.smooth_objective(param, 'func')
-            f_like = self.likelihood_loss.smooth_objective(param, 'func')
-            f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
-            return f
+            f = self.total_loss.smooth_objective(param, 'func')
+            return self.scale(f)
         elif mode == 'grad':
-            g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'grad')
-            g_like = self.likelihood_loss.smooth_objective(param, 'grad')
-            g = self.scale(g_nonneg + g_like + g_active_conj + barrier_gradient_i)
-            return g
+            g = self.total_loss.smooth_objective(param, 'grad')
+            return self.scale(g)
         elif mode == 'both':
-            f_nonneg, g_nonneg = self.nonnegative_barrier.smooth_objective(param, 'both')
-            f_like, g_like = self.likelihood_loss.smooth_objective(param, 'both')
-            f = self.scale(f_nonneg + f_like + f_active_conj + conjugate_value_i)
-            g = self.scale(g_nonneg + g_like + g_active_conj + barrier_gradient_i)
-            return f, g
+            f, g = self.total_loss.smooth_objective(param, 'both')
+            return self.scale(f), self.scale(g)
         else:
             raise ValueError("mode incorrectly specified")
 
-    def active_conjugate_objective(self, param):
-
-        active_conj_value, active_conj_grad = self.active_conjugate
-        param_a = self.A_active.dot(param)
-        f_active_conj = active_conj_value(param_a + self.offset_active)
-        g_active_conj = self.A_active.T.dot(active_conj_grad(param_a)+self.offset_active)
-
-        return f_active_conj, g_active_conj
-
-    def cube_objective(self, param):
-
-        conjugate_argument_i = self.A_inactive.dot(param)
-        conjugate_optimizer_i, conjugate_value_i = cube_subproblem(conjugate_argument_i,
-                                                                   self.inactive_conjugate,
-                                                                   self.inactive_lagrange,
-                                                                   initial=self.inactive_subgrad)
-
-        barrier_gradient_i = self.A_inactive.T.dot(conjugate_optimizer_i)
-        return conjugate_value_i, barrier_gradient_i
-
-    def minimize(self, initial=None):
+    def minimize(self, initial=None, min_its=10, max_its=50, tol=1.e-10):
 
         nonneg_con = self._opt_selector.output_shape[0]
         constraint = rr.separable(self.shape,
-                                  #[rr.nonnegative((nonneg_con,), offset=1.e-12 * np.ones(nonneg_con))],
-                                  [rr.nonnegative((nonneg_con,))],
+                                  [rr.nonnegative((nonneg_con,), offset=1.e-12 * np.ones(nonneg_con))],
                                   [self._opt_selector.index_obj])
 
         problem = rr.separable_problem.fromatom(constraint, self)
-        problem.coefs[self._opt_selector.index_obj] = 0.5
-        soln = problem.solve(max_its=200, min_its=100, tol=1.e-12)
+        problem.coefs[:] = 0.5
+        soln = problem.solve(max_its=max_its, min_its=min_its, tol=tol)
         value = problem.objective(soln)
         if np.any(soln == 0):
             stop
