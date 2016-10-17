@@ -8,7 +8,7 @@ from imp import reload
 reload(selection.bayesian.sel_probability2)
 from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
 from selection.randomized.api import randomization
-from selection.bayesian.barrier import barrier_conjugate
+from selection.bayesian.barrier import barrier_conjugate_log, barrier_conjugate_softmax
 
 def test_barrier_conjugate():
 
@@ -239,14 +239,14 @@ def test_barrier_conjugate():
     #lagrange = np.arange(4) + 1
     lagrange = np.random.uniform(low=1.0, high=2.0, size=4)
     print(lagrange)
-    _barrier_star = barrier_conjugate(cube_bool, lagrange)
-
+    _barrier_star_log = barrier_conjugate_log(cube_bool, lagrange)
+    _barrier_star_softmax = barrier_conjugate_softmax(cube_bool, lagrange)
     arg = np.zeros(p)
     arg[cube_bool] = np.random.standard_normal(4)
     arg[~cube_bool] = - np.fabs(np.random.standard_normal(6))
 
-    print(_barrier_star.smooth_objective(arg, mode='func',method="log-barrier"),
-          _barrier_star.smooth_objective(arg, mode='func',method="softmax-barrier"))
+    print(_barrier_star_log.smooth_objective(arg, mode='func'),
+          _barrier_star_softmax.smooth_objective(arg, mode='func'))
 
 test_barrier_conjugate()
 
