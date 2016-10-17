@@ -88,6 +88,8 @@ class dual_selection_probability_func():
         n, p = X.shape
         E = active.sum()
 
+        self._X = X
+
         self.mean_parameter = np.squeeze(mean_parameter)
 
         self.active = active
@@ -105,20 +107,20 @@ class dual_selection_probability_func():
         B_E = B[active]
         B_mE = B[~active]
 
-        self.A_active = np.hstack([-X[:, active].T, (B_E + epsilon * np.identity(E)) * active_signs[None, :]])
-        self.A_inactive = np.hstack([-X[:, ~active].T, (B_mE * active_signs[None, :])])
+        self.B_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :], np.zeros((E, p - E))])
+        self.B_inactive = np.hstack([B_mE * active_signs[None, :], np.identity((p - E))])
+        self.B_p = np.vstack((self.B_active, self.B_inactive))
 
         self.offset_active = active_signs * lagrange[active]
         self.inactive_subgrad = np.zeros(p - E)
 
-        append = np.zeros((p, p - E))
-        append[E:, :] = np.identity(p - E)
-        B_p = self.B_p = np.hstack([np.vstack([self.A_active[:, n:], self.A_inactive[:, n:]]), append])
-        self.X = X
+        self.offset_active = active_signs * lagrange[active]
+        self.inactive_subgrad = np.zeros(p - E)
 
         self.cube_bool = np.zeros(p, np.bool)
         self.cube_bool[E:] = 1
-        self.dual_arg = -np.linalg.inv(B_p).dot(np.append(self.offset_active,self.inactive_subgrad))
+        self.dual_arg = np.linalg.inv(self.B_p).dot(np.append(self.offset_active, self.inactive_subgrad))
+
 
     def rand_CGF(self,v):
         u = (np.linalg.inv(self.B_p.T)).dot(v)

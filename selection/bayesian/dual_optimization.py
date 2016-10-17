@@ -84,7 +84,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
 
-        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X.dot(np.linalg.inv(self.B_p.T)))
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self._X.dot(np.linalg.inv(self.B_p.T)))
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
 
