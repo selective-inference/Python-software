@@ -53,7 +53,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.B_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :],np.zeros((E,p-E))])
         self.B_inactive = np.hstack([B_mE * active_signs[None, :],np.identity((p-E))])
-        self.B_p = np.vstack((self.A_active,self.A_inactive))
+        self.B_p = np.vstack((self.B_active,self.B_inactive))
 
         self.offset_active = active_signs * lagrange[active]
         self.inactive_subgrad = np.zeros(p - E)
