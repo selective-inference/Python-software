@@ -75,10 +75,9 @@ def test_minimizations():
         obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
 
         toc = time.time()
-        res = minimize(obj2, x0=sel_prob_scipy.initial, bounds=sel_prob_scipy._bounds)
+        _regreg2 = sel_prob_grad_descent.minimize2(nstep=20)[::-1]
         tic = time.time()
-        print('regreg-scipy time', tic-toc)
-        print('hybrid', obj2(res.x))
+        print('regreg2', tic-toc)
 
 
         print("value and minimizer- scipy", _scipy, obj1(_scipy[1]), obj2(_scipy[1]))
@@ -143,9 +142,14 @@ def test_one_sparse_minimizations():
             _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
 
             toc = time.time()
-            _regreg = sel_prob_grad_descent.minimize(min_its=100, max_its=200, tol=1.e-12)[::-1]
+            _regreg = sel_prob_grad_descent.minimize(min_its=500, max_its=1000, tol=1.e-12)[::-1]
             tic = time.time()
             print('regreg time', tic-toc)
+
+            toc = time.time()
+            _regreg2 = sel_prob_grad_descent.minimize2()[::-1]
+            tic = time.time()
+            print('regreg2 time', tic-toc)
 
             obj1 = sel_prob_scipy.objective
             obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
@@ -155,7 +159,8 @@ def test_one_sparse_minimizations():
             #check_two_approaches(_regreg[1], sel_prob_scipy, sel_prob_grad_descent)
 
             result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]), 
-                           obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1])])
+                           obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1]), 
+                           obj1(_regreg2[1]), obj2(_regreg2[1]), obj3(_regreg2[1])])
 
             print('scipy gradient', sel_prob_grad_descent.smooth_objective(_scipy[1], 'grad'))
             print('regreg gradient', sel_prob_grad_descent.smooth_objective(_regreg[1], 'grad'))
