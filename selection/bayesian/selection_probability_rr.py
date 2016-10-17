@@ -13,6 +13,21 @@ import regreg.api as rr
 ### we need at least the gradient of the
 ### CGF
 
+import numpy as np
+
+from scipy.optimize import minimize
+from scipy.stats import norm as ndist
+
+from selection.algorithms.softmax import nonnegative_softmax
+import regreg.api as rr
+
+
+#################################################################
+
+### For arbitrary randomizations,
+### we need at least the gradient of the
+### CGF
+
 def cube_subproblem(argument,
                     randomization_CGF_conjugate,
                     lagrange, nstep=100,
@@ -411,10 +426,6 @@ class selection_probability_objective(rr.smooth_atom):
         print('iter', itercount)
         value = objective(current)
         return current, value
-
-
-
-
 
 
 

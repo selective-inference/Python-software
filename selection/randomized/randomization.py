@@ -71,8 +71,8 @@ class randomization(rr.smooth_atom):
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
-        CGF = isotropic_gaussian_CGF(scale)
-        CGF_conjugate = isotropic_gaussian_CGF_conjugate(scale)
+        CGF = isotropic_gaussian_CGF(shape, scale)
+        CGF_conjugate = isotropic_gaussian_CGF_conjugate(shape, scale)
         return randomization(shape, 
                              density, 
                              grad_negative_log_density, 
@@ -103,8 +103,8 @@ class randomization(rr.smooth_atom):
         density = lambda x: rv.pdf(x)
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
-        CGF = laplace_CGF(scale)
-        CGF_conjugate = laplace_CGF_conjugate(scale)
+        CGF = laplace_CGF(shape, scale)
+        CGF_conjugate = laplace_CGF_conjugate(shape, scale)
         return randomization(shape, 
                              density, 
                              grad_negative_log_density, 
@@ -129,13 +129,15 @@ class randomization(rr.smooth_atom):
 
 # Conjugate generating function for Gaussian
 
-def isotropic_gaussian_CGF(scale): # scale = SD
-    return (lambda x: (x**2).sum() * scale**2 / 2., 
-            lambda x: scale**2 * x)
+def isotropic_gaussian_CGF(shape, scale): # scale = SD
+    return cumulant(shape,
+                    lambda x: (x**2).sum() * scale**2 / 2., 
+                    lambda x: scale**2 * x)
 
-def isotropic_gaussian_CGF_conjugate(scale):  # scale = SD
-    return (lambda x: (x**2).sum() / (2 * scale**2), 
-            lambda x: x / scale**2)
+def isotropic_gaussian_CGF_conjugate(shape, scale):  # scale = SD
+    return cumulant_conjugate(shape,
+                              lambda x: (x**2).sum() / (2 * scale**2), 
+                              lambda x: x / scale**2)
 
 # Conjugate generating function for Laplace
 
@@ -157,11 +159,89 @@ def _standard_laplace_CGF_conjugate_grad(u):
     return root
 
 BIG = 10**10
-def laplace_CGF(scale):
-    return (lambda x: -np.log(1 - (scale * x)**2).sum() + BIG * (np.abs(x) > 1),
-            lambda x: 2 * x * scale**2 / (1 - (scale * x)**2))
+def laplace_CGF(shape, scale):
+    return cumulant(shape,
+                    lambda x: -np.log(1 - (scale * x)**2).sum() + BIG * (np.abs(x) > 1),
+                    lambda x: 2 * x * scale**2 / (1 - (scale * x)**2))
 
-def laplace_CGF_conjugate(scale):
-    return (lambda x: _standard_laplace_CGF_conjugate(x / scale),
-            lambda x: _standard_laplace_CGF_conjugate_grad(x / scale) / scale)
+def laplace_CGF_conjugate(shape, scale):
+    return cumulant_conjugate(shape,
+                              lambda x: _standard_laplace_CGF_conjugate(x / scale),
+                              lambda x: _standard_laplace_CGF_conjugate_grad(x / scale) / scale)
+
+class from_grad_func(rr.smooth_atom):
+
+    """
+    take a (func, grad) pair and make a smooth_objective
+    """
+
+
+    def __init__(self,
+                 shape,
+                 func,
+                 grad,
+                 coef=1.,
+                 offset=None,
+                 initial=None,
+                 quadratic=None):
+
+        rr.smooth_atom.__init__(self,
+                                shape,
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        self._func, self._grad = (func, grad)
+
+    def smooth_objective(self, param, mode='both', check_feasibility=False):
+        """
+
+        Evaluate the smooth objective, computing its value, gradient or both.
+
+        Parameters
+        ----------
+
+        mean_param : ndarray
+            The current parameter values.
+
+        mode : str
+            One of ['func', 'grad', 'both']. 
+
+        check_feasibility : bool
+            If True, return `np.inf` when
+            point is not feasible, i.e. when `mean_param` is not
+            in the domain.
+
+        Returns
+        -------
+
+        If `mode` is 'func' returns just the objective value 
+        at `mean_param`, else if `mode` is 'grad' returns the gradient
+        else returns both.
+        """
+        
+        param = self.apply_offset(param)
+
+        if mode == 'func':
+            return self.scale(self._func(param))
+        elif mode == 'grad':
+            return self.scale(self._grad(param))
+        elif mode == 'both':
+            return self.scale(self._func(param)), self.scale(self._grad(param))
+        else:
+            raise ValueError("mode incorrectly specified")
+
+
+class cumulant(from_grad_func):
+    """
+    Class for CGF.
+    """
+    pass
+
+class cumulant_conjugate(from_grad_func):
+    """
+    Class for conjugate of a CGF.
+    """
+    pass
 
