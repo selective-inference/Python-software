@@ -1,14 +1,47 @@
 import numpy as np
 from scipy.optimize import minimize
 
-def barrier_conjugate_func(cube_bool, lagrange, arg):
+def cube_barrier_softmax_coord(z, lam):
+    _diff = z - lam
+    _sum = z + lam
+    if -lam + np.power(10, -10) < z < lam - np.power(10, -10):
+        return np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum))
+    else:
+        return 2 * np.log(1+(10 ** 10))
 
+def softmax_barrier_conjugate(cube_bool, lagrange, arg):
     p = cube_bool.shape[0]
     orthant_bool = ~cube_bool
 
     initial = np.ones(p)
     initial[cube_bool] = lagrange * 0.5
 
+    cube_arg = arg[cube_bool]
+    cube_val = 0
+    def cube_conjugate(z,u,j):
+        return -u*z + cube_barrier_softmax_coord(z,lagrange[j])
+
+    for i in range(cube_arg.shape[0]):
+        u = cube_arg[i]
+        j = i
+        bounds = [(-lagrange[i], lagrange[i])]
+        res = minimize(cube_conjugate, x0=(initial[cube_bool])[i], args=(u,j), bounds=bounds)
+        cube_val+= -res.fun
+
+    orthant_arg = arg[orthant_bool]
+
+    if np.any(orthant_arg >= -1.e-6):
+        return np.power(10, 10)
+    else:
+        orthant_maximizer = - 0.5 + np.sqrt(0.25 - 1. / orthant_arg)
+        orthant_val = np.sum(orthant_maximizer * orthant_arg - np.log(1 + 1. / orthant_maximizer))
+        return cube_val + orthant_val
+
+
+def log_barrier_conjugate(cube_bool, lagrange, arg):
+
+    p = cube_bool.shape[0]
+    orthant_bool = ~cube_bool
     cube_arg = arg[cube_bool]
     cube_maximizer = -1. / cube_arg + np.sign(cube_arg) * np.sqrt(1. / cube_arg ** 2 + lagrange ** 2)
 
@@ -76,7 +109,7 @@ class dual_selection_probability_func():
         return np.true_divide(u.T.dot(u), 2* self.rand_variance)
 
     def composed_barrier_conjugate(self,v):
-        return barrier_conjugate_func(self.cube_bool, self.inactive_lagrange, v)
+        return softmax_barrier_conjugate(self.cube_bool, self.inactive_lagrange, v)
 
     def data_CGF(self,v):
         u = (np.linalg.inv(self.B_p.T)).dot(v)
