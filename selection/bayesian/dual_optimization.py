@@ -2,6 +2,36 @@ import numpy as np
 import regreg.api as rr
 from selection.bayesian.barrier import barrier_conjugate_softmax, barrier_conjugate_log
 
+class identity_map(rr.smooth_atom):
+    def __init__(self,
+                 p,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+        self.p = p
+
+        rr.smooth_atom.__init__(self,
+                                (p,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                coef=coef)
+
+    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
+        arg = self.apply_offset(arg)
+
+        if mode == 'func':
+            return arg
+        elif mode == 'grad':
+            g = np.identity(self.p)
+            return g
+        elif mode == 'both':
+            g = np.identity(self.p)
+            return arg, g
+        else:
+            raise ValueError('mode incorrectly specified')
+
+
+
 class selection_probability_dual_objective(rr.smooth_atom):
 
     def __init__(self,
@@ -72,7 +102,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -np.linalg.inv(self.B_p.T))
 
-        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg,0)
+        self.linear_term = rr.affine_smooth(identity_map(p), self.dual_arg)
 
         self.total_loss = rr.smooth_sum([self.conjugate_barrier,
                                          self.CGF_randomizer,
@@ -87,27 +117,28 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self._X.dot(np.linalg.inv(self.B_p.T)))
 
-    def objective_dual(self, param):
+   # def objective_dual(self, param):
 
         #return self.conjugate_barrier.smooth_objective(self.feasible_point, mode='func')
         #return self.likelihood_loss.smooth_objective(self.feasible_point, mode='func')
-        return self.CGF_randomizer.smooth_objective(self.feasible_point, mode='func')
+        #return self.CGF_randomizer.smooth_objective(self.feasible_point, mode='func')
+        #return self.linear_term.smooth_objective(self.feasible_point, mode='func')
 
-    #def smooth_objective(self, param, mode='both', check_feasibility=False):
+    def smooth_objective(self, param, mode='both', check_feasibility=False):
 
-    #    param = self.apply_offset(param)
+        param = self.apply_offset(param)
 
-    #    if mode == 'func':
-    #        f = self.total_loss.smooth_objective(param, 'func')
-    #        return self.scale(f)
-    #    elif mode == 'grad':
-    #        g = self.total_loss.smooth_objective(param, 'grad')
-    #        return self.scale(g)
-    #    elif mode == 'both':
-    #        f, g = self.total_loss.smooth_objective(param, 'both')
-    #        return self.scale(f), self.scale(g)
-    #    else:
-    #        raise ValueError("mode incorrectly specified")
+        if mode == 'func':
+            f = self.total_loss.smooth_objective(param, 'func')
+            return self.scale(f)
+        elif mode == 'grad':
+            g = self.total_loss.smooth_objective(param, 'grad')
+            return self.scale(g)
+        elif mode == 'both':
+            f, g = self.total_loss.smooth_objective(param, 'both')
+            return self.scale(f), self.scale(g)
+        else:
+            raise ValueError("mode incorrectly specified")
 
 
 
