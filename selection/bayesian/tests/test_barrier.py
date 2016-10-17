@@ -225,15 +225,30 @@ class understand(rr.smooth_atom):
 
 
 
-my_funct = understand(np.array([[2,2,1],[2,3,4]]),2*np.ones(3),np.array([3, 4]),1.)
+#my_funct = understand(np.array([[2,2,1],[2,3,4]]),2*np.ones(3),np.array([3, 4]),1.)
 
-print (my_funct.smooth_objective(u=2*np.ones(3), mode='both'))
-
-
+#print (my_funct.smooth_objective(u=2*np.ones(3), mode='both'))
 
 
 
+def test_barrier_conjugate():
 
+    p = 10
+    cube_bool = np.zeros(p, np.bool)
+    cube_bool[:4] = 1
+    #lagrange = np.arange(4) + 1
+    lagrange = np.random.uniform(low=1.0, high=2.0, size=4)
+    print(lagrange)
+    _barrier_star = barrier_conjugate(cube_bool, lagrange)
+
+    arg = np.zeros(p)
+    arg[cube_bool] = np.random.standard_normal(4)
+    arg[~cube_bool] = - np.fabs(np.random.standard_normal(6))
+
+    print(_barrier_star.smooth_objective(arg, mode='func',method="log-barrier"),
+          _barrier_star.smooth_objective(arg, mode='func',method="softmax-barrier"))
+
+test_barrier_conjugate()
 
 
 

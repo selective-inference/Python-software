@@ -1,5 +1,6 @@
 import numpy as np
 import regreg.api as rr
+from scipy.optimize import bisect
 
 class barrier_conjugate(rr.smooth_atom):
 
@@ -41,14 +42,13 @@ class barrier_conjugate(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
-    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
+    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6, method= "log-barrier"):
 
         # here we compute those expressions in the note
 
         arg = self.apply_offset(arg) # all smooth_objectives should do this....
 
         cube_arg = arg[self.cube_bool]
-        cube_maximizer = -1. / cube_arg + np.sign(cube_arg) * np.sqrt(1. / cube_arg**2 + self.lagrange**2)
 
         orthant_arg = arg[self.orthant_bool]
         
@@ -63,13 +63,33 @@ class barrier_conjugate(rr.smooth_atom):
                 raise ValueError('mode incorrectly specified') 
 
         orthant_maximizer = - 0.5 + np.sqrt(0.25 - 1. / orthant_arg)
+        orthant_val = np.sum(orthant_maximizer * orthant_arg -
+                             np.log(1 + 1. / orthant_maximizer))
 
-        if mode in ['func', 'both']:
-            cube_val = np.sum(cube_maximizer * cube_arg + 
-                              np.log(self.lagrange - cube_maximizer) + 
-                              np.log(self.lagrange + cube_maximizer))
-            orthant_val = np.sum(orthant_maximizer * orthant_arg - 
-                                 np.log(1 + 1. / orthant_maximizer))
+        if method == "log-barrier":
+            cube_maximizer = -1. / cube_arg + np.sign(cube_arg) * np.sqrt(1. / cube_arg ** 2 + self.lagrange ** 2)
+            cube_val = np.sum(cube_maximizer * cube_arg +
+                              np.log(self.lagrange - cube_maximizer) +
+                              np.log(self.lagrange + cube_maximizer) - (2 * np.log(self.lagrange)))
+
+        elif method == "softmax-barrier" :
+            def cube_conjugate_grad(z, u, j):
+                _diff = z - self.lagrange[j]  # z - \lambda < 0
+                _sum = z + self.lagrange[j]  # z + \lambda > 0
+                return u - (1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum)
+
+            cube_maximizer = np.zeros(cube_arg.shape[0])
+            for i in range(cube_arg.shape[0]):
+                u = cube_arg[i]
+                j = i
+                cube_maximizer[i] = bisect(cube_conjugate_grad, a=-self.lagrange[j] + 10 ** -10,
+                                           b=self.lagrange[j] - 10 ** -10, args=(u, j),
+                                           rtol=4.4408920985006262e-5, maxiter=32)
+
+            cube_val = np.sum(cube_maximizer * cube_arg - np.log(1. + (1. / self.lagrange - cube_maximizer))
+                              - np.log(1. + (1. / self.lagrange + cube_maximizer)))
+        else :
+            raise ValueError('barrier incorrectly specified')
 
         if mode == 'func':
             return cube_val + orthant_val
