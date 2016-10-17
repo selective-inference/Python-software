@@ -131,11 +131,11 @@ class dual_selection_probability_func():
 
     def data_CGF(self,v):
         u = (np.linalg.inv(self.B_p.T)).dot(v)
-        dev = np.dot(self.X,u)-self.mean_parameter
+        dev = np.dot(self._X,u)-self.mean_parameter
         return np.true_divide(dev.T.dot(dev),2 * self.noise_variance)
 
     def dual_objective(self,v):
-        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)-v.T.dot(self.dual_arg)
+        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)+ v.T.dot(self.dual_arg)
 
     def minimize_dual(self):
         bounds = []
