@@ -2,7 +2,7 @@ import numpy as np
 import regreg.api as rr
 from selection.bayesian.barrier import barrier_conjugate
 
-class dual_selection_probability(rr.smooth_atom):
+class selection_probability_dual_objective(rr.smooth_atom):
 
     def __init__(self,
                  X,
@@ -10,44 +10,29 @@ class dual_selection_probability(rr.smooth_atom):
                  active,
                  active_signs,
                  lagrange,
-                 mean_parameter,
+                 mean_parameter,  # in R^n
                  noise_variance,
-                 randomization,
+                 randomizer,
                  epsilon,
                  coef=1.,
                  offset=None,
-                 quadratic=None):
+                 quadratic=None,
+                 nstep=10):
 
-        self.X=X
         n, p = X.shape
         E = active.sum()
-
+        self._X = X
         self.active = active
         self.noise_variance = noise_variance
-        self.randomization = randomization
+        self.randomization = randomizer
 
-        self.CGF_randomization = randomization.CGF
+        self.CGF_randomization = randomizer.CGF
 
         if self.CGF_randomization is None:
-            raise ValueError(
-                'randomization must know its cgf -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
+            raise ValueError('randomization must know its cgf -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
         self.inactive_lagrange = lagrange[~active]
-
-        X_E = self.X_E = X[:,active]
-        B = X.T.dot(X_E)
-
-        B_E = B[active]
-        B_mE = B[~active]
-
-        self.A_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :],np.zeros((E,p-E))])
-        self.A_inactive = np.hstack([B_mE * active_signs[None, :],np.identity((p-E))])
-        self.A=np.vstack((self.A_active,self.A_inactive))
-        self.dual_arg = np.zeros(p)
-        self.dual_arg[:E] = -active_signs * lagrange[active]
-        self.feasible_point=feasible_point
-
-        initial=feasible_point
+        initial = feasible_point
 
         rr.smooth_atom.__init__(self,
                                 (p,),
@@ -56,107 +41,68 @@ class dual_selection_probability(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
+        self.coefs[:] = initial
+
+        self.active = active
+
+        X_E = self.X_E = X[:, active]
+        B = X.T.dot(X_E)
+
+        B_E = B[active]
+        B_mE = B[~active]
+
+        self.B_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :],np.zeros((E,p-E))])
+        self.B_inactive = np.hstack([B_mE * active_signs[None, :],np.identity((p-E))])
+        self.B_p = np.vstack((self.A_active,self.A_inactive))
+
+        self.offset_active = active_signs * lagrange[active]
+        self.inactive_subgrad = np.zeros(p - E)
+
         self.cube_bool = np.zeros(p, np.bool)
         self.cube_bool[E:] = 1
+        self.dual_arg = -np.linalg.inv(self.B_p).dot(np.append(self.offset_active, self.inactive_subgrad))
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        #self.coefs[:] = initial
+        _barrier_star = barrier_conjugate(self.cube_bool, self.inactive_lagrange)
+
+        self.conjugate_barrier = rr.affine_smooth(_barrier_star, np.identity(p))
+
+        self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, np.linalg.inv(self.B_p.T))
+
+        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg,0)
+
+        self.total_loss = rr.smooth_sum([self.conjugate_barrier,
+                                         self.CGF_randomizer,
+                                         self.likelihood_loss,
+                                         -self.linear_term])
+
 
     def set_parameter(self, mean_parameter, noise_variance):
 
+        mean_parameter = np.squeeze(mean_parameter)
+
         self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
-        #self.likelihood_loss.quadratic = rr.identity_quadratic(0, 0, 0,
-                                                             # -0.5 * (mean_parameter ** 2).sum() / noise_variance)
 
-        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X)
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X.dot(np.linalg.inv(self.B_p.T)))
 
-    def smooth_objective(self, dual, mode='both', check_feasibility=False):
+    def smooth_objective(self, param, mode='both', check_feasibility=False):
 
-        dual = self.apply_offset(dual)
-
-        _barrier_star = barrier_conjugate(self.cube_bool,self.inactive_lagrange)
-
-        composition_barrier = rr.affine_smooth(_barrier_star, self.A.T)
-
-        CGF_rand_value, CGF_rand_grad = self.CGF_randomization
+        param = self.apply_offset(param)
 
         if mode == 'func':
-            f_rand_cgf = CGF_rand_value(dual)
-            f_data_cgf = self.likelihood_loss.smooth_objective(dual, 'func')
-            f_barrier_conj=composition_barrier.smooth_objective(dual, 'func')
-            f = self.scale(f_rand_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.dual_arg)))
-            # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
-            return f
-
+            f = self.total_loss.smooth_objective(param, 'func')
+            return self.scale(f)
         elif mode == 'grad':
-            g_rand_cgf = CGF_rand_grad(dual)
-            g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'grad')
-            g_barrier_conj = composition_barrier.smooth_objective(dual, 'grad')
-            g = self.scale(g_rand_cgf + g_data_cgf + g_barrier_conj-self.dual_arg)
-            # print(g, 'grad')
-            return g
-
+            g = self.total_loss.smooth_objective(param, 'grad')
+            return self.scale(g)
         elif mode == 'both':
-            f_rand_cgf, g_rand_cgf = self.CGF_randomization(dual)
-            f_data_cgf, g_data_cgf = self.likelihood_loss.smooth_objective(dual, 'both')
-            f_barrier_conj, g_barrier_conj = composition_barrier.smooth_objective(dual, 'both')
-            f = self.scale(f_rand_cgf + f_data_cgf + f_barrier_conj-(dual.T.dot(self.dual_arg)))
-            g = self.scale(g_rand_cgf + g_data_cgf + g_barrier_conj-self.dual_arg)
-            # print(f, f_nonneg, f_like, f_active_conj, conjugate_value_i, 'value')
-            return f, g
+            f, g = self.total_loss.smooth_objective(param, 'both')
+            return self.scale(f), self.scale(g)
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize(self, initial=None, step=1, nstep=30):
-
-        current = self.feasible_point
-        current_value = np.inf
-
-        objective = lambda u: self.smooth_objective(u, 'func')
-
-        for itercount in range(nstep):
-            newton_step = self.smooth_objective(current, 'grad') * self.noise_variance
-
-            # make sure proposal is feasible
-
-            count = 0
-            while True:
-                count += 1
-                proposal = current - step * newton_step
-                if np.isfinite(objective(proposal)):
-                    break
-                step *= 0.5
-                if count >= 40:
-                    raise ValueError('not finding a feasible point')
-
-            # make sure proposal is a descent
-
-            count = 0
-            while True:
-                proposal = current - step * newton_step
-                proposed_value = objective(proposal)
-                # print(current_value, proposed_value, 'minimize')
-                if proposed_value <= current_value:
-                    break
-                step *= 0.5
-
-            # stop if relative decrease is small
-
-            if np.fabs(current_value - proposed_value) < 1.e-6 * np.fabs(current_value):
-                current = proposal
-                current_value = proposed_value
-                break
-
-            current = proposal
-            current_value = proposed_value
-
-            if itercount % 4 == 0:
-                step *= 2
-
-        value = objective(current)
-        return current, value
-
+    
 
 
 
