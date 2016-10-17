@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.optimize import minimize
+from scipy.optimize import minimize, bisect
 
 def cube_barrier_softmax_coord(z, lam):
     _diff = z - lam
@@ -17,16 +17,32 @@ def softmax_barrier_conjugate(cube_bool, lagrange, arg):
     initial[cube_bool] = lagrange * 0.5
 
     cube_arg = arg[cube_bool]
-    cube_val = 0
+
     def cube_conjugate(z,u,j):
         return -u*z + cube_barrier_softmax_coord(z,lagrange[j])
 
+    def cube_conjugate_grad(z,u,j):
+        _diff = z - lagrange[j]  # z - \lambda < 0
+        _sum = z + lagrange[j]  # z + \lambda > 0
+        return u -(1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum)
+
+    #cube_val = 0
+    #for i in range(cube_arg.shape[0]):
+    #    u = cube_arg[i]
+    #    j = i
+    #    bounds = [(-lagrange[i], lagrange[i])]
+    #    res = minimize(cube_conjugate, x0=(initial[cube_bool])[i], args=(u,j), bounds=bounds)
+    #    cube_val+= -res.fun
+
+    cube_maximizer = np.zeros(cube_arg.shape[0])
     for i in range(cube_arg.shape[0]):
         u = cube_arg[i]
         j = i
-        bounds = [(-lagrange[i], lagrange[i])]
-        res = minimize(cube_conjugate, x0=(initial[cube_bool])[i], args=(u,j), bounds=bounds)
-        cube_val+= -res.fun
+        cube_maximizer[i]= bisect(cube_conjugate_grad, a= -lagrange[j]+10**-10, b= lagrange[j]-10**-10, args=(u,j),
+                                  rtol=4.4408920985006262e-5, maxiter=32)
+
+    cube_val = np.sum(cube_maximizer * cube_arg - np.log(1.+(1./lagrange - cube_maximizer))
+                      - np.log(1.+(1./lagrange + cube_maximizer)))
 
     orthant_arg = arg[orthant_bool]
 
