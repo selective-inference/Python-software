@@ -34,6 +34,8 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.inactive_lagrange = lagrange[~active]
         initial = feasible_point
 
+        self.feasible_point = feasible_point
+
         rr.smooth_atom.__init__(self,
                                 (p,),
                                 offset=offset,
@@ -41,7 +43,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
-        self.coefs[:] = initial
+        #self.coefs[:] = initial
 
         self.active = active
 
@@ -77,7 +79,6 @@ class selection_probability_dual_objective(rr.smooth_atom):
                                          self.likelihood_loss,
                                          self.linear_term])
 
-
     def set_parameter(self, mean_parameter, noise_variance):
 
         mean_parameter = np.squeeze(mean_parameter)
@@ -86,21 +87,27 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self._X.dot(np.linalg.inv(self.B_p.T)))
 
-    def smooth_objective(self, param, mode='both', check_feasibility=False):
+    def objective_dual(self, param):
 
-        param = self.apply_offset(param)
+        #return self.conjugate_barrier.smooth_objective(self.feasible_point, mode='func')
+        #return self.likelihood_loss.smooth_objective(self.feasible_point, mode='func')
+        return self.CGF_randomizer.smooth_objective(self.feasible_point, mode='func')
 
-        if mode == 'func':
-            f = self.total_loss.smooth_objective(param, 'func')
-            return self.scale(f)
-        elif mode == 'grad':
-            g = self.total_loss.smooth_objective(param, 'grad')
-            return self.scale(g)
-        elif mode == 'both':
-            f, g = self.total_loss.smooth_objective(param, 'both')
-            return self.scale(f), self.scale(g)
-        else:
-            raise ValueError("mode incorrectly specified")
+    #def smooth_objective(self, param, mode='both', check_feasibility=False):
+
+    #    param = self.apply_offset(param)
+
+    #    if mode == 'func':
+    #        f = self.total_loss.smooth_objective(param, 'func')
+    #        return self.scale(f)
+    #    elif mode == 'grad':
+    #        g = self.total_loss.smooth_objective(param, 'grad')
+    #        return self.scale(g)
+    #    elif mode == 'both':
+    #        f, g = self.total_loss.smooth_objective(param, 'both')
+    #        return self.scale(f), self.scale(g)
+    #    else:
+    #        raise ValueError("mode incorrectly specified")
 
 
 
