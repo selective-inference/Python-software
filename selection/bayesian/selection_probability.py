@@ -120,6 +120,7 @@ class selection_probability_methods():
             else:
                 bounds.append((-np.inf, np.inf))
         res = minimize(self.objective, x0=self.initial, bounds=bounds)
+        self._bounds = bounds
         return res.fun, res.x
 
     def objective_p(self,param):

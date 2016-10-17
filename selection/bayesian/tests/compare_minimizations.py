@@ -2,6 +2,7 @@ from __future__ import print_function
 import time
 
 import numpy as np
+from scipy.optimize import minimize
 from selection.tests.instance import gaussian_instance
 from selection.tests.decorators import wait_for_return_value
 from selection.bayesian.initial_soln import selection
@@ -61,7 +62,8 @@ def test_minimizations():
                                                                 mean, 
                                                                 noise_variance,
                                                                 randomization.isotropic_gaussian((p,), 1.),
-                                                                epsilon)
+                                                                epsilon,
+                                                                nstep=10)
 
         _scipy = [sel_prob_scipy_val[0], sel_prob_scipy_val[1]]
         toc = time.time()
@@ -71,6 +73,14 @@ def test_minimizations():
 
         obj1 = sel_prob_scipy.objective
         obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
+
+        toc = time.time()
+        res = minimize(obj2, x0=sel_prob_scipy.initial, bounds=sel_prob_scipy._bounds)
+        tic = time.time()
+        print('regreg-scipy time', tic-toc)
+        print('hybrid', obj2(res.x))
+
+
         print("value and minimizer- scipy", _scipy, obj1(_scipy[1]), obj2(_scipy[1]))
         print("value and minimizer- regreg", _regreg, obj1(_regreg[1]), obj2(_regreg[1]))
         return _scipy[0], _regreg[0]
@@ -141,8 +151,8 @@ def test_one_sparse_minimizations():
             obj2 = lambda x : sel_prob_grad_descent.smooth_objective(x, 'func')
             obj3 = lambda x : sel_prob_grad_descent.objective(x)
 
-            check_two_approaches(_scipy[1], sel_prob_scipy, sel_prob_grad_descent)
-            check_two_approaches(_regreg[1], sel_prob_scipy, sel_prob_grad_descent)
+            #check_two_approaches(_scipy[1], sel_prob_scipy, sel_prob_grad_descent)
+            #check_two_approaches(_regreg[1], sel_prob_scipy, sel_prob_grad_descent)
 
             result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]), 
                            obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1])])

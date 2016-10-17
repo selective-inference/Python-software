@@ -49,6 +49,7 @@ def cube_subproblem(argument,
 
     objective = lambda u: cube_barrier(u, lagrange) + conj_value(argument + u)
         
+
     for itercount in range(nstep):
         newton_step = ((cube_gradient(current, lagrange) +
                         conj_grad(argument + current)) / 
@@ -148,7 +149,7 @@ class cube_objective(rr.smooth_atom):
     def __init__(self,
                  randomization_CGF_conjugate,
                  lagrange, 
-                 nstep=100,
+                 nstep=10,
                  tol=1.e-10,
                  initial=None,
                  coef=1.,
@@ -204,7 +205,7 @@ class selection_probability_objective(rr.smooth_atom):
                  coef=1.,
                  offset=None,
                  quadratic=None,
-                 nstep=100):
+                 nstep=10):
 
         """
         Objective function for $\beta_E$ (i.e. active) with $E$ the `active_set` optimization
