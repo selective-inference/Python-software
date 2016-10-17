@@ -4,14 +4,15 @@ from selection.bayesian.initial_soln import selection
 from selection.bayesian.sel_probability import selection_probability
 from selection.bayesian.non_scaled_sel_probability import no_scale_selection_probability
 from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
-from selection.bayesian.dual_optimization import dual_selection_probability
+#from selection.bayesian.dual_optimization import selection_probability_dual_objective
 from selection.randomized.api import randomization
 from selection.bayesian.selection_probability import selection_probability_methods
-from selection.bayesian.objective_functions import selection_probability_only_objective
+#from selection.bayesian.objective_functions import selection_probability_only_objective
+from selection.bayesian.dual_scipy import dual_selection_probability_func
 from matplotlib import pyplot as plt
 
 #fixing n, p, true sparsity and signal strength
-n = 10
+n = 20
 p = 2
 s = 1
 snr = 5
@@ -337,7 +338,67 @@ if sel is not None:
                 sel_prob_scipy_val_1 = sel_prob_scipy.minimize_scipy_p()
                 print "low and high ", np.asscalar(-sel_prob_scipy_val_1[0]), -sel_prob_scipy_val[0]
 
-    test_two_optimizations_one_sparse()
+    #test_two_optimizations_one_sparse()
+
+    def test_dual_primal():
+
+        dual_feasible = np.ones(p)
+        dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+        for i in range(10):
+            parameter = np.random.standard_normal(nactive)
+            lagrange = lam * np.ones(p)
+            mean = X_1[:, active].dot(parameter)
+            #print mean
+            sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
+
+            sel_dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
+
+            sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+
+            sel_prob_scipy_val_1 = sel_prob_scipy.minimize_scipy_p()
+
+            sel_dual_scipy_val = sel_dual_scipy.minimize_dual()
+
+            print -sel_prob_scipy_val[0], -sel_prob_scipy_val_1[0], sel_dual_scipy_val[0]
+
+
+    #test_dual_primal()
+
+    def test_dual_primal_one_sparse():
+
+        if nactive == 1:
+            snr_seq = np.linspace(-10, 10, num=20)
+            lagrange = lam * np.ones(p)
+            dual_feasible = np.ones(p)
+            dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+            for i in range(snr_seq.shape[0]):
+                parameter = snr_seq[i]
+                mean = X_1[:, active].dot(parameter)
+
+                sel_prob_scipy = selection_probability_methods(X_1, np.fabs(betaE), active, active_signs, lagrange,
+                                                               mean,
+                                                               noise_variance, tau, epsilon)
+
+                sel_dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange,
+                                                                 mean,
+                                                                 noise_variance, tau, epsilon)
+
+                sel_prob_scipy_val = sel_prob_scipy.minimize_scipy()
+
+                sel_prob_scipy_val_1 = sel_prob_scipy.minimize_scipy_p()
+
+                sel_dual_scipy_val = sel_dual_scipy.minimize_dual()
+
+                print -sel_prob_scipy_val[0], -sel_prob_scipy_val_1[0], sel_dual_scipy_val[0]
+
+
+    test_dual_primal_one_sparse()
+
+
+
 
 
 
