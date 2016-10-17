@@ -60,7 +60,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.cube_bool = np.zeros(p, np.bool)
         self.cube_bool[E:] = 1
-        self.dual_arg = -np.linalg.inv(self.B_p).dot(np.append(self.offset_active, self.inactive_subgrad))
+        self.dual_arg = np.linalg.inv(self.B_p).dot(np.append(self.offset_active, self.inactive_subgrad))
 
         self.set_parameter(mean_parameter, noise_variance)
 
@@ -68,9 +68,9 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.conjugate_barrier = rr.affine_smooth(_barrier_star, np.identity(p))
 
-        self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, np.linalg.inv(self.B_p.T))
+        self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -np.linalg.inv(self.B_p.T))
 
-        self.linear_term = rr.identity_quadratic(0, 0, -self.dual_arg,0)
+        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg,0)
 
         self.total_loss = rr.smooth_sum([self.conjugate_barrier,
                                          self.CGF_randomizer,
