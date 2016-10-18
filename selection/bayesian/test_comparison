@@ -4,7 +4,8 @@ from selection.bayesian.initial_soln import selection
 from selection.bayesian.sel_probability import selection_probability
 from selection.bayesian.non_scaled_sel_probability import no_scale_selection_probability
 from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
-#from selection.bayesian.dual_optimization import selection_probability_dual_objective
+from selection.bayesian.barrier import barrier_conjugate_softmax, barrier_conjugate_log
+from selection.bayesian.dual_optimization import selection_probability_dual_objective
 from selection.randomized.api import randomization
 from selection.bayesian.selection_probability import selection_probability_methods
 #from selection.bayesian.objective_functions import selection_probability_only_objective
@@ -13,8 +14,8 @@ from matplotlib import pyplot as plt
 
 #fixing n, p, true sparsity and signal strength
 n = 20
-p = 2
-s = 1
+p = 5
+s = 3
 snr = 5
 
 #sampling the Gaussian instance
@@ -395,10 +396,43 @@ if sel is not None:
                 print -sel_prob_scipy_val[0], -sel_prob_scipy_val_1[0], sel_dual_scipy_val[0]
 
 
-    test_dual_primal_one_sparse()
+    #test_dual_primal_one_sparse()
 
+    def compare_dual_objectives():
 
+        dual_feasible = np.ones(p)
+        dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
 
+        for i in range(10):
+            parameter = np.random.standard_normal(nactive)
+            lagrange = lam * np.ones(p)
+            mean = X_1[:, active].dot(parameter)
+            test_point = np.ones(p)
+            test_point[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+            #print mean
+            sel_dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
+
+            sel_dual_regreg = selection_probability_dual_objective(X_1,
+                                                                   dual_feasible,
+                                                                   active,
+                                                                   active_signs,
+                                                                   lagrange,
+                                                                   mean,
+                                                                   noise_variance,
+                                                                   randomization.isotropic_gaussian((p,), tau),
+                                                                   epsilon)
+
+            sel_dual_scipy_obj = sel_dual_scipy.dual_objective(test_point)
+
+            sel_dual_regreg_obj = sel_dual_regreg.smooth_objective(test_point, mode='grad')
+
+            #sel_dual_regreg_obj = sel_dual_regreg.objective_dual(test_point)
+
+            print sel_dual_scipy_obj, sel_dual_regreg_obj
+
+    compare_dual_objectives()
 
 
 
