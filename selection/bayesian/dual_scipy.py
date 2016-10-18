@@ -146,5 +146,6 @@ class dual_selection_probability_func():
                 bounds.append((-np.inf, 0))
         res= minimize(self.dual_objective, x0 = self.feasible_point, bounds = bounds)
 
-        return res.fun-np.true_divide(self.mean_parameter.dot(self.mean_parameter), 2 * self.noise_variance), res.x
+        return res.x, res.fun
+    #-np.true_divide(self.mean_parameter.dot(self.mean_parameter), 2 * self.noise_variance)
 

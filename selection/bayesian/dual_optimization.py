@@ -152,6 +152,60 @@ class selection_probability_dual_objective(rr.smooth_atom):
         value = problem.objective(soln)
         return soln, value
 
+    def minimize2(self, step=1, nstep=30, tol=1.e-8):
+
+        n, p = self._X.shape
+
+        current = self.feasible_point
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective(u, 'func')
+        grad = lambda u: self.smooth_objective(u, 'grad')
+
+        for itercount in range(nstep):
+            newton_step = grad(current) * self.noise_variance
+
+            # make sure proposal is feasible
+
+            count = 0
+            while True:
+                count += 1
+                proposal = current - step * newton_step
+                if np.all(proposal[:self.active.shape[0]] < 0):
+                    break
+                step *= 0.5
+                if count >= 40:
+                    raise ValueError('not finding a feasible point')
+
+            # make sure proposal is a descent
+
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+                # print(current_value, proposed_value, 'minimize')
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        print('iter', itercount)
+        value = objective(current)
+        return current, value
+
+
 
 
 
