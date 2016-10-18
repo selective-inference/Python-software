@@ -198,9 +198,9 @@ class cube_objective(rr.smooth_atom):
         if mode == 'func':
             return self.scale(value)
         elif mode == 'grad':
-            return -self.scale(optimizer)
+            return self.scale(arg + optimizer)
         elif mode == 'both':
-            return self.scale(value), -self.scale(optimizer)
+            return self.scale(value), self.scale(arg + optimizer)
         else:
             raise ValueError("mode incorrectly specified")
 
