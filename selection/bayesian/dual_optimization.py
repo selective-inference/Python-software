@@ -97,6 +97,8 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.cube_bool[E:] = 1
         self.dual_arg = np.linalg.inv(self.B_p).dot(np.append(self.offset_active, self.inactive_subgrad))
 
+        self._opt_selector = rr.selector(~self.cube_bool, (p,))
+
         self.set_parameter(mean_parameter, noise_variance)
 
         _barrier_star = barrier_conjugate_softmax(self.cube_bool, self.inactive_lagrange)
@@ -137,6 +139,18 @@ class selection_probability_dual_objective(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
+    def minimize(self, initial=None, min_its=10, max_its=50, tol=1.e-10):
+
+        nonpos_con = self._opt_selector.output_shape[0]
+        constraint = rr.separable(self.shape,
+                                  [rr.nonpositive((nonpos_con,), offset=1.e-12 * np.ones(nonpos_con))],
+                                  [self._opt_selector.index_obj])
+
+        problem = rr.separable_problem.fromatom(constraint, self)
+        problem.coefs[:] = 0.5
+        soln = problem.solve(max_its=max_its, min_its=min_its, tol=tol)
+        value = problem.objective(soln)
+        return soln, value
 
 
 
