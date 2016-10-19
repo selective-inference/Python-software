@@ -461,7 +461,7 @@ def test_individual_terms_dual():
                                                                noise_variance,
                                                                randomization.isotropic_gaussian((p,), tau),
                                                                epsilon)
-            test_point = np.ones(p)
+            test_point = np.zeros(p)
             test_point[:nactive] = -np.fabs(np.random.standard_normal(nactive))
 
             check_duals(test_point, dual_scipy, dual_regreg)
