@@ -468,7 +468,7 @@ def test_individual_terms_dual():
 
 #test_individual_terms_dual()
 
-def test_minimizations():
+def test_dual_minimizations():
 
     #fixing n, p, true sparsity and signal strength
     n = 20
@@ -533,5 +533,81 @@ def test_minimizations():
         print("value and minimizer- regreg", _regreg, obj1(_regreg[1]), obj2(_regreg[1]))
         return _scipy[0], _regreg[0]
 
+def test_one_sparse_dual_minimizations():
+
+    #fixing n, p, true sparsity and signal strength
+    n = 10
+    p = 3
+    s = 1
+    snr = 5
+
+    #sampling the Gaussian instance
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    random_Z = np.random.standard_normal(p)
+    #getting randomized Lasso solution
+    sel = selection(X_1,y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    noise_variance = 1
+    nactive=betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau=1 #randomization_variance
+    dual_feasible = np.ones(p)
+    dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+    if nactive == 1:
+        snr_seq = np.linspace(-10, 10, num=51)
+        snr_seq = np.hstack([snr_seq[25:], snr_seq[:25][::-1]])
+        lagrange = lam * np.ones(p)
+        result = []
+        for i in range(snr_seq.shape[0]):
+            parameter = snr_seq[i]
+            mean = X_1[:, active].dot(parameter)
+
+            dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                         noise_variance, tau, epsilon)
+
+            dual_regreg = selection_probability_dual_objective(X_1,
+                                                               dual_feasible,
+                                                               active,
+                                                               active_signs,
+                                                               lagrange,
+                                                               mean,
+                                                               noise_variance,
+                                                               randomization.isotropic_gaussian((p,), tau),
+                                                               epsilon)
+
+            toc = time.time()
+            dual_scipy_val = dual_scipy.minimize_dual()
+            tic = time.time()
+            print('scipy time', tic-toc)
+
+            _scipy = [dual_scipy_val[0], dual_scipy_val[1]]
+
+            toc = time.time()
+            _regreg = dual_regreg.minimize(min_its=20, max_its=200, tol=1.e-12)[::-1]
+            tic = time.time()
+            print('regreg time', tic-toc)
+
+            toc = time.time()
+            _regreg2 = dual_regreg.minimize2()[::-1]
+            tic = time.time()
+            print('regreg2 time', tic-toc)
+
+            obj1 = dual_scipy.dual_objective
+            obj2 = lambda x : dual_regreg.smooth_objective(x, 'func')
+            obj3 = lambda x : dual_regreg.objective(x)
+
+            #check_two_approaches(_scipy[1], sel_prob_scipy, sel_prob_grad_descent)
+            #check_two_approaches(_regreg[1], sel_prob_scipy, sel_prob_grad_descent)
+
+            result.append([obj1(_scipy[1]), obj2(_scipy[1]), obj3(_scipy[1]),
+                           obj1(_regreg[1]), obj2(_regreg[1]), obj3(_regreg[1]),
+                           obj1(_regreg2[1]), obj2(_regreg2[1]), obj3(_regreg2[1])])
+
+            print('scipy gradient', dual_regreg.smooth_objective(_scipy[1], 'grad'))
+            print('regreg gradient', dual_regreg.smooth_objective(_regreg[1], 'grad'))
+
+        return np.array(result)
 
 
