@@ -466,6 +466,72 @@ def test_individual_terms_dual():
             test_point[nactive:] = np.random.standard_normal(p-nactive)
             check_duals(test_point, dual_scipy, dual_regreg)
 
-test_individual_terms_dual()
+#test_individual_terms_dual()
+
+def test_minimizations():
+
+    #fixing n, p, true sparsity and signal strength
+    n = 20
+    p = 10
+    s = 3
+    snr = 5
+
+    #sampling the Gaussian instance
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    random_Z = np.random.standard_normal(p)
+    #getting randomized Lasso solution
+    sel = selection(X_1,y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    print(epsilon, lam, betaE)
+    noise_variance = 1
+    nactive=betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau=1 #randomization_variance
+    dual_feasible = np.ones(p)
+    dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+    if nactive > 1:
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+
+        dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                     noise_variance, tau, epsilon)
+
+        dual_regreg = selection_probability_dual_objective(X_1,
+                                                           dual_feasible,
+                                                           active,
+                                                           active_signs,
+                                                           lagrange,
+                                                           mean,
+                                                           noise_variance,
+                                                           randomization.isotropic_gaussian((p,), tau),
+                                                           epsilon)
+        toc = time.time()
+        dual_scipy_val = dual_scipy.minimize_dual()
+        tic = time.time()
+        print('scipy time', tic-toc)
+
+        _scipy = [dual_scipy_val[0], dual_scipy_val[1]]
+
+        toc = time.time()
+        _regreg = dual_regreg.minimize(max_its=100, tol=1.e-12)[::-1]
+        tic = time.time()
+        print('regreg time', tic-toc)
+
+        obj1 = dual_scipy.dual_objective
+        obj2 = lambda x : dual_regreg.smooth_objective(x, 'func')
+
+        toc = time.time()
+        _regreg2 = dual_regreg.minimize2(nstep=20)[::-1]
+        tic = time.time()
+        print('regreg2', tic-toc)
+
+
+        print("value and minimizer- scipy", _scipy, obj1(_scipy[1]), obj2(_scipy[1]))
+        print("value and minimizer- regreg", _regreg, obj1(_regreg[1]), obj2(_regreg[1]))
+        return _scipy[0], _regreg[0]
+
 
 
