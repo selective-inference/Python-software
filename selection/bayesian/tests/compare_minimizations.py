@@ -9,11 +9,13 @@ from selection.bayesian.initial_soln import selection
 from selection.bayesian.sel_probability import selection_probability
 from selection.bayesian.non_scaled_sel_probability import no_scale_selection_probability
 from selection.bayesian.selection_probability_rr import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
-from selection.bayesian.dual_optimization import dual_selection_probability
 from selection.randomized.api import randomization
 from selection.bayesian.selection_probability import selection_probability_methods
+from selection.bayesian.dual_scipy import dual_selection_probability_func
+from selection.bayesian.dual_optimization import selection_probability_dual_objective
 
-@wait_for_return_value()
+
+#@wait_for_return_value()
 def test_minimizations():
 
     #fixing n, p, true sparsity and signal strength
@@ -84,7 +86,7 @@ def test_minimizations():
         print("value and minimizer- regreg", _regreg, obj1(_regreg[1]), obj2(_regreg[1]))
         return _scipy[0], _regreg[0]
 
-@wait_for_return_value()
+#@wait_for_return_value()
 def test_one_sparse_minimizations():
 
     #fixing n, p, true sparsity and signal strength
@@ -167,7 +169,7 @@ def test_one_sparse_minimizations():
 
         return np.array(result)
 
-@wait_for_return_value()
+#@wait_for_return_value()
 def test_individual_terms():
 
     #fixing n, p, true sparsity and signal strength
@@ -258,7 +260,7 @@ def check_two_approaches(param, sel_prob_scipy, sel_prob_grad_descent):
 
 
 
-@wait_for_return_value()
+#@wait_for_return_value()
 def test_objectives_one_sparse():
 
     #fixing n, p, true sparsity and signal strength
@@ -308,7 +310,7 @@ def test_objectives_one_sparse():
             print("objective - to be debugged", sel_grad_objective)
         return True
 
-@wait_for_return_value()
+#@wait_for_return_value()
 def test_objectives_not_one_sparse():
 
     #fixing n, p, true sparsity and signal strength
@@ -357,11 +359,113 @@ def test_objectives_not_one_sparse():
         return True
 
 
+################check for dual
+def check_duals(param, dual_scipy, dual_regreg):
+
+    np.testing.assert_allclose(dual_scipy.data_CGF(param),
+                               dual_regreg.likelihood_loss.smooth_objective(param, 'func'))
+
+    np.testing.assert_allclose(dual_scipy.rand_CGF(param),
+                               dual_regreg.CGF_randomizer.smooth_objective(param, 'func'), rtol=1.e-5)
+
+    np.testing.assert_allclose(dual_scipy.composed_barrier_conjugate(param),
+                               dual_regreg.conjugate_barrier.smooth_objective(param, 'func'))
+
+    np.testing.assert_allclose(dual_scipy.linear_term(param),
+                               dual_regreg.linear_term.smooth_objective(param, 'func'))
+
+    # check the objective is the sum of terms it's supposed to be
+
+    np.testing.assert_allclose(dual_scipy.dual_objective(param),
+                               dual_scipy.data_CGF(param) +
+                               dual_scipy.rand_CGF(param) +
+                               dual_scipy.composed_barrier_conjugate(param) +
+                               dual_scipy.linear_term(param), rtol=1.e-5)
+
+    # check the objective values
+
+    np.testing.assert_allclose(dual_scipy.dual_objective(param),
+                               dual_regreg.smooth_objective(param, 'func'), rtol=1.e-5)
+
+    np.testing.assert_allclose(dual_scipy.dual_objective(param),
+                               dual_regreg.likelihood_loss.smooth_objective(param, 'func') +
+                               dual_regreg.CGF_randomizer.smooth_objective(param, 'func') +
+                               dual_regreg.conjugate_barrier.smooth_objective(param, 'func') +
+                               dual_regreg.linear_term.smooth_objective(param, 'func'), rtol=1.e-5)
 
 
+def test_individual_terms_dual():
+
+    #fixing n, p, true sparsity and signal strength
+    n = 10
+    p = 20
+    s = 5
+    snr = 5
+
+    #sampling the Gaussian instance
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    random_Z = np.random.standard_normal(p)
+    #getting randomized Lasso solution
+    sel = selection(X_1,y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    print(betaE)
+    noise_variance = 1
+    nactive=betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau=1 #randomization_variance
+    dual_feasible = np.ones(p)
+    dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+    if nactive == 1:
+        snr_seq = np.linspace(-10, 10, num=6)
+        lagrange = lam * np.ones(p)
+        result = []
+        for i in range(snr_seq.shape[0]):
+            parameter = snr_seq[i]
+            mean = X_1[:, active].dot(parameter)
+
+            dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
 
 
+            dual_regreg = selection_probability_dual_objective(X_1,
+                                                               dual_feasible,
+                                                               active,
+                                                               active_signs,
+                                                               lagrange,
+                                                               mean,
+                                                               noise_variance,
+                                                               randomization.isotropic_gaussian((p,), tau),
+                                                               epsilon)
 
+            test_point = np.ones(p)
+            test_point[:nactive] = -np.fabs(np.random.standard_normal(nactive))
 
+            check_duals(test_point, dual_scipy, dual_regreg)
+
+    else:
+        for i in range(6):
+            parameter = np.random.standard_normal(nactive)
+            lagrange = lam * np.ones(p)
+            mean = X_1[:, active].dot(parameter)
+            dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                         noise_variance, tau, epsilon)
+
+            dual_regreg = selection_probability_dual_objective(X_1,
+                                                               dual_feasible,
+                                                               active,
+                                                               active_signs,
+                                                               lagrange,
+                                                               mean,
+                                                               noise_variance,
+                                                               randomization.isotropic_gaussian((p,), tau),
+                                                               epsilon)
+            test_point = np.ones(p)
+            test_point[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+            check_duals(test_point, dual_scipy, dual_regreg)
+
+test_individual_terms_dual()
 
 

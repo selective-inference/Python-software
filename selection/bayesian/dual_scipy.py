@@ -134,8 +134,11 @@ class dual_selection_probability_func():
         dev = np.dot(self._X,u)-self.mean_parameter
         return np.true_divide(dev.T.dot(dev),2 * self.noise_variance)
 
+    def linear_term(self,v):
+        return v.T.dot(self.dual_arg)
+
     def dual_objective(self,v):
-        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)+ v.T.dot(self.dual_arg)
+        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)+ self.linear_term(v)
 
     def minimize_dual(self):
         bounds = []
