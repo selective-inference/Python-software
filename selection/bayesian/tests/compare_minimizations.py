@@ -463,7 +463,7 @@ def test_individual_terms_dual():
                                                                epsilon)
             test_point = np.zeros(p)
             test_point[:nactive] = -np.fabs(np.random.standard_normal(nactive))
-
+            test_point[nactive:] = np.random.standard_normal(p-nactive)
             check_duals(test_point, dual_scipy, dual_regreg)
 
 test_individual_terms_dual()
