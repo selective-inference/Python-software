@@ -87,6 +87,7 @@ class bayesian_inference():
         projection_map = lambda x : x
         stepsize = 1./np.sqrt(self.p)
         samples = projected_langevin(initial_condition, gradient_map, projection_map, stepsize)
+        return samples
 
 
 
