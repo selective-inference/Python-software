@@ -112,7 +112,10 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -np.linalg.inv(self.B_p.T))
 
         self._linear_term = linear_map(p, self.dual_arg)
-        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg, 0)
+
+        constant = np.true_divide(np.squeeze(mean_parameter).dot(np.squeeze(mean_parameter)), 2*noise_variance)
+
+        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg, -constant)
 
         self.total_loss = rr.smooth_sum([self.conjugate_barrier,
                                          self.CGF_randomizer,

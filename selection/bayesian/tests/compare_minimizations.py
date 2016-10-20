@@ -490,6 +490,7 @@ def test_dual_minimizations():
     tau=1 #randomization_variance
     dual_feasible = np.ones(p)
     dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+    print('loc1')
 
     if nactive > 1:
         parameter = np.random.standard_normal(nactive)
@@ -519,7 +520,7 @@ def test_dual_minimizations():
                                                             randomization.isotropic_gaussian((p,), tau),
                                                             epsilon)
         toc = time.time()
-        print (dual_feasible, 'dual2')
+        #print (dual_feasible, 'dual2')
         dual_scipy_val = dual_scipy.minimize_dual()
         tic = time.time()
         print('scipy time', tic-toc)
@@ -530,7 +531,7 @@ def test_dual_minimizations():
         _regreg = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-12)[::-1]
         tic = time.time()
         print('regreg time', tic-toc)
-        print (dual_feasible, 'dual')
+        #print (dual_feasible, 'dual')
 
         obj1 = dual_scipy.dual_objective
         obj2 = lambda x : dual_regreg.total_loss.objective(x, 'func')
@@ -542,7 +543,7 @@ def test_dual_minimizations():
         tic = time.time()
         print('regreg2', tic-toc)
 
-        print (dual_feasible, 'dual3')
+        #print (dual_feasible, 'dual3')
 
         print("value and minimizer- scipy", _scipy, obj1(_scipy[1]), obj2(_scipy[1]))
         print("value and minimizer- regreg", _regreg, obj1(_regreg[1]), obj2(_regreg[1]))
@@ -551,6 +552,7 @@ def test_dual_minimizations():
         print("grad- regreg", grad(_regreg[1]))
         return obj1(_scipy[1]), _scipy[0], _regreg[0], _regreg2[0]
 
+test_dual_minimizations()
 def test_one_sparse_dual_minimizations():
 
     #fixing n, p, true sparsity and signal strength
