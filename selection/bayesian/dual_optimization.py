@@ -120,6 +120,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.total_loss = rr.smooth_sum([self.conjugate_barrier,
                                          self.CGF_randomizer,
                                          self.likelihood_loss])
+
         self.total_loss.quadratic = self.linear_term
 
     def set_parameter(self, mean_parameter, noise_variance):

@@ -471,8 +471,8 @@ def test_individual_terms_dual():
 def test_dual_minimizations():
 
     #fixing n, p, true sparsity and signal strength
-    n = 20
-    p = 10
+    n = 30
+    p = 20
     s = 3
     snr = 5
 
