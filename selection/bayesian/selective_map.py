@@ -7,6 +7,7 @@ from selection.bayesian.selection_probability_rr import cube_subproblem, cube_gr
     selection_probability_objective
 from selection.bayesian.selection_probability import selection_probability_methods
 from selection.randomized.api import randomization
+from selection.bayesian.credible_intervals import projected_langevin
 
 class bayesian_inference():
     def __init__(self,
@@ -79,6 +80,16 @@ class bayesian_inference():
         initial = np.zeros(self.generative_X.shape[1])
         res = minimize(self.map_objective, x0=initial)
         return res.x
+
+    def posterior_samples(self):
+        initial_condition = np.zeros(self.generative_X.shape[1])
+        gradient_map = lambda x : self.gradient_selection_prob(x)[0]
+        projection_map = lambda x : x
+        stepsize = 1./np.sqrt(self.p)
+        samples = projected_langevin(initial_condition, gradient_map, projection_map, stepsize)
+
+
+
 
 
 
