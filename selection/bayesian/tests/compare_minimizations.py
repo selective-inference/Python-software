@@ -372,7 +372,7 @@ def check_duals(param, dual_scipy, dual_regreg):
                                dual_regreg.conjugate_barrier.smooth_objective(param, 'func'))
 
     np.testing.assert_allclose(dual_scipy.linear_term(param),
-                               dual_regreg.linear_term.smooth_objective(param, 'func'))
+                               dual_regreg.linear_term.objective(param, 'func'))
 
     # check the objective is the sum of terms it's supposed to be
 
@@ -385,13 +385,13 @@ def check_duals(param, dual_scipy, dual_regreg):
     # check the objective values
 
     np.testing.assert_allclose(dual_scipy.dual_objective(param),
-                               dual_regreg.smooth_objective(param, 'func'), rtol=1.e-5)
+                               dual_regreg.total_loss.objective(param, 'func'), rtol=1.e-5)
 
     np.testing.assert_allclose(dual_scipy.dual_objective(param),
                                dual_regreg.likelihood_loss.smooth_objective(param, 'func') +
                                dual_regreg.CGF_randomizer.smooth_objective(param, 'func') +
                                dual_regreg.conjugate_barrier.smooth_objective(param, 'func') +
-                               dual_regreg.linear_term.smooth_objective(param, 'func'), rtol=1.e-5)
+                               dual_regreg.linear_term.objective(param, 'func'), rtol=1.e-5)
 
 
 def test_individual_terms_dual():
@@ -508,7 +508,18 @@ def test_dual_minimizations():
                                                            noise_variance,
                                                            randomization.isotropic_gaussian((p,), tau),
                                                            epsilon)
+
+        dual_regreg2 = selection_probability_dual_objective(X_1,
+                                                            dual_feasible,
+                                                            active,
+                                                            active_signs,
+                                                            lagrange,
+                                                            mean,
+                                                            noise_variance,
+                                                            randomization.isotropic_gaussian((p,), tau),
+                                                            epsilon)
         toc = time.time()
+        print (dual_feasible, 'dual2')
         dual_scipy_val = dual_scipy.minimize_dual()
         tic = time.time()
         print('scipy time', tic-toc)
@@ -516,22 +527,29 @@ def test_dual_minimizations():
         _scipy = [dual_scipy_val[0], dual_scipy_val[1]]
 
         toc = time.time()
-        _regreg = dual_regreg.minimize(max_its=100, tol=1.e-12)[::-1]
+        _regreg = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-12)[::-1]
         tic = time.time()
         print('regreg time', tic-toc)
+        print (dual_feasible, 'dual')
 
         obj1 = dual_scipy.dual_objective
-        obj2 = lambda x : dual_regreg.smooth_objective(x, 'func')
+        obj2 = lambda x : dual_regreg.total_loss.objective(x, 'func')
+
+        grad = lambda x: (dual_regreg.total_loss.smooth_objective(x, 'grad') + dual_regreg.dual_arg)
 
         toc = time.time()
-        _regreg2 = dual_regreg.minimize2(nstep=20)[::-1]
+        _regreg2 = dual_regreg2.minimize2(nstep=100)[::-1]
         tic = time.time()
         print('regreg2', tic-toc)
 
+        print (dual_feasible, 'dual3')
 
         print("value and minimizer- scipy", _scipy, obj1(_scipy[1]), obj2(_scipy[1]))
         print("value and minimizer- regreg", _regreg, obj1(_regreg[1]), obj2(_regreg[1]))
-        return _scipy[0], _regreg[0]
+        print("value and minimizer- regreg2", _regreg2, obj1(_regreg2[1]), obj2(_regreg2[1]))
+        print("grad- scipy", grad(_scipy[1]))
+        print("grad- regreg", grad(_regreg[1]))
+        return obj1(_scipy[1]), _scipy[0], _regreg[0], _regreg2[0]
 
 def test_one_sparse_dual_minimizations():
 

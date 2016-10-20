@@ -65,6 +65,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
             raise ValueError('randomization must know its cgf -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
         self.inactive_lagrange = lagrange[~active]
+
         initial = feasible_point
 
         self.feasible_point = feasible_point
@@ -76,7 +77,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
-        #self.coefs[:] = initial
+        self.coefs[:] = feasible_point
 
         self.active = active
 
@@ -85,6 +86,9 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         B_E = B[active]
         B_mE = B[~active]
+
+        self.active_slice = np.zeros_like(active, np.bool)
+        self.active_slice[:active.sum()] = True
 
         self.B_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :],np.zeros((E,p-E))])
         self.B_inactive = np.hstack([B_mE * active_signs[None, :],np.identity((p-E))])
@@ -107,12 +111,13 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -np.linalg.inv(self.B_p.T))
 
-        self.linear_term = linear_map(p, self.dual_arg)
+        self._linear_term = linear_map(p, self.dual_arg)
+        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg, 0)
 
         self.total_loss = rr.smooth_sum([self.conjugate_barrier,
                                          self.CGF_randomizer,
-                                         self.likelihood_loss,
-                                         self.linear_term])
+                                         self.likelihood_loss])
+        self.total_loss.quadratic = self.linear_term
 
     def set_parameter(self, mean_parameter, noise_variance):
 
@@ -123,7 +128,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self._X.dot(np.linalg.inv(self.B_p.T)))
 
 
-    def smooth_objective(self, param, mode='both', check_feasibility=False):
+    def _smooth_objective(self, param, mode='both', check_feasibility=False):
 
         param = self.apply_offset(param)
 
@@ -146,9 +151,10 @@ class selection_probability_dual_objective(rr.smooth_atom):
                                   [rr.nonpositive((nonpos_con,), offset=1.e-12 * np.ones(nonpos_con))],
                                   [self._opt_selector.index_obj])
 
-        problem = rr.separable_problem.fromatom(constraint, self)
-        problem.coefs[:] = 0.5
+        problem = rr.separable_problem.fromatom(constraint, self.total_loss)
+        problem.coefs[:] = self.coefs
         soln = problem.solve(max_its=max_its, min_its=min_its, tol=tol)
+        self.coefs[:] = soln
         value = problem.objective(soln)
         return soln, value
 
@@ -159,8 +165,8 @@ class selection_probability_dual_objective(rr.smooth_atom):
         current = self.feasible_point
         current_value = np.inf
 
-        objective = lambda u: self.smooth_objective(u, 'func')
-        grad = lambda u: self.smooth_objective(u, 'grad')
+        objective = lambda u: self.total_loss.objective(u)
+        grad = lambda u: self.total_loss.smooth_objective(u, 'grad') + self.dual_arg
 
         for itercount in range(nstep):
             newton_step = grad(current) * self.noise_variance
@@ -171,7 +177,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                if np.all(proposal[:self.active.shape[0]] < 0):
+                if np.all(proposal[self.active_slice] < 0):
                     break
                 step *= 0.5
                 if count >= 40:
