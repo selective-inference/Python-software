@@ -13,7 +13,7 @@ from selection.bayesian.dual_scipy import dual_selection_probability_func
 from matplotlib import pyplot as plt
 
 #fixing n, p, true sparsity and signal strength
-n = 20
+n = 30
 p = 5
 s = 3
 snr = 5
@@ -432,9 +432,45 @@ if sel is not None:
 
             print sel_dual_scipy_obj, sel_dual_regreg_obj
 
-    compare_dual_objectives()
+    #compare_dual_objectives()
 
 
+    def compare_dual_minimizations():
+
+        dual_feasible = np.ones(p)
+        dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+        for i in range(10):
+            parameter = np.random.standard_normal(nactive)
+            lagrange = lam * np.ones(p)
+            mean = X_1[:, active].dot(parameter)
+            test_point = np.ones(p)
+            test_point[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+            #print mean
+            sel_dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                           noise_variance, tau, epsilon)
+
+            sel_dual_regreg = selection_probability_dual_objective(X_1,
+                                                                   dual_feasible,
+                                                                   active,
+                                                                   active_signs,
+                                                                   lagrange,
+                                                                   mean,
+                                                                   noise_variance,
+                                                                   randomization.isotropic_gaussian((p,), tau),
+                                                                   epsilon)
+
+            sel_dual_scipy_obj = sel_dual_scipy.minimize_dual()
+
+            sel_dual_regreg_obj = sel_dual_regreg.minimize2()
+
+            #sel_dual_regreg_obj = sel_dual_regreg.objective_dual(test_point)
+
+            print sel_dual_scipy_obj, sel_dual_regreg_obj
+
+
+    compare_dual_minimizations()
 
 
 
