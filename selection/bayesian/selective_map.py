@@ -45,7 +45,7 @@ class bayesian_inference():
 
         mean_parameter = np.squeeze(self.generative_mean(true_param))
         dual_sol = selection_probability_dual_objective(self.X,
-                                                        self.primal_feasible,
+                                                        self.dual_feasible,
                                                         self.active,
                                                         self.active_signs,
                                                         self.lagrange,
@@ -54,7 +54,7 @@ class bayesian_inference():
                                                         self.randomizer,
                                                         self.epsilon)
         primal_sol = selection_probability_objective(self.X,
-                                                     self.dual_feasible,
+                                                     self.primal_feasible,
                                                      self.active,
                                                      self.active_signs,
                                                      self.lagrange,
