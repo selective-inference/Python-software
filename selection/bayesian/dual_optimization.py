@@ -82,7 +82,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.active = active
 
         X_E = self.X_E = X[:, active]
-        self.X_perm = np.hstack([self.X_E, self._X[:, ~active]])
+        self.X_permute = np.hstack([self.X_E, self._X[:, ~active]])
         B = X.T.dot(X_E)
 
         B_E = B[active]
@@ -130,7 +130,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
 
-        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_perm.dot(np.linalg.inv(self.B_p.T)))
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_permute.dot(np.linalg.inv(self.B_p.T)))
 
 
     def _smooth_objective(self, param, mode='both', check_feasibility=False):

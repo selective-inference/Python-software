@@ -689,9 +689,10 @@ def primal_dual_minimizations():
         tic = time.time()
         print('dual time', tic-toc)
 
-        #dual_sol = mean - ()
+        dual_sol = mean - (dual_regreg.X_permute.dot(np.linalg.inv(dual_regreg.B_p.T))).dot(dual_val[1])
 
         print("value and minimizer- primal", primal_val)
         print("value and minimizer- dual", dual_val)
+        print("primal and dual optimizer", primal_sol, dual_sol)
 
 primal_dual_minimizations()
