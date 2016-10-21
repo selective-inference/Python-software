@@ -32,13 +32,13 @@ class bayesian_inference():
         self.n, self.p = X.shape
 
     def log_prior(self, true_param):
-        return -np.true_divide(true_param.dot(true_param),self.prior_variance)
+        return -np.true_divide(true_param.dot(true_param),2*self.prior_variance)
 
     def generative_mean(self, true_param):
         return self.generative_X.dot(true_param)
 
     def likelihood(self, true_param):
-        return np.true_divide(np.linalg.norm(self.y - np.squeeze(self.generative_mean(true_param))),
+        return np.true_divide(np.linalg.norm(self.y - np.squeeze(self.generative_mean(true_param)))**2,
                                         2*self.noise_variance)
 
     def gradient_selection_prob(self, true_param):
