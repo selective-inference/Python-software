@@ -82,9 +82,13 @@ class bayesian_inference():
         res = minimize(self.map_objective, x0=initial)
         return res.x
 
+    def gradient_posterior(self, true_param):
+        return -self.gradient_selection_prob(true_param)[0] - np.true_divide(true_param, 2 * self.prior_variance) + \
+               self.generative_X.T.dot(self.y - self.generative_mean(true_param))
+
     def posterior_samples(self):
         initial_condition = np.zeros(self.generative_X.shape[1])
-        gradient_map = lambda x : self.gradient_selection_prob(x)[0]
+        gradient_map = lambda x : self.gradient_posterior(x)
         projection_map = lambda x : x
         stepsize = 1./np.sqrt(self.p)
         samples = projected_langevin(initial_condition, gradient_map, projection_map, stepsize)
