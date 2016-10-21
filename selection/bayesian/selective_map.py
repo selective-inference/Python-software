@@ -83,8 +83,9 @@ class bayesian_inference():
         return res.x
 
     def gradient_posterior(self, true_param):
-        return -self.gradient_selection_prob(true_param)[0] - np.true_divide(true_param, 2 * self.prior_variance) + \
-               self.generative_X.T.dot(self.y - self.generative_mean(true_param))
+        return -np.true_divide(self.generative_X.T.dot(self.gradient_selection_prob(true_param)[0]), self.noise_variance)\
+               - np.true_divide(true_param, 2 * self.prior_variance) + \
+               np.true_divide(self.generative_X.T.dot(self.y - self.generative_mean(true_param)),self.noise_variance)
 
     def posterior_samples(self):
         initial_condition = np.zeros(self.generative_X.shape[1])
