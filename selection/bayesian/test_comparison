@@ -10,11 +10,13 @@ from selection.randomized.api import randomization
 from selection.bayesian.selection_probability import selection_probability_methods
 #from selection.bayesian.objective_functions import selection_probability_only_objective
 from selection.bayesian.dual_scipy import dual_selection_probability_func
+from selection.bayesian.selective_map import bayesian_inference
+from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map
 from matplotlib import pyplot as plt
 
 #fixing n, p, true sparsity and signal strength
-n = 30
-p = 5
+n = 10
+p = 20
 s = 3
 snr = 5
 
@@ -470,7 +472,51 @@ if sel is not None:
             print sel_dual_scipy_obj, sel_dual_regreg_obj
 
 
-    compare_dual_minimizations()
+    #compare_dual_minimizations()
+
+    def test_gradient():
+        primal_feasible = np.fabs(betaE)
+        dual_feasible = np.ones(p)
+        dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+        lagrange = lam * np.ones(p)
+        generative_X = X_1[:,active]
+        prior_variance = 1
+        inf = bayesian_inference(y,
+                                 X_1,
+                                 primal_feasible,
+                                 dual_feasible,
+                                 active,
+                                 active_signs,
+                                 lagrange,
+                                 generative_X,
+                                 noise_variance,
+                                 prior_variance,
+                                 randomization.isotropic_gaussian((p,), tau),
+                                 epsilon)
+
+        inf_rr = selective_map(y,
+                               X_1,
+                               primal_feasible,
+                               dual_feasible,
+                               active,
+                               active_signs,
+                               lagrange,
+                               generative_X,
+                               noise_variance,
+                               prior_variance,
+                               randomization.isotropic_gaussian((p,), tau),
+                               epsilon)
+
+        test = np.random.standard_normal(nactive)
+        print inf.map_objective(test), inf_rr.smooth_objective(test, mode='func')
+        print -inf.log_prior(test), inf_rr.log_prior_loss.smooth_objective(test, mode='func')
+        print inf.likelihood(test), inf_rr.likelihood_loss.smooth_objective(test, mode='func')
+        print inf.gradient_selection_prob(test)[::-1][0], inf_rr.log_sel_prob.smooth_objective(test, mode='func')
+
+    test_gradient()
+
+
+
 
 
 
