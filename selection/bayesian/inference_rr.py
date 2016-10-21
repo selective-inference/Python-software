@@ -71,13 +71,13 @@ class sel_prob_gradient_map(rr.smooth_atom):
             optimal_dual = mean_parameter - (dual_sol.X_permute.dot(np.linalg.inv(dual_sol.B_p.T))).\
                 dot(sel_prob_dual[1])
             sel_prob_val = sel_prob_dual[0]
-            optimizer = optimal_dual - np.true_divide(mean_parameter, self.noise_variance)
+            optimizer = self.generative_X.T.dot(np.true_divide(optimal_dual - mean_parameter, self.noise_variance))
 
         else:
             sel_prob_primal = primal_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
             optimal_primal = (sel_prob_primal[1])[:self.n]
             sel_prob_val = -sel_prob_primal[0]
-            optimizer = optimal_primal- np.true_divide(mean_parameter, self.noise_variance)
+            optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
 
         if mode == 'func':
             return sel_prob_val
