@@ -63,15 +63,17 @@ class bayesian_inference():
                                                      self.randomizer,
                                                      self.epsilon)
 
-        if self.n + self.E > self.p:
-            sel_prob = dual_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
-            optimal = mean_parameter - (self.X.dot(np.linalg.inv(dual_sol.B_p.T))).dot(sel_prob[1])
-            return optimal - np.true_divide(mean_parameter, self.noise_variance), sel_prob[0]
+        #if self.n + self.E > self.p:
+        sel_prob_dual = dual_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+        optimal_dual = mean_parameter - (self.X.dot(np.linalg.inv(dual_sol.B_p.T))).dot(sel_prob_dual[1])
+        #return optimal_dual - np.true_divide(mean_parameter, self.noise_variance), sel_prob_dual[0]
 
-        else:
-            sel_prob = primal_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
-            optimal = (sel_prob[1])[:self.n]
-            return optimal - np.true_divide(mean_parameter, self.noise_variance), -sel_prob[0]
+        #else:
+        sel_prob_primal = primal_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+        optimal_primal = (sel_prob_primal[1])[:self.n]
+        return optimal_dual, sel_prob_dual[0], sel_prob_dual[1],\
+               optimal_primal, -sel_prob_primal[0], \
+               sel_prob_primal[1], - np.true_divide(mean_parameter, self.noise_variance)
 
     def map_objective(self, true_param):
         -self.log_prior(true_param) + self.likelihood(true_param) + self.gradient_selection_prob(true_param)[1]

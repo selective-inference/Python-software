@@ -481,14 +481,14 @@ def test_dual_minimizations():
     sel = selection(X_1,y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
-    print(epsilon, lam, betaE)
+    #print(epsilon, lam, betaE)
     noise_variance = 1
     nactive=betaE.shape[0]
     active_signs = np.sign(betaE)
     tau=1 #randomization_variance
     dual_feasible = np.ones(p)
     dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
-    print('loc1')
+    #print('loc1')
 
     if nactive > 1:
         parameter = np.random.standard_normal(nactive)
@@ -550,7 +550,7 @@ def test_dual_minimizations():
         print("grad- regreg", grad(_regreg[1]))
         return obj1(_scipy[1]), _scipy[0], _regreg[0], _regreg2[0]
 
-test_dual_minimizations()
+#test_dual_minimizations()
 def test_one_sparse_dual_minimizations():
 
     #fixing n, p, true sparsity and signal strength
@@ -628,4 +628,70 @@ def test_one_sparse_dual_minimizations():
 
         return np.array(result)
 
+def primal_dual_minimizations():
 
+    #fixing n, p, true sparsity and signal strength
+    n = 10
+    p = 5
+    s = 3
+    snr = 5
+
+    #sampling the Gaussian instance
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    random_Z = np.random.standard_normal(p)
+    #getting randomized Lasso solution
+    sel = selection(X_1,y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    print(epsilon, lam, betaE, active.sum())
+    noise_variance = 1
+    nactive=betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau=1 #randomization_variance
+    dual_feasible = np.ones(p)
+    dual_feasible[:nactive] = -np.fabs(betaE)
+    primal_feasible = np.fabs(betaE)
+    #print('loc1')
+
+    if nactive > 1:
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+
+        primal_regreg = selection_probability_objective(X_1,
+                                                        primal_feasible,
+                                                        active,
+                                                        active_signs,
+                                                        lagrange,
+                                                        mean,
+                                                        noise_variance,
+                                                        randomization.isotropic_gaussian((p,), 1.),
+                                                        epsilon)
+        dual_regreg = selection_probability_dual_objective(X_1,
+                                                           dual_feasible,
+                                                           active,
+                                                           active_signs,
+                                                           lagrange,
+                                                           mean,
+                                                           noise_variance,
+                                                           randomization.isotropic_gaussian((p,), tau),
+                                                           epsilon)
+
+        toc = time.time()
+        primal_val = primal_regreg.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+        tic = time.time()
+        print('primal time', tic-toc)
+
+        primal_sol = primal_val[1]
+
+        toc = time.time()
+        dual_val = dual_regreg.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+        tic = time.time()
+        print('dual time', tic-toc)
+
+        #dual_sol = mean - ()
+
+        print("value and minimizer- primal", primal_val)
+        print("value and minimizer- dual", dual_val)
+
+primal_dual_minimizations()

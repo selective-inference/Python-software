@@ -1,6 +1,6 @@
 import numpy as np
 import regreg.api as rr
-from selection.bayesian.barrier import barrier_conjugate_softmax, barrier_conjugate_log
+from selection.bayesian.barrier import barrier_conjugate_softmax, barrier_conjugate_log, cube_barrier_softmax_coord
 
 class linear_map(rr.smooth_atom):
     def __init__(self,
@@ -82,6 +82,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.active = active
 
         X_E = self.X_E = X[:, active]
+        self.X_perm = np.hstack([self.X_E, self._X[:, ~active]])
         B = X.T.dot(X_E)
 
         B_E = B[active]
@@ -113,9 +114,9 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self._linear_term = linear_map(p, self.dual_arg)
 
-        constant = np.true_divide(np.squeeze(mean_parameter).dot(np.squeeze(mean_parameter)), 2*noise_variance)
+        self.constant = np.true_divide(np.squeeze(mean_parameter).dot(np.squeeze(mean_parameter)), 2*noise_variance)
 
-        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg, -constant)
+        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg, -self.constant)
 
         self.total_loss = rr.smooth_sum([self.conjugate_barrier,
                                          self.CGF_randomizer,
@@ -129,7 +130,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
 
-        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self._X.dot(np.linalg.inv(self.B_p.T)))
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_perm.dot(np.linalg.inv(self.B_p.T)))
 
 
     def _smooth_objective(self, param, mode='both', check_feasibility=False):

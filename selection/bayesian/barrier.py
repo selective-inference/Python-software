@@ -1,6 +1,15 @@
 import numpy as np
 import regreg.api as rr
-from scipy.optimize import bisect
+from scipy.optimize import bisect, minimize
+
+
+def cube_barrier_softmax_coord(z, lam):
+    _diff = z - lam
+    _sum = z + lam
+    if -lam + np.power(10, -10) < z < lam - np.power(10, -10):
+        return np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum))
+    else:
+        return 2 * np.log(1+(10 ** 10))
 
 class barrier_conjugate_log(rr.smooth_atom):
 
@@ -105,7 +114,7 @@ class barrier_conjugate_softmax(rr.smooth_atom):
         orthant_bool = ~cube_bool
 
         initial = np.ones(p)
-        initial[cube_bool] = lagrange * 0.5
+        self._initial = initial[cube_bool] = lagrange * 0.5
 
         if barrier_scale is None:
             barrier_scale = 1.
@@ -154,7 +163,17 @@ class barrier_conjugate_softmax(rr.smooth_atom):
             _sum = z + self.lagrange[j]  # z + \lambda > 0
             return u - (1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum)
 
+        #def cube_conjugate(z, u, j):
+        #    return -u * z + cube_barrier_softmax_coord(z, self.lagrange[j])
+
         cube_maximizer = np.zeros(cube_arg.shape[0])
+
+        #for i in range(cube_arg.shape[0]):
+        #    u = cube_arg[i]
+        #    j = i
+        #    bounds = [(-self.lagrange[i], self.lagrange[i])]
+        #    res = minimize(cube_conjugate, x0=(self._initial)[i], args=(u,j), bounds=bounds)
+        #    cube_maximizer[i] = res.x
 
         for i in range(cube_arg.shape[0]):
             u = cube_arg[i]
