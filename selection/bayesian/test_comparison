@@ -15,8 +15,8 @@ from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map
 from matplotlib import pyplot as plt
 
 #fixing n, p, true sparsity and signal strength
-n = 10
-p = 20
+n = 20
+p = 10
 s = 3
 snr = 5
 
@@ -508,10 +508,11 @@ if sel is not None:
                                epsilon)
 
         test = np.random.standard_normal(nactive)
-        print inf.map_objective(test), inf_rr.smooth_objective(test, mode='func')
-        print -inf.log_prior(test), inf_rr.log_prior_loss.smooth_objective(test, mode='func')
-        print inf.likelihood(test), inf_rr.likelihood_loss.smooth_objective(test, mode='func')
-        print inf.gradient_selection_prob(test)[::-1][0], inf_rr.log_sel_prob.smooth_objective(test, mode='func')
+        #print inf.map_objective(test), inf_rr.smooth_objective(test, mode='func')
+        #print -inf.log_prior(test), inf_rr.log_prior_loss.smooth_objective(test, mode='func')
+        #print inf.likelihood(test), inf_rr.likelihood_loss.smooth_objective(test, mode='func')
+        #print inf.gradient_selection_prob(test)[::-1][0], inf_rr.log_sel_prob.smooth_objective(test, mode='func')
+        print inf.gradient_posterior(test), -inf_rr.smooth_objective(test, mode='grad')
 
     test_gradient()
 
