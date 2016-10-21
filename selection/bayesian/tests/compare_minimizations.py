@@ -631,8 +631,8 @@ def test_one_sparse_dual_minimizations():
 def primal_dual_minimizations():
 
     #fixing n, p, true sparsity and signal strength
-    n = 10
-    p = 5
+    n = 20
+    p = 10
     s = 3
     snr = 5
 
