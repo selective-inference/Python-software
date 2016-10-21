@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.optimize import minimize
+from scipy.stats import norm as ndist
 from selection.bayesian.dual_scipy import cube_barrier_softmax_coord, softmax_barrier_conjugate, log_barrier_conjugate, \
     dual_selection_probability_func
 from selection.bayesian.dual_optimization import selection_probability_dual_objective
@@ -89,13 +90,37 @@ class bayesian_inference():
                - np.true_divide(true_param, self.prior_variance) + \
                np.true_divide(self.generative_X.T.dot(self.y - self.generative_mean(true_param)),self.noise_variance)
 
-    def posterior_samples(self):
+    def posterior_samples(self, Langevin_steps = 100, burnin = 0):
         initial_condition = np.zeros(self.generative_X.shape[1])
-        gradient_map = lambda x : self.gradient_posterior(x)
+        gradient_map = lambda x : -self.gradient_posterior(x)
         projection_map = lambda x : x
-        stepsize = 1./np.sqrt(self.p)
-        samples = projected_langevin(initial_condition, gradient_map, projection_map, stepsize)
+        stepsize = 1./self.E
+        sampler = projected_langevin(initial_condition, gradient_map, projection_map, stepsize)
+
+        samples = []
+
+        for i in range(Langevin_steps):
+            if i > burnin:
+                sampler.next()
+                samples.append(sampler.state.copy())
+                print i, sampler.state.copy()
+
+        samples = np.array(samples)
         return samples
+
+    def posterior_samples_test(self, Langevin_steps = 100):
+        initial_condition = np.zeros(self.generative_X.shape[1])
+        gradient_map = lambda x: -self.gradient_posterior(x)
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        state = initial_condition
+        _noise = ndist(loc=0, scale=1)
+        _sqrt_step = np.sqrt(stepsize)
+        for i in range(Langevin_steps):
+            proj_arg = state + 0.5 * stepsize * gradient_map(state)+ _noise.rvs(initial_condition.shape[0]) * _sqrt_step
+            candidate = projection_map(proj_arg)
+            print i, gradient_map(candidate)
+
 
 
 
