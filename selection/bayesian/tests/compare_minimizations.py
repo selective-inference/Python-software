@@ -6,7 +6,9 @@ from scipy.optimize import minimize
 from selection.tests.instance import gaussian_instance
 from selection.tests.decorators import wait_for_return_value
 from selection.bayesian.initial_soln import selection
-from selection.bayesian.selection_probability_rr import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
+from selection.bayesian.selection_probability_rr import cube_subproblem, cube_gradient, cube_barrier, \
+    selection_probability_objective, cube_subproblem_scaled, cube_gradient_scaled, cube_barrier_scaled, \
+    cube_subproblem_scaled
 from selection.randomized.api import randomization
 from selection.bayesian.selection_probability import selection_probability_methods
 from selection.bayesian.dual_scipy import dual_selection_probability_func
