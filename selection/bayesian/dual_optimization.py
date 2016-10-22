@@ -1,6 +1,7 @@
 import numpy as np
 import regreg.api as rr
-from selection.bayesian.barrier import barrier_conjugate_softmax, barrier_conjugate_log, cube_barrier_softmax_coord
+from selection.bayesian.barrier import barrier_conjugate_softmax, barrier_conjugate_softmax_scaled,\
+    barrier_conjugate_log, cube_barrier_softmax_coord
 
 class linear_map(rr.smooth_atom):
     def __init__(self,
@@ -106,7 +107,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        _barrier_star = barrier_conjugate_softmax(self.cube_bool, self.inactive_lagrange)
+        _barrier_star = barrier_conjugate_softmax_scaled(self.cube_bool, self.inactive_lagrange)
 
         self.conjugate_barrier = rr.affine_smooth(_barrier_star, np.identity(p))
 
