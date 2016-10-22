@@ -336,6 +336,75 @@ class cube_objective(rr.smooth_atom):
             raise ValueError("mode incorrectly specified")
 
 
+class nonnegative_softmax_scaled(rr.smooth_atom):
+    """
+    The nonnegative softmax objective
+    .. math::
+         \mu \mapsto
+         \sum_{i=1}^{m} \log \left(1 +
+         \frac{1}{\mu_i} \right)
+    """
+
+    objective_template = r"""\text{nonneg_softmax}\left(%(var)s\right)"""
+
+    def __init__(self,
+                 shape,
+                 barrier_scale=5.,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None,
+                 initial=None):
+
+        rr.smooth_atom.__init__(self,
+                             shape,
+                             offset=offset,
+                             quadratic=quadratic,
+                             initial=initial,
+                             coef=coef)
+
+        # a feasible point
+        self.coefs[:] = np.ones(shape)
+        self.barrier_scale = barrier_scale
+
+    def smooth_objective(self, mean_param, mode='both', check_feasibility=False):
+        """
+        Evaluate the smooth objective, computing its value, gradient or both.
+        Parameters
+        ----------
+        mean_param : ndarray
+            The current parameter values.
+        mode : str
+            One of ['func', 'grad', 'both'].
+        check_feasibility : bool
+            If True, return `np.inf` when
+            point is not feasible, i.e. when `mean_param` is not
+            in the domain.
+        Returns
+        -------
+        If `mode` is 'func' returns just the objective value
+        at `mean_param`, else if `mode` is 'grad' returns the gradient
+        else returns both.
+        """
+
+        slack = self.apply_offset(mean_param)
+
+        if mode in ['both', 'func']:
+            if np.all(slack > 0):
+                f = self.scale(np.log((slack + self.barrier_scale) / slack).sum())
+            else:
+                f = np.inf
+        if mode in ['both', 'grad']:
+            g = self.scale(1. / (slack + self.barrier_scale) - 1. / slack)
+
+        if mode == 'both':
+            return f, g
+        elif mode == 'grad':
+            return g
+        elif mode == 'func':
+            return f
+        else:
+            raise ValueError("mode incorrectly specified")
+
 class selection_probability_objective(rr.smooth_atom):
     def __init__(self,
                  X,
@@ -411,7 +480,7 @@ class selection_probability_objective(rr.smooth_atom):
         self.coefs[:] = initial
 
         self.active = active
-        nonnegative = nonnegative_softmax(E)  # should there be a
+        nonnegative = nonnegative_softmax_scaled(E)  # should there be a
         # scale to our softmax?
         opt_vars = np.zeros(n + E, bool)
         opt_vars[n:] = 1

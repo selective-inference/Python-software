@@ -211,7 +211,7 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
     def __init__(self,
                  cube_bool,  # -E
                  lagrange,  # cube half lengths
-                 barrier_scale=None,  # maybe scale each coordinate in future?
+                 barrier_scale=5.,  # maybe scale each coordinate in future?
                  coef=1.,
                  offset=None,
                  quadratic=None):
@@ -260,9 +260,10 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
             else:
                 raise ValueError('mode incorrectly specified')
 
-        orthant_maximizer = - 0.5 + np.sqrt(0.25 - 1. / orthant_arg)
+        orthant_maximizer = (- 0.5*self.barrier_scale) + np.sqrt((0.25*(self.barrier_scale**2)) -
+                                                                 (self.barrier_scale / orthant_arg))
         orthant_val = np.sum(orthant_maximizer * orthant_arg -
-                             np.log(1 + 1. / orthant_maximizer))
+                             np.log(1 + (self.barrier_scale / orthant_maximizer)))
 
         def cube_conjugate_grad(z, u, j):
             _diff = z - self.lagrange[j]  # z - \lambda < 0
