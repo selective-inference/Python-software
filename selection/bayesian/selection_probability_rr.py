@@ -192,12 +192,12 @@ def cube_subproblem_scaled(argument,
 
     step = np.ones(k, np.float)
 
-    objective = lambda u: cube_barrier(u, lagrange) + conj_value(argument + u)
+    objective = lambda u: cube_barrier_scaled(u, lagrange) + conj_value(argument + u)
 
     for itercount in range(nstep):
-        newton_step = ((cube_gradient(current, lagrange) +
+        newton_step = ((cube_gradient_scaled(current, lagrange) +
                         conj_grad(argument + current)) /
-                       (cube_hessian(current, lagrange) + lipschitz))
+                       (cube_hessian_scaled(current, lagrange) + lipschitz))
 
         # make sure proposal is feasible
 
@@ -239,8 +239,7 @@ def cube_subproblem_scaled(argument,
     value = objective(current)
     return current, value
 
-
-def cube_barrier(argument, lagrange):
+def cube_barrier_scaled(argument, lagrange, cube_scale= 3.):
     '''
     Barrier approximation to the
     cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
@@ -255,10 +254,10 @@ def cube_barrier(argument, lagrange):
     _diff = argument - lagrange  # z - \lambda < 0
     _sum = argument + lagrange  # z + \lambda > 0
     violations = ((_diff >= 0).sum() + (_sum <= 0).sum() > 0)
-    return np.log((_diff - lagrange) * (_sum + lagrange) / (_diff * _sum)).sum() + BIG * violations
+    return np.log((_diff - (cube_scale*lagrange)) * (_sum + (cube_scale*lagrange)) / (_diff * _sum)).sum() + BIG * violations
 
 
-def cube_gradient(argument, lagrange):
+def cube_gradient_scaled(argument, lagrange, cube_scale= 3.):
     """
     Gradient of approximation to the
     cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
@@ -271,10 +270,10 @@ def cube_gradient(argument, lagrange):
     """
     _diff = argument - lagrange  # z - \lambda < 0
     _sum = argument + lagrange  # z + \lambda > 0
-    return 1. / (_diff - lagrange) - 1. / _diff + 1. / (_sum + lagrange) - 1. / _sum
+    return 1. / (_diff - (cube_scale*lagrange)) - 1. / _diff + 1. / (_sum + (cube_scale*lagrange)) - 1. / _sum
 
 
-def cube_hessian(argument, lagrange):
+def cube_hessian_scaled(argument, lagrange, cube_scale= 3.):
     """
     (Diagonal) Heissian of approximation to the
     cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
@@ -287,7 +286,8 @@ def cube_hessian(argument, lagrange):
     """
     _diff = argument - lagrange  # z - \lambda < 0
     _sum = argument + lagrange  # z + \lambda > 0
-    return 1. / _diff ** 2 - 1. / (_diff - lagrange) ** 2 + 1. / _sum ** 2 - 1. / (_sum + lagrange) ** 2
+    return 1. / _diff ** 2 - 1. / (_diff - (cube_scale*lagrange)) ** 2 + 1. / _sum ** 2 - \
+           1. / (_sum + (cube_scale*lagrange)) ** 2
 
 
 class cube_objective(rr.smooth_atom):

@@ -211,6 +211,7 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
     def __init__(self,
                  cube_bool,  # -E
                  lagrange,  # cube half lengths
+                 cube_scale = 3.,
                  barrier_scale=5.,  # maybe scale each coordinate in future?
                  coef=1.,
                  offset=None,
@@ -228,9 +229,11 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
         (self.cube_bool,
          self.orthant_bool,
          self.lagrange,
+         self.cube_scale,
          self.barrier_scale) = (cube_bool,
                                 orthant_bool,
                                 lagrange,
+                                cube_scale,
                                 barrier_scale)
 
         rr.smooth_atom.__init__(self,
@@ -268,7 +271,8 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
         def cube_conjugate_grad(z, u, j):
             _diff = z - self.lagrange[j]  # z - \lambda < 0
             _sum = z + self.lagrange[j]  # z + \lambda > 0
-            return u - (1. / (_diff - self.lagrange[j]) - 1. / _diff + 1. / (_sum + self.lagrange[j]) - 1. / _sum)
+            return u - (1. / (_diff - (self.cube_scale*self.lagrange[j])) - 1. / _diff +
+                        1. / (_sum + (self.cube_scale*self.lagrange[j])) - 1. / _sum)
 
         #def cube_conjugate(z, u, j):
         #    return -u * z + cube_barrier_softmax_coord(z, self.lagrange[j])
@@ -289,8 +293,9 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
                                        b=self.lagrange[j] - 10 ** -10, args=(u, j),
                                        rtol=4.4408920985006262e-5, maxiter=32)
 
-        cube_val = np.sum(cube_maximizer * cube_arg - np.log(1. + (self.lagrange / (self.lagrange - cube_maximizer)))
-                          - np.log(1. + (self.lagrange / (self.lagrange + cube_maximizer))))
+        cube_val = np.sum(cube_maximizer * cube_arg - np.log(1. + ((self.cube_scale*self.lagrange)
+                                                                   / (self.lagrange - cube_maximizer)))
+                          - np.log(1. + ((self.cube_scale*self.lagrange) / (self.lagrange + cube_maximizer))))
 
         if mode == 'func':
             return cube_val + orthant_val
