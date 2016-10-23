@@ -643,7 +643,6 @@ def primal_dual_minimizations():
     random_Z = np.random.standard_normal(p)
     #getting randomized Lasso solution
     sel = selection(X_1,y, random_Z)
-
     lam, epsilon, active, betaE, cube, initial_soln = sel
     print(epsilon, lam, betaE, active.sum())
     noise_variance = 1
