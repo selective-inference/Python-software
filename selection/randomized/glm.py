@@ -308,9 +308,9 @@ class glm_group_lasso(M_estimator):
         M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.selection_variable['groups'],
+                                              self.selection_variable['variables'],
                                               beta_full=self._beta_full,
-                                              inactive=~self.selection_variable['groups'])[0]
+                                              inactive=~self.selection_variable['variables'])[0]
 
         return bootstrap_score
 
@@ -320,9 +320,9 @@ class split_glm_group_lasso(M_estimator_split):
         M_estimator_split.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.selection_variable['groups'],
+                                              self.selection_variable['variables'],
                                               beta_full=self._beta_full,
-                                              inactive=~self.selection_variable['groups'])[0]
+                                              inactive=~self.selection_variable['variables'])[0]
 
         return bootstrap_score
 
@@ -333,7 +333,7 @@ class glm_group_lasso_parametric(M_estimator):
 
     def setup_sampler(self):
         M_estimator.setup_sampler(self)
-        return self.selection_variable['groups']
+        return self.selection_variable['variables']
 
 
 class glm_greedy_step(greedy_score_step, glm):
@@ -374,8 +374,8 @@ class fixedX_group_lasso(M_estimator):
         X, Y = self.loss.data
 
         bootstrap_score = resid_bootstrap(self.loss,
-                                          self.selection_variable['groups'],
-                                          ~self.selection_variable['groups'])[0]
+                                          self.selection_variable['variables'],
+                                          ~self.selection_variable['variables'])[0]
         return bootstrap_score
 
 # Methods to form appropriate covariances
