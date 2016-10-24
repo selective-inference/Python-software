@@ -46,7 +46,7 @@ class approximate_density(rr.smooth_atom):
 
         initial = feasible_point
 
-        #self.feasible_point = feasible_point
+        self.feasible_point = feasible_point
 
         rr.smooth_atom.__init__(self,
                                 (E,),
@@ -75,6 +75,11 @@ class approximate_density(rr.smooth_atom):
         self.offset_active = self.offset(j, s, subgrad_offset)[:E,]
 
         self.offset_inactive = self.offset(j, s, subgrad_offset)[E:, ]
+
+        opt_vars = np.zeros(E, bool)
+        opt_vars[:E] = 1
+
+        self._opt_selector = rr.selector(opt_vars, (E,))
 
         self.active_conj_loss = rr.affine_smooth(self.active_conjugate,
                                                  rr.affine_transform(self.B_active, self.offset_active))
@@ -114,9 +119,24 @@ class approximate_density(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
+    def minimize(self, initial=None, min_its=100, max_its=500, tol=1.e-10):
+
+        nonpos_con = self._opt_selector.output_shape[0]
+        constraint = rr.separable(self.shape,
+                                  [rr.nonpositive((nonpos_con,), offset=1.e-12 * np.ones(nonpos_con))],
+                                  [self._opt_selector.index_obj])
+
+        problem = rr.separable_problem.fromatom(constraint, self.total_loss)
+        problem.coefs[:] = self.coefs
+        soln = problem.solve(max_its=max_its, min_its=min_its, tol=tol)
+        self.coefs[:] = soln
+        value = problem.objective(soln)
+        return soln, value
+
 
 class approximate_CI():
-    
+
+
 
 
 
