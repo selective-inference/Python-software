@@ -65,7 +65,7 @@ def test_condition(ndraw=10000, burnin=2000,
         if nactive==s:
             return None
 
-        if scalings == 'tryall': # try condition on some scalings
+        if scalings: # try condition on some scalings
             views[0].condition_on_scalings()
             views[0].condition_on_subgradient()
             views[1].condition_on_subgradient()
@@ -84,7 +84,7 @@ def test_condition(ndraw=10000, burnin=2000,
                                                      burnin=burnin)
 
         active_var = np.zeros_like(pvalues, np.bool)
-        _nonzero = [i in nonzero for i in np.nonzero(active_union)[0]]
+        _nonzero = np.array([i in nonzero for i in active_set])
         active_var[_nonzero] = True
         return pvalues, active_var
 
