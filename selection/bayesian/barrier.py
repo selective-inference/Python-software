@@ -211,8 +211,8 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
     def __init__(self,
                  cube_bool,  # -E
                  lagrange,  # cube half lengths
-                 cube_scale = 3.,
-                 barrier_scale=5.,  # maybe scale each coordinate in future?
+                 cube_scale = 1.,
+                 barrier_scale=1.,  # maybe scale each coordinate in future?
                  coef=1.,
                  offset=None,
                  quadratic=None):

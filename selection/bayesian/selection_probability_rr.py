@@ -239,7 +239,7 @@ def cube_subproblem_scaled(argument,
     value = objective(current)
     return current, value
 
-def cube_barrier_scaled(argument, lagrange, cube_scale= 3.):
+def cube_barrier_scaled(argument, lagrange, cube_scale= 1.):
     '''
     Barrier approximation to the
     cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
@@ -257,7 +257,7 @@ def cube_barrier_scaled(argument, lagrange, cube_scale= 3.):
     return np.log((_diff - (cube_scale*lagrange)) * (_sum + (cube_scale*lagrange)) / (_diff * _sum)).sum() + BIG * violations
 
 
-def cube_gradient_scaled(argument, lagrange, cube_scale= 3.):
+def cube_gradient_scaled(argument, lagrange, cube_scale= 1.):
     """
     Gradient of approximation to the
     cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
@@ -273,7 +273,7 @@ def cube_gradient_scaled(argument, lagrange, cube_scale= 3.):
     return 1. / (_diff - (cube_scale*lagrange)) - 1. / _diff + 1. / (_sum + (cube_scale*lagrange)) - 1. / _sum
 
 
-def cube_hessian_scaled(argument, lagrange, cube_scale= 3.):
+def cube_hessian_scaled(argument, lagrange, cube_scale= 1.):
     """
     (Diagonal) Heissian of approximation to the
     cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
@@ -349,7 +349,7 @@ class nonnegative_softmax_scaled(rr.smooth_atom):
 
     def __init__(self,
                  shape,
-                 barrier_scale=5.,
+                 barrier_scale=1.,
                  coef=1.,
                  offset=None,
                  quadratic=None,
