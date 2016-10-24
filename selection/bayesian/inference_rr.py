@@ -172,7 +172,7 @@ class selective_map_credible(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def map_solve(self, step=1, nstep=100, tol=1.e-8):
+    def map_solve_2(self, step=1, nstep=100, tol=1.e-8):
 
         current = self.coefs[:]
         current_value = np.inf
@@ -208,6 +208,14 @@ class selective_map_credible(rr.smooth_atom):
 
         value = objective(current)
         return current, value
+
+    def map_solve(self, initial=None, min_its=10, max_its=50, tol=1.e-10):
+
+        problem = rr.separable_problem.singleton(self)
+        #problem.coefs[:] = 0.5
+        soln = problem.solve(max_its=max_its, min_its=min_its, tol=tol)
+        value = problem.objective(soln)
+        return soln, value
 
     def posterior_samples(self, Langevin_steps = 100, burnin = 0):
         state = self.initial_state
