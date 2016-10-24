@@ -36,9 +36,9 @@ def one_sparse_minimizations():
     primal_feasible = np.fabs(betaE)
 
     if nactive == 1:
-        snr_seq = np.linspace(-10, 10, num=51)
+        snr_seq = np.linspace(9, 20, num=25)
         #snr_seq = np.hstack([snr_seq[:25], snr_seq[25:][::-1]])
-        snr_seq = snr_seq[25:][::-1]
+        #snr_seq = snr_seq[25:][::-1]
         lagrange = lam * np.ones(p)
         result = []
         for i in range(snr_seq.shape[0]):
@@ -54,6 +54,10 @@ def one_sparse_minimizations():
                                                             randomization.isotropic_gaussian((p,), 1.),
                                                             epsilon)
 
+
+            primal_val = primal_regreg.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+            primal_sol = primal_val[1]
+
             dual_regreg = selection_probability_dual_objective(X_1,
                                                                dual_feasible,
                                                                active,
@@ -64,26 +68,16 @@ def one_sparse_minimizations():
                                                                randomization.isotropic_gaussian((p,), tau),
                                                                epsilon)
 
-            primal_val = primal_regreg.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
-            primal_sol = primal_val[1]
-
-            dual_val = dual_regreg.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+            dual_val = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-12)[::-1]
             dual_sol = mean - (dual_regreg.X_permute.dot(np.linalg.inv(dual_regreg.B_p.T))).dot(dual_val[1])
 
             print(parameter, -primal_val[0], dual_val[0])
 
-            result.append([parameter,-primal_val[0],dual_val[0]])
+            #result.append([parameter,-primal_val[0],dual_val[0]])
 
-        return np.array(result)
+        #return np.array(result)
 
 one_sparse_minimizations()
 
-#result = one_sparse_minimizations()
-#plt.clf()
-#plt.title("sel_prob")
-#plt.plot(snr_seq, result[:,1], color="b")
-#plt.plot(snr_seq, sel_scaled_seq, color="r")
-#plt.plot(snr_seq, sel_grad_descent, color="m")
-#plt.savefig('/Users/snigdhapanigrahi/Python_Plots/my_sel_prob.png')
-#plt.close()
+
 
