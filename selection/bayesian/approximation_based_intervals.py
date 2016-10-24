@@ -163,6 +163,8 @@ class approximate_conditional_density():
         self.mean_parameter = np.squeeze(mean_parameter)
         self.mean_contrast = np.linalg.pinv(X_active)[j, :].T.dot(self.mean_parameter)
 
+        self.grid = np.linspace(-10, 10, num=100)
+
     def smooth_objective(self, s, mode='func', check_feasibility=False, tol=1.e-6):
 
         s = self.apply_offset(s)
@@ -187,23 +189,32 @@ class approximate_conditional_density():
 
     def normalizing_constant(self):
 
-        s_seq = np.linspace(-10, 10, num=100)
-
         normalizer = 0.
 
-        for i in range(s_seq):
+        approx_unormalized = []
 
-            normalizer = normalizer + np.exp(-self.smooth_objective(s_seq[i], mode='func'))
+        for i in range(self.grid):
 
-        return normalizer
+            approx_density = np.exp(-self.smooth_objective(self.grid[i], mode='func'))
 
-    def normalized_density(self, s):
+            normalizer = normalizer + approx_density
 
-        return np.exp(-self.smooth_objective(s, mode='func'))/self.normalizing_constant
+            approx_unormalized.append(approx_density)
+
+        return np.array(approx_unormalized/normalizer)
 
     def approximate_ci(self):
 
-        
+        density = self.normalizing_constant()
+
+        upper_limit = np.amin(self.grid[(density>=0.95)])
+
+        lower_limit = np.amax(self.grid[(density<=0.05)])
+
+        return lower_limit, upper_limit
+
+
+
 
 
 
