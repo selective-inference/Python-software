@@ -655,7 +655,7 @@ def primal_dual_minimizations():
     #print('loc1')
 
     if nactive > 1:
-        parameter = np.random.standard_normal(nactive)
+        parameter = 10*np.random.standard_normal(nactive)
         lagrange = lam * np.ones(p)
         mean = X_1[:, active].dot(parameter)
 
@@ -686,7 +686,7 @@ def primal_dual_minimizations():
         primal_sol = primal_val[1]
 
         toc = time.time()
-        dual_val = dual_regreg.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+        dual_val = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-12)[::-1]
         tic = time.time()
         print('dual time', tic-toc)
 

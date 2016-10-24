@@ -30,25 +30,25 @@ class bayesian_inference():
                  epsilon):
         (self.y, self.X, self.primal_feasible, self.dual_feasible, self.active, self.active_signs, self.lagrange,
          self.generative_X, self.noise_variance, self.prior_variance, self.randomizer, self.epsilon) =\
-            (y, X, primal_feasible, dual_feasible,active, active_signs, lagrange,generative_X, noise_variance,
-             prior_variance,randomizer, epsilon)
+            (np.squeeze(y), X, primal_feasible, dual_feasible,active, active_signs, lagrange,generative_X,
+             noise_variance,prior_variance,randomizer, epsilon)
 
         self.E = active.sum()
         self.n, self.p = X.shape
 
     def log_prior(self, true_param):
-        return -np.true_divide(true_param.dot(true_param),2*self.prior_variance)
+        return np.true_divide(true_param.dot(true_param),2*self.prior_variance)
 
     def generative_mean(self, true_param):
-        return self.generative_X.dot(true_param)
+        return np.squeeze(self.generative_X.dot(true_param))
 
     def likelihood(self, true_param):
-        return np.true_divide(np.linalg.norm(self.y - np.squeeze(self.generative_mean(true_param)))**2,
+        return np.true_divide(np.linalg.norm(self.y - self.generative_mean(true_param))**2,
                                         2*self.noise_variance)
 
     def gradient_selection_prob(self, true_param):
 
-        mean_parameter = np.squeeze(self.generative_mean(true_param))
+        mean_parameter = self.generative_mean(true_param)
         dual_sol = selection_probability_dual_objective(self.X,
                                                         self.dual_feasible,
                                                         self.active,
@@ -71,17 +71,15 @@ class bayesian_inference():
         if self.n + self.E > self.p:
             sel_prob_dual = dual_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
             optimal_dual = mean_parameter - (dual_sol.X_permute.dot(np.linalg.inv(dual_sol.B_p.T))).dot(sel_prob_dual[1])
-            return self.generative_X.T.dot(np.true_divide(optimal_dual,self.noise_variance)
-                                           - np.true_divide(mean_parameter, self.noise_variance)), sel_prob_dual[0]
+            return self.generative_X.T.dot(np.true_divide(optimal_dual,self.noise_variance)), sel_prob_dual[0]
 
         else:
             sel_prob_primal = primal_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
             optimal_primal = (sel_prob_primal[1])[:self.n]
-            return self.generative_X.T.dot(np.true_divide(optimal_primal,self.noise_variance)
-                                           - np.true_divide(mean_parameter, self.noise_variance)), -sel_prob_primal[0]
+            return self.generative_X.T.dot(np.true_divide(optimal_primal,self.noise_variance)), -sel_prob_primal[0]
 
     def map_objective(self, true_param):
-        return -self.log_prior(true_param) + self.likelihood(true_param) \
+        return self.log_prior(true_param) + self.likelihood(true_param) \
                + (self.gradient_selection_prob(true_param)[::-1])[0]
 
     def selective_map(self):
@@ -90,9 +88,9 @@ class bayesian_inference():
         return res.x
 
     def gradient_posterior(self, true_param):
-        return -self.gradient_selection_prob(true_param)[0]\
-               - np.true_divide(true_param, self.prior_variance) + \
-               np.true_divide(self.generative_X.T.dot(self.y - self.generative_mean(true_param)),self.noise_variance)
+        return self.gradient_selection_prob(true_param)[0]\
+               + np.true_divide(true_param, self.prior_variance) - \
+               np.true_divide(self.generative_X.T.dot(self.y),self.noise_variance)
 
     def posterior_samples(self, Langevin_steps = 100, burnin = 0):
         state = np.zeros(self.generative_X.shape[1])
