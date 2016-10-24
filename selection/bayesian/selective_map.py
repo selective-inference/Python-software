@@ -92,7 +92,7 @@ class bayesian_inference():
                + np.true_divide(true_param, self.prior_variance) - \
                np.true_divide(self.generative_X.T.dot(self.y),self.noise_variance)
 
-    def posterior_samples(self, Langevin_steps = 100, burnin = 0):
+    def posterior_samples(self, Langevin_steps = 5000, burnin = 200):
         state = np.zeros(self.generative_X.shape[1])
         gradient_map = lambda x : -self.gradient_posterior(x)
         projection_map = lambda x : x
@@ -102,14 +102,13 @@ class bayesian_inference():
         samples = []
 
         for i in range(Langevin_steps):
-            if i > burnin:
-                sampler.next()
-                samples.append(sampler.state.copy())
-                sampler = projected_langevin(sampler.state.copy(), gradient_map, projection_map, stepsize)
-                print i, sampler.state.copy()
+            sampler.next()
+            samples.append(sampler.state.copy())
+            #sampler = projected_langevin(sampler.state.copy(), gradient_map, projection_map, stepsize)
+            print i, sampler.state.copy()
 
         samples = np.array(samples)
-        return samples
+        return samples.shape, samples[burnin:,:]
 
 
 
