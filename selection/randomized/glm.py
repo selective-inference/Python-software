@@ -239,8 +239,9 @@ def target(loss,
        Sampler returned for this queries.
 
     subset : np.bool
-       Indicator of subset of active variables
-       to be returned.
+       Indicator of subset of variables
+       to be returned. Includes both
+       active and inactive variables.
 
     bootstrap : bool
        If True, sampler returned uses bootstrap
