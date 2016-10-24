@@ -113,11 +113,9 @@ class selective_map_credible(rr.smooth_atom):
 
         self.E = active.sum()
 
-        initial = np.squeeze(primal_feasible*active_signs[None,:])
-
-        self.initial_state = initial
-
         self.generative_X = generative_X
+
+        initial = np.zeros(self.E, )
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -126,7 +124,11 @@ class selective_map_credible(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
+        #self.initial = np.squeeze(primal_feasible * active_signs[None, :])
+
         self.coefs[:] = initial
+
+        self.initial_state = np.squeeze(primal_feasible * active_signs[None, :])
 
         self.set_likelihood(y, noise_variance, generative_X)
 
@@ -172,7 +174,7 @@ class selective_map_credible(rr.smooth_atom):
 
     def map_solve(self, step=1, nstep=100, tol=1.e-8):
 
-        current = self.coefs
+        current = self.coefs[:]
         current_value = np.inf
 
         objective = lambda u: self.smooth_objective(u, 'func')
@@ -181,23 +183,12 @@ class selective_map_credible(rr.smooth_atom):
         for itercount in range(nstep):
             newton_step = grad(current)
 
-            # make sure proposal is feasible
-
-            count = 0
-            while True:
-                count += 1
-                proposal = current - step * newton_step
-                step *= 0.5
-                if count >= 40:
-                    raise ValueError('not finding a feasible point')
-
             # make sure proposal is a descent
 
             count = 0
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
-                # print(current_value, proposed_value, 'minimize')
                 if proposed_value <= current_value:
                     break
                 step *= 0.5
@@ -215,7 +206,6 @@ class selective_map_credible(rr.smooth_atom):
             if itercount % 4 == 0:
                 step *= 2
 
-        print('iter', itercount)
         value = objective(current)
         return current, value
 
