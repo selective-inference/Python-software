@@ -4,7 +4,7 @@ from selection.bayesian.selection_probability_rr import nonnegative_softmax_scal
     cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled, cube_objective
 
 #class should return approximate probability of (\beta_E,u_{-E}) in K conditional on s:
-class approximate_density(rr.smooth_atom):
+class approximate_conditional_sel_prob(rr.smooth_atom):
 
     def __init__(self,
                  y,
@@ -13,8 +13,6 @@ class approximate_density(rr.smooth_atom):
                  active,
                  active_signs,
                  lagrange,
-                 mean_parameter,  # in R^n
-                 noise_variance,
                  randomizer,
                  epsilon,
                  j, #index of interest amongst active variables
@@ -31,8 +29,6 @@ class approximate_density(rr.smooth_atom):
         self.y = y
 
         self.active = active
-
-        self.noise_variance = noise_variance
 
         self.randomization = randomizer
 
@@ -96,12 +92,12 @@ class approximate_density(rr.smooth_atom):
 
     def offset(self,j, s, subgrad_offset):
 
-        eta = self.XE_pinv[j, :]
-        c = np.true_divide(eta, self.eta_norm_sq[j])
+        eta = np.linalg.pinv(self.X_E)[j, :]
+        c = np.true_divide(eta, np.linalg.norm(eta)**2)
         fixed_part = np.dot(np.identity(self.y.shape) - np.outer(c, eta), self.y)
         _offset_active = subgrad_offset - self.X_E.T.dot(fixed_part) - s*(self.X_E.T.dot(c))
         _offset_inactive = - self.X_inactive.T.dot(fixed_part) - s*(self.X_inactive.T.dot(c))
-        return np.vstack[_offset_active,_offset_inactive]
+        return np.vstack([_offset_active,_offset_inactive])
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
 
@@ -134,7 +130,89 @@ class approximate_density(rr.smooth_atom):
         return soln, value
 
 
-class approximate_CI():
+class approximate_conditional_density():
+
+    def __init__(self,
+                 y,
+                 X,
+                 feasible_point,
+                 active,
+                 active_signs,
+                 lagrange,
+                 mean_parameter,
+                 noise_variance,
+                 randomizer,
+                 epsilon,
+                 j,  # index of interest amongst active variables
+                 coef=1.,
+                 offset=None,
+                 quadratic=None,
+                 nstep=10):
+
+        (self.y, self.X, self.feasible_point, self.active, self.active_signs, self.lagrange,
+         self.noise_variance, self.randomizer, self.epsilon, self.j) = (y, X, feasible_point, active, active_signs,
+                                                                       lagrange, noise_variance, randomizer, epsilon, j)
+        rr.smooth_atom.__init__(self,
+                                (1,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                coef=coef)
+
+
+        X_active = self.X[:, active]
+        self.mean_parameter = np.squeeze(mean_parameter)
+        self.mean_contrast = np.linalg.pinv(X_active)[j, :].T.dot(self.mean_parameter)
+
+    def smooth_objective(self, s, mode='func', check_feasibility=False, tol=1.e-6):
+
+        s = self.apply_offset(s)
+
+        approximate_h = approximate_conditional_sel_prob(self.y,
+                                                         self.X,
+                                                         self.feasible_point,
+                                                         self.active,
+                                                         self.active_signs,
+                                                         self.lagrange,
+                                                         self.randomizer,
+                                                         self.epsilon,
+                                                         self.j, #index of interest amongst active variables
+                                                         s)
+
+        h_hat = (approximate_h.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1])[0]
+
+        if mode == 'func':
+            return np.true_divide((s-self.mean_contrast)**2,self.noise_variance) + h_hat
+        else:
+            raise ValueError('mode incorrectly specified')
+
+    def normalizing_constant(self):
+
+        s_seq = np.linspace(-10, 10, num=100)
+
+        normalizer = 0.
+
+        for i in range(s_seq):
+
+            normalizer = normalizer + np.exp(-self.smooth_objective(s_seq[i], mode='func'))
+
+        return normalizer
+
+    def normalized_density(self, s):
+
+        return np.exp(-self.smooth_objective(s, mode='func'))/self.normalizing_constant
+
+    def approximate_ci(self):
+
+        
+
+
+
+
+
+
+
+
+
 
 
 
