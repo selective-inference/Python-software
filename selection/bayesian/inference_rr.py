@@ -88,7 +88,7 @@ class sel_prob_gradient_map(rr.smooth_atom):
         else:
             raise ValueError('mode incorrectly specified')
 
-class selective_map(rr.smooth_atom):
+class selective_map_credible(rr.smooth_atom):
     def __init__(self,
                  y,
                  X,
@@ -111,7 +111,11 @@ class selective_map(rr.smooth_atom):
 
         y = np.squeeze(y)
 
+        self.E = active.sum()
+
         initial = np.squeeze(primal_feasible*active_signs[None,:])
+
+        self.initial = initial
 
         self.generative_X = generative_X
 
@@ -122,7 +126,7 @@ class selective_map(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
-        self.coefs[:] = initial
+        self.coefs[:] = self.initial
 
         self.set_likelihood(y, noise_variance, generative_X)
 
@@ -167,8 +171,6 @@ class selective_map(rr.smooth_atom):
             raise ValueError("mode incorrectly specified")
 
     def map_solve(self, step=1, nstep=30, tol=1.e-8):
-
-        n, p = self._X.shape
 
         current = self.coefs
         current_value = np.inf
@@ -216,6 +218,22 @@ class selective_map(rr.smooth_atom):
         print('iter', itercount)
         value = objective(current)
         return current, value
+
+    def posterior_samples(self, Langevin_steps = 5000, burnin = 200):
+        state = self.initial
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
+
+        samples = []
+
+        for i in range(Langevin_steps):
+            sampler.next()
+            samples.append(sampler.state.copy())
+
+        samples = np.array(samples)
+        return samples[burnin:, :]
 
 
 
