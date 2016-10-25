@@ -157,7 +157,7 @@ class approximate_conditional_density(rr.smooth_atom):
                                 coef=coef)
 
 
-        self.grid = np.squeeze(np.round(np.linspace(0, 10, num=100), decimals=1))
+        self.grid = np.squeeze(np.round(np.linspace(2, 8, num=60), decimals=1))
 
         self.contrast = np.linalg.pinv(self.X[:,active])[self.j, :]
 
@@ -173,6 +173,8 @@ class approximate_conditional_density(rr.smooth_atom):
         self.ind_obs =  np.where(self.grid == s_obs)[0]
 
         #print self.ind_obs, s_obs, self.grid
+
+        self.h_approx = self.approx_conditional()
 
     def approx_conditional(self):
 
@@ -193,7 +195,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
             h_hat.append(-(approx.minimize(max_its=1000, min_its=500,tol=1.e-12)[::-1])[0])
 
-        return  np.array(h_hat)
+        return np.array(h_hat)
 
     def normalized_density(self, truth):
 
@@ -201,12 +203,10 @@ class approximate_conditional_density(rr.smooth_atom):
 
         approx_nonnormalized = []
 
-        h_approx = self.approx_conditional()
-
         for i in range(self.grid.shape[0]):
 
             approx_density = np.exp(-np.true_divide((self.grid[i]-truth)**2, self.noise_variance * self.norm)
-                                    + h_approx[i])
+                                    + self.h_approx[i])
 
             normalizer = normalizer + approx_density
 
@@ -218,7 +218,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def approximate_ci(self):
 
-        param_grid = np.squeeze(np.round(np.linspace(0, 10, num=100), decimals=1))
+        param_grid = np.squeeze(np.round(np.linspace(0, 10, num=25), decimals=1))
 
         area = []
 
