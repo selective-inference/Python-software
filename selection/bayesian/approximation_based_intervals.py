@@ -23,8 +23,8 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
                  nstep = 10):
 
         n, p = X.shape
+
         E = active.sum()
-        self._X = X
 
         self.y = y
 
@@ -64,13 +64,20 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         B_mE = B[~active]
 
         self.B_active = (B_E + epsilon * np.identity(E)) * active_signs[None, :]
-        self.B_inactive = B_mE * active_signs[None, :]\
+        self.B_inactive = B_mE * active_signs[None, :]
 
-        subgrad_offset = active_signs * lagrange[active]
+        self.subgrad_offset = active_signs * lagrange[active]
 
-        self.offset_active = self.offset(j, s, subgrad_offset)[:E,]
+        self.j = j
 
-        self.offset_inactive = self.offset(j, s, subgrad_offset)[E:, ]
+        self.s = s
+
+        eta = np.linalg.pinv(self.X_E)[self.j, :]
+        c = np.true_divide(eta, np.linalg.norm(eta) ** 2)
+
+        fixed_part = (np.identity(n) - np.outer(c, eta)).dot(self.y)
+        self.offset_active = self.subgrad_offset - self.X_E.T.dot(fixed_part) - self.s * (self.X_E.T.dot(c))
+        self.offset_inactive = - self.X_inactive.T.dot(fixed_part) - self.s * (self.X_inactive.T.dot(c))
 
         opt_vars = np.zeros(E, bool)
         opt_vars[:E] = 1
@@ -90,14 +97,6 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
                                          self.cube_loss,
                                          self.nonnegative_barrier])
 
-    def offset(self,j, s, subgrad_offset):
-
-        eta = np.linalg.pinv(self.X_E)[j, :]
-        c = np.true_divide(eta, np.linalg.norm(eta)**2)
-        fixed_part = np.dot(np.identity(self.y.shape) - np.outer(c, eta), self.y)
-        _offset_active = subgrad_offset - self.X_E.T.dot(fixed_part) - s*(self.X_E.T.dot(c))
-        _offset_inactive = - self.X_inactive.T.dot(fixed_part) - s*(self.X_inactive.T.dot(c))
-        return np.vstack([_offset_active,_offset_inactive])
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
 
