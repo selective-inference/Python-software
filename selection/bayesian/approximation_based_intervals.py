@@ -189,17 +189,19 @@ class approximate_conditional_density(rr.smooth_atom):
 
         normalizer = 0.
 
-        approx_unormalized = []
+        approx_nonnormalized = []
 
-        for i in range(self.grid):
+        for i in range(self.grid.shape[0]):
 
-            approx_density = np.exp(-self.smooth_objective(self.grid[i], mode='func'))
+            approx_density = np.exp(self.smooth_objective(self.grid[i], mode='func'))
 
             normalizer = normalizer + approx_density
 
-            approx_unormalized.append(approx_density)
+            approx_nonnormalized.append(approx_density)
 
-        return np.array(approx_unormalized/normalizer)
+            print approx_density
+
+        return np.array(approx_nonnormalized/normalizer)
 
     def approximate_ci(self):
 
