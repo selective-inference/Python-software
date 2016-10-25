@@ -138,7 +138,6 @@ class approximate_conditional_density(rr.smooth_atom):
                  active,
                  active_signs,
                  lagrange,
-                 mean_parameter,
                  noise_variance,
                  randomizer,
                  epsilon,
@@ -157,43 +156,57 @@ class approximate_conditional_density(rr.smooth_atom):
                                 quadratic=quadratic,
                                 coef=coef)
 
-        X_active = self.X[:, active]
-        self.mean_parameter = np.squeeze(mean_parameter)
-        self.mean_contrast = np.linalg.pinv(X_active)[j, :].T.dot(self.mean_parameter)
 
-        self.grid = np.linspace(-10, 10, num=100)
+        self.grid = np.squeeze(np.round(np.linspace(0, 10, num=100), decimals=1))
 
-    def smooth_objective(self, s, mode='func', check_feasibility=False, tol=1.e-6):
+        self.contrast = np.linalg.pinv(self.X[:,active])[self.j, :]
 
-        s = self.apply_offset(s)
+        self.norm = np.linalg.norm(self.contrast)**2
 
-        approximate_h = approximate_conditional_sel_prob(self.y,
-                                                         self.X,
-                                                         self.feasible_point,
-                                                         self.active,
-                                                         self.active_signs,
-                                                         self.lagrange,
-                                                         self.randomizer,
-                                                         self.epsilon,
-                                                         self.j, #index of interest amongst active variables
-                                                         s)
+        s_obs = np.round(np.squeeze(self.contrast.dot(self.y)), decimals=1)
 
-        h_hat = (approximate_h.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1])[0]
-
-        if mode == 'func':
-            return -np.true_divide((s-self.mean_contrast)**2,self.noise_variance) - h_hat
+        if s_obs>=self.grid[0]:
+            s_obs = s_obs
         else:
-            raise ValueError('mode incorrectly specified')
+            s_obs = self.grid[0]
 
-    def normalizing_constant(self):
+        self.ind_obs =  np.where(self.grid == s_obs)[0]
+
+        #print self.ind_obs, s_obs, self.grid
+
+    def approx_conditional(self):
+
+        h_hat = []
+
+        for j in range(self.grid.shape[0]):
+
+            approx = approximate_conditional_sel_prob(self.y,
+                                                      self.X,
+                                                      self.feasible_point,
+                                                      self.active,
+                                                      self.active_signs,
+                                                      self.lagrange,
+                                                      self.randomizer,
+                                                      self.epsilon,
+                                                      self.j, #index of interest amongst active variables
+                                                      self.grid[j])
+
+            h_hat.append(-(approx.minimize(max_its=1000, min_its=500,tol=1.e-12)[::-1])[0])
+
+        return  np.array(h_hat)
+
+    def normalized_density(self, truth):
 
         normalizer = 0.
 
         approx_nonnormalized = []
 
+        h_approx = self.approx_conditional()
+
         for i in range(self.grid.shape[0]):
 
-            approx_density = np.exp(self.smooth_objective(self.grid[i], mode='func'))
+            approx_density = np.exp(-np.true_divide((self.grid[i]-truth)**2, self.noise_variance * self.norm)
+                                    + h_approx[i])
 
             normalizer = normalizer + approx_density
 
@@ -205,13 +218,22 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def approximate_ci(self):
 
-        density = self.normalizing_constant()
+        param_grid = np.squeeze(np.round(np.linspace(0, 10, num=100), decimals=1))
 
-        upper_limit = np.amin(self.grid[(density>=0.95)])
+        area = []
 
-        lower_limit = np.amax(self.grid[(density<=0.05)])
+        for k in range(param_grid.shape[0]):
 
-        return lower_limit, upper_limit
+            area_vec = np.cumsum(self.normalized_density(param_grid[k]))
+
+            area[k] = area_vec(self.ind_obs)
+
+        area = np.array(area)
+
+        region = param_grid[(area >= 0.05) and (area <= 0.95)]
+
+        return np.amin(region), np.amax(region)
+
 
 
 
