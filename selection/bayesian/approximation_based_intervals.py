@@ -129,7 +129,7 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         return soln, value
 
 
-class approximate_conditional_density():
+class approximate_conditional_density(rr.smooth_atom):
 
     def __init__(self,
                  y,
@@ -143,10 +143,10 @@ class approximate_conditional_density():
                  randomizer,
                  epsilon,
                  j,  # index of interest amongst active variables
-                 coef=1.,
-                 offset=None,
-                 quadratic=None,
-                 nstep=10):
+                 coef = 1.,
+                 offset = None,
+                 quadratic = None,
+                 nstep = 10):
 
         (self.y, self.X, self.feasible_point, self.active, self.active_signs, self.lagrange,
          self.noise_variance, self.randomizer, self.epsilon, self.j) = (y, X, feasible_point, active, active_signs,
@@ -156,7 +156,6 @@ class approximate_conditional_density():
                                 offset=offset,
                                 quadratic=quadratic,
                                 coef=coef)
-
 
         X_active = self.X[:, active]
         self.mean_parameter = np.squeeze(mean_parameter)
@@ -182,7 +181,7 @@ class approximate_conditional_density():
         h_hat = (approximate_h.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1])[0]
 
         if mode == 'func':
-            return np.true_divide((s-self.mean_contrast)**2,self.noise_variance) + h_hat
+            return -np.true_divide((s-self.mean_contrast)**2,self.noise_variance) - h_hat
         else:
             raise ValueError('mode incorrectly specified')
 
