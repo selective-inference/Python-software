@@ -116,9 +116,9 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
 
     def minimize(self, initial=None, min_its=100, max_its=500, tol=1.e-10):
 
-        nonpos_con = self._opt_selector.output_shape[0]
+        nonneg_con = self._opt_selector.output_shape[0]
         constraint = rr.separable(self.shape,
-                                  [rr.nonpositive((nonpos_con,), offset=1.e-12 * np.ones(nonpos_con))],
+                                  [rr.nonnegative((nonneg_con,), offset=1.e-12 * np.ones(nonneg_con))],
                                   [self._opt_selector.index_obj])
 
         problem = rr.separable_problem.fromatom(constraint, self.total_loss)
