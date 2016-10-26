@@ -157,7 +157,7 @@ class approximate_conditional_density(rr.smooth_atom):
                                 coef=coef)
 
 
-        self.grid = np.squeeze(np.round(np.linspace(0, 10, num=100), decimals=1))
+        self.grid = np.squeeze(np.round(np.linspace(-2, 10, num=120), decimals=1))
 
         self.contrast = np.linalg.pinv(self.X[:,active])[self.j, :]
 
@@ -174,7 +174,10 @@ class approximate_conditional_density(rr.smooth_atom):
 
         #print self.ind_obs, s_obs, self.grid
 
+        print self.ind_obs, self.grid
+
         self.h_approx = self.approx_conditional()
+
 
     def approx_conditional(self):
 
@@ -193,9 +196,9 @@ class approximate_conditional_density(rr.smooth_atom):
                                                       self.j, #index of interest amongst active variables
                                                       self.grid[i])
 
-            print i
+            h_hat.append(-(approx.minimize(max_its=500, min_its=50,tol=1.e-6)[::-1])[0])
 
-            h_hat.append(-(approx.minimize(max_its=500, min_its=50,tol=1.e-8)[::-1])[0])
+            print i
 
         return np.array(h_hat)
 
@@ -214,7 +217,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
             approx_nonnormalized.append(approx_density)
 
-            print i, approx_density
+            #print i, approx_density
 
         return np.array(approx_nonnormalized/normalizer)
 
@@ -228,11 +231,13 @@ class approximate_conditional_density(rr.smooth_atom):
 
             area_vec = np.cumsum(self.normalized_density(param_grid[k]))
 
-            area[k] = area_vec[self.ind_obs]
+            print k
 
-        area = np.array(area)
+            area.append(area_vec[self.ind_obs])
 
-        region = param_grid[(area >= 0.05) and (area <= 0.95)]
+        area = np.array(area).T
+
+        region = param_grid[np.squeeze(np.all([area >= 0.05, area <= 0.95], axis=0))]
 
         return np.amin(region), np.amax(region)
 
