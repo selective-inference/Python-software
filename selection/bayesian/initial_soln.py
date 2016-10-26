@@ -32,7 +32,7 @@ def selection(X, y, random_Z, randomization_scale=1, sigma=1):
 
 class instance(object):
 
-    def __init__(self, n, p, s, snr=5, sigma=1., rho=0, random_signs=True, scale =True, center=True):
+    def __init__(self, n, p, s, snr=5, sigma=1., rho=0, random_signs=False, scale =True, center=True):
          (self.n, self.p, self.s,
          self.snr,
          self.sigma,
