@@ -20,9 +20,9 @@ lam, epsilon, active, betaE, cube, initial_soln = sel
 
 print true_beta, active
 
-truth = ((np.linalg.pinv(X_1[:,active])[1, :]).T).dot(X_1[:,active].dot(betaE))
+truth = ((np.linalg.pinv(X_1[:,active])[1, :]).T).dot(X_1.dot(true_beta))
 
-print truth
+print("truth",truth)
 
 def approximate_ci_test():
 
@@ -58,22 +58,18 @@ def approximate_ci_test():
                                                      j=1)
 
         ci = approx_val.approximate_ci()
-        lci = ci[0]
-        uci = ci[1]
 
-        print(lci, uci)
+        return ci
 
-    return lci, uci
-
-coverage =0
+#coverage =0
 
 for iter in range(100):
 
-    print iter
+    #print(iter)
 
-    lc, uc = approximate_ci_test()
+    print(iter, approximate_ci_test())
 
-    if (truth >= lc) and (truth <= uc):
-        coverage += 1
+    #if (truth >= lc) and (truth <= uc):
+    #    coverage += 1
 
-print coverage
+#print coverage

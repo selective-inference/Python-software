@@ -18,7 +18,7 @@ def cube_barrier_softmax_coord(z, lam):
     _diff = z - lam
     _sum = z + lam
     if -lam + SMALL < z < lam - SMALL:
-        return np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum))
+        return np.log((_diff - lam) * (_sum + lam) / (_diff * _sum))
     else:
         return 2 * np.log(1+1./SMALL)
 
