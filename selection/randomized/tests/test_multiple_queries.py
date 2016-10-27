@@ -132,7 +132,7 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
             subset = np.zeros(p, np.bool)
             subset[active_set[j]] = True
             target_sampler, target_observed = glm_target(loss,
-                                                         active_union * (1 - subset),
+                                                         active_union * ~subset,
                                                          mv,
                                                          subset=subset,
                                                          reference=np.zeros((1,)))
