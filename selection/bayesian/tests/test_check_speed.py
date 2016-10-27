@@ -210,7 +210,7 @@ def regreg_iterations_test():
 
 ###dual problem
 
-def dual_speed():
+def dual_primal_speed():
     n = 10
     p = 30
     s = 5
@@ -230,6 +230,7 @@ def dual_speed():
     tau = 1  # randomization_variance
     dual_feasible = np.ones(p)
     dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+    primal_feasible = np.fabs(betaE)
 
     if nactive > 1:
         #parameter = true_beta[active]
@@ -237,8 +238,15 @@ def dual_speed():
         lagrange = lam * np.ones(p)
         mean = X_1[:, active].dot(parameter)
 
-        dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
-                                                     noise_variance, tau, epsilon)
+        primal_regreg = selection_probability_objective(X_1,
+                                                        primal_feasible,
+                                                        active,
+                                                        active_signs,
+                                                        lagrange,
+                                                        mean,
+                                                        noise_variance,
+                                                        randomization.isotropic_gaussian((p,), 1.),
+                                                        epsilon)
 
         dual_regreg = selection_probability_dual_objective(X_1,
                                                            dual_feasible,
@@ -250,38 +258,24 @@ def dual_speed():
                                                            randomization.isotropic_gaussian((p,), tau),
                                                            epsilon)
 
-        toc = time.time()
-        dual_scipy_val = dual_scipy.minimize_dual()
-        tic = time.time()
-        print('scipy time', tic - toc)
-
-        _scipy = [dual_scipy_val[0], dual_scipy_val[1]]
 
         toc = time.time()
-        _regreg = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-10)[::-1]
+        _regreg_dual = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-10)[::-1]
         tic = time.time()
-        print('regreg time', tic - toc)
+        print('dual time', tic - toc)
 
         toc = time.time()
-        _regreg2 = dual_regreg.minimize2(nstep=100)[::-1]
+        _regreg2_dual = dual_regreg.minimize2(nstep=100, tol=1.e-10)[::-1]
         tic = time.time()
-        print('regreg2', tic - toc)
+        print('dual time', tic - toc)
 
-        obj1 = dual_scipy.dual_objective
-        obj2 = lambda x: dual_regreg.total_loss.objective(x, 'func')
+        toc = time.time()
+        _regreg = primal_regreg.minimize2(nstep=100)[::-1]
+        tic = time.time()
+        print('primal', tic - toc)
 
-        print(_scipy, _regreg)
-        #print("value and minimizer- scipy", obj1(_scipy[1]), obj2(_scipy[1]))
-        #print("value and minimizer- regreg1", obj1(_regreg[1]), obj2(_regreg[1]))
-        #print("value and minimizer- regreg2", obj1(_regreg2[1]), obj2(_regreg2[1]))
-
-        test = np.ones(p)
-        test[:nactive] = -np.fabs(np.random.standard_normal(nactive))
-
-        print('check objectives', obj1(test), obj2(test))
-        np.testing.assert_allclose(obj1(test), obj2(test), rtol=1.e-5)
-
-    return _scipy[0], _regreg[0]
+        print(_regreg_dual[0], _regreg2_dual[0], _regreg[0])
+    return _regreg[0]
 
 
-dual_speed()
+dual_primal_speed()
