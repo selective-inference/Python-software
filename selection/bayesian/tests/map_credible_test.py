@@ -16,8 +16,8 @@ from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map
 
 
 def test_inf_regreg():
-    n = 20
-    p = 60
+    n = 50
+    p = 5
     s = 3
     snr = 5
 
@@ -28,7 +28,7 @@ def test_inf_regreg():
     sel = selection(X_1, y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
-    print(epsilon, lam, betaE, true_beta, active)
+    print(epsilon, lam, betaE, true_beta, active, active.sum())
     noise_variance = 1.
     nactive = betaE.shape[0]
     active_signs = np.sign(betaE)
@@ -39,7 +39,7 @@ def test_inf_regreg():
     dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
     lagrange = lam * np.ones(p)
     generative_X = X_1[:, active]
-    prior_variance = 1
+    prior_variance = 1000.
 
     inf_rr = selective_map_credible(y,
                                     X_1,
@@ -64,6 +64,7 @@ def test_inf_regreg():
     print('sampling time', tic - toc)
     return samples
 
+#test_inf_regreg()
 post_samples = test_inf_regreg()
 print(np.percentile(post_samples, 5, axis=0), np.percentile(post_samples, 95, axis=0))
 

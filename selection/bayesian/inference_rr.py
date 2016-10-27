@@ -68,18 +68,18 @@ class sel_prob_gradient_map(rr.smooth_atom):
                                                      self.randomizer,
                                                      self.epsilon)
 
-        if self.n + self.E > self.p:
-            sel_prob_dual = dual_sol.minimize2(nstep=60)[::-1]
-            optimal_dual = mean_parameter - (dual_sol.X_permute.dot(np.linalg.inv(dual_sol.B_p.T))).\
-                dot(sel_prob_dual[1])
-            sel_prob_val = sel_prob_dual[0]
-            optimizer = self.generative_X.T.dot(np.true_divide(optimal_dual - mean_parameter, self.noise_variance))
+        #if self.n + self.E > self.p:
+            #sel_prob_dual = dual_sol.minimize2(nstep=60)[::-1]
+            #optimal_dual = mean_parameter - (dual_sol.X_permute.dot(np.linalg.inv(dual_sol.B_p.T))).\
+            #    dot(sel_prob_dual[1])
+            #sel_prob_val = sel_prob_dual[0]
+            #optimizer = self.generative_X.T.dot(np.true_divide(optimal_dual - mean_parameter, self.noise_variance))
 
-        else:
-            sel_prob_primal = primal_sol.minimize2(nstep=60)[::-1]
-            optimal_primal = (sel_prob_primal[1])[:self.n]
-            sel_prob_val = -sel_prob_primal[0]
-            optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
+        #else:
+        sel_prob_primal = primal_sol.minimize2(nstep=60)[::-1]
+        optimal_primal = (sel_prob_primal[1])[:self.n]
+        sel_prob_val = -sel_prob_primal[0]
+        optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
 
         if mode == 'func':
             return sel_prob_val
