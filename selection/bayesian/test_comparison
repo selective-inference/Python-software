@@ -13,6 +13,8 @@ from selection.bayesian.selection_probability import selection_probability_metho
 from selection.bayesian.dual_scipy import dual_selection_probability_func
 from selection.bayesian.selective_map import bayesian_inference
 from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map_credible
+from selection.bayesian.approximation_based_intervals import approximate_conditional_sel_prob, \
+    approximate_conditional_density
 from matplotlib import pyplot as plt
 
 #fixing n, p, true sparsity and signal strength
@@ -515,15 +517,15 @@ if sel is not None:
         #print inf.gradient_selection_prob(test)[::-1][0], inf_rr.log_sel_prob.smooth_objective(test, mode='func')
         print -inf.gradient_posterior(test), -inf_rr.smooth_objective(test, mode='grad')
         #print inf_rr.map_solve_2()
-        print inf_rr.posterior_samples()
+        #print inf_rr.posterior_samples()
 
     test_gradient()
 #######################################################################################################
 
-#n = 10
-#p = 20
-#s = 3
-#snr = 5
+n = 15
+p = 10
+s = 3
+snr = 5
 
 
 def posterior_samples_test(Langevin_steps=100):
@@ -582,8 +584,64 @@ def posterior_samples_test(Langevin_steps=100):
 
 
 
+def approximate_ci_test():
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    random_Z = np.random.standard_normal(p)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    noise_variance = 1
+    nactive = betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau = 1.
+    X_perm = np.zeros((n, p))
+    X_perm[:, :nactive] = X_1[:, active]
+    X_perm[:, nactive:] = X_1[:, ~active]
+    B_sel = np.zeros((p, p))
+    B_sel[:, :nactive] = np.dot(X_perm.T, X_perm[:, :nactive])
+    B_sel[:nactive, :nactive] += epsilon * np.identity(nactive)
+    B_sel[nactive:, nactive:] = lam * np.identity((p - nactive))
+    gamma_sel = np.zeros(p)
+    gamma_sel[:nactive] = lam * np.sign(betaE)
 
+    lagrange = lam * np.ones(p)
+    feasible_point = np.fabs(betaE)
 
+    truth = -1.
+
+    approx = approximate_conditional_sel_prob(y,
+                                              X_1,
+                                              feasible_point,
+                                              active,
+                                              active_signs,
+                                              lagrange,
+                                              randomization.isotropic_gaussian((p,), tau),
+                                              epsilon,
+                                              j=1, #index of interest amongst active variables
+                                              s= 2.)
+    val = approx.smooth_objective(np.fabs(np.random.standard_normal(nactive)),mode='both')
+
+    min = (approx.minimize(min_its=100, max_its=500, tol=1.e-10)[::-1])[0]
+
+    cd = approximate_conditional_density(y,
+                                         X_1,
+                                         feasible_point,
+                                         active,
+                                         active_signs,
+                                         lagrange,
+                                         noise_variance,
+                                         randomization.isotropic_gaussian((p,), tau),
+                                         epsilon,
+                                         j=1)
+
+    #print cd.approx_conditional()
+
+    print cd.approximate_ci()
+        #, cd.approximate_ci()
+
+    #print np.cumsum(cd.normalized_density(5.))
+
+#approximate_ci_test()
 
 
 
