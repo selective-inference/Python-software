@@ -98,6 +98,8 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.B_inactive = np.hstack([B_mE * active_signs[None, :], np.identity((p-E))])
         self.B_p = np.vstack((self.B_active,self.B_inactive))
 
+        self.B_p_inv = np.linalg.inv(self.B_p.T)
+
         self.offset_active = active_signs * lagrange[active]
         self.inactive_subgrad = np.zeros(p - E)
 
@@ -113,9 +115,11 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         _barrier_star = barrier_conjugate_softmax_scaled(self.cube_bool, self.inactive_lagrange)
 
+        #_barrier_star = barrier_conjugate_log(self.cube_bool, self.inactive_lagrange)
+
         self.conjugate_barrier = rr.affine_smooth(_barrier_star, np.identity(p))
 
-        self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -np.linalg.inv(self.B_p.T))
+        self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -self.B_p_inv)
 
         self._linear_term = linear_map(p, self.dual_arg)
 
@@ -135,7 +139,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
 
-        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_permute.dot(np.linalg.inv(self.B_p.T)))
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_permute.dot(self.B_p_inv))
 
     def _smooth_objective(self, param, mode='both', check_feasibility=False):
 
