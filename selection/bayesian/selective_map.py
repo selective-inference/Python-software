@@ -92,7 +92,7 @@ class bayesian_inference():
                + np.true_divide(true_param, self.prior_variance) - \
                np.true_divide(self.generative_X.T.dot(self.y),self.noise_variance)
 
-    def posterior_samples(self, Langevin_steps = 5000, burnin = 200):
+    def posterior_samples(self, Langevin_steps = 1000, burnin = 200):
         state = np.zeros(self.generative_X.shape[1])
         gradient_map = lambda x : -self.gradient_posterior(x)
         projection_map = lambda x : x

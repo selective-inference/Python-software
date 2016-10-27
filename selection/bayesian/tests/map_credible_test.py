@@ -16,8 +16,8 @@ from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map
 
 
 def test_inf_regreg():
-    n = 50
-    p = 10
+    n = 20
+    p = 60
     s = 3
     snr = 5
 
@@ -39,7 +39,7 @@ def test_inf_regreg():
     dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
     lagrange = lam * np.ones(p)
     generative_X = X_1[:, active]
-    prior_variance = 1000
+    prior_variance = 1
 
     inf_rr = selective_map_credible(y,
                                     X_1,
@@ -56,9 +56,8 @@ def test_inf_regreg():
 
     map = inf_rr.map_solve_2(nstep = 100)[::-1]
 
-    #print ("gradient at map", -inf_rr.smooth_objective(map_solver[0], mode='func'))
-    print("map objective, map", map[0], map[1])
-    #print
-    #inf_rr.posterior_samples()
+    print ("gradient at map", -inf_rr.smooth_objective(map[1], mode='grad'))
+    print ("map objective, map", map[0], map[1])
+    print(inf_rr.posterior_samples())
 
 test_inf_regreg()
