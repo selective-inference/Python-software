@@ -217,7 +217,8 @@ def target(loss,
            queries,
            subset=None, 
            bootstrap=False,
-           solve_args={'min_its':50, 'tol':1.e-10}):
+           solve_args={'min_its':50, 'tol':1.e-10},
+           reference=None):
     """
     Form target from self.loss
     restricting to active variables.
@@ -246,6 +247,11 @@ def target(loss,
     bootstrap : bool
        If True, sampler returned uses bootstrap
        otherwise uses a plugin CLT.
+
+    reference : np.float (optional)
+       Optional reference parameter. Defaults
+       to the observed reference parameter. 
+       Must have shape `active.sum()`.
 
     solve_args : dict
        Args used to solve restricted M estimator.
@@ -287,6 +293,9 @@ def target(loss,
     queries.setup_sampler(form_covariances)
     queries.setup_opt_state()
 
+    if reference is None:
+        reference = target_observed
+
     if bootstrap:
         alpha_mat = set_alpha_matrix(loss, active, inactive=inactive)
         alpha_subset = np.ones(alpha_mat.shape[0], np.bool)
@@ -296,11 +305,11 @@ def target(loss,
         target_sampler = queries.setup_bootstrapped_target(_target,
                                                            target_observed,
                                                            alpha_mat,
-                                                           reference=target_observed)
+                                                           reference=reference)
     else:
         target_sampler = queries.setup_target(_target,
                                               target_observed,
-                                              reference=target_observed)
+                                              reference=reference)
     return target_sampler, target_observed
 
 class glm_group_lasso(M_estimator):

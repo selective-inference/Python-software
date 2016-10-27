@@ -20,11 +20,11 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True, test = 'selected zeros'): 
-    s, n, p = 0, 600, 10
+def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=False, test = 'selected zeros'): 
+    s, n, p = 3, 600, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=4)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -61,12 +61,15 @@ def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=True, test = 'sele
         active_set = np.nonzero(active_union)[0]
 
         if test == 'selected zeros':
-            inactive_selected = [active_union[i] and i not in nonzero for i in range(p)]
+            inactive_selected = np.array([active_union[i] and i not in nonzero for i in range(p)])
+            true_active = (beta != 0)
+            reference = np.zeros(inactive_selected.sum())
             target_sampler, target_observed = glm_target(loss,
-                                                         active_union,
+                                                         true_active,
                                                          mv,
                                                          subset=inactive_selected,
-                                                         bootstrap=bootstrap)
+                                                         bootstrap=bootstrap,
+                                                         reference=reference)
         else:
             target_sampler, target_observed = glm_target(loss,
                                                          active_union,
@@ -91,7 +94,7 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=5)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -127,11 +130,12 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
         for j in range(nactive):
 
             subset = np.zeros(p, np.bool)
-            subset[j] = True
+            subset[active_set[j]] = True
             target_sampler, target_observed = glm_target(loss,
-                                                         active_union,
+                                                         active_union * (1 - subset),
                                                          mv,
-                                                         subset=subset)
+                                                         subset=subset,
+                                                         reference=np.zeros((1,)))
             test_stat = lambda x: np.atleast_1d(x)
 
             pval = target_sampler.hypothesis_test(test_stat,
@@ -140,6 +144,10 @@ def test_multiple_queries_individual_coeff(ndraw=10000, burnin=2000):
                                                   ndraw=ndraw,
                                                   burnin=burnin)
             pvalues.append(pval)
+
+        active_var = np.zeros_like(pvalues, np.bool)
+        _nonzero = np.array([i in nonzero for i in active_set])
+        active_var[_nonzero] = True
 
         return pvalues, [active_set[j] in nonzero for j in range(nactive)]
 
@@ -210,7 +218,8 @@ def report(niter=50):
     # these are all our null tests
     fn_names = ['test_parametric_covariance',
                 'test_multiple_queries',
-                'test_multiple_queries_individual_coeff']
+                'test_multiple_queries_individual_coeff'
+                ]
 
     dfs = []
     for fn in fn_names:
