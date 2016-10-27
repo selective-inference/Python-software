@@ -69,12 +69,12 @@ class bayesian_inference():
                                                      self.epsilon)
 
         if self.n + self.E > self.p:
-            sel_prob_dual = dual_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+            sel_prob_dual = dual_sol.minimize2(nstep = 60)[::-1]
             optimal_dual = mean_parameter - (dual_sol.X_permute.dot(np.linalg.inv(dual_sol.B_p.T))).dot(sel_prob_dual[1])
             return self.generative_X.T.dot(np.true_divide(optimal_dual,self.noise_variance)), sel_prob_dual[0]
 
         else:
-            sel_prob_primal = primal_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+            sel_prob_primal = primal_sol.minimize2(nstep = 60)[::-1]
             optimal_primal = (sel_prob_primal[1])[:self.n]
             return self.generative_X.T.dot(np.true_divide(optimal_primal,self.noise_variance)), -sel_prob_primal[0]
 

@@ -30,6 +30,8 @@ class sel_prob_gradient_map(rr.smooth_atom):
         self.n, self.p = X.shape
         self.dim = generative_X.shape[1]
 
+        self.noise_variance = noise_variance
+
         (self.X, self.primal_feasible, self.dual_feasible, self.active, self.active_signs, self.lagrange,
          self.generative_X, self.noise_variance, self.randomizer, self.epsilon) = \
             (X, primal_feasible, dual_feasible, active, active_signs, lagrange, generative_X, noise_variance,
@@ -67,14 +69,14 @@ class sel_prob_gradient_map(rr.smooth_atom):
                                                      self.epsilon)
 
         if self.n + self.E > self.p:
-            sel_prob_dual = dual_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+            sel_prob_dual = dual_sol.minimize2(nstep=60)[::-1]
             optimal_dual = mean_parameter - (dual_sol.X_permute.dot(np.linalg.inv(dual_sol.B_p.T))).\
                 dot(sel_prob_dual[1])
             sel_prob_val = sel_prob_dual[0]
             optimizer = self.generative_X.T.dot(np.true_divide(optimal_dual - mean_parameter, self.noise_variance))
 
         else:
-            sel_prob_primal = primal_sol.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+            sel_prob_primal = primal_sol.minimize2(nstep=60)[::-1]
             optimal_primal = (sel_prob_primal[1])[:self.n]
             sel_prob_val = -sel_prob_primal[0]
             optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
@@ -115,7 +117,7 @@ class selective_map_credible(rr.smooth_atom):
 
         self.generative_X = generative_X
 
-        initial = np.zeros(self.E, )
+        initial = np.squeeze(primal_feasible * active_signs[None,:])
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -181,14 +183,16 @@ class selective_map_credible(rr.smooth_atom):
         grad = lambda u: self.smooth_objective(u, 'grad')
 
         for itercount in range(nstep):
+
             newton_step = grad(current)
+                          #* self.noise_variance
 
             # make sure proposal is a descent
-
             count = 0
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
+
                 if proposed_value <= current_value:
                     break
                 step *= 0.5

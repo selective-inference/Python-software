@@ -220,7 +220,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
             if itercount % 4 == 0:
                 step *= 2
 
-        print('iter', itercount)
+        #print('iter', itercount)
         value = objective(current)
         return current, value
 

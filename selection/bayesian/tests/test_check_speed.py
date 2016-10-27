@@ -210,6 +210,7 @@ def regreg_iterations_test():
 
 ###dual problem
 #checking how close dual is to primal
+
 #low dim regime same as HIV data set
 def dual_primal_speed_low():
     n = 600
@@ -281,7 +282,7 @@ def dual_primal_speed_low():
 
 #dual_primal_speed_low()
 
-#high dim regime same
+#high dim regime
 def dual_primal_speed_high():
     n = 40
     p = 150
@@ -350,5 +351,5 @@ def dual_primal_speed_high():
     return _regreg[0]
 
 
-dual_primal_speed_high()
+#dual_primal_speed_high()
 
