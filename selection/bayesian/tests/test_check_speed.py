@@ -210,7 +210,8 @@ def regreg_iterations_test():
 
 ###dual problem
 #checking how close dual is to primal
-def dual_primal_speed():
+#low dim regime same as HIV data set
+def dual_primal_speed_low():
     n = 600
     p = 90
     s = 10
@@ -278,4 +279,76 @@ def dual_primal_speed():
     return _regreg[0]
 
 
-dual_primal_speed()
+#dual_primal_speed_low()
+
+#high dim regime same
+def dual_primal_speed_high():
+    n = 40
+    p = 150
+    s = 10
+    snr = 5
+
+    # sampling the Gaussian instance
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    random_Z = np.random.standard_normal(p)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    print(epsilon, lam, betaE, betaE.shape[0])
+    noise_variance = 1
+    nactive = betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau = 1  # randomization_variance
+    dual_feasible = np.ones(p)
+    dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+    primal_feasible = np.fabs(betaE)
+
+    if nactive > 1:
+        #parameter = true_beta[active]
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+
+        primal_regreg = selection_probability_objective(X_1,
+                                                        primal_feasible,
+                                                        active,
+                                                        active_signs,
+                                                        lagrange,
+                                                        mean,
+                                                        noise_variance,
+                                                        randomization.isotropic_gaussian((p,), 1.),
+                                                        epsilon)
+
+        dual_regreg = selection_probability_dual_objective(X_1,
+                                                           dual_feasible,
+                                                           active,
+                                                           active_signs,
+                                                           lagrange,
+                                                           mean,
+                                                           noise_variance,
+                                                           randomization.isotropic_gaussian((p,), tau),
+                                                           epsilon)
+
+
+        toc = time.time()
+        _regreg_dual = dual_regreg.minimize(max_its=1000, min_its=50, tol=1.e-10)[::-1]
+        tic = time.time()
+        print('dual time', tic - toc)
+
+        toc = time.time()
+        _regreg2_dual = dual_regreg.minimize2(nstep=50)[::-1]
+        tic = time.time()
+        print('dual time', tic - toc)
+
+        toc = time.time()
+        _regreg = primal_regreg.minimize2(nstep=50)[::-1]
+        tic = time.time()
+        print('primal time', tic - toc)
+
+        print(_regreg_dual[0], _regreg2_dual[0], _regreg[0])
+    return _regreg[0]
+
+
+dual_primal_speed_high()
+
