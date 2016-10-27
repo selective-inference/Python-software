@@ -58,6 +58,13 @@ def test_inf_regreg():
 
     print ("gradient at map", -inf_rr.smooth_objective(map[1], mode='grad'))
     print ("map objective, map", map[0], map[1])
-    print(inf_rr.posterior_samples())
+    toc = time.time()
+    samples = inf_rr.posterior_samples()
+    tic = time.time()
+    print('sampling time', tic - toc)
+    return samples
 
-test_inf_regreg()
+post_samples = test_inf_regreg()
+print(np.percentile(post_samples, 5, axis=0), np.percentile(post_samples, 95, axis=0))
+
+
