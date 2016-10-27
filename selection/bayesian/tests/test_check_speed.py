@@ -209,11 +209,11 @@ def regreg_iterations_test():
 #regreg_iterations_test()
 
 ###dual problem
-
+#checking how close dual is to primal
 def dual_primal_speed():
-    n = 10
-    p = 30
-    s = 5
+    n = 600
+    p = 90
+    s = 10
     snr = 5
 
     # sampling the Gaussian instance
@@ -223,7 +223,7 @@ def dual_primal_speed():
     sel = selection(X_1, y, random_Z)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
-    print(epsilon, lam, betaE, true_beta)
+    print(epsilon, lam, betaE, betaE.shape[0])
     noise_variance = 1
     nactive = betaE.shape[0]
     active_signs = np.sign(betaE)
@@ -260,19 +260,19 @@ def dual_primal_speed():
 
 
         toc = time.time()
-        _regreg_dual = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-10)[::-1]
+        _regreg_dual = dual_regreg.minimize(max_its=1000, min_its=50, tol=1.e-10)[::-1]
         tic = time.time()
         print('dual time', tic - toc)
 
         toc = time.time()
-        _regreg2_dual = dual_regreg.minimize2(nstep=100, tol=1.e-10)[::-1]
+        _regreg2_dual = dual_regreg.minimize2(nstep=50)[::-1]
         tic = time.time()
         print('dual time', tic - toc)
 
         toc = time.time()
-        _regreg = primal_regreg.minimize2(nstep=100)[::-1]
+        _regreg = primal_regreg.minimize2(nstep=50)[::-1]
         tic = time.time()
-        print('primal', tic - toc)
+        print('primal time', tic - toc)
 
         print(_regreg_dual[0], _regreg2_dual[0], _regreg[0])
     return _regreg[0]
