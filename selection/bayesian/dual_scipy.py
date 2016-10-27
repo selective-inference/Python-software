@@ -5,7 +5,7 @@ def cube_barrier_softmax_coord(z, lam):
     _diff = z - lam
     _sum = z + lam
     if -lam + np.power(10, -10) < z < lam - np.power(10, -10):
-        return np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum))
+        return np.log((_diff - lam) * (_sum + lam) / (_diff * _sum))
     else:
         return 2 * np.log(1+(10 ** 10))
 
@@ -24,7 +24,7 @@ def softmax_barrier_conjugate(cube_bool, lagrange, arg):
     def cube_conjugate_grad(z,u,j):
         _diff = z - lagrange[j]  # z - \lambda < 0
         _sum = z + lagrange[j]  # z + \lambda > 0
-        return u -(1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum)
+        return u -(1. / (_diff - lagrange[j]) - 1. / _diff + 1. / (_sum + lagrange[j]) - 1. / _sum)
 
     #cube_val = 0
     #for i in range(cube_arg.shape[0]):
@@ -41,8 +41,8 @@ def softmax_barrier_conjugate(cube_bool, lagrange, arg):
         cube_maximizer[i]= bisect(cube_conjugate_grad, a= -lagrange[j]+10**-10, b= lagrange[j]-10**-10, args=(u,j),
                                   rtol=4.4408920985006262e-5, maxiter=32)
 
-    cube_val = np.sum(cube_maximizer * cube_arg - np.log(1.+(1./lagrange - cube_maximizer))
-                      - np.log(1.+(1./lagrange + cube_maximizer)))
+    cube_val = np.sum(cube_maximizer * cube_arg - np.log(1.+(lagrange/(lagrange - cube_maximizer)))
+                      - np.log(1.+(lagrange/(lagrange + cube_maximizer))))
 
     orthant_arg = arg[orthant_bool]
 
@@ -138,7 +138,8 @@ class dual_selection_probability_func():
         return v.T.dot(self.dual_arg)
 
     def dual_objective(self,v):
-        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)+ self.linear_term(v)
+        return self.rand_CGF(v)+self.data_CGF(v)+ self.composed_barrier_conjugate(v)+ self.linear_term(v)\
+               -np.true_divide(self.mean_parameter.dot(self.mean_parameter), 2 * self.noise_variance)
 
     def minimize_dual(self):
         bounds = []

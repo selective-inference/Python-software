@@ -36,7 +36,7 @@ def one_sparse_minimizations():
     primal_feasible = np.fabs(betaE)
 
     if nactive == 1:
-        snr_seq = np.linspace(9, 20, num=25)
+        snr_seq = np.linspace(0, 20, num=5)
         #snr_seq = np.hstack([snr_seq[:25], snr_seq[25:][::-1]])
         #snr_seq = snr_seq[25:][::-1]
         lagrange = lam * np.ones(p)

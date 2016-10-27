@@ -14,7 +14,7 @@ from selection.bayesian.selection_probability import selection_probability_metho
 from selection.bayesian.dual_scipy import dual_selection_probability_func
 from selection.bayesian.dual_optimization import selection_probability_dual_objective
 
-
+###primal problem
 #deciding how close regreg is to scipy
 def primal_speed():
     n = 100
@@ -206,4 +206,82 @@ def regreg_iterations_test():
 
         return  _regreg2[0], _regreg1[0]
 
-regreg_iterations_test()
+#regreg_iterations_test()
+
+###dual problem
+
+def dual_speed():
+    n = 10
+    p = 30
+    s = 5
+    snr = 5
+
+    # sampling the Gaussian instance
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    random_Z = np.random.standard_normal(p)
+    # getting randomized Lasso solution
+    sel = selection(X_1, y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+    print(epsilon, lam, betaE, true_beta)
+    noise_variance = 1
+    nactive = betaE.shape[0]
+    active_signs = np.sign(betaE)
+    tau = 1  # randomization_variance
+    dual_feasible = np.ones(p)
+    dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+    if nactive > 1:
+        #parameter = true_beta[active]
+        parameter = np.random.standard_normal(nactive)
+        lagrange = lam * np.ones(p)
+        mean = X_1[:, active].dot(parameter)
+
+        dual_scipy = dual_selection_probability_func(X_1, dual_feasible, active, active_signs, lagrange, mean,
+                                                     noise_variance, tau, epsilon)
+
+        dual_regreg = selection_probability_dual_objective(X_1,
+                                                           dual_feasible,
+                                                           active,
+                                                           active_signs,
+                                                           lagrange,
+                                                           mean,
+                                                           noise_variance,
+                                                           randomization.isotropic_gaussian((p,), tau),
+                                                           epsilon)
+
+        toc = time.time()
+        dual_scipy_val = dual_scipy.minimize_dual()
+        tic = time.time()
+        print('scipy time', tic - toc)
+
+        _scipy = [dual_scipy_val[0], dual_scipy_val[1]]
+
+        toc = time.time()
+        _regreg = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-10)[::-1]
+        tic = time.time()
+        print('regreg time', tic - toc)
+
+        toc = time.time()
+        _regreg2 = dual_regreg.minimize2(nstep=100)[::-1]
+        tic = time.time()
+        print('regreg2', tic - toc)
+
+        obj1 = dual_scipy.dual_objective
+        obj2 = lambda x: dual_regreg.total_loss.objective(x, 'func')
+
+        print(_scipy, _regreg)
+        #print("value and minimizer- scipy", obj1(_scipy[1]), obj2(_scipy[1]))
+        #print("value and minimizer- regreg1", obj1(_regreg[1]), obj2(_regreg[1]))
+        #print("value and minimizer- regreg2", obj1(_regreg2[1]), obj2(_regreg2[1]))
+
+        test = np.ones(p)
+        test[:nactive] = -np.fabs(np.random.standard_normal(nactive))
+
+        print('check objectives', obj1(test), obj2(test))
+        np.testing.assert_allclose(obj1(test), obj2(test), rtol=1.e-5)
+
+    return _scipy[0], _regreg[0]
+
+
+dual_speed()

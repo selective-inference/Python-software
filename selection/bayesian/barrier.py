@@ -161,7 +161,7 @@ class barrier_conjugate_softmax(rr.smooth_atom):
         def cube_conjugate_grad(z, u, j):
             _diff = z - self.lagrange[j]  # z - \lambda < 0
             _sum = z + self.lagrange[j]  # z + \lambda > 0
-            return u - (1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum)
+            return u - (1. / (_diff - self.lagrange[j]) - 1. / _diff + 1. / (_sum + self.lagrange[j]) - 1. / _sum)
 
         #def cube_conjugate(z, u, j):
         #    return -u * z + cube_barrier_softmax_coord(z, self.lagrange[j])
@@ -178,12 +178,12 @@ class barrier_conjugate_softmax(rr.smooth_atom):
         for i in range(cube_arg.shape[0]):
             u = cube_arg[i]
             j = i
-            cube_maximizer[i] = bisect(cube_conjugate_grad, a=-self.lagrange[j] + 10 ** -10,
-                                       b=self.lagrange[j] - 10 ** -10, args=(u, j),
+            cube_maximizer[i] = bisect(cube_conjugate_grad, a=-self.lagrange[j] + 1e-10,
+                                       b=self.lagrange[j] - 1e-10, args=(u, j),
                                        rtol=4.4408920985006262e-5, maxiter=32)
 
-        cube_val = np.sum(cube_maximizer * cube_arg - np.log(1. + (1. / self.lagrange - cube_maximizer))
-                          - np.log(1. + (1. / self.lagrange + cube_maximizer)))
+        cube_val = np.sum(cube_maximizer * cube_arg - np.log(1. + (self.lagrange / self.lagrange - cube_maximizer))
+                          - np.log(1. + (self.lagrange / self.lagrange + cube_maximizer)))
 
         if mode == 'func':
             return cube_val + orthant_val
@@ -243,7 +243,7 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
-    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
+    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-12):
 
         # here we compute those expressions in the note
 
@@ -254,6 +254,7 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
         orthant_arg = arg[self.orthant_bool]
 
         if check_feasibility and np.any(orthant_arg >= -tol):
+            raise ValueError('returning nan gradient')
             if mode == 'func':
                 return np.inf
             elif mode == 'grad':
@@ -265,6 +266,10 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
 
         orthant_maximizer = (- 0.5*self.barrier_scale) + np.sqrt((0.25*(self.barrier_scale**2)) -
                                                                  (self.barrier_scale / orthant_arg))
+
+        if np.any(np.isnan(orthant_maximizer)):
+            raise ValueError('maximizer is nan')
+
         orthant_val = np.sum(orthant_maximizer * orthant_arg -
                              np.log(1 + (self.barrier_scale / orthant_maximizer)))
 
@@ -289,9 +294,12 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
         for i in range(cube_arg.shape[0]):
             u = cube_arg[i]
             j = i
-            cube_maximizer[i] = bisect(cube_conjugate_grad, a=-self.lagrange[j] + 10 ** -10,
-                                       b=self.lagrange[j] - 10 ** -10, args=(u, j),
+            cube_maximizer[i] = bisect(cube_conjugate_grad, a=-self.lagrange[j] + 1e-10,
+                                       b=self.lagrange[j] - 1e-10, args=(u, j),
                                        rtol=4.4408920985006262e-5, maxiter=32)
+
+        if np.any(np.isnan(cube_maximizer)):
+            raise ValueError('cube maximizer is nan')
 
         cube_val = np.sum(cube_maximizer * cube_arg - np.log(1. + ((self.cube_scale*self.lagrange)
                                                                    / (self.lagrange - cube_maximizer)))

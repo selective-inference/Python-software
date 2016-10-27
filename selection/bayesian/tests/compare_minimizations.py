@@ -655,7 +655,7 @@ def primal_dual_minimizations():
     #print('loc1')
 
     if nactive > 1:
-        parameter = 10*np.random.standard_normal(nactive)
+        parameter = 5*np.random.standard_normal(nactive)
         lagrange = lam * np.ones(p)
         mean = X_1[:, active].dot(parameter)
 
@@ -668,6 +668,7 @@ def primal_dual_minimizations():
                                                         noise_variance,
                                                         randomization.isotropic_gaussian((p,), 1.),
                                                         epsilon)
+
         dual_regreg = selection_probability_dual_objective(X_1,
                                                            dual_feasible,
                                                            active,
@@ -679,14 +680,14 @@ def primal_dual_minimizations():
                                                            epsilon)
 
         toc = time.time()
-        primal_val = primal_regreg.minimize(max_its=1000, min_its=500, tol=1.e-12)[::-1]
+        primal_val = primal_regreg.minimize2(nstep=50, tol=1.e-8)[::-1]
         tic = time.time()
         print('primal time', tic-toc)
 
         primal_sol = primal_val[1]
 
         toc = time.time()
-        dual_val = dual_regreg.minimize(max_its=2000, min_its=1000, tol=1.e-12)[::-1]
+        dual_val = dual_regreg.minimize2(nstep=50, tol=1.e-8)[::-1]
         tic = time.time()
         print('dual time', tic-toc)
 

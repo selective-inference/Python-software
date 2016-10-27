@@ -80,6 +80,8 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.coefs[:] = feasible_point
 
+        mean_parameter = np.squeeze(mean_parameter)
+
         self.active = active
 
         X_E = self.X_E = X[:, active]
@@ -93,14 +95,16 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.active_slice[:active.sum()] = True
 
         self.B_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_signs[None, :],np.zeros((E,p-E))])
-        self.B_inactive = np.hstack([B_mE * active_signs[None, :],np.identity((p-E))])
+        self.B_inactive = np.hstack([B_mE * active_signs[None, :], np.identity((p-E))])
         self.B_p = np.vstack((self.B_active,self.B_inactive))
 
         self.offset_active = active_signs * lagrange[active]
         self.inactive_subgrad = np.zeros(p - E)
 
         self.cube_bool = np.zeros(p, np.bool)
+
         self.cube_bool[E:] = 1
+
         self.dual_arg = np.linalg.inv(self.B_p).dot(np.append(self.offset_active, self.inactive_subgrad))
 
         self._opt_selector = rr.selector(~self.cube_bool, (p,))
@@ -115,7 +119,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self._linear_term = linear_map(p, self.dual_arg)
 
-        self.constant = np.true_divide(np.squeeze(mean_parameter).dot(np.squeeze(mean_parameter)), 2*noise_variance)
+        self.constant = np.true_divide(mean_parameter.dot(mean_parameter), 2*noise_variance)
 
         self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg, -self.constant)
 
@@ -132,7 +136,6 @@ class selection_probability_dual_objective(rr.smooth_atom):
         self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
 
         self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_permute.dot(np.linalg.inv(self.B_p.T)))
-
 
     def _smooth_objective(self, param, mode='both', check_feasibility=False):
 
@@ -154,7 +157,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         nonpos_con = self._opt_selector.output_shape[0]
         constraint = rr.separable(self.shape,
-                                  [rr.nonpositive((nonpos_con,), offset=1.e-12 * np.ones(nonpos_con))],
+                                  [rr.nonpositive((nonpos_con,), offset=-1.e-12 * np.ones(nonpos_con))],
                                   [self._opt_selector.index_obj])
 
         problem = rr.separable_problem.fromatom(constraint, self.total_loss)
