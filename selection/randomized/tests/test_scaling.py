@@ -109,7 +109,11 @@ def test_scaling(snr=15,
         print(target_sampler.crude_lipschitz(), 'crude')
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(null_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -127,7 +131,11 @@ def test_scaling(snr=15,
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(active_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # null selected
@@ -148,7 +156,11 @@ def test_scaling(snr=15,
         print(target_sampler.crude_lipschitz(), 'crude')
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(null_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # true selected
@@ -166,7 +178,11 @@ def test_scaling(snr=15,
         target_sampler = mv.setup_target(active_target, active_observed)#, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(active_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # condition on opt variables
@@ -191,7 +207,11 @@ def test_scaling(snr=15,
             print(target_sampler.crude_lipschitz(), 'crude')
 
             test_stat = lambda x: x[0]
-            pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+            pval = target_sampler.hypothesis_test(test_stat, 
+                                                  test_stat(null_observed), 
+                                                  burnin=burnin, 
+                                                  ndraw=ndraw, 
+                                                  stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
             pvalues.append(pval)
 
             # true saturated
@@ -210,7 +230,11 @@ def test_scaling(snr=15,
             target_sampler = mv.setup_target(active_target, active_observed)
 
             test_stat = lambda x: x[0]
-            pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+            pval = target_sampler.hypothesis_test(test_stat, 
+                                                  test_stat(active_observed), 
+                                                  burnin=burnin, 
+                                                  ndraw=ndraw, 
+                                                  stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
             pvalues.append(pval)
 
         # true selected
