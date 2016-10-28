@@ -85,7 +85,7 @@ def cube_subproblem_fs(argument,
     value = objective(current)
     return current, value
 
-class cube_objective(rr.smooth_atom):
+class cube_objective_fs(rr.smooth_atom):
     def __init__(self,
                  randomization_CGF_conjugate,
                  lagrange,
