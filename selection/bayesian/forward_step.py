@@ -2,8 +2,8 @@ import numpy as np
 
 from selection.algorithms.softmax import nonnegative_softmax
 import regreg.api as rr
-from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled,
-nonnegative_softmax_scaled
+from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
+from selection.algorithms.softmax import nonnegative_softmax
 
 def cube_subproblem_fs(argument,
                            c,
@@ -156,12 +156,11 @@ class selection_probability_objective_fs(rr.smooth_atom):
                  X,
                  feasible_point,
                  active,
-                 active_signs,
-                 lagrange,
+                 active_sign,
                  mean_parameter,  # in R^n
                  noise_variance,
                  randomizer,
-                 epsilon,
+                 epsilon = 0.,
                  coef=1.,
                  offset=None,
                  quadratic=None,
@@ -200,7 +199,7 @@ class selection_probability_objective_fs(rr.smooth_atom):
         """
 
         n, p = X.shape
-        E = active.sum()
+        E = 1
         self._X = X
         self.active = active
         self.noise_variance = noise_variance
@@ -210,8 +209,6 @@ class selection_probability_objective_fs(rr.smooth_atom):
         if self.active_conjugate is None:
             raise ValueError(
                 'randomization must know its CGF_conjugate -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
-
-        self.inactive_lagrange = lagrange[~active]
 
         initial = np.zeros(n + E, )
         initial[n:] = feasible_point
@@ -225,9 +222,8 @@ class selection_probability_objective_fs(rr.smooth_atom):
 
         self.coefs[:] = initial
 
-        self.active = active
-        nonnegative = nonnegative_softmax_scaled(E)  # should there be a
-        # scale to our softmax?
+        nonnegative = nonnegative_softmax(E)
+
         opt_vars = np.zeros(n + E, bool)
         opt_vars[n:] = 1
 
@@ -236,27 +232,20 @@ class selection_probability_objective_fs(rr.smooth_atom):
         self._response_selector = rr.selector(~opt_vars, (n + E,))
 
         X_E = self.X_E = X[:, active]
-        B = X.T.dot(X_E)
 
-        B_E = B[active]
-        B_mE = B[~active]
+        self.A_active = np.hstack([-X[:, active].T, active_sign])
+        self.A_inactive_1 = np.hstack([-X[:, ~active].T, np.zeros(p-E)])
+        self.A_inactive_2 = np.hstack([np.zeros(n).T, np.ones(E).T])
+        self.A_inactive = np.hvstack([self.A_inactive_1, self.A_inactive_2])
 
-        self.A_active = np.hstack([-X[:, active].T, (B_E + epsilon * np.identity(E)) * active_signs[None, :]])
-        self.A_inactive = np.hstack([-X[:, ~active].T, (B_mE * active_signs[None, :])])
-
-        self.offset_active = active_signs * lagrange[active]
+        self.offset_active = active_sign
 
         # defines \gamma and likelihood loss
         self.set_parameter(mean_parameter, noise_variance)
 
-        self.inactive_subgrad = np.zeros(p - E)
+        self.active_conj_loss = rr.affine_smooth(self.active_conjugate, self.A_active)
 
-        self.active_conj_loss = rr.affine_smooth(self.active_conjugate,
-                                                 rr.affine_transform(self.A_active, self.offset_active))
-
-        cube_obj = cube_objective(self.inactive_conjugate,
-                                  lagrange[~active],
-                                  nstep=nstep)
+        cube_obj = cube_objective_fs(self.inactive_conjugate)
 
         self.cube_loss = rr.affine_smooth(cube_obj, self.A_inactive)
 
