@@ -2,7 +2,8 @@ import numpy as np
 
 from selection.algorithms.softmax import nonnegative_softmax
 import regreg.api as rr
-from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
+from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled,
+nonnegative_softmax_scaled
 
 def cube_subproblem_fs(argument,
                            c,
@@ -83,4 +84,70 @@ def cube_subproblem_fs(argument,
 
     value = objective(current)
     return current, value
+
+class cube_objective(rr.smooth_atom):
+    def __init__(self,
+                 randomization_CGF_conjugate,
+                 lagrange,
+                 nstep=10,
+                 tol=1.e-10,
+                 initial=None,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+
+        (self.randomization_CGF_conjugate,
+         self.lagrange,
+         self.nstep,
+         self.tol) = (randomization_CGF_conjugate,
+                      lagrange,
+                      nstep,
+                      tol)
+
+        rr.smooth_atom.__init__(self,
+                                randomization_CGF_conjugate.shape,
+                                initial=initial,
+                                coef=coef,
+                                offset=offset,
+                                quadratic=quadratic)
+
+    def smooth_objective(self, arg, mode='both', check_feasibility=False):
+
+        arg = self.apply_offset(arg)
+
+        arg_shape = arg.shape[0]
+
+        c_bool = np.zeros(arg_shape, bool)
+
+        c_bool[(arg_shape-1):] = 1
+
+        z = arg[~c_bool]
+
+        c = arg[c_bool]
+
+        optimizer, value = cube_subproblem_fs(z,
+                                              c,
+                                              self.randomization_CGF_conjugate,
+                                              self.lagrange,
+                                              nstep=self.nstep,
+                                              tol=self.tol)
+
+        gradient_z = z + (c * optimizer)
+
+        gradient_max_c = -np.true_divide((2* c* optimizer) + z, (c**2 + cube_hessian_scaled(optimizer, lagrange = 1.)))
+
+        gradient_c = (c* z.T + cube_gradient_scaled(optimizer, lagrange = 1.).T + ((c**2)*optimizer.T)).\
+            dot(gradient_max_c) + (c*np.power(optimizer, 2.)) + optimizer.T.dot(z)
+
+        gradient = np.vstack([gradient_z, gradient_c])
+
+        if mode == 'func':
+            return self.scale(value)
+        elif mode == 'grad':
+            return self.scale(gradient)
+        elif mode == 'both':
+            return self.scale(value), self.scale(gradient)
+        else:
+            raise ValueError("mode incorrectly specified")
+
 
