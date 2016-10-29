@@ -4,7 +4,7 @@ from selection.bayesian.selection_probability.rr import cube_subproblem_scaled, 
     cube_gradient_scaled, cube_hessian_scaled, cube_objective
 import regreg.api as rr
 
-class selection_probability_objective(rr.smooth_atom):
+class selection_probability_objective_ms(rr.smooth_atom):
     def __init__(self,
                  T,
                  feasible_point,
