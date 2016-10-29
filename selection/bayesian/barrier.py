@@ -585,10 +585,10 @@ def cube_conjugate(cube_argument,
 
     linear = linear_map(cube_argument)
 
-    objective = lambda z: -cube_barrier_scaled(z, lagrange) - linear.smooth_objective(z, 'func')
+    objective = lambda z: cube_barrier_scaled(z, lagrange) - linear.smooth_objective(z, 'func')
 
     for itercount in range(nstep):
-        newton_step = ((cube_gradient_scaled(current, lagrange) + cube_argument)/
+        newton_step = ((cube_gradient_scaled(current, lagrange) - cube_argument)/
                        (cube_hessian_scaled(current, lagrange) + lipschitz))
 
         # make sure proposal is a descent

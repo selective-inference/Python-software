@@ -1,4 +1,5 @@
 from __future__ import print_function
+import time
 from scipy.optimize import minimize
 import numpy as np
 import regreg.api as rr
@@ -250,17 +251,25 @@ def test_barrier_conjugate():
 
 def test_barrier_conjugate_softmax():
 
-    p = 10
+    p = 100
     cube_bool = np.zeros(p, np.bool)
-    cube_bool[:4] = 1
+    cube_bool[:10] = 1
     #lagrange = np.arange(4) + 1
-    lagrange = np.random.uniform(low=1.0, high=2.0, size=4)
+    lagrange = np.random.uniform(low=1.0, high=2.0, size=10)
     #print(lagrange)
+    toc = time.time()
     _barrier_star_1 = barrier_conjugate_softmax_scaled(cube_bool, lagrange)
+    tic = time.time()
+    print("time scipy", tic-toc)
+
+    toc = time.time()
     _barrier_star_2 = barrier_conjugate_softmax_scaled_rr(cube_bool, lagrange)
+    tic = time.time()
+    print("time regreg", tic - toc)
+
     arg = np.zeros(p)
-    arg[cube_bool] = np.random.standard_normal(4)
-    arg[~cube_bool] = - np.fabs(np.random.standard_normal(6))
+    arg[cube_bool] = np.random.standard_normal(10)
+    arg[~cube_bool] = - np.fabs(np.random.standard_normal(90))
 
     print(_barrier_star_1.smooth_objective(arg, mode='func'),
           _barrier_star_2.smooth_objective(arg, mode='func'))
