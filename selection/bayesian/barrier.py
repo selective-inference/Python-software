@@ -2,8 +2,6 @@ import numpy as np
 import regreg.api as rr
 from scipy.optimize import bisect, minimize
 from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
-from selection.bayesian.dual_optimization import linear_map
-
 
 def cube_barrier_softmax_coord(z, lam):
     _diff = z - lam
@@ -443,6 +441,36 @@ class barrier_conjugate_softmax_scaled(rr.smooth_atom):
             raise ValueError('mode incorrectly specified')
 
 ###########################################################
+class linear_map(rr.smooth_atom):
+    def __init__(self,
+                 dual_arg,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+
+        self.dual_arg = dual_arg
+        p = self.dual_arg.shape[0]
+        rr.smooth_atom.__init__(self,
+                                (p,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                coef=coef)
+
+    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
+        arg = self.apply_offset(arg)
+
+        if mode == 'func':
+            f = self.dual_arg.T.dot(arg)
+            return f
+        elif mode == 'grad':
+            g = self.dual_arg
+            return g
+        elif mode == 'both':
+            f = self.dual_arg.T.dot(arg)
+            g = self.dual_arg
+            return f, g
+        else:
+            raise ValueError('mode incorrectly specified')
 
 class barrier_conjugate_softmax_scaled_rr(rr.smooth_atom):
     """
@@ -555,7 +583,9 @@ def cube_conjugate(cube_argument,
 
     step = np.ones(k, np.float)
 
-    objective = lambda z: -cube_barrier_scaled(z, lagrange) - linear_map(cube_argument.shape[0],cube_argument)
+    linear = linear_map(cube_argument)
+
+    objective = lambda z: -cube_barrier_scaled(z, lagrange) - linear.smooth_objective(z, 'func')
 
     for itercount in range(nstep):
         newton_step = ((cube_gradient_scaled(current, lagrange) + cube_argument)/

@@ -2,13 +2,13 @@ from __future__ import print_function
 from scipy.optimize import minimize
 import numpy as np
 import regreg.api as rr
-
-import selection.bayesian.sel_probability2;
-from imp import reload
-reload(selection.bayesian.sel_probability2)
-from selection.bayesian.sel_probability2 import cube_subproblem, cube_gradient, cube_barrier, selection_probability_objective
 from selection.randomized.api import randomization
-from selection.bayesian.barrier import barrier_conjugate_log, barrier_conjugate_softmax
+from selection.bayesian.barrier import barrier_conjugate_softmax_scaled, barrier_conjugate_softmax_scaled_rr
+
+from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
+
+
+
 
 def test_barrier_conjugate():
 
@@ -246,8 +246,25 @@ def test_barrier_conjugate():
     print(_barrier_star_log.smooth_objective(arg, mode='func'),
           _barrier_star_softmax.smooth_objective(arg, mode='func'))
 
-test_barrier_conjugate()
+#test_barrier_conjugate()
+
+def test_barrier_conjugate_softmax():
+
+    p = 10
+    cube_bool = np.zeros(p, np.bool)
+    cube_bool[:4] = 1
+    #lagrange = np.arange(4) + 1
+    lagrange = np.random.uniform(low=1.0, high=2.0, size=4)
+    #print(lagrange)
+    _barrier_star_1 = barrier_conjugate_softmax_scaled(cube_bool, lagrange)
+    _barrier_star_2 = barrier_conjugate_softmax_scaled_rr(cube_bool, lagrange)
+    arg = np.zeros(p)
+    arg[cube_bool] = np.random.standard_normal(4)
+    arg[~cube_bool] = - np.fabs(np.random.standard_normal(6))
+
+    print(_barrier_star_1.smooth_objective(arg, mode='func'),
+          _barrier_star_2.smooth_objective(arg, mode='func'))
 
 
 
-
+test_barrier_conjugate_softmax()

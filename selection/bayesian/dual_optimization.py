@@ -3,38 +3,6 @@ import regreg.api as rr
 from selection.bayesian.barrier import barrier_conjugate_softmax, barrier_conjugate_softmax_scaled,\
     barrier_conjugate_log, cube_barrier_softmax_coord
 
-class linear_map(rr.smooth_atom):
-    def __init__(self,
-                 p,
-                 dual_arg,
-                 coef=1.,
-                 offset=None,
-                 quadratic=None):
-        self.p = p
-        self.dual_arg = dual_arg
-        rr.smooth_atom.__init__(self,
-                                (p,),
-                                offset=offset,
-                                quadratic=quadratic,
-                                coef=coef)
-
-    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
-        arg = self.apply_offset(arg)
-
-        if mode == 'func':
-            f = self.dual_arg.T.dot(arg)
-            return f
-        elif mode == 'grad':
-            g = self.dual_arg
-            return g
-        elif mode == 'both':
-            f = self.dual_arg.T.dot(arg)
-            g = self.dual_arg
-            return f, g
-        else:
-            raise ValueError('mode incorrectly specified')
-
-
 
 class selection_probability_dual_objective(rr.smooth_atom):
 
@@ -121,7 +89,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -self.B_p_inv)
 
-        self._linear_term = linear_map(p, self.dual_arg)
+        #self._linear_term = linear_map(p, self.dual_arg)
 
         self.constant = np.true_divide(mean_parameter.dot(mean_parameter), 2*noise_variance)
 
