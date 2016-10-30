@@ -8,7 +8,7 @@ from selection.algorithms.softmax import nonnegative_softmax
 def cube_subproblem_fs(argument,
                        c,
                        randomization_CGF_conjugate,
-                       lagrange= 1., nstep=100,
+                       lagrange = 1., nstep=100,
                        initial=None,
                        lipschitz=0,
                        tol=1.e-10):
@@ -160,7 +160,6 @@ class selection_probability_objective_fs(rr.smooth_atom):
                  mean_parameter,  # in R^n
                  noise_variance,
                  randomizer,
-                 epsilon = 0.,
                  coef=1.,
                  offset=None,
                  quadratic=None,
@@ -230,8 +229,6 @@ class selection_probability_objective_fs(rr.smooth_atom):
         self._opt_selector = rr.selector(opt_vars, (n + E,))
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
         self._response_selector = rr.selector(~opt_vars, (n + E,))
-
-        X_E = self.X_E = X[:, active]
 
         self.A_active = np.hstack([-X[:, active].T, active_sign])
         self.A_inactive_1 = np.hstack([-X[:, ~active].T, np.zeros(p-E)])
