@@ -6,12 +6,12 @@ from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cub
 from selection.algorithms.softmax import nonnegative_softmax
 
 def cube_subproblem_fs(argument,
-                           c,
-                           randomization_CGF_conjugate,
-                           lagrange= 1., nstep=100,
-                           initial=None,
-                           lipschitz=0,
-                           tol=1.e-10):
+                       c,
+                       randomization_CGF_conjugate,
+                       lagrange= 1., nstep=100,
+                       initial=None,
+                       lipschitz=0,
+                       tol=1.e-10):
     '''
     Solve the subproblem
     $$
@@ -43,7 +43,7 @@ def cube_subproblem_fs(argument,
     for itercount in range(nstep):
         newton_step = ((cube_gradient_scaled(current, lagrange) +
                         (c*conj_grad(argument + c*current))) /
-                       (cube_hessian_scaled(current, lagrange) + lipschitz))
+                       (cube_hessian_scaled(current, lagrange) + lipschitz + c**2))
 
         # make sure proposal is feasible
 
@@ -137,7 +137,7 @@ class cube_objective_fs(rr.smooth_atom):
         gradient_max_c = -np.true_divide((2* c* optimizer) + z, (c**2 + cube_hessian_scaled(optimizer, lagrange = 1.)))
 
         gradient_c = (c* z.T + cube_gradient_scaled(optimizer, lagrange = 1.).T + ((c**2)*optimizer.T)).\
-            dot(gradient_max_c) + (c*np.power(optimizer, 2.)) + optimizer.T.dot(z)
+            dot(gradient_max_c) + (c*(optimizer.T.dot(optimizer))) + optimizer.T.dot(z)
 
         gradient = np.vstack([gradient_z, gradient_c])
 
