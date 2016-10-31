@@ -89,7 +89,7 @@ class selection_probability_objective_ms(rr.smooth_atom):
 
         self.A_active = np.hstack([-np.identity(E),np.zeros((E,p-E)),np.identity(E)*active_signs[None, :]])
         self.offset_active = active_signs * threshold[active]
-        self.A_inactive = np.hstack([np.zeros((p-E,E)), np.identity(p-E), np.zeros(E)])
+        self.A_inactive = np.hstack([np.zeros((p-E,E)), np.identity(p-E), np.zeros((p-E,E))])
 
         # defines \gamma and likelihood loss
         self.set_parameter(mean_parameter, noise_variance)
@@ -112,10 +112,9 @@ class selection_probability_objective_ms(rr.smooth_atom):
         """
         Set $\beta_E^*$.
         """
-        mean = var_half_inv.dot(np.squeeze(mean_parameter))
-        likelihood_loss = rr.signal_approximator(mean, coef=1.)
-        _likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
-        self.likelihood_loss = rr.affine_smooth(_likelihood_loss, var_half_inv)
+        mean_parameter = np.squeeze(mean_parameter)
+        likelihood_loss = rr.signal_approximator(mean_parameter, coef=1.)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """
