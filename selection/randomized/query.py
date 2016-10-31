@@ -1,6 +1,7 @@
 from itertools import product
 import numpy as np
 from scipy.stats import norm as ndist
+from scipy.optimize import bisect
 
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
@@ -571,6 +572,7 @@ class targeted_sampler(object):
                         burnin=2000,
                         stepsize=None,
                         sample=None,
+                        parameter=None,
                         alternative='twosided'):
 
         '''
@@ -586,8 +588,8 @@ class targeted_sampler(object):
            Test statistic to evaluate on sample from
            selective distribution.
 
-        observed_target : np.float
-           Observed value of target estimate.
+        observed_value : float
+           Observed value of test statistic.
            Used in p-value calculation.
 
         ndraw : int
@@ -608,6 +610,10 @@ class targeted_sampler(object):
            intervals, hypothesis tests, etc. If not None,
            `ndraw, burnin, stepsize` are ignored.
 
+        parameter : np.float (optional)
+           If not None, defaults to `self.reference`.
+           Otherwise, sample is reweighted using Gaussian tilting.
+
         alternative : ['greater', 'less', 'twosided']
             What alternative to use.
 
@@ -624,9 +630,15 @@ class targeted_sampler(object):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        sample_test_stat = np.array([test_stat(x) for x in sample])
+        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
 
-        family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
+        if parameter is None:
+            parameter = self.reference
+
+        delta = self.target_inv_cov.dot(parameter - self.reference)
+        W = np.exp(sample.dot(delta))
+
+        family = discrete_family(sample_test_stat, W)
         pval = family.cdf(0, observed_value)
 
         if alternative == 'greater':
@@ -641,7 +653,8 @@ class targeted_sampler(object):
                              ndraw=10000,
                              burnin=2000,
                              stepsize=None,
-                             sample=None):
+                             sample=None,
+                             level=0.9):
         '''
         Parameters
         ----------
@@ -667,6 +680,10 @@ class targeted_sampler(object):
            Allows reuse of the same sample for construction of confidence 
            intervals, hypothesis tests, etc.
 
+        level : float (optional)
+            Specify the
+            confidence level.
+
         Notes
         -----
 
@@ -690,7 +707,7 @@ class targeted_sampler(object):
                                                    observed, 
                                                    self.target_cov)
 
-        return intervals_instance.confidence_intervals_all()
+        return intervals_instance.confidence_intervals_all(level=level)
 
     def coefficient_pvalues(self,
                             observed,
@@ -819,9 +836,9 @@ class targeted_sampler(object):
                                                                                         opt_state[:,self.opt_slice[i]])
         return np.squeeze(reconstructed)
 
-    def log_density(self, state):
+    def log_randomization_density(self, state):
         '''
-        Log-density at current state.
+        Log of randomization density at current state.
 
         Parameters
         ----------
@@ -844,6 +861,203 @@ class targeted_sampler(object):
             log_dens = self.objectives[i].randomization.log_density
             value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
+
+    def hypothesis_test_translate(self,
+                                  sample,
+                                  test_stat,
+                                  observed_target,
+                                  parameter=None,
+                                  alternative='twosided'):
+
+        '''
+        Carry out a hypothesis test
+        based on the distribution of the
+        residual `observed_target - target`
+        sampled at `self.reference`.
+
+        Parameters
+        ----------
+
+        sample : np.array 
+           Sample of target and optimization variables drawn at `self.reference`.
+
+        test_stat : callable
+           Test statistic to evaluate on sample from
+           selective distribution.
+
+        observed_target : np.float
+           Observed value of target estimate.
+           Used in p-value calculation.
+
+        parameter : np.float (optional)
+           If not None, defaults to `self.reference`.
+           Otherwise, sample is reweighted using Gaussian tilting.
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+
+        gradient : np.float
+
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        _intervals = translate_intervals(self, 
+                                         sample,
+                                         observed_target)
+
+        if parameter is None:
+            parameter = self.reference
+
+        return _intervals.pivot(test_stat,
+                                parameter,
+                                alternative=alternative)
+
+
+    def confidence_intervals_translate(self,
+                                       observed_target,
+                                       ndraw=10000,
+                                       burnin=2000,
+                                       stepsize=None,
+                                       sample=None,
+                                       level=0.9):
+        '''
+        Parameters
+        ----------
+
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : int
+           How many samples to discard?
+
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence 
+           intervals, hypothesis tests, etc.
+
+        level : float (optional)
+            Specify the
+            confidence level.
+
+        Notes
+        -----
+
+        Construct selective confidence intervals
+        for each parameter of the target.
+
+        Returns
+        -------
+
+        intervals : [(float, float)]
+            List of confidence intervals.
+
+        '''
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize, keep_opt=True)
+
+        _intervals = translate_intervals(self, 
+                                         sample,
+                                         observed_target)
+
+        limits = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            limits.append(_intervals.confidence_interval(keep, level=level))
+
+        return np.array(limits)
+
+    def coefficient_pvalues_translate(self,
+                                      observed_target,
+                                      parameter=None,
+                                      ndraw=10000,
+                                      burnin=2000,
+                                      stepsize=None,
+                                      sample=None):
+        '''
+        Parameters
+        ----------
+
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+
+        parameter : np.float (optional)
+            A vector of parameters with shape `self.shape`
+            at which to evaluate p-values. Defaults
+            to `np.zeros(self.shape)`.
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : int
+           How many samples to discard?
+
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence 
+           intervals, hypothesis tests, etc.
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+
+        pvalues : np.float
+            P values for each coefficient.
+        
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize, keep_opt=True)
+
+        if parameter is None:
+            parameter = np.zeros_like(observed_target)
+
+        _intervals = translate_intervals(self, 
+                                         sample,
+                                         observed_target)
+
+        pvalues = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            
+            _parameter = self.reference.copy()
+            _parameter[i] = parameter[i]
+            pvalues.append(_intervals.pivot(lambda x: keep.dot(x), 
+                                            _parameter,
+                                            alternative=alternative))
+
+        return np.array(pvalues)
 
 class bootstrapped_target_sampler(targeted_sampler):
 
@@ -974,7 +1188,7 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         LU[1,j] = observed[j] + sigma * quantile
     return LU.T
 
-class translate_intervals(intervals_from_sample):
+class translate_intervals(object): # intervals_from_sample):
 
     """
 
@@ -996,21 +1210,91 @@ class translate_intervals(intervals_from_sample):
 
     randomization_density(sample + (candidate, 0, 0))
     randomization_density(sample + (reference, 0, 0))
+
+    WE ARE ASSUMING sample is sampled from targeted_sampler.reference
     """
 
     def __init__(self, 
-                 reference, 
+                 targeted_sampler,
                  sample, 
-                 observed, 
-                 covariance, 
-                 randomization_density,
-                 target_linear,
-                 offset):
-        intervals_from_sample.__init__(self, reference, sample, observed, covariance)
+                 observed):
+        self.targeted_sampler = targeted_sampler
+        self.observed = observed.copy() # this is our observed unpenalized estimator
+        self._logden = targeted_sampler.log_randomization_density(sample)
+        self._delta = sample.copy()
+        self._delta[:, targeted_sampler.target_slice] -= targeted_sampler.reference[None, :]
 
-        self.randomization_density = randomization_density
-        self.target_linear = target_linear
-        self.offset = offset
+    def pivot(self, 
+              test_statistic, 
+              candidate, 
+              alternative='twosided'):
+        '''
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+
+        pvalue : np.float
+        
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        observed_delta = self.observed - candidate
+        observed_stat = test_statistic(observed_delta)
+        
+        candidate_sample, weights = self._weights(candidate)
+        sample_stat = np.array([test_statistic(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
+        pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
+
+        if alternative == 'twosided':
+            return 2 * min(pivot, 1 - pivot)
+        elif alternative == 'less':
+            return pivot
+        else:
+            return 1 - pivot
+
+    def confidence_interval(self, linear_func, level=0.95, how_many_sd=20):
+
+        target_delta = self._delta[:,self.targeted_sampler.target_slice]
+        projected_delta = target_delta.dot(linear_func)
+        projected_observed = self.observed.dot(linear_func)
+
+        delta_min, delta_max = projected_delta.min(), projected_delta.max()
+
+        _norm = np.linalg.norm(linear_func)
+        grid_min, grid_max = -how_many_sd * np.std(projected_delta), how_many_sd * np.std(projected_delta)
+
+        reference = self.targeted_sampler.reference
+
+        def _rootU(gamma):
+            return self.pivot(lambda x: linear_func.dot(x),
+                              reference + gamma * linear_func / _norm**2,
+                              alternative='less') - (1 - level) / 2.
+        
+
+        def _rootL(gamma):
+            return self.pivot(lambda x: linear_func.dot(x),
+                              reference + gamma * linear_func / _norm**2,
+                              alternative='less') - (1 + level) / 2.
+        
+        upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+        lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+
+        return lower + projected_observed, upper + projected_observed
+
+    # Private methods
+
+    def _weights(self, candidate):
+
+        candidate_sample = self._delta.copy()
+        candidate_sample[:, self.targeted_sampler.target_slice] += candidate[None, :]
+        _lognum = self.targeted_sampler.log_randomization_density(candidate_sample)
+
+        return candidate_sample, np.exp(_lognum - self._logden)
+
 
 
 

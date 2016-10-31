@@ -29,6 +29,7 @@ def test_intervals(s=3,
                    ndraw=10000, 
                    burnin=2000, 
                    bootstrap=True,
+                   intervals='new',
                    solve_args={'min_its':50, 'tol':1.e-10}):
 
     randomizer = randomization.laplace((p,), scale=1.)
@@ -71,10 +72,18 @@ def test_intervals(s=3,
 
         target_sample = target_sampler.sample(ndraw=ndraw,
                                               burnin=burnin)
+        if intervals == 'old':
+            LU = target_sampler.confidence_intervals(target_observed,
+                                                     sample=target_sample,
+                                                     level=0.9)
+        else:
+            full_sample = target_sampler.sample(ndraw=ndraw,
+                                                burnin=burnin,
+                                                keep_opt=True)
 
-
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample)
+            LU = target_sampler.confidence_intervals_translate(target_observed,
+                                                               sample=full_sample,
+                                                               level=0.9)
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
