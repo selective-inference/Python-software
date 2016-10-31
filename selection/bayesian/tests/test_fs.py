@@ -52,4 +52,49 @@ def fs_primal_test():
 
     print("selection prob and minimizer- fs", sel_prob_fs)
 
-fs_primal_test()
+#fs_primal_test()
+
+
+def fs_one_sparse_test():
+    n = 50
+    p = 10
+    s = 5
+    snr = 3
+
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    print(true_beta, nonzero, noise_variance)
+    random_Z = np.random.standard_normal(p)
+    random_obs = X_1.T.dot(y) + random_Z
+    active_index = np.argmax(random_obs)
+    active = np.zeros(p, bool)
+    active[active_index] = 1
+    active_sign = np.sign(random_obs[active_index])
+    nactive = 1
+
+
+    feasible_point = np.fabs(random_obs[active_index])
+    tau = 1 #randomization_variance
+    randomizer = randomization.isotropic_gaussian((p,), 1.)
+
+    snr_seq = np.linspace(-10, 20, num=10)
+    result = []
+    for i in range(snr_seq.shape[0]):
+        parameter = snr_seq[i]
+        mean = X_1[:, active].dot(parameter)
+
+        fs = selection_probability_objective_fs(X_1,
+                                                feasible_point,
+                                                active,
+                                                active_sign,
+                                                mean,  # in R^n
+                                                noise_variance,
+                                                randomizer)
+
+
+        sel_prob_fs = fs.minimize2(nstep = 50)[::-1]
+        print(parameter, sel_prob_fs[0], sel_prob_fs[1])
+        result.append([parameter, -sel_prob_fs[0]])
+
+    return np.array(result)
+
+fs_one_sparse_test()
