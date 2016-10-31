@@ -6,13 +6,12 @@ import regreg.api as rr
 
 class selection_probability_objective_ms(rr.smooth_atom):
     def __init__(self,
-                 T,
                  feasible_point,
                  active,
                  active_signs,
-                 threshold,
-                 mean_parameter,  # in R^n
-                 noise_var_covar, #a matrix this time
+                 threshold, # a vector in R^p
+                 mean_parameter,  # in R^p
+                 noise_variance,
                  randomizer,
                  epsilon = 0.,
                  coef=1.,
@@ -52,12 +51,12 @@ class selection_probability_objective_ms(rr.smooth_atom):
              that was added before selection.
         """
 
-        p = T.shape
+        p = threshold.shape
         E = active.sum()
         self.active = active
 
-        w, v = np.linalg.eig(noise_var_covar)
-        var_half_inv = (v.T.dot(np.diag(1./w))).dot(v)
+        #w, v = np.linalg.eig(noise_var_covar)
+        #var_half_inv = (v.T.dot(np.diag(1./w))).dot(v)
         self.randomization = randomizer
 
         self.inactive_conjugate = self.active_conjugate = randomizer.CGF_conjugate
