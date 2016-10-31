@@ -83,7 +83,7 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         self.generative_X = generative_X
 
-        initial = np.squeeze(primal_feasible * active_sign[None,:])
+        initial = np.array(primal_feasible * active_sign)
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -94,7 +94,7 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         self.coefs[:] = initial
 
-        self.initial_state = np.squeeze(primal_feasible * active_sign[None, :])
+        self.initial_state = np.reshape(np.squeeze(np.array(primal_feasible * active_sign)), 1)
 
         self.set_likelihood(y, noise_variance, generative_X)
 
@@ -174,7 +174,7 @@ class selective_map_credible_fs(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps = 10000, burnin = 1000):
+    def posterior_samples(self, Langevin_steps = 5000, burnin = 500):
         state = self.initial_state
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
