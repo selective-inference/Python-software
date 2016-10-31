@@ -99,7 +99,7 @@ def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=False, test = 'sel
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries_translate(ndraw=10000, burnin=2000, bootstrap=False, test = 'selected zeros'): 
+def test_multiple_queries_translate(ndraw=10000, burnin=2000, bootstrap=False): 
     s, n, p = 3, 600, 10
 
     randomizer = randomization.laplace((p,), scale=1)
@@ -121,7 +121,6 @@ def test_multiple_queries_translate(ndraw=10000, burnin=2000, bootstrap=False, t
     nview = 5
     for i in range(nview):
         view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
-
 
     mv = multiple_queries(view)
     mv.solve()
@@ -160,15 +159,6 @@ def test_multiple_queries_translate(ndraw=10000, burnin=2000, bootstrap=False, t
                                                          test_stat,
                                                          target_observed,
                                                          alternative='twosided')
-
-#         print(target_sampler.confidence_intervals_translate(target_observed,
-#                                                             ndraw=ndraw,
-#                                                             burnin=burnin))
-
-#         print(target_sampler.confidence_intervals(target_observed,
-#                                                   ndraw=ndraw,
-#                                                   burnin=burnin))
-
 
         return [pivot], [False]
 
