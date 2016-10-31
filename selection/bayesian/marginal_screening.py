@@ -87,13 +87,15 @@ class selection_probability_objective_ms(rr.smooth_atom):
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
         self._response_selector = rr.selector(~opt_vars, (p + E,))
 
-        self.A_active = np.hstack([-np.identity(E), np.zeros((E,p-E)), np.diag(threshold[active])* active_signs[None, :]])
+        self.A_active = np.hstack([-np.identity(E),np.zeros((E,p-E)),np.identity(E)*active_signs[None, :]])
+        self.offset_active = active_signs * threshold[active]
         self.A_inactive = np.hstack([np.zeros((p-E,E)), np.identity(p-E), np.zeros(E)])
 
         # defines \gamma and likelihood loss
-        self.set_parameter(mean_parameter, var_half_inv)
+        self.set_parameter(mean_parameter, noise_variance)
 
-        self.active_conj_loss = rr.affine_smooth(self.active_conjugate, self.A_active)
+        self.active_conj_loss = rr.affine_smooth(self.active_conjugate,
+                                                 rr.affine_transform(self.A_active, self.offset_active))
 
         cube_obj = cube_objective(self.inactive_conjugate,
                                   threshold[~active],
