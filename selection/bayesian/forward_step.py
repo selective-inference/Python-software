@@ -139,7 +139,9 @@ class cube_objective_fs(rr.smooth_atom):
         gradient_c = (c* z.T + cube_gradient_scaled(optimizer, lagrange = 1.).T + ((c**2)*optimizer.T)).\
             dot(gradient_max_c) + (c*(optimizer.T.dot(optimizer))) + optimizer.T.dot(z)
 
-        gradient = np.vstack([gradient_z, gradient_c])
+        #print gradient_z.shape, gradient_c.shape
+
+        gradient = np.append(gradient_z, gradient_c)
 
         if mode == 'func':
             return self.scale(value)
@@ -230,12 +232,16 @@ class selection_probability_objective_fs(rr.smooth_atom):
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
         self._response_selector = rr.selector(~opt_vars, (n + E,))
 
-        self.A_active = np.hstack([-X[:, active].T, active_sign])
-        self.A_inactive_1 = np.hstack([-X[:, ~active].T, np.zeros(p-E)])
-        self.A_inactive_2 = np.hstack([np.zeros(n).T, np.ones(E).T])
-        self.A_inactive = np.hvstack([self.A_inactive_1, self.A_inactive_2])
+        sign_array = np.zeros((E,E))
+        sign_array[0:,:] = active_sign
 
-        self.offset_active = active_sign
+        #print sign_array.shape, X[:, active].T.shape, X[:, ~active].T.shape, np.zeros(p-E).shape
+        self.A_active = np.hstack([-X[:, active].T, sign_array])
+        self.A_inactive_1 = np.hstack([-X[:, ~active].T, np.zeros((p-E,1))])
+        self.A_inactive_2 = np.hstack([np.zeros((n,E)).T, np.ones((E,E)).T])
+        self.A_inactive = np.vstack([self.A_inactive_1, self.A_inactive_2])
+
+        #print self.A_active.shape, self.A_inactive.shape
 
         # defines \gamma and likelihood loss
         self.set_parameter(mean_parameter, noise_variance)
