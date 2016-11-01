@@ -216,12 +216,12 @@ class approximate_conditional_density(rr.smooth_atom):
 
         s_obs = np.round(np.squeeze(self.contrast.dot(self.y)), decimals=1)
 
-        print s_obs
-
         if s_obs>=self.grid[0]:
             s_obs = s_obs
         else:
             s_obs = self.grid[0]
+
+        print s_obs
 
         self.ind_obs =  np.where(self.grid == s_obs)[0]
 
@@ -249,7 +249,7 @@ class approximate_conditional_density(rr.smooth_atom):
                                                       self.j, #index of interest amongst active variables
                                                       self.grid[i])
 
-            h_hat.append(-(approx.minimize2(nstep = 50)[::-1])[0])
+            h_hat.append(-(approx.minimize2(nstep = 80)[::-1])[0])
 
             #print i
 
@@ -288,7 +288,11 @@ class approximate_conditional_density(rr.smooth_atom):
 
         region = param_grid[(area >= 0.05) & (area <= 0.95)]
 
-        return np.amin(region), np.amax(region)
+        if region.size>0:
+            return np.amin(region), np.amax(region)
+
+        else:
+            return 0,0
 
 
 
