@@ -10,8 +10,8 @@ from selection.randomized.api import randomization
 
 
 def ms_primal_dual_test():
-    n = 100
-    p = 20
+    n = 30
+    p = 10
     s = 5
     snr = 3
 
@@ -70,3 +70,4 @@ def ms_primal_dual_test():
     print("selection prob and minimizer- ms", sel_prob_primal, sel_prob_dual)
 
 ms_primal_dual_test()
+

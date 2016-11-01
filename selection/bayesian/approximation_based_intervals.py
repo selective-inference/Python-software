@@ -53,7 +53,7 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
 
         self.coefs[:] = initial
 
-        self.nonnegative_barrier = nonnegative_softmax_scaled(E)
+        nonnegative = nonnegative_softmax_scaled(E)
 
         X_E = self.X_E = X[:, active]
         self.X_inactive = X[:, ~active]
@@ -83,6 +83,7 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         opt_vars[:E] = 1
 
         self._opt_selector = rr.selector(opt_vars, (E,))
+        self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
 
         self.active_conj_loss = rr.affine_smooth(self.active_conjugate,
                                                  rr.affine_transform(self.B_active, self.offset_active))
@@ -96,7 +97,6 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         self.total_loss = rr.smooth_sum([self.active_conj_loss,
                                          self.cube_loss,
                                          self.nonnegative_barrier])
-
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
 
@@ -128,6 +128,57 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         value = problem.objective(soln)
         return soln, value
 
+    def minimize2(self, step=1, nstep=30, tol=1.e-8):
+
+        current = self.coefs
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective(u, 'func')
+        grad = lambda u: self.smooth_objective(u, 'grad')
+
+        for itercount in range(nstep):
+            newton_step = grad(current)
+
+            # make sure proposal is feasible
+
+            count = 0
+            while True:
+                count += 1
+                proposal = current - step * newton_step
+                if np.all(proposal > 0):
+                    break
+                step *= 0.5
+                if count >= 40:
+                    raise ValueError('not finding a feasible point')
+
+            # make sure proposal is a descent
+
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+                # print(current_value, proposed_value, 'minimize')
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        # print('iter', itercount)
+        value = objective(current)
+        return current, value
+
 
 class approximate_conditional_density(rr.smooth_atom):
 
@@ -157,7 +208,7 @@ class approximate_conditional_density(rr.smooth_atom):
                                 coef=coef)
 
 
-        self.grid = np.squeeze(np.round(np.linspace(0, 10, num = 100), decimals=1))
+        self.grid = np.squeeze(np.round(np.linspace(-4, 10, num = 140), decimals=1))
 
         self.contrast = np.linalg.pinv(self.X[:,active])[self.j, :]
 
@@ -198,7 +249,7 @@ class approximate_conditional_density(rr.smooth_atom):
                                                       self.j, #index of interest amongst active variables
                                                       self.grid[i])
 
-            h_hat.append(-(approx.minimize(max_its=100, min_its=10,tol=1.e-4)[::-1])[0])
+            h_hat.append(-(approx.minimize2(nstep = 50)[::-1])[0])
 
             #print i
 
@@ -225,7 +276,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def approximate_ci(self):
 
-        param_grid = np.squeeze(np.round(np.linspace(0, 8, num= 80), decimals=1))
+        param_grid = np.round(np.linspace(0, 10, num= 100), decimals=1)
 
         area = np.zeros(param_grid.shape[0])
 
@@ -235,7 +286,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
             area[k] = area_vec[self.ind_obs]
 
-        region = param_grid[np.squeeze(np.all([area >= 0.05, area <= 0.95], axis=0))]
+        region = param_grid[(area >= 0.05) & (area <= 0.95)]
 
         return np.amin(region), np.amax(region)
 

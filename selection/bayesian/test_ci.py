@@ -9,15 +9,12 @@ n = 15
 p = 5
 s = 3
 snr = 5
+
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 X_1, y, true_beta, nonzero, noise_variance = sample.generate_response()
-
 random_Z = np.random.standard_normal(p)
-
 sel = selection(X_1, y, random_Z)
-
 lam, epsilon, active, betaE, cube, initial_soln = sel
-
 print true_beta, active
 
 truth = ((np.linalg.pinv(X_1[:,active])[1, :]).T).dot(X_1.dot(true_beta))
