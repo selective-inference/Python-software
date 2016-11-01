@@ -5,12 +5,12 @@ import numpy as np
 from scipy.optimize import minimize
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.selection_probability_rr import cube_gradient_scaled, cube_barrier_scaled, cube_subproblem_scaled
-from selection.bayesian.marginal_screening import selection_probability_objective_ms
+from selection.bayesian.marginal_screening import selection_probability_objective_ms, dual_selection_probability_ms
 from selection.randomized.api import randomization
 
 
 def ms_primal_test():
-    n = 100
+    n = 20
     p = 10
     s = 5
     snr = 3
@@ -35,21 +35,33 @@ def ms_primal_test():
     randomizer = randomization.isotropic_gaussian((p,), 1.)
     threshold = 1.65 * np.ones(p)
 
-    ms = selection_probability_objective_ms(active,
+    ms_primal = selection_probability_objective_ms(active,
                                             active_signs,
                                             threshold, # a vector in R^p
                                             mean,  # in R^p
                                             noise_variance,
                                             randomizer)
 
-    test = np.append(np.ones(p),np.fabs(np.random.standard_normal(nactive)))
-    print(ms.smooth_objective(test))
+    ms_dual = dual_selection_probability_ms(active,
+                                       active_signs,
+                                       threshold,  # a vector in R^p
+                                       mean,  # in R^p
+                                       noise_variance,
+                                       randomizer)
+
+    #test = np.append(np.ones(p),np.fabs(np.random.standard_normal(nactive)))
+    #print(ms.smooth_objective(test))
 
     toc = time.time()
-    sel_prob_ms = ms.minimize2(nstep=50)[::-1]
+    sel_prob_primal = ms_primal.minimize2(nstep=50)[::-1]
     tic = time.time()
-    print('ms time', tic - toc)
+    print('primal ms time', tic - toc)
 
-    print("selection prob and minimizer- ms", sel_prob_ms)
+    toc = time.time()
+    sel_prob_dual = ms_dual.minimize2(nstep=60)[::-1]
+    tic = time.time()
+    print('dual ms time', tic - toc)
+
+    print("selection prob and minimizer- ms", sel_prob_primal, sel_prob_dual)
 
 ms_primal_test()

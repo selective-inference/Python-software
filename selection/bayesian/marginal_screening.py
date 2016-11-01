@@ -296,7 +296,11 @@ class dual_selection_probability_ms(rr.smooth_atom):
 
         self.total_loss.quadratic = self.linear_term
 
+        self.threshold = threshold
+
     def set_parameter(self, mean_parameter, noise_variance):
+
+        mean_parameter = np.append(mean_parameter[self.active], mean_parameter[~self.active])
 
         mean_parameter = np.squeeze(mean_parameter)
 
@@ -322,9 +326,9 @@ class dual_selection_probability_ms(rr.smooth_atom):
 
     def minimize2(self, step=1, nstep=30, tol=1.e-8):
 
-        n, p = self._X.shape
-
-        current = self.feasible_point
+        E = self.active.sum()
+        p = self.threshold.shape[0]
+        current = np.append(-np.ones(E),np.ones(p-E))
         current_value = np.inf
 
         objective = lambda u: self.total_loss.objective(u)
