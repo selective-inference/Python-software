@@ -1,6 +1,6 @@
 import numpy as np
 from selection.algorithms.softmax import nonnegative_softmax
-from selection.bayesian.selection_probability.rr import cube_subproblem_scaled, cube_barrier_scaled,\
+from selection.bayesian.selection_probability_rr import cube_subproblem_scaled, cube_barrier_scaled,\
     cube_gradient_scaled, cube_hessian_scaled, cube_objective
 import regreg.api as rr
 
