@@ -216,3 +216,65 @@ class selection_probability_objective_ms(rr.smooth_atom):
         #print('iter', itercount)
         value = objective(current)
         return current, value
+
+
+class dual_selection_probability_ms(rr.smooth_atom):
+    def __init__(self,
+                 active,
+                 active_signs,
+                 threshold,  # a vector in R^p
+                 mean_parameter,  # in R^p
+                 noise_variance,
+                 randomizer,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None,
+                 nstep=10):
+
+        p = threshold.shape[0]
+        E = active.sum()
+
+        self.active = active
+        self.noise_variance = noise_variance
+        self.randomization = randomizer
+
+        self.CGF_randomization = randomizer.CGF
+
+        if self.CGF_randomization is None:
+            raise ValueError(
+                'randomization must know its cgf -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
+
+        initial = -np.ones(p)
+
+        rr.smooth_atom.__init__(self,
+                                (p,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        self.coefs[:] = initial
+
+        mean_parameter = np.squeeze(mean_parameter)
+
+        self.active_slice = np.zeros_like(active, np.bool)
+        self.active_slice[:active.sum()] = True
+
+        self.B_active = np.hstack([np.identity(E) * active_signs[None, :], np.zeros((E, p - E))])
+        self.B_inactive = np.hstack([np.zeros((p-E, E)), np.identity((p - E))])
+        self.B_p = np.vstack((self.B_active, self.B_inactive))
+
+        self.B_p_inv = np.linalg.inv(self.B_p.T)
+
+        self.offset_active = threshold[active]
+        self.inactive_subgrad = np.zeros(p - E)
+
+        self.cube_bool = np.zeros(p, np.bool)
+
+        self.cube_bool[E:] = 1
+
+        self.dual_arg = self.B_p_inv.dot(np.append(self.offset_active, self.inactive_subgrad))
+
+        self._opt_selector = rr.selector(~self.cube_bool, (p,))
+
+

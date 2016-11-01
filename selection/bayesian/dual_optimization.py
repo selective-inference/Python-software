@@ -75,7 +75,7 @@ class selection_probability_dual_objective(rr.smooth_atom):
 
         self.cube_bool[E:] = 1
 
-        self.dual_arg = np.linalg.inv(self.B_p).dot(np.append(self.offset_active, self.inactive_subgrad))
+        self.dual_arg = self.B_p_inv.dot(np.append(self.offset_active, self.inactive_subgrad))
 
         self._opt_selector = rr.selector(~self.cube_bool, (p,))
 
