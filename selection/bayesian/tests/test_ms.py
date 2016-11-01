@@ -9,38 +9,43 @@ from selection.bayesian.marginal_screening import selection_probability_objectiv
 from selection.randomized.api import randomization
 
 
-def ms_primal_test():
-    n = 20
-    p = 10
+def ms_primal_dual_test():
+    n = 100
+    p = 20
     s = 5
     snr = 3
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     print(true_beta, noise_variance)
+
     random_Z = np.random.standard_normal(p)
     w, v = np.linalg.eig(X_1.T.dot(X_1))
-    var_half_inv = (v.T.dot(np.diag(np.power(w,-0.5)))).dot(v)
+    var_half_inv = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
     Z_stats = var_half_inv.dot(X_1.T.dot(y))
-    random_Z = np.true_divide(Z_stats,noise_variance)  + random_Z
-
+    randomized_Z_stats = np.true_divide(Z_stats, noise_variance) + random_Z
 
     active = np.zeros(p, bool)
-    active[np.fabs(random_Z)>1.65] = 1
-    active_signs = np.sign(random_Z[active])
+    active[np.fabs(randomized_Z_stats)>1.65] = 1
+    active_signs = np.sign(randomized_Z_stats[active])
     nactive = active.sum()
     tau = 1 #randomization_variance
 
+    X = np.hstack([X_1[:, active], X_1[:, ~active]])
+    w_0, v_0 = np.linalg.eig(X.T.dot(X))
+    var_half_inv_0 = (v_0.T.dot(np.diag(np.power(w_0, -0.5)))).dot(v_0)
+
     parameter = np.random.standard_normal(nactive)
-    mean = (var_half_inv.dot(X_1.T)).dot(X_1[:, active].dot(parameter))
+    mean = (var_half_inv_0.dot(X.T)).dot(X_1[:, active].dot(parameter))
+
     randomizer = randomization.isotropic_gaussian((p,), 1.)
     threshold = 1.65 * np.ones(p)
 
     ms_primal = selection_probability_objective_ms(active,
-                                            active_signs,
-                                            threshold, # a vector in R^p
-                                            mean,  # in R^p
-                                            noise_variance,
-                                            randomizer)
+                                                   active_signs,
+                                                   threshold, # a vector in R^p
+                                                   mean,  # in R^p
+                                                   noise_variance,
+                                                   randomizer)
 
     ms_dual = dual_selection_probability_ms(active,
                                        active_signs,
@@ -64,4 +69,4 @@ def ms_primal_test():
 
     print("selection prob and minimizer- ms", sel_prob_primal, sel_prob_dual)
 
-ms_primal_test()
+ms_primal_dual_test()

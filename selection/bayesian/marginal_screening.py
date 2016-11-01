@@ -300,7 +300,7 @@ class dual_selection_probability_ms(rr.smooth_atom):
 
     def set_parameter(self, mean_parameter, noise_variance):
 
-        mean_parameter = np.append(mean_parameter[self.active], mean_parameter[~self.active])
+        #mean_parameter = np.append(mean_parameter[self.active], mean_parameter[~self.active])
 
         mean_parameter = np.squeeze(mean_parameter)
 
