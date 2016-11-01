@@ -10,13 +10,13 @@ from selection.randomized.api import randomization
 
 
 def ms_primal_test():
-    n = 50
+    n = 100
     p = 10
     s = 5
     snr = 3
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
-    print(true_beta, nonzero, noise_variance)
+    print(true_beta, noise_variance)
     random_Z = np.random.standard_normal(p)
     w, v = np.linalg.eig(X_1.T.dot(X_1))
     var_half_inv = (v.T.dot(np.diag(np.power(w,-0.5)))).dot(v)
@@ -28,8 +28,6 @@ def ms_primal_test():
     active[np.fabs(random_Z)>1.65] = 1
     active_signs = np.sign(random_Z[active])
     nactive = active.sum()
-
-    feasible_point = np.ones(nactive)
     tau = 1 #randomization_variance
 
     parameter = np.random.standard_normal(nactive)
@@ -37,13 +35,21 @@ def ms_primal_test():
     randomizer = randomization.isotropic_gaussian((p,), 1.)
     threshold = 1.65 * np.ones(p)
 
-    ms = selection_probability_objective_ms(feasible_point,
-                                            active,
+    ms = selection_probability_objective_ms(active,
                                             active_signs,
                                             threshold, # a vector in R^p
                                             mean,  # in R^p
                                             noise_variance,
                                             randomizer)
 
+    test = np.append(np.ones(p),np.fabs(np.random.standard_normal(nactive)))
+    print(ms.smooth_objective(test))
+
+    toc = time.time()
+    sel_prob_ms = ms.minimize2(nstep=50)[::-1]
+    tic = time.time()
+    print('ms time', tic - toc)
+
+    print("selection prob and minimizer- ms", sel_prob_ms)
 
 ms_primal_test()

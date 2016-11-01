@@ -6,7 +6,6 @@ import regreg.api as rr
 
 class selection_probability_objective_ms(rr.smooth_atom):
     def __init__(self,
-                 feasible_point,
                  active,
                  active_signs,
                  threshold, # a vector in R^p
@@ -51,7 +50,7 @@ class selection_probability_objective_ms(rr.smooth_atom):
              that was added before selection.
         """
 
-        p = threshold.shape
+        p = threshold.shape[0]
         E = active.sum()
         self.active = active
 
@@ -66,8 +65,7 @@ class selection_probability_objective_ms(rr.smooth_atom):
 
         #self.inactive_threshold = threshold[~active]
 
-        initial = np.zeros(p + E, )
-        initial[p:] = feasible_point
+        initial = np.ones(p + E)
 
         rr.smooth_atom.__init__(self,
                                 (p + E,),
@@ -94,6 +92,8 @@ class selection_probability_objective_ms(rr.smooth_atom):
         # defines \gamma and likelihood loss
         self.set_parameter(mean_parameter, noise_variance)
 
+        self.noise_variance = noise_variance
+
         self.active_conj_loss = rr.affine_smooth(self.active_conjugate,
                                                  rr.affine_transform(self.A_active, self.offset_active))
 
@@ -107,6 +107,8 @@ class selection_probability_objective_ms(rr.smooth_atom):
                                          self.cube_loss,
                                          self.likelihood_loss,
                                          self.nonnegative_barrier])
+
+        self.threshold = threshold
 
     def set_parameter(self, mean_parameter, var_half_inv):
         """
@@ -165,8 +167,7 @@ class selection_probability_objective_ms(rr.smooth_atom):
 
     def minimize2(self, step=1, nstep=30, tol=1.e-8):
 
-        n, p = self._X.shape
-
+        p = self.threshold.shape[0]
         current = self.coefs
         current_value = np.inf
 
@@ -182,7 +183,7 @@ class selection_probability_objective_ms(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                if np.all(proposal[n:] > 0):
+                if np.all(proposal[p:] > 0):
                     break
                 step *= 0.5
                 if count >= 40:
