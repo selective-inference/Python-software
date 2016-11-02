@@ -257,7 +257,7 @@ class selection_probability_objective_fs(rr.smooth_atom):
 
         self.active_conj_loss = rr.affine_smooth(self.active_conjugate, self.A_active)
 
-        cube_obj = cube_objective_fs(self.inactive_conjugate)
+        cube_obj = cube_objective_fs_linear(self.inactive_conjugate)
 
         self.cube_loss = rr.affine_smooth(cube_obj, self.A_inactive)
 
