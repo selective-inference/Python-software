@@ -59,16 +59,22 @@ def approximate_ci_test():
         return ci
 
 coverage =0
+null = 0
 
-for iter in range(100):
+for iter in range(200):
 
     intervals = approximate_ci_test()
     print(iter, intervals)
-    if (intervals[0]==0) and (intervals[1]==0):
+    if intervals is None:
         coverage = coverage
-    if (truth >= intervals[0]) and (truth <= intervals[1]):
-        coverage += 1
+        null = null + 1
+    else:
+        if (intervals[0]==0) and (intervals[1]==0):
+             coverage = coverage
+             null = null + 1
+        elif (truth >= intervals[0]) and (truth <= intervals[1]):
+            coverage += 1
 
     print coverage
 
-print coverage/100
+print coverage/(200.-null)
