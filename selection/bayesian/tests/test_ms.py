@@ -19,9 +19,9 @@ def ms_primal_dual_test():
     print(true_beta, noise_variance)
 
     random_Z = np.random.standard_normal(p)
-    w, v = np.linalg.eig(X_1.T.dot(X_1))
-    var_half_inv = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
-    Z_stats = var_half_inv.dot(X_1.T.dot(y))
+    #w, v = np.linalg.eig(X_1.T.dot(X_1))
+    #var_half_inv = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
+    Z_stats = X_1.T.dot(y)
     randomized_Z_stats = np.true_divide(Z_stats, noise_variance) + random_Z
 
     active = np.zeros(p, bool)

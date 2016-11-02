@@ -14,6 +14,7 @@ from selection.bayesian.selection_probability import selection_probability_metho
 from selection.bayesian.dual_scipy import dual_selection_probability_func
 from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map_credible
 from selection.bayesian.inference_fs import sel_prob_gradient_map_fs, selective_map_credible_fs
+from selection.bayesian.inference_ms import sel_prob_gradient_map_ms, selective_map_credible_ms
 
 def test_inf_regreg():
     n = 50
@@ -115,5 +116,48 @@ def test_inf_fs():
     return samples
 
 #test_inf_fs()
-post_samples = test_inf_fs()
-print(np.percentile(post_samples, 5, axis=0), np.percentile(post_samples, 95, axis=0))
+#post_samples = test_inf_fs()
+#print(np.percentile(post_samples, 5, axis=0), np.percentile(post_samples, 95, axis=0))
+
+def test_inf_ms():
+    n = 50
+    p = 10
+    s = 5
+    snr = 5
+
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    print(true_beta, nonzero, noise_variance)
+    random_Z = np.random.standard_normal(p)
+    randomized_Z_stats = np.true_divide(X_1.T.dot(y), noise_variance) + random_Z
+
+    active = np.zeros(p, bool)
+    active[np.fabs(randomized_Z_stats) > 1.65] = 1
+    active_signs = np.sign(randomized_Z_stats[active])
+    nactive = active.sum()
+    randomizer = randomization.isotropic_gaussian((p,), 1.)
+    threshold = 1.65 * np.ones(p)
+
+    generative_X = X_1[:, active]
+    prior_variance = 1000.
+
+    inf_rr = selective_map_credible_ms(y,
+                                       X_1,
+                                       active,
+                                       active_signs,
+                                       threshold,
+                                       generative_X,
+                                       noise_variance,
+                                       prior_variance,
+                                       randomizer)
+
+    map = inf_rr.map_solve_2(nstep = 100)[::-1]
+
+    print ("gradient at map", -inf_rr.smooth_objective(map[1], mode='grad'))
+    print ("map objective, map", map[0], map[1])
+    toc = time.time()
+    samples = inf_rr.posterior_samples()
+    tic = time.time()
+    print('sampling time', tic - toc)
+    return samples
+
+test_inf_ms()

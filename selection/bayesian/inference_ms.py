@@ -16,7 +16,7 @@ class sel_prob_gradient_map_ms(rr.smooth_atom):
                  offset=None,
                  quadratic=None):
 
-        self.E = active.sum()
+        self.dim = active.sum()
 
         self.noise_variance = noise_variance
 
@@ -33,7 +33,7 @@ class sel_prob_gradient_map_ms(rr.smooth_atom):
 
         w, v = np.linalg.eig(self.X.T.dot(self.X))
         var_half_inv = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
-        self.coef = var_half_inv.dot(self.X.T)
+        self.scale_coef = var_half_inv.dot(self.X.T)
 
     def smooth_objective(self, true_param, mode='both', check_feasibility=False, tol=1.e-6):
 
@@ -41,7 +41,7 @@ class sel_prob_gradient_map_ms(rr.smooth_atom):
 
         mean_parameter = np.squeeze(self.generative_X.dot(true_param))
 
-        mean = self.coef.dot(mean_parameter)
+        mean = self.scale_coef.dot(mean_parameter)
 
         sol = selection_probability_objective_ms(self.active,
                                                  self.active_signs,
@@ -53,7 +53,7 @@ class sel_prob_gradient_map_ms(rr.smooth_atom):
         sel_prob_primal = sol.minimize2(nstep=60)[::-1]
         optimal_primal = (sel_prob_primal[1])[:self.p]
         sel_prob_val = -sel_prob_primal[0]
-        optimizer = (self.generative_X.T.dot(self.coef.T)).dot(np.true_divide(optimal_primal - mean, self.noise_variance))
+        optimizer = (self.generative_X.T.dot(self.scale_coef.T)).dot(np.true_divide(optimal_primal - mean, self.noise_variance))
 
         if mode == 'func':
             return sel_prob_val
@@ -65,7 +65,7 @@ class sel_prob_gradient_map_ms(rr.smooth_atom):
             raise ValueError('mode incorrectly specified')
 
 
-class selective_map_credible(rr.smooth_atom):
+class selective_map_credible_ms(rr.smooth_atom):
     def __init__(self,
                  y,
                  X,
@@ -84,7 +84,7 @@ class selective_map_credible(rr.smooth_atom):
         self.param_shape = generative_X.shape[1]
 
         y = np.squeeze(y)
-
+        self.X = X
         w, v = np.linalg.eig(self.X.T.dot(self.X))
         var_half_inv = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
         scale_coef = var_half_inv.dot(self.X.T)
@@ -107,7 +107,7 @@ class selective_map_credible(rr.smooth_atom):
 
         self.coefs[:] = initial
 
-        self.initial_state = np.ones(self.E)
+        self.initial_state = initial
 
         self.set_likelihood(scaled_Z, noise_variance, scale_coef, generative_X)
 
