@@ -5,9 +5,9 @@ from selection.bayesian.approximation_based_intervals import approximate_conditi
     approximate_conditional_density
 from selection.randomized.api import randomization
 
-n = 50
-p = 5
-s = 3
+n = 100
+p = 10
+s = 5
 snr = 5
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
