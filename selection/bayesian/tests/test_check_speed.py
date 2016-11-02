@@ -284,9 +284,9 @@ def dual_primal_speed_low():
 
 #high dim regime
 def dual_primal_speed_high():
-    n = 40
-    p = 150
-    s = 10
+    n = 100
+    p = 50
+    s = 40
     snr = 5
 
     # sampling the Gaussian instance
@@ -340,7 +340,7 @@ def dual_primal_speed_high():
         toc = time.time()
         _regreg2_dual = dual_regreg.minimize2(nstep=50)[::-1]
         tic = time.time()
-        print('dual time', tic - toc)
+        print('dual time 2', tic - toc)
 
         toc = time.time()
         _regreg = primal_regreg.minimize2(nstep=50)[::-1]
@@ -351,5 +351,5 @@ def dual_primal_speed_high():
     return _regreg[0]
 
 
-#dual_primal_speed_high()
+dual_primal_speed_high()
 
