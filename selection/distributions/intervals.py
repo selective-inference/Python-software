@@ -89,13 +89,13 @@ class intervals_from_sample(object):
         for j in range(self.shape[0]):
             linear_func = np.zeros(self.shape)
             linear_func[j] = 1.
-            pivots[j] = self._pivot_by_tilting(linear_func, parameter[j])
+            pivots[j] = self._pivot_param(linear_func, parameter[j])
         return pivots
 
-    def confidence_interval(self, linear_func, alpha=0.1):
+    def confidence_interval(self, linear_func, level=0.9):
         '''
 
-        Construct a `(1-alpha)*100`% confidence
+        Construct a `level*100`% confidence
         interval for a linear functional
         of the mean parameter
         of the underlying Gaussian.
@@ -107,8 +107,8 @@ class intervals_from_sample(object):
             Linear functional determining
             parameter.
 
-        alpha : float (optional)
-            Specify the (complement of the)
+        level : float (optional)
+            Specify the
             confidence level.
 
         Returns
@@ -118,6 +118,7 @@ class intervals_from_sample(object):
             Lower and upper limits of confidence
             interval.
         '''
+        alpha = 1 - level
         pvalues_at_grid, grid = self._pivots_grid(linear_func)
         accepted_indices = np.array(pvalues_at_grid > alpha)
         if np.sum(accepted_indices) > 0:
@@ -125,9 +126,9 @@ class intervals_from_sample(object):
             upper = np.max(grid[accepted_indices])
             return lower, upper
 
-    def confidence_intervals_all(self, alpha=0.1):
+    def confidence_intervals_all(self, level=0.9):
         '''
-        Construct a `(1-alpha)*100`% confidence
+        Construct a `level*100`% confidence
         interval for each $\theta_j$
         of the mean parameter
         of the underlying Gaussian.
@@ -135,9 +136,8 @@ class intervals_from_sample(object):
         Parameters
         ----------
 
-        alpha : float (optional)
-            Specify the (complement of the)
-            confidence level.
+        level : float (optional)
+            Specify the confidence level.
 
         Returns
         -------
@@ -150,7 +150,7 @@ class intervals_from_sample(object):
         for j in range(self.shape[0]):
             linear_func = np.zeros(self.shape)
             linear_func[j] = 1.
-            limits = self.confidence_interval(linear_func, alpha=alpha)
+            limits = self.confidence_interval(linear_func, level=level)
             if limits is not None:
                 lower[j], upper[j] = limits
             else:
@@ -159,7 +159,7 @@ class intervals_from_sample(object):
 
     # Private methods
 
-    def _pivot_by_tilting(self, linear_func, param):
+    def _pivot_param(self, linear_func, param):
         """
         Compute pivotal quantity for the
         quantitiy linear_func.dot(parameter)
@@ -187,7 +187,7 @@ class intervals_from_sample(object):
         linear_func = np.atleast_1d(linear_func)
         stdev = np.sqrt(np.sum(linear_func * self.covariance.dot(linear_func)))
         grid = np.linspace(-10*stdev, 10*stdev, 1000) + (self.reference * linear_func).sum()
-        pivots_at_grid = [self._pivot_by_tilting(linear_func, grid[i])
+        pivots_at_grid = [self._pivot_param(linear_func, grid[i])
                           for i in range(grid.shape[0])]
         pivots_at_grid = [2*min(pval, 1-pval) for pval in pivots_at_grid]
         pivots_at_grid = np.asarray(pivots_at_grid)
