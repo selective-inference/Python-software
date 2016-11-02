@@ -77,4 +77,5 @@ for iter in range(200):
 
     print coverage
 
+print null
 print coverage/(200.-null)
