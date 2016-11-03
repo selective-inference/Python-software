@@ -158,20 +158,32 @@ def fs_barrier_conjugate(argument,
 
 
     for itercount in range(nstep):
-        diff_1 = ((4* ((current_active* np.ones(k - 1))**2)) - (current_inactive**2))
-        diff_2 = ((((current_active* np.ones(k - 1))**2)) - (current_inactive**2))
+        lagrange = current_active * np.ones(k - 1)
+
         current_active = current[:E]
         current_inactive = current[E:]
-        lagrange = current_active * np.ones(k - 1)
-        gradient_active = arg_active + 1./(current_active * (current_active+1)) \
-                          + 6. * (np.true_divide(current_active * (current_inactive**2), diff_1*diff_2).sum())
 
-        gradient_inactive = arg_inactive + cube_gradient_scaled(current_inactive,lagrange)
+        diff_1 = (4 * (lagrange ** 2)) - (current_inactive ** 2)
+        diff_2 = (lagrange ** 2) - (current_inactive ** 2)
+
+        inter_grad = 6. * (np.true_divide(current_inactive ** 2, diff_1 * diff_2).sum())
+
+        inter_hessian = (-8./diff_1 + 2./ diff_2).sum()
+
+        gradient_active = arg_active + 1./(current_active * (current_active+1)) \
+                          + current_active * inter_grad
+
+        gradient_inactive = arg_inactive + cube_gradient_scaled(current_inactive, lagrange)
+
+        hessian_inactive = cube_hessian_scaled(current_inactive, lagrange)
+        hessian_active = -1./(current_active**2) + 1./(current_active**2 +1.) + inter_grad +\
+                         (current_active* inter_hessian)
 
         gradient_obj = np.append(gradient_active, gradient_inactive)
 
-        newton_step = ((cube_gradient_scaled(current, lagrange) - cube_argument)/
-                       (cube_hessian_scaled(current, lagrange) + lipschitz))
+        hessian_obj = np.append(hessian_active, hessian_inactive)
+
+        newton_step =np.true_divide(gradient_obj,hessian_obj+lipschitz)
 
         # make sure proposal is a descent
 
