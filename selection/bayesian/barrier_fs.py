@@ -63,7 +63,7 @@ class barrier_conjugate_softmax_fs_rr(rr.smooth_atom):
             else:
                 raise ValueError('mode incorrectly specified')
 
-        maximizer, neg_val = fs_barrier_conjugate(np.append(cube_arg, orthant_arg))
+        maximizer, neg_val = fs_barrier_conjugate(np.append(orthant_arg, cube_arg))
 
         if np.any(np.isnan(maximizer)):
             raise ValueError('cube maximizer is nan')
