@@ -144,9 +144,11 @@ class cube_objective_fs_linear(rr.smooth_atom):
 
         gradient_c_max = np.true_divide(_num,_den)
 
-        vec = 2./(_diff_c - lagrange) + 2./(_sum_c + lagrange) - 1./_diff_c -1./_sum_c
+        vec_1 = 1./(_diff_c - lagrange) + 1./(_sum_c + lagrange) - 1./_diff_c -1./_sum_c
 
-        gradient_c = (z + optimizer + vec).T.dot(gradient_c_max)
+        vec_2 = -2./(_diff_c- lagrange) + 2./(_sum_c + lagrange) + 1./_diff_c -1./_sum_c
+
+        gradient_c = (z + optimizer + vec_1).T.dot(gradient_c_max) + vec_2
 
         #print gradient_z.shape, gradient_c.shape
 
