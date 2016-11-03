@@ -3,7 +3,7 @@ import regreg.api as rr
 from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
 from selection.algorithms.softmax import nonnegative_softmax
 
-class barrier_conjugate_softmax_fs_rr(rr.smooth_atom):
+class barrier_conjugate_fs_rr(rr.smooth_atom):
     """
 
     Conjugate of a barrier for the
@@ -63,7 +63,7 @@ class barrier_conjugate_softmax_fs_rr(rr.smooth_atom):
             else:
                 raise ValueError('mode incorrectly specified')
 
-        maximizer, neg_val = fs_barrier_conjugate(np.append(orthant_arg, cube_arg))
+        maximizer, neg_val = fs_conjugate(np.append(orthant_arg, cube_arg))
 
         if np.any(np.isnan(maximizer)):
             raise ValueError('cube maximizer is nan')
@@ -111,7 +111,7 @@ class linear_map(rr.smooth_atom):
         else:
             raise ValueError('mode incorrectly specified')
 
-def fs_barrier_conjugate(argument,
+def fs_conjugate(argument,
                          nstep=100,
                          initial=None,
                          lipschitz=0,
