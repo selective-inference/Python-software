@@ -3,7 +3,7 @@ import regreg.api as rr
 from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
 from selection.algorithms.softmax import nonnegative_softmax
 
-class barrier_conjugate_softmax_scaled_rr(rr.smooth_atom):
+class barrier_conjugate_softmax_fs_rr(rr.smooth_atom):
     """
 
     Conjugate of a barrier for the
@@ -63,34 +63,19 @@ class barrier_conjugate_softmax_scaled_rr(rr.smooth_atom):
             else:
                 raise ValueError('mode incorrectly specified')
 
-        orthant_maximizer = (- 0.5*self.barrier_scale) + np.sqrt((0.25*(self.barrier_scale**2)) -
-                                                                 (self.barrier_scale / orthant_arg))
+        maximizer, neg_val = fs_barrier_conjugate(np.append(cube_arg, orthant_arg))
 
-        if np.any(np.isnan(orthant_maximizer)):
-            raise ValueError('maximizer is nan')
-
-        orthant_val = np.sum(orthant_maximizer * orthant_arg -
-                             np.log(1 + (self.barrier_scale / orthant_maximizer)))
-
-        cube_maximizer, neg_cube_val = cube_conjugate(cube_arg, self.lagrange)
-
-        if np.any(np.isnan(cube_maximizer)):
+        if np.any(np.isnan(maximizer)):
             raise ValueError('cube maximizer is nan')
 
-        cube_val = -neg_cube_val
+        val = -neg_val
 
         if mode == 'func':
-            return cube_val + orthant_val
+            return val
         elif mode == 'grad':
-            g = np.zeros(self.shape)
-            g[self.cube_bool] = cube_maximizer
-            g[self.orthant_bool] = orthant_maximizer
-            return g
+            return maximizer
         elif mode == 'both':
-            g = np.zeros(self.shape)
-            g[self.cube_bool] = cube_maximizer
-            g[self.orthant_bool] = orthant_maximizer
-            return cube_val + orthant_val, g
+            return val, maximizer
         else:
             raise ValueError('mode incorrectly specified')
 
@@ -127,7 +112,6 @@ class linear_map(rr.smooth_atom):
             raise ValueError('mode incorrectly specified')
 
 def fs_barrier_conjugate(argument,
-                         lagrange,
                          nstep=100,
                          initial=None,
                          lipschitz=0,
@@ -154,8 +138,6 @@ def fs_barrier_conjugate(argument,
     arg_active = argument[:E]
 
     arg_inactive = argument[E:]
-
-
 
     for itercount in range(nstep):
         lagrange = current_active * np.ones(k - 1)
