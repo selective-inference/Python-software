@@ -61,13 +61,14 @@ def fs_primal_test():
     print('fs time', tic-toc)
 
     test = np.append(y,1.)
-    print(fs_rp.smooth_objective(test, mode='grad'))
-    #toc = time.time()
-    #sel_prob_fs_rp = fs_rp.minimize2(nstep=50)[::-1]
-    #tic = time.time()
-    #print('fs_rp time', tic - toc)
+    print(fs_rp.smooth_objective(test, mode='both'), fs.smooth_objective(test, mode='both'))
 
-    #print("selection prob and minimizer- fs", sel_prob_fs)
+    toc = time.time()
+    sel_prob_fs_rp = fs_rp.minimize2(nstep=50)[::-1]
+    tic = time.time()
+    print('fs_rp time', tic - toc)
+
+    print("selection prob and minimizer- fs", sel_prob_fs, sel_prob_fs_rp)
 
 fs_primal_test()
 
