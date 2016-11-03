@@ -441,7 +441,7 @@ class dual_selection_probability_fs(rr.smooth_atom):
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        _barrier_star = barrier_conjugate_fs_rr(self.cube_bool, self.inactive_lagrange)
+        _barrier_star = barrier_conjugate_fs_rr(self.cube_bool)
 
         # _barrier_star = barrier_conjugate_log(self.cube_bool, self.inactive_lagrange)
 
