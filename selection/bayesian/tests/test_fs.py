@@ -10,7 +10,7 @@ from selection.bayesian.forward_step_reparametrized import cube_subproblem_fs_li
     selection_probability_objective_fs_rp
 
 def fs_primal_test():
-    n = 30
+    n = 50
     p = 10
     s = 5
     snr = 3
