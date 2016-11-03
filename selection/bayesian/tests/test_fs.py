@@ -7,7 +7,7 @@ from selection.tests.instance import gaussian_instance
 from selection.bayesian.forward_step import cube_subproblem_fs, cube_objective_fs, selection_probability_objective_fs
 from selection.randomized.api import randomization
 from selection.bayesian.forward_step_reparametrized import cube_subproblem_fs_linear, cube_objective_fs_linear, \
-    selection_probability_objective_fs_rp
+    selection_probability_objective_fs_rp, dual_selection_probability_fs
 
 def fs_primal_test():
     n = 50
@@ -70,7 +70,69 @@ def fs_primal_test():
 
     print("selection prob and minimizer- fs", sel_prob_fs, sel_prob_fs_rp)
 
-fs_primal_test()
+#fs_primal_test()
+
+#################################test for dual and primal comparisons
+
+def fs_primal_dual_test():
+    n = 50
+    p = 10
+    s = 5
+    snr = 3
+
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    print(true_beta, nonzero, noise_variance)
+    random_Z = np.random.standard_normal(p)
+    random_obs = X_1.T.dot(y) + random_Z
+    active_index = np.argmax(random_obs)
+    active = np.zeros(p, bool)
+    active[active_index] = 1
+    active_sign = np.sign(random_obs[active_index])
+    nactive = 1
+
+
+    primal_feasible = np.fabs(random_obs[active_index])
+    dual_feasible = np.append(-1.,np.ones(p-1))
+    tau = 1 #randomization_variance
+
+    parameter = np.random.standard_normal(nactive)
+    mean = X_1[:, active].dot(parameter)
+
+    #print(active_index, active, active_sign, mean)
+    randomizer = randomization.isotropic_gaussian((p,), 1.)
+
+    fs_primal = selection_probability_objective_fs_rp(X_1,
+                                                      primal_feasible,
+                                                      active,
+                                                      active_sign,
+                                                      mean,  # in R^n
+                                                      noise_variance,
+                                                      randomizer)
+
+    fs_dual = dual_selection_probability_fs(X_1,
+                                            dual_feasible,
+                                            active,
+                                            active_sign,
+                                            mean,  # in R^n
+                                            noise_variance,
+                                            randomizer)
+
+    toc = time.time()
+    sel_prob_primal = fs_primal.minimize2(nstep = 50)[::-1]
+    tic = time.time()
+    print('fs time', tic-toc)
+
+    toc = time.time()
+    sel_prob_dual = fs_dual.minimize2(nstep=70)[::-1]
+    tic = time.time()
+    print('fs_rp time', tic - toc)
+
+    print("selection prob and minimizer- fs", sel_prob_primal, sel_prob_dual)
+
+fs_primal_dual_test()
+
+
+############################################################################
 
 
 def fs_one_sparse_test():
