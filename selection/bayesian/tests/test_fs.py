@@ -6,9 +6,11 @@ from scipy.optimize import minimize
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.forward_step import cube_subproblem_fs, cube_objective_fs, selection_probability_objective_fs
 from selection.randomized.api import randomization
+from selection.bayesian.forward_step_reparametrized import cube_subproblem_fs_linear, cube_objective_fs_linear, \
+    selection_probability_objective_fs_rp
 
 def fs_primal_test():
-    n = 100
+    n = 30
     p = 10
     s = 5
     snr = 3
@@ -45,14 +47,29 @@ def fs_primal_test():
                                             noise_variance,
                                             randomizer)
 
+    fs_rp = selection_probability_objective_fs_rp(X_1,
+                                                  feasible_point,
+                                                  active,
+                                                  active_sign,
+                                                  mean,  # in R^n
+                                                  noise_variance,
+                                                  randomizer)
+
     toc = time.time()
     sel_prob_fs = fs.minimize2(nstep = 50)[::-1]
     tic = time.time()
     print('fs time', tic-toc)
 
-    print("selection prob and minimizer- fs", sel_prob_fs)
+    test = np.append(y,1.)
+    print(fs_rp.smooth_objective(test, mode='grad'))
+    #toc = time.time()
+    #sel_prob_fs_rp = fs_rp.minimize2(nstep=50)[::-1]
+    #tic = time.time()
+    #print('fs_rp time', tic - toc)
 
-#fs_primal_test()
+    #print("selection prob and minimizer- fs", sel_prob_fs)
+
+fs_primal_test()
 
 
 def fs_one_sparse_test():
@@ -82,16 +99,20 @@ def fs_one_sparse_test():
         parameter = snr_seq[i]
         mean = X_1[:, active].dot(parameter)
 
-        fs = selection_probability_objective_fs(X_1,
-                                                feasible_point,
-                                                active,
-                                                active_sign,
-                                                mean,  # in R^n
-                                                noise_variance,
-                                                randomizer)
+        fs = selection_probability_objective_fs_rp(X_1,
+                                                   feasible_point,
+                                                   active,
+                                                   active_sign,
+                                                   mean,  # in R^n
+                                                   noise_variance,
+                                                   randomizer)
 
 
         sel_prob_fs = fs.minimize2(nstep = 50)[::-1]
+        print(parameter, sel_prob_fs[0], sel_prob_fs[1])
+        result.append([parameter, -sel_prob_fs[0]])
+
+        sel_prob_fs_rp = fs.minimize2(nstep=50)[::-1]
         print(parameter, sel_prob_fs[0], sel_prob_fs[1])
         result.append([parameter, -sel_prob_fs[0]])
 

@@ -146,7 +146,7 @@ class cube_objective_fs_linear(rr.smooth_atom):
 
         vec_1 = 1./(_diff_c - lagrange) + 1./(_sum_c + lagrange) - 1./_diff_c -1./_sum_c
 
-        vec_2 = -2./(_diff_c- lagrange) + 2./(_sum_c + lagrange) + 1./_diff_c -1./_sum_c
+        vec_2 = (-2./(_diff_c- lagrange) + 2./(_sum_c + lagrange) + 1./_diff_c -1./_sum_c).sum()
 
         gradient_c = (z + optimizer + vec_1).T.dot(gradient_c_max) + vec_2
 
@@ -164,7 +164,7 @@ class cube_objective_fs_linear(rr.smooth_atom):
             raise ValueError("mode incorrectly specified")
 
 
-class selection_probability_objective_fs(rr.smooth_atom):
+class selection_probability_objective_fs_rp(rr.smooth_atom):
     def __init__(self,
                  X,
                  feasible_point,
