@@ -140,17 +140,17 @@ def fs_barrier_conjugate(argument,
     arg_inactive = argument[E:]
 
     for itercount in range(nstep):
-        lagrange = current_active * np.ones(k - 1)
-
         current_active = current[:E]
         current_inactive = current[E:]
+
+        lagrange = current_active * np.ones(k - 1)
 
         diff_1 = (4 * (lagrange ** 2)) - (current_inactive ** 2)
         diff_2 = (lagrange ** 2) - (current_inactive ** 2)
 
         inter_grad = 6. * (np.true_divide(current_inactive ** 2, diff_1 * diff_2).sum())
 
-        inter_hessian = (-8./diff_1 + 2./ diff_2).sum()
+        inter_hessian = (-64./(diff_1**2) + 4./ (diff_2**2)).sum()
 
         gradient_active = arg_active + 1./(current_active * (current_active+1)) \
                           + current_active * inter_grad
@@ -159,7 +159,7 @@ def fs_barrier_conjugate(argument,
 
         hessian_inactive = cube_hessian_scaled(current_inactive, lagrange)
         hessian_active = -1./(current_active**2) + 1./(current_active**2 +1.) + inter_grad +\
-                         (current_active* inter_hessian)
+                         ((current_active**2)* inter_hessian)
 
         gradient_obj = np.append(gradient_active, gradient_inactive)
 
