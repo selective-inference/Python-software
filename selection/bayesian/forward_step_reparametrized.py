@@ -91,7 +91,7 @@ def cube_subproblem_fs_linear(argument,
 class cube_objective_fs_linear(rr.smooth_atom):
     def __init__(self,
                  randomization_CGF_conjugate,
-                 nstep=10,
+                 nstep=100,
                  tol=1.e-10,
                  initial=None,
                  coef=1.,
@@ -130,6 +130,8 @@ class cube_objective_fs_linear(rr.smooth_atom):
                                                      self.randomization_CGF_conjugate,
                                                      nstep=self.nstep,
                                                      tol=self.tol)
+
+        #print "opt scaled",optimizer/6.
 
         gradient_z = z + optimizer
 

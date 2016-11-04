@@ -89,7 +89,7 @@ class cube_objective_fs(rr.smooth_atom):
     def __init__(self,
                  randomization_CGF_conjugate,
                  lagrange=1.,
-                 nstep=10,
+                 nstep=100,
                  tol=1.e-10,
                  initial=None,
                  coef=1.,
@@ -132,9 +132,12 @@ class cube_objective_fs(rr.smooth_atom):
                                               nstep=self.nstep,
                                               tol=self.tol)
 
+        #print "opt",optimizer
+
         gradient_z = z + (c * optimizer)
 
-        gradient_max_c = -np.true_divide((2* c* optimizer) + z, (c**2 + cube_hessian_scaled(optimizer, lagrange = 1.)))
+        gradient_max_c = -np.true_divide((2* c* optimizer) + z, ((c**2)*np.ones(z.shape[0])
+                                                                 + cube_hessian_scaled(optimizer, lagrange = 1.)))
 
         gradient_c = (c* z.T + cube_gradient_scaled(optimizer, lagrange = 1.).T + ((c**2)*optimizer.T)).\
             dot(gradient_max_c) + (c*(optimizer.T.dot(optimizer))) + optimizer.T.dot(z)
