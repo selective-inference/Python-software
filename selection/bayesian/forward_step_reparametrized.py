@@ -137,10 +137,10 @@ class cube_objective_fs_linear(rr.smooth_atom):
         _diff_c = optimizer - lagrange # z - c < 0
         _sum_c = optimizer +  lagrange # z + c > 0
 
-        _num = -2. / ((_diff_c - lagrange)**2) - 1. /( _diff_c**2) + 2. / ((_sum_c + lagrange)**2) \
-                         + 1. / (_sum_c**2)
+        _num = -2. / ((_diff_c - lagrange)**2) + 1. /( _diff_c**2) + 2. / ((_sum_c + lagrange)**2) \
+                         - 1. / (_sum_c**2)
 
-        _den = 1. - (1. / _diff_c ** 2 + 1. / ((_diff_c - lagrange) ** 2) + 1. / _sum_c ** 2 + \
+        _den = np.ones(z.shape[0]) - (-1. / _diff_c ** 2 + 1. / ((_diff_c - lagrange) ** 2) - 1. / _sum_c ** 2 + \
            1. / ((_sum_c + lagrange) ** 2))
 
         gradient_c_max = np.true_divide(_num,_den)
