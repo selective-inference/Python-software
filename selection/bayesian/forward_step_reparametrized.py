@@ -250,7 +250,7 @@ class selection_probability_objective_fs_rp(rr.smooth_atom):
         #print sign_array.shape, X[:, active].T.shape, X[:, ~active].T.shape, np.zeros(p-E).shape
         self.A_active = np.hstack([-X[:, active].T, sign_array])
         self.A_inactive_1 = np.hstack([-X[:, ~active].T, np.zeros((p-E,1))])
-        self.A_inactive_2 = np.hstack([np.zeros((n,E)).T, np.ones((E,E)).T])
+        self.A_inactive_2 = np.hstack([np.zeros((n,E)).T, sign_array])
         self.A_inactive = np.vstack([self.A_inactive_1, self.A_inactive_2])
 
         #print self.A_active.shape, self.A_inactive.shape

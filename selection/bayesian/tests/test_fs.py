@@ -16,7 +16,7 @@ def fs_primal_test():
     snr = 5
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
-    print(true_beta, nonzero, noise_variance)
+    #print(true_beta, nonzero, noise_variance)
     random_Z = np.random.standard_normal(p)
     random_obs = X_1.T.dot(y) + random_Z
     active_index = np.argmax(random_obs)
@@ -24,6 +24,7 @@ def fs_primal_test():
     active[active_index] = 1
     active_sign = np.sign(random_obs[active_index])
     nactive = 1
+    print(active_index, active_sign)
 
     test_point_primal = np.append(np.random.uniform(low=-2.0, high=2.0, size=n), 6)
 
