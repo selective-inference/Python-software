@@ -57,7 +57,10 @@ def fs_primal_test():
                                                   noise_variance,
                                                   randomizer)
 
-    #print("compare primal objectives", fs.smooth_objective(test_point_primal),fs_rp.smooth_objective(test_point_primal))
+    #print("compare primal grads", fs.smooth_objective(test_point_primal, mode='grad')-
+    #      fs_rp.smooth_objective(test_point_primal, mode= 'grad'))
+    #print("compare primal objectives", fs.smooth_objective(test_point_primal, mode='func') -
+    #      fs_rp.smooth_objective(test_point_primal, mode='func'))
 
     fs_dual = dual_selection_probability_fs(X_1,
                                             dual_feasible,
@@ -75,7 +78,7 @@ def fs_primal_test():
     print('fs time', tic-toc)
 
     #test = np.append(y,1.)
-    #print(fs_rp.smooth_objective(test, mode='both'), fs.smooth_objective(test, mode='both'))
+    #print(fs_rp.smooth_objective(test, mode='grad'), fs.smooth_objective(test, mode='grad'))
 
     toc = time.time()
     sel_prob_fs_rp = fs_rp.minimize2(nstep=100)[::-1]
@@ -86,6 +89,10 @@ def fs_primal_test():
           fs.smooth_objective(sel_prob_fs_rp[1],mode='func'))
     print("primal rp objectives at minimum ", fs_rp.smooth_objective(sel_prob_fs[1],mode='func'),
           fs_rp.smooth_objective(sel_prob_fs_rp[1],mode='func'))
+    print("primal grads at minimum", fs.smooth_objective(sel_prob_fs[1], mode='grad')-
+          fs_rp.smooth_objective(sel_prob_fs[1], mode='grad'))
+    print("primal grads at minimum", fs.smooth_objective(sel_prob_fs_rp[1], mode='grad') -
+          fs_rp.smooth_objective(sel_prob_fs_rp[1], mode='grad'))
 
     toc = time.time()
     sel_prob_dual_rp = fs_dual.minimize2(nstep=100)[::-1]
