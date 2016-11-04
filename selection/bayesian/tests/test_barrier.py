@@ -7,6 +7,7 @@ from selection.randomized.api import randomization
 from selection.bayesian.barrier import barrier_conjugate_softmax_scaled, barrier_conjugate_softmax_scaled_rr
 
 from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
+from selection.bayesian.barrier_fs import linear_map, fs_conjugate, barrier_conjugate_fs_rr
 
 
 
@@ -276,4 +277,18 @@ def test_barrier_conjugate_softmax():
 
 
 
-test_barrier_conjugate_softmax()
+#test_barrier_conjugate_softmax()
+
+def test_barrier_conjugate_fs():
+    p = 15
+    cube_bool = np.zeros(p, np.bool)
+    cube_bool[1:] = 1
+    argument = np.append(-1,np.random.uniform(low=-10.0, high=10.0, size=p-1))
+    print("argument", argument)
+
+    _barrier_star = barrier_conjugate_fs_rr(cube_bool)
+    print("conjugate value and maximizer",_barrier_star.smooth_objective(argument))
+
+    _conjugate = fs_conjugate(argument)
+
+test_barrier_conjugate_fs()

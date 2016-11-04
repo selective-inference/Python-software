@@ -21,7 +21,7 @@ class barrier_conjugate_fs_rr(rr.smooth_atom):
         p = cube_bool.shape[0]
         orthant_bool = ~cube_bool
 
-        initial = np.ones(p)
+        initial = -np.ones(p)
         self._initial = initial[cube_bool] = 0.5 * np.ones(p-1)
 
         if barrier_scale is None:
@@ -112,10 +112,10 @@ class linear_map(rr.smooth_atom):
             raise ValueError('mode incorrectly specified')
 
 def fs_conjugate(argument,
-                         nstep=100,
-                         initial=None,
-                         lipschitz=0,
-                         tol=1.e-10):
+                 nstep=30,
+                 initial=None,
+                 lipschitz=0,
+                 tol=1.e-10):
 
     k = argument.shape[0]
     E = 1
@@ -140,6 +140,7 @@ def fs_conjugate(argument,
     arg_inactive = argument[E:]
 
     for itercount in range(nstep):
+        #print "loc", current
         current_active = current[:E]
         current_inactive = current[E:]
 
@@ -158,14 +159,16 @@ def fs_conjugate(argument,
         gradient_inactive = arg_inactive + cube_gradient_scaled(current_inactive, lagrange)
 
         hessian_inactive = cube_hessian_scaled(current_inactive, lagrange)
-        hessian_active = -1./(current_active**2) + 1./(current_active**2 +1.) + inter_grad +\
+        hessian_active = -1./(current_active**2) + 1./(current_active**2 + 1.) + inter_grad -\
                          ((current_active**2)* inter_hessian)
 
         gradient_obj = np.append(gradient_active, gradient_inactive)
 
         hessian_obj = np.append(hessian_active, hessian_inactive)
 
-        newton_step =np.true_divide(gradient_obj,hessian_obj+lipschitz)
+        newton_step =np.true_divide(gradient_obj, hessian_obj+lipschitz)
+
+        #print "loc",diff_1, diff_2, gradient_obj, hessian_obj
 
         # make sure proposal is a descent
 
@@ -178,6 +181,7 @@ def fs_conjugate(argument,
             step *= 0.5
 
         # stop if relative decrease is small
+        #print "loc-1", current, np.fabs(current_value - proposed_value)
 
         if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
             current = proposal

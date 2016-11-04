@@ -422,17 +422,15 @@ class dual_selection_probability_fs(rr.smooth_atom):
 
         self.active = active
 
-        X_E = self.X_E = X[:, active]
+        sign_array = np.zeros((E, E))
+        sign_array[0:, :] = active_sign
+
+        self.X_E = X[:, active]
         self.X_permute = np.hstack([self.X_E, self._X[:, ~active]])
 
-        self.active_slice = np.zeros_like(active, np.bool)
-        self.active_slice[:active.sum()] = True
-
-        self.B_active = np.hstack([active_sign[None, :], np.zeros((E, p - E))])
+        self.B_active = np.hstack([sign_array, np.zeros((E, p - E))])
         self.B_inactive = np.hstack([np.zeros((p-E,E)), np.identity((p - E))])
-        self.B_p = np.vstack((self.B_active, self.B_inactive))
-
-        self.B_p_inv = np.linalg.inv(self.B_p.T)
+        self.B_p_inv = np.vstack((self.B_active, self.B_inactive))
 
         self.cube_bool = np.zeros(p, np.bool)
 
@@ -446,15 +444,23 @@ class dual_selection_probability_fs(rr.smooth_atom):
 
         # _barrier_star = barrier_conjugate_log(self.cube_bool, self.inactive_lagrange)
 
-        self.conjugate_barrier = rr.affine_smooth(_barrier_star, np.identity(p))
+        self.conjugate_barrier = _barrier_star
+
+        #self.conjugate_barrier = rr.affine_smooth(_barrier_star, np.identity(p))
+
+        print self.conjugate_barrier.smooth_objective(np.append(np.append(-1, 0.5*np.ones(p-2)),0.9))
 
         self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -self.B_p_inv)
 
         self.constant = np.true_divide(mean_parameter.dot(mean_parameter), 2 * noise_variance)
 
+        self.linear_term = rr.identity_quadratic(0, 0, 0, -self.constant)
+
         self.total_loss = rr.smooth_sum([self.conjugate_barrier,
                                          self.CGF_randomizer,
                                          self.likelihood_loss])
+
+        self.total_loss.quadratic = self.linear_term
 
     def set_parameter(self, mean_parameter, noise_variance):
 
@@ -464,7 +470,7 @@ class dual_selection_probability_fs(rr.smooth_atom):
 
         self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_permute.dot(self.B_p_inv))
 
-    def smooth_objective(self, param, mode='both', check_feasibility=False):
+    def _smooth_objective(self, param, mode='both', check_feasibility=False):
 
         param = self.apply_offset(param)
 
@@ -502,7 +508,7 @@ class dual_selection_probability_fs(rr.smooth_atom):
         current_value = np.inf
 
         objective = lambda u: self.total_loss.objective(u)
-        grad = lambda u: self.total_loss.smooth_objective(u, 'grad') + self.dual_arg
+        grad = lambda u: self.total_loss.smooth_objective(u, 'grad')
 
         for itercount in range(nstep):
             newton_step = grad(current) * self.noise_variance
@@ -513,7 +519,7 @@ class dual_selection_probability_fs(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                if np.all(proposal[self.active_slice] < 0):
+                if np.all(proposal[:1] < 0):
                     break
                 step *= 0.5
                 if count >= 40:
