@@ -10,7 +10,7 @@ from selection.bayesian.forward_step_reparametrized import cube_subproblem_fs_li
     selection_probability_objective_fs_rp, dual_selection_probability_fs
 
 def fs_primal_test():
-    n = 50
+    n = 100
     p = 10
     s = 5
     snr = 5
@@ -76,7 +76,7 @@ def fs_primal_test():
     toc = time.time()
     sel_prob_fs = fs.minimize2(nstep = 100)[::-1]
     tic = time.time()
-    print('fs time', tic-toc)
+
 
     #test = np.append(y,1.)
     #print(fs_rp.smooth_objective(test, mode='grad'), fs.smooth_objective(test, mode='grad'))
@@ -84,7 +84,6 @@ def fs_primal_test():
     toc = time.time()
     sel_prob_fs_rp = fs_rp.minimize2(nstep=100)[::-1]
     tic = time.time()
-    print('fs_rp time', tic - toc)
 
     print("primal objectives at minimum", fs.smooth_objective(sel_prob_fs[1],mode='func'),
           fs.smooth_objective(sel_prob_fs_rp[1],mode='func'))
@@ -98,6 +97,10 @@ def fs_primal_test():
     toc = time.time()
     sel_prob_dual_rp = fs_dual.minimize2(nstep=100)[::-1]
     tic = time.time()
+
+
+    print('fs time', tic - toc)
+    print('fs_rp time', tic - toc)
     print('fs_dual time', tic - toc)
 
     print("selection prob and minimizer- fs", sel_prob_fs[0], sel_prob_fs_rp[0], sel_prob_dual_rp[0])
