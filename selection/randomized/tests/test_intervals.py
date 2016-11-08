@@ -134,3 +134,5 @@ def report(niter=50, **kwargs):
 
     fig = reports.pivot_plot(bootstrap_runs, color='g', label='CLT', fig=fig)
     fig.savefig('intervals_pivots.pdf') # will have both bootstrap and CLT on plot
+
+report()
