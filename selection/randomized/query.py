@@ -1246,7 +1246,9 @@ class translate_intervals(object): # intervals_from_sample):
         observed_stat = test_statistic(observed_delta)
         
         candidate_sample, weights = self._weights(candidate)
-        sample_stat = np.array([test_statistic(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
+        #sample_stat = np.array([test_statistic(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
+        sample_stat = np.array([test_statistic(s) for s in self._delta[:, self.targeted_sampler.target_slice]])
+
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
 
         if alternative == 'twosided':
