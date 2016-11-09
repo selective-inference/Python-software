@@ -990,7 +990,8 @@ class targeted_sampler(object):
                                       ndraw=10000,
                                       burnin=2000,
                                       stepsize=None,
-                                      sample=None):
+                                      sample=None,
+                                      alternative='twosided'):
         '''
         Parameters
         ----------
@@ -1295,7 +1296,10 @@ class translate_intervals(object): # intervals_from_sample):
         candidate_sample[:, self.targeted_sampler.target_slice] += candidate[None, :]
         _lognum = self.targeted_sampler.log_randomization_density(candidate_sample)
 
-        return candidate_sample, np.exp(_lognum - self._logden)
+        _logratio = _lognum - self._logden
+        _logratio -= _logratio.max()
+
+        return candidate_sample, np.exp(_logratio)
 
 
 
