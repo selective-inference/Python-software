@@ -24,7 +24,6 @@ def test_intervals(s=0,
                    p=20,
                    snr=7,
                    rho=0.1,
-                   split_frac=0.8,
                    lam_frac=0.7,
                    ndraw=10000, 
                    burnin=2000, 
@@ -34,6 +33,7 @@ def test_intervals(s=0,
 
     randomizer = randomization.laplace((p,), scale=1.)
     #randomizer = randomization.gaussian(np.identity(p))
+    #randomizer =randomization.logistic((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
@@ -75,7 +75,6 @@ def test_intervals(s=0,
         if intervals == 'old':
             target_sample = target_sampler.sample(ndraw=ndraw,
                                                   burnin=burnin)
-
             LU = target_sampler.confidence_intervals(target_observed,
                                                      sample=target_sample,
                                                      level=0.9)
@@ -92,27 +91,20 @@ def test_intervals(s=0,
             full_sample = target_sampler.sample(ndraw=ndraw,
                                                 burnin=burnin,
                                                 keep_opt=True)
-
             LU = target_sampler.confidence_intervals_translate(target_observed,
                                                                sample=full_sample,
                                                                level=0.9)
-
             pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
                                                             parameter=target_sampler.reference,
                                                             sample=full_sample)
-
             pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
                                                           parameter=true_vec,
                                                           sample=full_sample)
-
             pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
                                                      parameter=np.zeros_like(true_vec),
                                                      sample=full_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
-
-
-        unpenalized_mle = restricted_Mest(loss, M_est1.selection_variable['variables'], solve_args=solve_args)
 
         L, U = LU.T
 

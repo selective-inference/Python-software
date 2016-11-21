@@ -28,10 +28,10 @@ def test_multiple_splits(s=3, n=300, p=20,
                        split_frac=0.8,
                        lam_frac=0.7,
                        nsplits=4,
+                       intervals ='old',
                        ndraw=10000, burnin=2000,
                        solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
 
-    randomizer = randomization.laplace((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
@@ -52,17 +52,12 @@ def test_multiple_splits(s=3, n=300, p=20,
         view.append(split_glm_group_lasso(loss, epsilon, m, penalty))
 
     mv = multiple_queries(view)
-    #M_est1 = split_glm_group_lasso(loss, epsilon, m, penalty)
-    # mv = multiple_queries([M_est1, M_est2])
-    #mv = multiple_queries([M_est1])
     mv.solve()
 
     active_union = np.zeros(p, np.bool)
     for i in range(nsplits):
         active_union += view[i].selection_variable['variables']
 
-    nactive = np.sum(active_union)
-    #active_union = M_est1.selection_variable['variables'] #+ M_est2.selection_variable['variables']
     nactive = np.sum(active_union)
     print("nactive", nactive)
     if nactive==0:
@@ -78,40 +73,57 @@ def test_multiple_splits(s=3, n=300, p=20,
         true_vec = beta[active_union]
 
         ## bootstrap
-
         target_sampler_boot, target_observed = glm_target(loss,
                                                           active_union,
                                                           mv,
                                                           bootstrap=True)
 
-        target_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
-                                                        burnin=burnin)
-
-        LU_boot = target_sampler_boot.confidence_intervals(target_observed,
-                                                           sample=target_sample_boot)
-
-        pivots_boot = target_sampler_boot.coefficient_pvalues(target_observed,
-                                                              parameter=true_vec,
-                                                              sample=target_sample_boot)
+        if intervals == 'old':
+            target_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
+                                                            burnin=burnin)
+            LU_boot = target_sampler_boot.confidence_intervals(target_observed,
+                                                               sample=target_sample_boot,
+                                                               level=0.9)
+            pivots_boot = target_sampler_boot.coefficient_pvalues(target_observed,
+                                                                  parameter=true_vec,
+                                                                  sample=target_sample_boot)
+        else:
+            full_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
+                                                          burnin=burnin,
+                                                          keep_opt=True)
+            LU_boot = target_sampler_boot.confidence_intervals_translate(target_observed,
+                                                                         sample=full_sample_boot,
+                                                                         level=0.9)
+            pivots_boot = target_sampler_boot.coefficient_pvalues_translate(target_observed,
+                                                                            parameter=true_vec,
+                                                                            sample=full_sample_boot)
         ## CLT plugin
-
         target_sampler, _ = glm_target(loss,
                                        active_union,
-                                       mv)
+                                       mv,
+                                       bootstrap=False)
 
-
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
-        pivots = target_sampler.coefficient_pvalues(target_observed,
-                                                    parameter=true_vec,
-                                                    sample=target_sample)
-
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample)
+        if intervals == 'old':
+            target_sample = target_sampler.sample(ndraw=ndraw,
+                                                  burnin=burnin)
+            LU = target_sampler.confidence_intervals(target_observed,
+                                                     sample=target_sample,
+                                                     level=0.9)
+            pivots = target_sampler.coefficient_pvalues(target_observed,
+                                                        parameter=true_vec,
+                                                        sample=target_sample)
+        else:
+            full_sample = target_sampler.sample(ndraw=ndraw,
+                                                burnin=burnin,
+                                                keep_opt=True)
+            LU = target_sampler.confidence_intervals_translate(target_observed,
+                                                               sample=full_sample,
+                                                               level=0.9)
+            pivots = target_sampler.coefficient_pvalues_translate(target_observed,
+                                                                  parameter=true_vec,
+                                                                  sample=full_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
-
-
 
 
         def coverage(LU):
@@ -139,9 +151,10 @@ def test_multiple_splits(s=3, n=300, p=20,
         return pivots, pivots_boot, covered, ci_length, covered_boot, ci_length_boot, \
                 active_var, covered_naive, ci_length_naive
 
+
 def report(niter=50, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.5, 'nsplits':3}
+    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.5, 'nsplits':3, 'intervals':'old'}
     split_report = reports.reports['test_multiple_splits']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],

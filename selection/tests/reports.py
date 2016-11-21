@@ -370,9 +370,17 @@ def compute_lengths(multiple_results):
 def compute_length_frac(multiple_results):
     result = {}
     if 'ci_length_clt' and 'ci_length_split' in multiple_results.columns:
-        result['split/clt'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_clt']))
+        split = multiple_results['ci_length_split']
+        clt = multiple_results['ci_length_clt']
+        split = split[~np.isnan(clt)]
+        clt = clt[~np.isnan(clt)]
+        result['split/clt'] = np.median(np.divide(split, clt))
     if 'ci_length_boot' and 'ci_length_split' in multiple_results.columns:
-        result['split/boot'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_boot']))
+        split = multiple_results['ci_length_split']
+        boot = multiple_results['ci_length_boot']
+        split = split[~np.isnan(boot)]
+        boot = clt[~np.isnan(boot)]
+        result['split/boot'] = np.median(np.divide(split, boot))
     return result
 
 def compute_screening(multiple_results):

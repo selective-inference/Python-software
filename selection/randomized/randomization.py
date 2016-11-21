@@ -1,8 +1,7 @@
 """
 Different randomization options for selective sampler.
-
 Main method used in selective sampler is the gradient method which
-should be a gradient of the negative of the log-density. For a 
+should be a gradient of the negative of the log-density. For a
 Gaussian density, this will be a convex function, not a concave function.
 """
 from __future__ import division, print_function
@@ -13,11 +12,11 @@ from scipy.stats import laplace, norm as ndist
 
 class randomization(rr.smooth_atom):
 
-    def __init__(self, 
-                 shape, 
-                 density, 
-                 grad_negative_log_density, 
-                 sampler, 
+    def __init__(self,
+                 shape,
+                 density,
+                 grad_negative_log_density,
+                 sampler,
                  lipschitz=1,
                  log_density=None):
 
@@ -52,15 +51,11 @@ class randomization(rr.smooth_atom):
     def gradient(self, perturbation):
         """
         Evaluate the gradient of the log-density.
-
         Parameters
         ----------
-
         perturbation : np.float
-
         Returns
         -------
-
         gradient : np.float
         """
         return self.smooth_objective(perturbation, mode='grad')
@@ -68,15 +63,11 @@ class randomization(rr.smooth_atom):
     def log_density(self, perturbation):
         """
         Evaluate the log-density.
-
         Parameters
         ----------
-
         perturbation : np.float
-
         Returns
         -------
-
         value : float
         """
         return np.squeeze(self._log_density(perturbation))
@@ -95,27 +86,24 @@ class randomization(rr.smooth_atom):
     def isotropic_gaussian(shape, scale):
         """
         Isotropic Gaussian with SD `scale`.
-
         Parameters
         ----------
-
         shape : tuple
             Shape of noise.
-
         scale : float
             SD of noise.
         """
         rv = ndist(scale=scale, loc=0.)
-        density = lambda x: rv.pdf(x)
+        density = lambda x: np.product(rv.pdf(x))
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
 
         p = np.product(shape)
         constant = -0.5 * p * np.log(2 * np.pi * scale**2)
-        return randomization(shape, 
-                             density, 
-                             grad_negative_log_density, 
-                             sampler, 
+        return randomization(shape,
+                             density,
+                             grad_negative_log_density,
+                             sampler,
                              lipschitz=1./scale**2,
                              log_density = lambda x: -0.5 * (np.atleast_2d(x)**2).sum(1) / scale**2 + constant)
 
@@ -123,16 +111,14 @@ class randomization(rr.smooth_atom):
     def gaussian(covariance):
         """
         Gaussian noise with a given covariance.
-
         Parameters
         ----------
-
         covariance : np.float((*,*))
             Positive definite covariance matrix. Non-negative definite
             will raise an error.
         """
         precision = np.linalg.inv(covariance)
-        sqrt_precision = np.linalg.cholesky(precision)
+        sqrt_precision = np.linalg.cholesky(precision).T
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
         _const = np.sqrt((2*np.pi)**p * _det)
@@ -140,37 +126,34 @@ class randomization(rr.smooth_atom):
         grad_negative_log_density = lambda x: precision.dot(x)
         sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
 
-        return randomization((p,), 
-                             density, 
-                             grad_negative_log_density, 
-                             sampler, 
+        return randomization((p,),
+                             density,
+                             grad_negative_log_density,
+                             sampler,
                              lipschitz=np.linalg.svd(precision)[1].max(),
-                             log_density = lambda x: np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const))
+                             log_density = lambda x: -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const))
 
     @staticmethod
     def laplace(shape, scale):
         """
         Standard Laplace noise multiplied by `scale`
-
         Parameters
         ----------
-
         shape : tuple
             Shape of noise.
-
         scale : float
             Scale of noise.
         """
         rv = laplace(scale=scale, loc=0.)
-        density = lambda x: rv.pdf(x)
+        density = lambda x: np.product(rv.pdf(x))
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
 
         constant = -np.product(shape) * np.log(2 * scale)
-        return randomization(shape, 
-                             density, 
-                             grad_negative_log_density, 
-                             sampler, 
+        return randomization(shape,
+                             density,
+                             grad_negative_log_density,
+                             sampler,
                              lipschitz=1./scale**2,
                              log_density = lambda x: -np.fabs(np.atleast_2d(x)).sum(1) / scale - np.log(scale) + constant)
 
@@ -178,30 +161,29 @@ class randomization(rr.smooth_atom):
     def logistic(shape, scale):
         """
         Standard logistic noise multiplied by `scale`
-
         Parameters
         ----------
-
         shape : tuple
             Shape of noise.
-
         scale : float
             Scale of noise.
         """
         # from http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.logistic.html
-        density = lambda x: (np.exp(-x / scale) / (1 + np.exp(-x / scale))**2) / scale**(np.product(x.shape))
+        density = lambda x: (np.product(np.exp(-x / scale) /
+                                        (1 + np.exp(-x / scale))**2)
+                             / scale**(np.product(x.shape)))
         # negative log density is (with \mu=0)
         # x/s + log(s) + 2 \log (1 + e(-x/s))
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
         sampler = lambda size: np.random.logistic(loc=0, scale=scale, size=shape + size)
 
         constant = - np.product(shape) * np.log(scale)
-        return randomization(shape, 
-                             density, 
-                             grad_negative_log_density, 
-                             sampler, 
+        return randomization(shape,
+                             density,
+                             grad_negative_log_density,
+                             sampler,
                              lipschitz=.25/scale**2,
-                             log_density = lambda x: -np.atleast_2d(x).sum(1) / scale - 2 * np.log(1 + np.exp(-np.atleast_2d(x) / scale)).sum(1) + constant) 
+                             log_density = lambda x: -np.atleast_2d(x).sum(1) / scale - 2 * np.log(1 + np.exp(-np.atleast_2d(x) / scale)).sum(1) + constant)
 
 class split(randomization):
 
@@ -215,12 +197,12 @@ class split(randomization):
 
     def set_covariance(self, covariance):
         """
-        Once covariance has been set, then 
+        Once covariance has been set, then
         the usual API of randomization will work.
         """
         self._covariance = covariance
         precision = np.linalg.inv(covariance)
-        sqrt_precision = np.linalg.cholesky(precision)
+        sqrt_precision = np.linalg.cholesky(precision).T
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
         _const = np.sqrt((2*np.pi)**p * _det)
@@ -229,9 +211,7 @@ class split(randomization):
         self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
         self.lipschitz = np.linalg.svd(precision)[1].max()
         def _log_density(x):
-            #return np.log(self._density(x))
             return -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const)
-            #return -(np.linalg.norm(sqrt_precision.dot(np.atleast_2d(x).T))**2)/2-np.log(_const)
         self._log_density = _log_density
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
@@ -253,22 +233,17 @@ class split(randomization):
         """
         Parameters
         ----------
-
         loss : rr.glm
             A glm loss with a `subsample` method.
-
         epsilon : float
             Coefficient in front of quadratic term
-
         Returns
         -------
-        
+
         Subsampled loss multiplied by `n / m` where
-        m is the subsample size out of a total 
+        m is the subsample size out of a total
         sample size of n.
-
         The quadratic term is not multiplied by `n / m`
-
         """
         n, m = self.total_size, self.subsample_size
         inv_frac = n / m
