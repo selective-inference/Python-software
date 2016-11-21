@@ -291,7 +291,6 @@ def boot_clt_plot(multiple_results, coverage=True, label=None, fig=None, active=
     F_MLE = ecdf_clt(G)
     ax.plot(G, F_MLE, '-o', c='b', lw=2, label='CLT')
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
-    ax.set_title("Pivots based on plugin CLT")
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
 
@@ -299,19 +298,21 @@ def boot_clt_plot(multiple_results, coverage=True, label=None, fig=None, active=
     F_true = ecdf_boot(G)
     ax.plot(G, F_true, '-o', c='g', lw=2, label='Bootstrap')
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
-    ax.set_title("Bootstrapped Pivots")
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
     ax.legend(loc='lower right')
     #plot_pvalues_boot.legend(loc='lower right')
 
     if coverage:
-        if 'covered_naive' in multiple_results.columns:
-            fig.suptitle('CLT Coverage: %0.2f, Boot: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['covered_clt']),
-                            np.mean(multiple_results['covered_boot']), np.mean(multiple_results['covered_naive'])))
+        if 'covered_split' in multiple_results.columns:
+            fig.suptitle('CLT Coverage: %0.2f, Boot: %0.2f, Naive: %0.2f, Split: %0.2f' % (np.mean(multiple_results['covered_clt']),
+                            np.mean(multiple_results['covered_boot']), np.mean(multiple_results['covered_naive']),
+                                                                      np.mean(multiple_results['covered_split'])))
         else:
-            fig.suptitle('Coverage CLT: %0.2f, Bootstrap: %0.2f' % (np.mean(multiple_results['covered_clt']),
-                                                            np.mean(multiple_results['covered_boot'])))
+
+            fig.suptitle('CLT Coverage: %0.2f, Boot: %0.2f, Naive: %0.2f' % (np.mean(multiple_results['covered_clt']),
+                                                                             np.mean(multiple_results['covered_boot']),
+                                                                             np.mean(multiple_results['covered_naive'])))
     return fig
 
 def compute_pivots(multiple_results):

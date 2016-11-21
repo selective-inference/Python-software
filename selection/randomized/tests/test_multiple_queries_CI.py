@@ -8,7 +8,7 @@ import selection.tests.reports as reports
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import (randomization,
-                           split_glm_group_lasso,
+                           glm_group_lasso,
                            multiple_queries,
                            glm_target)
 from selection.tests.instance import logistic_instance
@@ -22,18 +22,18 @@ from selection.randomized.query import naive_confidence_intervals
                   'active', 'covered_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
-def test_multiple_splits(s=3,
+def test_multiple_queries(s=3,
                          n=300,
                          p=20,
                          snr=7,
                          rho=0.1,
-                         split_frac=0.8,
                          lam_frac=0.7,
-                         nsplits=4,
+                         nviews=4,
                          intervals ='new',
                          ndraw=10000, burnin=2000,
                          solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
 
+    randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
@@ -47,17 +47,16 @@ def test_multiple_splits(s=3,
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    m = int(split_frac * n)
 
     view = []
-    for i in range(nsplits):
-        view.append(split_glm_group_lasso(loss, epsilon, m, penalty))
+    for i in range(nviews):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
     mv = multiple_queries(view)
     mv.solve()
 
     active_union = np.zeros(p, np.bool)
-    for i in range(nsplits):
+    for i in range(nviews):
         active_union += view[i].selection_variable['variables']
 
     nactive = np.sum(active_union)
@@ -154,10 +153,10 @@ def test_multiple_splits(s=3,
                 active_var, covered_naive, ci_length_naive
 
 
-def report(niter=3, **kwargs):
+def report(niter=10, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.5, 'nsplits':3, 'intervals':'old'}
-    split_report = reports.reports['test_multiple_splits']
+    kwargs = {'s': 0, 'n': 300, 'p': 10, 'snr': 7, 'nviews':3, 'intervals':'old'}
+    split_report = reports.reports['test_multiple_queries']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],
                                                      niter,
@@ -165,7 +164,7 @@ def report(niter=3, **kwargs):
                                                      **kwargs)
 
     fig = reports.boot_clt_plot(screened_results, inactive=True, active=False)
-    fig.savefig('multiple_splits.pdf') # will have both bootstrap and CLT on plot
+    fig.savefig('multiple_queries_CI.pdf') # will have both bootstrap and CLT on plot
 
 
 if __name__=='__main__':

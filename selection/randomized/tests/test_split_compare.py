@@ -23,7 +23,9 @@ from selection.randomized.query import naive_confidence_intervals
                   'active', 'covered_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
-def test_split_compare(s=3, n=200, p=20,
+def test_split_compare(s=3,
+                       n=200,
+                       p=20,
                        snr=7,
                        rho=0.1,
                        split_frac=0.8,
@@ -155,9 +157,9 @@ def test_split_compare(s=3, n=200, p=20,
                covered_split, ci_length_split, active_var, covered_naive, ci_length_naive
 
 
-def report(niter=50, **kwargs):
+def report(niter=3, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.8, 'intervals':'new'}
+    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.8, 'intervals':'old'}
     split_report = reports.reports['test_split_compare']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],

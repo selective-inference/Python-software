@@ -29,10 +29,15 @@ def test_intervals(s=0,
                    burnin=2000, 
                    bootstrap=True,
                    intervals='new',
+                   randomizer = 'laplace',
                    solve_args={'min_its':50, 'tol':1.e-10}):
+    if randomizer =='laplace':
+        randomizer = randomization.laplace((p,), scale=1.)
+    elif randomizer=='gaussian':
+        randomizer = randomization.gaussian(np.identity(p))
+    elif randomizer == 'logistic':
+        randomizer = randomization.logistic((p,), scale=1.)
 
-    randomizer = randomization.laplace((p,), scale=1.)
-    #randomizer = randomization.gaussian(np.identity(p))
     #randomizer =randomization.logistic((p,), scale=1.)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
@@ -124,7 +129,7 @@ def test_intervals(s=0,
 
 def report(niter=10, **kwargs):
 
-    kwargs= {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'bootstrap': False}
+    kwargs= {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'bootstrap': False, 'randomizer':'gaussian'}
     intervals_report = reports.reports['test_intervals']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

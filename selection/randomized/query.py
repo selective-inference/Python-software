@@ -630,10 +630,11 @@ class targeted_sampler(object):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
-
         if parameter is None:
             parameter = self.reference
+
+        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
+
 
         delta = self.target_inv_cov.dot(parameter - self.reference)
         W = np.exp(sample.dot(delta))

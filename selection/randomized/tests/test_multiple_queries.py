@@ -76,15 +76,19 @@ def test_multiple_queries(s=3, n=200, p=20,
                                                          subset=inactive_selected,
                                                          bootstrap=bootstrap,
                                                          reference=reference)
+            test_stat = lambda x: np.linalg.norm(x-reference)
+            observed_test_value = test_stat(target_observed-reference)
+
         else:
             target_sampler, target_observed = glm_target(loss,
                                                          active_union,
                                                          mv,
                                                          bootstrap=bootstrap,
                                                          reference = beta[active_union])
+            test_stat = lambda x: np.linalg.norm(x-beta[active_union])
+            observed_test_value = test_stat(target_observed-beta[active_union])
 
-        test_stat = lambda x: np.linalg.norm(x)
-        observed_test_value = test_stat(target_observed)
+
         pivot = target_sampler.hypothesis_test(test_stat,
                                                observed_test_value,
                                                alternative='twosided',
@@ -93,17 +97,24 @@ def test_multiple_queries(s=3, n=200, p=20,
 
         return [pivot], [False]
 
-@register_report(['pvalue', 'active'])
+@register_report(['truth', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries_individual_coeff(s=3, n=100, p=10, snr=7, nview=1, ndraw=10000, burnin=2000, bootstrap=True):
+def test_multiple_queries_individual_coeff(s=3,
+                                           n=100,
+                                           p=10,
+                                           snr=7,
+                                           rho=0.1,
+                                           lam_frac=0.7,
+                                           nview=4,
+                                           ndraw=10000, burnin=2000,
+                                           bootstrap=True):
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=snr)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
-    lam_frac = 1.
 
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
@@ -140,9 +151,10 @@ def test_multiple_queries_individual_coeff(s=3, n=100, p=10, snr=7, nview=1, ndr
                                                          active_union,# * ~subset,
                                                          mv,
                                                          subset=subset,
-                                                         reference=np.zeros((1,)),
+                                                         reference = true_beta[j],
+                                                         #reference=np.zeros((1,)),
                                                          bootstrap=bootstrap)
-            test_stat = lambda x: np.atleast_1d(x)
+            test_stat = lambda x: np.atleast_1d(x-true_beta[j])
 
             pval = target_sampler.hypothesis_test(test_stat,
                                                   np.atleast_1d(target_observed-true_beta[j]),
@@ -291,11 +303,12 @@ def test_multiple_queries_translate(s=3, n=200, p=20,
 
         return [pivot], [False]
 
-def report(niter=50, **kwargs):
+def report(niter=2, **kwargs):
 
-    kwargs = {'s':3, 'n':300, 'p':20, 'snr':7, 'nview':4, 'test': 'global'}
+    #kwargs = {'s':3, 'n':300, 'p':20, 'snr':7, 'nview':4, 'test': 'global'}
+    kwargs = {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'nview': 4}
     kwargs['bootstrap'] = False
-    intervals_report = reports.reports['test_multiple_queries']
+    intervals_report = reports.reports['test_multiple_queries_individual_coeff']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
                                              niter,
@@ -314,7 +327,7 @@ def report(niter=50, **kwargs):
 
     #fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-    fig.savefig('multiple_queries.pdf') # will have both bootstrap and CLT on plot
+    fig.savefig('multiple_queries_individual_coeff.pdf') # will have both bootstrap and CLT on plot
 
 
 if __name__ == "__main__":
