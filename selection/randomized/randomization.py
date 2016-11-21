@@ -229,7 +229,9 @@ class split(randomization):
         self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
         self.lipschitz = np.linalg.svd(precision)[1].max()
         def _log_density(x):
-            return np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const)
+            #return np.log(self._density(x))
+            return -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const)
+            #return -(np.linalg.norm(sqrt_precision.dot(np.atleast_2d(x).T))**2)/2-np.log(_const)
         self._log_density = _log_density
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):

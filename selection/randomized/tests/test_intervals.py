@@ -19,9 +19,9 @@ from selection.randomized.query import naive_confidence_intervals
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_intervals(s=3,
+def test_intervals(s=0,
                    n=200,
-                   p=50, 
+                   p=20,
                    snr=7,
                    rho=0.1,
                    split_frac=0.8,
@@ -33,6 +33,7 @@ def test_intervals(s=3,
                    solve_args={'min_its':50, 'tol':1.e-10}):
 
     randomizer = randomization.laplace((p,), scale=1.)
+    #randomizer = randomization.gaussian(np.identity(p))
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
@@ -50,8 +51,8 @@ def test_intervals(s=3,
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     # second randomization
     # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-
     # mv = multiple_queries([M_est1, M_est2])
+
     mv = multiple_queries([M_est1])
     mv.solve()
 
@@ -68,14 +69,25 @@ def test_intervals(s=3,
 
         target_sampler, target_observed = glm_target(loss,
                                                      active_union,
-                                                     mv)
+                                                     mv,
+                                                     bootstrap=bootstrap)
 
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
         if intervals == 'old':
+            target_sample = target_sampler.sample(ndraw=ndraw,
+                                                  burnin=burnin)
+
             LU = target_sampler.confidence_intervals(target_observed,
                                                      sample=target_sample,
                                                      level=0.9)
+            pivots_mle = target_sampler.coefficient_pvalues(target_observed,
+                                                            parameter=target_sampler.reference,
+                                                            sample=target_sample)
+            pivots_truth = target_sampler.coefficient_pvalues(target_observed,
+                                                          parameter=true_vec,
+                                                          sample=target_sample)
+            pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                     parameter=np.zeros_like(true_vec),
+                                                     sample=target_sample)
         else:
             full_sample = target_sampler.sample(ndraw=ndraw,
                                                 burnin=burnin,
@@ -85,18 +97,21 @@ def test_intervals(s=3,
                                                                sample=full_sample,
                                                                level=0.9)
 
+            pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
+                                                            parameter=target_sampler.reference,
+                                                            sample=full_sample)
+
+            pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
+                                                          parameter=true_vec,
+                                                          sample=full_sample)
+
+            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
+                                                     parameter=np.zeros_like(true_vec),
+                                                     sample=full_sample)
+
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
-        pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-                                                        parameter=target_sampler.reference,
-                                                        sample=target_sample)
 
-        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                          parameter=true_vec,
-                                                          sample=target_sample)
-        pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                     parameter=np.zeros_like(true_vec),
-                                                     sample=target_sample)
         unpenalized_mle = restricted_Mest(loss, M_est1.selection_variable['variables'], solve_args=solve_args)
 
         L, U = LU.T
@@ -114,25 +129,30 @@ def test_intervals(s=3,
 
         return pivots_mle, pivots_truth, pvalues, covered, naive_covered, active_var
 
-def report(niter=50, **kwargs):
 
+def report(niter=10, **kwargs):
+
+    kwargs= {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_intervals']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
                                              niter,
                                              reports.summarize_all,
                                              **kwargs)
-    kwargs['bootstrap'] = True
-    fig = reports.pivot_plot(CLT_runs, color='b', label='Bootstrap')
 
-    kwargs['bootstrap'] = False
+    #fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
+    fig = reports.pivot_plot_2in1(CLT_runs, color='b', label='CLT')
+
+    kwargs['bootstrap'] = True
     bootstrap_runs = reports.collect_multiple_runs(intervals_report['test'],
                                                    intervals_report['columns'],
                                                    niter,
                                                    reports.summarize_all,
                                                    **kwargs)
 
-    fig = reports.pivot_plot(bootstrap_runs, color='g', label='CLT', fig=fig)
+    #fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
+    fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     fig.savefig('intervals_pivots.pdf') # will have both bootstrap and CLT on plot
 
-report()
+if __name__== '__main__':
+    report()

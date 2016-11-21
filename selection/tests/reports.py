@@ -22,6 +22,7 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
     """
     dfs = [] 
     for i in range(nrun):
+        print(i)
         count, result = test_fn(*args, **kwargs)
         #print(result)
         #print(len(np.atleast_1d(result[0])))
@@ -181,9 +182,13 @@ def pivot_plot_simple(multiple_results, coverage=True, color='b', label=None, fi
         _, plot_pivots = fig.axes
         plot_pivots.set_title("Bootstrap Pivots")
 
-    ecdf_clt = sm.distributions.ECDF(multiple_results['pivot'])
+    if 'pivot' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['pivot'])
+    elif 'truth' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['truth'])
+
     G = np.linspace(0, 1)
-    F_pivot = ecdf_clt(G)
+    F_pivot = ecdf(G)
     #print(color)
     plot_pivots.plot(G, F_pivot, '-o', c=color, lw=2, label=label)
     plot_pivots.plot([0, 1], [0, 1], 'k-', lw=2)
@@ -191,6 +196,40 @@ def pivot_plot_simple(multiple_results, coverage=True, color='b', label=None, fi
     plot_pivots.set_ylim([0, 1])
 
     return fig
+
+
+def pivot_plot_2in1(multiple_results, coverage=True, color='b', label=None, fig=None):
+    """
+    Extract pivots at truth and mle.
+    """
+
+    if fig is None:
+        fig = plt.figure()
+    ax = fig.gca()
+
+    fig.suptitle('Plugin CLT and bootstrap pivots')
+
+    if 'pivot' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['pivot'])
+    elif 'truth' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['truth'])
+    elif 'pvalue' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['pvalue'])
+
+    G = np.linspace(0, 1)
+    F_pivot = ecdf(G)
+    #print(color)
+    ax.plot(G, F_pivot, '-o', c=color, lw=2, label=label)
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
+    ax.legend(loc='lower right')
+
+    return fig
+
+
+
+
 
 def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None):
     """
@@ -230,7 +269,7 @@ def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None)
 
     return fig
 
-def boot_clt_plot(multiple_results, coverage=True, color='b', label=None, fig=None, active=True, inactive=True):
+def boot_clt_plot(multiple_results, coverage=True, label=None, fig=None, active=True, inactive=True):
     """
     Extract pivots at truth and mle.
     """
@@ -244,27 +283,26 @@ def boot_clt_plot(multiple_results, coverage=True, color='b', label=None, fig=No
     print(test.sum(), test.shape)
 
     if fig is None:
-        fig, _ = plt.subplots(nrows=1, ncols=2)
-    plot_pvalues_clt, plot_pvalues_boot = fig.axes
+        fig = plt.figure()
+    ax = fig.gca()
 
     ecdf_clt = sm.distributions.ECDF(multiple_results['pivots_clt'])
     G = np.linspace(0, 1)
     F_MLE = ecdf_clt(G)
-    #print(color)
-    plot_pvalues_clt.plot(G, F_MLE, '-o', c=color, lw=2, label=label)
-    plot_pvalues_clt.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_clt.set_title("Pivots based on plugin CLT")
-    plot_pvalues_clt.set_xlim([0, 1])
-    plot_pvalues_clt.set_ylim([0, 1])
-    #plot_pvalues_clt.legend(loc='lower right')
+    ax.plot(G, F_MLE, '-o', c='b', lw=2, label='CLT')
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+    ax.set_title("Pivots based on plugin CLT")
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
 
     ecdf_boot = sm.distributions.ECDF(multiple_results['pivots_boot'])
     F_true = ecdf_boot(G)
-    plot_pvalues_boot.plot(G, F_true, '-o', c=color, lw=2, label=label)
-    plot_pvalues_boot.plot([0, 1], [0, 1], 'k-', lw=2)
-    plot_pvalues_boot.set_title("Bootstrapped Pivots")
-    plot_pvalues_boot.set_xlim([0, 1])
-    plot_pvalues_boot.set_ylim([0, 1])
+    ax.plot(G, F_true, '-o', c='g', lw=2, label='Bootstrap')
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+    ax.set_title("Bootstrapped Pivots")
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
+    ax.legend(loc='lower right')
     #plot_pvalues_boot.legend(loc='lower right')
 
     if coverage:
@@ -332,9 +370,9 @@ def compute_lengths(multiple_results):
 def compute_length_frac(multiple_results):
     result = {}
     if 'ci_length_clt' and 'ci_length_split' in multiple_results.columns:
-        result['clt/split'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_clt']))
+        result['split/clt'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_clt']))
     if 'ci_length_boot' and 'ci_length_split' in multiple_results.columns:
-        result['boot/split'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_boot']))
+        result['split/boot'] = np.median(np.divide(multiple_results['ci_length_split'], multiple_results['ci_length_boot']))
     return result
 
 def compute_screening(multiple_results):

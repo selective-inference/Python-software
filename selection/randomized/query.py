@@ -990,7 +990,8 @@ class targeted_sampler(object):
                                       ndraw=10000,
                                       burnin=2000,
                                       stepsize=None,
-                                      sample=None):
+                                      sample=None,
+                                      alternative='twosided'):
         '''
         Parameters
         ----------

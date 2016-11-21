@@ -23,15 +23,19 @@ from selection.randomized.query import naive_confidence_intervals
                   'active', 'covered_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
-def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True): 
-    # s, n, p = 0, 200, 10
-    s, n, p = 6, 300, 40
+def test_split_compare(s=3, n=200, p=20,
+                       snr=7,
+                       rho=0.1,
+                       split_frac=0.8,
+                       lam_frac=0.7,
+                       ndraw=10000, burnin=2000,
+                       intervals = 'old',
+                       solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=5)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
-    lam_frac = 1.
 
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
@@ -42,13 +46,9 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    m = int(0.8 * n)
-    # first randomization
-    M_est1 = split_glm_group_lasso(loss, epsilon, m, penalty)
-    # second randomization
-    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    m = int(split_frac * n)
 
-    # mv = multiple_queries([M_est1, M_est2])
+    M_est1 = split_glm_group_lasso(loss, epsilon, m, penalty)
     mv = multiple_queries([M_est1])
     mv.solve()
 
@@ -76,31 +76,58 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
                                                           mv,
                                                           bootstrap=True)
 
-        target_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
-                                                        burnin=burnin)
+        if intervals == 'old':
+            target_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
+                                                  burnin=burnin)
 
-        LU_boot = target_sampler_boot.confidence_intervals(target_observed,
-                                                           sample=target_sample_boot)
-
-        pivots_boot = target_sampler_boot.coefficient_pvalues(target_observed,
+            LU_boot = target_sampler_boot.confidence_intervals(target_observed,
+                                                     sample=target_sample_boot,
+                                                     level=0.9)
+            pivots_boot = target_sampler_boot.coefficient_pvalues(target_observed,
                                                               parameter=true_vec,
                                                               sample=target_sample_boot)
+        else:
+            full_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
+                                                burnin=burnin,
+                                                keep_opt=True)
+
+            LU_boot = target_sampler_boot.confidence_intervals_translate(target_observed,
+                                                               sample=full_sample_boot,
+                                                               level=0.9)
+
+            pivots_boot = target_sampler_boot.coefficient_pvalues_translate(target_observed,
+                                                                        parameter=true_vec,
+                                                                        sample=full_sample_boot)
+
         ## CLT plugin
 
         target_sampler, _ = glm_target(loss,
                                        active_union,
-                                       mv)
+                                       mv,
+                                       bootstrap=False)
 
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
+        if intervals == 'old':
+            target_sample = target_sampler.sample(ndraw=ndraw,
+                                                  burnin=burnin)
 
+            LU = target_sampler.confidence_intervals(target_observed,
+                                                     sample=target_sample,
+                                                     level=0.9)
+            pivots = target_sampler.coefficient_pvalues(target_observed,
+                                                              parameter=true_vec,
+                                                              sample=target_sample)
+        else:
+            full_sample = target_sampler.sample(ndraw=ndraw,
+                                                burnin=burnin,
+                                                keep_opt=True)
 
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
+            LU = target_sampler.confidence_intervals_translate(target_observed,
+                                                               sample=full_sample,
+                                                               level=0.9)
 
-
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample)
+            pivots = target_sampler.coefficient_pvalues_translate(target_observed,
+                                                                        parameter=true_vec,
+                                                                        sample=full_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
@@ -110,9 +137,6 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
         else:
             LU_split = LU_split_sm = np.ones((nactive, 2)) * np.nan
 
-        pivots = target_sampler.coefficient_pvalues(target_observed,
-                                                    parameter=true_vec,
-                                                    sample=target_sample)
 
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]
@@ -140,8 +164,10 @@ def test_split_compare(ndraw=20000, burnin=10000, solve_args={'min_its':50, 'tol
         return pivots, pivots_boot, covered, ci_length, covered_boot, ci_length_boot, \
                covered_split, ci_length_split, active_var, covered_naive, ci_length_naive
 
+
 def report(niter=50, **kwargs):
 
+    kwargs = {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.8, 'intervals':'new'}
     split_report = reports.reports['test_split_compare']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],
@@ -149,7 +175,9 @@ def report(niter=50, **kwargs):
                                                      reports.summarize_all,
                                                      **kwargs)
 
-    fig = reports.boot_clt_plot(screened_results, color='b', inactive=True, active=False)
+    fig = reports.boot_clt_plot(screened_results, inactive=True, active=False)
     fig.savefig('split_compare_pivots.pdf') # will have both bootstrap and CLT on plot
 
 
+if __name__=='__main__':
+    report()
