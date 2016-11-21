@@ -106,7 +106,7 @@ class randomization(rr.smooth_atom):
             SD of noise.
         """
         rv = ndist(scale=scale, loc=0.)
-        density = lambda x: rv.pdf(x)
+        density = lambda x: np.product(rv.pdf(x))
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
 
@@ -132,7 +132,7 @@ class randomization(rr.smooth_atom):
             will raise an error.
         """
         precision = np.linalg.inv(covariance)
-        sqrt_precision = np.linalg.cholesky(precision)
+        sqrt_precision = np.linalg.cholesky(precision).T
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
         _const = np.sqrt((2*np.pi)**p * _det)
@@ -145,7 +145,7 @@ class randomization(rr.smooth_atom):
                              grad_negative_log_density, 
                              sampler, 
                              lipschitz=np.linalg.svd(precision)[1].max(),
-                             log_density = lambda x: np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const))
+                             log_density = lambda x: -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const))
 
     @staticmethod
     def laplace(shape, scale):
@@ -162,7 +162,7 @@ class randomization(rr.smooth_atom):
             Scale of noise.
         """
         rv = laplace(scale=scale, loc=0.)
-        density = lambda x: rv.pdf(x)
+        density = lambda x: np.product(rv.pdf(x))
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
 
@@ -189,7 +189,9 @@ class randomization(rr.smooth_atom):
             Scale of noise.
         """
         # from http://docs.scipy.org/doc/numpy/reference/generated/numpy.random.logistic.html
-        density = lambda x: (np.exp(-x / scale) / (1 + np.exp(-x / scale))**2) / scale**(np.product(x.shape))
+        density = lambda x: (np.product(np.exp(-x / scale) / 
+                                        (1 + np.exp(-x / scale))**2) 
+                             / scale**(np.product(x.shape)))
         # negative log density is (with \mu=0)
         # x/s + log(s) + 2 \log (1 + e(-x/s))
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
@@ -220,7 +222,7 @@ class split(randomization):
         """
         self._covariance = covariance
         precision = np.linalg.inv(covariance)
-        sqrt_precision = np.linalg.cholesky(precision)
+        sqrt_precision = np.linalg.cholesky(precision).T
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
         _const = np.sqrt((2*np.pi)**p * _det)
@@ -229,7 +231,7 @@ class split(randomization):
         self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
         self.lipschitz = np.linalg.svd(precision)[1].max()
         def _log_density(x):
-            return np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const)
+            return -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const)
         self._log_density = _log_density
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
