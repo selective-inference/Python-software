@@ -230,8 +230,8 @@ def target(loss,
     Parameters
     ----------
 
-    query : `query`
-       A query with a glm loss.
+    loss : `smooth_atom`
+       A glm loss.
 
     active : np.bool
        Indicators of active variables.

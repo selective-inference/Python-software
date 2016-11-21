@@ -115,6 +115,8 @@ class greedy_score_step(query):
                                    'maximizing_direction':self.maximizing_subgrad,
                                    'variables':self.maximizing_variables}
 
+        # need to implement Jacobian
+
     def setup_sampler(self):
 
         self.observed_opt_state = np.hstack([self.observed_subgradients,
