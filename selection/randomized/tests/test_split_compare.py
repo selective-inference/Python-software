@@ -29,7 +29,7 @@ def test_split_compare(s=3, n=200, p=20,
                        split_frac=0.8,
                        lam_frac=0.7,
                        ndraw=10000, burnin=2000,
-                       intervals = 'old',
+                       intervals = 'new',
                        solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
 
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
@@ -157,7 +157,7 @@ def test_split_compare(s=3, n=200, p=20,
 
 def report(niter=50, **kwargs):
 
-    kwargs = {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.8, 'intervals':'new'}
+    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.8, 'intervals':'new'}
     split_report = reports.reports['test_split_compare']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],

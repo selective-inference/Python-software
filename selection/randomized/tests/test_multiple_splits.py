@@ -28,7 +28,7 @@ def test_multiple_splits(s=3, n=300, p=20,
                        split_frac=0.8,
                        lam_frac=0.7,
                        nsplits=4,
-                       intervals ='old',
+                       intervals ='new',
                        ndraw=10000, burnin=2000,
                        solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
 
@@ -154,7 +154,7 @@ def test_multiple_splits(s=3, n=300, p=20,
 
 def report(niter=50, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.5, 'nsplits':3, 'intervals':'old'}
+    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.5, 'nsplits':3, 'intervals':'new'}
     split_report = reports.reports['test_multiple_splits']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],
