@@ -176,7 +176,7 @@ class selective_map_credible_fs(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps = 3000, burnin = 500):
+    def posterior_samples(self, Langevin_steps = 1000, burnin = 100):
         state = self.initial_state
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
