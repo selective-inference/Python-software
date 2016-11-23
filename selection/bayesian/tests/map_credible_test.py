@@ -78,8 +78,8 @@ def test_inf_regreg():
     print("usual posterior based map & intervals", unadjusted_intervals)
     return np.vstack([unadjusted_intervals, adjusted_intervals])
 
-intervals = test_inf_regreg()
-np.savetxt('credible_randomized.txt', intervals)
+#intervals = test_inf_regreg()
+#np.savetxt('credible_randomized.txt', intervals)
 #post_samples = test_inf_regreg()
 #adjusted_intervals = np.vstack([np.percentile(post_samples, 5, axis=0), np.percentile(post_samples, 95, axis=0)])
 #print(adjusted_intervals)

@@ -19,20 +19,22 @@ from selection.bayesian.inference_ms import sel_prob_gradient_map_ms, selective_
 
 def test_inf_regreg():
     n = 100
-    p = 50
-    s = 5
+    p = 20
+    s = 0
     snr = 3
 
     # sampling the Gaussian instance
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
     # getting randomized Lasso solution
-    sel = selection(X_1, y, random_Z)
+    sel = selection(X_1, y, random_Z, lam = 1.0)
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
-    print(epsilon, lam, betaE, true_beta, active, active.sum())
+    active_set = [i for i in range(p) if active[i]]
+    print(active_set, active.sum(),active[:s].sum())
     noise_variance = 1.
     nactive = betaE.shape[0]
+    correct = active[:s].sum()
     active_signs = np.sign(betaE)
     tau = 1  # randomization_variance
 
@@ -48,7 +50,7 @@ def test_inf_regreg():
     post_var = prior_variance* np.identity(nactive) - ((prior_variance**2)*(generative_X.T.dot(Q).dot(generative_X)))
     unadjusted_intervals = np.vstack([post_mean - 1.65*(post_var.diagonal()),post_mean + 1.65*(post_var.diagonal())])
     unadjusted_intervals = np.vstack([post_mean, unadjusted_intervals])
-    #print(np.vstack([post_mean, unadjusted_intervals]))
+    print(unadjusted_intervals)
 
     inf_rr = selective_map_credible(y,
                                     X_1,
@@ -74,14 +76,16 @@ def test_inf_regreg():
     print('sampling time', tic - toc)
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
     adjusted_intervals = np.vstack([map[1], adjusted_intervals])
-    print(active)
+    print(active, correct)
     print("selective map and intervals", adjusted_intervals)
     print("usual posterior based map & intervals", unadjusted_intervals)
-    return nactive, np.vstack([unadjusted_intervals, adjusted_intervals])
+    return nactive, correct, np.vstack([unadjusted_intervals, adjusted_intervals]), active_set
 
 test = test_inf_regreg()
-intervals = test[1]
+intervals = test[2]
 nactive = test[0]
+correct = test[1]
+active_set = list(test[3])
 
 un_mean = intervals[0,:]
 un_lower_error = list(un_mean-intervals[1,:])
@@ -95,7 +99,7 @@ adStd = [ad_lower_error, ad_upper_error]
 
 N = len(un_mean)               # number of data entries
 ind = np.arange(N)              # the x locations for the groups
-width = 0.35                    # bar width
+width = 0.25                    # bar width
 
 print('here')
 
@@ -116,31 +120,13 @@ rects2 = ax.bar(ind + width, ad_mean,
                           'linewidth':2})
 
 axes = plt.gca()
-axes.set_ylim([-6, 10])             # y-axis bounds
+axes.set_ylim([-8, 8])             # y-axis bounds
 
 ax.set_ylabel('Credible')
-ax.set_title('Credible and Map')
-ax.set_xticks(ind + width)
-if nactive == 1:
-    ax.set_xticklabels(('Coef1'))
-elif nactive == 2:
-    ax.set_xticklabels(('Coef1', 'Coef2'))
-elif nactive == 3:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3'))
-elif nactive == 4:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4'))
-elif nactive == 5:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5'))
-elif nactive == 6:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6'))
-elif nactive == 7:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7'))
-elif nactive == 8:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7','Coef8'))
-elif nactive == 9:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7','Coef8','Coef9'))
-else:
-    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7', 'Coef8', 'Coef9','Coef10'))
+ax.set_title('selected variables'.format(active_set))
+ax.set_xticks(ind + 1.2* width)
+
+ax.set_xticklabels(active_set)
 
 
 #ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6'))
@@ -163,5 +149,5 @@ print('here')
 
 #plt.show()                              # render the plot
 
-plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_un_adjusted_1.pdf', bbox_inches='tight')
+plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_un_adjusted_4.pdf', bbox_inches='tight')
 

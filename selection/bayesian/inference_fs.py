@@ -1,6 +1,8 @@
 import numpy as np
 import regreg.api as rr
 from selection.bayesian.forward_step import cube_subproblem_fs, cube_objective_fs, selection_probability_objective_fs
+from selection.bayesian.forward_step_reparametrized import cube_subproblem_fs_linear, cube_objective_fs_linear, \
+    selection_probability_objective_fs_rp, dual_selection_probability_fs
 from selection.bayesian.credible_intervals import projected_langevin
 
 class sel_prob_gradient_map_fs(rr.smooth_atom):
@@ -36,13 +38,13 @@ class sel_prob_gradient_map_fs(rr.smooth_atom):
 
         mean_parameter = np.squeeze(self.generative_X.dot(true_param))
 
-        primal_sol = selection_probability_objective_fs(self.X,
-                                                        self.primal_feasible,
-                                                        self.active,
-                                                        self.active_sign,
-                                                        mean_parameter,
-                                                        self.noise_variance,
-                                                        self.randomizer)
+        primal_sol = selection_probability_objective_fs_rp(self.X,
+                                                           self.primal_feasible,
+                                                           self.active,
+                                                           self.active_sign,
+                                                           mean_parameter,
+                                                           self.noise_variance,
+                                                           self.randomizer)
 
         sel_prob_primal = primal_sol.minimize2(nstep=60)[::-1]
         optimal_primal = (sel_prob_primal[1])[:self.n]
@@ -174,7 +176,7 @@ class selective_map_credible_fs(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps = 5000, burnin = 500):
+    def posterior_samples(self, Langevin_steps = 3000, burnin = 500):
         state = self.initial_state
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x

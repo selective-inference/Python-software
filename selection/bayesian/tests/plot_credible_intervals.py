@@ -62,3 +62,69 @@ print('here')
 #plt.show()                              # render the plot
 
 plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_un_adjusted.pdf', bbox_inches='tight')
+
+
+if nactive == 1:
+    ax.set_xticklabels(('Coef1'))
+elif nactive == 2:
+    ax.set_xticklabels(('Coef1', 'Coef2'))
+elif nactive == 3:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3'))
+elif nactive == 4:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4'))
+elif nactive == 5:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5'))
+elif nactive == 6:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6'))
+elif nactive == 7:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7'))
+elif nactive == 8:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7','Coef8'))
+elif nactive == 9:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7','Coef8','Coef9'))
+elif nactive == 10:
+    ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6', 'Coef7', 'Coef8', 'Coef9','Coef10'))
+elif nactive == 11:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9','C10',
+                        'C11'))
+elif nactive == 12:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12'))
+elif nactive == 13:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13'))
+elif nactive == 14:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14'))
+elif nactive == 15:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15'))
+elif nactive == 16:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16'))
+elif nactive == 17:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17'))
+elif nactive == 18:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18'))
+elif nactive == 19:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19'))
+elif nactive == 20:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20'))
+
+elif nactive == 21:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21'))
+
+elif nactive == 22:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', 'C22'))
+elif nactive == 23:
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', 'C22', 'C23'))
+else :
+    ax.set_xticklabels(('C1', 'C2', 'C3', 'C4', 'C5', 'C6', 'C7', 'C8', 'C9', 'C10',
+                        'C11', 'C12', 'C13', 'C14', 'C15', 'C16', 'C17', 'C18', 'C19', 'C20', 'C21', 'C22','C23', 'C24'))
