@@ -24,30 +24,34 @@ from selection.api import (randomization,
 
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@register_report(['pvalue', 'active'])
+@register_report(['truth', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_condition(ndraw=10000, burnin=2000,
-                   scalings=True): 
-    s, n, p = 6, 600, 40
+def test_condition(s=0,
+                   n=100,
+                   p=200,
+                   rho=0.2,
+                   snr=10,
+                   lam_frac = 1.,
+                   ndraw=10000, burnin=2000,
+                   scalings=False):
 
-    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.2, snr=5)
-    randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
-
-    lam_frac = 1.5
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
+    randomizer = randomization.laplace((p,), scale=1)
 
     loss = rr.glm.gaussian(X, y)
     epsilon = 1. / np.sqrt(n)
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
     W = np.ones(p)*lam
-    W[0] = 0 # use at least some unpenalized
+    #W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     views = []
-    nview = 3
+    nview = 1
     for i in range(nview):
         views.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
@@ -72,21 +76,26 @@ def test_condition(ndraw=10000, burnin=2000,
             views[2].condition_on_scalings()
         else:
             views[0].condition_on_subgradient()
-            views[1].condition_on_subgradient()
-            views[2].condition_on_subgradient()
+           # views[1].condition_on_subgradient()
+           # views[2].condition_on_subgradient()
 
         active_set = np.nonzero(active_union)[0]
-        target_sampler, target_observed = glm_target(loss, active_union, queries)
+        target_sampler, target_observed = glm_target(loss,
+                                                     active_union,
+                                                     queries,
+                                                     reference=beta[active_union])
 
-        pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                     alternative='twosided',
-                                                     ndraw=ndraw,
-                                                     burnin=burnin)
+        test_stat = lambda x: np.linalg.norm(x - beta[active_union])
+        observed_test_value = test_stat(target_observed)
 
-        active_var = np.zeros_like(pvalues, np.bool)
-        _nonzero = np.array([i in nonzero for i in active_set])
-        active_var[_nonzero] = True
-        return pvalues, active_var
+        pivots = target_sampler.hypothesis_test(test_stat,
+                                               observed_test_value,
+                                               alternative='twosided',
+                                               parameter = beta[active_union],
+                                               ndraw=ndraw,
+                                               burnin=burnin)
+
+        return [pivots], [False]
 
 def report(niter=50, **kwargs):
 
@@ -97,5 +106,9 @@ def report(niter=50, **kwargs):
                                          reports.summarize_all,
                                          **kwargs)
 
-    fig = reports.pvalue_plot(runs)
+    fig = reports.pivot_plot_simple(runs)
     fig.savefig('conditional_pivots.pdf')
+
+
+if __name__ == '__main__':
+    report()

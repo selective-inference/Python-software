@@ -16,7 +16,7 @@ import selection.tests.reports as reports
 from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric, glm_target
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@register_report(['pvalue', 'active'])
+@register_report(['truth', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
@@ -27,7 +27,7 @@ def test_multiple_queries(s=3, n=200, p=20,
                           nview=4,
                           ndraw=10000, burnin=2000,
                           bootstrap=True,
-                          test = 'selected zeros'):
+                          test = 'global'):
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
@@ -77,23 +77,25 @@ def test_multiple_queries(s=3, n=200, p=20,
                                                          bootstrap=bootstrap,
                                                          reference=reference)
             test_stat = lambda x: np.linalg.norm(x-reference)
-            observed_test_value = test_stat(target_observed-reference)
+            observed_test_value = test_stat(target_observed)
 
         else:
+            reference = beta[active_union]
             target_sampler, target_observed = glm_target(loss,
                                                          active_union,
                                                          mv,
                                                          bootstrap=bootstrap,
-                                                         reference = beta[active_union])
+                                                         reference = reference)
             test_stat = lambda x: np.linalg.norm(x-beta[active_union])
-            observed_test_value = test_stat(target_observed-beta[active_union])
+            observed_test_value = test_stat(target_observed)
 
 
         pivot = target_sampler.hypothesis_test(test_stat,
                                                observed_test_value,
                                                alternative='twosided',
                                                ndraw=ndraw,
-                                               burnin=burnin)
+                                               burnin=burnin,
+                                               parameter = reference)
 
         return [pivot], [False]
 
@@ -121,7 +123,7 @@ def test_multiple_queries_individual_coeff(s=3,
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
-    W[0] = 0 # use at least some unpenalized
+    #W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
@@ -303,12 +305,12 @@ def test_multiple_queries_translate(s=3, n=200, p=20,
 
         return [pivot], [False]
 
-def report(niter=2, **kwargs):
+def report(niter=20, **kwargs):
 
     #kwargs = {'s':3, 'n':300, 'p':20, 'snr':7, 'nview':4, 'test': 'global'}
-    kwargs = {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'nview': 4}
+    kwargs = {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'nview': 1}
     kwargs['bootstrap'] = False
-    intervals_report = reports.reports['test_multiple_queries_individual_coeff']
+    intervals_report = reports.reports['test_multiple_queries']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
                                              niter,
@@ -327,7 +329,7 @@ def report(niter=2, **kwargs):
 
     #fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-    fig.savefig('multiple_queries_individual_coeff.pdf') # will have both bootstrap and CLT on plot
+    fig.savefig('multiple_queries.pdf') # will have both bootstrap and CLT on plot
 
 
 if __name__ == "__main__":
