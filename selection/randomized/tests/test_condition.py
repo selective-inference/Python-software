@@ -30,29 +30,36 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @wait_for_return_value()
 def test_condition(s=0,
                    n=100,
-                   p=200,
-                   rho=0.2,
+                   p=100,
+                   rho=0.1,
                    snr=10,
-                   lam_frac = 1.,
+                   lam_frac = 1,
                    ndraw=10000, burnin=2000,
+                   loss='logistic',
+                   nviews=1,
                    scalings=False):
 
-    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr)
-    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
-    randomizer = randomization.laplace((p,), scale=1)
+    if loss=="gaussian":
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+        loss = rr.glm.gaussian(X, y)
+    elif loss=="logistic":
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        loss = rr.glm.logistic(X, y)
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    loss = rr.glm.gaussian(X, y)
+    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
+    randomizer = randomization.laplace((p,), scale=0.75)
+
     epsilon = 1. / np.sqrt(n)
 
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
     W = np.ones(p)*lam
     #W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     views = []
-    nview = 1
-    for i in range(nview):
+    for i in range(nviews):
         views.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
 
     queries = multiple_queries(views)
@@ -65,6 +72,8 @@ def test_condition(s=0,
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
+    nonzero = np.where(beta)[0]
+
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
         if nactive==s:
             return None
@@ -75,16 +84,15 @@ def test_condition(s=0,
             views[1].condition_on_subgradient()
             views[2].condition_on_scalings()
         else:
-            views[0].condition_on_subgradient()
-           # views[1].condition_on_subgradient()
-           # views[2].condition_on_subgradient()
+            for i in range(nviews):
+               views[i].condition_on_subgradient()
 
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,
                                                      active_union,
                                                      queries,
-                                                     reference=beta[active_union])
-
+                                                     reference= beta[active_union])
+        #print(target_sampler.target_cov)
         test_stat = lambda x: np.linalg.norm(x - beta[active_union])
         observed_test_value = test_stat(target_observed)
 
