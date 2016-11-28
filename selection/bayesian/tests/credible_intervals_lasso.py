@@ -16,6 +16,7 @@ from selection.bayesian.dual_scipy import dual_selection_probability_func
 from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map_credible
 from selection.bayesian.inference_fs import sel_prob_gradient_map_fs, selective_map_credible_fs
 from selection.bayesian.inference_ms import sel_prob_gradient_map_ms, selective_map_credible_ms
+from selection.bayesian.highest_posterior_density import calc_min_interval, hpd
 
 def test_inf_regreg():
     n = 100
@@ -74,18 +75,28 @@ def test_inf_regreg():
     samples = inf_rr.posterior_samples()
     tic = time.time()
     print('sampling time', tic - toc)
+
+    hpd_intervals = np.zeros((2,nactive))
+    #hpd intervals
+    for i in range(nactive):
+        lc, uc = hpd(samples[:,i])
+        hpd_intervals[0,i] = lc
+        hpd_intervals[1, i] = uc
+
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
     adjusted_intervals = np.vstack([map[1], adjusted_intervals])
     print(active, correct)
     print("selective map and intervals", adjusted_intervals)
     print("usual posterior based map & intervals", unadjusted_intervals)
-    return nactive, correct, np.vstack([unadjusted_intervals, adjusted_intervals]), active_set
+    print("hpd intervals", hpd_intervals)
+    return nactive, correct, np.vstack([unadjusted_intervals, adjusted_intervals]), active_set, hpd_intervals
 
 test = test_inf_regreg()
 intervals = test[2]
 nactive = test[0]
 correct = test[1]
 active_set = list(test[3])
+hpd_intervals = test[4]
 
 un_mean = intervals[0,:]
 un_lower_error = list(un_mean-intervals[1,:])
