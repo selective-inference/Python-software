@@ -151,6 +151,8 @@ class selective_map_credible(rr.smooth_atom):
                                          self.log_prior_loss,
                                          self.log_sel_prob])
 
+        self.noise_variance = noise_variance
+
     def set_likelihood(self, y, noise_variance, generative_X):
         likelihood_loss = rr.signal_approximator(y, coef=1. / noise_variance)
         self.likelihood_loss = rr.affine_smooth(likelihood_loss, generative_X)
@@ -174,7 +176,7 @@ class selective_map_credible(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def map_solve_2(self, step=1, nstep=100, tol=1.e-8):
+    def map_solve_2(self, step=1, nstep=300, tol=1.e-8):
 
         current = self.coefs[:]
         current_value = np.inf
@@ -184,8 +186,7 @@ class selective_map_credible(rr.smooth_atom):
 
         for itercount in range(nstep):
 
-            newton_step = grad(current)
-                          #* self.noise_variance
+            newton_step = grad(current)* self.noise_variance
 
             # make sure proposal is a descent
             count = 0
@@ -221,7 +222,7 @@ class selective_map_credible(rr.smooth_atom):
         value = problem.objective(soln)
         return soln, value
 
-    def posterior_samples(self, Langevin_steps = 100, burnin = 5):
+    def posterior_samples(self, Langevin_steps = 5000, burnin = 500):
         state = self.initial_state
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x

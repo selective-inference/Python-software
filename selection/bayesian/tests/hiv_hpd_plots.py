@@ -5,6 +5,7 @@ from selection.bayesian.initial_soln import selection
 from selection.randomized.api import randomization
 from selection.bayesian.inference_rr import sel_prob_gradient_map, selective_map_credible
 import matplotlib.pyplot as plt
+from selection.bayesian.highest_posterior_density import calc_min_interval, hpd
 
 
 if not os.path.exists("NRTI_DATA.txt"):
@@ -107,11 +108,23 @@ print("usual posterior based map & intervals", unadjusted_intervals)
 
 intervals = np.vstack([unadjusted_intervals, adjusted_intervals])
 
+hpd_intervals = np.zeros((2,nactive))
+#hpd intervals
+for i in range(nactive):
+    lc, uc = hpd(samples[:,i])
+    hpd_intervals[0,i] = lc
+    hpd_intervals[1, i] = uc
+
 
 un_mean = intervals[0,:]
 un_lower_error = list(un_mean-intervals[1,:])
 un_upper_error = list(intervals[2,:]-un_mean)
 unStd = [un_lower_error, un_upper_error]
+
+un_mean_0 = intervals[3,:]
+un_lower_error_0 = list(un_mean_0-hpd_intervals[0,:])
+un_upper_error_0 = list(hpd_intervals[1,:]-un_mean_0)
+unStd_0 = [un_lower_error_0, un_upper_error_0]
 
 ad_mean = intervals[3,:]
 ad_lower_error = list(ad_mean-intervals[4,:])
@@ -120,7 +133,7 @@ adStd = [ad_lower_error, ad_upper_error]
 
 
 N = len(un_mean)               # number of data entries
-ind = np.arange(N)              # the x locations for the groups
+ind = 2* np.arange(N)              # the x locations for the groups
 width = 0.35                    # bar width
 
 width_0 = 0.10
@@ -136,7 +149,14 @@ rects1 = ax.bar(ind, un_mean,                  # data
                 error_kw={'ecolor':'dimgrey',    # error-bars colour
                           'linewidth':2})       # error-bar width
 
-rects2 = ax.bar(ind + width, ad_mean,
+rects2 = ax.bar(ind + width, un_mean_0,
+                width,
+                color='tan',
+                yerr=unStd_0,
+                error_kw={'ecolor':'maroon',
+                          'linewidth':2})
+
+rects3 = ax.bar(ind + 2*width, ad_mean,
                 width,
                 color='thistle',
                 yerr=adStd,
@@ -144,18 +164,18 @@ rects2 = ax.bar(ind + width, ad_mean,
                           'linewidth':2})
 
 axes = plt.gca()
-axes.set_ylim([-8, 70])             # y-axis bounds
+axes.set_ylim([-8, 65])             # y-axis bounds
 
 ax.set_ylabel('Credible')
-ax.set_title('selected variables'.format(active_set))
-ax.set_xticks(ind + 1.2* width)
+ax.set_title('selected model'.format(active_set))
+ax.set_xticks(ind + 1.5* width)
 
 ax.set_xticklabels(active_set_0, rotation=90)
 
 
 #ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6'))
 
-ax.legend((rects1[0], rects2[0]), ('Unadjusted', 'Adjusted'), loc='upper left')
+ax.legend((rects1[0], rects2[0], rects3[0]), ('Nominal', 'HPD', 'Equi-tailed'), loc='upper left')
 
 print('here')
 
@@ -173,9 +193,10 @@ print('here')
 
 #plt.show()                              # render the plot
 
-plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_1.pdf', bbox_inches='tight')
+plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_hpd.pdf', bbox_inches='tight')
 
-##################################################
+################################
+
 ind = np.zeros(len(active_set), np.bool)
 
 index = active_set_0.index('P184V')
@@ -187,11 +208,18 @@ active_set.pop(index)
 
 intervals = intervals[:, ~ind]
 
+hpd_intervals = hpd_intervals[:, ~ind]
 
 un_mean = intervals[0,:]
 un_lower_error = list(un_mean-intervals[1,:])
 un_upper_error = list(intervals[2,:]-un_mean)
 unStd = [un_lower_error, un_upper_error]
+
+un_mean_0 = intervals[3,:]
+un_lower_error_0 = list(un_mean_0-hpd_intervals[0,:])
+un_upper_error_0 = list(hpd_intervals[1,:]-un_mean_0)
+unStd_0 = [un_lower_error_0, un_upper_error_0]
+
 ad_mean = intervals[3,:]
 ad_lower_error = list(ad_mean-intervals[4,:])
 ad_upper_error = list(intervals[5,:]- ad_mean)
@@ -199,8 +227,9 @@ adStd = [ad_lower_error, ad_upper_error]
 
 
 N = len(un_mean)               # number of data entries
-ind = np.arange(N)              # the x locations for the groups
+ind = 2* np.arange(N)              # the x locations for the groups
 width = 0.35                    # bar width
+
 
 print('here')
 
@@ -213,7 +242,14 @@ rects1 = ax.bar(ind, un_mean,                  # data
                 error_kw={'ecolor':'dimgrey',    # error-bars colour
                           'linewidth':2})       # error-bar width
 
-rects2 = ax.bar(ind + width, ad_mean,
+rects2 = ax.bar(ind + width, un_mean_0,
+                width,
+                color='tan',
+                yerr=unStd_0,
+                error_kw={'ecolor':'maroon',
+                          'linewidth':2})
+
+rects3 = ax.bar(ind + 2*width, ad_mean,
                 width,
                 color='thistle',
                 yerr=adStd,
@@ -221,16 +257,33 @@ rects2 = ax.bar(ind + width, ad_mean,
                           'linewidth':2})
 
 axes = plt.gca()
-axes.set_ylim([-8, 12])             # y-axis bounds
+axes.set_ylim([-8, 15])             # y-axis bounds
 
 ax.set_ylabel('Credible')
-ax.set_title('selected variables'.format(active_set))
-ax.set_xticks(ind + 1.2* width)
+ax.set_title('selected model'.format(active_set))
+ax.set_xticks(ind + 1.5* width)
 
 ax.set_xticklabels(active_set_0, rotation=90)
 
-ax.legend((rects1[0], rects2[0]), ('Unadjusted', 'Adjusted'), loc='upper right')
+
+#ax.set_xticklabels(('Coef1', 'Coef2', 'Coef3', 'Coef4', 'Coef5', 'Coef6'))
+
+ax.legend((rects1[0], rects2[0], rects3[0]), ('Nominal', 'HPD', 'Equi-tailed'), loc='upper left')
 
 print('here')
 
-plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_2.pdf', bbox_inches='tight')
+#def autolabel(rects):
+#    for rect in rects:
+#        height = rect.get_height()
+#        ax.text(rect.get_x() + rect.get_width()/2., 1.05*height,
+#                '%d' % int(height),
+#                ha='center',            # vertical alignment
+#                va='bottom'             # horizontal alignment
+#                )
+
+#autolabel(rects1)
+#autolabel(rects2)
+
+#plt.show()                              # render the plot
+
+plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_hpd_0.pdf', bbox_inches='tight')
