@@ -39,6 +39,7 @@ X /= np.sqrt(n)
 
 ols_fit = sm.OLS(Y, X).fit()
 sigma_3TC = np.linalg.norm(ols_fit.resid) / np.sqrt(n-p-1)
+print("variance", sigma_3TC)
 OLS_3TC = ols_fit.params
 
 # Design matrix
