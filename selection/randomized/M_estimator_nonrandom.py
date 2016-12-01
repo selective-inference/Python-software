@@ -7,7 +7,7 @@ from ..distributions.api import discrete_family
 
 class M_estimator(object):
 
-    def __init__(self, loss, penalty, solve_args={'min_its':50, 'tol':1.e-10}):
+    def __init__(self, lam, loss, penalty, solve_args={'min_its':50, 'tol':1.e-10}):
         """
         Fits the logistic regression to a candidate active set, without penalty.
         Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
@@ -42,7 +42,7 @@ class M_estimator(object):
          self.solve_args) = (loss,
                              penalty,
                              solve_args)
-
+        self.lam = lam
     # Methods needed for subclassing a query
 
     def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
@@ -149,6 +149,9 @@ class M_estimator(object):
 
         self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
                                                -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
+
+       #print("obs score", self.observed_score_state[])
+       # print()
 
         #print(self.observed_score_state.shape)
         # form linear part
@@ -260,19 +263,20 @@ class M_estimator(object):
         new_state = opt_state.copy() # not really necessary to copy
         new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
         new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
-
+        #print("unadjusted", opt_state[self.subgrad_slice])
+        #print(new_state[self.subgrad_slice])
+        #print("clipped", np.clip(opt_state[self.subgrad_slice], -self.lam, self.lam))
         return new_state
 
 
     def normal_data_gradient(self, data_vector):
         return -np.dot(self.total_cov_inv, data_vector-self.reference)
+        #return -np.dot(self.score_cov_inv, data_vector-self.reference)
 
     def gradient(self, opt_state):
         """
         Randomization derivative at full state.
         """
-
-        # reconstruction of randoimzation omega
 
         opt_linear, opt_offset = self.opt_transform
         opt_piece = opt_linear.dot(opt_state) + opt_offset
@@ -281,10 +285,13 @@ class M_estimator(object):
         #full_state = self.score_transform_inv.dot(opt_piece)
 
         data_derivative = self.normal_data_gradient(opt_piece)
+        #score_derivative = self.normal_data_gradient(self.score_mat_inv.dot(opt_piece))
 
         # chain rule for optimization part
 
         opt_grad = opt_linear.T.dot(data_derivative)
+        #opt_grad = np.dot(opt_linear.T, score_derivative)
+        #opt_grad = np.dot((self.score_mat_inv.dot(opt_linear)).T, score_derivative)
 
         return opt_grad #- self.grad_log_jacobian(opt_state)
 
@@ -300,7 +307,11 @@ class M_estimator(object):
 
         score_cov = bootstrap_cov(lambda: np.random.choice(n, size=(n,), replace=True), bootstrap_score)
         self.score_cov = score_cov
+        self.score_cov_inv = np.linalg.inv(self.score_cov)
+
         self.score_mat = -self.score_transform[0]
+        print("RHS", self.score_mat.dot(self.observed_score_state))
+        print("LHS", self.opt_transform[0].dot(self.observed_opt_state)+self.opt_transform[1])
         self.score_mat_inv = np.linalg.inv(-self.score_transform[0])
         self.total_cov = np.dot(self.score_mat, self.score_cov).dot(self.score_mat.T)
         self.total_cov_inv = np.linalg.inv(self.total_cov)
