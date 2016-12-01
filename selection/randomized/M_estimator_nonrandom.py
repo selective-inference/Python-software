@@ -104,6 +104,7 @@ class M_estimator(object):
 
         initial_subgrad = initial_subgrad[self._inactive]
         initial_unpenalized = self.initial_soln[self._unpenalized]
+
         self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized,
                                                   initial_subgrad], axis=0)
@@ -149,6 +150,7 @@ class M_estimator(object):
         self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
                                                -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
+        #print(self.observed_score_state.shape)
         # form linear part
 
         self.num_opt_var = p = loss.shape[0] # shorthand for p
@@ -191,6 +193,7 @@ class M_estimator(object):
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
+            epsilon=0
             _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
 
         self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
@@ -254,7 +257,6 @@ class M_estimator(object):
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-
         new_state = opt_state.copy() # not really necessary to copy
         new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
         new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
@@ -276,10 +278,7 @@ class M_estimator(object):
         opt_piece = opt_linear.dot(opt_state) + opt_offset
 
         # value of the data D
-
         #full_state = self.score_transform_inv.dot(opt_piece)
-
-        # gradient of negative log density of randomization at omega
 
         data_derivative = self.normal_data_gradient(opt_piece)
 
@@ -289,9 +288,11 @@ class M_estimator(object):
 
         return opt_grad #- self.grad_log_jacobian(opt_state)
 
-    def setup_sampler(self, mu, n,
+    def setup_sampler(self, score_mean,
                       scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
-        self.reference = mu
+
+        X, _ = self.loss.data
+        n = X.shape[0]
         bootstrap_score = pairs_bootstrap_glm(self.loss,
                                               self._overall,
                                               beta_full=self._beta_full,
@@ -303,7 +304,8 @@ class M_estimator(object):
         self.score_mat_inv = np.linalg.inv(-self.score_transform[0])
         self.total_cov = np.dot(self.score_mat, self.score_cov).dot(self.score_mat.T)
         self.total_cov_inv = np.linalg.inv(self.total_cov)
-
+        self.reference = self.score_mat.dot(score_mean)
+        #print(self.reference)
 
     def reconstruction_map(self, opt_state):
 
@@ -313,12 +315,12 @@ class M_estimator(object):
         # reconstruction of randoimzation omega
 
         opt_state = np.atleast_2d(opt_state)
-
+        #print(opt_state)
         opt_linear, opt_offset = self.opt_transform
         opt_piece = opt_linear.dot(opt_state.T) + opt_offset
 
-        # value of the randomization omega
-
+        #print("recon", self.score_mat_inv.dot(opt_linear.dot(self.observed_opt_state) + opt_offset))
+        #print("score", self.observed_score_state)
         return self.score_mat_inv.dot(opt_piece)
 
     def sample(self, ndraw, burnin, stepsize):
@@ -350,29 +352,27 @@ class M_estimator(object):
         -------
 
         gradient : np.float
-
         '''
-
         #if stepsize is None:
         #    stepsize = 1. / self.crude_lipschitz()
-        target_langevin = projected_langevin(self.observed_opt_state.copy(),
+        langevin = projected_langevin(self.observed_opt_state.copy(),
                                              self.gradient,
                                              self.projection,
                                              stepsize)
 
         samples = []
         for i in range(ndraw + burnin):
-            target_langevin.next()
+            langevin.next()
             if (i >= burnin):
-                samples.append(self.reconstruction_map(target_langevin.state.copy()))
+                samples.append(self.reconstruction_map(langevin.state.copy()))
 
         return np.asarray(samples)
 
     def hypothesis_test(self,
                         test_stat,
                         observed_value,
-                        ndraw=5000,
-                        burnin=1000,
+                        ndraw=10000,
+                        burnin=0,
                         stepsize=None,
                         sample=None,
                         parameter=None,
@@ -437,8 +437,9 @@ class M_estimator(object):
             parameter = self.reference
 
         sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
-
-
+        #print(sample_test_stat.shape)
+        #print(sample_test_stat[:10], sample_test_stat[10:])
+        #print(observed_value)
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.cdf(0, observed_value)
 

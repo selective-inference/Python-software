@@ -467,7 +467,6 @@ class targeted_sampler(object):
         -------
 
         projected_state : np.float
-
         '''
 
         opt_state = state[self.overall_opt_slice]
