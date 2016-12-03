@@ -8,7 +8,7 @@ from selection.randomized.M_estimator_nonrandom import M_estimator
 
 def test_nonrandomized(s=0,
                        n=200,
-                       p=20,
+                       p=10,
                        snr=7,
                        rho=0,
                        lam_frac=0.8,
@@ -18,7 +18,6 @@ def test_nonrandomized(s=0,
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         loss = rr.glm.gaussian(X, y)
-
     elif loss == "logistic":
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
         loss = rr.glm.logistic(X, y)
@@ -34,14 +33,13 @@ def test_nonrandomized(s=0,
     M_est.solve()
     active  = M_est._overall
     nactive = np.sum(active)
-    print("nactive",nactive)
+    print("nactive", nactive)
     if nactive == 0:
         return None
-    beta_unpenalized = restricted_Mest(loss, active, solve_args=solve_args)
 
-    score_mean = M_est.observed_score_state
+    score_mean = M_est.observed_score_state.copy()
     score_mean[:nactive] = 0
-    #M_est.setup_sampler(score_mean = score_mean)
+    #M_est.setup_sampler(score_mean = np.zeros(p))
     M_est.setup_sampler(score_mean=score_mean)
     #M_est.sample(ndraw = 1000, burnin=1000, stepsize=1./p)
 

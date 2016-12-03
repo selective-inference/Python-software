@@ -102,6 +102,10 @@ class M_estimator(object):
         initial_subgrad = -self.loss.smooth_objective(self.initial_soln, 'grad')
                           # the quadratic of a smooth_atom is not included in computing the smooth_objective
 
+        #print("initial sub", initial_subgrad)
+        X, y = loss.data
+        #print(np.dot(X.T, y-X.dot(self.initial_soln)))
+
         initial_subgrad = initial_subgrad[self._inactive]
         initial_unpenalized = self.initial_soln[self._unpenalized]
 
@@ -149,9 +153,9 @@ class M_estimator(object):
 
         self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
                                                -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
-
-       #print("obs score", self.observed_score_state[])
-       # print()
+        #print('observed score', self.observed_score_state)
+        #print("obs score", self.observed_score_state[])
+        # print()
 
         #print(self.observed_score_state.shape)
         # form linear part
@@ -179,6 +183,7 @@ class M_estimator(object):
         for _i, _n in zip(inactive_idx, null_idx):
             _score_linear_term[_i,_n] = -_sqrt_scaling
 
+        #print("score mat", _score_linear_term)
         # c_E piece
 
         scaling_slice = slice(0, active_groups.sum())
@@ -196,7 +201,7 @@ class M_estimator(object):
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            epsilon=0
+            epsilon = 0
             _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
 
         self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
@@ -228,6 +233,7 @@ class M_estimator(object):
         # in `linear_decomposition`
 
         self.opt_transform = (_opt_linear_term, _opt_affine_term)
+
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         # now store everything needed for the projections
@@ -263,15 +269,11 @@ class M_estimator(object):
         new_state = opt_state.copy() # not really necessary to copy
         new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
         new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
-        #print("unadjusted", opt_state[self.subgrad_slice])
-        #print(new_state[self.subgrad_slice])
-        #print("clipped", np.clip(opt_state[self.subgrad_slice], -self.lam, self.lam))
         return new_state
 
 
     def normal_data_gradient(self, data_vector):
         return -np.dot(self.total_cov_inv, data_vector-self.reference)
-        #return -np.dot(self.score_cov_inv, data_vector-self.reference)
 
     def gradient(self, opt_state):
         """
@@ -285,13 +287,9 @@ class M_estimator(object):
         #full_state = self.score_transform_inv.dot(opt_piece)
 
         data_derivative = self.normal_data_gradient(opt_piece)
-        #score_derivative = self.normal_data_gradient(self.score_mat_inv.dot(opt_piece))
-
         # chain rule for optimization part
 
         opt_grad = opt_linear.T.dot(data_derivative)
-        #opt_grad = np.dot(opt_linear.T, score_derivative)
-        #opt_grad = np.dot((self.score_mat_inv.dot(opt_linear)).T, score_derivative)
 
         return opt_grad #- self.grad_log_jacobian(opt_state)
 
@@ -309,9 +307,7 @@ class M_estimator(object):
         self.score_cov = score_cov
         self.score_cov_inv = np.linalg.inv(self.score_cov)
 
-        self.score_mat = -self.score_transform[0]
-        print("RHS", self.score_mat.dot(self.observed_score_state))
-        print("LHS", self.opt_transform[0].dot(self.observed_opt_state)+self.opt_transform[1])
+        self.score_mat = self.score_transform[0]
         self.score_mat_inv = np.linalg.inv(-self.score_transform[0])
         self.total_cov = np.dot(self.score_mat, self.score_cov).dot(self.score_mat.T)
         self.total_cov_inv = np.linalg.inv(self.total_cov)
@@ -326,12 +322,9 @@ class M_estimator(object):
         # reconstruction of randoimzation omega
 
         opt_state = np.atleast_2d(opt_state)
-        #print(opt_state)
         opt_linear, opt_offset = self.opt_transform
         opt_piece = opt_linear.dot(opt_state.T) + opt_offset
 
-        #print("recon", self.score_mat_inv.dot(opt_linear.dot(self.observed_opt_state) + opt_offset))
-        #print("score", self.observed_score_state)
         return self.score_mat_inv.dot(opt_piece)
 
     def sample(self, ndraw, burnin, stepsize):
@@ -367,9 +360,9 @@ class M_estimator(object):
         #if stepsize is None:
         #    stepsize = 1. / self.crude_lipschitz()
         langevin = projected_langevin(self.observed_opt_state.copy(),
-                                             self.gradient,
-                                             self.projection,
-                                             stepsize)
+                                      self.gradient,
+                                      self.projection,
+                                      stepsize)
 
         samples = []
         for i in range(ndraw + burnin):
@@ -448,9 +441,6 @@ class M_estimator(object):
             parameter = self.reference
 
         sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
-        #print(sample_test_stat.shape)
-        #print(sample_test_stat[:10], sample_test_stat[10:])
-        #print(observed_value)
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.cdf(0, observed_value)
 

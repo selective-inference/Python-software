@@ -39,7 +39,7 @@ def test_multiple_queries(s=3, n=200, p=20,
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
-    W[0] = 0 # use at least some unpenalized
+    #W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
@@ -88,7 +88,6 @@ def test_multiple_queries(s=3, n=200, p=20,
                                                          reference = reference)
             test_stat = lambda x: np.linalg.norm(x-beta[active_union])
             observed_test_value = test_stat(target_observed)
-
 
         pivot = target_sampler.hypothesis_test(test_stat,
                                                observed_test_value,

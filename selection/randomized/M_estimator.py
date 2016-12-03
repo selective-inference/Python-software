@@ -219,6 +219,22 @@ class M_estimator(query):
 
         self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
 
+
+        ## limits on the subgradients
+        subgradient_limits = np.zeros(inactive.sum())
+        groups = np.unique(penalty.groups)
+        idx = 0
+        for i, g in enumerate(groups):
+            if ~active_groups[i]:
+                group = penalty.groups == g
+                print(penalty.weights[g])
+                subgradient_limits[idx] = penalty.weights[g]
+                #_opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
+                idx += 1
+        self.subgradient_limits = subgradient_limits
+
+        print(penalty.weights)
+        print("subgradient_limits", self.subgradient_limits)
         # form affine part
 
         _opt_affine_term = np.zeros(p)
@@ -250,6 +266,7 @@ class M_estimator(query):
         new_groups = penalty.groups[inactive]
         new_weights = dict([(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
 
+
         # we form a dual group lasso object
         # to do the projection
 
@@ -257,6 +274,7 @@ class M_estimator(query):
         self.subgrad_slice = subgrad_slice
 
         self._setup = True
+
 
     def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
         pass

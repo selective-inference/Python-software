@@ -8,13 +8,15 @@ from __future__ import division, print_function
 
 import numpy as np
 import regreg.api as rr
-from scipy.stats import laplace, norm as ndist
+from scipy.stats import laplace, logistic, norm as ndist
 
 class randomization(rr.smooth_atom):
 
     def __init__(self,
                  shape,
                  density,
+                 cdf,
+                 pdf,
                  grad_negative_log_density,
                  sampler,
                  lipschitz=1,
@@ -23,6 +25,8 @@ class randomization(rr.smooth_atom):
         rr.smooth_atom.__init__(self,
                                 shape)
         self._density = density
+        self._cdf = cdf
+        self._pdf = pdf
         self._grad_negative_log_density = grad_negative_log_density
         self._sampler = sampler
         self.lipschitz = lipschitz
@@ -95,6 +99,8 @@ class randomization(rr.smooth_atom):
         """
         rv = ndist(scale=scale, loc=0.)
         density = lambda x: np.product(rv.pdf(x))
+        cdf = lambda x: ndist.cdf(x, loc=0., scale=scale)
+        pdf = lambda x: ndist.pdf(x, loc=0., scale=scale)
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
 
@@ -102,6 +108,8 @@ class randomization(rr.smooth_atom):
         constant = -0.5 * p * np.log(2 * np.pi * scale**2)
         return randomization(shape,
                              density,
+                             cdf,
+                             pdf,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=1./scale**2,
@@ -123,11 +131,15 @@ class randomization(rr.smooth_atom):
         p = covariance.shape[0]
         _const = np.sqrt((2*np.pi)**p * _det)
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
+        cdf = lambda x: None
+        pdf = lambda x: None
         grad_negative_log_density = lambda x: precision.dot(x)
         sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
 
         return randomization((p,),
                              density,
+                             cdf,
+                             pdf,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=np.linalg.svd(precision)[1].max(),
@@ -146,12 +158,16 @@ class randomization(rr.smooth_atom):
         """
         rv = laplace(scale=scale, loc=0.)
         density = lambda x: np.product(rv.pdf(x))
+        cdf = lambda x: laplace.cdf(x, loc=0., scale = scale)
+        pdf = lambda x: laplace.pdf(x, loc=0., scale = scale)
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
 
         constant = -np.product(shape) * np.log(2 * scale)
         return randomization(shape,
                              density,
+                             cdf,
+                             pdf,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=1./scale**2,
@@ -172,6 +188,8 @@ class randomization(rr.smooth_atom):
         density = lambda x: (np.product(np.exp(-x / scale) /
                                         (1 + np.exp(-x / scale))**2)
                              / scale**(np.product(x.shape)))
+        cdf = lambda x: logistic.cdf(x, loc=0., scale = scale)
+        pdf = lambda x: logistic.pdf(x, loc=0., scale=scale)
         # negative log density is (with \mu=0)
         # x/s + log(s) + 2 \log (1 + e(-x/s))
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
@@ -180,6 +198,8 @@ class randomization(rr.smooth_atom):
         constant = - np.product(shape) * np.log(scale)
         return randomization(shape,
                              density,
+                             cdf,
+                             pdf,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=.25/scale**2,
