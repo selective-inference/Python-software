@@ -233,8 +233,6 @@ class M_estimator(query):
                 idx += 1
         self.subgradient_limits = subgradient_limits
 
-        print(penalty.weights)
-        print("subgradient_limits", self.subgradient_limits)
         # form affine part
 
         _opt_affine_term = np.zeros(p)
@@ -358,6 +356,44 @@ class M_estimator(query):
         self.scaling_slice = np.zeros(new_linear.shape[1], np.bool)
         self.num_opt_var = new_linear.shape[1]
 
+
+    def marginalize_subgradient(self):
+        self._marginalize_subgradient = True
+
+
+    def construct_weights(self, data_piece, opt_state):
+        """
+            marginalizing over the sub-gradient
+        """
+
+        if not self._setup:
+            raise ValueError('setup_sampler should be called before using this function')
+
+        p = opt_state.shape[0]
+        weights = np.zeros(p)
+        opt_linear, opt_offset = self.opt_transform
+        opt_piece = opt_linear.dot(opt_state) + opt_offset
+        full_state = (data_piece + opt_piece)
+
+        opt_state_plus, opt_state_minus = opt_state.copy(), opt_state.copy()
+        opt_state_plus[self.subgrad_slice] = self.subgradient_limits
+        opt_state_minus[self.subgrad_slice] = -self.subgradient_limits
+        opt_piece_plus = opt_linear.dot(opt_state_plus) + opt_offset
+        opt_piece_minus = opt_linear.dot(opt_state_minus) + opt_offset
+        full_state_plus = (data_piece + opt_piece_plus)
+        full_state_minus = (data_piece + opt_piece_minus)
+
+        def fraction(upper, lower):
+            return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
+                   / (self.randomization._cdf(upper) - self.randomization._cdf(lower))
+
+        for i in range(p):
+            if self._inactive[i]:
+                weights[i] = fraction(full_state_plus[i], full_state_minus[i])
+            elif self._overall[i]:
+                weights[i] = np.log(self.randomization._pdf(full_state[i]))
+
+        return weights
 
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):

@@ -24,38 +24,7 @@ class query(object):
         self._randomized = True
 
 
-    def construct_weights(self, data_state, data_transform, opt_state):
-
-        p = opt_state.shape[0]
-        weights = np.zeros(p)
-        opt_linear, opt_offset = self.opt_transform
-        data_linear, data_offset = data_transform
-        data_piece = data_linear.dot(data_state) + data_offset
-        opt_piece = opt_linear.dot(opt_state) + opt_offset
-        full_state = (data_piece + opt_piece)
-
-        opt_state_plus, opt_state_minus = opt_state.copy(), opt_state.copy()
-        opt_state_plus[self.subgrad_slice] = self.subgradient_limits
-        opt_state_minus[self.subgrad_slice] = -self.subgradient_limits
-        opt_piece_plus = opt_linear.dot(opt_state_plus)+opt_offset
-        opt_piece_minus = opt_linear.dot(opt_state_minus)+opt_offset
-        full_state_plus = (data_piece + opt_piece_plus)
-        full_state_minus = (data_piece + opt_piece_minus)
-
-        def fraction(upper,lower):
-            return (self.randomization._pdf(upper)-self.randomization._pdf(lower))\
-                   /(self.randomization._cdf(upper)-self.randomization._cdf(lower))
-
-        for i in range(p):
-            if self._inactive[i]:
-                weights[i] = fraction(full_state_plus[i], full_state_minus[i])
-            elif self._overall[i]:
-                weights[i] = self.randomization.log_density(full_state[i])
-
-        return weights
-
-
-    def randomization_gradient(self, data_state, data_transform, opt_state, marginalize = True):
+    def randomization_gradient(self, data_state, data_transform, opt_state):
         """
         Randomization derivative at full state.
         """
@@ -73,8 +42,8 @@ class query(object):
 
         # gradient of negative log density of randomization at omega
 
-        if marginalize:
-            randomization_derivative = self.construct_weights(data_state, data_transform, opt_state)
+        if self._marginalize_subgradient:
+            randomization_derivative = self.construct_weights(data_piece, opt_state)
         else:
             randomization_derivative = self.randomization.gradient(full_state)
         # chain rule for data, optimization parts
