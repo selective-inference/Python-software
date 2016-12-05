@@ -88,10 +88,10 @@ def test_multiple_queries(ndraw=10000, burnin=2000, bootstrap=False, test = 'sel
                                        burnin=burnin,
                                        keep_opt=True)
 
-        pivot = target_sampler.hypothesis_test2(full_sample,
-                                                test_stat,
-                                                target_observed,
-                                                alternative='twosided')
+        pivot = target_sampler.hypothesis_test_translate(full_sample,
+                                                         test_stat,
+                                                         target_observed,
+                                                         alternative='twosided')
 
         return [pivot], [False]
 
