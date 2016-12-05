@@ -51,15 +51,12 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    # mv = multiple_queries([M_est1, M_est2])
-    mv = multiple_queries([M_est1])
+    mv = multiple_queries([M_est])
     mv.solve()
 
-    active_union = M_est1.selection_variable['variables'] #+ M_est2.selection_variable['variables']
+    active_union = M_est.selection_variable['variables'] 
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
@@ -89,7 +86,8 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
         # param_cov = _parametric_cov_glm(loss, active_union)
 
         alpha_mat = set_alpha_matrix(loss, active_union)
-        target_alpha = np.dot(inactive_indicators_mat, alpha_mat) # target = target_alpha\times alpha+reference_vec
+        # target = target_alpha\times alpha+reference_vec
+        target_alpha = np.dot(inactive_indicators_mat, alpha_mat) 
 
         target_sampler = mv.setup_bootstrapped_target(inactive_target, inactive_observed, target_alpha)
 
@@ -124,14 +122,13 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value(max_tries=300)
-def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000, bootstrap=True):
+def test_multiple_queries_individual_coeff_small(ndraw=10000, 
+                                                 burnin=2000, 
+                                                 bootstrap=True):
     s, n, p = 3, 100, 20
 
-    #randomizer = randomization.logistic((p,), scale=1./np.log(n))
-    #randomizer = randomization.laplace((p,), scale=2. / np.sqrt(n))
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=12.)
-    # X, y, beta, _, _ = gaussian_instance(n=n, p=p, s=s, rho=0, snr=5.)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=20.)
 
     nonzero = np.where(beta)[0]
     lam_frac = 3.
@@ -145,32 +142,29 @@ def test_multiple_queries_individual_coeff_small(ndraw=10000, burnin=2000, boots
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    # second randomization
-    # M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-
-    # mv = multiple_queries([M_est1, M_est2])
-    mv = multiple_queries([M_est1])
+    # randomization
+    M_est = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    mv = multiple_queries([M_est])
     mv.solve()
 
-    active_union = M_est1.selection_variable['variables'] #+ M_est2.selection_variable['variables']
-    nactive = np.sum(active_union)
-    active_set = np.nonzero(active_union)[0]
+    active_vars = M_est.selection_variable['variables'] 
+
+    nactive = np.sum(active_vars)
+    active_set = np.nonzero(active_vars)[0]
 
     pvalues = []
-    true_beta = beta[active_union]
+    true_beta = beta[active_vars]
 
-    if set(nonzero).issubset(np.nonzero(active_union)[0]):
-
-        alpha_mat = set_alpha_matrix(loss, active_union)
+    print(nonzero, active_set)
+    if set(nonzero).issubset(active_set):
 
         for j in range(nactive):
 
+            print(j)
             subset = np.zeros(p, np.bool)
             subset[active_set[j]] = True
             target_sampler, target_observed = glm_target(loss,
-                                                         active_union * ~subset,
+                                                         active_vars,
                                                          mv,
                                                          subset=subset,
                                                          bootstrap=bootstrap,
