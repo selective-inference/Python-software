@@ -415,7 +415,7 @@ class M_estimator(query):
         self.num_opt_var = new_linear.shape[1]
 
 
-    def construct_weights(self, full_state, data_transform):
+    def construct_weights(self, full_state):
         """
             marginalizing over the sub-gradient
         """
@@ -423,21 +423,10 @@ class M_estimator(query):
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-        data_state, opt_state = full_state
         p = self.p
         weights = np.zeros(p)
-        opt_linear, opt_offset = self.opt_transform
-        opt_piece = opt_linear.dot(opt_state) + opt_offset
-        data_linear, data_offset = data_transform
-        data_piece = data_linear.dot(data_state) + data_offset
-        full_state = (data_piece + opt_piece)
 
         if self.inactive_marginal_groups.sum()>0:
-            opt_state_plus, opt_state_minus = opt_state.copy(), opt_state.copy()
-            opt_state_plus[self.subgrad_slice] = self.subgradient_limits[0]
-            opt_state_minus[self.subgrad_slice] = -self.subgradient_limits[0]
-            opt_piece_plus = opt_linear.dot(opt_state_plus) + opt_offset
-            opt_piece_minus = opt_linear.dot(opt_state_minus) + opt_offset
             full_state_plus = full_state+self.subgradient_limits[0]*np.array(self.inactive_marginal_groups, np.float)
             full_state_minus = full_state-self.subgradient_limits[0]*np.array(self.inactive_marginal_groups, np.float)
 
@@ -479,6 +468,7 @@ class M_estimator_split(M_estimator):
             raise ValueError('subsample size must be smaller than total sample size')
 
         self.total_size, self.subsample_size = total_size, subsample_size
+
 
     def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}, B=2000):
 

@@ -45,7 +45,7 @@ class query(object):
         if not self._marginalize_subgradient:
             randomization_derivative = self.randomization.gradient(full_state)
         else:
-            randomization_derivative = self.construct_weights((data_state, opt_state), data_transform)
+            randomization_derivative = self.construct_weights(full_state)
         # chain rule for data, optimization parts
 
         data_grad = data_linear.T.dot(randomization_derivative)

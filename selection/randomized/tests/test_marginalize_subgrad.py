@@ -30,11 +30,11 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @wait_for_return_value()
 def test_marginalize(s=0,
                     n=100,
-                    p=3,
+                    p=10,
                     rho=0.1,
                     snr=10,
                     lam_frac = 1.4,
-                    ndraw=1000,
+                    ndraw=5000,
                     burnin=0,
                     loss='logistic',
                     nviews=1,
@@ -90,7 +90,7 @@ def test_marginalize(s=0,
                conditioning_groups[:(p/2)] = True
                marginalizing_groups = np.zeros(p, dtype=bool)
                marginalizing_groups[(p/2):] = True
-               views[i].decompose_subgradient(conditioning_groups, marginalizing_groups=marginalizing_groups)
+               views[i].decompose_subgradient(conditioning_groups, marginalizing_groups=np.ones(p, bool))
 
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,
