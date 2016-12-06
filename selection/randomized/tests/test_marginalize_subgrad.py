@@ -34,12 +34,12 @@ def test_marginalize(s=0,
                     rho=0.1,
                     snr=10,
                     lam_frac = 1.4,
-                    ndraw=10000, burnin=2000,
+                    ndraw=1000,
+                    burnin=0,
                     loss='logistic',
                     nviews=1,
                     scalings=False,
-                    subgrad =True,
-                    marginalize_subgrad=False):
+                    subgrad =True):
 
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
@@ -86,11 +86,11 @@ def test_marginalize(s=0,
                 views[i].condition_on_scalings()
         if subgrad:
             for i in range(nviews):
-               conditioning_groups = np.ones(p,dtype=bool)
-               views[i].condition_on_subgradient(conditioning_groups)
-        if marginalize_subgrad:
-            for i in range(nviews):
-                views[i].marginalize_subgradient()
+               conditioning_groups = np.zeros(p,dtype=bool)
+               conditioning_groups[:(p/2)] = True
+               marginalizing_groups = np.zeros(p, dtype=bool)
+               marginalizing_groups[(p/2):] = True
+               views[i].decompose_subgradient(conditioning_groups, marginalizing_groups=marginalizing_groups)
 
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,

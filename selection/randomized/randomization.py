@@ -17,6 +17,7 @@ class randomization(rr.smooth_atom):
                  density,
                  cdf,
                  pdf,
+                 derivative_log_density,
                  grad_negative_log_density,
                  sampler,
                  lipschitz=1,
@@ -27,6 +28,7 @@ class randomization(rr.smooth_atom):
         self._density = density
         self._cdf = cdf
         self._pdf = pdf
+        self._derivative_log_density = derivative_log_density
         self._grad_negative_log_density = grad_negative_log_density
         self._sampler = sampler
         self.lipschitz = lipschitz
@@ -101,6 +103,7 @@ class randomization(rr.smooth_atom):
         density = lambda x: np.product(rv.pdf(x))
         cdf = lambda x: ndist.cdf(x, loc=0., scale=scale)
         pdf = lambda x: ndist.pdf(x, loc=0., scale=scale)
+        derivative_log_density = lambda x: -x/(scale**2)
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
 
@@ -110,6 +113,7 @@ class randomization(rr.smooth_atom):
                              density,
                              cdf,
                              pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=1./scale**2,
@@ -133,6 +137,7 @@ class randomization(rr.smooth_atom):
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         cdf = lambda x: None
         pdf = lambda x: None
+        derivative_log_density = lambda x: None
         grad_negative_log_density = lambda x: precision.dot(x)
         sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
 
@@ -140,6 +145,7 @@ class randomization(rr.smooth_atom):
                              density,
                              cdf,
                              pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=np.linalg.svd(precision)[1].max(),
@@ -160,6 +166,7 @@ class randomization(rr.smooth_atom):
         density = lambda x: np.product(rv.pdf(x))
         cdf = lambda x: laplace.cdf(x, loc=0., scale = scale)
         pdf = lambda x: laplace.pdf(x, loc=0., scale = scale)
+        derivative_log_density = lambda x: -np.sign(x)/scale
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
 
@@ -168,6 +175,7 @@ class randomization(rr.smooth_atom):
                              density,
                              cdf,
                              pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=1./scale**2,
@@ -189,7 +197,8 @@ class randomization(rr.smooth_atom):
                                         (1 + np.exp(-x / scale))**2)
                              / scale**(np.product(x.shape)))
         cdf = lambda x: logistic.cdf(x, loc=0., scale = scale)
-        pdf = lambda x: logistic.pdf(x, loc=0., scale=scale)
+        pdf = lambda x: logistic.pdf(x, loc=0., scale = scale)
+        derivative_log_density = lambda x: (np.exp(-x/scale)-1)/(scale*np.exp(-x/scale)+1)
         # negative log density is (with \mu=0)
         # x/s + log(s) + 2 \log (1 + e(-x/s))
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
@@ -200,6 +209,7 @@ class randomization(rr.smooth_atom):
                              density,
                              cdf,
                              pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=.25/scale**2,

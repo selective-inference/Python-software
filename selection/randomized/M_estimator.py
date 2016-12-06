@@ -274,6 +274,7 @@ class M_estimator(query):
         self._marginalize_subgradient=False
         self.scaling_slice = scaling_slice
         self.unpenalized_slice = unpenalized_slice
+        self.p = loss.shape[0]
 
     def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
         pass
@@ -308,12 +309,14 @@ class M_estimator(query):
 
     # optional things to condition on
 
-    def condition_on_subgradient(self, conditioning_groups):
+    def decompose_subgradient(self, conditioning_groups, marginalizing_groups=None):
         """
         Maybe we should allow subgradients of only some variables...
         """
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
+        if marginalizing_groups is not None:
+            self._marginalize_subgradient=True
 
         #idx = 0
         groups = np.unique(self.penalty.groups)
@@ -321,22 +324,31 @@ class M_estimator(query):
         condition_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
         moving_inactive_groups = np.zeros_like(groups, dtype=bool)
         moving_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
-        self._inactive_groups = np.multiply(~self._active_groups, ~self._unpenalized)
+        self._inactive_groups = ~(self._active_groups+self._unpenalized)
 
+        inactive_marginal_groups = np.zeros_like(self._inactive, dtype=bool)
         for i, g in enumerate(groups):
             if (self._inactive_groups[i]) and conditioning_groups[i]:
                 group = self.penalty.groups == g
                 condition_inactive_groups[g] = True
                 condition_inactive_variables[group] = True
-            elif (self._inactive_groups[i]) and (~conditioning_groups[i]):
+            elif (self._inactive_groups[i]) and (~conditioning_groups[i]) and (~marginalizing_groups[i]):
                 group = self.penalty.groups == g
                 moving_inactive_groups[g] = True
                 moving_inactive_variables[group] = True
+            if (self._inactive_groups[i]) and marginalizing_groups[i]:
+                group = self.penalty.groups == g
+                inactive_marginal_groups[g] = True
+
+        self.inactive_marginal_groups = inactive_marginal_groups
+        #if self.inactive_marginal_groups.sum()==0:
+        #    self._marginalize_subgradient=False
                 #_opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
                 #idx += 1
         #self.condition_inactive_groups = condition_inactive_groups
         print("active groups", self._active_groups)
         print("condtioning", condition_inactive_groups)
+        print("marginalize", self.inactive_marginal_groups)
         opt_linear, opt_offset = self.opt_transform
 
         new_linear = np.zeros((opt_linear.shape[0], self._active_groups.sum()+self._unpenalized_groups.sum()+moving_inactive_variables.sum()))
@@ -371,7 +383,6 @@ class M_estimator(query):
         self.selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
 
         # reset variables
-
         #self.observed_opt_state = np.concatenate((self.observed_opt_state[self.scaling_slice], subgrad_observed[~condition_inactive_variables]), 0)
         #self.scaling_slice = slice(None, None, None)
         #self.subgrad_slice = np.zeros(new_linear.shape[1], np.bool)
@@ -403,10 +414,6 @@ class M_estimator(query):
         self.num_opt_var = new_linear.shape[1]
 
 
-    def marginalize_subgradient(self):
-        self._marginalize_subgradient = True
-
-
     def construct_weights(self, full_state, data_transform):
         """
             marginalizing over the sub-gradient
@@ -416,7 +423,7 @@ class M_estimator(query):
             raise ValueError('setup_sampler should be called before using this function')
 
         data_state, opt_state = full_state
-        p = opt_state.shape[0]
+        p = self.p
         weights = np.zeros(p)
         opt_linear, opt_offset = self.opt_transform
         opt_piece = opt_linear.dot(opt_state) + opt_offset
@@ -424,25 +431,27 @@ class M_estimator(query):
         data_piece = data_linear.dot(data_state) + data_offset
         full_state = (data_piece + opt_piece)
 
-        opt_state_plus, opt_state_minus = opt_state.copy(), opt_state.copy()
-        opt_state_plus[self.subgrad_slice] = self.subgradient_limits
-        opt_state_minus[self.subgrad_slice] = -self.subgradient_limits
-        opt_piece_plus = opt_linear.dot(opt_state_plus) + opt_offset
-        opt_piece_minus = opt_linear.dot(opt_state_minus) + opt_offset
-        full_state_plus = (data_piece + opt_piece_plus)
-        full_state_minus = (data_piece + opt_piece_minus)
+        if self.inactive_marginal_groups.sum()>0:
+            opt_state_plus, opt_state_minus = opt_state.copy(), opt_state.copy()
+            opt_state_plus[self.subgrad_slice] = self.subgradient_limits[0]
+            opt_state_minus[self.subgrad_slice] = -self.subgradient_limits[0]
+            opt_piece_plus = opt_linear.dot(opt_state_plus) + opt_offset
+            opt_piece_minus = opt_linear.dot(opt_state_minus) + opt_offset
+            full_state_plus = (data_piece + opt_piece_plus)
+            full_state_minus = (data_piece + opt_piece_minus)
 
         def fraction(upper, lower):
             return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
                    / (self.randomization._cdf(upper) - self.randomization._cdf(lower))
 
         for i in range(p):
-            if self._inactive[i]:
+            if self.inactive_marginal_groups[i]:
                 weights[i] = fraction(full_state_plus[i], full_state_minus[i])
-            elif self._overall[i]:
-                weights[i] = np.log(self.randomization._pdf(full_state[i]))
-
-        return weights
+            else:
+                weights[i] = self.randomization._derivative_log_density(full_state[i])
+        #print("weights", weights)
+        #print("randomization gradient",self.randomization.gradient(full_state))
+        return -weights
 
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
