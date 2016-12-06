@@ -34,7 +34,7 @@ class query(object):
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
         data_piece = data_linear.dot(data_state) + data_offset
-        opt_piece = opt_linear.dot(opt_state) + opt_offset
+        opt_piece = opt_linear.dot(np.array(opt_state)) + opt_offset
 
         # value of the randomization omega
 
@@ -42,10 +42,10 @@ class query(object):
 
         # gradient of negative log density of randomization at omega
 
-        if self._marginalize_subgradient:
-            randomization_derivative = self.construct_weights(data_piece, opt_state)
-        else:
+        if not self._marginalize_subgradient:
             randomization_derivative = self.randomization.gradient(full_state)
+        else:
+            randomization_derivative = self.construct_weights((data_state, opt_state), data_transform)
         # chain rule for data, optimization parts
 
         data_grad = data_linear.T.dot(randomization_derivative)
@@ -248,7 +248,7 @@ class multiple_queries(object):
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
         for i in range(len(self.objectives)):
-            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
+            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state[:self.num_opt_var]
 
     def setup_target(self,
                      target_info,

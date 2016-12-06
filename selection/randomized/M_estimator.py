@@ -115,7 +115,7 @@ class M_estimator(query):
         initial_subgrad = -(self.randomized_loss.smooth_objective(self.initial_soln, 'grad') + 
                             self.randomized_loss.quadratic.objective(self.initial_soln, 'grad')) 
                           # the quadratic of a smooth_atom is not included in computing the smooth_objective
-
+        self.initial_subgrad = initial_subgrad
         initial_subgrad = initial_subgrad[self._inactive]
         initial_unpenalized = self.initial_soln[self._unpenalized]
         self.observed_opt_state = np.concatenate([initial_scalings,
@@ -227,7 +227,6 @@ class M_estimator(query):
         for i, g in enumerate(groups):
             if ~active_groups[i]:
                 group = penalty.groups == g
-                print(penalty.weights[g])
                 subgradient_limits[idx] = penalty.weights[g]
                 #_opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
                 idx += 1
@@ -272,7 +271,9 @@ class M_estimator(query):
         self.subgrad_slice = subgrad_slice
 
         self._setup = True
-
+        self._marginalize_subgradient=False
+        self.scaling_slice = scaling_slice
+        self.unpenalized_slice = unpenalized_slice
 
     def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
         pass
@@ -307,30 +308,75 @@ class M_estimator(query):
 
     # optional things to condition on
 
-    def condition_on_subgradient(self):
+    def condition_on_subgradient(self, conditioning_groups):
         """
         Maybe we should allow subgradients of only some variables...
         """
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
+        #idx = 0
+        groups = np.unique(self.penalty.groups)
+        condition_inactive_groups = np.zeros_like(groups, dtype=bool)
+        condition_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
+        moving_inactive_groups = np.zeros_like(groups, dtype=bool)
+        moving_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
+        self._inactive_groups = np.multiply(~self._active_groups, ~self._unpenalized)
+
+        for i, g in enumerate(groups):
+            if (self._inactive_groups[i]) and conditioning_groups[i]:
+                group = self.penalty.groups == g
+                condition_inactive_groups[g] = True
+                condition_inactive_variables[group] = True
+            elif (self._inactive_groups[i]) and (~conditioning_groups[i]):
+                group = self.penalty.groups == g
+                moving_inactive_groups[g] = True
+                moving_inactive_variables[group] = True
+                #_opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
+                #idx += 1
+        #self.condition_inactive_groups = condition_inactive_groups
+        print("active groups", self._active_groups)
+        print("condtioning", condition_inactive_groups)
         opt_linear, opt_offset = self.opt_transform
-        
-        new_offset = opt_linear[:,self.subgrad_slice].dot(self.observed_opt_state[self.subgrad_slice]) + opt_offset
-        new_linear = opt_linear[:,self.scaling_slice]
+
+        new_linear = np.zeros((opt_linear.shape[0], self._active_groups.sum()+self._unpenalized_groups.sum()+moving_inactive_variables.sum()))
+        new_linear[:,self.scaling_slice] = opt_linear[:, self.scaling_slice]
+        new_linear[:, self.unpenalized_slice] = opt_linear[:, self.unpenalized_slice]
+
+        inactive_moving_idx = np.nonzero(moving_inactive_variables)[0]
+        subgrad_idx = range(self._active_groups.sum() + self._unpenalized.sum(),
+                            self._active_groups.sum() + self._unpenalized.sum()+moving_inactive_variables.sum())
+        subgrad_slice = slice(self._active_groups.sum() + self._unpenalized.sum(),
+                              self._active_groups.sum() + self._unpenalized.sum()+moving_inactive_variables.sum())
+        for _i, _s in zip(inactive_moving_idx, subgrad_idx):
+            new_linear[_i, _s] = 1.
+
+        self.observed_opt_state[subgrad_slice] = self.initial_subgrad[moving_inactive_variables]
+
+        condition_linear = np.zeros((opt_linear.shape[0], self._active_groups.sum()+self._unpenalized_groups.sum()+condition_inactive_variables.sum()))
+        inactive_condition_idx = np.nonzero(condition_inactive_variables)[0]
+        subgrad_condition_idx = range(self._active_groups.sum() + self._unpenalized.sum(),
+                            self._active_groups.sum() + self._unpenalized.sum() + condition_inactive_variables.sum())
+        subgrad_condition_slice = slice(self._active_groups.sum() + self._unpenalized.sum(),
+                              self._active_groups.sum() + self._unpenalized.sum() + condition_inactive_variables.sum())
+        for _i, _s in zip(inactive_condition_idx, subgrad_condition_idx):
+            condition_linear[_i, _s] = 1.
+
+        new_offset = condition_linear[:,subgrad_condition_slice].dot(self.initial_subgrad[condition_inactive_variables]) + opt_offset
+
 
         self.opt_transform = (new_linear, new_offset)
-
         # for group LASSO this should not induce a bigger jacobian as
         # the subgradients are in the interior of a ball
         self.selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
 
         # reset variables
 
-        self.observed_opt_state = self.observed_opt_state[self.scaling_slice]
-        self.scaling_slice = slice(None, None, None)
-        self.subgrad_slice = np.zeros(new_linear.shape[1], np.bool)
+        #self.observed_opt_state = np.concatenate((self.observed_opt_state[self.scaling_slice], subgrad_observed[~condition_inactive_variables]), 0)
+        #self.scaling_slice = slice(None, None, None)
+        #self.subgrad_slice = np.zeros(new_linear.shape[1], np.bool)
         self.num_opt_var = new_linear.shape[1]
+
 
     def condition_on_scalings(self):
         """
@@ -361,7 +407,7 @@ class M_estimator(query):
         self._marginalize_subgradient = True
 
 
-    def construct_weights(self, data_piece, opt_state):
+    def construct_weights(self, full_state, data_transform):
         """
             marginalizing over the sub-gradient
         """
@@ -369,10 +415,13 @@ class M_estimator(query):
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
+        data_state, opt_state = full_state
         p = opt_state.shape[0]
         weights = np.zeros(p)
         opt_linear, opt_offset = self.opt_transform
         opt_piece = opt_linear.dot(opt_state) + opt_offset
+        data_linear, data_offset = data_transform
+        data_piece = data_linear.dot(data_state) + data_offset
         full_state = (data_piece + opt_piece)
 
         opt_state_plus, opt_state_minus = opt_state.copy(), opt_state.copy()

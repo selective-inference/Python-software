@@ -29,17 +29,17 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_marginalize(s=0,
-                   n=100,
-                   p=200,
-                   rho=0.1,
-                   snr=10,
-                   lam_frac = 1.4,
-                   ndraw=10000, burnin=2000,
-                   loss='logistic',
-                   nviews=1,
-                   scalings=False,
-                    subgrad =False,
-                   marginalize_subgrad=True):
+                    n=100,
+                    p=3,
+                    rho=0.1,
+                    snr=10,
+                    lam_frac = 1.4,
+                    ndraw=10000, burnin=2000,
+                    loss='logistic',
+                    nviews=1,
+                    scalings=False,
+                    subgrad =True,
+                    marginalize_subgrad=False):
 
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
@@ -86,7 +86,8 @@ def test_marginalize(s=0,
                 views[i].condition_on_scalings()
         if subgrad:
             for i in range(nviews):
-               views[i].condition_on_subgradient()
+               conditioning_groups = np.ones(p,dtype=bool)
+               views[i].condition_on_subgradient(conditioning_groups)
         if marginalize_subgrad:
             for i in range(nviews):
                 views[i].marginalize_subgradient()
@@ -105,7 +106,8 @@ def test_marginalize(s=0,
                                                alternative='twosided',
                                                parameter = beta[active_union],
                                                ndraw=ndraw,
-                                               burnin=burnin)
+                                               burnin=burnin,
+                                               stepsize=None)
 
         return [pivots], [False]
 
