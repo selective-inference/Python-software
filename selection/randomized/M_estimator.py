@@ -315,6 +315,7 @@ class M_estimator(query):
         """
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
+
         if marginalizing_groups is not None:
             self._marginalize_subgradient=True
 
@@ -437,8 +438,8 @@ class M_estimator(query):
             opt_state_minus[self.subgrad_slice] = -self.subgradient_limits[0]
             opt_piece_plus = opt_linear.dot(opt_state_plus) + opt_offset
             opt_piece_minus = opt_linear.dot(opt_state_minus) + opt_offset
-            full_state_plus = (data_piece + opt_piece_plus)
-            full_state_minus = (data_piece + opt_piece_minus)
+            full_state_plus = full_state+self.subgradient_limits[0]*np.array(self.inactive_marginal_groups, np.float)
+            full_state_minus = full_state-self.subgradient_limits[0]*np.array(self.inactive_marginal_groups, np.float)
 
         def fraction(upper, lower):
             return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
