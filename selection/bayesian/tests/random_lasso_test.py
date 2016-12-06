@@ -10,10 +10,10 @@ from selection.bayesian.paired_bootstrap import pairs_bootstrap_glm, bootstrap_c
 from selection.bayesian.randomX_lasso_primal import selection_probability_objective_randomX
 
 def test_approximation_randomlasso():
-    n = 100
+    n = 200
     p = 20
     s = 5
-    snr = 5
+    snr = 3
 
     sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     X_1, y, true_beta, nonzero, noise_variance = sample.generate_response()
@@ -57,10 +57,11 @@ def test_approximation_randomlasso():
                                                               epsilon)
 
     toc = time.time()
-    regreg = sel_prob_regreg.minimize2(nstep=20)[::-1]
+    regreg = sel_prob_regreg.minimize2(nstep=100)[::-1]
     tic = time.time()
     print('computation time', tic - toc)
     print('selection prob', regreg[0])
+    print('minimizer', regreg[1])
 
 test_approximation_randomlasso()
 
