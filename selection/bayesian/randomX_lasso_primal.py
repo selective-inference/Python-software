@@ -95,6 +95,12 @@ class selection_probability_objective_randomX(rr.smooth_atom):
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
         self._response_selector = rr.selector(~opt_vars, (p + E,))
 
+        w, v = np.linalg.eig(Sigma_parameter)
+        self.Sigma_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
+        offset_def = np.zeros(p)
+        self.scaled_response_selector = rr.selector(~opt_vars, (p + E,),rr.affine_transform(self.Sigma_inv_half,
+                                                                                            offset_def))
+
         X_E = self.X_E = X[:, active]
         B = X.T.dot(X_E)
 
@@ -109,7 +115,7 @@ class selection_probability_objective_randomX(rr.smooth_atom):
         self.offset_active = active_signs * lagrange[active]
 
         # defines \gamma and likelihood loss
-        self.set_parameter(mean_parameter, Sigma_parameter, noise_variance)
+        self.set_parameter(mean_parameter, noise_variance)
 
         self.inactive_subgrad = np.zeros(p - E)
 
@@ -127,17 +133,14 @@ class selection_probability_objective_randomX(rr.smooth_atom):
                                          self.likelihood_loss,
                                          self.nonnegative_barrier])
 
-    def set_parameter(self, mean_parameter, Sigma_parameter, noise_variance):
+    def set_parameter(self, mean_parameter, noise_variance):
         """
         Set $\beta_E^*$.
         """
         mean_parameter = np.squeeze(mean_parameter)
-        w, v = np.linalg.eig(Sigma_parameter)
-        Sigma_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
-        mean_scaled = Sigma_inv_half.dot(mean_parameter)
-        scaled_response_selector = Sigma_inv_half.dot(self._response_selector)
+        mean_scaled = self.Sigma_inv_half.dot(mean_parameter)
         likelihood_loss = rr.signal_approximator(mean_scaled, coef=1. / noise_variance)
-        self.likelihood_loss = rr.affine_smooth(likelihood_loss, scaled_response_selector)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self.scaled_response_selector)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """

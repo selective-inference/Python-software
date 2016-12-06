@@ -1,9 +1,13 @@
+from __future__ import print_function
+import time
+
 import numpy as np
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection, instance
 from selection.randomized.api import randomization
 from selection.bayesian.paired_bootstrap import pairs_bootstrap_glm, bootstrap_cov
+from selection.bayesian.randomX_lasso_primal import selection_probability_objective_randomX
 
 def test_approximation_randomlasso():
     n = 100
@@ -16,7 +20,7 @@ def test_approximation_randomlasso():
     random_Z = np.random.standard_normal(p)
     sel = selection(X_1, y, random_Z, randomization_scale=1, sigma=None, lam=None)
     lam, epsilon, active, betaE, cube, initial_soln = sel
-    print true_beta, active
+    print(true_beta, active)
 
     noise_variance = 1
     nactive = betaE.shape[0]
@@ -38,7 +42,25 @@ def test_approximation_randomlasso():
     generative_mean = X_active.dot(parameter)
     mean_suff = X_gen_inv.dot(generative_mean)
     mean_nuisance = ((X_inactive.T).dot((np.identity(n)- X_projection))).dot(generative_mean)
+    mean = np.append(mean_suff, mean_nuisance)
     print("means", mean_suff, mean_nuisance)
+
+    sel_prob_regreg = selection_probability_objective_randomX(X_1,
+                                                              np.fabs(betaE),
+                                                              active,
+                                                              active_signs,
+                                                              lagrange,
+                                                              mean,
+                                                              cov,
+                                                              noise_variance,
+                                                              randomization.isotropic_gaussian((p,), 1.),
+                                                              epsilon)
+
+    toc = time.time()
+    regreg = sel_prob_regreg.minimize2(nstep=20)[::-1]
+    tic = time.time()
+    print('computation time', tic - toc)
+    print('selection prob', regreg[0])
 
 test_approximation_randomlasso()
 
