@@ -18,11 +18,10 @@ lam, epsilon, active, betaE, cube, initial_soln = sel
 print true_beta, active
 
 bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1,y), active, beta_full=None, inactive = ~active)[0]
-sampler = lambda: np.random.choice(n, size=(n,1),replace = True)
-print(sampler)
+sampler = lambda: np.random.choice(n, size=(n,),replace = True)
+#print(sampler)
 cov = bootstrap_cov(sampler, bootstrap_score)
 
-#print("covariance", cov)
 
 
 
