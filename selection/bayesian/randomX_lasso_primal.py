@@ -11,7 +11,8 @@ class selection_probability_objective_randomX(rr.smooth_atom):
                  active,
                  active_signs,
                  lagrange,
-                 mean_parameter,  # in R^n
+                 mean_parameter,  # in R^p
+                 Sigma_parameter, # in R^{p \times p}
                  noise_variance,
                  randomizer,
                  epsilon,
@@ -108,7 +109,7 @@ class selection_probability_objective_randomX(rr.smooth_atom):
         self.offset_active = active_signs * lagrange[active]
 
         # defines \gamma and likelihood loss
-        self.set_parameter(mean_parameter, noise_variance)
+        self.set_parameter(mean_parameter, Sigma_parameter, noise_variance)
 
         self.inactive_subgrad = np.zeros(p - E)
 
@@ -126,13 +127,17 @@ class selection_probability_objective_randomX(rr.smooth_atom):
                                          self.likelihood_loss,
                                          self.nonnegative_barrier])
 
-    def set_parameter(self, mean_parameter, noise_variance):
+    def set_parameter(self, mean_parameter, Sigma_parameter, noise_variance):
         """
         Set $\beta_E^*$.
         """
         mean_parameter = np.squeeze(mean_parameter)
-        likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
-        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
+        w, v = np.linalg.eig(Sigma_parameter)
+        Sigma_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
+        mean_scaled = Sigma_inv_half.dot(mean_parameter)
+        scaled_response_selector = Sigma_inv_half.dot(self._response_selector)
+        likelihood_loss = rr.signal_approximator(mean_scaled, coef=1. / noise_variance)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, scaled_response_selector)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """
@@ -200,7 +205,7 @@ class selection_probability_objective_randomX(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                if np.all(proposal[n:] > 0):
+                if np.all(proposal[p:] > 0):
                     break
                 step *= 0.5
                 if count >= 40:
