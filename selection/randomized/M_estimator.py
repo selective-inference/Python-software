@@ -219,19 +219,6 @@ class M_estimator(query):
 
         self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
 
-
-        ## limits on the subgradients
-        subgradient_limits = np.zeros(inactive.sum())
-        groups = np.unique(penalty.groups)
-        idx = 0
-        for i, g in enumerate(groups):
-            if ~active_groups[i]:
-                group = penalty.groups == g
-                subgradient_limits[idx] = penalty.weights[g]
-                #_opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
-                idx += 1
-        self.subgradient_limits = subgradient_limits
-
         # form affine part
 
         _opt_affine_term = np.zeros(p)
@@ -328,20 +315,24 @@ class M_estimator(query):
         self._inactive_groups = ~(self._active_groups+self._unpenalized)
 
         inactive_marginal_groups = np.zeros_like(self._inactive, dtype=bool)
+        limits_marginal_groups = np.zeros_like(self._inactive)
+
         for i, g in enumerate(groups):
             if (self._inactive_groups[i]) and conditioning_groups[i]:
                 group = self.penalty.groups == g
-                condition_inactive_groups[g] = True
+                condition_inactive_groups[i] = True
                 condition_inactive_variables[group] = True
             elif (self._inactive_groups[i]) and (~conditioning_groups[i]) and (~marginalizing_groups[i]):
                 group = self.penalty.groups == g
-                moving_inactive_groups[g] = True
+                moving_inactive_groups[i] = True
                 moving_inactive_variables[group] = True
             if (self._inactive_groups[i]) and marginalizing_groups[i]:
                 group = self.penalty.groups == g
-                inactive_marginal_groups[g] = True
+                inactive_marginal_groups[i] = True
+                limits_marginal_groups[i] = self.penalty.weights[g]
 
         self.inactive_marginal_groups = inactive_marginal_groups
+        self.limits_marginal_groups = limits_marginal_groups
         #if self.inactive_marginal_groups.sum()==0:
         #    self._marginalize_subgradient=False
                 #_opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
@@ -427,8 +418,8 @@ class M_estimator(query):
         weights = np.zeros(p)
 
         if self.inactive_marginal_groups.sum()>0:
-            full_state_plus = full_state+self.subgradient_limits[0]*np.array(self.inactive_marginal_groups, np.float)
-            full_state_minus = full_state-self.subgradient_limits[0]*np.array(self.inactive_marginal_groups, np.float)
+            full_state_plus = full_state+np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
+            full_state_minus = full_state-np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
 
         def fraction(upper, lower):
             return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
