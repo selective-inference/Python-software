@@ -6,18 +6,18 @@ from selection.bayesian.approximation_based_intervals import approximate_conditi
 from selection.randomized.api import randomization
 
 n = 100
-p = 10
+p = 20
 s = 5
 snr = 5
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 X_1, y, true_beta, nonzero, noise_variance = sample.generate_response()
 random_Z = np.random.standard_normal(p)
-sel = selection(X_1, y, random_Z)
+sel = selection(X_1, y, random_Z, randomization_scale=1, sigma=None, lam=None)
 lam, epsilon, active, betaE, cube, initial_soln = sel
 print true_beta, active
 
-truth = ((np.linalg.pinv(X_1[:,active])[1, :]).T).dot(X_1.dot(true_beta))
+truth = ((np.linalg.pinv(X_1[:,active])[0, :]).T).dot(X_1.dot(true_beta))
 
 print("truth",truth)
 
@@ -31,7 +31,11 @@ def approximate_ci_test():
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
-    if active[1] == True:
+    active_set = np.asarray([i for i in range(p) if active[i]])
+
+    print("active set", active_set)
+
+    if active[active_set[0]] == True:
 
         noise_variance = 1.
 
@@ -52,7 +56,7 @@ def approximate_ci_test():
                                                      noise_variance,
                                                      randomization.isotropic_gaussian((p,), tau),
                                                      epsilon,
-                                                     j=1)
+                                                     j=0)
 
         ci = approx_val.approximate_ci()
 
