@@ -51,6 +51,7 @@ class selection_probability_objective_randomX(rr.smooth_atom):
         randomization : np.float
              Variance of IID Gaussian noise
              that was added before selection.
+        W : a possible weight matrix as it appears for logistic lasso
         """
 
         n, p = X.shape
@@ -71,11 +72,11 @@ class selection_probability_objective_randomX(rr.smooth_atom):
 
         self.inactive_lagrange = lagrange[~active]
 
-        initial = np.zeros(n + E, )
-        initial[n:] = feasible_point
+        initial = np.zeros(p + E, )
+        initial[p:] = feasible_point
 
         rr.smooth_atom.__init__(self,
-                                (n + E,),
+                                (p + E,),
                                 offset=offset,
                                 quadratic=quadratic,
                                 initial=initial,
