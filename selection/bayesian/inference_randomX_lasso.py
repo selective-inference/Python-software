@@ -38,19 +38,18 @@ class sel_prob_gradient_map(rr.smooth_atom):
                                 coef=coef)
 
         X_active = X[:, active]
-        self.X_inactive = X[:, ~active]
-        self.X_gen_inv = np.linalg.pinv(X_active)
-        self.X_projection = X_active.dot(self.X_gen_inv)
+        X_inactive = X[:, ~active]
+        X_gen_inv = np.linalg.pinv(X_active)
+        X_projection = X_active.dot(X_gen_inv)
+        X_inter = (X_inactive.T).dot((np.identity(self.n) - X_projection))
+        self.D_mean = np.vstack([X_gen_inv,X_inter])
 
     def smooth_objective(self, true_param, mode='both', check_feasibility=False, tol=1.e-6):
 
         true_param = self.apply_offset(true_param)
 
         generative_mean = np.squeeze(self.generative_X.dot(true_param))
-
-        mean_suff = self.X_gen_inv.dot(generative_mean)
-        mean_nuisance = ((self.X_inactive.T).dot((np.identity(self.n) - self.X_projection))).dot(generative_mean)
-        mean_parameter = np.append(mean_suff, mean_nuisance)
+        mean_parameter = self.D_mean.dot(generative_mean)
 
         primal_sol = selection_probability_objective_randomX(self.X,
                                                              self.primal_feasible,
