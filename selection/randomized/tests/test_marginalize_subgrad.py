@@ -33,9 +33,9 @@ def test_marginalize(s=0,
                     p=10,
                     rho=0.1,
                     snr=10,
-                    lam_frac = 1.2,
-                    ndraw=5000,
-                    burnin=0,
+                    lam_frac = 1.,
+                    ndraw=10000,
+                    burnin=1000,
                     loss='logistic',
                     nviews=1,
                     scalings=False,
@@ -90,7 +90,7 @@ def test_marginalize(s=0,
                conditioning_groups[:(p/2)] = True
                marginalizing_groups = np.zeros(p, dtype=bool)
                marginalizing_groups[(p/2):] = True
-               views[i].decompose_subgradient(conditioning_groups, marginalizing_groups=np.ones(p, bool))
+               views[i].decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool), marginalizing_groups=np.ones(p, bool))
 
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,

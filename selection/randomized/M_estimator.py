@@ -355,7 +355,10 @@ class M_estimator(query):
         for _i, _s in zip(inactive_moving_idx, subgrad_idx):
             new_linear[_i, _s] = 1.
 
-        self.observed_opt_state[subgrad_slice] = self.initial_subgrad[moving_inactive_variables]
+        observed_opt_state = self.observed_opt_state[:(self._active_groups.sum()+self._unpenalized_groups.sum()+moving_inactive_variables.sum())]
+        observed_opt_state[subgrad_slice] = self.initial_subgrad[moving_inactive_variables]
+
+        self.observed_opt_state = observed_opt_state
 
         condition_linear = np.zeros((opt_linear.shape[0], self._active_groups.sum()+self._unpenalized_groups.sum()+condition_inactive_variables.sum()))
         inactive_condition_idx = np.nonzero(condition_inactive_variables)[0]
