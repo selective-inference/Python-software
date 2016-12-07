@@ -7,19 +7,19 @@ import selection.tests.reports as reports
 
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.tests.decorators import (wait_for_return_value, 
-                                        set_seed_iftrue, 
+from selection.tests.decorators import (wait_for_return_value,
+                                        set_seed_iftrue,
                                         set_sampling_params_iftrue,
                                         register_report)
 import selection.tests.reports as reports
 
-from selection.api import (randomization, 
-                           glm_group_lasso, 
-                           pairs_bootstrap_glm, 
-                           multiple_queries, 
-                           discrete_family, 
-                           projected_langevin, 
-                           glm_group_lasso_parametric, 
+from selection.api import (randomization,
+                           glm_group_lasso,
+                           pairs_bootstrap_glm,
+                           multiple_queries,
+                           discrete_family,
+                           projected_langevin,
+                           glm_group_lasso_parametric,
                            glm_target)
 
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
@@ -28,16 +28,18 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_condition(s=0,
-                   n=100,
-                   p=200,
-                   rho=0.1,
-                   snr=10,
-                   lam_frac = 1.4,
-                   ndraw=10000, burnin=2000,
-                   loss='logistic',
-                   nviews=1,
-                   scalings=False):
+def test_marginalize(s=0,
+                    n=100,
+                    p=10,
+                    rho=0.1,
+                    snr=10,
+                    lam_frac = 1.,
+                    ndraw=10000,
+                    burnin=1000,
+                    loss='logistic',
+                    nviews=1,
+                    scalings=False,
+                    subgrad =True):
 
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
@@ -82,9 +84,13 @@ def test_condition(s=0,
             for i in range(nviews):
                 views[i].condition_on_subgradient()
                 views[i].condition_on_scalings()
-        else:
+        if subgrad:
             for i in range(nviews):
-               views[i].condition_on_subgradient()
+               conditioning_groups = np.zeros(p,dtype=bool)
+               conditioning_groups[:(p/2)] = True
+               marginalizing_groups = np.zeros(p, dtype=bool)
+               marginalizing_groups[(p/2):] = True
+               views[i].decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool), marginalizing_groups=np.ones(p, bool))
 
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,
@@ -100,13 +106,14 @@ def test_condition(s=0,
                                                alternative='twosided',
                                                parameter = beta[active_union],
                                                ndraw=ndraw,
-                                               burnin=burnin)
+                                               burnin=burnin,
+                                               stepsize=None)
 
         return [pivots], [False]
 
 def report(niter=50, **kwargs):
 
-    condition_report = reports.reports['test_condition']
+    condition_report = reports.reports['test_marginalize']
     runs = reports.collect_multiple_runs(condition_report['test'],
                                          condition_report['columns'],
                                          niter,
@@ -114,7 +121,7 @@ def report(niter=50, **kwargs):
                                          **kwargs)
 
     fig = reports.pivot_plot_simple(runs)
-    fig.savefig('conditional_pivots.pdf')
+    fig.savefig('marginalized_subgrad_pivots.pdf')
 
 
 if __name__ == '__main__':

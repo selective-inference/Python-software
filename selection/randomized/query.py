@@ -23,6 +23,7 @@ class query(object):
             self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
+
     def randomization_gradient(self, data_state, data_transform, opt_state):
         """
         Randomization derivative at full state.
@@ -33,15 +34,15 @@ class query(object):
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
         data_piece = data_linear.dot(data_state) + data_offset
-        opt_piece = opt_linear.dot(opt_state) + opt_offset
+        opt_piece = opt_linear.dot(np.array(opt_state)) + opt_offset
 
         # value of the randomization omega
 
-        full_state = (data_piece + opt_piece) 
+        full_state = (data_piece + opt_piece)
 
         # gradient of negative log density of randomization at omega
 
-        randomization_derivative = self.randomization.gradient(full_state)
+        randomization_derivative = self.construct_weights(full_state)
 
         # chain rule for data, optimization parts
 
@@ -49,6 +50,9 @@ class query(object):
         opt_grad = opt_linear.T.dot(randomization_derivative)
 
         return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
+
+    def construct_weights(self, full_state):
+        return self.randomization.gradient(full_state)
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
@@ -467,7 +471,6 @@ class targeted_sampler(object):
         -------
 
         projected_state : np.float
-
         '''
 
         opt_state = state[self.overall_opt_slice]
@@ -630,10 +633,11 @@ class targeted_sampler(object):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
-
         if parameter is None:
             parameter = self.reference
+
+        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
+
 
         delta = self.target_inv_cov.dot(parameter - self.reference)
         W = np.exp(sample.dot(delta))
