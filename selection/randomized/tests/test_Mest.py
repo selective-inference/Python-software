@@ -1,18 +1,26 @@
+"""
+These tests exposes lower level functions than needed -- see tests_multiple_queries for simpler constructions
+using glm_target
+"""
 from __future__ import print_function
-import numpy as np
+import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
+from selection.tests.decorators import wait_for_return_value, register_report
+import selection.tests.reports as reports
+
+from selection.randomized.api import randomization, multiple_queries, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
 from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
 
-from selection.randomized.tests import wait_for_return_value, logistic_instance
+from selection.randomized.tests import logistic_instance
 
-@wait_for_return_value
-def test_overall_null_two_views():
+@register_report(['pvalue', 'active'])
+@wait_for_return_value()
+def test_overall_null_two_queries():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)
@@ -43,7 +51,7 @@ def test_overall_null_two_views():
 
     # we take target to be union of two active sets
 
-    active = M_est1.overall + M_est2.overall
+    active = M_est1.selection_variable['variables'] + M_est2.selection_variable['variables']
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
@@ -58,6 +66,9 @@ def test_overall_null_two_views():
 
         # is it enough only to bootstrap the inactive ones?
         # seems so...
+
+        if not I:
+            return None
 
         A1, b1 = M_est1.linear_decomposition(cov1[I], target_cov[I][:,I], target_observed[I])
         A2, b2 = M_est2.linear_decomposition(cov2[I], target_cov[I][:,I], target_observed[I])
@@ -119,14 +130,14 @@ def test_overall_null_two_views():
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.ccdf(0, observed)
-        return pval
+        return pval, False
 
-def test_one_inactive_coordinate_handcoded(seed=None):
+@register_report(['pvalue', 'naive_pvalue', 'active'])
+@wait_for_return_value()
+def test_one_inactive_coordinate_handcoded():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    if seed is not None:
-        np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
 
     nonzero = np.where(beta)[0]
@@ -135,8 +146,6 @@ def test_one_inactive_coordinate_handcoded(seed=None):
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
-    if seed is not None:
-        np.random.seed(seed)
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
     W += lam * np.arange(p) / 200
@@ -147,19 +156,16 @@ def test_one_inactive_coordinate_handcoded(seed=None):
     print(lam)
     # our randomization
 
-    np.random.seed(seed)
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
     M_est1.solve()
     bootstrap_score1 = M_est1.setup_sampler()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
 
         # target are all true null coefficients selected
 
-        if seed is not None:
-            np.random.seed(seed)
         sampler = lambda : np.random.choice(n, size=(n,), replace=True)
         target_cov, cov1 = bootstrap_cov(sampler, boot_target, cross_terms=(bootstrap_score1,))
 
@@ -172,7 +178,7 @@ def test_one_inactive_coordinate_handcoded(seed=None):
         # seems so...
 
         if not I:
-            return None, None
+            return None
 
         # take the first inactive one
         I = I[:1]
@@ -234,17 +240,16 @@ def test_one_inactive_coordinate_handcoded(seed=None):
         _i = I[0]
         naive_Z = target_observed[_i] / np.sqrt(target_cov[_i,_i])
         naive_pval = ndist.sf(np.fabs(naive_Z))
-        return pval, naive_pval
-    else:
-        return None, None
+        naive_pval = 2 * min(naive_pval, 1 - naive_pval)
+        print('naive Z', naive_Z, naive_pval)
+        return pval, naive_pval, False
 
-@wait_for_return_value
-def test_logistic_selected_inactive_coordinate(seed=None):
+@register_report(['pvalue', 'active'])
+@wait_for_return_value()
+def test_logistic_selected_inactive_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    if seed is not None:
-        np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
 
     nonzero = np.where(beta)[0]
@@ -253,8 +258,6 @@ def test_logistic_selected_inactive_coordinate(seed=None):
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
-    if seed is not None:
-        np.random.seed(seed)
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p),
@@ -263,13 +266,12 @@ def test_logistic_selected_inactive_coordinate(seed=None):
     print(lam)
     # our randomization
 
-    np.random.seed(seed)
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     scaling = np.linalg.svd(X)[1].max()**2
 
@@ -283,13 +285,14 @@ def test_logistic_selected_inactive_coordinate(seed=None):
             return None
 
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def null_target(indices):
             result = boot_target(indices)
             return np.hstack([result[idx], result[nactive:]])
 
-        null_observed = np.zeros(M_est1.inactive.sum() + 1)
+        null_observed = np.zeros(inactive.sum() + 1)
         null_observed[0] = target_observed[idx]
         null_observed[1:] = target_observed[nactive:]
 
@@ -298,17 +301,19 @@ def test_logistic_selected_inactive_coordinate(seed=None):
 
         mv.setup_sampler(form_covariances)
         target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
-        test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000, stepsize=1./scaling) # twosided by default
-        return pval
 
-@wait_for_return_value
-def test_logistic_saturated_inactive_coordinate(seed=None):
+        test_stat = lambda x: x[0]
+        print(null_observed)
+        pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=1000, ndraw=1000) # twosided by default
+
+        return pval, False
+
+@register_report(['pvalue', 'active'])
+@wait_for_return_value()
+def test_logistic_saturated_inactive_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    if seed is not None:
-        np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
 
     nonzero = np.where(beta)[0]
@@ -317,8 +322,6 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
-    if seed is not None:
-        np.random.seed(seed)
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p),
@@ -327,13 +330,12 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
     print(lam)
     # our randomization
 
-    np.random.seed(seed)
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -343,7 +345,8 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
         if not I:
             return None
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def null_target(indices):
             result = boot_target(indices)
@@ -361,16 +364,15 @@ def test_logistic_saturated_inactive_coordinate(seed=None):
         target_sampler = mv.setup_target(null_target, null_observed)
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=10000, ndraw=10000) # twosided by default
-        return pval
+        pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=10000, ndraw=10000) # twosided by default
+        return pval, False
 
-@wait_for_return_value
-def test_logistic_selected_active_coordinate(seed=None):
+@register_report(['pvalue', 'active'])
+@wait_for_return_value()
+def test_logistic_selected_active_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    if seed is not None:
-        np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
 
     nonzero = np.where(beta)[0]
@@ -379,8 +381,6 @@ def test_logistic_selected_active_coordinate(seed=None):
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
-    if seed is not None:
-        np.random.seed(seed)
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p),
@@ -389,13 +389,12 @@ def test_logistic_selected_active_coordinate(seed=None):
     print(lam)
     # our randomization
 
-    np.random.seed(seed)
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -404,13 +403,14 @@ def test_logistic_selected_active_coordinate(seed=None):
         active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
 
         idx = A[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def active_target(indices):
             result = boot_target(indices)
             return np.hstack([result[idx], result[nactive:]])
 
-        active_observed = np.zeros(M_est1.inactive.sum() + 1)
+        active_observed = np.zeros(inactive.sum() + 1)
         active_observed[0] = target_observed[idx]
         active_observed[1:] = target_observed[nactive:]
 
@@ -422,16 +422,15 @@ def test_logistic_selected_active_coordinate(seed=None):
         mv.setup_sampler(form_covariances)
         target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
-        return pval
+        pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=10000, ndraw=10000) # twosided by default
+        return pval, True
 
-@wait_for_return_value
-def test_logistic_saturated_active_coordinate(seed=None):
+@register_report(['pvalue', 'active'])
+@wait_for_return_value()
+def test_logistic_saturated_active_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    if seed is not None:
-        np.random.seed(seed)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
 
     nonzero = np.where(beta)[0]
@@ -440,8 +439,6 @@ def test_logistic_saturated_active_coordinate(seed=None):
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
-    if seed is not None:
-        np.random.seed(seed)
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p),
@@ -450,13 +447,12 @@ def test_logistic_saturated_active_coordinate(seed=None):
     print(lam)
     # our randomization
 
-    np.random.seed(seed)
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
-    active = M_est1.overall
+    active = M_est1.selection_variable['variables']
     nactive = active.sum()
     if set(nonzero).issubset(np.nonzero(active)[0]):
 
@@ -465,7 +461,8 @@ def test_logistic_saturated_active_coordinate(seed=None):
         active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
 
         idx = A[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est1.inactive)
+        inactive = ~M_est1.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         def active_target(indices):
             result = boot_target(indices)
@@ -483,6 +480,29 @@ def test_logistic_saturated_active_coordinate(seed=None):
         mv.setup_sampler(form_covariances)
         target_sampler = mv.setup_target(active_target, active_observed)
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=10000, ndraw=10000) # twosided by default
-        return pval
+        pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=10000, ndraw=10000) # twosided by default
+        return pval, True
 
+def report(niter=50):
+    
+    # these are all our null tests
+    fn_names = ['test_overall_null_two_queries',
+                'test_one_inactive_coordinate_handcoded',
+                'test_logistic_selected_inactive_coordinate',
+                'test_logistic_saturated_inactive_coordinate',
+                'test_logistic_selected_active_coordinate',
+                'test_logistic_saturated_active_coordinate']
+
+    dfs = []
+    for fn in fn_names:
+        fn = reports.reports[fn]
+        dfs.append(reports.collect_multiple_runs(fn['test'],
+                                                 fn['columns'],
+                                                 niter,
+                                                 reports.summarize_all))
+    dfs = pd.concat(dfs)
+
+    fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
+    fig = reports.naive_pvalue_plot(dfs, fig=fig, colors=['k', 'b'])
+
+    fig.savefig('Mest_pvalues.pdf') # will have both bootstrap and CLT on plot

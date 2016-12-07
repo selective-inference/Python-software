@@ -9,7 +9,8 @@ import nose.tools as nt
 import numpy as np
 
 from selection.constraints.quasi_affine import (quadratic_inequality_solver, intersection, sqrt_inequality_solver)
-from selection.tests.decorators import set_seed_for_test
+from selection.tests.flags import SET_SEED
+from selection.tests.decorators import set_seed_iftrue
 
 def test_quadratic_solver():
     yield np.testing.assert_almost_equal, quadratic_inequality_solver(7,0.,-28),[[-2.0,2.0]]
@@ -32,7 +33,7 @@ def test_intersection():
     yield np.testing.assert_almost_equal, intersection([1,4], [-1,2]), [1,2]
     yield np.testing.assert_almost_equal, intersection([1,4], [-1,12]), [1,4]
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 def test_sqrt_solver():
     a, b, c = np.random.random_integers(-50, 50, 3)
     n = 100

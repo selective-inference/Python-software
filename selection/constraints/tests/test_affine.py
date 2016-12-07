@@ -7,10 +7,11 @@ import nose.tools as nt
 
 import regreg.api as rr
 
+from selection.tests.flags import SET_SEED
 import selection.constraints.affine as AC
-from selection.tests.decorators import set_seed_for_test
+from selection.tests.decorators import set_seed_iftrue
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 def test_conditional():
 
     p = 200
@@ -44,7 +45,7 @@ def test_conditional():
            np.linalg.norm(np.dot(C, W) - d))
     nt.assert_true(np.sum(V > tol) < 0.001*V.shape[0])
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 def test_conditional_simple():
 
     A = np.ones((1,2))
@@ -109,7 +110,7 @@ def test_regreg_transform():
     print(conditional.pivot(W, Z))
     print(con.pivot(W, Z))
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 def test_simulate_nonwhitened():
     n, p = 50, 200
 
@@ -150,7 +151,7 @@ def test_pivots_intervals():
     con.interval(u, Z, UMAU=True)
     con.interval(u, Z, UMAU=False)
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 def test_sampling():
     """
     See that means and covariances are approximately correct
@@ -166,7 +167,7 @@ def test_sampling():
     nt.assert_true(np.linalg.norm(np.einsum('ij,ik->ijk', V, V).mean(0) - 
                                   np.outer(V.mean(0), V.mean(0)) - S) < 0.01)
 
-@set_seed_for_test()
+@set_seed_iftrue(SET_SEED)
 @np.testing.decorators.skipif(True, msg="optimal tilt undefined -- need to implement softmax version")
 def test_optimal_tilt():
 

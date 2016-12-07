@@ -14,7 +14,7 @@ as described in `post selection LASSO`_.
 
 from __future__ import division
 
-import warnings
+import warnings, functools
 from copy import copy
 
 import numpy as np
@@ -37,6 +37,7 @@ from ..constraints.affine import (constraints, selection_interval,
                                  stack)
 
 from ..distributions.discrete_family import discrete_family
+from ..randomized.glm import pairs_bootstrap_glm
 
 class lasso(object):
 
@@ -194,6 +195,10 @@ class lasso(object):
                 if self.covariance_estimator is not None:
 
                     # make full constraints
+
+                    # A: active
+                    # I: inactive
+                    # F: full, (A,I) stacked
 
                     _cov_FA = self.covariance_estimator(self.onestep_estimator,
                                                         self.active,
@@ -547,6 +552,7 @@ class lasso(object):
                    Y, 
                    feature_weights, 
                    quadratic=None,
+                   covariance='parametric',
                    solve_args={'min_its':200}):
         r"""
         Use sqrt-LASSO to choose variables.
@@ -579,6 +585,11 @@ class lasso(object):
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
             coefficient to 0.
+
+        covariance : str
+            One of 'parametric' or 'sandwich'. Method
+            used to estimate covariance for inference
+            in second stage.
 
         solve_args : dict
             Arguments passed to solver.
@@ -676,7 +687,12 @@ class lasso(object):
 
         loglike = glm.gaussian(X, Y, quadratic=quadratic)
 
-        cov_est = gaussian_parametric_estimator(X, Y, sigma=_sigma_hat)
+        if covariance == 'parametric':
+            cov_est = glm_parametric_estimator(loglike, dispersion=_sigma_hat)
+        elif covariance == 'sandwich':
+            cov_est = glm_sandwich_estimator(loglike, B=2000)
+        else:
+            raise ValueError('covariance must be one of ["parametric", "sandwich"]')
 
         L = lasso(loglike, feature_weights * multiplier * sigma_E,
                   covariance_estimator=cov_est,
@@ -801,7 +817,7 @@ def nominal_intervals(lasso_obj):
                                          _interval))
     return unadjusted_intervals
 
-def gaussian_sandwich_estimator(X, Y, B=1000):
+def glm_sandwich_estimator(loss, B=1000):
     """
     Bootstrap estimator of covariance of 
     
@@ -821,53 +837,54 @@ def gaussian_sandwich_estimator(X, Y, B=1000):
 
     """
     
-    def _estimator(beta, active, inactive, X=X, Y=Y, B=B):
+    def _estimator(loss, B, beta, active, inactive):
         
-        n, p = X.shape
-        n_active = len(active)
+        X, Y = loss.data
+        n, p = X.shape # shorthand
 
-        idx = np.arange(n)
+        beta_full = np.zeros(p)
+        beta_full[active] = beta
 
-        Sigma_A = X[:,active].T.dot(X[:,active]) 
-        Sigma_Ainv = np.linalg.inv(Sigma_A)
+        # make sure active / inactive are bool
 
+        active_bool = np.zeros(p, np.bool)
+        active_bool[active] = 1
+
+        inactive_bool = np.zeros(p, np.bool)
+        inactive_bool[inactive] = 1
+
+        bootstrapper = pairs_bootstrap_glm(loss, 
+                                           active_bool, 
+                                           beta_full=beta_full,
+                                           inactive=inactive_bool)[0]
+
+        nactive = active_bool.sum()
         first_moment = np.zeros(p)
-        second_moment = np.zeros((p, len(active)))
-        second_moment_A = second_moment[:n_active]
-        second_moment_I = second_moment[n_active:]
+        second_moment = np.zeros((p, nactive))
 
         for b in range(B):
-            idx_star = np.random.choice(idx, n, replace=True)
-            X_star = X[idx_star]
-            Y_star = Y[idx_star]
-            resid_star = Y_star - X_star[:,active].dot(beta)
-            score_star = X_star.T.dot(resid_star)
-            
-            first_moment[:n_active] += score_star[active]
-            first_moment[n_active:] += score_star[inactive]
-            second_moment_A += np.multiply.outer(score_star[active], score_star[active])
-            second_moment_I += np.multiply.outer(score_star[inactive], score_star[active])
+            indices = np.random.choice(n, n, replace=True)
+            Z_star = bootstrapper(indices)
+            first_moment += Z_star
+            second_moment += np.multiply.outer(Z_star, Z_star[:nactive])
 
-        first_moment_norm = first_moment / B
-        second_moment_norm = second_moment / B
+        first_moment /= B
+        second_moment /= B
 
-        score_cov = second_moment_norm - np.multiply.outer(first_moment_norm, 
-                                                           first_moment_norm[:n_active])
+        cov = second_moment - np.multiply.outer(first_moment, 
+                                                first_moment[:nactive])
 
-        final_cov = score_cov.dot(Sigma_Ainv)
-        final_cov[:n_active][:,:n_active] = Sigma_Ainv.dot(final_cov[:n_active][:,:n_active])
+        return cov
 
-        return final_cov
+    return functools.partial(_estimator, loss, B)
 
-    return _estimator
-
-def gaussian_parametric_estimator(X, Y, sigma=None):
+def glm_parametric_estimator(loglike, dispersion=None):
     """
     Parametric estimator of covariance of 
     
     .. math::
     
-        (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}_E)
+        (\bar{\beta}_E, X_{-E}^T(y-\nabla \ell(X_E\bar{\beta}_E))
 
     the OLS estimator of population regression 
     coefficients and inactive correlation with the
@@ -885,28 +902,35 @@ def gaussian_parametric_estimator(X, Y, sigma=None):
 
     """
     
-    def _estimator(beta, active, inactive, X=X, Y=Y, sigma=sigma):
+    def _estimator(loglike, dispersion, beta, active, inactive):
         
+        X, Y = loglike.data
         n, p = X.shape
-        n_active = len(active)
+        nactive = len(active)
 
-        idx = np.arange(n)
-
-        Sigma_A = X[:,active].T.dot(X[:,active]) 
+        linear_predictor = X[:,active].dot(beta)
+        W = loglike.saturated_loss.hessian(linear_predictor)
+        Sigma_A = X[:,active].T.dot(W[:, None] * X[:,active]) 
         Sigma_Ainv = np.linalg.inv(Sigma_A)
 
-        P_A = X[:,active].dot(Sigma_Ainv).dot(X[:,active].T)
         _unscaled = np.zeros((p, len(active)))
-        _unscaled[:n_active] = Sigma_Ainv
+        _unscaled[:nactive] = Sigma_Ainv
 
-        if sigma is None:
-            sigma = Y.dot(P_A.dot(Y)) / (X.shape[0] - n_active)
+        # the lower block is left at 0 because
+        # under the parametric model, these pieces
+        # are independent
 
-        _unscaled *= sigma**2
+        # if no dispersion, use Pearson's X^2
+
+        if dispersion is None:
+            eta = X[:,active].dot(beta)
+            dispersion= ((loglike.saturated_loss.smooth_objective(eta, 'grad'))**2 / W).sum() / (n - nactive)
+
+        _unscaled *= dispersion**2
 
         return _unscaled
 
-    return _estimator
+    return functools.partial(_estimator, loglike, dispersion)
 
 def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
     """
@@ -1128,7 +1152,7 @@ class data_carving(lasso):
         else:
             _sigma_hat = L._sigma_hat
 
-        cov_est = gaussian_parametric_estimator(X, Y, sigma=_sigma_hat)
+        cov_est = glm_parametric_estimator(L.loglike, dispersion=_sigma_hat)
 
         loglike = glm.gaussian(X, Y)
         loglike1 = glm.gaussian(X1, Y1)
@@ -1163,7 +1187,7 @@ class data_carving(lasso):
             _cov_block = np.linalg.inv(H_AA)
             self._carve_invcov = H_AA
         else:
-            C = self.covariance_estimator(_unpenalized, self.active, self.inactive)
+            C = self.covariance_estimator(_unpenalized_active, self.active, self.inactive)
             _cov_block = C[:len(self.active)][:,:len(self.active)]
             self._carve_invcov = np.linalg.pinv(_cov_block)
 

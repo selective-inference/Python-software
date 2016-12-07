@@ -1,10 +1,22 @@
+"""
+These tests exposes lower level functions than needed -- see tests_multiple_queries for simpler constructions
+using glm_target
+"""
 import numpy as np
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
+from selection.tests.flags import SMALL_SAMPLES, SET_SEED
+from selection.tests.decorators import (wait_for_return_value, 
+                                        set_seed_iftrue, 
+                                        set_sampling_params_iftrue, 
+                                        register_report)
+from selection.tests.instance import logistic_instance
+import selection.tests.reports as reports
+
 from selection.randomized.api import (randomization, 
-                                      multiple_views, 
+                                      multiple_queries, 
                                       pairs_bootstrap_glm, 
                                       glm_group_lasso, 
                                       glm_greedy_step, 
@@ -12,15 +24,12 @@ from selection.randomized.api import (randomization,
 from selection.randomized.glm import bootstrap_cov
 from selection.distributions.discrete_family import discrete_family
 from selection.sampling.langevin import projected_langevin
-from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
 
-from selection.tests.instance import logistic_instance
-
-
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
+@register_report(['pvalue', 'active'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
+def test_overall_null_two_queries(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)
@@ -46,20 +55,20 @@ def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 
     # second randomization -- a greedy step from LASSO
 
-    active_groups = M_est1.active_groups + M_est1.unpenalized_groups
-    inactive_groups = ~active_groups
-    inactive_randomizer = randomization.laplace((inactive_groups.sum(),), scale=0.5)
+    active = M_est1.selection_variable['variables']
+    inactive = ~active
+    inactive_randomizer = randomization.laplace((inactive.sum(),), scale=0.5)
 
     step = glm_greedy_step(loss, penalty,
-                           active_groups,
-                           inactive_groups,
+                           active,
+                           inactive,
                            inactive_randomizer)
     step.solve()
     bootstrap_score2 = step.setup_sampler()
 
     # we take target to be union of two active sets
 
-    active = M_est1.overall + step.maximizing_variables
+    active = M_est1.selection_variable['variables'] + step.selection_variable['variables']
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
         boot_target, target_observed = pairs_bootstrap_glm(loss, active)
@@ -71,6 +80,9 @@ def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 
         active_set = np.nonzero(active)[0]
         inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
+
+        if not I:
+            return None
 
         # is it enough only to bootstrap the inactive ones?
         # seems so...
@@ -133,4 +145,4 @@ def test_overall_null_two_views(ndraw=10000, burnin=2000, nsim=None): # nsim nee
 
         family = discrete_family(sample_test_stat, np.ones_like(sample_test_stat))
         pval = family.ccdf(0, observed)
-        return pval
+        return pval, False

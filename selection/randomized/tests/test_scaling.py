@@ -3,12 +3,18 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.randomized.api import randomization, multiple_views, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
-from selection.distributions.discrete_family import discrete_family
-from selection.sampling.langevin import projected_langevin
-from selection.tests.decorators import wait_for_return_value, set_seed_for_test, set_sampling_params_iftrue
+from selection.tests.flags import SET_SEED, SMALL_SAMPLES
+from selection.tests.decorators import (wait_for_return_value, 
+                                        set_seed_iftrue, 
+                                        set_sampling_params_iftrue,
+                                        register_report)
 from selection.tests.instance import logistic_instance
 
+from selection.randomized.api import (randomization, 
+                                      multiple_queries, 
+                                      glm_group_lasso,
+                                      glm_nonparametric_bootstrap,
+                                      pairs_bootstrap_glm)
 try:
     import statsmodels.api as sm
     statsmodels_available = True
@@ -29,21 +35,22 @@ def generate_data(s=5,
 
     return logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
 
-@set_sampling_params_iftrue(True, ndraw=100, burnin=100)
-@set_seed_for_test()
+DEBUG = False
+@register_report(['pvalue', 'active'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
+@set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_logistic_many_targets(snr=15, 
-                               s=5, 
-                               n=200, 
-                               p=20, 
-                               rho=0.1, 
-                               burnin=20000, 
-                               ndraw=30000, 
-                               scale=0.9,
-                               nsim=None, # needed for decorator
-                               frac=0.5): # 0.9 has roughly same screening probability as 50% data splitting, i.e. around 10%
+def test_scaling(snr=15, 
+                 s=5, 
+                 n=200, 
+                 p=20, 
+                 rho=0.1, 
+                 burnin=20000, 
+                 ndraw=30000, 
+                 scale=0.9,
+                 nsim=None, # needed for decorator
+                 frac=0.5): # 0.9 has roughly same screening probability as 50% data splitting, i.e. around 10%
 
-    DEBUG = False
     randomizer = randomization.laplace((p,), scale=scale)
     X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
 
@@ -60,16 +67,13 @@ def test_logistic_many_targets(snr=15,
 
     M_est = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_views([M_est])
+    mv = multiple_queries([M_est])
     mv.solve()
 
-    active = M_est.overall
+    active = M_est.selection_variable['variables']
     nactive = active.sum()
 
     if set(nonzero).issubset(np.nonzero(active)[0]):
-
-        if DEBUG:
-            print(M_est.initial_soln[:3] * scaling, scaling, 'first nonzero scaled')
 
         pvalues = []
         active_set = np.nonzero(active)[0]
@@ -79,7 +83,8 @@ def test_logistic_many_targets(snr=15,
         if not I:
             return None
         idx = I[0]
-        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=M_est.inactive)
+        inactive = ~M_est.selection_variable['variables']
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
         if DEBUG:
             sampler = lambda : np.random.choice(n, size=(n,), replace=True)
@@ -104,7 +109,11 @@ def test_logistic_many_targets(snr=15,
         print(target_sampler.crude_lipschitz(), 'crude')
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(null_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # true saturated
@@ -122,7 +131,11 @@ def test_logistic_many_targets(snr=15,
         target_scaling = 5 * np.linalg.svd(target_sampler.target_transform[0][0])[1].max()**2# should have something do with noise scale too
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(active_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # null selected
@@ -143,7 +156,11 @@ def test_logistic_many_targets(snr=15,
         print(target_sampler.crude_lipschitz(), 'crude')
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(null_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # true selected
@@ -161,7 +178,11 @@ def test_logistic_many_targets(snr=15,
         target_sampler = mv.setup_target(active_target, active_observed)#, target_set=[0])
 
         test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+        pval = target_sampler.hypothesis_test(test_stat, 
+                                              test_stat(active_observed), 
+                                              burnin=burnin, 
+                                              ndraw=ndraw, 
+                                              stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
         pvalues.append(pval)
 
         # condition on opt variables
@@ -186,7 +207,11 @@ def test_logistic_many_targets(snr=15,
             print(target_sampler.crude_lipschitz(), 'crude')
 
             test_stat = lambda x: x[0]
-            pval = target_sampler.hypothesis_test(test_stat, test_stat(null_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+            pval = target_sampler.hypothesis_test(test_stat, 
+                                                  test_stat(null_observed), 
+                                                  burnin=burnin, 
+                                                  ndraw=ndraw, 
+                                                  stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
             pvalues.append(pval)
 
             # true saturated
@@ -205,7 +230,11 @@ def test_logistic_many_targets(snr=15,
             target_sampler = mv.setup_target(active_target, active_observed)
 
             test_stat = lambda x: x[0]
-            pval = target_sampler.hypothesis_test(test_stat, test_stat(active_observed), burnin=burnin, ndraw=ndraw, stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
+            pval = target_sampler.hypothesis_test(test_stat, 
+                                                  test_stat(active_observed), 
+                                                  burnin=burnin, 
+                                                  ndraw=ndraw, 
+                                                  stepsize=.5/target_sampler.crude_lipschitz()) # twosided by default
             pvalues.append(pval)
 
         # true selected
@@ -215,16 +244,18 @@ def test_logistic_many_targets(snr=15,
         X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
         X_E = X[:,active_set]
 
+        active_var = [False, True, False, True]
+
         if statsmodels_available:
             try:
                 model = sm.GLM(y, X_E, family=sm.families.Binomial())
                 model_results = model.fit()
                 pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
-
+                active_var.extend([False, True])
             except sm.tools.sm_exceptions.PerfectSeparationError:
-                pvalues.extend([np.nan, np.nan])
+                pass
         else:
-            pvalues.extend([np.nan, np.nan])
+            pass
 
         # data splitting-ish p-value -- draws a new data set of smaller size
         # frac is presumed to be how much data was used in stage 1, we get (1-frac)*n for stage 2
@@ -235,18 +266,19 @@ def test_logistic_many_targets(snr=15,
         ys = ys[:int((1-frac)*n)]
         X_Es = Xs[:,active_set]
 
+
         if statsmodels_available:
             try:
                 model = sm.GLM(ys, X_Es, family=sm.families.Binomial())
                 model_results = model.fit()
                 pvalues.extend([model_results.pvalues[I[0]], model_results.pvalues[A[0]]])
-
+                active_var.extend([False, False])
             except sm.tools.sm_exceptions.PerfectSeparationError:
-                pvalues.extend([np.nan, np.nan])
+                pass
         else:
-            pvalues.extend([np.nan, np.nan])
+            pass
 
-        return pvalues
+        return pvalues, active_var
 
 def data_splitting_screening(frac=0.5, snr=15, s=5, n=200, p=20, rho=0.1):
 
@@ -306,13 +338,20 @@ def randomization_screening(scale=1., snr=15, s=5, n=200, p=20, rho=0.1):
         active_set = np.nonzero(M_est.initial_soln != 0)[0]
         if set(nonzero).issubset(active_set):
             return count
-
-def main(nsample=2000, frac=0.6, scale=0.9):
-    P = []
-    while len(P) < nsample:
-        p = test_logistic_many_targets(frac=frac, scale=scale, **instance_opts)
-        if p is not None: P.append(p)
-        print(np.nanmean(P, 0), 'mean', len(P))
-        print(np.nanstd(P, 0), 'std')
-        print(np.nanmean(np.array(P) < 0.05, 0), 'rejection')
         
+def report(niter=50, **kwargs):
+    # these are all our null tests
+    fn_names = ['test_scaling']
+
+    dfs = []
+    for fn in fn_names:
+        fn = reports.reports[fn]
+        dfs.append(reports.collect_multiple_runs(fn['test'],
+                                                 fn['columns'],
+                                                 niter,
+                                                 reports.summarize_all))
+    dfs = pd.concat(dfs)
+
+    fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
+
+    fig.savefig('scaling_pvalues.pdf') # will have both bootstrap and CLT on plot
