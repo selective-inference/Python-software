@@ -7,33 +7,33 @@ import selection.tests.reports as reports
 
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.api import (randomization, 
-                           split_glm_group_lasso, 
-                           multiple_queries, 
+from selection.api import (randomization,
+                           glm_group_lasso,
+                           multiple_queries,
                            glm_target)
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
-from selection.randomized.glm import standard_ci, standard_ci_sm 
+from selection.randomized.glm import standard_ci, standard_ci_sm
 from selection.randomized.query import naive_confidence_intervals
 
-@register_report(['pivots_clt', 'pivots_boot', 
-                  'covered_clt', 'ci_length_clt', 
-                  'covered_boot', 'ci_length_boot', 
-                  'covered_split', 'ci_length_split', 
+@register_report(['pivots_clt', 'pivots_boot',
+                  'covered_clt', 'ci_length_clt',
+                  'covered_boot', 'ci_length_boot',
                   'active', 'covered_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
-def test_split_compare(s=3,
-                       n=200,
-                       p=20,
-                       snr=7,
-                       rho=0.1,
-                       split_frac=0.8,
-                       lam_frac=0.7,
-                       ndraw=10000, burnin=2000,
-                       intervals = 'new',
-                       solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
+def test_multiple_queries(s=3,
+                         n=300,
+                         p=20,
+                         snr=7,
+                         rho=0.1,
+                         lam_frac=0.7,
+                         nviews=4,
+                         intervals ='new',
+                         ndraw=10000, burnin=2000,
+                         solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
 
+    randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
 
     nonzero = np.where(beta)[0]
@@ -47,19 +47,22 @@ def test_split_compare(s=3,
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    m = int(split_frac * n)
 
-    M_est1 = split_glm_group_lasso(loss, epsilon, m, penalty)
-    mv = multiple_queries([M_est1])
+    view = []
+    for i in range(nviews):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
+
+    mv = multiple_queries(view)
     mv.solve()
 
-    active_union = M_est1.selection_variable['variables'] #+ M_est2.selection_variable['variables']
+    active_union = np.zeros(p, np.bool)
+    for i in range(nviews):
+        active_union += view[i].selection_variable['variables']
+
     nactive = np.sum(active_union)
     print("nactive", nactive)
     if nactive==0:
         return None
-
-    leftout_indices = M_est1.randomized_loss.saturated_loss.case_weights == 0
 
     screen = set(nonzero).issubset(np.nonzero(active_union)[0])
 
@@ -78,24 +81,23 @@ def test_split_compare(s=3,
 
         if intervals == 'old':
             target_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
-                                                  burnin=burnin)
+                                                            burnin=burnin)
             LU_boot = target_sampler_boot.confidence_intervals(target_observed,
-                                                     sample=target_sample_boot,
-                                                     level=0.9)
+                                                               sample=target_sample_boot,
+                                                               level=0.9)
             pivots_boot = target_sampler_boot.coefficient_pvalues(target_observed,
-                                                              parameter=true_vec,
-                                                              sample=target_sample_boot)
+                                                                  parameter=true_vec,
+                                                                  sample=target_sample_boot)
         else:
             full_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
-                                                burnin=burnin,
-                                                keep_opt=True)
+                                                          burnin=burnin,
+                                                          keep_opt=True)
             LU_boot = target_sampler_boot.confidence_intervals_translate(target_observed,
-                                                               sample=full_sample_boot,
-                                                               level=0.9)
+                                                                         sample=full_sample_boot,
+                                                                         level=0.9)
             pivots_boot = target_sampler_boot.coefficient_pvalues_translate(target_observed,
-                                                                        parameter=true_vec,
-                                                                        sample=full_sample_boot)
-
+                                                                            parameter=true_vec,
+                                                                            sample=full_sample_boot)
         ## CLT plugin
         target_sampler, _ = glm_target(loss,
                                        active_union,
@@ -124,11 +126,6 @@ def test_split_compare(s=3,
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
-        if X.shape[0] - leftout_indices.sum() > nactive:
-            LU_split = standard_ci(X, y, active_union, leftout_indices)
-            LU_split_sm = standard_ci_sm(X, y, active_union, leftout_indices)
-        else:
-            LU_split = LU_split_sm = np.ones((nactive, 2)) * np.nan
 
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]
@@ -146,7 +143,6 @@ def test_split_compare(s=3,
 
         covered, ci_length = coverage(LU)
         covered_boot, ci_length_boot = coverage(LU_boot)
-        covered_split, ci_length_split = coverage(LU_split)
         covered_naive, ci_length_naive = coverage(LU_naive)
 
         active_var = np.zeros(nactive, np.bool)
@@ -154,13 +150,13 @@ def test_split_compare(s=3,
             active_var[j] = active_set[j] in nonzero
 
         return pivots, pivots_boot, covered, ci_length, covered_boot, ci_length_boot, \
-               covered_split, ci_length_split, active_var, covered_naive, ci_length_naive
+                active_var, covered_naive, ci_length_naive
 
 
-def report(niter=3, **kwargs):
+def report(niter=10, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 20, 'snr': 7, 'split_frac': 0.8, 'intervals':'old'}
-    split_report = reports.reports['test_split_compare']
+    kwargs = {'s': 0, 'n': 300, 'p': 10, 'snr': 7, 'nviews':3, 'intervals':'old'}
+    split_report = reports.reports['test_multiple_queries']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],
                                                      niter,
@@ -168,7 +164,7 @@ def report(niter=3, **kwargs):
                                                      **kwargs)
 
     fig = reports.boot_clt_plot(screened_results, inactive=True, active=False)
-    fig.savefig('split_compare_pivots.pdf') # will have both bootstrap and CLT on plot
+    fig.savefig('multiple_queries_CI.pdf') # will have both bootstrap and CLT on plot
 
 
 if __name__=='__main__':
