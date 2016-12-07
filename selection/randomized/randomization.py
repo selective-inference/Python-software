@@ -21,7 +21,8 @@ class randomization(rr.smooth_atom):
                  grad_negative_log_density,
                  sampler,
                  lipschitz=1,
-                 log_density=None):
+                 log_density=None,
+                 IID=False):
 
         rr.smooth_atom.__init__(self,
                                 shape)
@@ -32,6 +33,7 @@ class randomization(rr.smooth_atom):
         self._grad_negative_log_density = grad_negative_log_density
         self._sampler = sampler
         self.lipschitz = lipschitz
+        self.IID = IID
 
         if log_density is None:
             log_density = lambda x: np.log(density(x))
@@ -117,7 +119,8 @@ class randomization(rr.smooth_atom):
                              grad_negative_log_density,
                              sampler,
                              lipschitz=1./scale**2,
-                             log_density = lambda x: -0.5 * (np.atleast_2d(x)**2).sum(1) / scale**2 + constant)
+                             log_density = lambda x: -0.5 * (np.atleast_2d(x)**2).sum(1) / scale**2 + constant,
+                             IID=True)
 
     @staticmethod
     def gaussian(covariance):
@@ -149,7 +152,8 @@ class randomization(rr.smooth_atom):
                              grad_negative_log_density,
                              sampler,
                              lipschitz=np.linalg.svd(precision)[1].max(),
-                             log_density = lambda x: -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const))
+                             log_density = lambda x:  \
+                                 -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const))
 
     @staticmethod
     def laplace(shape, scale):
@@ -179,7 +183,9 @@ class randomization(rr.smooth_atom):
                              grad_negative_log_density,
                              sampler,
                              lipschitz=1./scale**2,
-                             log_density = lambda x: -np.fabs(np.atleast_2d(x)).sum(1) / scale - np.log(scale) + constant)
+                             log_density = lambda x: 
+                                   -np.fabs(np.atleast_2d(x)).sum(1) / scale - np.log(scale) + constant,
+                             IID=True)
 
     @staticmethod
     def logistic(shape, scale):
@@ -213,7 +219,10 @@ class randomization(rr.smooth_atom):
                              grad_negative_log_density,
                              sampler,
                              lipschitz=.25/scale**2,
-                             log_density = lambda x: -np.atleast_2d(x).sum(1) / scale - 2 * np.log(1 + np.exp(-np.atleast_2d(x) / scale)).sum(1) + constant)
+                             log_density = lambda x: \
+                                 -np.atleast_2d(x).sum(1) / scale - \
+                                 2 * np.log(1 + np.exp(-np.atleast_2d(x) / scale)).sum(1) + constant,
+                             IID=True)
 
 class split(randomization):
 

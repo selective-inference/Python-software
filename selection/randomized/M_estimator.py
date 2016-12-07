@@ -300,6 +300,9 @@ class M_estimator(query):
         """
         Maybe we should allow subgradients of only some variables...
         """
+        if not self.randomization.IID:
+            raise ValueError('randomization should be IID')
+
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
@@ -420,23 +423,23 @@ class M_estimator(query):
         p = self.p
         weights = np.zeros(p)
 
-        if self.inactive_marginal_groups.sum()>0:
-            full_state_plus = full_state+np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
-            full_state_minus = full_state-np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
+        if self._marginalize_subgradient:
+            if self.inactive_marginal_groups.sum()>0:
+                full_state_plus = full_state+np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
+                full_state_minus = full_state-np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
 
-        def fraction(upper, lower):
-            return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
-                   / (self.randomization._cdf(upper) - self.randomization._cdf(lower))
+            def fraction(upper, lower):
+                return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
+                       / (self.randomization._cdf(upper) - self.randomization._cdf(lower))
 
-        for i in range(p):
-            if self.inactive_marginal_groups[i]:
-                weights[i] = fraction(full_state_plus[i], full_state_minus[i])
-            else:
-                weights[i] = self.randomization._derivative_log_density(full_state[i])
-        #print("weights", weights)
-        #print("randomization gradient",self.randomization.gradient(full_state))
-        return -weights
-
+            for i in range(p):
+                if self.inactive_marginal_groups[i]:
+                    weights[i] = fraction(full_state_plus[i], full_state_minus[i])
+                else:
+                    weights[i] = self.randomization._derivative_log_density(full_state[i])
+            return -weights
+        else:
+            return self.randomization.gradient(full_state)
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 

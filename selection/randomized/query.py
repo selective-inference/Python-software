@@ -42,10 +42,8 @@ class query(object):
 
         # gradient of negative log density of randomization at omega
 
-        if not self._marginalize_subgradient:
-            randomization_derivative = self.randomization.gradient(full_state)
-        else:
-            randomization_derivative = self.construct_weights(full_state)
+        randomization_derivative = self.construct_weights(full_state)
+
         # chain rule for data, optimization parts
 
         data_grad = data_linear.T.dot(randomization_derivative)
@@ -53,6 +51,8 @@ class query(object):
 
         return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
 
+    def construct_weights(self, full_state):
+        return self.randomization.gradient(full_state)
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
@@ -248,7 +248,7 @@ class multiple_queries(object):
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
         for i in range(len(self.objectives)):
-            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state[:self.num_opt_var]
+            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
                      target_info,
