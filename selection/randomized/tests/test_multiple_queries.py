@@ -96,8 +96,83 @@ def test_multiple_queries(s=3,
                                                observed_test_value,
                                                alternative='twosided',
                                                ndraw=ndraw,
-                                               burnin=burnin,
-                                               parameter = reference)
+                                               burnin=burnin)
+
+        full_sample = target_sampler.sample(ndraw=ndraw,
+                                       burnin=burnin,
+                                       keep_opt=True)
+
+        pivot = target_sampler.hypothesis_test_translate(full_sample,
+                                                         test_stat,
+                                                         target_observed,
+                                                         alternative='twosided')
+
+        return [pivot], [False]
+
+@register_report(['pvalue', 'active'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+@set_seed_iftrue(SET_SEED)
+@wait_for_return_value()
+def test_multiple_queries_translate(ndraw=10000, burnin=2000, bootstrap=False): 
+    s, n, p = 3, 600, 10
+
+    randomizer = randomization.laplace((p,), scale=1)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=4)
+
+    nonzero = np.where(beta)[0]
+    lam_frac = 1.
+
+    loss = rr.glm.logistic(X, y)
+    epsilon = 1.
+
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+    W = np.ones(p)*lam
+    W[0] = 0 # use at least some unpenalized
+    penalty = rr.group_lasso(np.arange(p),
+                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
+
+    view = []
+    nview = 5
+    for i in range(nview):
+        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
+
+    mv = multiple_queries(view)
+    mv.solve()
+
+    active_union = np.zeros(p, np.bool)
+    for i in range(nview):
+        active_union += view[i].selection_variable['variables']
+
+    nactive = np.sum(active_union)
+    print("nactive", nactive)
+
+    if set(nonzero).issubset(np.nonzero(active_union)[0]):
+        if nactive==s:
+            return None
+
+        active_set = np.nonzero(active_union)[0]
+
+        inactive_selected = np.array([active_union[i] and i not in nonzero for i in range(p)])
+        true_active = (beta != 0)
+        reference = np.zeros(inactive_selected.sum())
+        target_sampler, target_observed = glm_target(loss,
+                                                     true_active,
+                                                     mv,
+                                                     subset=inactive_selected,
+                                                     bootstrap=bootstrap,
+                                                     reference=reference)
+
+        test_stat = lambda x: np.linalg.norm(x)
+        observed_test_value = test_stat(target_observed)
+
+        full_sample = target_sampler.sample(ndraw=ndraw,
+                                            burnin=burnin,
+                                            keep_opt=True)
+
+        pivot = target_sampler.hypothesis_test_translate(full_sample,
+                                                         test_stat,
+                                                         target_observed,
+                                                         alternative='twosided')
 
         return [pivot], [False]
 
