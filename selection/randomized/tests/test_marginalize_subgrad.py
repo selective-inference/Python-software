@@ -30,7 +30,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @wait_for_return_value()
 def test_marginalize(s=0,
                     n=3000,
-                    p=1000,
+                    p=50,
                     rho=0.1,
                     snr=10,
                     lam_frac = 1.3,

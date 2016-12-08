@@ -438,7 +438,7 @@ class M_estimator(query):
         #        weights[i] = self.randomization._derivative_log_density(full_state[i])
 
         weights[self.inactive_marginal_groups] = fraction(full_state_plus, full_state_minus, self.inactive_marginal_groups)
-        weights[~self.inactive_marginal_groups] =self.randomization.gradient(full_state)[~self.inactive_marginal_groups]
+        weights[~self.inactive_marginal_groups] = self.randomization._derivative_log_density(full_state)[~self.inactive_marginal_groups]
         return -weights
 
 
