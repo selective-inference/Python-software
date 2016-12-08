@@ -22,18 +22,21 @@ from selection.api import (randomization,
                            glm_group_lasso_parametric,
                            glm_target)
 
+from selection.randomized.query import naive_confidence_intervals
+
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@register_report(['truth', 'active'])
+@register_report(['truth', 'covered_clt', 'ci_length_clt',
+                  'covered_naive', 'ci_length_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_marginalize(s=0,
                     n=3000,
-                    p=50,
+                    p=1000,
                     rho=0.1,
                     snr=10,
-                    lam_frac = 1.3,
+                    lam_frac = 1.5,
                     ndraw=5000,
                     burnin=0,
                     loss='logistic',
@@ -78,6 +81,8 @@ def test_marginalize(s=0,
     true_vec = beta[active_union]
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
+        check_screen=True
+
         if nactive==s:
             return None
 
@@ -101,7 +106,9 @@ def test_marginalize(s=0,
                                                      #reference= beta[active_union])
         target_sample = target_sampler.sample(ndraw=ndraw,
                                               burnin=burnin)
-
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample,
+                                                 level=0.9)
         pivots = target_sampler.coefficient_pvalues(target_observed,
                                                     parameter=true_vec,
                                                     sample=target_sample)
@@ -116,7 +123,25 @@ def test_marginalize(s=0,
         #                                       ndraw=ndraw,
         #                                       burnin=burnin,
         #                                       stepsize=None)
-        return pivots, [False]
+
+        def coverage(LU):
+            L, U = LU[:, 0], LU[:, 1]
+            covered = np.zeros(nactive)
+            ci_length = np.zeros(nactive)
+
+            for j in range(nactive):
+                if check_screen:
+                    if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
+                        covered[j] = 1
+                else:
+                    covered[j] = None
+                ci_length[j] = U[j] - L[j]
+            return covered, ci_length
+
+        covered, ci_length = coverage(LU)
+        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
+        covered_naive, ci_length_naive = coverage(LU_naive)
+        return pivots, covered, ci_length, covered_naive, ci_length_naive
 
 def report(niter=50, **kwargs):
 
