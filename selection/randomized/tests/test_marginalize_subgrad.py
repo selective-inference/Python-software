@@ -29,8 +29,8 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_marginalize(s=0,
-                    n=300,
-                    p=20,
+                    n=3000,
+                    p=1000,
                     rho=0.1,
                     snr=10,
                     lam_frac = 1.3,

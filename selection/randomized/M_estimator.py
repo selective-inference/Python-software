@@ -429,10 +429,8 @@ class M_estimator(query):
         #           / (self.randomization._cdf(upper) - self.randomization._cdf(lower))
 
         def fraction(full_state_plus, full_state_minus, inactive_marginal_groups):
-            return [(self.randomization._pdf(full_state_plus[i]) - self.randomization._pdf(full_state_minus[i])) \
-                   / (self.randomization._cdf(full_state_plus[i]) - self.randomization._cdf(full_state_minus[i]))
-                    for i in range(full_state_plus.shape[0]) if inactive_marginal_groups[i]==True]
-
+            return (np.divide(self.randomization._pdf(full_state_plus) - self.randomization._pdf(full_state_minus),
+                   self.randomization._cdf(full_state_plus) - self.randomization._cdf(full_state_minus)))[inactive_marginal_groups]
         #for i in range(p):
         #    if self.inactive_marginal_groups[i]:
         #        weights[i] = fraction(full_state_plus[i], full_state_minus[i])
