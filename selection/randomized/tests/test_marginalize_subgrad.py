@@ -29,13 +29,13 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_marginalize(s=0,
-                    n=100,
-                    p=10,
+                    n=300,
+                    p=20,
                     rho=0.1,
                     snr=10,
-                    lam_frac = 1.,
-                    ndraw=10000,
-                    burnin=1000,
+                    lam_frac = 1.3,
+                    ndraw=5000,
+                    burnin=0,
                     loss='logistic',
                     nviews=1,
                     scalings=False,
@@ -75,6 +75,7 @@ def test_marginalize(s=0,
     print("nactive", nactive)
 
     nonzero = np.where(beta)[0]
+    true_vec = beta[active_union]
 
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
         if nactive==s:
@@ -95,21 +96,27 @@ def test_marginalize(s=0,
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,
                                                      active_union,
-                                                     queries)
+                                                     queries,
+                                                     bootstrap=False)
                                                      #reference= beta[active_union])
-        #print(target_sampler.target_cov)
-        test_stat = lambda x: np.linalg.norm(x - beta[active_union])
-        observed_test_value = test_stat(target_observed)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
 
-        pivots = target_sampler.hypothesis_test(test_stat,
-                                               observed_test_value,
-                                               alternative='twosided',
-                                               parameter = beta[active_union],
-                                               ndraw=ndraw,
-                                               burnin=burnin,
-                                               stepsize=None)
+        pivots = target_sampler.coefficient_pvalues(target_observed,
+                                                    parameter=true_vec,
+                                                    sample=target_sample)
 
-        return [pivots], [False]
+
+        #test_stat = lambda x: np.linalg.norm(x - beta[active_union])
+        #observed_test_value = test_stat(target_observed)
+        #pivots = target_sampler.hypothesis_test(test_stat,
+        #                                       observed_test_value,
+        #                                       alternative='twosided',
+        #                                       parameter = beta[active_union],
+        #                                       ndraw=ndraw,
+        #                                       burnin=burnin,
+        #                                       stepsize=None)
+        return pivots, [False]
 
 def report(niter=50, **kwargs):
 

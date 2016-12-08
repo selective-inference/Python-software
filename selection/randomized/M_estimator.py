@@ -338,9 +338,9 @@ class M_estimator(query):
                 #_opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
                 #idx += 1
         #self.condition_inactive_groups = condition_inactive_groups
-        print("active groups", self._active_groups)
-        print("condtioning", condition_inactive_groups)
-        print("marginalize", self.inactive_marginal_groups)
+        #print("active groups", self._active_groups)
+        #print("condtioning", condition_inactive_groups)
+        #print("marginalize", self.inactive_marginal_groups)
         opt_linear, opt_offset = self.opt_transform
 
         new_linear = np.zeros((opt_linear.shape[0], self._active_groups.sum()+self._unpenalized_groups.sum()+moving_inactive_variables.sum()))
@@ -424,17 +424,23 @@ class M_estimator(query):
             full_state_plus = full_state+np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
             full_state_minus = full_state-np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
 
-        def fraction(upper, lower):
-            return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
-                   / (self.randomization._cdf(upper) - self.randomization._cdf(lower))
+        #def fraction(upper, lower):
+        #    return (self.randomization._pdf(upper) - self.randomization._pdf(lower)) \
+        #           / (self.randomization._cdf(upper) - self.randomization._cdf(lower))
 
-        for i in range(p):
-            if self.inactive_marginal_groups[i]:
-                weights[i] = fraction(full_state_plus[i], full_state_minus[i])
-            else:
-                weights[i] = self.randomization._derivative_log_density(full_state[i])
-        #print("weights", weights)
-        #print("randomization gradient",self.randomization.gradient(full_state))
+        def fraction(full_state_plus, full_state_minus, inactive_marginal_groups):
+            return [(self.randomization._pdf(full_state_plus[i]) - self.randomization._pdf(full_state_minus[i])) \
+                   / (self.randomization._cdf(full_state_plus[i]) - self.randomization._cdf(full_state_minus[i]))
+                    for i in range(full_state_plus.shape[0]) if inactive_marginal_groups[i]==True]
+
+        #for i in range(p):
+        #    if self.inactive_marginal_groups[i]:
+        #        weights[i] = fraction(full_state_plus[i], full_state_minus[i])
+        #    else:
+        #        weights[i] = self.randomization._derivative_log_density(full_state[i])
+
+        weights[self.inactive_marginal_groups] = fraction(full_state_plus, full_state_minus, self.inactive_marginal_groups)
+        weights[~self.inactive_marginal_groups] =self.randomization.gradient(full_state)[~self.inactive_marginal_groups]
         return -weights
 
 
