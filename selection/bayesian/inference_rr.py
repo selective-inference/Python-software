@@ -117,7 +117,10 @@ class selective_map_credible(rr.smooth_atom):
 
         self.generative_X = generative_X
 
-        initial = np.squeeze(primal_feasible * active_signs[None,:])
+        if self.param_shape == self.E:
+            initial = np.squeeze(primal_feasible * active_signs[None,:])
+        else:
+            initial = np.zeros(self.param_shape)
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -126,11 +129,9 @@ class selective_map_credible(rr.smooth_atom):
                                 initial=initial,
                                 coef=coef)
 
-        #self.initial = np.squeeze(primal_feasible * active_signs[None, :])
-
         self.coefs[:] = initial
 
-        self.initial_state = np.squeeze(primal_feasible * active_signs[None, :])
+        self.initial_state = initial
 
         self.set_likelihood(y, noise_variance, generative_X)
 
@@ -176,7 +177,7 @@ class selective_map_credible(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def map_solve_2(self, step=1, nstep=300, tol=1.e-8):
+    def map_solve_2(self, step=1, nstep=500, tol=1.e-8):
 
         current = self.coefs[:]
         current_value = np.inf
@@ -222,7 +223,7 @@ class selective_map_credible(rr.smooth_atom):
         value = problem.objective(soln)
         return soln, value
 
-    def posterior_samples(self, Langevin_steps = 5000, burnin = 500):
+    def posterior_samples(self, Langevin_steps = 8000, burnin = 1000):
         state = self.initial_state
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x

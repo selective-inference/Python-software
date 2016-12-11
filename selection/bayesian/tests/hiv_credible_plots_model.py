@@ -48,7 +48,7 @@ OLS_3TC = ols_fit.params
 print(X.shape)
 
 #solving the Lasso at theoretical lambda
-tau = 1.0
+tau = 1
 print(tau**2)
 random_Z = np.random.normal(loc=0.0, scale= tau, size= p)
 sel = selection(X, Y, random_Z, sigma=sigma_3TC)
@@ -70,12 +70,12 @@ primal_feasible = np.fabs(betaE)
 dual_feasible = np.ones(p)
 dual_feasible[:nactive] = -np.fabs(np.random.standard_normal(nactive))
 lagrange = lam * np.ones(p)
-generative_X = X[:, active]
+generative_X = np.identity(n)
 prior_variance = 1000.
 
 Q = np.linalg.inv(prior_variance* (generative_X.dot(generative_X.T)) + noise_variance* np.identity(n))
 post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(Y))
-post_var = prior_variance* np.identity(nactive) - ((prior_variance**2)*(generative_X.T.dot(Q).dot(generative_X)))
+post_var = prior_variance* np.identity(n) - ((prior_variance**2)*(generative_X.T.dot(Q).dot(generative_X)))
 unadjusted_intervals = np.vstack([post_mean - 1.65*(post_var.diagonal()),post_mean + 1.65*(post_var.diagonal())])
 unadjusted_intervals = np.vstack([post_mean, unadjusted_intervals])
 print(unadjusted_intervals)
@@ -174,7 +174,7 @@ print('here')
 
 #plt.show()                              # render the plot
 
-plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_selected_0.pdf', bbox_inches='tight')
+plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_saturated_0.pdf', bbox_inches='tight')
 
 ##################################################
 ind = np.zeros(len(active_set), np.bool)
@@ -234,4 +234,4 @@ ax.legend((rects1[0], rects2[0]), ('Unadjusted', 'Adjusted'), loc='upper right')
 
 print('here')
 
-plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_selected_1.pdf', bbox_inches='tight')
+plt.savefig('/Users/snigdhapanigrahi/Documents/Research/Python_plots/credible_hiv_saturated_1.pdf', bbox_inches='tight')

@@ -53,7 +53,7 @@ def test_approximation_randomlasso():
                                                               mean,
                                                               cov,
                                                               noise_variance,
-                                                              randomization.isotropic_gaussian((p,), 1.),
+                                                              randomization.isotropic_gaussian((p,), 1),
                                                               epsilon)
 
     toc = time.time()
