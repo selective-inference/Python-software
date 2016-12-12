@@ -96,6 +96,13 @@ def test_inference_randomlasso():
     generative_X = X_1[:, active]
     prior_variance = 1000.
 
+    Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
+    post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
+    post_var = prior_variance * np.identity(nactive) - (
+    (prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
+    unadjusted_intervals = np.vstack([post_mean - 1.65 * (post_var.diagonal()), post_mean
+                                      + 1.65 * (post_var.diagonal())])
+
     inf_rr = selective_map_credible_randomX(y,
                                             X_1,
                                             primal_feasible,
@@ -110,7 +117,6 @@ def test_inference_randomlasso():
                                             epsilon)
 
     map = inf_rr.map_solve_2(nstep=100)[::-1]
-    print("selective map", map[1])
 
     toc = time.time()
     samples = inf_rr.posterior_samples()
@@ -118,6 +124,11 @@ def test_inference_randomlasso():
     print('sampling time', tic - toc)
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
     print("selective intervals", adjusted_intervals)
+    print("unadjusted intervals", unadjusted_intervals)
+    print("selective map", map[1])
+    print("unadjusted map", post_mean)
+    print("active", active)
+
     adjusted_intervals = np.vstack([map[1], adjusted_intervals])
     return(adjusted_intervals)
 
