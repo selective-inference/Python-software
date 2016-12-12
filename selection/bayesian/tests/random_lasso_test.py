@@ -89,6 +89,7 @@ def test_inference_randomlasso():
     bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1,y), active, beta_full=None, inactive = ~active)[0]
     sampler = lambda: np.random.choice(n, size=(n,),replace = True)
     cov = bootstrap_cov(sampler, bootstrap_score)
+    print("bootstrapped covariance", cov)
 
     primal_feasible = np.fabs(betaE)
     lagrange = lam * np.ones(p)
@@ -116,6 +117,7 @@ def test_inference_randomlasso():
     tic = time.time()
     print('sampling time', tic - toc)
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+    print("selective intervals", adjusted_intervals)
     adjusted_intervals = np.vstack([map[1], adjusted_intervals])
     return(adjusted_intervals)
 
