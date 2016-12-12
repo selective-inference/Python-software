@@ -100,6 +100,7 @@ class selective_map_credible_randomX(rr.smooth_atom):
                  nstep=10):
 
         self.param_shape = generative_X.shape[1]
+        n = generative_X.shape[0]
 
         y = np.squeeze(y)
 
@@ -113,7 +114,7 @@ class selective_map_credible_randomX(rr.smooth_atom):
         X_inactive = X[:, ~active]
         X_gen_inv = np.linalg.pinv(X_active)
         X_projection = X_active.dot(X_gen_inv)
-        X_inter = (X_inactive.T).dot((np.identity(self.n) - X_projection))
+        X_inter = (X_inactive.T).dot((np.identity(n) - X_projection))
         self.D_mean = np.vstack([X_gen_inv, X_inter])
 
         w, v = np.linalg.eig(Sigma_parameter)
