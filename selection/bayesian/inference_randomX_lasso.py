@@ -116,6 +116,9 @@ class selective_map_credible_randomX(rr.smooth_atom):
         X_inter = (X_inactive.T).dot((np.identity(self.n) - X_projection))
         self.D_mean = np.vstack([X_gen_inv, X_inter])
 
+        w, v = np.linalg.eig(Sigma_parameter)
+        self.Sigma_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
+
         data_obs = self.D_mean.dot(y)
 
         rr.smooth_atom.__init__(self,
@@ -127,7 +130,7 @@ class selective_map_credible_randomX(rr.smooth_atom):
 
         self.coefs[:] = initial
 
-        self.initial_state = np.squeeze(primal_feasible * active_signs[None, :])
+        self.initial_state = np.squeeze(primal_feasible * active_signs[None, :]) #initial_state valid only for selected model
 
         self.set_likelihood(data_obs, noise_variance, generative_X)
 
@@ -150,9 +153,11 @@ class selective_map_credible_randomX(rr.smooth_atom):
 
         self.noise_variance = noise_variance
 
-    def set_likelihood(self, y, noise_variance, generative_X):
-        likelihood_loss = rr.signal_approximator(y, coef=1. / noise_variance)
-        self.likelihood_loss = rr.affine_smooth(likelihood_loss, generative_X)
+    def set_likelihood(self, data_obs, noise_variance, generative_X):
+        scaled_data_obs = self.Sigma_inv_half.dot(data_obs)
+        likelihood_loss = rr.signal_approximator(scaled_data_obs, coef=1. / noise_variance)
+        coef_param = self.Sigma_inv_half.dot(self.D_mean.dot(self.generative_X))
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, coef_param)
 
     def set_prior(self, prior_variance):
         self.log_prior_loss = rr.signal_approximator(np.zeros(self.param_shape), coef=1. / prior_variance)

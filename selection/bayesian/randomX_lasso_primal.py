@@ -93,7 +93,7 @@ class selection_probability_objective_randomX(rr.smooth_atom):
 
         self._opt_selector = rr.selector(opt_vars, (p + E,))
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
-        self._response_selector = rr.selector(~opt_vars, (p + E,))
+        #self._response_selector = rr.selector(~opt_vars, (p + E,))
 
         w, v = np.linalg.eig(Sigma_parameter)
         self.Sigma_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
