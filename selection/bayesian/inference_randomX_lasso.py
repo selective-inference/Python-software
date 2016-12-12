@@ -68,7 +68,7 @@ class sel_prob_gradient_map_randomX(rr.smooth_atom):
         optimal_primal = (sel_prob_primal[1])[:self.p]
         sel_prob_val = -sel_prob_primal[0]
         coef = (np.linalg.inv(self.Sigma_parameter)).dot(self.D_mean.dot(self.generative_X))
-        optimizer = (coef.T).dot(np.true_divide(optimal_primal - generative_mean, self.noise_variance))
+        optimizer = (coef.T).dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
 
         if mode == 'func':
             return sel_prob_val
