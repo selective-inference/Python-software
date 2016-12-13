@@ -65,6 +65,7 @@ def test_approximate_conditional_prob():
     data_coef = np.vstack([data_active, data_nactive])
 
     A = (data_coef.dot(Sigma_D_T)).dot(Sigma_T_inv)
+    print("shape of A", np.shape(A))
 
     #observed target and null statistic
     X_inactive = X_1[:, ~active]
@@ -74,7 +75,7 @@ def test_approximate_conditional_prob():
     D_mean = np.vstack([X_gen_inv, X_inter])
     data_obs = D_mean.dot(y)
     target_obs = data_obs[:nactive]
-    null_statistic = data_coef.dot(data_obs) - A.dot(target_obs)
+    null_statistic = (data_coef.dot(data_obs) - A.dot(target_obs))
     feasible_point = np.fabs(betaE)
 
     approx_cond = approximate_conditional_prob(X_1,
@@ -88,8 +89,10 @@ def test_approximate_conditional_prob():
                                                randomization.isotropic_gaussian((p,), 1.),
                                                epsilon,
                                                t= 3.)
-
-    cond_density = approx_cond.minimize2(j = 1, nstep= 100)
+    test_point = np.fabs(betaE)
+    j_ind = 1
+    #cond_density = approx_cond.sel_prob(j_ind)
+    cond_density = approx_cond.sel_prob_smooth_objective(test_point, j_ind, mode= 'func')
 
     print("conditional density", cond_density)
 

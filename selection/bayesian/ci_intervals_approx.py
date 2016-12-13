@@ -84,32 +84,29 @@ class approximate_conditional_prob(rr.smooth_atom):
 
         self.E = E
 
-    def sel_prob(self,j):
+    def sel_prob_smooth_objective(self, param, j, mode='both', check_feasibility=False):
 
+        param = self.apply_offset(param)
         index = np.zeros(self.E, bool)
         index[j] = 1
-        data = self.t * self.A[:, index] + self.A[:, ~index].dot(self.target[:, ~index])
+        data = np.squeeze(self.t * self.A[:, index]) + self.A[:, ~index].dot(self.target[~index])
+
         offset_active = self.subgrad_offset + self.null_statistic[:self.E] + data[:self.E]
+
         offset_inactive = self.null_statistic[self.E:] + data[self.E:]
+
+        print("shape of offsets", np.shape(offset_active), np.shape(offset_inactive))
 
         active_conj_loss = rr.affine_smooth(self.active_conjugate,
                                                  rr.affine_transform(self.B_active, offset_active))
 
-        cube_obj = cube_objective(self.inactive_conjugate, self.lagrange[~self.active], nstep=self.nstep)
+        cube_obj = cube_objective(self.inactive_conjugate, self.inactive_lagrange, nstep=self.nstep)
 
         cube_loss = rr.affine_smooth(cube_obj, rr.affine_transform(self.B_inactive, offset_inactive))
 
         total_loss = rr.smooth_sum([active_conj_loss,
                                     cube_loss,
                                     self.nonnegative_barrier])
-
-        return total_loss
-
-
-    def smooth_objective(self, j, param, mode='both', check_feasibility=False):
-
-        param = self.apply_offset(param)
-        total_loss = self.sel_prob(j)
 
         if mode == 'func':
             f = total_loss.smooth_objective(param, 'func')
