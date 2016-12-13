@@ -3,7 +3,7 @@ import regreg.api as rr
 from selection.bayesian.selection_probability_rr import nonnegative_softmax_scaled, cube_subproblem_scaled, \
     cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled, cube_objective
 
-class approximate_conditional_sel_prob(rr.smooth_atom):
+class approximate_conditional_prob(rr.smooth_atom):
 
     def __init__(self,
                  X,
@@ -14,7 +14,6 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
                  active,
                  active_signs,
                  lagrange,
-                 Sigma_parameter,  # in R^{p \times p}
                  randomizer,
                  epsilon,
                  t, #point at which density is to computed
@@ -23,8 +22,6 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
                  quadratic= None,
                  nstep = 10):
 
-        n, p = X.shape
-
         self.t = t
 
         self.A = A
@@ -32,8 +29,6 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         self.target = target
 
         self.null_statistic = null_statistic
-
-        self.lagrange = lagrange
 
         E = active.sum()
 
@@ -50,6 +45,7 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
                 'randomization must know its CGF_conjugate -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
         self.inactive_lagrange = lagrange[~active]
+        self.active_lagrange = lagrange[active]
 
         #here, feasible point is in E dimensions
         initial = feasible_point
@@ -78,7 +74,7 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         self.B_active = (B_E + epsilon * np.identity(E)) * active_signs[None, :]
         self.B_inactive = B_mE * active_signs[None, :]
 
-        self.subgrad_offset = active_signs * self.lagrange[active]
+        self.subgrad_offset = active_signs * self.active_lagrange
 
         opt_vars = np.zeros(E, bool)
         opt_vars[:E] = 1
@@ -177,3 +173,4 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         # print('iter', itercount)
         value = objective(current)
         return current, value
+
