@@ -95,8 +95,6 @@ class approximate_conditional_prob(rr.smooth_atom):
 
         offset_inactive = self.null_statistic[self.E:] + data[self.E:]
 
-        print("shape of offsets", np.shape(offset_active), np.shape(offset_inactive))
-
         active_conj_loss = rr.affine_smooth(self.active_conjugate,
                                                  rr.affine_transform(self.B_active, offset_active))
 
@@ -125,8 +123,8 @@ class approximate_conditional_prob(rr.smooth_atom):
         current = self.coefs
         current_value = np.inf
 
-        objective = lambda u: self.smooth_objective(j, u, 'func')
-        grad = lambda u: self.smooth_objective(j, u, 'grad')
+        objective = lambda u: self.sel_prob_smooth_objective(u, j, 'func')
+        grad = lambda u: self.sel_prob_smooth_objective(u, j, 'grad')
 
         for itercount in range(nstep):
             newton_step = grad(current)

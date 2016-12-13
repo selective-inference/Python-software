@@ -89,10 +89,11 @@ def test_approximate_conditional_prob():
                                                randomization.isotropic_gaussian((p,), 1.),
                                                epsilon,
                                                t= 3.)
-    test_point = np.fabs(betaE)
+    #test_point = np.fabs(betaE)
     j_ind = 1
     #cond_density = approx_cond.sel_prob(j_ind)
-    cond_density = approx_cond.sel_prob_smooth_objective(test_point, j_ind, mode= 'func')
+    #cond_density = approx_cond.sel_prob_smooth_objective(test_point, j_ind, mode= 'func')
+    cond_density = approx_cond.minimize2(j_ind)
 
     print("conditional density", cond_density)
 
