@@ -97,7 +97,7 @@ def test_approximate_conditional_prob():
 
     print("conditional density", cond_density)
 
-test_approximate_conditional_prob()
+#test_approximate_conditional_prob()
 
 
 
