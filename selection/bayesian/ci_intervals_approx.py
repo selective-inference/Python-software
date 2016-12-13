@@ -6,16 +6,18 @@ from selection.bayesian.selection_probability_rr import nonnegative_softmax_scal
 class approximate_conditional_sel_prob(rr.smooth_atom):
 
     def __init__(self,
-                 y,
                  X,
+                 target,
+                 A, # the coef matrix of target
+                 null_statistic, #null statistic that stays fixed
                  feasible_point,
                  active,
                  active_signs,
                  lagrange,
+                 Sigma_parameter,  # in R^{p \times p}
                  randomizer,
                  epsilon,
-                 j, #index of interest amongst active variables
-                 s, #point at which density is to computed
+                 t, #point at which density is to computed
                  coef = 1.,
                  offset= None,
                  quadratic= None,
@@ -23,13 +25,23 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
 
         n, p = X.shape
 
-        E = active.sum()
+        self.t = t
 
-        self.y = y
+        self.A = A
+
+        self.target = target
+
+        self.null_statistic = null_statistic
+
+        self.lagrange = lagrange
+
+        E = active.sum()
 
         self.active = active
 
         self.randomization = randomizer
+
+        self.nstep = nstep
 
         self.inactive_conjugate = self.active_conjugate = randomizer.CGF_conjugate
 
@@ -66,18 +78,7 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         self.B_active = (B_E + epsilon * np.identity(E)) * active_signs[None, :]
         self.B_inactive = B_mE * active_signs[None, :]
 
-        self.subgrad_offset = active_signs * lagrange[active]
-
-        self.j = j
-
-        self.s = s
-
-        eta = np.linalg.pinv(self.X_E)[self.j, :]
-        c = np.true_divide(eta, np.linalg.norm(eta) ** 2)
-
-        fixed_part = (np.identity(n) - np.outer(c, eta)).dot(self.y)
-        self.offset_active = self.subgrad_offset - self.X_E.T.dot(fixed_part) - self.s * (self.X_E.T.dot(c))
-        self.offset_inactive = - self.X_inactive.T.dot(fixed_part) - self.s * (self.X_inactive.T.dot(c))
+        self.subgrad_offset = active_signs * self.lagrange[active]
 
         opt_vars = np.zeros(E, bool)
         opt_vars[:E] = 1
@@ -85,56 +86,54 @@ class approximate_conditional_sel_prob(rr.smooth_atom):
         self._opt_selector = rr.selector(opt_vars, (E,))
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
 
-        self.active_conj_loss = rr.affine_smooth(self.active_conjugate,
-                                                 rr.affine_transform(self.B_active, self.offset_active))
+        self.E = E
 
-        cube_obj = cube_objective(self.inactive_conjugate,
-                                  lagrange[~active],
-                                  nstep=nstep)
+    def sel_prob(self,j):
 
-        self.cube_loss = rr.affine_smooth(cube_obj, rr.affine_transform(self.B_inactive, self.offset_inactive))
+        index = np.zeros(self.E, bool)
+        index[j] = 1
+        data = self.t * self.A[:, index] + self.A[:, ~index].dot(self.target[:, ~index])
+        offset_active = self.subgrad_offset + self.null_statistic[:self.E] + data[:self.E]
+        offset_inactive = self.null_statistic[self.E:] + data[self.E:]
 
-        self.total_loss = rr.smooth_sum([self.active_conj_loss,
-                                         self.cube_loss,
-                                         self.nonnegative_barrier])
+        active_conj_loss = rr.affine_smooth(self.active_conjugate,
+                                                 rr.affine_transform(self.B_active, offset_active))
 
-    def smooth_objective(self, param, mode='both', check_feasibility=False):
+        cube_obj = cube_objective(self.inactive_conjugate, self.lagrange[~self.active], nstep=self.nstep)
+
+        cube_loss = rr.affine_smooth(cube_obj, rr.affine_transform(self.B_inactive, offset_inactive))
+
+        total_loss = rr.smooth_sum([active_conj_loss,
+                                    cube_loss,
+                                    self.nonnegative_barrier])
+
+        return total_loss
+
+
+    def smooth_objective(self, j, param, mode='both', check_feasibility=False):
 
         param = self.apply_offset(param)
+        total_loss = self.sel_prob(j)
 
         if mode == 'func':
-            f = self.total_loss.smooth_objective(param, 'func')
+            f = total_loss.smooth_objective(param, 'func')
             return self.scale(f)
         elif mode == 'grad':
-            g = self.total_loss.smooth_objective(param, 'grad')
+            g = total_loss.smooth_objective(param, 'grad')
             return self.scale(g)
         elif mode == 'both':
-            f, g = self.total_loss.smooth_objective(param, 'both')
+            f, g = total_loss.smooth_objective(param, 'both')
             return self.scale(f), self.scale(g)
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize(self, initial=None, min_its=100, max_its=500, tol=1.e-10):
-
-        nonneg_con = self._opt_selector.output_shape[0]
-        constraint = rr.separable(self.shape,
-                                  [rr.nonnegative((nonneg_con,), offset=1.e-12 * np.ones(nonneg_con))],
-                                  [self._opt_selector.index_obj])
-
-        problem = rr.separable_problem.fromatom(constraint, self.total_loss)
-        problem.coefs[:] = self.coefs
-        soln = problem.solve(max_its=max_its, min_its=min_its, tol=tol)
-        self.coefs[:] = soln
-        value = problem.objective(soln)
-        return soln, value
-
-    def minimize2(self, step=1, nstep=30, tol=1.e-8):
+    def minimize2(self, j, step=1, nstep=30, tol=1.e-8):
 
         current = self.coefs
         current_value = np.inf
 
-        objective = lambda u: self.smooth_objective(u, 'func')
-        grad = lambda u: self.smooth_objective(u, 'grad')
+        objective = lambda u: self.smooth_objective(j, u, 'func')
+        grad = lambda u: self.smooth_objective(j, u, 'grad')
 
         for itercount in range(nstep):
             newton_step = grad(current)
