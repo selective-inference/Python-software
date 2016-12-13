@@ -35,11 +35,6 @@ def approximate_ci_test():
 
     print("active set", active_set)
 
-    noise_variance = 1
-    nactive = betaE.shape[0]
-    active_signs = np.sign(betaE)
-    tau = 1  # randomization_variance
-
     if active[active_set[0]] == True:
 
         noise_variance = 1.
