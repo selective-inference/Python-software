@@ -228,8 +228,14 @@ class approximate_conditional_density(rr.smooth_atom):
 
         #defining the grid on which marginal conditional densities will be evaluated
         self.grid = np.squeeze(np.round(np.linspace(-4, 10, num=141), decimals=1))
+        s_obs = np.zeros(nactive)
+        self.ind_obs = np.zeros(nactive)
         for j in range(nactive):
             self.h_approx[j,:] = self.approx_conditional(j)
+            s_obs[j] = np.round(self.target_obs[j], decimals=1)
+            if s_obs[j] < self.grid[0]:
+                s_obs[j] = self.grid[0]
+            self.ind_obs[j] = np.where(self.grid == s_obs[j])[0]
 
     def approx_conditional_prob(self, j):
         h_hat = []
@@ -251,21 +257,40 @@ class approximate_conditional_density(rr.smooth_atom):
 
         return np.array(h_hat)
 
-    def normalized_density(self, j, truth):
+    def area_normalized_density(self, j, mean):
 
         normalizer = 0.
 
         approx_nonnormalized = []
 
         for i in range(self.grid.shape[0]):
-            approx_density = np.exp(-np.true_divide((self.grid[i] - truth) ** 2, 2 * (self.noise_variance * self.norm))
+            approx_density = np.exp(-np.true_divide((self.grid[i] - mean) ** 2, 2 * (self.noise_variance * self.norm))
                                     + (self.h_approx[j,:])[i])
 
             normalizer = normalizer + approx_density
 
             approx_nonnormalized.append(approx_density)
 
-        return np.array(approx_nonnormalized / normalizer)
+        return np.cumsum(np.array(approx_nonnormalized / normalizer))
+
+    def approximate_ci(self, j):
+
+        param_grid = np.round(np.linspace(0, 10, num=100), decimals=1)
+
+        area = np.zeros(param_grid.shape[0])
+
+        for k in range(param_grid.shape[0]):
+
+            area_vec = self.area_normalized_density(j, param_grid[k])
+            area[k] = area_vec[self.ind_obs[j]]
+
+        region = param_grid[(area >= 0.05) & (area <= 0.95)]
+
+        if region.size > 0:
+            return np.nanmin(region), np.nanmax(region)
+
+        else:
+            return 0, 0
 
 
 
