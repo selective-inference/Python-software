@@ -21,7 +21,7 @@ sel = selection(X_1, y, random_Z, randomization_scale=1, sigma=None, lam=None)
 lam, epsilon, active, betaE, cube, initial_soln = sel
 print(true_beta, active)
 
-truth = ((np.linalg.pinv(X_1[:,active])[0, :]).T).dot(X_1.dot(true_beta))
+truth = (np.linalg.pinv(X_1[:,active])).dot(X_1.dot(true_beta))
 
 print("truth",truth)
 
@@ -136,9 +136,8 @@ def test_approximate_ci():
                                                       noise_variance,
                                                       randomization.isotropic_gaussian((p,), 1.),
                                                       epsilon)
-
-    ci = approximate_den.approximate_ci(1)
-    print("approximate ci", ci)
+    for j in range(nactive):
+        print("approximate ci", approximate_den.approximate_ci(j))
 
 test_approximate_ci()
 
