@@ -4,7 +4,7 @@ import time
 import numpy as np
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
-from selection.bayesian.initial_soln import selection, instance
+from selection.bayesian.initial_soln import selection
 from selection.bayesian.ci_intervals_approx import approximate_conditional_prob, approximate_conditional_density
 from selection.randomized.api import randomization
 from selection.bayesian.paired_bootstrap import pairs_bootstrap_glm, bootstrap_cov
@@ -14,20 +14,9 @@ p = 20
 s = 3
 snr = 5
 
-sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
-X_1, y, true_beta, nonzero, noise_variance = sample.generate_response()
-random_Z = np.random.standard_normal(p)
-sel = selection(X_1, y, random_Z, randomization_scale=1, sigma=None, lam=None)
-lam, epsilon, active, betaE, cube, initial_soln = sel
-print(true_beta, active)
-
-truth = (np.linalg.pinv(X_1[:,active])).dot(X_1.dot(true_beta))
-
-print("truth",truth)
-
 def test_approximate_conditional_prob():
 
-    X_1, y, true_beta, nonzero, noise_variance = sample.generate_response()
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
     random_Z = np.random.standard_normal(p)
 
@@ -44,6 +33,8 @@ def test_approximate_conditional_prob():
     lagrange = lam * np.ones(p)
 
     print("active set", active_set)
+
+    truth = (np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active]))
 
     bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
     sampler = lambda: np.random.choice(n, size=(n,), replace=True)
@@ -102,7 +93,7 @@ def test_approximate_conditional_prob():
 
 def test_approximate_ci():
 
-    X_1, y, true_beta, nonzero, noise_variance = sample.generate_response()
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
     random_Z = np.random.standard_normal(p)
 
@@ -112,21 +103,26 @@ def test_approximate_ci():
 
     active_set = np.asarray([i for i in range(p) if active[i]])
 
+    true_support = np.asarray([i for i in range(p) if i < s])
+
     nactive = active.sum()
 
     active_signs = np.sign(betaE)
 
     lagrange = lam * np.ones(p)
 
-    print("active set", active_set)
+    print("active set, true_support", active_set, true_support)
 
-    bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
-    sampler = lambda: np.random.choice(n, size=(n,), replace=True)
-    cov = bootstrap_cov(sampler, bootstrap_score)
+    truth = (np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active]))
 
-    feasible_point = np.fabs(betaE)
+    print("true coefficients", truth)
 
-    approximate_den = approximate_conditional_density(y,
+    if (set(active_set).intersection(set(true_support)) == set(true_support))== True:
+        bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
+        sampler = lambda: np.random.choice(n, size=(n,), replace=True)
+        cov = bootstrap_cov(sampler, bootstrap_score)
+        feasible_point = np.fabs(betaE)
+        approximate_den = approximate_conditional_density(y,
                                                       X_1,
                                                       feasible_point,
                                                       active,
@@ -136,11 +132,14 @@ def test_approximate_ci():
                                                       noise_variance,
                                                       randomization.isotropic_gaussian((p,), 1.),
                                                       epsilon)
-    for j in range(nactive):
-        print("approximate ci", approximate_den.approximate_ci(j))
+        ci_active = np.zeros((nactive,2))
+        for j in range(nactive):
+            ci_active[j,:] = np.array(approximate_den.approximate_ci(j))
+
+        return ci_active
+
 
 test_approximate_ci()
-
 
 
 
