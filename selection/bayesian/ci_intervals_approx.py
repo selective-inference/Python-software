@@ -239,9 +239,9 @@ class approximate_conditional_density(rr.smooth_atom):
             if s_obs[j] < self.grid[0]:
                 s_obs[j] = self.grid[0]
             self.ind_obs[j] = int(np.where(self.grid == s_obs[j])[0])
-            print("observed index", self.ind_obs[j])
+            #print("observed index", self.ind_obs[j])
             self.h_approx[j, :] = self.approx_conditional_prob(j)
-            print("here", j)
+            #print("here", j)
 
     def approx_conditional_prob(self, j):
         h_hat = []
