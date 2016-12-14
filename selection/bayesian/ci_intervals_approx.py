@@ -202,7 +202,8 @@ class approximate_conditional_density(rr.smooth_atom):
         nactive = self.active.sum()
 
         Sigma_D_T = Sigma_parameter[:, :nactive]
-        Sigma_T_inv = np.linalg.inv(Sigma_parameter[:nactive, :nactive])
+        Sigma_T = Sigma_parameter[:nactive, :nactive]
+        Sigma_T_inv = np.linalg.inv(Sigma_T)
 
         X_active = X[:, active]
         B = X.T.dot(X_active)
@@ -230,8 +231,10 @@ class approximate_conditional_density(rr.smooth_atom):
         self.grid = np.squeeze(np.round(np.linspace(-4, 10, num=141), decimals=1))
         s_obs = np.zeros(nactive)
         self.ind_obs = np.zeros(nactive)
+        self.norm = np.zeros(nactive)
         for j in range(nactive):
             self.h_approx[j,:] = self.approx_conditional(j)
+            self.norm[j] = Sigma_T[j,j]
             s_obs[j] = np.round(self.target_obs[j], decimals=1)
             if s_obs[j] < self.grid[0]:
                 s_obs[j] = self.grid[0]
@@ -264,7 +267,7 @@ class approximate_conditional_density(rr.smooth_atom):
         approx_nonnormalized = []
 
         for i in range(self.grid.shape[0]):
-            approx_density = np.exp(-np.true_divide((self.grid[i] - mean) ** 2, 2 * (self.noise_variance * self.norm))
+            approx_density = np.exp(-np.true_divide((self.grid[i] - mean) ** 2, 2 * (self.noise_variance * self.norm[j]))
                                     + (self.h_approx[j,:])[i])
 
             normalizer = normalizer + approx_density
