@@ -197,7 +197,7 @@ class approximate_conditional_density(rr.smooth_atom):
                                 quadratic=quadratic,
                                 coef=coef)
 
-        n, p = X.shape()
+        n, p = X.shape
 
         nactive = self.active.sum()
 
@@ -230,15 +230,18 @@ class approximate_conditional_density(rr.smooth_atom):
         #defining the grid on which marginal conditional densities will be evaluated
         self.grid = np.squeeze(np.round(np.linspace(-4, 10, num=141), decimals=1))
         s_obs = np.zeros(nactive)
-        self.ind_obs = np.zeros(nactive)
+        self.ind_obs = np.zeros(nactive, int)
         self.norm = np.zeros(nactive)
+        self.h_approx = np.zeros((nactive, self.grid.shape[0]))
         for j in range(nactive):
-            self.h_approx[j,:] = self.approx_conditional(j)
             self.norm[j] = Sigma_T[j,j]
             s_obs[j] = np.round(self.target_obs[j], decimals=1)
             if s_obs[j] < self.grid[0]:
                 s_obs[j] = self.grid[0]
-            self.ind_obs[j] = np.where(self.grid == s_obs[j])[0]
+            self.ind_obs[j] = int(np.where(self.grid == s_obs[j])[0])
+            print("observed index", self.ind_obs[j])
+            self.h_approx[j, :] = self.approx_conditional_prob(j)
+            print("here", j)
 
     def approx_conditional_prob(self, j):
         h_hat = []
@@ -256,7 +259,7 @@ class approximate_conditional_density(rr.smooth_atom):
                                                   self.epsilon,
                                                   self.grid[i])
 
-            h_hat.append(-(approx.minimize2(j, nstep=80)[::-1])[0])
+            h_hat.append(-(approx.minimize2(j, nstep=50)[::-1])[0])
 
         return np.array(h_hat)
 
@@ -291,7 +294,6 @@ class approximate_conditional_density(rr.smooth_atom):
 
         if region.size > 0:
             return np.nanmin(region), np.nanmax(region)
-
         else:
             return 0, 0
 

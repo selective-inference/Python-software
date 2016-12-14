@@ -5,13 +5,13 @@ import numpy as np
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection, instance
-from selection.bayesian.ci_intervals_approx import approximate_conditional_prob
+from selection.bayesian.ci_intervals_approx import approximate_conditional_prob, approximate_conditional_density
 from selection.randomized.api import randomization
 from selection.bayesian.paired_bootstrap import pairs_bootstrap_glm, bootstrap_cov
 
 n = 100
 p = 20
-s = 5
+s = 3
 snr = 5
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
@@ -100,7 +100,47 @@ def test_approximate_conditional_prob():
 #test_approximate_conditional_prob()
 
 
+def test_approximate_ci():
 
+    X_1, y, true_beta, nonzero, noise_variance = sample.generate_response()
+
+    random_Z = np.random.standard_normal(p)
+
+    sel = selection(X_1, y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+
+    active_set = np.asarray([i for i in range(p) if active[i]])
+
+    nactive = active.sum()
+
+    active_signs = np.sign(betaE)
+
+    lagrange = lam * np.ones(p)
+
+    print("active set", active_set)
+
+    bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
+    sampler = lambda: np.random.choice(n, size=(n,), replace=True)
+    cov = bootstrap_cov(sampler, bootstrap_score)
+
+    feasible_point = np.fabs(betaE)
+
+    approximate_den = approximate_conditional_density(y,
+                                                      X_1,
+                                                      feasible_point,
+                                                      active,
+                                                      active_signs,
+                                                      lagrange,
+                                                      cov,
+                                                      noise_variance,
+                                                      randomization.isotropic_gaussian((p,), 1.),
+                                                      epsilon)
+
+    ci = approximate_den.approximate_ci(1)
+    print("approximate ci", ci)
+
+test_approximate_ci()
 
 
 
