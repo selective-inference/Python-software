@@ -31,8 +31,7 @@ class neg_log_cube_probability(rr.smooth_atom):
 
         cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
         log_cube_prob = -np.log(cube_prob).sum()
-        log_cube_grad = -(np.true_divide(norm.pdf(arg_u) - norm.pdf(arg_l), cube_prob)/
-                         self.randomization_scale).sum()
+        log_cube_grad = -(np.true_divide(norm.pdf(arg_u) - norm.pdf(arg_l), cube_prob))/self.randomization_scale
 
         if mode == 'func':
             return self.scale(log_cube_prob)
