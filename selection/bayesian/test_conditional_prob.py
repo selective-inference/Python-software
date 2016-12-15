@@ -111,11 +111,11 @@ def test_approximate_ci():
 
     lagrange = lam * np.ones(p)
 
-    print("active set, true_support", active_set, true_support)
+    #print("active set, true_support", active_set, true_support)
 
     truth = (np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active]))
 
-    print("true coefficients", truth)
+    #print("true coefficients", truth)
 
     if (set(active_set).intersection(set(true_support)) == set(true_support))== True:
         bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
@@ -142,7 +142,7 @@ def test_approximate_ci():
 #test_approximate_ci()
 def compute_coverage():
 
-    niter = 1
+    niter = 100
     coverage = np.zeros(p)
     nsel = np.zeros(p)
     for iter in range(niter):
@@ -153,11 +153,13 @@ def compute_coverage():
         active_set = test_ci[0]
         true_val = test_ci[2]
         nactive = test_ci[3]
+        toc = time.time()
         for l in range(nactive):
             nsel[active_set[l]] += 1
             if (ci_active[l,0]<= true_val[l]) and (true_val[l]<= ci_active[l,1]):
                 coverage[active_set[l]] += 1
-        #print("coverage", coverage)
+        tic = time.time()
+        print('ci time', tic - toc)
     coverage_prop = np.true_divide(coverage, nsel)
     coverage_prop[coverage_prop == np.inf] = 0
     coverage_prop = np.nan_to_num(coverage_prop)
