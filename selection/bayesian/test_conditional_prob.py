@@ -6,6 +6,8 @@ import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection
 from selection.bayesian.ci_intervals_approx import approximate_conditional_prob, approximate_conditional_density
+from selection.bayesian.ci_intervals_approx_E import neg_log_cube_probability, \
+    approximate_conditional_prob_E, approximate_conditional_density_E
 from selection.randomized.api import randomization
 from selection.bayesian.paired_bootstrap import pairs_bootstrap_glm, bootstrap_cov
 
@@ -111,11 +113,11 @@ def test_approximate_ci():
 
     lagrange = lam * np.ones(p)
 
-    #print("active set, true_support", active_set, true_support)
+    print("active set, true_support", active_set, true_support)
 
     truth = (np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active]))
 
-    #print("true coefficients", truth)
+    print("true coefficients", truth)
 
     if (set(active_set).intersection(set(true_support)) == set(true_support))== True:
         bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
@@ -123,23 +125,46 @@ def test_approximate_ci():
         cov = bootstrap_cov(sampler, bootstrap_score)
         feasible_point = np.fabs(betaE)
         approximate_den = approximate_conditional_density(y,
-                                                      X_1,
-                                                      feasible_point,
-                                                      active,
-                                                      active_signs,
-                                                      lagrange,
-                                                      cov,
-                                                      noise_variance,
-                                                      randomization.isotropic_gaussian((p,), 1.),
-                                                      epsilon)
+                                                          X_1,
+                                                          feasible_point,
+                                                          active,
+                                                          active_signs,
+                                                          lagrange,
+                                                          cov,
+                                                          noise_variance,
+                                                          randomization.isotropic_gaussian((p,), 1.),
+                                                          epsilon)
+
+        approximate_den_E = approximate_conditional_density_E(y,
+                                                              X_1,
+                                                              feasible_point,
+                                                              active,
+                                                              active_signs,
+                                                              lagrange,
+                                                              cov,
+                                                              noise_variance,
+                                                              randomization.isotropic_gaussian((p,), 1.),
+                                                              epsilon)
         ci_active = np.zeros((nactive,2))
+        ci_active_E = np.zeros((nactive, 2))
+        toc = time.time()
         for j in range(nactive):
             ci_active[j,:] = np.array(approximate_den.approximate_ci(j))
+        tic = time.time()
+        print('ci time previously', tic - toc)
+        print('ci intervals previously', ci_active)
+        toc = time.time()
+        for j in range(nactive):
+            ci_active_E[j, :] = np.array(approximate_den_E.approximate_ci(j))
+        tic = time.time()
+        print('ci time now', tic - toc)
+        print('ci intervals now', ci_active_E)
 
         return active_set, ci_active, truth, nactive
 
 
-#test_approximate_ci()
+test_approximate_ci()
+
 def compute_coverage():
 
     niter = 100
@@ -165,7 +190,7 @@ def compute_coverage():
     coverage_prop = np.nan_to_num(coverage_prop)
     return coverage_prop, nsel
 
-print(compute_coverage())
+#print(compute_coverage())
 
 
 
