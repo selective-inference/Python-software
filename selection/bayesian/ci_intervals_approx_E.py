@@ -46,7 +46,8 @@ class neg_log_cube_probability(rr.smooth_atom):
 class approximate_conditional_prob_E(rr.smooth_atom):
 
     def __init__(self,
-                 X,
+                 B_E,
+                 B_mE,
                  target,
                  A, # the coef matrix of target
                  null_statistic, #null statistic that stays fixed
@@ -71,7 +72,7 @@ class approximate_conditional_prob_E(rr.smooth_atom):
 
         E = active.sum()
 
-        p = X.shape[1]
+        p = B_E.shape[0] + B_mE.shape[0]
 
         self.q = p-E
 
@@ -103,14 +104,6 @@ class approximate_conditional_prob_E(rr.smooth_atom):
         self.coefs[:] = initial
 
         nonnegative = nonnegative_softmax_scaled(E)
-
-        X_E = self.X_E = X[:, active]
-        self.X_inactive = X[:, ~active]
-
-        B = X.T.dot(X_E)
-
-        B_E = B[active]
-        B_mE = B[~active]
 
         self.B_active = (B_E + epsilon * np.identity(E)) * active_signs[None, :]
         self.B_inactive = B_mE * active_signs[None, :]
@@ -250,11 +243,11 @@ class approximate_conditional_density_E(rr.smooth_atom):
         X_inactive = X[:, ~active]
         B = X.T.dot(X_active)
 
-        B_active = B[active]
-        B_nactive = B[~active]
+        self.B_E = B[active]
+        self.B_mE = B[~active]
 
-        data_active = np.hstack([-B_active, np.zeros((nactive, p - nactive))])
-        data_nactive = np.hstack([-B_nactive, np.identity(p - nactive)])
+        data_active = np.hstack([-self.B_E, np.zeros((nactive, p - nactive))])
+        data_nactive = np.hstack([-self.B_mE, np.identity(p - nactive)])
         data_coef = np.vstack([data_active, data_nactive])
 
         self.A = (data_coef.dot(Sigma_D_T)).dot(Sigma_T_inv)
@@ -288,7 +281,8 @@ class approximate_conditional_density_E(rr.smooth_atom):
         h_hat = []
 
         for i in range(self.grid.shape[0]):
-            approx = approximate_conditional_prob_E(self.X,
+            approx = approximate_conditional_prob_E(self.B_E,
+                                                    self.B_mE,
                                                     self.target_obs,
                                                     self.A, # the coef matrix of target
                                                     self.null_statistic, #null statistic that stays fixed

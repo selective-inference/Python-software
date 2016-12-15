@@ -145,14 +145,14 @@ def test_approximate_ci():
                                                               noise_variance,
                                                               randomization.isotropic_gaussian((p,), 1.),
                                                               epsilon)
-        ci_active = np.zeros((nactive,2))
+        #ci_active = np.zeros((nactive,2))
         ci_active_E = np.zeros((nactive, 2))
-        toc = time.time()
-        for j in range(nactive):
-            ci_active[j,:] = np.array(approximate_den.approximate_ci(j))
-        tic = time.time()
-        print('ci time previously', tic - toc)
-        print('ci intervals previously', ci_active)
+        #toc = time.time()
+        #for j in range(nactive):
+        #    ci_active[j,:] = np.array(approximate_den.approximate_ci(j))
+        #tic = time.time()
+        #print('ci time previously', tic - toc)
+        #print('ci intervals previously', ci_active)
         toc = time.time()
         for j in range(nactive):
             ci_active_E[j, :] = np.array(approximate_den_E.approximate_ci(j))
@@ -160,8 +160,7 @@ def test_approximate_ci():
         print('ci time now', tic - toc)
         print('ci intervals now', ci_active_E)
 
-        return active_set, ci_active, truth, nactive
-
+        #return active_set, ci_active, truth, nactive
 
 test_approximate_ci()
 
