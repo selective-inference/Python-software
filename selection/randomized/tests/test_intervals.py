@@ -24,7 +24,7 @@ def test_intervals(s=0,
                    p=10,
                    snr=7,
                    rho=0.1,
-                   lam_frac=0.7,
+                   lam_frac=1.2,
                    ndraw=10000, 
                    burnin=2000, 
                    bootstrap=True,
@@ -136,7 +136,7 @@ def test_intervals(s=0,
 
 def report(niter=10, **kwargs):
 
-    kwargs= {'s': 0, 'n': 300, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer':'gaussian'}
+    kwargs= {'s': 0, 'n': 300, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_intervals']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
