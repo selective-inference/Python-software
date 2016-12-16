@@ -24,9 +24,10 @@ class neg_log_cube_probability(rr.smooth_atom):
 
         self.randomization_scale = randomization_scale
         self.lagrange = lagrange
+        self.q = q
 
         rr.smooth_atom.__init__(self,
-                                (q,),
+                                (self.q,),
                                 offset=offset,
                                 quadratic=quadratic,
                                 initial=None,
@@ -38,10 +39,18 @@ class neg_log_cube_probability(rr.smooth_atom):
 
         arg_u = (arg + self.lagrange)/self.randomization_scale
         arg_l = (arg - self.lagrange)/self.randomization_scale
-
+        prod_arg = np.exp((self.lagrange * arg)/(self.randomization_scale**2))
         cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
         log_cube_prob = -np.log(cube_prob).sum()
-        log_cube_grad = (np.true_divide(-norm.pdf(arg_u) + norm.pdf(arg_l), cube_prob))/self.randomization_scale
+        threshold = 10 ** -10
+        indicator = np.zeros(self.q, bool)
+        indicator[(cube_prob > threshold)] = 1
+        log_cube_grad = np.zeros(self.q)
+        log_cube_grad[indicator] = (np.true_divide(-norm.pdf(arg_u[indicator]) + norm.pdf(arg_l[indicator]),
+                                        cube_prob[indicator]))/self.randomization_scale
+
+        log_cube_grad[~indicator] = ((-1. + prod_arg[~indicator])/((1./arg_u[~indicator])-
+                                                                   (prod_arg[~indicator]/arg_l[~indicator])))/self.randomization_scale
 
         if mode == 'func':
             return self.scale(log_cube_prob)

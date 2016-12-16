@@ -216,7 +216,7 @@ def compute_coverage():
     for iter in range(niter):
         print("\n")
         print("iteration", iter)
-        test_ci = test_approximate_ci()
+        test_ci = test_approximate_ci_E()
         if test_ci != 0:
             ci_active = test_ci[1]
             active_set = test_ci[0]
