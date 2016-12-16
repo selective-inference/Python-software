@@ -39,18 +39,27 @@ class neg_log_cube_probability(rr.smooth_atom):
 
         arg_u = (arg + self.lagrange)/self.randomization_scale
         arg_l = (arg - self.lagrange)/self.randomization_scale
-        prod_arg = np.exp((self.lagrange * arg)/(self.randomization_scale**2))
+        prod_arg = np.exp(-(2. * self.lagrange * arg)/(self.randomization_scale**2))
         cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
         log_cube_prob = -np.log(cube_prob).sum()
         threshold = 10 ** -10
         indicator = np.zeros(self.q, bool)
         indicator[(cube_prob > threshold)] = 1
+        positive_arg = np.zeros(self.q, bool)
+        positive_arg[(arg>0)] = 1
+        pos_index = np.logical_and(positive_arg, ~indicator)
+        neg_index = np.logical_and(~positive_arg, ~indicator)
         log_cube_grad = np.zeros(self.q)
         log_cube_grad[indicator] = (np.true_divide(-norm.pdf(arg_u[indicator]) + norm.pdf(arg_l[indicator]),
                                         cube_prob[indicator]))/self.randomization_scale
 
-        log_cube_grad[~indicator] = ((-1. + prod_arg[~indicator])/((1./arg_u[~indicator])-
-                                                                   (prod_arg[~indicator]/arg_l[~indicator])))/self.randomization_scale
+        log_cube_grad[pos_index] = ((-1. + prod_arg[pos_index])/
+                                     ((prod_arg[pos_index]/arg_u[pos_index])-
+                                      (1./arg_l[pos_index])))/self.randomization_scale
+
+        log_cube_grad[neg_index] = ((arg_u[neg_index] * prod_arg[neg_index]) -(arg_l[neg_index]))\
+                                    /(prod_arg[neg_index] -1.)
+
 
         if mode == 'func':
             return self.scale(log_cube_prob)
@@ -172,7 +181,7 @@ class approximate_conditional_prob_E(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize2(self, j, step=1, nstep=30, tol=1.e-8):
+    def minimize2(self, j, step=1, nstep=30, tol=1.e-6):
 
         current = self.coefs
         current_value = np.inf
@@ -189,7 +198,7 @@ class approximate_conditional_prob_E(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                #print("current proposal", proposal)
+                print("current proposal", proposal)
                 if np.all(proposal > 0):
                     break
                 step *= 0.5
@@ -203,7 +212,7 @@ class approximate_conditional_prob_E(rr.smooth_atom):
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
-                # print(current_value, proposed_value, 'minimize')
+                #print(current_value, proposed_value, 'minimize')
                 if proposed_value <= current_value:
                     break
                 step *= 0.5
@@ -302,7 +311,6 @@ class approximate_conditional_density_E(rr.smooth_atom):
             else:
                 self.ind_obs[j] = (np.where(self.grid == s_obs[j])[0])[0]
             self.h_approx[j, :] = self.approx_conditional_prob(j)
-            print('here')
 
     def approx_conditional_prob(self, j):
         h_hat = []

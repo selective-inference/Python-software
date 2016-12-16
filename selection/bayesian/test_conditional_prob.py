@@ -219,6 +219,7 @@ def compute_coverage():
         test_ci = test_approximate_ci_E()
         if test_ci != 0:
             ci_active = test_ci[1]
+            print("ci", ci_active)
             active_set = test_ci[0]
             true_val = test_ci[2]
             nactive = test_ci[3]
