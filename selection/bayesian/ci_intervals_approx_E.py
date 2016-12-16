@@ -41,7 +41,7 @@ class neg_log_cube_probability(rr.smooth_atom):
 
         cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
         log_cube_prob = -np.log(cube_prob).sum()
-        log_cube_grad = -(np.true_divide(norm.pdf(arg_u) - norm.pdf(arg_l), cube_prob))/self.randomization_scale
+        log_cube_grad = (np.true_divide(-norm.pdf(arg_u) + norm.pdf(arg_l), cube_prob))/self.randomization_scale
 
         if mode == 'func':
             return self.scale(log_cube_prob)
@@ -100,18 +100,19 @@ class approximate_conditional_prob_E(rr.smooth_atom):
         self.active_lagrange = lagrange[active]
 
         #here, feasible point is in E dimensions
-        initial = feasible_point
 
         self.feasible_point = feasible_point
+
+        #print("feasible_point", feasible_point)
 
         rr.smooth_atom.__init__(self,
                                 (E,),
                                 offset=offset,
                                 quadratic=quadratic,
-                                initial=initial,
+                                initial=feasible_point,
                                 coef=coef)
 
-        self.coefs[:] = initial
+        self.coefs[:] = self.feasible_point
 
         nonnegative = nonnegative_softmax_scaled(E)
 
@@ -179,10 +180,12 @@ class approximate_conditional_prob_E(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
+                #print("current proposal", proposal)
                 if np.all(proposal > 0):
                     break
                 step *= 0.5
                 if count >= 40:
+                    #print(proposal)
                     raise ValueError('not finding a feasible point')
 
             # make sure proposal is a descent
@@ -241,7 +244,7 @@ class approximate_conditional_density_E(rr.smooth_atom):
                                 quadratic=quadratic,
                                 coef=coef)
 
-        toc = time.time()
+
         n, p = X.shape
 
         nactive = self.active.sum()
@@ -271,24 +274,26 @@ class approximate_conditional_density_E(rr.smooth_atom):
         data_obs = D_mean.dot(y)
         self.target_obs = data_obs[:nactive]
         self.null_statistic = (data_coef.dot(data_obs)) -(self.A.dot(self.target_obs))
-        tic = time.time()
-        print('time now', tic - toc)
+
         #defining the grid on which marginal conditional densities will be evaluated
         self.grid = np.squeeze(np.round(np.linspace(-4, 8, num=121), decimals=1))
         s_obs = np.round(self.target_obs, decimals =1)
+        print("observed values", s_obs)
         self.ind_obs = np.zeros(nactive, int)
         self.norm = np.zeros(nactive)
         self.h_approx = np.zeros((nactive, self.grid.shape[0]))
-        toc = time.time()
+
         for j in range(nactive):
-            print("here", j)
+
             self.norm[j] = Sigma_T[j,j]
             if s_obs[j] < self.grid[0]:
                 self.ind_obs[j] = 0
-            self.ind_obs[j] = (np.where(self.grid == s_obs[j])[0])[0]
+            elif s_obs[j] > np.max(self.grid):
+                self.ind_obs[j] = 120
+            else:
+                self.ind_obs[j] = (np.where(self.grid == s_obs[j])[0])[0]
             self.h_approx[j, :] = self.approx_conditional_prob(j)
-        tic = time.time()
-        print('time in approximation', tic - toc)
+            print('here')
 
     def approx_conditional_prob(self, j):
         h_hat = []

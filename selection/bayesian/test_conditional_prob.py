@@ -92,7 +92,6 @@ def test_approximate_conditional_prob():
 
 #test_approximate_conditional_prob()
 
-
 def test_approximate_ci():
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
@@ -123,17 +122,64 @@ def test_approximate_ci():
         bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
         sampler = lambda: np.random.choice(n, size=(n,), replace=True)
         cov = bootstrap_cov(sampler, bootstrap_score)
-        feasible_point = np.fabs(betaE)
-        #approximate_den = approximate_conditional_density(y,
-        #                                                  X_1,
-        #                                                  feasible_point,
-        #                                                  active,
-        #                                                  active_signs,
-        #                                                  lagrange,
-        #                                                  cov,
-        #                                                  noise_variance,
-        #                                                  randomization.isotropic_gaussian((p,), 1.),
-        #                                                  epsilon)
+        feasible_point = np.squeeze(betaE*active_signs[None,:])
+        approximate_den = approximate_conditional_density(y,
+                                                          X_1,
+                                                          feasible_point,
+                                                          active,
+                                                          active_signs,
+                                                          lagrange,
+                                                          cov,
+                                                          noise_variance,
+                                                          randomization.isotropic_gaussian((p,), 1.),
+                                                          epsilon)
+
+
+        ci_active = np.zeros((nactive,2))
+        toc = time.time()
+        for j in range(nactive):
+            ci_active[j,:] = np.array(approximate_den.approximate_ci(j))
+        tic = time.time()
+        print('ci time previously', tic - toc)
+        print('ci intervals previously', ci_active)
+        return active_set, ci_active, truth, nactive
+
+    else:
+        return 0
+
+#test_approximate_ci()
+
+def test_approximate_ci_E():
+
+    X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+
+    random_Z = np.random.standard_normal(p)
+
+    sel = selection(X_1, y, random_Z)
+
+    lam, epsilon, active, betaE, cube, initial_soln = sel
+
+    active_set = np.asarray([i for i in range(p) if active[i]])
+
+    true_support = np.asarray([i for i in range(p) if i < s])
+
+    nactive = active.sum()
+
+    active_signs = np.sign(betaE)
+
+    lagrange = lam * np.ones(p)
+
+    print("active set, true_support", active_set, true_support)
+
+    truth = (np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active]))
+
+    print("true coefficients", truth)
+
+    if (set(active_set).intersection(set(true_support)) == set(true_support))== True:
+        bootstrap_score = pairs_bootstrap_glm(rr.glm.gaussian(X_1, y), active, beta_full=None, inactive=~active)[0]
+        sampler = lambda: np.random.choice(n, size=(n,), replace=True)
+        cov = bootstrap_cov(sampler, bootstrap_score)
+        feasible_point = np.squeeze(betaE*active_signs[None,:])
 
         approximate_den_E = approximate_conditional_density_E(y,
                                                               X_1,
@@ -145,14 +191,8 @@ def test_approximate_ci():
                                                               noise_variance,
                                                               randomization.isotropic_gaussian((p,), 1.),
                                                               epsilon)
-        #ci_active = np.zeros((nactive,2))
+
         ci_active_E = np.zeros((nactive, 2))
-        #toc = time.time()
-        #for j in range(nactive):
-        #    ci_active[j,:] = np.array(approximate_den.approximate_ci(j))
-        #tic = time.time()
-        #print('ci time previously', tic - toc)
-        #print('ci intervals previously', ci_active)
         toc = time.time()
         for j in range(nactive):
             ci_active_E[j, :] = np.array(approximate_den_E.approximate_ci(j))
@@ -160,9 +200,13 @@ def test_approximate_ci():
         print('ci time now', tic - toc)
         print('ci intervals now', ci_active_E)
 
-        #return active_set, ci_active, truth, nactive
+        return active_set, ci_active_E, truth, nactive
 
-test_approximate_ci()
+    else:
+        return 0
+
+
+#test_approximate_ci_E()
 
 def compute_coverage():
 
@@ -173,23 +217,28 @@ def compute_coverage():
         print("\n")
         print("iteration", iter)
         test_ci = test_approximate_ci()
-        ci_active = test_ci[1]
-        active_set = test_ci[0]
-        true_val = test_ci[2]
-        nactive = test_ci[3]
-        toc = time.time()
-        for l in range(nactive):
-            nsel[active_set[l]] += 1
-            if (ci_active[l,0]<= true_val[l]) and (true_val[l]<= ci_active[l,1]):
-                coverage[active_set[l]] += 1
-        tic = time.time()
-        print('ci time', tic - toc)
+        if test_ci != 0:
+            ci_active = test_ci[1]
+            active_set = test_ci[0]
+            true_val = test_ci[2]
+            nactive = test_ci[3]
+            toc = time.time()
+            if ci_active is None:
+                coverage = coverage
+                nsel = nsel
+            else:
+                for l in range(nactive):
+                    nsel[active_set[l]] += 1
+                    if (ci_active[l,0]<= true_val[l]) and (true_val[l]<= ci_active[l,1]):
+                        coverage[active_set[l]] += 1
+            tic = time.time()
+            print('ci time', tic - toc)
     coverage_prop = np.true_divide(coverage, nsel)
     coverage_prop[coverage_prop == np.inf] = 0
     coverage_prop = np.nan_to_num(coverage_prop)
     return coverage_prop, nsel
 
-#print(compute_coverage())
+print(compute_coverage())
 
 
 
