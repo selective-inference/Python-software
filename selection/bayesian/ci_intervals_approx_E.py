@@ -1,7 +1,17 @@
+import time
 import numpy as np
 import regreg.api as rr
 from selection.bayesian.selection_probability_rr import nonnegative_softmax_scaled
 from scipy.stats import norm
+
+
+def myround(a, decimals=1):
+    a_x = np.round(a, decimals=1)* 10.
+    rem = np.zeros(a.shape[0], bool)
+    rem[(np.remainder(a_x, 2) == 1)] = 1
+    a_x[rem] = a_x[rem] + 1.
+    return a_x/10.
+
 
 class neg_log_cube_probability(rr.smooth_atom):
     def __init__(self,
@@ -231,6 +241,7 @@ class approximate_conditional_density_E(rr.smooth_atom):
                                 quadratic=quadratic,
                                 coef=coef)
 
+        toc = time.time()
         n, p = X.shape
 
         nactive = self.active.sum()
@@ -259,23 +270,25 @@ class approximate_conditional_density_E(rr.smooth_atom):
         D_mean = np.vstack([X_gen_inv, X_inter])
         data_obs = D_mean.dot(y)
         self.target_obs = data_obs[:nactive]
-        self.null_statistic = (data_coef.dot(data_obs)) -(self. A.dot(self.target_obs))
-
+        self.null_statistic = (data_coef.dot(data_obs)) -(self.A.dot(self.target_obs))
+        tic = time.time()
+        print('time now', tic - toc)
         #defining the grid on which marginal conditional densities will be evaluated
-        self.grid = np.squeeze(np.round(np.linspace(-4, 10, num=141), decimals=1))
-        s_obs = np.zeros(nactive)
+        self.grid = np.squeeze(np.round(np.linspace(-4, 8, num=121), decimals=1))
+        s_obs = np.round(self.target_obs, decimals =1)
         self.ind_obs = np.zeros(nactive, int)
         self.norm = np.zeros(nactive)
         self.h_approx = np.zeros((nactive, self.grid.shape[0]))
+        toc = time.time()
         for j in range(nactive):
+            print("here", j)
             self.norm[j] = Sigma_T[j,j]
-            s_obs[j] = np.round(self.target_obs[j], decimals=1)
             if s_obs[j] < self.grid[0]:
-                s_obs[j] = self.grid[0]
-            self.ind_obs[j] = int(np.where(self.grid == s_obs[j])[0])
-            #print("observed index", self.ind_obs[j])
+                self.ind_obs[j] = 0
+            self.ind_obs[j] = (np.where(self.grid == s_obs[j])[0])[0]
             self.h_approx[j, :] = self.approx_conditional_prob(j)
-            #print("here", j)
+        tic = time.time()
+        print('time in approximation', tic - toc)
 
     def approx_conditional_prob(self, j):
         h_hat = []
@@ -316,7 +329,7 @@ class approximate_conditional_density_E(rr.smooth_atom):
 
     def approximate_ci(self, j):
 
-        param_grid = np.round(np.linspace(-5, 10, num=150), decimals=1)
+        param_grid = np.round(np.linspace(-5, 10, num=151), decimals=1)
 
         area = np.zeros(param_grid.shape[0])
 

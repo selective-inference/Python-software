@@ -124,16 +124,16 @@ def test_approximate_ci():
         sampler = lambda: np.random.choice(n, size=(n,), replace=True)
         cov = bootstrap_cov(sampler, bootstrap_score)
         feasible_point = np.fabs(betaE)
-        approximate_den = approximate_conditional_density(y,
-                                                          X_1,
-                                                          feasible_point,
-                                                          active,
-                                                          active_signs,
-                                                          lagrange,
-                                                          cov,
-                                                          noise_variance,
-                                                          randomization.isotropic_gaussian((p,), 1.),
-                                                          epsilon)
+        #approximate_den = approximate_conditional_density(y,
+        #                                                  X_1,
+        #                                                  feasible_point,
+        #                                                  active,
+        #                                                  active_signs,
+        #                                                  lagrange,
+        #                                                  cov,
+        #                                                  noise_variance,
+        #                                                  randomization.isotropic_gaussian((p,), 1.),
+        #                                                  epsilon)
 
         approximate_den_E = approximate_conditional_density_E(y,
                                                               X_1,
