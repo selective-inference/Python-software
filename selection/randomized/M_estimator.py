@@ -84,6 +84,8 @@ class M_estimator(query):
 
         initial_scalings = []
 
+        active_directions_list = [] ## added for group lasso
+        active_penalty = []
         for i, g in enumerate(groups):
             group = penalty.groups == g
             active_groups[i] = (np.linalg.norm(self.initial_soln[group]) > 1.e-6 * penalty.weights[g]) and (penalty.weights[g] > 0)
@@ -93,15 +95,20 @@ class M_estimator(query):
                 z = np.zeros(active.shape, np.float)
                 z[group] = self.initial_soln[group] / np.linalg.norm(self.initial_soln[group])
                 active_directions.append(z)
+                active_directions_list.append(z[group]) ## added for group lasso
+                active_penalty.append(penalty.weights[g]) ## added
                 initial_scalings.append(np.linalg.norm(self.initial_soln[group]))
             if unpenalized_groups[i]:
                 unpenalized[group] = True
 
+        self.active_penalty = active_penalty
         # solve the restricted problem
 
         self._overall = active + unpenalized
         self._inactive = ~self._overall
         self._unpenalized = unpenalized
+
+        self.active_directions_list = active_directions_list ## added for group lasso
         self._active_directions = np.array(active_directions).T
         self._active_groups = np.array(active_groups, np.bool)
         self._unpenalized_groups = np.array(unpenalized_groups, np.bool)
@@ -167,7 +174,9 @@ class M_estimator(query):
 
         # form linear part
 
-        self.num_opt_var = p = loss.shape[0] # shorthand for p
+        self.num_opt_var = self.observed_opt_state.shape[0]
+
+        p = loss.shape[0] # shorthand for p
 
         # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})
         # E for active
@@ -262,6 +271,63 @@ class M_estimator(query):
         self.scaling_slice = scaling_slice
         self.unpenalized_slice = unpenalized_slice
         self.p = loss.shape[0]
+
+        self.Q = ((_hessian + epsilon * np.identity(p))[:,active])[active,:]
+        self.Qinv = np.linalg.inv(self.Q)
+        self.form_VQLambda()
+
+
+    def form_VQLambda(self):
+        nactive_groups = len(self.active_directions_list)
+        #print(self.active_directions_list)
+        nactive_vars = np.sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
+        V = np.zeros((nactive_vars, nactive_vars-nactive_groups))
+        #U = np.zeros((nvariables, ngroups))
+        Lambda = np.zeros((nactive_vars,nactive_vars))
+        temp_row, temp_col = 0, 0
+        for g in range(len(self.active_directions_list)):
+            size_curr_group = self.active_directions_list[g].shape[0]
+            #U[temp_row:(temp_row+size_curr_group),g] = self._active_directions[g]
+            Lambda[temp_row:(temp_row+size_curr_group),temp_row:(temp_row+size_curr_group)] \
+                = self.active_penalty[g]*np.identity(size_curr_group)
+            import scipy
+            from scipy import linalg, matrix
+            def null(A, eps=1e-12):
+                u, s, vh = scipy.linalg.svd(A)
+                padding = max(0, np.shape(A)[1] - np.shape(s)[0])
+                null_mask = np.concatenate(((s <= eps), np.ones((padding,), dtype=bool)), axis=0)
+                null_space = scipy.compress(null_mask, vh, axis=0)
+                return scipy.transpose(null_space)
+
+            V_g = null(matrix(self.active_directions_list[g]))
+            V[temp_row:(temp_row+V_g.shape[0]), temp_col:(temp_col+V_g.shape[1])] = V_g
+            temp_row += V_g.shape[0]
+            temp_col += V_g.shape[1]
+        self.VQLambda = np.dot(np.dot(V.T,self.Qinv), Lambda.dot(V))
+
+        return self.VQLambda
+
+
+    def derivative_logdet_jacobian(self, scalings):
+        nactive_groups = len(self.active_directions_list)
+        nactive_vars = np.sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
+        from scipy.linalg import block_diag
+        matrix_list = [scalings[i]*np.identity(self.active_directions_list[i].shape[0]-1) for i in range(scalings.shape[0])]
+        Gamma_minus = block_diag(*matrix_list)
+        jacobian_inv = np.linalg.inv(Gamma_minus+self.VQLambda)
+
+        group_sizes = [self._active_directions[i].shape[0] for i in range(nactive_groups)]
+        group_sizes_cumsum = np.concatenate(([0], np.array(group_sizes).cumsum()))
+
+        jacobian_inv_blocks = [jacobian_inv[group_sizes_cumsum[i]:group_sizes_cumsum[i+1],group_sizes_cumsum[i]:group_sizes_cumsum[i+1]]
+                                for i in range(nactive_groups)]
+
+        der = np.zeros(self.observed_opt_state.shape[0])
+        der[self.scaling_slice] = np.array([np.matrix.trace(jacobian_inv_blocks[i]) for i in range(scalings.shape[0])])
+        return der
+
+
+
 
     def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
         pass
