@@ -43,51 +43,6 @@ class M_estimator(object):
                              penalty,
                              solve_args)
         self.lam = lam
-    # Methods needed for subclassing a query
-
-    def solve_new(self,  scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
-
-        (loss,
-         penalty,
-         solve_args) = (self.loss,
-                        self.penalty,
-                        self.solve_args)
-
-        # initial solution
-
-        problem = rr.simple_problem(loss, penalty)
-        self.initial_soln = problem.solve(**solve_args)
-
-        active = self.initial_soln!=0
-        self.active = active
-        inactive = ~active
-        _beta_unpenalized = restricted_Mest(loss, active, solve_args=solve_args)
-
-        initial_subgrad = -self.loss.smooth_objective(self.initial_soln, 'grad')
-        self.observed_score_state = np.concatenate((_beta_unpenalized, initial_subgrad[inactive]), 0)
-        betaE = self.initial_soln[active]
-        self.signs = np.sign(betaE)
-
-        self.scaling_slice=slice(0, active.sum())
-        self.subgrad_slice = slice(active.sum(), self.initial_soln.shape[0])
-        self.observed_opt_state = np.concatenate((betaE, initial_subgrad[inactive]),0)
-        p  = self.initial_soln.shape[0]
-        score_linear_term = np.zeros((p,p))
-        X,y = loss.data
-        XE = X[:, active]
-        X_minusE = X[:, inactive]
-        score_linear_term[:active.sum(), :active.sum()] = np.dot(XE.T,XE)
-        score_linear_term[active.sum():, :active.sum()] = np.dot(X_minusE.T, XE)
-        score_linear_term[active.sum():, active.sum():]  = np.identity(inactive.sum())
-        offset  = np.concatenate((initial_subgrad[active], np.zeros(inactive.sum())),0)
-        self.offset = np.linalg.inv(score_linear_term).dot(offset)
-
-        beta_full = np.zeros(active.shape)
-        beta_full[active] = _beta_unpenalized
-        self._beta_full= beta_full
-        self._overall = active
-
-        self._setup = True
 
     def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
 
@@ -114,6 +69,7 @@ class M_estimator(object):
         unpenalized = np.zeros(loss.shape, np.bool)
 
         initial_scalings = []
+        active_directions_list = []
 
         for i, g in enumerate(groups):
             group = penalty.groups == g
@@ -125,10 +81,13 @@ class M_estimator(object):
                 z[group] = self.initial_soln[group] / np.linalg.norm(self.initial_soln[group])
                 active_directions.append(z)
                 initial_scalings.append(np.linalg.norm(self.initial_soln[group]))
+                active_directions_list.append(z[group])
             if unpenalized_groups[i]:
                 unpenalized[group] = True
 
         # solve the restricted problem
+        from scipy.linalg import block_diag
+        self._active_directions_mat = block_diag(*active_directions_list)
 
         self._overall = active + unpenalized
         self._inactive = ~self._overall
@@ -299,6 +258,12 @@ class M_estimator(object):
 
         self._setup = True
 
+        #_opt_affine_term_modified = np.dot(np.linalg.inv(_score_linear_term), _opt_affine_term)
+        #_opt_linear_term_modified =
+        #self.opt_transform_modified = (_opt_affine_term_modified, _opt_linear_term_modified)
+        self.score_mat = -_score_linear_term
+        self.score_mat_inv = np.linalg.inv(self.score_mat)
+
 
     def projection(self, opt_state):
         """
@@ -311,13 +276,8 @@ class M_estimator(object):
             raise ValueError('setup_sampler should be called before using this function')
 
         new_state = opt_state.copy() # not really necessary to copy
-        for i in range(self.active.sum()):
-            if new_state[i]*self.signs[i]<0:
-                new_state[i] = 0
-        new_state[self.subgrad_slice] = np.clip(opt_state[self.subgrad_slice], -self.lam, self.lam)
-
-        #new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
-        #new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
+        new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
+        new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
 
         return new_state
 
@@ -330,13 +290,15 @@ class M_estimator(object):
         """
         Randomization derivative at full state.
         """
-        #opt_linear, opt_offset = self.opt_transform
-        #opt_piece = opt_linear.dot(opt_state) + opt_offset
+        opt_linear, opt_offset = self.opt_transform
+        opt_piece = opt_linear.dot(opt_state) + opt_offset
         #data_derivative = self.normal_data_gradient(opt_piece)
         # chain rule for optimization part
         # opt_grad = opt_linear.T.dot(data_derivative)
-        opt_piece = opt_state+self.offset
-        opt_grad = self.normal_data_gradient(opt_piece)
+        opt_piece_modified = self.score_mat_inv.dot(opt_piece)
+        opt_grad = self.normal_data_gradient(opt_piece_modified)
+
+        opt_grad[self.scaling_slice] = self._active_directions_mat.T.dot(opt_grad[self.scaling_slice])
         return opt_grad #- self.grad_log_jacobian(opt_state)
 
     def setup_sampler(self, score_mean,
@@ -345,7 +307,7 @@ class M_estimator(object):
         X, _ = self.loss.data
         n, p = X.shape
         bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.active,
+                                              self._overall,
                                               beta_full=self._beta_full,
                                               inactive=~self._overall)[0]
 
@@ -375,11 +337,10 @@ class M_estimator(object):
         # reconstruction of randoimzation omega
 
         #opt_state = np.atleast_2d(opt_state)
-        #opt_linear, opt_offset = self.opt_transform
-        #opt_piece = opt_linear.dot(opt_state.T) + opt_offset
+        opt_linear, opt_offset = self.opt_transform
+        opt_piece = opt_linear.dot(opt_state.T) + opt_offset
 
-        #return self.score_mat_inv.dot(opt_piece)
-        return opt_state+self.offset
+        return self.score_mat_inv.dot(opt_piece)
 
     def sample(self, ndraw, burnin, stepsize):
         '''

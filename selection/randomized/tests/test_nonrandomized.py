@@ -3,12 +3,12 @@ import numpy as np
 from selection.tests.instance import gaussian_instance,logistic_instance
 import regreg.api as rr
 
-from selection.randomized.M_estimator import restricted_Mest
-from selection.randomized.M_estimator_nonrandom import M_estimator
+from selection.randomized.M_estimator_group_lasso import restricted_Mest
+from selection.randomized.M_estimator_group_lasso import M_estimator
 
 def test_nonrandomized(s=0,
-                       n=20,
-                       p=50,
+                       n=200,
+                       p=20,
                        snr=7,
                        rho=0,
                        lam_frac=0.8,
@@ -30,15 +30,15 @@ def test_nonrandomized(s=0,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     M_est = M_estimator(lam, loss, penalty)
-    M_est.solve_new()
-    active  = M_est.active
+    M_est.solve()
+    active  = M_est._overall
     nactive = np.sum(active)
     print("nactive", nactive)
     if nactive == 0:
         return None
 
-    score_mean = M_est.observed_score_state.copy()
-    score_mean[:nactive] = 0
+    #score_mean = M_est.observed_score_state.copy()
+    #score_mean[:nactive] = 0
     M_est.setup_sampler(score_mean = np.zeros(p))
     #M_est.setup_sampler(score_mean=score_mean)
     #M_est.sample(ndraw = 1000, burnin=1000, stepsize=1./p)
