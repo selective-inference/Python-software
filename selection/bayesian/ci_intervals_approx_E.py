@@ -279,7 +279,7 @@ class approximate_conditional_density_E(rr.smooth_atom):
         self.B_mE = B[~active]
 
         data_active = np.hstack([-self.B_E, np.zeros((nactive, p - nactive))])
-        data_nactive = np.hstack([-self.B_mE, np.identity(p - nactive)])
+        data_nactive = np.hstack([-self.B_mE, -np.identity(p - nactive)])
         data_coef = np.vstack([data_active, data_nactive])
 
         self.A = (data_coef.dot(Sigma_D_T)).dot(Sigma_T_inv)
