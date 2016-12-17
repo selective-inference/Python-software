@@ -198,7 +198,7 @@ class approximate_conditional_prob_E(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                print("current proposal", proposal)
+                #print("current proposal and grad", proposal, newton_step)
                 if np.all(proposal > 0):
                     break
                 step *= 0.5

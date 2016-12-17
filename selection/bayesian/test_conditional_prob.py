@@ -12,8 +12,8 @@ from selection.randomized.api import randomization
 from selection.bayesian.paired_bootstrap import pairs_bootstrap_glm, bootstrap_cov
 
 n = 100
-p = 20
-s = 3
+p = 10
+s = 5
 snr = 5
 
 def test_approximate_conditional_prob():
@@ -171,7 +171,7 @@ def test_approximate_ci_E():
 
     print("active set, true_support", active_set, true_support)
 
-    truth = (np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active]))
+    truth = np.round((np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active])))
 
     print("true coefficients", truth)
 
@@ -216,7 +216,7 @@ def compute_coverage():
     for iter in range(niter):
         print("\n")
         print("iteration", iter)
-        test_ci = test_approximate_ci_E()
+        test_ci = test_approximate_ci()
         if test_ci != 0:
             ci_active = test_ci[1]
             print("ci", ci_active)
@@ -234,6 +234,7 @@ def compute_coverage():
                         coverage[active_set[l]] += 1
             tic = time.time()
             print('ci time', tic - toc)
+            print('coverage so far',np.true_divide(coverage, nsel))
     coverage_prop = np.true_divide(coverage, nsel)
     coverage_prop[coverage_prop == np.inf] = 0
     coverage_prop = np.nan_to_num(coverage_prop)
