@@ -228,20 +228,21 @@ class approximate_conditional_density(rr.smooth_atom):
         self.null_statistic = (data_coef.dot(data_obs)) -(self. A.dot(self.target_obs))
 
         #defining the grid on which marginal conditional densities will be evaluated
-        self.grid = np.squeeze(np.round(np.linspace(-4, 10, num=141), decimals=1))
-        s_obs = np.zeros(nactive)
+        self.grid = np.squeeze(np.round(np.linspace(-4, 8, num=121), decimals=1))
+        s_obs = np.round(self.target_obs, decimals=1)
+        print("observed values", s_obs)
         self.ind_obs = np.zeros(nactive, int)
         self.norm = np.zeros(nactive)
         self.h_approx = np.zeros((nactive, self.grid.shape[0]))
         for j in range(nactive):
             self.norm[j] = Sigma_T[j,j]
-            s_obs[j] = np.round(self.target_obs[j], decimals=1)
             if s_obs[j] < self.grid[0]:
                 s_obs[j] = self.grid[0]
-            self.ind_obs[j] = (np.where(self.grid == s_obs[j])[0])[0]
-            print("observed index", self.ind_obs[j])
+            elif s_obs[j] > np.max(self.grid):
+                self.ind_obs[j] = 120
+            else:
+                self.ind_obs[j] = (np.where(self.grid == s_obs[j])[0])[0]
             self.h_approx[j, :] = self.approx_conditional_prob(j)
-            print("here", j)
 
     def approx_conditional_prob(self, j):
         h_hat = []
