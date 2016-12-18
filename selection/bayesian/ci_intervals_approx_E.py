@@ -40,6 +40,7 @@ class neg_log_cube_probability(rr.smooth_atom):
         arg_u = (arg + self.lagrange)/self.randomization_scale
         arg_l = (arg - self.lagrange)/self.randomization_scale
         prod_arg = np.exp(-(2. * self.lagrange * arg)/(self.randomization_scale**2))
+        neg_prod_arg = np.exp((2. * self.lagrange * arg)/(self.randomization_scale**2))
         cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
         log_cube_prob = -np.log(cube_prob).sum()
         threshold = 10 ** -10
@@ -57,8 +58,8 @@ class neg_log_cube_probability(rr.smooth_atom):
                                      ((prod_arg[pos_index]/arg_u[pos_index])-
                                       (1./arg_l[pos_index])))/self.randomization_scale
 
-        log_cube_grad[neg_index] = ((arg_u[neg_index] * prod_arg[neg_index]) -(arg_l[neg_index]))\
-                                    /(prod_arg[neg_index] -1.)
+        log_cube_grad[neg_index] = ((arg_u[neg_index] -(arg_l[neg_index]*neg_prod_arg[neg_index]))
+                                    /self.randomization_scale)/(1.- neg_prod_arg[neg_index])
 
 
         if mode == 'func':
@@ -100,7 +101,7 @@ class approximate_conditional_prob_E(rr.smooth_atom):
 
         E = active.sum()
 
-        p = B_E.shape[0] + B_mE.shape[0]
+        p = self.A.shape[0]
 
         self.q = p-E
 
@@ -132,18 +133,12 @@ class approximate_conditional_prob_E(rr.smooth_atom):
 
         self.coefs[:] = self.feasible_point
 
-        nonnegative = nonnegative_softmax_scaled(E)
-
         self.B_active = (B_E + epsilon * np.identity(E)) * active_signs[None, :]
         self.B_inactive = B_mE * active_signs[None, :]
 
         self.subgrad_offset = active_signs * self.active_lagrange
 
-        opt_vars = np.zeros(E, bool)
-        opt_vars[:E] = 1
-
-        self._opt_selector = rr.selector(opt_vars, (E,))
-        self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
+        self.nonnegative_barrier = nonnegative_softmax_scaled(E)
 
         self.E = E
 

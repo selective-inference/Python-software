@@ -198,7 +198,7 @@ def test_approximate_ci_E():
             ci_active_E[j, :] = np.array(approximate_den_E.approximate_ci(j))
         tic = time.time()
         print('ci time now', tic - toc)
-        print('ci intervals now', ci_active_E)
+        #print('ci intervals now', ci_active_E)
 
         return active_set, ci_active_E, truth, nactive
 
@@ -210,35 +210,39 @@ def test_approximate_ci_E():
 
 def compute_coverage():
 
-    niter = 100
+    niter = 300
     coverage = np.zeros(p)
     nsel = np.zeros(p)
+    nerr = 0
     for iter in range(niter):
         print("\n")
         print("iteration", iter)
-        test_ci = test_approximate_ci()
-        if test_ci != 0:
-            ci_active = test_ci[1]
-            print("ci", ci_active)
-            active_set = test_ci[0]
-            true_val = test_ci[2]
-            nactive = test_ci[3]
-            toc = time.time()
-            if ci_active is None:
-                coverage = coverage
-                nsel = nsel
-            else:
+        try:
+            test_ci = test_approximate_ci_E()
+            if test_ci != 0:
+                ci_active = test_ci[1]
+                print("ci", ci_active)
+                active_set = test_ci[0]
+                true_val = test_ci[2]
+                nactive = test_ci[3]
+                toc = time.time()
                 for l in range(nactive):
                     nsel[active_set[l]] += 1
                     if (ci_active[l,0]<= true_val[l]) and (true_val[l]<= ci_active[l,1]):
                         coverage[active_set[l]] += 1
-            tic = time.time()
+                tic = time.time()
             print('ci time', tic - toc)
             print('coverage so far',np.true_divide(coverage, nsel))
+
+        except ValueError:
+            nerr +=1
+            print('ignore iteration raising ValueError')
+            continue
+
     coverage_prop = np.true_divide(coverage, nsel)
     coverage_prop[coverage_prop == np.inf] = 0
     coverage_prop = np.nan_to_num(coverage_prop)
-    return coverage_prop, nsel
+    return coverage_prop, nsel, nerr
 
 print(compute_coverage())
 
