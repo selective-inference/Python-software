@@ -4,6 +4,7 @@ import regreg.api as rr
 from selection.randomized.glm import pairs_bootstrap_glm, bootstrap_cov
 from ..sampling.langevin import projected_langevin
 from ..distributions.api import discrete_family
+from ..distributions.api import discrete_family, intervals_from_sample
 
 class M_estimator(object):
 
@@ -164,7 +165,7 @@ class M_estimator(object):
         # form linear part
 
         self.num_opt_var = p = loss.shape[0] # shorthand for p
-
+        self.p = p
         # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})
         # E for active
         # U for unpenalized
@@ -284,7 +285,7 @@ class M_estimator(object):
 
     def normal_data_gradient(self, data_vector):
         #return -np.dot(self.total_cov_inv, data_vector-self.reference)
-        return -np.dot(self.score_cov_inv, data_vector)
+        return -np.dot(self.score_cov_inv, data_vector-self.reference)
 
     def gradient(self, opt_state):
         """
@@ -391,7 +392,7 @@ class M_estimator(object):
                         test_stat,
                         observed_value,
                         ndraw=10000,
-                        burnin=0,
+                        burnin=2000,
                         stepsize=None,
                         sample=None,
                         parameter=None,
@@ -449,6 +450,9 @@ class M_estimator(object):
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
+        if stepsize is None:
+            stepsize = 1./self.p
+
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
@@ -465,6 +469,63 @@ class M_estimator(object):
             return pval
         else:
             return 2 * min(pval, 1 - pval)
+
+    def confidence_intervals(self,
+                            observed,
+                            ndraw=10000,
+                            burnin=2000,
+                            stepsize=None,
+                            sample=None,
+                            level=0.9):
+        if stepsize is None:
+            stepsize = 1./self.p
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize)
+            print(sample.shape)
+        #nactive = observed.shape[0]
+        self.target_cov = self.score_cov[:self._overall.sum(),:self._overall.sum()]
+        intervals_instance = intervals_from_sample(self.reference[:self._overall.sum()],
+                                                   sample[:, :self._overall.sum()],
+                                                   observed[:self._overall.sum()],
+                                                   self.target_cov)
+
+        return intervals_instance.confidence_intervals_all(level=level)
+
+    def coefficient_pvalues(self,
+                            observed,
+                            parameter=None,
+                            ndraw=10000,
+                            burnin=2000,
+                            stepsize=None,
+                            sample=None,
+                            alternative='twosided'):
+        if stepsize is None:
+            stepsize = 1./self.p
+
+        if alternative not in ['greater', 'less', 'twosided']:
+          raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+          sample = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        if parameter is None:
+          parameter = np.zeros(self._overall.sum())
+
+        #nactive = observed.shape[0]
+        intervals_instance = intervals_from_sample(self.reference[:self._overall.sum()],
+                                           sample[:, :self._overall.sum()],
+                                           observed[:self._overall.sum()],
+                                           self.target_cov)
+
+        pval = intervals_instance.pivots_all(parameter)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * np.minimum(pval, 1 - pval)
 
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):

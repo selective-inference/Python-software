@@ -5,10 +5,17 @@ import regreg.api as rr
 
 from selection.randomized.M_estimator_group_lasso import restricted_Mest
 from selection.randomized.M_estimator_group_lasso import M_estimator
+import selection.tests.reports as reports
+from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
+from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 
+
+@register_report(['pivot', 'covered_clt'])
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+@wait_for_return_value()
 def test_nonrandomized(s=0,
                        n=200,
-                       p=20,
+                       p=10,
                        snr=7,
                        rho=0,
                        lam_frac=0.8,
@@ -28,7 +35,7 @@ def test_nonrandomized(s=0,
     W = np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
-
+    true_vec = beta
     M_est = M_estimator(lam, loss, penalty)
     M_est.solve()
     active  = M_est._overall
@@ -38,37 +45,74 @@ def test_nonrandomized(s=0,
         return None
 
     #score_mean = M_est.observed_score_state.copy()
-    #score_mean[:nactive] = 0
+    #score_mean[nactive:] = 0
     M_est.setup_sampler(score_mean = np.zeros(p))
     #M_est.setup_sampler(score_mean=score_mean)
     #M_est.sample(ndraw = 1000, burnin=1000, stepsize=1./p)
 
-    test_stat = lambda x: np.linalg.norm(x)
+    if set(nonzero).issubset(np.nonzero(active)[0]):
+        check_screen=True
+        #test_stat = lambda x: np.linalg.norm(x)
+        #return M_est.hypothesis_test(test_stat, test_stat(M_est.observed_score_state), stepsize=1./p)
 
-    return M_est.hypothesis_test(test_stat, test_stat(M_est.observed_score_state), stepsize=1./p)
+        ci = M_est.confidence_intervals(M_est.observed_score_state)
+        pivots = M_est.coefficient_pvalues(M_est.observed_score_state)
+        def coverage(LU):
+            L, U = LU[:, 0], LU[:, 1]
+            covered = np.zeros(nactive)
+            ci_length = np.zeros(nactive)
+
+            for j in range(nactive):
+                if check_screen:
+                    if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
+                        covered[j] = 1
+                else:
+                    covered[j] = None
+                ci_length[j] = U[j] - L[j]
+            return covered, ci_length
+        covered = coverage(ci)[0]
+        #print(pivots)
+        #print(coverage)
+        return pivots, covered
+
+def report(niter=100, **kwargs):
+
+    kwargs = {'s': 0, 'n': 300, 'p': 10, 'snr': 7}
+    split_report = reports.reports['test_nonrandomized']
+    screened_results = reports.collect_multiple_runs(split_report['test'],
+                                                     split_report['columns'],
+                                                     niter,
+                                                     reports.summarize_all,
+                                                     **kwargs)
+
+    fig = reports.pivot_plot_simple(screened_results)
+    fig.savefig('nonrandomized_pivots.pdf') # will have both bootstrap and CLT on plot
 
 
 if __name__=='__main__':
+    report()
 
-    pvals = []
-    for i in range(100):
-        print(i)
-        pval = test_nonrandomized()
-        print(pval)
-        if pval is not None:
-            pvals.append(pval)
-
-    import matplotlib.pyplot as plt
-    import statsmodels.api as sm
-
-    fig = plt.figure()
-    ax = fig.gca()
-
-    ecdf = sm.distributions.ECDF(pvals)
-    G = np.linspace(0, 1)
-    F = ecdf(G)
-    ax.plot(G, F, '-o', c='b', lw=2)
-    ax.plot([0, 1], [0, 1], 'k-', lw=2)
-    ax.set_xlim([0, 1])
-    ax.set_ylim([0, 1])
-    plt.show()
+# if __name__=='__main__':
+#
+#     pvals = []
+#     for i in range(100):
+#         print(i)
+#         pval = test_nonrandomized()
+#         print(pval)
+#         if pval is not None:
+#             pvals.append(pval)
+#
+#     import matplotlib.pyplot as plt
+#     import statsmodels.api as sm
+#
+#     fig = plt.figure()
+#     ax = fig.gca()
+#
+#     ecdf = sm.distributions.ECDF(pvals)
+#     G = np.linspace(0, 1)
+#     F = ecdf(G)
+#     ax.plot(G, F, '-o', c='b', lw=2)
+#     ax.plot([0, 1], [0, 1], 'k-', lw=2)
+#     ax.set_xlim([0, 1])
+#     ax.set_ylim([0, 1])
+#     plt.show()
