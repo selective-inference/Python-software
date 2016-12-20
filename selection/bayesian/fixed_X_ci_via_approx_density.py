@@ -320,7 +320,7 @@ def test_approximate_ci_fixedX(n=200, p=10, s=5, snr=5, rho=0.1,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     randomization = randomization.isotropic_gaussian((p,), 1.)
-    ci = approximate_conditional_density_fixedX(loss, epsilon, penalty, randomization)
+    ci = approximate_conditional_density_fixedX(loss, epsilon, penalty, sigma**2 , randomization)
 
     ci.solve_approx()
     print("nactive", ci._overall.sum())
