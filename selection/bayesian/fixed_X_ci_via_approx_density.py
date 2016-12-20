@@ -4,15 +4,6 @@ import regreg.api as rr
 from selection.bayesian.selection_probability_rr import nonnegative_softmax_scaled
 from scipy.stats import norm
 from selection.randomized.M_estimator import M_estimator
-from selection.randomized.glm import pairs_bootstrap_glm, bootstrap_cov
-
-def myround(a, decimals=1):
-    a_x = np.round(a, decimals=1)* 10.
-    rem = np.zeros(a.shape[0], bool)
-    rem[(np.remainder(a_x, 2) == 1)] = 1
-    a_x[rem] = a_x[rem] + 1.
-    return a_x/10.
-
 
 class neg_log_cube_probability(rr.smooth_atom):
     def __init__(self,
@@ -72,8 +63,7 @@ class neg_log_cube_probability(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-
-class approximate_conditional_prob_E(rr.smooth_atom):
+class approximate_conditional_prob_fixedX(rr.smooth_atom):
 
     def __init__(self,
                  t, #point at which density is to computed
@@ -202,9 +192,9 @@ class approximate_conditional_prob_E(rr.smooth_atom):
 
         return current, value
 
-class approximate_conditional_density_E(rr.smooth_atom, M_estimator):
+class approximate_conditional_density_fixedX(rr.smooth_atom, M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization,
+    def __init__(self, loss, epsilon, penalty, noise_variance, randomization,
                  coef=1.,
                  offset=None,
                  quadratic=None,
@@ -218,6 +208,8 @@ class approximate_conditional_density_E(rr.smooth_atom, M_estimator):
                                 quadratic=quadratic,
                                 coef=coef)
 
+        self.noise_variance = noise_variance
+
     def solve_approx(self):
 
         self.Msolve()
@@ -225,26 +217,14 @@ class approximate_conditional_density_E(rr.smooth_atom, M_estimator):
         X, _ = self.loss.data
         n, p = X.shape
         self.p = p
-        bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self._overall,
-                                              beta_full=self._beta_full,
-                                              inactive=~self._overall)[0]
-
-        score_cov = bootstrap_cov(lambda: np.random.choice(n, size=(n,), replace=True), bootstrap_score)
-
         nactive = self._overall.sum()
-
-        Sigma_D_T = score_cov[:, :nactive]
-        Sigma_T = score_cov[:nactive, :nactive]
-        Sigma_T_inv = np.linalg.inv(Sigma_T)
 
         score_linear_term = self.score_transform[0]
         (self.opt_linear_term, self.opt_affine_term) = self.opt_transform
 
         # decomposition
-        #print(self.opt_affine_term[nactive:])
-        target_linear_term = (score_linear_term.dot(Sigma_D_T)).dot(Sigma_T_inv)
-
+        target_linear_term = score_linear_term[:,:nactive]
+        self.var_target = self.noise_variance * np.linalg.inv(-score_linear_term[:nactive,:nactive])
         # observed target and null statistic
         target_observed = self.observed_score_state[:nactive]
         null_statistic = (score_linear_term.dot(self.observed_score_state))-(target_linear_term.dot(target_observed))
@@ -265,7 +245,7 @@ class approximate_conditional_density_E(rr.smooth_atom, M_estimator):
 
         for j in range(nactive):
             obs = target_observed[j]
-            self.norm[j] = Sigma_T[j,j]
+            self.norm[j] = self.var_target[j,j]
             if obs < self.grid[0]:
                 self.ind_obs[j] = 0
             elif obs > np.max(self.grid):
@@ -281,7 +261,7 @@ class approximate_conditional_density_E(rr.smooth_atom, M_estimator):
 
         for i in range(self.grid.shape[0]):
 
-            approx = approximate_conditional_prob_E(self.grid[i], self)
+            approx = approximate_conditional_prob_fixedX(self.grid[i], self)
             h_hat.append(-(approx.minimize2(j, nstep=50)[::-1])[0])
 
         return np.array(h_hat)
@@ -320,25 +300,17 @@ class approximate_conditional_density_E(rr.smooth_atom, M_estimator):
         else:
             return 0, 0
 
-
-
-def test_approximate_ci_E(n=200, p=10, s=5, snr=5, rho=0.1,
+def test_approximate_ci_fixedX(n=200, p=10, s=5, snr=5, rho=0.1,
                           lam_frac=1.,
                           loss='gaussian'):
 
-    from selection.tests.instance import logistic_instance, gaussian_instance
+    from selection.tests.instance import gaussian_instance
     from selection.randomized.api import randomization
 
-    if loss == "gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
-        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-        loss = rr.glm.gaussian(X, y)
-    elif loss == "logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
-        loss = rr.glm.logistic(X, y)
-        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    # randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+    loss = rr.glm.gaussian(X, y)
 
     epsilon = 1. / np.sqrt(n)
 
@@ -348,7 +320,7 @@ def test_approximate_ci_E(n=200, p=10, s=5, snr=5, rho=0.1,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     randomization = randomization.isotropic_gaussian((p,), 1.)
-    ci = approximate_conditional_density_E(loss, epsilon, penalty, randomization)
+    ci = approximate_conditional_density_fixedX(loss, epsilon, penalty, randomization)
 
     ci.solve_approx()
     print("nactive", ci._overall.sum())
@@ -360,7 +332,6 @@ def test_approximate_ci_E(n=200, p=10, s=5, snr=5, rho=0.1,
 
     print("active set, true_support", active_set, true_support)
 
-    #truth = np.round((np.linalg.pinv(X_1[:, active])).dot(X_1[:, active].dot(true_beta[active])))
     truth = beta[ci._overall]
 
     print("true coefficients", truth)
@@ -374,7 +345,6 @@ def test_approximate_ci_E(n=200, p=10, s=5, snr=5, rho=0.1,
             print(ci_active_E[j, :])
         tic = time.time()
         print('ci time now', tic - toc)
-        #print('ci intervals now', ci_active_E)
 
         return active_set, ci_active_E, truth, nactive
 
@@ -391,7 +361,7 @@ def compute_coverage(p=10):
         print("\n")
         print("iteration", iter)
         try:
-            test_ci = test_approximate_ci_E()
+            test_ci = test_approximate_ci_fixedX()
             if test_ci != 0:
                 ci_active = test_ci[1]
                 print("ci", ci_active)
@@ -423,12 +393,3 @@ def compute_coverage(p=10):
 
 
 print(compute_coverage())
-
-
-
-
-
-
-
-
-
