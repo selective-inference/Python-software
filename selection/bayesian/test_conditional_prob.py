@@ -11,7 +11,7 @@ from selection.bayesian.ci_intervals_approx_E import neg_log_cube_probability, \
 from selection.randomized.api import randomization
 from selection.bayesian.paired_bootstrap import pairs_bootstrap_glm, bootstrap_cov
 
-n = 100
+n = 200
 p = 10
 s = 5
 snr = 5
@@ -134,7 +134,6 @@ def test_approximate_ci():
                                                           randomization.isotropic_gaussian((p,), 1.),
                                                           epsilon)
 
-
         ci_active = np.zeros((nactive,2))
         toc = time.time()
         for j in range(nactive):
@@ -231,8 +230,9 @@ def compute_coverage():
                     if (ci_active[l,0]<= true_val[l]) and (true_val[l]<= ci_active[l,1]):
                         coverage[active_set[l]] += 1
                 tic = time.time()
-            print('ci time', tic - toc)
+                print('ci time', tic - toc)
             print('coverage so far',np.true_divide(coverage, nsel))
+            print('coverage so far',np.true_divide(np.sum(coverage[~np.isnan(coverage)]), np.sum(nsel[~np.isnan(nsel)])))
 
         except ValueError:
             nerr +=1
