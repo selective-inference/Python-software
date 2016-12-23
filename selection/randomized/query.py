@@ -6,6 +6,8 @@ from scipy.optimize import bisect
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
 
+
+
 class query(object):
 
     def __init__(self, randomization):
@@ -14,7 +16,7 @@ class query(object):
         self._solved = False
         self._randomized = False
         self._setup = False
-
+        self.target_offset = None
     # Methods reused by subclasses
          
     def randomize(self):
@@ -33,7 +35,9 @@ class query(object):
 
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
-        data_piece = data_linear.dot(data_state) + data_offset
+        if self.target_offset is None:
+            self.target_offset = np.zeros(data_state.shape[0])
+        data_piece = data_linear.dot(data_state+self.target_offset) + data_offset
         opt_piece = opt_linear.dot(np.array(opt_state)) + opt_offset
 
         # value of the randomization omega
@@ -85,6 +89,21 @@ class query(object):
 
         return (composition_linear_part, composition_offset)
 
+
+    def target_decomposition(self, target_cv_cov, cv_cov, observed_cv):
+        """
+        """
+        target_cv_cov = np.atleast_2d(target_cv_cov)
+        cv_cov = np.atleast_2d(cv_cov)
+        observed_cv = np.atleast_1d(observed_cv)
+
+        linear_part = target_cv_cov.T.dot(np.linalg.pinv(cv_cov))
+
+        offset = np.dot(linear_part, observed_cv)
+
+        return offset
+
+
     def reconstruction_map(self, data_state, data_transform, opt_state):
 
         if not self._setup:
@@ -97,7 +116,10 @@ class query(object):
 
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
-        data_piece = data_linear.dot(data_state.T) + data_offset[:, None]
+        if self.target_offset is None:
+            self.target_offset = np.zeros(data_state.shape[0])
+
+        data_piece = data_linear.dot((data_state+self.target_offset).T) + data_offset[:, None]
         opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
 
         # value of the randomization omega
