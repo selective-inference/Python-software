@@ -57,6 +57,7 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
         n, p = X.shape
         E = 2
         self._X = X
+        X_step2 = X[:,~active_1]
         self.active_1 = active_1
         self.active_2 = active_2
         self.noise_variance = noise_variance
@@ -101,18 +102,18 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
         sign_1[0:,:] = active_sign_1
         sign_2 = np.zeros((1, 1))
         sign_2[0:, :] = active_sign_2
-        Projection = (X[:,~active_1].dot(np.linalg.inv(X[:,~active_1].T.dot(X[:,~active_1])))).dot(X[:,~active_1].T)
+        Projection = (X_step2.dot(np.linalg.inv(X_step2.T.dot(X_step2)))).dot(X_step2.T)
         P_1 = np.identity(n) - Projection
 
         #print sign_array.shape, X[:, active].T.shape, X[:, ~active].T.shape, np.zeros(p-E).shape
         self.A_active_1 = np.hstack([-X[:, active_1].T, sign_1, np.zeros((1,1))])
-        self.A_active_2 = np.hstack([-X[:, active_2].T.dot(P_1), np.zeros((1, 1)), sign_2])
+        self.A_active_2 = np.hstack([-X_step2[:, active_2].T.dot(P_1), np.zeros((1, 1)), sign_2])
 
         self.A_in_1 = np.hstack([-X[:, ~active_1].T, np.zeros((p-1,1))])
         self.A_in_2 = np.hstack([np.zeros((n,1)).T, np.ones((1,1))])
         self.A_inactive_1 = np.vstack([self.A_in_1, self.A_in_2])
 
-        self.A_in2_1 = np.hstack([-X[:, ~active_2].T.dot(P_1), np.zeros((p - 2, 1))])
+        self.A_in2_1 = np.hstack([-X_step2[:, ~active_2].T.dot(P_1), np.zeros((p - 2, 1))])
         self.A_in2_2 = np.hstack([np.zeros((n, 1)).T, np.ones((1, 1))])
         self.A_inactive_2 = np.vstack([self.A_in2_1, self.A_in2_2])
 
@@ -180,5 +181,59 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
             return self.scale(f), self.scale(g)
         else:
             raise ValueError("mode incorrectly specified")
+
+    def minimize2(self, step=1, nstep=30, tol=1.e-8):
+
+        n, p = self._X.shape
+
+        current = self.coefs
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective(u, 'func')
+        grad = lambda u: self.smooth_objective(u, 'grad')
+
+        for itercount in range(nstep):
+            newton_step = grad(current) * self.noise_variance
+
+            # make sure proposal is feasible
+
+            count = 0
+            while True:
+                count += 1
+                proposal = current - step * newton_step
+                if np.all(proposal[n:] > 0):
+                    break
+                step *= 0.5
+                if count >= 40:
+                    raise ValueError('not finding a feasible point')
+
+            # make sure proposal is a descent
+
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+                # print(current_value, proposed_value, 'minimize')
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        # print('iter', itercount)
+        value = objective(current)
+        return current, value
+
 
 
