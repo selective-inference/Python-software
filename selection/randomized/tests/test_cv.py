@@ -94,7 +94,7 @@ def bootstrap_CV_curve(X, y, lam_seq, folds, K):
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=200, p=20, s=10, snr=5, K=5, rho=0,
+def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
              randomizer='laplace',
              intervals = 'old',
              bootstrap=False,
@@ -147,6 +147,19 @@ def test_cv(n=200, p=20, s=10, snr=5, K=5, rho=0,
     active_union = M_est1._overall
     nactive = np.sum(active_union)
     print(nactive)
+
+    _full_boot_score = pairs_bootstrap_glm(loss,
+                                           active_union)[0]
+    def _boot_score(indices):
+        return _full_boot_score(indices)[:nactive]
+
+    cov_est = glm_nonparametric_bootstrap(n, n)
+    # compute covariance of selected parameters with CV error curve
+    cov = cov_est(CV_boot, cross_terms=[_boot_score], nsample=1)
+    if bootstrap=='False':
+        M_est1.target_decomposition(cov, CV_val)
+
+
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
         active_set = np.nonzero(active_union)[0]
@@ -207,8 +220,8 @@ def test_cv(n=200, p=20, s=10, snr=5, K=5, rho=0,
         return pivots_mle, pivots_truth, pvalues, covered, naive_covered, active_var
 
 
-def report(niter=10, **kwargs):
-    kwargs = {'s': 0, 'n': 300, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+def report(niter=5, **kwargs):
+    kwargs = {'s': 0, 'n': 200, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
@@ -219,15 +232,16 @@ def report(niter=10, **kwargs):
     # fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
     fig = reports.pivot_plot_2in1(CLT_runs, color='b', label='CLT')
 
-    kwargs['bootstrap'] = True
-    bootstrap_runs = reports.collect_multiple_runs(intervals_report['test'],
-                                                   intervals_report['columns'],
-                                                   niter,
-                                                   reports.summarize_all,
-                                                   **kwargs)
+    #kwargs['bootstrap'] = True
+    #bootstrap_runs = reports.collect_multiple_runs(intervals_report['test'],
+    #                                               intervals_report['columns'],
+    #                                               niter,
+    #                                               reports.summarize_all,
+    #                                               **kwargs)
 
     # fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-    fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
+    #fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
+
     fig.savefig('intervals_pivots.pdf')  # will have both bootstrap and CLT on plot
 
 

@@ -90,9 +90,10 @@ class query(object):
         return (composition_linear_part, composition_offset)
 
 
-    def target_decomposition(self, target_cv_cov, cv_cov, observed_cv):
+    def target_decomposition(self, cov, observed_cv):
         """
         """
+        cv_cov, target_cv_cov = cov
         target_cv_cov = np.atleast_2d(target_cv_cov)
         cv_cov = np.atleast_2d(cv_cov)
         observed_cv = np.atleast_1d(observed_cv)
@@ -100,7 +101,7 @@ class query(object):
         linear_part = target_cv_cov.T.dot(np.linalg.pinv(cv_cov))
 
         offset = np.dot(linear_part, observed_cv)
-
+        self.target_offset = offset
         return offset
 
 
@@ -444,6 +445,9 @@ class targeted_sampler(object):
         self.score_cov = covariances[1:]
 
         self.target_transform = []
+
+        self.target_offset = self.objectives[0].target_offset ## added target_offset
+
         for i in range(self.nqueries):
             self.target_transform.append(
                 self.objectives[i].linear_decomposition(self.score_cov[i],
@@ -584,10 +588,13 @@ class targeted_sampler(object):
                                              stepsize)
 
         samples = []
+        if self.target_offset is None:
+            self.target_offset = np.zeros(self.observed_state[keep_slice].shape[0])
+
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[keep_slice].copy())
+                samples.append(target_langevin.state[keep_slice].copy()+self.target_offset)
 
         return np.asarray(samples)
 
