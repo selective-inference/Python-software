@@ -52,7 +52,7 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
              that was added before selection.
         """
 
-        n, p = X.shape
+        self.n, p = X.shape
         E = 2
         self._X = X
         X_step2 = X[:,~active_1]
@@ -66,11 +66,11 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
             raise ValueError(
                 'randomization must know its CGF_conjugate -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
-        initial = np.zeros(n + E, )
-        initial[n:] = feasible_point
+        initial = np.zeros(self.n + E, )
+        initial[self.n:] = feasible_point
 
         rr.smooth_atom.__init__(self,
-                                (n + E,),
+                                (self.n + E,),
                                 offset=offset,
                                 quadratic=quadratic,
                                 initial=initial,
@@ -80,46 +80,43 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
 
         nonnegative = nonnegative_softmax(E)
 
-        opt_vars = np.zeros(n + E, bool)
-        opt_vars[n:] = 1
+        opt_vars = np.zeros(self.n + E, bool)
+        opt_vars[self.n:] = 1
 
-        self._opt_selector = rr.selector(opt_vars, (n + E,))
+        self._opt_selector = rr.selector(opt_vars, (self.n + E,))
 
-        arg_inactive_loss = np.zeros(n + E, bool)
-        arg_inactive_loss_1 = arg_inactive_loss
-        arg_inactive_loss_1[:n+1] = 1
-        arg_inactive_loss_2 = arg_inactive_loss
-        arg_inactive_loss_2[:n] = 1
-        arg_inactive_loss_2[n+1] = 1
-
+        arg_inactive_loss_1 = np.zeros(self.n + E, bool)
+        arg_inactive_loss_1[:self.n+1] = 1
+        arg_inactive_loss_2 = np.zeros(self.n + 1, bool)
+        arg_inactive_loss_2[:self.n] = 1
+        arg_inactive_loss_2 = np.append(arg_inactive_loss_2, np.ones(1, bool))
 
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
-        self._response_selector = rr.selector(~opt_vars, (n + E,))
+        self._response_selector = rr.selector(~opt_vars, (self.n + E,))
 
         sign_1 = np.zeros((1,1))
         sign_1[0:,:] = active_sign_1
         sign_2 = np.zeros((1, 1))
         sign_2[0:, :] = active_sign_2
         Projection = (X_step2.dot(np.linalg.inv(X_step2.T.dot(X_step2)))).dot(X_step2.T)
-        P_1 = np.identity(n) - Projection
+        P_1 = np.identity(self.n) - Projection
 
-        #print sign_array.shape, X[:, active].T.shape, X[:, ~active].T.shape, np.zeros(p-E).shape
         self.A_active_1 = np.hstack([-X[:, active_1].T, sign_1, np.zeros((1,1))])
         self.A_active_2 = np.hstack([-X_step2[:, active_2].T.dot(P_1), np.zeros((1, 1)), sign_2])
 
         self.A_in_1 = np.hstack([-X[:, ~active_1].T, np.zeros((p-1,1))])
-        self.A_in_2 = np.hstack([np.zeros((n,1)).T, np.ones((1,1))])
+        self.A_in_2 = np.hstack([np.zeros((self.n,1)).T, np.ones((1,1))])
         self.A_inactive_1 = np.vstack([self.A_in_1, self.A_in_2])
 
         self.A_in2_1 = np.hstack([-X_step2[:, ~active_2].T.dot(P_1), np.zeros((p - 2, 1))])
-        self.A_in2_2 = np.hstack([np.zeros((n, 1)).T, np.ones((1, 1))])
+        self.A_in2_2 = np.hstack([np.zeros((self.n, 1)).T, np.ones((1, 1))])
         self.A_inactive_2 = np.vstack([self.A_in2_1, self.A_in2_2])
 
-        self.A_inactive_sel_1 = rr.selector(arg_inactive_loss_1, (n + E,),
-                                            rr.affine_transform(self.A_inactive_1, np.zeros(n + 1)))
+        self.A_inactive_sel_1 = rr.selector(arg_inactive_loss_1, (self.n + E,),
+                                            rr.affine_transform(self.A_inactive_1, np.zeros(p)))
 
-        self.A_inactive_sel_2 = rr.selector(arg_inactive_loss_2, (n + E,),
-                                            rr.affine_transform(self.A_inactive_2, np.zeros(n + 1)))
+        self.A_inactive_sel_2 = rr.selector(arg_inactive_loss_2, (self.n + E,),
+                                            rr.affine_transform(self.A_inactive_2, np.zeros(p - 1)))
 
         self.set_parameter(mean_parameter, noise_variance)
 
@@ -175,7 +172,8 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
             g = self.total_loss.smooth_objective(param, 'grad')
             return self.scale(g)
         elif mode == 'both':
-            f, g = self.total_loss.smooth_objective(param, 'both')
+            f = self.total_loss.smooth_objective(param, 'func')
+            g = self.total_loss.smooth_objective(param, 'grad')
             return self.scale(f), self.scale(g)
         else:
             raise ValueError("mode incorrectly specified")

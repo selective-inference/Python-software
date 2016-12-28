@@ -36,7 +36,11 @@ def sel_prob_fs_2steps():
 
     active = np.zeros(p, bool)
     active[active_index_1] = 1
-    (active[~active])[active_index_2] = 1
+    if active_index_2 >= active_index_1:
+        active[active_index_2+1] = 1
+    else:
+        active[active_index_2] = 1
+    print("active", active)
 
     feasible_point = np.fabs(np.append(random_obs_1[active_index_1], random_obs_2[active_index_2]))
     nactive = 2
@@ -56,6 +60,7 @@ def sel_prob_fs_2steps():
                                                    mean,  # in R^n
                                                    noise_variance,
                                                    randomizer)
+
 
     toc = time.time()
     sel_prob_fs = fs.minimize2(nstep=100)[::-1]
