@@ -295,7 +295,7 @@ class sel_prob_gradient_map_fs_2steps(rr.smooth_atom):
 
 
 
-class selective_map_credible_fs(rr.smooth_atom):
+class selective_map_credible_fs_2steps(rr.smooth_atom):
     def __init__(self,
                  y,
                  grad_map,
@@ -314,7 +314,11 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         self.generative_X = grad_map.generative_X
 
-        initial = np.squeeze(grad_map.primal_feasible.dot(np.append(grad_map.active_sign_1, grad_map.active_sign_2)))
+        initial = np.zeros(2)
+
+        initial[0] = grad_map.primal_feasible[0]* grad_map.active_sign_1
+
+        initial[1] = grad_map.primal_feasible[1]* grad_map.active_sign_2
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -331,9 +335,11 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         self.set_prior(prior_variance)
 
+        self.initial_state = initial
+
         self.total_loss = rr.smooth_sum([self.likelihood_loss,
                                          self.log_prior_loss,
-                                         self.grad_map])
+                                         grad_map])
 
     def set_likelihood(self, y, noise_variance, generative_X):
         likelihood_loss = rr.signal_approximator(y, coef=1. / noise_variance)
@@ -358,7 +364,7 @@ class selective_map_credible_fs(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def map_solve_2(self, step=1, nstep=100, tol=1.e-8):
+    def map_solve(self, step=1, nstep=100, tol=1.e-8):
 
         current = self.coefs[:]
         current_value = np.inf
@@ -399,6 +405,7 @@ class selective_map_credible_fs(rr.smooth_atom):
 
     def posterior_samples(self, Langevin_steps=1000, burnin=100):
         state = self.initial_state
+        print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
