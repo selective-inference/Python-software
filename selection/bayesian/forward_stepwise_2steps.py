@@ -1,8 +1,6 @@
 import numpy as np
 import regreg.api as rr
-from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
 from selection.algorithms.softmax import nonnegative_softmax
-from selection.bayesian.barrier_fs import linear_map, fs_conjugate, barrier_conjugate_fs_rr
 from selection.bayesian.forward_step_reparametrized import cube_subproblem_fs_linear, cube_objective_fs_linear
 
 
