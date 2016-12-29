@@ -57,6 +57,12 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
         self._response_selector = rr.selector(~opt_vars, (n + E_1 + E_2,))
 
+        arg_ms = np.zeros(self.n + E_1 + E_2, bool)
+        arg_ms[:self.n + E_1] = 1
+        arg_lasso = np.zeros(self.n + E_1, bool)
+        arg_lasso[:self.n] = 1
+        arg_lasso = np.append(arg_lasso, np.ones(E_2, bool))
+
         X_E_1 = X[:, active_1]
         X_mE_1 = X[:, ~active_1]
 
@@ -71,12 +77,23 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
 
         self.offset_active_2 = active_signs_2 * lagrange[active_2]
 
-        self.active_conj_loss_2 = rr.affine_smooth(self.active_conjugate,
-                                                   rr.affine_transform(self.A_active_2, self.offset_active_2))
+        self.offset_inactive_2 = np.zeros(p-E_2)
+
+        self._ms_selector = rr.selector(arg_ms, (self.n + E_1 + E_2,))
+
+        self._active_lasso = rr.selector(arg_lasso, (self.n + E_1 + E_2,),
+                                           rr.affine_transform(self.A_active_2, self.offset_active_2))
+
+        self._inactive_lasso = rr.selector(arg_lasso, (self.n + E_1 + E_2,),
+                                           rr.affine_transform(self.A_inactive_2, self.offset_inactive_2))
+
+        self.active_conj_loss_2 = rr.affine_smooth(self.active_conjugate, self._active_lasso)
 
         cube_obj_2 = cube_objective(self.inactive_conjugate, lagrange[~active_2], nstep=nstep)
 
-        self.cube_loss_2 = rr.affine_smooth(cube_obj_2, self.A_inactive_2)
+        self.cube_loss_2 = rr.affine_smooth(cube_obj_2, self._inactive_lasso)
+
+
 
 
 
