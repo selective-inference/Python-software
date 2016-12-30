@@ -72,7 +72,9 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         self.A_active_1 = np.hstack([np.true_divide(-X[:, active_1].T,sigma),np.identity(E_1)
                                    *active_signs_1[None, :] ])
+
         self.A_inactive_1 = np.hstack([np.true_divide(-X[:, ~active_1].T, sigma), np.zeros((p - E_1, E_1))])
+
 
         self.offset_active_1 = active_signs_1 * threshold[active_1]
         self.offset_inactive_1 = np.zeros(p - E_1)
@@ -85,7 +87,7 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         self.active_conj_loss_1 = rr.affine_smooth(self.active_conjugate, self._active_ms)
 
-        cube_obj_1 = cube_objective(self.inactive_conjugate, lagrange[~active_2], nstep=nstep)
+        cube_obj_1 = cube_objective(self.inactive_conjugate, threshold[~active_1], nstep=nstep)
 
         self.cube_loss_1 = rr.affine_smooth(cube_obj_1, self._inactive_ms)
 
@@ -95,9 +97,12 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         B_E = B[active_2]
         B_mE = B[~active_2]
+        print("here", B_mE.shape)
 
         self.A_active_2 = np.hstack([-X_step2[:, active_2].T, (B_E + epsilon * np.identity(E_2)) * active_signs_2[None, :]])
         self.A_inactive_2 = np.hstack([-X_step2[:, ~active_2].T, (B_mE * active_signs_2[None, :])])
+
+        #print("here", self.A_inactive_2.shape)
 
         self.offset_active_2 = active_signs_2 * lagrange[active_2]
 
@@ -115,6 +120,8 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
         cube_obj_2 = cube_objective(self.inactive_conjugate, lagrange[~active_2], nstep=nstep)
 
         self.cube_loss_2 = rr.affine_smooth(cube_obj_2, self._inactive_lasso)
+
+        #print("here", self._inactive_lasso.shape)
 
         self.total_loss = rr.smooth_sum([self.active_conj_loss_1,
                                          self.active_conj_loss_2,
