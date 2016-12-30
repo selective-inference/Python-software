@@ -282,6 +282,131 @@ class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
             raise ValueError('mode incorrectly specified')
 
 
+class selective_map_credible_fs_2steps(rr.smooth_atom):
+    def __init__(self,
+                 y,
+                 grad_map,
+                 prior_variance,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None,
+                 nstep=10):
+
+        generative_X = grad_map.generative_X
+        self.param_shape = generative_X.shape[1]
+
+        y = np.squeeze(y)
+
+        E_1 = grad_map.E_1
+
+        self.generative_X = grad_map.generative_X
+
+        initial = np.zeros(2)
+
+        initial[0] = np.squeeze(grad_map.feasible_point[:E_1]* grad_map.active_signs_1[None,:])
+
+        initial[1] = np.squeeze(grad_map.feasible_point[E_1:]* grad_map.active_signs_2[None,:])
+
+        rr.smooth_atom.__init__(self,
+                                (self.param_shape,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        self.coefs[:] = initial
+
+        noise_variance = grad_map.noise_variance
+
+        self.set_likelihood(y, noise_variance, generative_X)
+
+        self.set_prior(prior_variance)
+
+        self.initial_state = initial
+
+        self.total_loss = rr.smooth_sum([self.likelihood_loss,
+                                         self.log_prior_loss,
+                                         grad_map])
+
+    def set_likelihood(self, y, noise_variance, generative_X):
+        likelihood_loss = rr.signal_approximator(y, coef=1. / noise_variance)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, generative_X)
+
+    def set_prior(self, prior_variance):
+        self.log_prior_loss = rr.signal_approximator(np.zeros(self.param_shape), coef=1. / prior_variance)
+
+    def smooth_objective(self, true_param, mode='both', check_feasibility=False):
+
+        true_param = self.apply_offset(true_param)
+
+        if mode == 'func':
+            f = self.total_loss.smooth_objective(true_param, 'func')
+            return self.scale(f)
+        elif mode == 'grad':
+            g = self.total_loss.smooth_objective(true_param, 'grad')
+            return self.scale(g)
+        elif mode == 'both':
+            f, g = self.total_loss.smooth_objective(true_param, 'both')
+            return self.scale(f), self.scale(g)
+        else:
+            raise ValueError("mode incorrectly specified")
+
+    def map_solve(self, step=1, nstep=100, tol=1.e-8):
+
+        current = self.coefs[:]
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective(u, 'func')
+        grad = lambda u: self.smooth_objective(u, 'grad')
+
+        for itercount in range(nstep):
+
+            newton_step = grad(current)
+            # * self.noise_variance
+
+            # make sure proposal is a descent
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        value = objective(current)
+        return current, value
+
+    def posterior_samples(self, Langevin_steps=1000, burnin=100):
+        state = self.initial_state
+        print("here", state.shape)
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
+
+        samples = []
+
+        for i in range(Langevin_steps):
+            sampler.next()
+            samples.append(sampler.state.copy())
+            print i, sampler.state.copy()
+
+        samples = np.array(samples)
+        return samples[burnin:, :]
 
 
 
