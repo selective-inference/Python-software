@@ -2,10 +2,8 @@ from __future__ import print_function
 import time
 
 import numpy as np
-from scipy.optimize import minimize
 from selection.tests.instance import gaussian_instance
 from selection.randomized.api import randomization
-from selection.bayesian.forward_step_reparametrized import cube_subproblem_fs_linear, cube_objective_fs_linear
 from selection.bayesian.forward_stepwise_2steps import selection_probability_objective_fs_2steps,\
     sel_prob_gradient_map_fs_2steps, selective_map_credible_fs_2steps
 

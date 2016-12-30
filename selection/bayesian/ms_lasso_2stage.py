@@ -284,7 +284,7 @@ class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
             raise ValueError('mode incorrectly specified')
 
 
-class selective_map_credible_fs_2steps(rr.smooth_atom):
+class selective_map_credible_ms_lasso(rr.smooth_atom):
     def __init__(self,
                  y,
                  grad_map,
