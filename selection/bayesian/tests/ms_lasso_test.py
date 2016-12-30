@@ -21,4 +21,9 @@ def sel_prob_ms_lasso():
     active_1 = np.zeros(p, bool)
     active_1[np.fabs(randomized_Z_stats) > 1.65] = 1
     active_signs_1 = np.sign(randomized_Z_stats[active_1])
-    nactive = active_1.sum()
+    nactive_1 = active_1.sum()
+
+    threshold = 1.65 * np.ones(p)
+
+
+

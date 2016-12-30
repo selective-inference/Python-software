@@ -86,18 +86,19 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         self.cube_loss_1 = rr.affine_smooth(cube_obj_1, self._inactive_ms)
 
-        X_E_2 = X[:, active_2]
-        B = X.T.dot(X_E_2)
+        X_step2 = X[:, ~active_1]
+        X_E_2 = X_step2[:, active_2]
+        B = X_step2.T.dot(X_E_2)
 
         B_E = B[active_2]
         B_mE = B[~active_2]
 
-        self.A_active_2 = np.hstack([-X[:, active_2].T, (B_E + epsilon * np.identity(E_2)) * active_signs_2[None, :]])
-        self.A_inactive_2 = np.hstack([-X[:, ~active_2].T, (B_mE * active_signs_2[None, :])])
+        self.A_active_2 = np.hstack([-X_step2[:, active_2].T, (B_E + epsilon * np.identity(E_2)) * active_signs_2[None, :]])
+        self.A_inactive_2 = np.hstack([-X_step2[:, ~active_2].T, (B_mE * active_signs_2[None, :])])
 
         self.offset_active_2 = active_signs_2 * lagrange[active_2]
 
-        self.offset_inactive_2 = np.zeros(p-E_2)
+        self.offset_inactive_2 = np.zeros(p-E_1-E_2)
 
 
         self._active_lasso = rr.selector(arg_lasso, (self.n + E_1 + E_2,),
