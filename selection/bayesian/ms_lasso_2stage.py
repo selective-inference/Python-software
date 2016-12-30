@@ -31,6 +31,8 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
         E_1 = active_1.sum()
         E_2 = active_2.sum()
 
+        sigma = np.sqrt(noise_variance)
+
         self.active_1 = active_1
         self.active_2 = active_2
         self.noise_variance = noise_variance
@@ -65,9 +67,9 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
         arg_lasso[:self.n] = 1
         arg_lasso = np.append(arg_lasso, np.ones(E_2, bool))
 
-        self.A_active_1 = np.hstack([np.true_divide(-X[:, active_1].T,noise_variance),np.identity(E_1)
+        self.A_active_1 = np.hstack([np.true_divide(-X[:, active_1].T,sigma),np.identity(E_1)
                                    *active_signs_1[None, :] ])
-        self.A_inactive_1 = np.hstack([np.true_divide(-X[:, ~active_1].T, noise_variance), np.zeros((p - E_1, E_1))])
+        self.A_inactive_1 = np.hstack([np.true_divide(-X[:, ~active_1].T, sigma), np.zeros((p - E_1, E_1))])
 
         self.offset_active_1 = active_signs_1 * threshold[active_1]
         self.offset_inactive_1 = np.zeros(p - E_1)
