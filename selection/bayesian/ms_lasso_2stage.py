@@ -6,7 +6,7 @@ from selection.bayesian.selection_probability_rr import cube_subproblem_scaled, 
 from selection.bayesian.credible_intervals import projected_langevin
 
 
-class selection_probability_objective_fs_2steps(rr.smooth_atom):
+class selection_probability_objective_ms_lasso(rr.smooth_atom):
     def __init__(self,
                  X,
                  feasible_point, #in R^{|E|_1 + |E|_2}
@@ -27,7 +27,7 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
 
         n, p = X.shape
         self._X = X
-        
+
         E_1 = active_1.sum()
         E_2 = active_2.sum()
 
@@ -212,6 +212,78 @@ class selection_probability_objective_fs_2steps(rr.smooth_atom):
         # print('iter', itercount)
         value = objective(current)
         return current, value
+
+class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
+    def __init__(self,
+                 X,
+                 feasible_point,  # in R^{|E|_1 + |E|_2}
+                 active_1,  # the active set chosen by randomized marginal screening
+                 active_2,  # the active set chosen by randomized lasso
+                 active_signs_1,  # the set of signs of active coordinates chosen by ms
+                 active_signs_2,  # the set of signs of active coordinates chosen by lasso
+                 lagrange,  # in R^p
+                 threshold,  # in R^p
+                 generative_X,  # in R^{p}\times R^{n}
+                 noise_variance,
+                 randomizer,
+                 epsilon,  # ridge penalty for randomized lasso
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+
+        self.E_1 = active_1.sum()
+        self.E_2 = active_2.sum()
+        self.n, self.p = X.shape
+        self.dim = generative_X.shape[1]
+
+        self.noise_variance = noise_variance
+
+        (self.X, self.feasible_point, self.active_1, self.active_2, self.active_signs_1, self.active_signs_2,
+         self.lagrange, self.threshold, self.generative_X, self.noise_variance, self.randomizer, self.epsilon) \
+            = (X, feasible_point, active_1, active_2, active_signs_1, active_signs_2, lagrange,
+               threshold, generative_X, noise_variance, randomizer, epsilon)
+
+        rr.smooth_atom.__init__(self,
+                                (self.dim,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                coef=coef)
+
+    def smooth_objective(self, true_param, mode='both', check_feasibility=False, tol=1.e-6):
+        true_param = self.apply_offset(true_param)
+
+        mean_parameter = np.squeeze(self.generative_X.dot(true_param))
+
+        primal_sol = selection_probability_objective_ms_lasso(self.X,
+                                                              self.feasible_point,
+                                                              self.active_1,
+                                                              self.active_2,
+                                                              self.active_signs_1,
+                                                              self.active_signs_2,
+                                                              self.lagrange,
+                                                              self.threshold,
+                                                              mean_parameter,
+                                                              self.noise_variance,
+                                                              self.randomizer,
+                                                              self.epsilon)
+
+        sel_prob_primal = primal_sol.minimize2(nstep=60)[::-1]
+        optimal_primal = (sel_prob_primal[1])[:self.n]
+        sel_prob_val = -sel_prob_primal[0]
+        optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
+
+        if mode == 'func':
+            return sel_prob_val
+        elif mode == 'grad':
+            return optimizer
+        elif mode == 'both':
+            return sel_prob_val, optimizer
+        else:
+            raise ValueError('mode incorrectly specified')
+
+
+
+
 
 
 
