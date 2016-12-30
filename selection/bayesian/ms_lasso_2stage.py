@@ -44,6 +44,7 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         initial = np.zeros(n + E_1 + E_2, )
         initial[n:] = feasible_point
+        self.n = n
 
         rr.smooth_atom.__init__(self,
                                 (n + E_1 + E_2,),
@@ -60,6 +61,8 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
         self._opt_selector = rr.selector(opt_vars, (n + E_1 + E_2,))
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
         self._response_selector = rr.selector(~opt_vars, (n + E_1 + E_2,))
+
+        self.set_parameter(mean_parameter, noise_variance)
 
         arg_ms = np.zeros(self.n + E_1 + E_2, bool)
         arg_ms[:self.n + E_1] = 1
