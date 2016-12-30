@@ -10,7 +10,7 @@ from selection.bayesian.ms_lasso_2stage import selection_probability_objective_m
 
 def sel_prob_ms_lasso():
     n = 50
-    p = 30
+    p = 10
     s = 5
     snr = 5
 
@@ -69,10 +69,40 @@ def sel_prob_ms_lasso():
                                                            randomizer,
                                                            epsilon)
 
-    #sel_prob = ms_lasso.smooth_objective(test_point, mode= 'func')
+    #sel_prob_ms_lasso = ms_lasso.minimize2(nstep=100)[::-1]
+    #print("selection prob and minimizer- fs", sel_prob_ms_lasso[0], sel_prob_ms_lasso[1])
 
-    sel_prob_ms_lasso = ms_lasso.minimize2(nstep=100)[::-1]
-    print("selection prob and minimizer- fs", sel_prob_ms_lasso[0], sel_prob_ms_lasso[1])
+    generative_X = X_1[:, active]
+
+    prior_variance = 100.
+
+    grad_map = sel_prob_gradient_map_ms_lasso(X_1,
+                                              feasible_point,  # in R^{|E|_1 + |E|_2}
+                                              active_1,  # the active set chosen by randomized marginal screening
+                                              active_2,  # the active set chosen by randomized lasso
+                                              active_signs_1,  # the set of signs of active coordinates chosen by ms
+                                              active_signs_2,  # the set of signs of active coordinates chosen by lasso
+                                              lagrange,  # in R^p
+                                              threshold,  # in R^p
+                                              generative_X,  # in R^{p}\times R^{n}
+                                              noise_variance,
+                                              randomizer,
+                                              epsilon)
+
+    ms = selective_map_credible_ms_lasso(y,
+                                         grad_map,
+                                         prior_variance)
+
+    sel_MAP = ms.map_solve(nstep=100)[::-1]
+
+    print("selective MAP- fs", sel_MAP[1])
+
+    toc = time.time()
+    samples = ms.posterior_samples()
+    tic = time.time()
+    print('sampling time', tic - toc)
+    return samples
+
 
 sel_prob_ms_lasso()
 

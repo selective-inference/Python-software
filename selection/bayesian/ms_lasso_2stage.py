@@ -97,12 +97,10 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         B_E = B[active_2]
         B_mE = B[~active_2]
-        print("here", B_mE.shape)
 
         self.A_active_2 = np.hstack([-X_step2[:, active_2].T, (B_E + epsilon * np.identity(E_2)) * active_signs_2[None, :]])
         self.A_inactive_2 = np.hstack([-X_step2[:, ~active_2].T, (B_mE * active_signs_2[None, :])])
 
-        #print("here", self.A_inactive_2.shape)
 
         self.offset_active_2 = active_signs_2 * lagrange[active_2]
 
@@ -120,8 +118,6 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
         cube_obj_2 = cube_objective(self.inactive_conjugate, lagrange[~active_2], nstep=nstep)
 
         self.cube_loss_2 = rr.affine_smooth(cube_obj_2, self._inactive_lasso)
-
-        #print("here", self._inactive_lasso.shape)
 
         self.total_loss = rr.smooth_sum([self.active_conj_loss_1,
                                          self.active_conj_loss_2,
@@ -312,13 +308,17 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
 
         E_1 = grad_map.E_1
 
+        E_2 = grad_map.E_2
+
+        self.E = E_1 + E_2
+
         self.generative_X = grad_map.generative_X
 
-        initial = np.zeros(2)
+        initial = np.zeros(self.E)
 
-        initial[0] = np.squeeze(grad_map.feasible_point[:E_1]* grad_map.active_signs_1[None,:])
+        initial[:E_1] = np.squeeze(grad_map.feasible_point[:E_1]* grad_map.active_signs_1[None,:])
 
-        initial[1] = np.squeeze(grad_map.feasible_point[E_1:]* grad_map.active_signs_2[None,:])
+        initial[E_1:] = np.squeeze(grad_map.feasible_point[E_1:]* grad_map.active_signs_2[None,:])
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
