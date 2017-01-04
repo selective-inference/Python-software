@@ -113,7 +113,6 @@ def test_marginalize(s=0,
                                                     parameter=true_vec,
                                                     sample=target_sample)
 
-
         #test_stat = lambda x: np.linalg.norm(x - beta[active_union])
         #observed_test_value = test_stat(target_observed)
         #pivots = target_sampler.hypothesis_test(test_stat,

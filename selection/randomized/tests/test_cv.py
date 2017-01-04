@@ -36,14 +36,15 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
              randomizer_scale = 1.,
              loss = 'gaussian',
              intervals = 'old',
-             bootstrap=False,
+             bootstrap = False,
+             marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
 
     if randomizer == 'laplace':
         randomizer = randomization.laplace((p,), scale=randomizer_scale)
     elif randomizer == 'gaussian':
-        randomizer = randomization.gaussian(np.identity(p)*randomizer_scale)
+        randomizer = randomization.isotropic_gaussian((p,),randomizer_scale)
     elif randomizer == 'logistic':
         randomizer = randomization.logistic((p,), scale=randomizer_scale)
 
@@ -54,17 +55,12 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
         loss = rr.glm.logistic(X, y)
 
-    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
-    truth = beta
-    loss = rr.glm.gaussian(X, y)
-    active = np.nonzero(truth != 0)[0]
     lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
-
     folds = np.arange(n) % K
     np.random.shuffle(folds)
-
     lam_CV, CV_curve = choose_lambda_CV(loss, lam_seq, folds)
     CV_val = np.array(CV_curve)[:,2]
+    CV_boot = bootstrap_CV_curve(loss, lam_seq, folds, K)
 
     #L = lasso.gaussian(X, y, lam_CV)
     #L.covariance_estimator = glm_sandwich_estimator(L.loglike, B=2000)
@@ -73,27 +69,26 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
     W = np.ones(p) * lam_CV
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
-    epsilon = 1.
+    epsilon = 1./np.sqrt(n)
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    CV_boot = bootstrap_CV_curve(loss, lam_seq, folds, K)
-
     #active = soln != 0
     active_union = M_est1._overall
     nactive = np.sum(active_union)
-    print(nactive)
+    print("nactive", nactive)
 
-    _full_boot_score = pairs_bootstrap_glm(loss,
-                                           active_union)[0]
+    _full_boot_score = pairs_bootstrap_glm(loss, active_union)[0]
+
     def _boot_score(indices):
         return _full_boot_score(indices)[:nactive]
 
     cov_est = glm_nonparametric_bootstrap(n, n)
-    # compute covariance of selected parameters with CV error curve
+    # compute covariance of CV error curve and the cross-covariance of CV error curve with the the active part of score
     cov = cov_est(CV_boot, cross_terms=[_boot_score], nsample=1)
+
     if bootstrap=='False':
         M_est1.target_decomposition(cov, CV_val)
 
@@ -102,6 +97,10 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
 
         active_set = np.nonzero(active_union)[0]
         true_vec = beta[active_union]
+
+        if marginalize_subgrad == True:
+            M_est1.decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool),
+                                         marginalizing_groups=np.ones(p, bool))
 
         target_sampler, target_observed = glm_target(loss,
                                                      active_union,
@@ -158,7 +157,7 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
         return pivots_mle, pivots_truth, pvalues, covered, naive_covered, active_var
 
 
-def report(niter=5, **kwargs):
+def report(niter=50, **kwargs):
     kwargs = {'s': 0, 'n': 200, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
@@ -180,7 +179,7 @@ def report(niter=5, **kwargs):
     # fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     #fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
 
-    fig.savefig('intervals_pivots.pdf')  # will have both bootstrap and CLT on plot
+    fig.savefig('cv_pivots.pdf')  # will have both bootstrap and CLT on plot
 
 
 if __name__ == '__main__':

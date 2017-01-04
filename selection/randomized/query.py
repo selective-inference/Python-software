@@ -46,7 +46,7 @@ class query(object):
 
         # gradient of negative log density of randomization at omega
 
-        if not self._marginalize_subgradient:
+        if self._marginalize_subgradient==False:
             randomization_derivative = self.randomization.gradient(full_state)
         else:
             randomization_derivative = self.construct_weights(full_state)
@@ -589,13 +589,14 @@ class targeted_sampler(object):
 
         samples = []
         if self.target_offset is None:
-            self.target_offset = np.zeros(self.observed_state[keep_slice].shape[0])
+            self.target_offset = np.zeros(self.observed_target_state.shape[0])
 
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                samples.append(target_langevin.state[keep_slice].copy()+self.target_offset)
-
+                curr_state = target_langevin.state.copy()
+                curr_state[self.target_slice] += self.target_offset
+                samples.append(curr_state[keep_slice])
         return np.asarray(samples)
 
     def hypothesis_test(self,
