@@ -39,12 +39,12 @@ class neg_log_cube_probability_laplace(rr.smooth_atom):
         ind_arg_1[(arg_u <0.)] = 1
         ind_arg_2 = np.zeros(self.q, bool)
         ind_arg_2[(arg_l >0.)] = 1
-        ind_arg_3 = np.logical_and(~ind_arg_1, ind_arg_2)
+        ind_arg_3 = np.logical_and(~ind_arg_1, ~ind_arg_2)
         cube_prob = np.zeros(self.q)
         cube_prob[ind_arg_1] = np.exp(arg_u[ind_arg_1])/2. - np.exp(arg_l[ind_arg_1])/2.
         cube_prob[ind_arg_2] = -np.exp(-arg_u[ind_arg_2])/2. + np.exp(-arg_l[ind_arg_2])/2.
         cube_prob[ind_arg_3] = 1- np.exp(-arg_u[ind_arg_3])/2. - np.exp(arg_l[ind_arg_3])/2.
-        log_cube_prob = -np.log(cube_prob).sum()
+        neg_log_cube_prob = -np.log(cube_prob).sum()
 
         log_cube_grad = np.zeros(self.q)
         log_cube_grad[ind_arg_1] = 1./self.b
@@ -53,15 +53,16 @@ class neg_log_cube_probability_laplace(rr.smooth_atom):
         num_cube_grad = np.true_divide(np.exp(-scaled_lagrange[ind_arg_3]), 2 * self.b) - \
                         np.true_divide(np.exp((2* arg_l[ind_arg_3])), 2 * self.b)
         den_cube_grad = np.exp(arg_l[ind_arg_3]) - np.exp(-scaled_lagrange[ind_arg_3])/2. - \
-                        np.true_divide(np.exp((2* arg_l[ind_arg_3])), 2)
-        log_cube_grad[ind_arg_3] = num_cube_grad/den_cube_grad
+                        np.exp(2* arg_l[ind_arg_3])/2.
+        log_cube_grad[ind_arg_3] = np.true_divide(num_cube_grad,den_cube_grad)
+        neg_log_cube_grad = -log_cube_grad
 
         if mode == 'func':
-            return self.scale(log_cube_prob)
+            return self.scale(neg_log_cube_prob)
         elif mode == 'grad':
-            return self.scale(log_cube_grad)
+            return self.scale(neg_log_cube_grad)
         elif mode == 'both':
-            return self.scale(log_cube_prob), self.scale(log_cube_grad)
+            return self.scale(neg_log_cube_prob), self.scale(neg_log_cube_grad)
         else:
             raise ValueError("mode incorrectly specified")
 
