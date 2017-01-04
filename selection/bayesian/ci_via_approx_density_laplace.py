@@ -48,8 +48,8 @@ class neg_log_cube_probability_laplace(rr.smooth_atom):
 
         log_cube_grad = np.zeros(self.q)
         log_cube_grad[ind_arg_1] = 1./self.b
-        log_cube_grad[ind_arg_2] = np.true_divide((np.exp(-scaled_lagrange[ind_arg_2])-1.)/self.b,
-                                                  1. - np.exp(-scaled_lagrange[ind_arg_2]))
+        log_cube_grad[ind_arg_2] = np.true_divide((np.exp(-scaled_lagrange[ind_arg_2])+ 1.)/self.b,
+                                                  np.exp(-scaled_lagrange[ind_arg_2])-1.)
         num_cube_grad = np.true_divide(np.exp(-scaled_lagrange[ind_arg_3]), 2 * self.b) - \
                         np.true_divide(np.exp((2* arg_l[ind_arg_3])), 2 * self.b)
         den_cube_grad = np.exp(arg_l[ind_arg_3]) - np.exp(-scaled_lagrange[ind_arg_3])/2. - \
