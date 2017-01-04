@@ -10,9 +10,12 @@ from selection.api import (randomization,
                            multiple_queries,
                            glm_target)
 import selection.api as sel
-from selection.tests.instance import gaussian_instance
+from selection.tests.instance import (gaussian_instance,
+                                      logistic_instance)
 from selection.randomized.glm import (pairs_bootstrap_glm,
                                       glm_nonparametric_bootstrap)
+from selection.randomized.cv import (choose_lambda_CV,
+                                     bootstrap_CV_curve)
 from selection.algorithms.lasso import (glm_sandwich_estimator,
                                         lasso)
 from selection.constraints.affine import (constraints,
@@ -24,98 +27,33 @@ from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 
 
-def CV_err(X, y, lam, folds, scale=0.5):
-
-    n, p = X.shape
-
-    penalty = rr.l1norm(p, lagrange=lam)
-
-    CV_err = 0
-    CV_err_randomized = 0
-
-    CV_err_squared = 0
-    CV_err_squared_randomized = 0
-
-    for fold in np.unique(folds):
-        test = folds == fold
-        train = ~test
-
-        X_train, y_train = X[train], y[train]
-        X_test, y_test = X[test], y[test]
-        n_test = y_test.shape[0]
-
-        loss = rr.glm.gaussian(X_train, y_train)
-        problem = rr.simple_problem(loss, penalty)
-        beta_train = problem.solve()
-
-        resid = y_test - X_test.dot(beta_train)
-        cur = (resid**2).sum() / n_test
-
-        # there are several ways we could randomize here...
-        random_noise = scale * np.random.standard_normal(y_test.shape)
-        cur_randomized = ((resid + random_noise)**2).sum() / n_test
-
-        CV_err += cur
-        CV_err_squared += cur**2
-
-        CV_err_randomized += cur_randomized
-        CV_err_squared_randomized += cur_randomized**2
-
-    K = len(np.unique(folds))
-
-    SD_CV = np.sqrt((CV_err_squared.mean() - CV_err.mean()**2) / (K-1))
-    SD_CV_randomized = np.sqrt((CV_err_squared_randomized.mean() - CV_err_randomized.mean()**2) / (K-1))
-    return CV_err, SD_CV, CV_err_randomized, SD_CV_randomized
-
-def choose_lambda_CV(X, y, lam_seq, folds):
-
-    CV_curve = []
-    for lam in lam_seq:
-        CV_curve.append(CV_err(X, y, lam, folds) + (lam,))
-
-    CV_curve = np.array(CV_curve)
-    minCV = lam_seq[np.argmin(CV_curve[:,0])] # unrandomized
-    minCV_randomized = lam_seq[np.argmin(CV_curve[:,2])] # randomized
-
-    return minCV_randomized, CV_curve
-
-def bootstrap_CV_curve(X, y, lam_seq, folds, K):
-
-    def _bootstrap_CVerr_curve(X, y, lam_seq, K, indices):
-        n, p = X.shape
-        folds_star = np.arange(n) % K
-        np.random.shuffle(folds_star)
-        X_star, y_star = X[indices], y[indices]
-        return np.array(choose_lambda_CV(X_star, y_star, lam_seq, folds_star)[1])[:,0]
-
-    return functools.partial(_bootstrap_CVerr_curve, X, y, lam_seq, K)
-
 @register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
 def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
-             randomizer='laplace',
+             randomizer='gaussian',
+             randomizer_scale = 1.,
+             loss = 'gaussian',
              intervals = 'old',
              bootstrap=False,
              ndraw = 10000,
              burnin = 2000):
-    print (n, p, s, rho)
-#     X, y, _, truth, sigma = gaussian_instance(n=n,
-#                                               p=p,
-#                                               s=s,
-#                                               rho=rho)
-    if randomizer == 'laplace':
-        randomizer = randomization.laplace((p,), scale=1.)
-    elif randomizer == 'gaussian':
-        randomizer = randomization.gaussian(np.identity(p))
-    elif randomizer == 'logistic':
-        randomizer = randomization.logistic((p,), scale=1.)
 
-    #X = np.random.standard_normal((n, p))
-    #y = np.random.standard_normal(n)
-    #truth = np.array([], np.int)
-    #sigma = 1.
+    if randomizer == 'laplace':
+        randomizer = randomization.laplace((p,), scale=randomizer_scale)
+    elif randomizer == 'gaussian':
+        randomizer = randomization.gaussian(np.identity(p)*randomizer_scale)
+    elif randomizer == 'logistic':
+        randomizer = randomization.logistic((p,), scale=randomizer_scale)
+
+    if loss == "gaussian":
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        loss = rr.glm.gaussian(X, y)
+    elif loss == "logistic":
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        loss = rr.glm.logistic(X, y)
+
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
     truth = beta
     loss = rr.glm.gaussian(X, y)
@@ -125,7 +63,7 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
     folds = np.arange(n) % K
     np.random.shuffle(folds)
 
-    lam_CV, CV_curve = choose_lambda_CV(X, y, lam_seq, folds)
+    lam_CV, CV_curve = choose_lambda_CV(loss, lam_seq, folds)
     CV_val = np.array(CV_curve)[:,2]
 
     #L = lasso.gaussian(X, y, lam_CV)
@@ -141,7 +79,7 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
     mv = multiple_queries([M_est1])
     mv.solve()
 
-    CV_boot = bootstrap_CV_curve(X, y, lam_seq, folds, K)
+    CV_boot = bootstrap_CV_curve(loss, lam_seq, folds, K)
 
     #active = soln != 0
     active_union = M_est1._overall
