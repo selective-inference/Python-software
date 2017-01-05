@@ -22,25 +22,25 @@ class smooth_cube_barrier(rr.smooth_atom):
                                 quadratic=quadratic,
                                 coef=coef)
 
-        def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
+    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
 
-            arg = self.apply_offset(arg)
-            BIG = 10 ** 10
-            _diff = arg - self.lagrange_cube  # z - \lambda < 0
-            _sum = arg + self.lagrange_cube  # z + \lambda > 0
-            violations = ((_diff >= 0).sum() + (_sum <= 0).sum() > 0)
+        arg = self.apply_offset(arg)
+        BIG = 10 ** 10
+        _diff = arg - self.lagrange_cube  # z - \lambda < 0
+        _sum = arg + self.lagrange_cube  # z + \lambda > 0
+        violations = ((_diff >= 0).sum() + (_sum <= 0).sum() > 0)
 
-            f = np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum)).sum() + BIG * violations
-            g = 1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum
+        f = np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum)).sum() + BIG * violations
+        g = 1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum
 
-            if mode == 'func':
-                return self.scale(f)
-            elif mode == 'grad':
-                return self.scale(g)
-            elif mode == 'both':
-                return self.scale(f), self.scale(g)
-            else:
-                raise ValueError('mode incorrectly specified')
+        if mode == 'func':
+            return self.scale(f)
+        elif mode == 'grad':
+            return self.scale(g)
+        elif mode == 'both':
+            return self.scale(f), self.scale(g)
+        else:
+            raise ValueError('mode incorrectly specified')
 
 
 class selection_probability_split(rr.smooth_atom, M_estimator_split):
@@ -65,10 +65,7 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
         lagrange = np.asarray(lagrange)
         self.inactive_lagrange = lagrange[~self._overall]
 
-        #active_feasible_point = np.abs(self.initial_soln[self._overall])
-        #inactive_feasible_point = self.initial_subgrad
         self.feasible_point = self.observed_opt_state
-        print("feasible_point", self.feasible_point)
 
         initial = np.zeros(2*p, )
         initial[p:] = self.feasible_point
@@ -142,6 +139,7 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
 
         self.p = p
         self.nactive = nactive
+        print("no of active variables", self.nactive)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """
@@ -187,19 +185,21 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
 
         for itercount in range(nstep):
             newton_step = grad(current)
-
+            ninactive = self.p + self.nactive
             count = 0
             while True:
                 count += 1
                 proposal = current - step * newton_step
                 proposal_opt = proposal[self.p:]
-                failing = (proposal[self.p+ self.nactive:] > self.inactive_lagrange) \
-                          + (proposal[self.p+ self.nactive:] < - self.inactive_lagrange)\
-                          + (proposal_opt[:self.nactive] < 0)
+                failing_cube = (proposal[ninactive:] > self.inactive_lagrange) + \
+                               (proposal[ninactive:] < - self.inactive_lagrange)
 
-                if not failing.sum():
+                failing_sign = (proposal_opt[:self.nactive] < 0)
+                failing = failing_cube.sum()+failing_sign.sum()
+
+                if not failing:
                     break
-                step *= 0.5 ** failing
+                step *= 0.5
 
                 if count >= 60:
                     raise ValueError('not finding a feasible point')
