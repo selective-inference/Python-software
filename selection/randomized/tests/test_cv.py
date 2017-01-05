@@ -34,7 +34,7 @@ from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, s
 def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
              randomizer='gaussian',
              randomizer_scale = 1.,
-             loss = 'gaussian',
+             loss = 'logistic',
              intervals = 'old',
              bootstrap = False,
              marginalize_subgrad = True,
@@ -50,17 +50,17 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
 
     if loss == "gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
-        loss = rr.glm.gaussian(X, y)
+        glm_loss = rr.glm.gaussian(X, y)
     elif loss == "logistic":
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
-        loss = rr.glm.logistic(X, y)
+        glm_loss = rr.glm.logistic(X, y)
 
     lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
     folds = np.arange(n) % K
     np.random.shuffle(folds)
-    lam_CV, CV_curve = choose_lambda_CV(loss, lam_seq, folds)
+    lam_CV, CV_curve = choose_lambda_CV(glm_loss, lam_seq, folds)
     CV_val = np.array(CV_curve)[:,2]
-    CV_boot = bootstrap_CV_curve(loss, lam_seq, folds, K)
+    CV_boot = bootstrap_CV_curve(glm_loss, lam_seq, folds, K)
 
     #L = lasso.gaussian(X, y, lam_CV)
     #L.covariance_estimator = glm_sandwich_estimator(L.loglike, B=2000)
@@ -70,7 +70,7 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     epsilon = 1./np.sqrt(n)
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([M_est1])
     mv.solve()
@@ -80,7 +80,7 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
-    _full_boot_score = pairs_bootstrap_glm(loss, active_union)[0]
+    _full_boot_score = pairs_bootstrap_glm(glm_loss, active_union)[0]
 
     def _boot_score(indices):
         return _full_boot_score(indices)[:nactive]
@@ -102,7 +102,7 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
             M_est1.decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool),
                                          marginalizing_groups=np.ones(p, bool))
 
-        target_sampler, target_observed = glm_target(loss,
+        target_sampler, target_observed = glm_target(glm_loss,
                                                      active_union,
                                                      mv,
                                                      bootstrap=bootstrap)
