@@ -94,8 +94,8 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
     # compute covariance of CV error curve and the cross-covariance of CV error curve with the the active part of score
     cov = cov_est(CV_boot, cross_terms=[_boot_score], nsample=1)
 
-    #if bootstrap=='False':
-    #    M_est1.target_decomposition(cov, CV_val)
+    if bootstrap=='False':
+        M_est1.target_decomposition(cov, CV_val)
 
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
@@ -164,7 +164,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
 
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 0, 'n': 3000, 'p': 500, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 10, 'n': 500, 'p': 100, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

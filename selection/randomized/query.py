@@ -536,7 +536,9 @@ class targeted_sampler(object):
             target_grad += target_grad_curr.copy()
 
         target_grad = - target_grad
-        target_grad += self._reference_inv.flatten() - self.target_inv_cov.dot(target_state)
+        if self.target_offset is None:
+            self.target_offset = np.zeros_like(target_state)
+        target_grad += self._reference_inv.flatten() - self.target_inv_cov.dot(target_state+self.target_offset)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
