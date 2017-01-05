@@ -21,8 +21,9 @@ def CV_err(loss, penalty, folds, scale=0.5, solve_args={'min_its':20, 'tol':1.e-
 
         loss_train = loss.subsample(train)
         loss_test = loss.subsample(test)
-        X_test, y_test = loss_test.data
+        X_test, y_test = X[test], y[test]
         n_test = y_test.shape[0]
+
         problem = rr.simple_problem(loss_train, penalty)
         beta_train = problem.solve(**solve_args)
 
@@ -31,7 +32,7 @@ def CV_err(loss, penalty, folds, scale=0.5, solve_args={'min_its':20, 'tol':1.e-
         cur = (resid**2).sum() / n_test
 
         # there are several ways we could randomize here...
-        random_noise = scale * np.random.standard_normal(y_test.shape)
+        random_noise = scale * np.random.standard_normal(n_test)
         cur_randomized = ((resid + random_noise)**2).sum() / n_test
 
         CV_err += cur

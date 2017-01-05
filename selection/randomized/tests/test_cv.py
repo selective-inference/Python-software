@@ -27,14 +27,14 @@ from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 
 
-@register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
+@register_report(['truth', 'cover', 'naive_cover', 'active'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
+def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
              randomizer='gaussian',
              randomizer_scale = 1.,
-             loss = 'logistic',
+             loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
              marginalize_subgrad = True,
@@ -56,6 +56,7 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
         glm_loss = rr.glm.logistic(X, y)
 
     lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
+
     folds = np.arange(n) % K
     np.random.shuffle(folds)
     lam_CV, CV_curve = choose_lambda_CV(glm_loss, lam_seq, folds)
@@ -65,6 +66,10 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
     #L = lasso.gaussian(X, y, lam_CV)
     #L.covariance_estimator = glm_sandwich_estimator(L.loglike, B=2000)
     #soln = L.fit()
+    problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=lam_CV))
+    beta_hat = problem.solve()
+    active_hat = beta_hat !=0
+    print("non-randomized lasso ", active_hat.sum())
 
     W = np.ones(p) * lam_CV
     penalty = rr.group_lasso(np.arange(p),
@@ -89,10 +94,10 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
     # compute covariance of CV error curve and the cross-covariance of CV error curve with the the active part of score
     cov = cov_est(CV_boot, cross_terms=[_boot_score], nsample=1)
 
-    if bootstrap=='False':
-        M_est1.target_decomposition(cov, CV_val)
+    #if bootstrap=='False':
+    #    M_est1.target_decomposition(cov, CV_val)
 
-
+    nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
         active_set = np.nonzero(active_union)[0]
@@ -113,15 +118,15 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
             LU = target_sampler.confidence_intervals(target_observed,
                                                      sample=target_sample,
                                                      level=0.9)
-            pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-                                                            parameter=target_sampler.reference,
-                                                            sample=target_sample)
+            #pivots_mle = target_sampler.coefficient_pvalues(target_observed,
+            #                                                parameter=target_sampler.reference,
+            #                                                sample=target_sample)
             pivots_truth = target_sampler.coefficient_pvalues(target_observed,
                                                               parameter=true_vec,
                                                               sample=target_sample)
-            pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                         parameter=np.zeros_like(true_vec),
-                                                         sample=target_sample)
+            #pvalues = target_sampler.coefficient_pvalues(target_observed,
+            #                                             parameter=np.zeros_like(true_vec),
+            #                                             sample=target_sample)
         else:
             full_sample = target_sampler.sample(ndraw=ndraw,
                                                 burnin=burnin,
@@ -129,15 +134,15 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
             LU = target_sampler.confidence_intervals_translate(target_observed,
                                                                sample=full_sample,
                                                                level=0.9)
-            pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                      parameter=target_sampler.reference,
-                                                                      sample=full_sample)
+            #pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
+            #                                                          parameter=target_sampler.reference,
+            #                                                          sample=full_sample)
             pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
                                                                         parameter=true_vec,
                                                                         sample=full_sample)
-            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                   parameter=np.zeros_like(true_vec),
-                                                                   sample=full_sample)
+            #pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
+            #                                                       parameter=np.zeros_like(true_vec),
+            #                                                       sample=full_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
@@ -154,11 +159,12 @@ def test_cv(n=100, p=20, s=10, snr=5, K=5, rho=0,
                 naive_covered[j] = 1
             active_var[j] = active_set[j] in nonzero
 
-        return pivots_mle, pivots_truth, pvalues, covered, naive_covered, active_var
+        print("individual coverage", covered/nactive)
+        return pivots_truth, covered, naive_covered, active_var
 
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 0, 'n': 200, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 0, 'n': 3000, 'p': 500, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
