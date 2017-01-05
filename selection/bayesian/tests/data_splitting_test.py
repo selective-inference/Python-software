@@ -32,13 +32,16 @@ def test_sel_prob_split(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.,loss='gauss
 
     true_support = np.asarray([i for i in range(p) if i < s])
 
+    test_point = np.append(solver.observed_score_state,solver.observed_opt_state)
+
     print("active set, true_support", active_set, true_support)
 
     if (set(active_set).intersection(set(true_support)) == set(true_support)) == True:
 
         generative_mean = np.append(snr*np.ones(s), np.zeros(p-s))
         sel_split = selection_probability_split(loss, epsilon, penalty, generative_mean)
-        sel_prob_split = sel_split.minimize2(nstep=100)[::-1]
-        print("sel prob and minimizer", sel_prob_split[0], sel_prob_split[1])
+        print("objective and grad at test", sel_split.cube_barrier.smooth_objective(test_point, mode='grad'))
+        #sel_prob_split = sel_split.minimize2(nstep=100)[::-1]
+        #print("sel prob and minimizer", sel_prob_split[0], sel_prob_split[1])
 
 print(test_sel_prob_split())

@@ -17,7 +17,7 @@ class smooth_cube_barrier(rr.smooth_atom):
         self.lagrange_cube = lagrange_cube
 
         rr.smooth_atom.__init__(self,
-                                (lagrange_cube.shape[0],),
+                                (self.lagrange_cube.shape[0],),
                                 offset=offset,
                                 quadratic=quadratic,
                                 coef=coef)
@@ -120,17 +120,19 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
         self.randomization_cov_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
         self.randomization_quad = self.randomization_cov_inv_half.dot(self.linear_map)
         self.offset_quad = self.randomization_cov_inv_half.dot(gamma)
-        gaussian_loss = rr.signal_approximator(np.squeeze(np.zeros(p)), coef=1.)
+        gaussian_loss = rr.signal_approximator(np.zeros(p), coef=1.)
         self.randomization_loss = rr.affine_smooth(gaussian_loss, rr.affine_transform(self.randomization_quad,
                                                                                       self.offset_quad))
+        #print("here", self.randomization_quad.shape, self.offset_quad.shape)
 
         w_1, v_1 = np.linalg.eig(score_cov)
         self.score_cov_inv_half = (v_1.T.dot(np.diag(np.power(w_1, -0.5)))).dot(v_1)
         mean_lik = self.score_cov_inv_half.dot(generative_mean)
         self.generative_mean = np.squeeze(generative_mean)
         likelihood_loss = rr.signal_approximator(mean_lik, coef=1.)
-        scaled_response_selector = rr.selector(~opt_vars,(n + p,), rr.affine_transform(self.score_cov_inv_half,
-                                                                                       np.zeros(n)))
+        scaled_response_selector = rr.selector(~opt_vars,(2*p,), rr.affine_transform(self.score_cov_inv_half,
+                                                                                       np.zeros(p)))
+
         self.likelihood_loss = rr.affine_smooth(likelihood_loss, scaled_response_selector)
 
         self.total_loss = rr.smooth_sum([self.randomization_loss,
