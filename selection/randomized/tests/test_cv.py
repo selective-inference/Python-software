@@ -159,7 +159,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
                 naive_covered[j] = 1
             active_var[j] = active_set[j] in nonzero
 
-        print("individual coverage", covered/nactive)
+        print("individual coverage", np.true_divide(covered.sum(),nactive))
         return pivots_truth, covered, naive_covered, active_var
 
 
