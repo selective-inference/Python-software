@@ -290,6 +290,7 @@ def target(loss,
     target_observed = _subsetter(boot_target_observed)
 
     form_covariances = glm_nonparametric_bootstrap(n, n)
+
     queries.setup_sampler(form_covariances)
     queries.setup_opt_state()
 
@@ -307,9 +308,11 @@ def target(loss,
                                                            alpha_mat,
                                                            reference=reference)
     else:
+
         target_sampler = queries.setup_target(_target,
                                               target_observed,
                                               reference=reference)
+
     return target_sampler, target_observed
 
 class glm_group_lasso(M_estimator):

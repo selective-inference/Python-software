@@ -275,7 +275,7 @@ class M_estimator(query):
         self.Q = ((_hessian + epsilon * np.identity(p))[:,active])[active,:]
         self.Qinv = np.linalg.inv(self.Q)
         self.form_VQLambda()
-
+        self.nboot = 2000
 
     def form_VQLambda(self):
         nactive_groups = len(self.active_directions_list)

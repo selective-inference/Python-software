@@ -14,8 +14,6 @@ from selection.tests.instance import (gaussian_instance,
                                       logistic_instance)
 from selection.randomized.glm import (pairs_bootstrap_glm,
                                       glm_nonparametric_bootstrap)
-from selection.randomized.cv import (choose_lambda_CV,
-                                     bootstrap_CV_curve)
 from selection.algorithms.lasso import (glm_sandwich_estimator,
                                         lasso)
 from selection.constraints.affine import (constraints,
@@ -25,6 +23,7 @@ from selection.randomized.query import naive_confidence_intervals
 import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+from selection.randomized.cv_view import CV_view
 
 
 @register_report(['truth', 'cover', 'naive_cover', 'active'])
@@ -55,29 +54,27 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
         glm_loss = rr.glm.logistic(X, y)
 
-    lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
-
-    folds = np.arange(n) % K
-    np.random.shuffle(folds)
-    lam_CV, CV_curve = choose_lambda_CV(glm_loss, lam_seq, folds)
-    CV_val = np.array(CV_curve)[:,2]
-    CV_boot = bootstrap_CV_curve(glm_loss, lam_seq, folds, K)
+    # view 1
+    cv = CV_view(glm_loss, K)
+    cv.solve()
+    #cv.condition_on_opt_state()
 
     #L = lasso.gaussian(X, y, lam_CV)
     #L.covariance_estimator = glm_sandwich_estimator(L.loglike, B=2000)
     #soln = L.fit()
-    problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=lam_CV))
+    problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=cv.lam_CVR))
     beta_hat = problem.solve()
     active_hat = beta_hat !=0
     print("non-randomized lasso ", active_hat.sum())
 
-    W = np.ones(p) * lam_CV
+    # view 2
+    W = np.ones(p) * cv.lam_CVR
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     epsilon = 1./np.sqrt(n)
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
-    mv = multiple_queries([M_est1])
+    mv = multiple_queries([cv, M_est1])
     mv.solve()
 
     #active = soln != 0
@@ -85,17 +82,6 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
     nactive = np.sum(active_union)
     print("nactive", nactive)
 
-    _full_boot_score = pairs_bootstrap_glm(glm_loss, active_union)[0]
-
-    def _boot_score(indices):
-        return _full_boot_score(indices)[:nactive]
-
-    cov_est = glm_nonparametric_bootstrap(n, n)
-    # compute covariance of CV error curve and the cross-covariance of CV error curve with the the active part of score
-    cov = cov_est(CV_boot, cross_terms=[_boot_score], nsample=1)
-
-    if bootstrap=='False':
-        M_est1.target_decomposition(cov, CV_val)
 
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
@@ -118,6 +104,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
             LU = target_sampler.confidence_intervals(target_observed,
                                                      sample=target_sample,
                                                      level=0.9)
+
             #pivots_mle = target_sampler.coefficient_pvalues(target_observed,
             #                                                parameter=target_sampler.reference,
             #                                                sample=target_sample)
@@ -164,7 +151,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
 
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 10, 'n': 500, 'p': 100, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 10, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
@@ -173,7 +160,7 @@ def report(niter=50, **kwargs):
                                              **kwargs)
 
     # fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
-    fig = reports.pivot_plot_2in1(CLT_runs, color='b', label='CLT')
+    fig = reports.pivot_plot_2in1(CLT_runs, color='b', label='CV')
 
     #kwargs['bootstrap'] = True
     #bootstrap_runs = reports.collect_multiple_runs(intervals_report['test'],

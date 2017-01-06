@@ -38,8 +38,10 @@ class query(object):
         if self.target_offset is None:
             self.target_offset = np.zeros(data_state.shape[0])
         data_piece = data_linear.dot(data_state+self.target_offset) + data_offset
-        opt_piece = opt_linear.dot(np.array(opt_state)) + opt_offset
-
+        if opt_linear is not None:
+            opt_piece = opt_linear.dot(np.array(opt_state)) + opt_offset
+        else:
+            opt_piece = opt_offset
         # value of the randomization omega
 
         full_state = (data_piece + opt_piece)
@@ -53,9 +55,12 @@ class query(object):
         # chain rule for data, optimization parts
 
         data_grad = data_linear.T.dot(randomization_derivative)
-        opt_grad = opt_linear.T.dot(randomization_derivative)
+        if opt_linear is not None:
+            opt_grad = opt_linear.T.dot(randomization_derivative)
+        else:
+            opt_grad = None
+        return data_grad, opt_grad #- self.grad_log_jacobian(opt_state)
 
-        return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
 
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
@@ -142,7 +147,8 @@ class query(object):
         assume is close to Hessian at \bar{\beta}_E^*
         """
         # needs to be implemented for group lasso
-        return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
+        return 0.
+        # self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
 
 
     def jacobian(self, opt_state):
@@ -257,10 +263,11 @@ class multiple_queries(object):
         nqueries = self.nqueries = len(self.objectives)
 
         self.score_info = []
-
+        self.nboot = []
         for objective in self.objectives:
             score_ = objective.setup_sampler()
             self.score_info.append(score_)
+            self.nboot.append(objective.nboot)
 
     def setup_opt_state(self):
         self.num_opt_var = 0
@@ -272,7 +279,8 @@ class multiple_queries(object):
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
         for i in range(len(self.objectives)):
-            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state[:self.num_opt_var]
+            if self.objectives[i].num_opt_var>0:
+                self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state #[:self.num_opt_var]
 
     def setup_target(self,
                      target_info,
@@ -428,8 +436,15 @@ class targeted_sampler(object):
         self.observed_target_state = observed_target_state
         self.shape = observed_target_state.shape
 
-        covariances = multi_view.form_covariances(target_info, cross_terms=multi_view.score_info)
-        self.target_cov = np.atleast_2d(covariances[0])
+        self.score_cov = []
+        #nsample = [1, 2000]
+        for i in range(self.nqueries):
+            target_cov, cross_cov = multi_view.form_covariances(target_info, cross_terms=[multi_view.score_info[i]],
+                                                                nsample=multi_view.nboot[i])
+            self.target_cov = target_cov
+            self.score_cov.append(cross_cov)
+
+        #self.target_cov = np.atleast_2d(covariances[0])
 
         # XXX we're not really using this target_set in our tests
 
@@ -442,7 +457,7 @@ class targeted_sampler(object):
                 self.target_cov[t, n] = 0.
                 self.target_cov[n, t] = 0.
 
-        self.score_cov = covariances[1:]
+        #self.score_cov = covariances[1:]
 
         self.target_transform = []
 
