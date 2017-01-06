@@ -3,9 +3,7 @@ import numpy as np
 import time
 import regreg.api as rr
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.randomized.M_estimator import M_estimator
 from selection.bayesian.inference_rr_data_split import smooth_cube_barrier, selection_probability_split
-from selection.randomized.randomization import split
 
 
 def test_sel_prob_split(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.,loss='gaussian'):
@@ -22,25 +20,17 @@ def test_sel_prob_split(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.,loss='gauss
 
     subsample_size = int(0.8* total_size)
 
-    randomizer_split = split(loss.shape, subsample_size, total_size)
+    generative_mean = np.append(snr * np.ones(s), np.zeros(p - s))
+    sel_split = selection_probability_split(loss, epsilon, penalty, generative_mean)
 
-    solver = M_estimator(loss, epsilon, penalty, randomizer_split)
-
-    solver.Msolve()
-
-    active_set = np.asarray([i for i in range(p) if solver._overall[i]])
+    active_set = np.asarray([i for i in range(p) if sel_split ._overall[i]])
 
     true_support = np.asarray([i for i in range(p) if i < s])
-
-    test_point = np.append(solver.observed_score_state,solver.observed_opt_state)
 
     print("active set, true_support", active_set, true_support)
 
     if (set(active_set).intersection(set(true_support)) == set(true_support)) == True:
 
-        generative_mean = np.append(snr*np.ones(s), np.zeros(p-s))
-        sel_split = selection_probability_split(loss, epsilon, penalty, generative_mean)
-        #print("objective and grad at test", sel_split.cube_barrier.smooth_objective(test_point, mode='grad'))
         sel_prob_split = sel_split.minimize2(nstep=100)[::-1]
         print("sel prob and minimizer", sel_prob_split[0], (sel_prob_split[1])[p:])
 

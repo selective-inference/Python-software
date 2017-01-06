@@ -139,7 +139,6 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
 
         self.p = p
         self.nactive = nactive
-        print("no of active variables", self.nactive)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """
