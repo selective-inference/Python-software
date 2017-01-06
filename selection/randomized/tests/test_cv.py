@@ -32,7 +32,7 @@ from selection.randomized.cv_view import CV_view
 @wait_for_return_value()
 def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
              randomizer='gaussian',
-             randomizer_scale = 1.,
+             randomizer_scale = 0.5,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
@@ -151,7 +151,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
 
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 0, 'n': 1000, 'p': 500, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 0, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
