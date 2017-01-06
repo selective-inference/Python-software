@@ -4,6 +4,7 @@ import regreg.api as rr
 from selection.algorithms.softmax import nonnegative_softmax
 from selection.randomized.M_estimator import M_estimator_split
 from selection.randomized.glm import pairs_bootstrap_glm, bootstrap_cov
+from selection.bayesian.credible_intervals import projected_langevin
 
 
 class smooth_cube_barrier(rr.smooth_atom):
@@ -45,7 +46,7 @@ class smooth_cube_barrier(rr.smooth_atom):
 
 class selection_probability_split(rr.smooth_atom, M_estimator_split):
 
-    def __init__(self, loss, epsilon, penalty, generative_mean, subsample_size, coef=1., offset=None, quadratic=None, nstep=10):
+    def __init__(self, loss, epsilon, penalty, generative_mean, subsample_size, coef=1., offset=None, quadratic=None):
 
         M_estimator_split.__init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10})
 
@@ -223,32 +224,21 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
         value = objective(current)
         return current, value
 
-class sel_prob_gradient_map_split(rr.smooth_atom):
+    def smooth_objective_gradient_map(self, true_param, mode='both', check_feasibility=False):
 
-    def __init__(self, sel_prob, true_dim, coef=1., offset=None, quadratic=None):
+        cov_data_inv = np.linalg.inv(self.score_cov)
 
-        self.sel_prob = sel_prob
-        self.p = self.sel_prob.generative_mean.shape[0]
+        true_mean = np.append(true_param, np.zeros(self.p-self.nactive))
 
-        self.dim = true_dim
-
-        self.cov_data_inv = np.linalg.inv(self.sel_prob.score_cov)
-
-        rr.smooth_atom.__init__(self,(self.dim,),offset=offset,quadratic=quadratic,coef=coef)
-
-    def smooth_objective(self, param, mode='both', check_feasibility=False, tol=1.e-6):
-
-        mean_parameter = self.sel_prob.generative_mean
-
-        sel_prob_primal = self.sel_prob.minimize2(nstep=100)[::-1]
+        sel_prob_primal = self.minimize2(nstep=100)[::-1]
 
         optimal_primal = (sel_prob_primal[1])[:self.p]
 
         sel_prob_val = -sel_prob_primal[0]
 
-        full_gradient = self.cov_data_inv .dot(optimal_primal - mean_parameter)
+        full_gradient = cov_data_inv.dot(optimal_primal - true_mean)
 
-        optimizer = full_gradient[:self.dim]
+        optimizer = full_gradient[:self.nactive]
 
         if mode == 'func':
             return sel_prob_val
@@ -258,6 +248,126 @@ class sel_prob_gradient_map_split(rr.smooth_atom):
             return sel_prob_val, optimizer
         else:
             raise ValueError('mode incorrectly specified')
+
+
+class selective_map_credible_split(rr.smooth_atom):
+
+    def __init__(self, loss, epsilon, penalty, generative_mean, subsample_size, prior_variance,
+                 coef=1., offset=None, quadratic=None):
+
+        selection_probability_split.__init__(self, loss, epsilon, penalty, generative_mean, subsample_size,
+                                             coef=1., offset=None, quadratic=None)
+
+        self.param_shape = self.nactive
+
+        initial = self.observed_opt_state[:self.nactive]
+
+        rr.smooth_atom.__init__(self,
+                                (self.param_shape,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef =coef)
+
+        self.coefs[:] = initial
+
+        self.initial_state = initial
+
+        data_obs = (self.score_cov_inv_half.dot(self.observed_score_state))[:self.param_shape]
+
+        likelihood_loss = rr.signal_approximator(data_obs,
+                                                 coef=1.)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self.score_cov_inv_half[:, :self.param_shape])
+
+        self.log_prior_loss = rr.signal_approximator(np.zeros(self.param_shape), coef=1. / prior_variance)
+
+        self.total_loss = rr.smooth_sum([self.likelihood_loss,
+                                         self.log_prior_loss])
+
+    def smooth_objective(self, true_param, mode='both', check_feasibility=False):
+
+        true_param = self.apply_offset(true_param)
+        f = self.total_loss.smooth_objective(true_param, 'func') + self.smooth_objective_gradient_map(true_param,
+                                                                                                      'func')
+        g = self.total_loss.smooth_objective(true_param, 'grad') + self.smooth_objective_gradient_map(true_param,
+                                                                                                      'grad')
+        if mode == 'func':
+            return self.scale(f)
+        elif mode == 'grad':
+            return self.scale(g)
+        elif mode == 'both':
+            return self.scale(f), self.scale(g)
+        else:
+            raise ValueError("mode incorrectly specified")
+
+    def map_solve(self, step=1, nstep=100, tol=1.e-8):
+
+        current = self.coefs[:]
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective(u, 'func')
+        grad = lambda u: self.smooth_objective(u, 'grad')
+
+        for itercount in range(nstep):
+
+            newton_step = grad(current)
+            # * self.noise_variance
+
+            # make sure proposal is a descent
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        value = objective(current)
+        return current, value
+
+    def posterior_samples(self, Langevin_steps=1000, burnin=100):
+        state = self.initial_state
+        print("here", state.shape)
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
+
+        samples = []
+
+        for i in range(Langevin_steps):
+            sampler.next()
+            samples.append(sampler.state.copy())
+            print i, sampler.state.copy()
+
+        samples = np.array(samples)
+        return samples[burnin:, :]
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
