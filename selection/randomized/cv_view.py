@@ -49,7 +49,6 @@ class CV_view(query):
                                        CV1_val)
         self.lam_idx = list(self.lam_seq).index(self.lam_CVR) # index of the minimizer
         self._solved = True
-        #self.projection_map = projection_cone(self.num_opt_var, lam_idx, -np.sign(CVR_val[lam_idx]))
         self.opt_transform = (np.identity(self.num_opt_var), np.zeros(self.num_opt_var))
         self.score_transform = (-np.identity(self.num_opt_var), np.zeros(self.num_opt_var))
 
@@ -60,8 +59,9 @@ class CV_view(query):
         return CV1_boot
 
     def projection(self, opt_state):
-        return projection(opt_state, self.lam_idx)
-
+        if self.opt_transform[0] is not None:
+            return projection(opt_state, self.lam_idx)
+        return None
 
     def condition_on_opt_state(self):
         self.num_opt_var = 0

@@ -57,11 +57,8 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
     # view 1
     cv = CV_view(glm_loss)
     cv.solve()
-    #cv.condition_on_opt_state()
+    cv.condition_on_opt_state()
 
-    #L = lasso.gaussian(X, y, lam_CV)
-    #L.covariance_estimator = glm_sandwich_estimator(L.loglike, B=2000)
-    #soln = L.fit()
     problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=cv.lam_CVR))
     beta_hat = problem.solve()
     active_hat = beta_hat !=0
