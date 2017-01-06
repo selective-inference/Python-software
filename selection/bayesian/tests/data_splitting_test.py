@@ -21,7 +21,7 @@ def test_sel_prob_split(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.,loss='gauss
     subsample_size = int(0.8* total_size)
 
     generative_mean = np.append(snr * np.ones(s), np.zeros(p - s))
-    sel_split = selection_probability_split(loss, epsilon, penalty, generative_mean)
+    sel_split = selection_probability_split(loss, epsilon, penalty, generative_mean, subsample_size)
 
     active_set = np.asarray([i for i in range(p) if sel_split ._overall[i]])
 

@@ -45,11 +45,7 @@ class smooth_cube_barrier(rr.smooth_atom):
 
 class selection_probability_split(rr.smooth_atom, M_estimator_split):
 
-    def __init__(self, loss, epsilon, penalty, generative_mean, coef=1., offset=None, quadratic=None, nstep=10):
-
-        total_size = loss.saturated_loss.shape[0]
-
-        subsample_size = int(0.8 * total_size)
+    def __init__(self, loss, epsilon, penalty, generative_mean, subsample_size, coef=1., offset=None, quadratic=None, nstep=10):
 
         M_estimator_split.__init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10})
 
