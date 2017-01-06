@@ -55,7 +55,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
         glm_loss = rr.glm.logistic(X, y)
 
     # view 1
-    cv = CV_view(glm_loss, K)
+    cv = CV_view(glm_loss)
     cv.solve()
     #cv.condition_on_opt_state()
 
@@ -151,7 +151,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
 
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 10, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 0, 'n': 1000, 'p': 500, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
