@@ -223,6 +223,43 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
         value = objective(current)
         return current, value
 
+class sel_prob_gradient_map_split(rr.smooth_atom):
+
+    def __init__(self, sel_prob, true_dim, coef=1., offset=None, quadratic=None):
+
+        self.sel_prob = sel_prob
+        self.p = self.sel_prob.generative_mean.shape[0]
+
+        self.dim = true_dim
+
+        self.cov_data_inv = np.linalg.inv(self.sel_prob.score_cov)
+
+        rr.smooth_atom.__init__(self,(self.dim,),offset=offset,quadratic=quadratic,coef=coef)
+
+    def smooth_objective(self, param, mode='both', check_feasibility=False, tol=1.e-6):
+
+        mean_parameter = self.sel_prob.generative_mean
+
+        sel_prob_primal = self.sel_prob.minimize2(nstep=100)[::-1]
+
+        optimal_primal = (sel_prob_primal[1])[:self.p]
+
+        sel_prob_val = -sel_prob_primal[0]
+
+        full_gradient = self.cov_data_inv .dot(optimal_primal - mean_parameter)
+
+        optimizer = full_gradient[:self.dim]
+
+        if mode == 'func':
+            return sel_prob_val
+        elif mode == 'grad':
+            return optimizer
+        elif mode == 'both':
+            return sel_prob_val, optimizer
+        else:
+            raise ValueError('mode incorrectly specified')
+
+
 
 
 
