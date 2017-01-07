@@ -273,10 +273,10 @@ class selective_map_credible_split(rr.smooth_atom):
 
         self.initial_state = initial
 
-        data_obs = (self.score_cov_inv_half.dot(self.observed_score_state))[:self.param_shape]
+        data_obs = self.score_cov_inv_half.dot(self.observed_score_state)
 
-        likelihood_loss = rr.signal_approximator(data_obs,
-                                                 coef=1.)
+        likelihood_loss = rr.signal_approximator(data_obs, coef=1.)
+
         self.likelihood_loss = rr.affine_smooth(likelihood_loss, self.score_cov_inv_half[:, :self.param_shape])
 
         self.log_prior_loss = rr.signal_approximator(np.zeros(self.param_shape), coef=1. / prior_variance)
