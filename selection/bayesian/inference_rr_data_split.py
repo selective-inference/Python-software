@@ -43,26 +43,26 @@ class smooth_cube_barrier(rr.smooth_atom):
         else:
             raise ValueError('mode incorrectly specified')
 
+class selection_probability_split(rr.smooth_atom):
 
-class selection_probability_split(rr.smooth_atom, M_estimator_split):
+    def __init__(self, solver, generative_mean, coef=1., offset=None, quadratic=None):
 
-    def __init__(self, loss, epsilon, penalty, generative_mean, subsample_size, coef=1., offset=None, quadratic=None):
+        self.loss = solver.loss
+        self._beta_full = solver._beta_full
+        self._overall = solver._overall
 
-        M_estimator_split.__init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10})
-
-        self.Msolve()
-
-        X, _ = self.loss.data
-        n, p = X.shape
         nactive = self._overall.sum()
 
+        X, _ = solver.loss.data
+        n, p = X.shape
+
         lagrange = []
-        for key, value in self.penalty.weights.iteritems():
+        for key, value in solver.penalty.weights.iteritems():
             lagrange.append(value)
         lagrange = np.asarray(lagrange)
         self.inactive_lagrange = lagrange[~self._overall]
 
-        self.feasible_point = self.observed_opt_state
+        self.feasible_point = solver.observed_opt_state
 
         initial = np.zeros(2*p, )
         initial[p:] = self.feasible_point
@@ -83,9 +83,9 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
 
         score_cov = bootstrap_cov(lambda: np.random.choice(n, size=(n,), replace=True), bootstrap_score)
 
-        score_linear_term = self.score_transform[0]
+        score_linear_term = solver.score_transform[0]
 
-        (opt_linear_term, opt_affine_term) = self.opt_transform
+        (opt_linear_term, opt_affine_term) = solver.opt_transform
 
         B = opt_linear_term
         A = score_linear_term
@@ -109,7 +109,7 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
         cube_objective = smooth_cube_barrier(self.inactive_lagrange)
         self.cube_barrier = rr.affine_smooth(cube_objective, self._opt_selector_inactive)
 
-        randomization_cov = self.setup_sampler()
+        randomization_cov = solver.setup_sampler()
         w, v = np.linalg.eig(randomization_cov)
         self.randomization_cov_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
         self.randomization_quad = self.randomization_cov_inv_half.dot(self.linear_map)
@@ -136,6 +136,8 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
 
         self.p = p
         self.nactive = nactive
+        self.cov_data_inv = np.linalg.inv(score_cov)
+        self.observed_score_state = solver.observed_score_state
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """
@@ -224,73 +226,69 @@ class selection_probability_split(rr.smooth_atom, M_estimator_split):
         value = objective(current)
         return current, value
 
-    def smooth_objective_gradient_map(self, true_param, mode='both', check_feasibility=False):
+class map_credible_split(selection_probability_split):
 
-        cov_data_inv = np.linalg.inv(self.score_cov)
+    def __init__(self, solver, prior_variance, coef=1., offset=None, quadratic=None):
 
-        true_mean = np.append(true_param, np.zeros(self.p-self.nactive))
+        self.solver = solver
+        X, _ = self.solver.loss.data
+        self.p_shape = X.shape[1]
+        self.param_shape = self.solver._overall.sum()
+        self.prior_variance = prior_variance
 
-        sel_prob_primal = self.minimize2(nstep=100)[::-1]
-
-        optimal_primal = (sel_prob_primal[1])[:self.p]
-
-        sel_prob_val = -sel_prob_primal[0]
-
-        full_gradient = cov_data_inv.dot(optimal_primal - true_mean)
-
-        optimizer = full_gradient[:self.nactive]
-
-        if mode == 'func':
-            return sel_prob_val
-        elif mode == 'grad':
-            return optimizer
-        elif mode == 'both':
-            return sel_prob_val, optimizer
-        else:
-            raise ValueError('mode incorrectly specified')
-
-
-class selective_map_credible_split(rr.smooth_atom):
-
-    def __init__(self, loss, epsilon, penalty, generative_mean, subsample_size, prior_variance,
-                 coef=1., offset=None, quadratic=None):
-
-        selection_probability_split.__init__(self, loss, epsilon, penalty, generative_mean, subsample_size,
-                                             coef=1., offset=None, quadratic=None)
-
-        self.param_shape = self.nactive
-
-        initial = self.observed_opt_state[:self.nactive]
+        initial = solver.observed_opt_state[:self.param_shape]
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
                                 offset=offset,
                                 quadratic=quadratic,
                                 initial=initial,
-                                coef =coef)
+                                coef=coef)
 
         self.coefs[:] = initial
 
         self.initial_state = initial
 
-        data_obs = self.score_cov_inv_half.dot(self.observed_score_state)
+    def smooth_objective_post(self, sel_param, mode='both', check_feasibility=False):
+
+        sel_param = self.apply_offset(sel_param)
+        generative_mean = np.zeros(self.p_shape)
+        generative_mean[:self.param_shape]= sel_param
+
+        sel_split = selection_probability_split(self.solver, generative_mean)
+
+        cov_data_inv = sel_split.cov_data_inv
+
+        sel_prob_primal = sel_split.minimize2(nstep=100)[::-1]
+
+        optimal_primal = (sel_prob_primal[1])[:sel_split.p]
+
+        sel_prob_val = -sel_prob_primal[0]
+
+        full_gradient = cov_data_inv.dot(optimal_primal - generative_mean)
+
+        optimizer = full_gradient[:self.param_shape]
+
+        data_obs = sel_split.score_cov_inv_half.dot(sel_split.observed_score_state)
 
         likelihood_loss = rr.signal_approximator(data_obs, coef=1.)
 
-        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self.score_cov_inv_half[:, :self.param_shape])
+        likelihood_loss = rr.affine_smooth(likelihood_loss, sel_split.score_cov_inv_half[:, :self.param_shape])
 
-        self.log_prior_loss = rr.signal_approximator(np.zeros(self.param_shape), coef=1. / prior_variance)
+        likelihood_loss_value = likelihood_loss.smooth_objective(sel_param, 'func')
 
-        self.total_loss = rr.smooth_sum([self.likelihood_loss,
-                                         self.log_prior_loss])
+        likelihood_loss_grad = likelihood_loss.smooth_objective(sel_param, 'grad')
 
-    def smooth_objective(self, true_param, mode='both', check_feasibility=False):
+        log_prior_loss = rr.signal_approximator(np.zeros(self.param_shape), coef=1. /self.prior_variance)
 
-        true_param = self.apply_offset(true_param)
-        f = self.total_loss.smooth_objective(true_param, 'func') + self.smooth_objective_gradient_map(true_param,
-                                                                                                      'func')
-        g = self.total_loss.smooth_objective(true_param, 'grad') + self.smooth_objective_gradient_map(true_param,
-                                                                                                      'grad')
+        log_prior_loss_value = log_prior_loss.smooth_objective(sel_param, 'func')
+
+        log_prior_loss_grad = log_prior_loss.smooth_objective(sel_param, 'grad')
+
+        f = likelihood_loss_value + log_prior_loss_value + sel_prob_val
+
+        g = likelihood_loss_grad + log_prior_loss_grad + optimizer
+
         if mode == 'func':
             return self.scale(f)
         elif mode == 'grad':
@@ -305,8 +303,8 @@ class selective_map_credible_split(rr.smooth_atom):
         current = self.coefs[:]
         current_value = np.inf
 
-        objective = lambda u: self.smooth_objective(u, 'func')
-        grad = lambda u: self.smooth_objective(u, 'grad')
+        objective = lambda u: self.smooth_objective_post(u, 'func')
+        grad = lambda u: self.smooth_objective_post(u, 'grad')
 
         for itercount in range(nstep):
 
@@ -342,7 +340,7 @@ class selective_map_credible_split(rr.smooth_atom):
     def posterior_samples(self, Langevin_steps=1000, burnin=100):
         state = self.initial_state
         print("here", state.shape)
-        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        gradient_map = lambda x: -self.smooth_objective_post(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
         sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
@@ -356,6 +354,8 @@ class selective_map_credible_split(rr.smooth_atom):
 
         samples = np.array(samples)
         return samples[burnin:, :]
+
+
 
 
 
