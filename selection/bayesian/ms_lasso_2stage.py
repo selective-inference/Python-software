@@ -91,7 +91,7 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         self.cube_loss_1 = rr.affine_smooth(cube_obj_1, self._inactive_ms)
 
-        X_step2 = X[:, ~active_1]
+        X_step2 = X[:, active_1]
         X_E_2 = X_step2[:, active_2]
         B = X_step2.T.dot(X_E_2)
 
@@ -104,7 +104,7 @@ class selection_probability_objective_ms_lasso(rr.smooth_atom):
 
         self.offset_active_2 = active_signs_2 * lagrange[active_2]
 
-        self.offset_inactive_2 = np.zeros(p-E_1-E_2)
+        self.offset_inactive_2 = np.zeros(E_1-E_2)
 
 
         self._active_lasso = rr.selector(arg_lasso, (self.n + E_1 + E_2,),
@@ -276,7 +276,7 @@ class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
                                                               self.randomizer,
                                                               self.epsilon)
 
-        sel_prob_primal = primal_sol.minimize2(nstep=60)[::-1]
+        sel_prob_primal = primal_sol.minimize2(nstep=100)[::-1]
         optimal_primal = (sel_prob_primal[1])[:self.n]
         sel_prob_val = -sel_prob_primal[0]
         optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
@@ -310,15 +310,15 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
 
         E_2 = grad_map.E_2
 
-        self.E = E_1 + E_2
+        self.E = E_2
 
         self.generative_X = grad_map.generative_X
 
         initial = np.zeros(self.E)
 
-        initial[:E_1] = np.squeeze(grad_map.feasible_point[:E_1]* grad_map.active_signs_1[None,:])
+        #initial[:E_1] = np.squeeze(grad_map.feasible_point[:E_1]* grad_map.active_signs_1[None,:])
 
-        initial[E_1:] = np.squeeze(grad_map.feasible_point[E_1:]* grad_map.active_signs_2[None,:])
+        initial = np.squeeze(grad_map.feasible_point[E_1:]* grad_map.active_signs_2[None,:])
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -403,7 +403,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=1000, burnin=100):
+    def posterior_samples(self, Langevin_steps=4000, burnin=500):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
