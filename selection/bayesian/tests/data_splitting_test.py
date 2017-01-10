@@ -93,7 +93,7 @@ def test_sel_prob_split_new(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.):
 
     total_size = loss.saturated_loss.shape[0]
 
-    subsample_size = int(0.8* total_size)
+    subsample_size = int(0.8 * total_size)
 
     prior_variance = 100.
 
@@ -105,22 +105,28 @@ def test_sel_prob_split_new(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.):
 
     true_support = np.asarray([i for i in range(p) if i < s])
 
-    #generative_mean = np.append(snr * np.ones(s), np.zeros(p - s))
-
     print("active set, true_support", active_set, true_support)
-
-    #sel_split = selection_probability_split(solver, generative_mean)
 
     test = solver.observed_opt_state[solver._overall]
 
     if (set(active_set).intersection(set(true_support)) == set(true_support)) == True:
-        #sel_prob_split = sel_split.minimize2(nstep=100)[::-1]
-        #print("sel prob and minimizer", sel_prob_split[0], (sel_prob_split[1])[p:])
 
         grad_split = map_credible_split(solver, prior_variance)
         sel_grad = grad_split.smooth_objective_post(test, 'both')
 
         print("value and gradient", sel_grad)
+
+        #sel_MAP = grad_split.map_solve(nstep=100)[::-1]
+
+        #print("selective MAP- data splitting", sel_MAP[1])
+
+        toc = time.time()
+        samples = grad_split.posterior_samples()
+        tic = time.time()
+        print('sampling time', tic - toc)
+
+        adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+        print("adjusted_data_split intervals", adjusted_intervals)
 
 
 test_sel_prob_split_new()

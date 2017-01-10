@@ -26,12 +26,12 @@ class smooth_cube_barrier(rr.smooth_atom):
     def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
 
         arg = self.apply_offset(arg)
-        BIG = 10 ** 10
+        #BIG = 10 ** 10
         _diff = arg - self.lagrange_cube  # z - \lambda < 0
         _sum = arg + self.lagrange_cube  # z + \lambda > 0
-        violations = ((_diff >= 0).sum() + (_sum <= 0).sum() > 0)
+        #violations = ((_diff >= 0).sum() + (_sum <= 0).sum() > 0)
 
-        f = np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum)).sum() + BIG * violations
+        f = np.log((_diff - 1.) * (_sum + 1.) / (_diff * _sum)).sum() #+ BIG * violations
         g = 1. / (_diff - 1) - 1. / _diff + 1. / (_sum + 1) - 1. / _sum
 
         if mode == 'func':
@@ -76,10 +76,7 @@ class selection_probability_split(rr.smooth_atom):
 
         self.coefs[:] = initial
 
-        bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self._overall,
-                                              beta_full=self._beta_full,
-                                              inactive=~self._overall)[0]
+        bootstrap_score, randomization_cov = solver.setup_sampler()
 
         score_cov = bootstrap_cov(lambda: np.random.choice(n, size=(n,), replace=True), bootstrap_score)
 
@@ -89,6 +86,7 @@ class selection_probability_split(rr.smooth_atom):
 
         B = opt_linear_term
         A = score_linear_term
+
         self.linear_map = np.hstack([A,B])
         gamma = opt_affine_term
 
@@ -109,7 +107,6 @@ class selection_probability_split(rr.smooth_atom):
         cube_objective = smooth_cube_barrier(self.inactive_lagrange)
         self.cube_barrier = rr.affine_smooth(cube_objective, self._opt_selector_inactive)
 
-        randomization_cov = solver.setup_sampler()
         w, v = np.linalg.eig(randomization_cov)
         self.randomization_cov_inv_half = (v.T.dot(np.diag(np.power(w, -0.5)))).dot(v)
         self.randomization_quad = self.randomization_cov_inv_half.dot(self.linear_map)
@@ -237,6 +234,7 @@ class map_credible_split(selection_probability_split):
         self.prior_variance = prior_variance
 
         initial = solver.observed_opt_state[:self.param_shape]
+        print("initial_state", initial)
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -261,7 +259,7 @@ class map_credible_split(selection_probability_split):
 
         sel_prob_primal = sel_split.minimize2(nstep=100)[::-1]
 
-        optimal_primal = (sel_prob_primal[1])[:sel_split.p]
+        optimal_primal = (sel_prob_primal[1])[:self.p_shape]
 
         sel_prob_val = -sel_prob_primal[0]
 
@@ -309,6 +307,7 @@ class map_credible_split(selection_probability_split):
         for itercount in range(nstep):
 
             newton_step = grad(current)
+            #print("newton step", newton_step)
             # * self.noise_variance
 
             # make sure proposal is a descent
@@ -316,6 +315,7 @@ class map_credible_split(selection_probability_split):
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
+                #print("proposal", proposal)
 
                 if proposed_value <= current_value:
                     break
@@ -342,7 +342,7 @@ class map_credible_split(selection_probability_split):
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective_post(x, 'grad')
         projection_map = lambda x: x
-        stepsize = 1. / self.E
+        stepsize = 1. / self.param_shape
         sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
 
         samples = []
