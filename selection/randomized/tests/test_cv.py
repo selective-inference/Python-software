@@ -36,6 +36,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
+             condition_on_CVR = False,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
@@ -57,7 +58,8 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
     # view 1
     cv = CV_view(glm_loss)
     cv.solve()
-    cv.condition_on_opt_state()
+    if condition_on_CVR:
+        cv.condition_on_opt_state()
 
     problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=cv.lam_CVR))
     beta_hat = problem.solve()
