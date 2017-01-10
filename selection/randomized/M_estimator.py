@@ -4,9 +4,9 @@ import regreg.api as rr
 from .query import query
 from .randomization import split
 
-
 class M_estimator(query):
-    def __init__(self, loss, epsilon, penalty, randomization, solve_args={'min_its': 50, 'tol': 1.e-10}):
+
+    def __init__(self, loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
         """
         Fits the logistic regression to a candidate active set, without penalty.
         Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
@@ -41,7 +41,7 @@ class M_estimator(query):
 
     # Methods needed for subclassing a query
 
-    def solve(self, scaling=1, solve_args={'min_its': 20, 'tol': 1.e-10}):
+    def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
 
         self.randomize()
 
@@ -77,8 +77,7 @@ class M_estimator(query):
 
         for i, g in enumerate(groups):
             group = penalty.groups == g
-            active_groups[i] = (np.linalg.norm(self.initial_soln[group]) > 1.e-6 * penalty.weights[g]) and (
-            penalty.weights[g] > 0)
+            active_groups[i] = (np.linalg.norm(self.initial_soln[group]) > 1.e-6 * penalty.weights[g]) and (penalty.weights[g] > 0)
             unpenalized_groups[i] = (penalty.weights[g] == 0)
             if active_groups[i]:
                 active[group] = True
@@ -98,15 +97,15 @@ class M_estimator(query):
         self._active_groups = np.array(active_groups, np.bool)
         self._unpenalized_groups = np.array(unpenalized_groups, np.bool)
 
-        self.selection_variable = {'groups': self._active_groups,
-                                   'variables': self._overall,
-                                   'directions': self._active_directions}
+        self.selection_variable = {'groups':self._active_groups,
+                                   'variables':self._overall,
+                                   'directions':self._active_directions}
 
         # initial state for opt variables
 
         initial_subgrad = -(self.randomized_loss.smooth_objective(self.initial_soln, 'grad') +
                             self.randomized_loss.quadratic.objective(self.initial_soln, 'grad'))
-        # the quadratic of a smooth_atom is not included in computing the smooth_objective
+                          # the quadratic of a smooth_atom is not included in computing the smooth_objective
 
         initial_subgrad = initial_subgrad[self._inactive]
         initial_unpenalized = self.initial_soln[self._unpenalized]
@@ -159,7 +158,7 @@ class M_estimator(query):
 
         # form linear part
 
-        self.num_opt_var = p = loss.shape[0]  # shorthand for p
+        self.num_opt_var = p = loss.shape[0] # shorthand for p
 
         # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})
         # E for active
@@ -172,45 +171,42 @@ class M_estimator(query):
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
         Mest_slice = slice(0, overall.sum())
-        _Mest_hessian = _hessian[:, overall]
-        _score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
+        _Mest_hessian = _hessian[:,overall]
+        _score_linear_term[:,Mest_slice] = -_Mest_hessian / _sqrt_scaling
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
         null_idx = range(overall.sum(), p)
         inactive_idx = np.nonzero(inactive)[0]
         for _i, _n in zip(inactive_idx, null_idx):
-            _score_linear_term[_i, _n] = -_sqrt_scaling
+            _score_linear_term[_i,_n] = -_sqrt_scaling
 
         # c_E piece
 
         scaling_slice = slice(0, active_groups.sum())
-        if len(active_directions) == 0:
-            _opt_hessian = 0
+        if len(active_directions)==0:
+            _opt_hessian=0
         else:
             _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
-        _opt_linear_term[:, scaling_slice] = _opt_hessian / _sqrt_scaling
+        _opt_linear_term[:,scaling_slice] = _opt_hessian / _sqrt_scaling
 
         self.observed_opt_state[scaling_slice] *= _sqrt_scaling
 
         # beta_U piece
 
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
-        unpenalized_directions = np.identity(p)[:, unpenalized]
+        unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            _opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(
-                unpenalized_directions) / _sqrt_scaling
+            _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
 
         self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
 
         # subgrad piece
 
-        subgrad_idx = range(active_groups.sum() + unpenalized.sum(),
-                            active_groups.sum() + inactive.sum() + unpenalized.sum())
-        subgrad_slice = slice(active_groups.sum() + unpenalized.sum(),
-                              active_groups.sum() + inactive.sum() + unpenalized.sum())
+        subgrad_idx = range(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
+        subgrad_slice = slice(active_groups.sum() + unpenalized.sum(), active_groups.sum() + inactive.sum() + unpenalized.sum())
         for _i, _s in zip(inactive_idx, subgrad_idx):
-            _opt_linear_term[_i, _s] = _sqrt_scaling
+            _opt_linear_term[_i,_s] = _sqrt_scaling
 
         self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
 
@@ -222,17 +218,17 @@ class M_estimator(query):
         for i, g in enumerate(groups):
             if active_groups[i]:
                 group = penalty.groups == g
-                _opt_affine_term[group] = active_directions[:, idx][group] * penalty.weights[g]
+                _opt_affine_term[group] = active_directions[:,idx][group] * penalty.weights[g]
                 idx += 1
 
         # two transforms that encode score and optimization
         # variable roles
 
-        # later, we will modify `score_transform`
-        # in `linear_decomposition`
-
         self.opt_transform = (_opt_linear_term, _opt_affine_term)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
+        # later, we will modify `score_transform`
+        # in `linear_decomposition`
 
         # now store everything needed for the projections
         # the projection acts only on the optimization
@@ -243,8 +239,7 @@ class M_estimator(query):
         # weights are scaled here because the linear terms scales them by scaling
 
         new_groups = penalty.groups[inactive]
-        new_weights = dict(
-            [(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
+        new_weights = dict([(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
 
         # we form a dual group lasso object
         # to do the projection
@@ -254,7 +249,7 @@ class M_estimator(query):
 
         self._setup = True
 
-    def setup_sampler(self, scaling=1, solve_args={'min_its': 20, 'tol': 1.e-10}):
+    def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
         pass
 
     def projection(self, opt_state):
@@ -266,18 +261,19 @@ class M_estimator(query):
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
+
         if ('subgradient' not in self.selection_variable and
-                    'scaling' not in self.selection_variable):  # have not conditioned on any thing else
-            new_state = opt_state.copy()  # not really necessary to copy
+            'scaling' not in self.selection_variable): # have not conditioned on any thing else
+            new_state = opt_state.copy() # not really necessary to copy
             new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
             new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
         elif ('subgradient' not in self.selection_variable and
-                      'scaling' in self.selection_variable):  # conditioned on the initial scalings
-            # only the subgradient in opt_state
+              'scaling' in self.selection_variable): # conditioned on the initial scalings
+                                                     # only the subgradient in opt_state
             new_state = self.group_lasso_dual.bound_prox(opt_state)
         elif ('subgradient' in self.selection_variable and
-                      'scaling' not in self.selection_variable):  # conditioned on the subgradient
-            # only the scaling in opt_state
+              'scaling' not in self.selection_variable): # conditioned on the subgradient
+                                                         # only the scaling in opt_state
             new_state = np.maximum(opt_state, 0)
         else:
             new_state = opt_state
@@ -294,8 +290,8 @@ class M_estimator(query):
 
         opt_linear, opt_offset = self.opt_transform
 
-        new_offset = opt_linear[:, self.subgrad_slice].dot(self.observed_opt_state[self.subgrad_slice]) + opt_offset
-        new_linear = opt_linear[:, self.scaling_slice]
+        new_offset = opt_linear[:,self.subgrad_slice].dot(self.observed_opt_state[self.subgrad_slice]) + opt_offset
+        new_linear = opt_linear[:,self.scaling_slice]
 
         self.opt_transform = (new_linear, new_offset)
 
@@ -319,8 +315,8 @@ class M_estimator(query):
 
         opt_linear, opt_offset = self.opt_transform
 
-        new_offset = opt_linear[:, self.scaling_slice].dot(self.observed_opt_state[self.scaling_slice]) + opt_offset
-        new_linear = opt_linear[:, self.subgrad_slice]
+        new_offset = opt_linear[:,self.scaling_slice].dot(self.observed_opt_state[self.scaling_slice]) + opt_offset
+        new_linear = opt_linear[:,self.subgrad_slice]
 
         self.opt_transform = (new_linear, new_offset)
 
@@ -335,24 +331,25 @@ class M_estimator(query):
         self.num_opt_var = new_linear.shape[1]
 
 
-def restricted_Mest(Mest_loss, active, solve_args={'min_its': 50, 'tol': 1.e-10}):
+
+def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
+
     X, Y = Mest_loss.data
 
     if Mest_loss._is_transform:
-        raise NotImplementedError(
-            'to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
-    X_restricted = X[:, active]
+        raise NotImplementedError('to fit restricted model, X must be an ndarray or scipy.sparse; general transforms not implemented')
+    X_restricted = X[:,active]
     loss_restricted = rr.affine_smooth(Mest_loss.saturated_loss, X_restricted)
     beta_E = loss_restricted.solve(**solve_args)
 
     return beta_E
 
-
 class M_estimator_split(M_estimator):
-    def __init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its': 50, 'tol': 1.e-10}):
+
+    def __init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10}):
         total_size = loss.saturated_loss.shape[0]
         self.randomization = split(loss.shape, subsample_size, total_size)
-        M_estimator.__init__(self, loss, epsilon, penalty, self.randomization, solve_args=solve_args)
+        M_estimator.__init__(self,loss, epsilon, penalty, self.randomization, solve_args=solve_args)
 
         total_size = loss.saturated_loss.shape[0]
         if subsample_size > total_size:
@@ -369,9 +366,9 @@ class M_estimator_split(M_estimator):
         # now we need to estimate covariance of
         # loss.grad(\beta_E^*) - 1/pi * randomized_loss.grad(\beta_E^*)
 
-        m, n, p = self.subsample_size, self.total_size, self.loss.shape[0]  # shorthand
+        m, n, p = self.subsample_size, self.total_size, self.loss.shape[0] # shorthand
 
-        from .glm import pairs_bootstrap_score  # need to correct these imports!!!
+        from .glm import pairs_bootstrap_score # need to correct these imports!!!
 
         bootstrap_score = pairs_bootstrap_score(self.loss,
                                                 self._overall,
@@ -395,8 +392,8 @@ class M_estimator_split(M_estimator):
 
         def subsample_diff(m, n, indices):
             subsample = np.random.choice(indices, size=m, replace=False)
-            full_score = bootstrap_score(indices)  # a sum of n terms
-            randomized_score = bootstrap_score_split(subsample)  # a sum of m terms
+            full_score = bootstrap_score(indices) # a sum of n terms
+            randomized_score = bootstrap_score_split(subsample) # a sum of m terms
             return full_score - randomized_score * inv_frac
 
         first_moment = np.zeros(p)

@@ -61,9 +61,10 @@ class threshold_score(query):
 
         beta_full = np.zeros(self.loss.shape)
         beta_full[active] = beta_active
+        self._beta_full = beta_full
 
         inactive_score = self.loss.smooth_objective(beta_full, 'grad')[inactive]
-        randomized_score = self.loss.smooth_objective(beta_full, 'grad')[inactive]
+        randomized_score = self.loss.smooth_objective(beta_full, 'grad')[inactive]+randomization.sample()
 
         # find the current active group, i.e.
         # subset of inactive that pass the threshold
@@ -74,8 +75,9 @@ class threshold_score(query):
         self.boundary_signs = np.sign(randomized_score)[self.boundary]
         self.interior = ~self.boundary
 
-        self.observed_overshoot = self.boundary_signs * (inactive_score[self.boundary] - threshold[self.boundary])
-        self.observed_below_thresh = inactive_score[self.interior]
+        #self.observed_overshoot = self.boundary_signs * (inactive_score[self.boundary] - threshold[self.boundary])
+        self.observed_overshoot = np.abs(randomized_score[self.boundary]-np.multiply(self.boundary_signs, self.threshold[self.boundary]))
+        self.observed_below_thresh = randomized_score[self.interior]
         self.observed_score_state = inactive_score
 
         self.selection_variable = {'boundary_set': self.boundary,
@@ -83,14 +85,16 @@ class threshold_score(query):
 
         self._solved = True
 
-        self.num_opt_var = self.boundary.shape[0]
+        #self.num_opt_var = self.boundary.shape[0]
 
     def setup_sampler(self):
 
         # must set observed_opt_state, opt_transform and score_transform
 
         p = self.boundary.shape[0]  # shorthand
+        self.num_opt_var = p
         self.observed_opt_state = np.zeros(p)
+        #self.feasible_point = self.observed_opt_state[self.boundary] = self.observed_overshoot
         self.observed_opt_state[self.boundary] = self.observed_overshoot
         self.observed_opt_state[self.interior] = self.observed_below_thresh
 
@@ -106,6 +110,9 @@ class threshold_score(query):
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         self._setup = True
+
+        ## permuted
+
 
     def projection(self, opt_state):
         """
