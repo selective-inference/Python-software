@@ -16,7 +16,7 @@ from selection.randomized.query import naive_pvalues
 @register_report(['cover', 'ci_length', 'truth', 'naive_cover', 'naive_pvalues'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
-def test_approximate_ci(n=200,
+def test_approximate_ci(n=100,
                         p=10,
                         s=3,
                         snr=5,
@@ -67,6 +67,7 @@ def test_approximate_ci(n=200,
     if (set(active_set).intersection(set(true_support)) == set(true_support))== True:
 
         ci_active = np.zeros((nactive, 2))
+        #mle_active = np.zeros(nactive)
         covered = np.zeros(nactive, np.bool)
         ci_length = np.zeros(nactive)
         pivots = np.zeros(nactive)
@@ -84,6 +85,7 @@ def test_approximate_ci(n=200,
 
         for j in range(nactive):
             ci_active[j, :] = np.array(ci.approximate_ci(j))
+            #mle_active[j] = ci.approx_MLE_solver(j, nstep= 100)[0]
             if (ci_active[j, 0] <= true_vec[j]) and (ci_active[j,1] >= true_vec[j]):
                 covered[j] = 1
             ci_length[j] = ci_active[j,1] - ci_active[j,0]
@@ -96,10 +98,8 @@ def test_approximate_ci(n=200,
 
         tic = time.time()
         print('ci time now', tic - toc)
-
         return covered, ci_length, pivots, naive_covered, naive_pvals
-    #else:
-    #    return 0
+
 
 def report(niter=50, **kwargs):
 

@@ -330,11 +330,13 @@ class approximate_conditional_density(rr.smooth_atom):
 
         param = self.apply_offset(param)
 
-        f =  (param**2)/(2*self.norm[j]) - (self.target_observed[j]*param)/self.norm[j] + \
-             log(self.area_normalized_density(j,param)[1])
+        approx_normalizer = self.area_normalized_density(j,param)
 
-        g =  param/self.norm[j] - self.target_observed[j]/self.norm[j] + \
-             self.area_normalized_density[2]/self.area_normalized_density(j,param)[1]
+        f = (param**2)/(2*self.norm[j]) - (self.target_observed[j]*param)/self.norm[j] + \
+            log(approx_normalizer[1])
+
+        g = param/self.norm[j] - self.target_observed[j]/self.norm[j] + \
+            approx_normalizer[2]/approx_normalizer[1]
 
         if mode == 'func':
             return self.scale(f)
@@ -347,7 +349,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def approx_MLE_solver(self, j, step=1, nstep=100, tol=1.e-5):
 
-        current = self.coefs[:]
+        current = self.target_observed[j]
         current_value = np.inf
 
         objective = lambda u: self.smooth_objective_MLE(u, j, 'func')
