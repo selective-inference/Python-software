@@ -26,7 +26,7 @@ from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, s
 from selection.randomized.cv_view import CV_view
 
 
-@register_report(['truth', 'cover', 'naive_cover', 'active'])
+@register_report(['truth', 'cover', 'naive_cover', 'active', 'BH_decisions', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
@@ -110,9 +110,9 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
             pivots_truth = target_sampler.coefficient_pvalues(target_observed,
                                                               parameter=true_vec,
                                                               sample=target_sample)
-            #pvalues = target_sampler.coefficient_pvalues(target_observed,
-            #                                             parameter=np.zeros_like(true_vec),
-            #                                             sample=target_sample)
+            pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                         parameter=np.zeros_like(true_vec),
+                                                         sample=target_sample)
         else:
             full_sample = target_sampler.sample(ndraw=ndraw,
                                                 burnin=burnin,
@@ -126,9 +126,9 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
             pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
                                                                         parameter=true_vec,
                                                                         sample=full_sample)
-            #pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-            #                                                       parameter=np.zeros_like(true_vec),
-            #                                                       sample=full_sample)
+            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
+                                                                   parameter=np.zeros_like(true_vec),
+                                                                   sample=full_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
@@ -146,11 +146,15 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
             active_var[j] = active_set[j] in nonzero
 
         print("individual coverage", np.true_divide(covered.sum(),nactive))
-        return pivots_truth, covered, naive_covered, active_var
+        from statsmodels.sandbox.stats.multicomp import multipletests
+        q = 0.1
+        BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
+
+        return pivots_truth, covered, naive_covered, active_var, BH_desicions, active_var
 
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 0, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 5, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
