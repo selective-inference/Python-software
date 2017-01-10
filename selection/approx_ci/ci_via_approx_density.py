@@ -1,3 +1,4 @@
+from math import log
 import numpy as np
 import regreg.api as rr
 from selection.bayesian.selection_probability_rr import nonnegative_softmax_scaled
@@ -267,6 +268,8 @@ class approximate_conditional_density(rr.smooth_atom):
                                 quadratic=quadratic,
                                 coef=coef)
 
+        self.coefs[:] = 0.
+
         self.target_observed = self.sel_alg.target_observed
         self.nactive = self.target_observed.shape[0]
         self.target_cov = self.sel_alg.target_cov
@@ -311,15 +314,74 @@ class approximate_conditional_density(rr.smooth_atom):
     def area_normalized_density(self, j, mean):
 
         normalizer = 0.
+        grad_normalizer = 0.
         approx_nonnormalized = []
 
         for i in range(self.grid.shape[0]):
             approx_density = np.exp(-np.true_divide((self.grid[i] - mean) ** 2, 2 * self.norm[j])
                                     + (self.h_approx[j,:])[i])
             normalizer += approx_density
+            grad_normalizer +=  (-mean/self.norm[j] + self.grid[i]/self.norm[j])* approx_density
             approx_nonnormalized.append(approx_density)
 
-        return np.cumsum(np.array(approx_nonnormalized / normalizer))
+        return np.cumsum(np.array(approx_nonnormalized / normalizer)), normalizer, grad_normalizer
+
+    def smooth_objective_MLE(self, param, j, mode='both', check_feasibility=False):
+
+        param = self.apply_offset(param)
+
+        f =  (param**2)/(2*self.norm[j]) - (self.target_observed[j]*param)/self.norm[j] + \
+             log(self.area_normalized_density(j,param)[1])
+
+        g =  param/self.norm[j] - self.target_observed[j]/self.norm[j] + \
+             self.area_normalized_density[2]/self.area_normalized_density(j,param)[1]
+
+        if mode == 'func':
+            return self.scale(f)
+        elif mode == 'grad':
+            return self.scale(g)
+        elif mode == 'both':
+            return self.scale(f), self.scale(g)
+        else:
+            raise ValueError("mode incorrectly specified")
+
+    def approx_MLE_solver(self, j, step=1, nstep=100, tol=1.e-5):
+
+        current = self.coefs[:]
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective_MLE(u, j, 'func')
+        grad = lambda u: self.smooth_objective_MLE(u, j, 'grad')
+
+        for itercount in range(nstep):
+
+            newton_step = grad(current) * self.norm[j]
+
+            # make sure proposal is a descent
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        value = objective(current)
+        return current, value
 
     def approximate_ci(self, j):
 
@@ -329,7 +391,7 @@ class approximate_conditional_density(rr.smooth_atom):
         area = np.zeros(param_grid.shape[0])
 
         for k in range(param_grid.shape[0]):
-            area_vec = self.area_normalized_density(j, param_grid[k])
+            area_vec = self.area_normalized_density(j, param_grid[k])[0]
             area[k] = area_vec[self.ind_obs[j]]
 
         region = param_grid[(area >= 0.05) & (area <= 0.95)]
@@ -340,7 +402,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def approximate_pvalue(self, j, param):
 
-        area_vec = self.area_normalized_density(j, param)
+        area_vec = self.area_normalized_density(j, param)[0]
         area = area_vec[self.ind_obs[j]]
 
         return 2*min(area, 1-area)
