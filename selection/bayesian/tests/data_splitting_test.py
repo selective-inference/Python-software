@@ -103,6 +103,8 @@ def test_sel_prob_split_new(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.):
 
     active_set = np.asarray([i for i in range(p) if solver._overall[i]])
 
+    nactive = active_set.shape[0]
+
     true_support = np.asarray([i for i in range(p) if i < s])
 
     print("active set, true_support", active_set, true_support)
@@ -116,7 +118,7 @@ def test_sel_prob_split_new(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.):
 
         print("value and gradient", sel_grad)
 
-        #sel_MAP = grad_split.map_solve(nstep=100)[::-1]
+        #sel_MAP = grad_split.map_solve(nstep=200)[::-1]
 
         #print("selective MAP- data splitting", sel_MAP[1])
 
@@ -127,6 +129,7 @@ def test_sel_prob_split_new(n=100, p=20, s=5, snr=5, rho=0.1,lam_frac=1.):
 
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
         print("adjusted_data_split intervals", adjusted_intervals)
+        print("observed data vector", solver.observed_score_state[:nactive])
 
 
 test_sel_prob_split_new()

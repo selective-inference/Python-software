@@ -296,7 +296,7 @@ class map_credible_split(selection_probability_split):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def map_solve(self, step=1, nstep=100, tol=1.e-8):
+    def map_solve(self, step=1, nstep=100, tol=1.e-5):
 
         current = self.coefs[:]
         current_value = np.inf
@@ -307,8 +307,6 @@ class map_credible_split(selection_probability_split):
         for itercount in range(nstep):
 
             newton_step = grad(current)
-            #print("newton step", newton_step)
-            # * self.noise_variance
 
             # make sure proposal is a descent
             count = 0
@@ -337,7 +335,7 @@ class map_credible_split(selection_probability_split):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=1000, burnin=100):
+    def posterior_samples(self, Langevin_steps=2000, burnin=100):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective_post(x, 'grad')
