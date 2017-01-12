@@ -395,6 +395,17 @@ def compute_FDP(multiple_results):
     return result
 
 
+def compute_power(multiple_results):
+    result = {}
+    if 'BH_decisions' and 'active_var' in multiple_results.columns:
+        BH_decisions = multiple_results['BH_decisions']
+        active_var = multiple_results['active_var']
+        BH_TP = BH_decisions[active_var].sum()
+        power = BH_TP
+        result['power'] = power
+    return result
+
+
 def compute_screening(multiple_results):
     return {'screening:': 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])}
 
@@ -408,6 +419,7 @@ def summarize_all(multiple_results):
     result.update(compute_lengths(multiple_results))
     result.update(compute_length_frac(multiple_results))
     result.update(compute_FDP(multiple_results))
+    result.update(compute_power(multiple_results))
     for i in result:
         print(i, result[i])
 

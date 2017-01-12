@@ -26,23 +26,23 @@ from selection.randomized.query import naive_confidence_intervals
 
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
-@register_report(['truth', 'covered_clt', 'ci_length_clt',
-                  'covered_naive', 'ci_length_naive'])
+@register_report(['pvalue','BH_decisions', 'active_var'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_marginalize(s=0,
-                    n=3000,
-                    p=1000,
-                    rho=0.,
-                    snr=3.5,
-                    lam_frac = 1.5,
-                    ndraw=5000,
-                    burnin=0,
-                    loss='logistic',
-                    nviews=1,
-                    scalings=False,
-                    subgrad =True):
+def test_power(s=30,
+               n=3000,
+               p=1000,
+               rho=0.,
+               snr=3.5,
+               lam_frac = 0.8,
+               q = 0.2,
+               ndraw=10000,
+               burnin=1000,
+               loss='gaussian',
+               nviews=1,
+               scalings=False,
+               subgrad =True):
 
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
@@ -53,12 +53,12 @@ def test_marginalize(s=0,
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
-    randomizer = randomization.laplace((p,), scale=0.6)
+    #randomizer = randomization.laplace((p,), scale=sigma)
+    randomizer = randomization.isotropic_gaussian((p,), scale=0.8)
 
     epsilon = 1. / np.sqrt(n)
 
-    W = np.ones(p)*lam
+    W = np.ones(p) * lam
     #W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -80,11 +80,8 @@ def test_marginalize(s=0,
     nonzero = np.where(beta)[0]
     true_vec = beta[active_union]
 
-    if set(nonzero).issubset(np.nonzero(active_union)[0]):
-        check_screen=True
-
-        if nactive==s:
-            return None
+    check_screen = False
+    if check_screen==False:
 
         if scalings: # try condition on some scalings
             for i in range(nviews):
@@ -99,6 +96,10 @@ def test_marginalize(s=0,
                views[i].decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool), marginalizing_groups=np.ones(p, bool))
 
         active_set = np.nonzero(active_union)[0]
+        active_var = np.zeros(nactive, np.bool)
+        for j in range(nactive):
+            active_var[j] = active_set[j] in nonzero
+
         target_sampler, target_observed = glm_target(loss,
                                                      active_union,
                                                      queries,
@@ -106,45 +107,18 @@ def test_marginalize(s=0,
                                                      #reference= beta[active_union])
         target_sample = target_sampler.sample(ndraw=ndraw,
                                               burnin=burnin)
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample,
-                                                 level=0.9)
-        pivots = target_sampler.coefficient_pvalues(target_observed,
-                                                    parameter=true_vec,
-                                                    sample=target_sample)
+        pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                     parameter=np.zeros_like(target_observed),
+                                                     sample=target_sample)
 
-        #test_stat = lambda x: np.linalg.norm(x - beta[active_union])
-        #observed_test_value = test_stat(target_observed)
-        #pivots = target_sampler.hypothesis_test(test_stat,
-        #                                       observed_test_value,
-        #                                       alternative='twosided',
-        #                                       parameter = beta[active_union],
-        #                                       ndraw=ndraw,
-        #                                       burnin=burnin,
-        #                                       stepsize=None)
+        from statsmodels.sandbox.stats.multicomp import multipletests
+        BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
 
-        def coverage(LU):
-            L, U = LU[:, 0], LU[:, 1]
-            covered = np.zeros(nactive)
-            ci_length = np.zeros(nactive)
-
-            for j in range(nactive):
-                if check_screen:
-                    if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
-                        covered[j] = 1
-                else:
-                    covered[j] = None
-                ci_length[j] = U[j] - L[j]
-            return covered, ci_length
-
-        covered, ci_length = coverage(LU)
-        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
-        covered_naive, ci_length_naive = coverage(LU_naive)
-        return pivots, covered, ci_length, covered_naive, ci_length_naive
+        return pvalues, BH_desicions, active_var
 
 def report(niter=50, **kwargs):
 
-    condition_report = reports.reports['test_marginalize']
+    condition_report = reports.reports['test_power']
     runs = reports.collect_multiple_runs(condition_report['test'],
                                          condition_report['columns'],
                                          niter,

@@ -12,7 +12,7 @@ from selection.api import randomization
 
 class CV_view(query):
 
-    def __init__(self, loss, scale1=0.1, scale2=0.5, K=5):
+    def __init__(self, loss, scale1=0.1, scale2=0.3, K=5):
 
         self.loss = loss
         X, y = loss.data
