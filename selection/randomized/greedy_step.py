@@ -1,15 +1,24 @@
 import numpy as np
 import regreg.api as rr
 
-from .M_estimator import M_estimator, restricted_Mest
+from .query import query
+from .M_estimator import restricted_Mest
 
-class greedy_score_step(M_estimator):
+class greedy_score_step(query):
 
-    def __init__(self, loss, penalty, active_groups, inactive_groups, randomization, solve_args={'min_its':50, 'tol':1.e-10},
+    def __init__(self,
+                 loss,
+                 penalty,
+                 active_groups,
+                 inactive_groups,
+                 randomization,
+                 solve_args={'min_its':50, 'tol':1.e-10},
                  beta_active=None):
         """
         penalty is a group_lasso object that assigns weights to groups
         """
+
+        query.__init__(self, randomization)
 
         (self.loss,
          self.penalty,
@@ -24,7 +33,7 @@ class greedy_score_step(M_estimator):
                               randomization,
                               solve_args,
                               beta_active)
-         
+
         self.active = np.zeros(self.loss.shape, np.bool)
         for i, g in enumerate(np.unique(self.penalty.groups)):
             if self.active_groups[i]:
@@ -58,10 +67,10 @@ class greedy_score_step(M_estimator):
 
         if beta_active is None:
             beta_active = self.beta_active = restricted_Mest(self.loss, active, solve_args=solve_args)
-            
+
         beta_full = np.zeros(loss.shape)
         beta_full[active] = beta_active
-            
+
         # score at unpenalized M-estimator
 
         self.observed_score_state = - self.loss.smooth_objective(beta_full, 'grad')[inactive]
@@ -75,12 +84,12 @@ class greedy_score_step(M_estimator):
         # assuming a.s. unique maximizing group here
 
         maximizing_group = np.unique(self.group_lasso_dual.groups)[np.argmax(terms)]
-        maximizing_subgrad = self.observed_score_state[self.group_lasso_dual.groups == maximizing_group]
+        maximizing_subgrad = randomized_score[self.group_lasso_dual.groups == maximizing_group]
         maximizing_subgrad /= np.linalg.norm(maximizing_subgrad) # this is now a unit vector
         maximizing_subgrad *= self.group_lasso_dual.weights[maximizing_group] # now a vector of length given by weight of maximizing group
         self.maximizing_subgrad = np.zeros(inactive.sum())
         self.maximizing_subgrad[self.group_lasso_dual.groups == maximizing_group] = maximizing_subgrad
-        self.observed_scaling = np.max(terms) / self.group_lasso_dual.weights[maximizing_group]
+        self.observed_scaling = np.max(terms) #/ self.group_lasso_dual.weights[maximizing_group]
 
         # which groups did not win
 
@@ -92,8 +101,8 @@ class greedy_score_step(M_estimator):
         # (inactive_subgradients, scaling) are in this epigraph:
         losing_weights = dict([(g, self.group_lasso_dual.weights[g]) for g in self.group_lasso_dual.weights.keys() if g in losing_groups])
         self.group_lasso_dual_epigraph = rr.group_lasso_dual_epigraph(self.group_lasso_dual.groups[losing_set], weights=losing_weights)
-        
-        self.observed_subgradients = -randomized_score[losing_set]
+
+        self.observed_subgradients = randomized_score[losing_set]
         self.losing_padding_map = np.identity(losing_set.shape[0])[:,losing_set]
 
         # which variables are added to the model
@@ -101,9 +110,12 @@ class greedy_score_step(M_estimator):
         winning_variables = self.group_lasso_dual.groups == maximizing_group
         padding_map = np.identity(self.active.shape[0])[:,self.inactive]
         self.maximizing_variables = padding_map.dot(winning_variables) > 0
-        
-        self.selection_variable = {'maximizing_group':maximizing_group, 
-                                   'maximizing_direction':self.maximizing_subgrad}
+
+        self.selection_variable = {'maximizing_group':maximizing_group,
+                                   'maximizing_direction':self.maximizing_subgrad,
+                                   'variables':self.maximizing_variables}
+
+        # need to implement Jacobian
 
     def setup_sampler(self):
 
@@ -120,10 +132,12 @@ class greedy_score_step(M_estimator):
         self.opt_transform = (_opt_linear_term, np.zeros(_opt_linear_term.shape[0]))
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
+        self._solved = True
+        self._setup = True
+
     def projection(self, opt_state):
         """
         Full projection for Langevin.
-
         The state here will be only the state of the optimization variables.
         """
         return self.group_lasso_dual_epigraph.cone_prox(opt_state)
