@@ -32,8 +32,10 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
         arg_l = (-arg + self.mu)/self.randomization_scale
         prod_arg = np.exp(-(2. * self.mu * arg)/(self.randomization_scale**2))
         neg_prod_arg = np.exp((2. * self.mu * arg)/(self.randomization_scale**2))
+
         cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
         log_cube_prob = -np.log(cube_prob).sum()
+
         threshold = 10 ** -10
         indicator = np.zeros(self.q, bool)
         indicator[(cube_prob > threshold)] = 1
@@ -41,8 +43,9 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
         positive_arg[(self.mu>0)] = 1
         pos_index = np.logical_and(positive_arg, ~indicator)
         neg_index = np.logical_and(~positive_arg, ~indicator)
+
         log_cube_grad = np.zeros(self.q)
-        log_cube_grad[indicator] = (np.true_divide(norm.pdf(arg_u[indicator]) + norm.pdf(arg_l[indicator]),
+        log_cube_grad[indicator] = -(np.true_divide(norm.pdf(arg_u[indicator]) + norm.pdf(arg_l[indicator]),
                                         cube_prob[indicator]))/self.randomization_scale
 
         log_cube_grad[pos_index] = ((1. + prod_arg[pos_index])/
@@ -50,7 +53,7 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
                                       (1./arg_l[pos_index])))/(self.randomization_scale **2)
 
         log_cube_grad[neg_index] = ((arg_u[neg_index] -(arg_l[neg_index]*neg_prod_arg[neg_index]))
-                                    /(self.randomization_scale**2))/(1.- neg_prod_arg[neg_index])
+                                    /(self.randomization_scale**2))/(1.+ neg_prod_arg[neg_index])
 
 
         if mode == 'func':
