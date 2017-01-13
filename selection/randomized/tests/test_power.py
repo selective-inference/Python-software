@@ -36,7 +36,7 @@ def test_power(s=10,
                p=1000,
                rho=0.,
                snr=3.5,
-               lam_frac = 1.,
+               lam_frac = 0.8,
                q = 0.2,
                cross_validation = False,
                ndraw=10000,
@@ -55,7 +55,7 @@ def test_power(s=10,
         lam = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
     #randomizer = randomization.laplace((p,), scale=sigma)
-    randomizer = randomization.isotropic_gaussian((p,), scale=0.5)
+    randomizer = randomization.isotropic_gaussian((p,), scale=1.)
 
     epsilon = 1. / np.sqrt(n)
 
