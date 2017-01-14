@@ -555,5 +555,3 @@ def standard_ci_sm(X, y, active, leftout_indices, alpha=0.1):
     result = logit.fit(disp=0)
     LU = result.conf_int(alpha=alpha)
     return LU.T
-
-

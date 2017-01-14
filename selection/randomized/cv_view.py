@@ -12,7 +12,7 @@ from selection.api import randomization
 
 class CV_view(query):
 
-    def __init__(self, loss, scale1=0.1, scale2=0.5, K=5):
+    def __init__(self, loss, scale1=0.1, scale2=0.1, K=5):
 
         self.loss = loss
         X, y = loss.data
@@ -66,7 +66,6 @@ class CV_view(query):
     def condition_on_opt_state(self):
         self.num_opt_var = 0
         self.opt_transform = (None, self.observed_opt_state)
-
 
 
 #DEBUG = True

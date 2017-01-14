@@ -32,8 +32,8 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_power(s=10,
-               n=3000,
-               p=1000,
+               n=1000,
+               p=500,
                rho=0.,
                snr=3.5,
                lam_frac = 0.8,
@@ -54,7 +54,7 @@ def test_power(s=10,
         loss = rr.glm.logistic(X, y)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    #randomizer = randomization.laplace((p,), scale=sigma)
+    #randomizer = randomization.laplace((p,), scale=2*sigma)
     randomizer = randomization.isotropic_gaussian((p,), scale=1.)
 
     epsilon = 1. / np.sqrt(n)
@@ -84,6 +84,8 @@ def test_power(s=10,
 
     nactive = np.sum(active_union)
     print("nactive", nactive)
+    if nactive==0:
+        return None
 
     nonzero = np.where(beta)[0]
     true_vec = beta[active_union]
@@ -133,15 +135,47 @@ def report(niter=50, **kwargs):
     fig = reports.pivot_plot_simple(runs)
     fig.savefig('marginalized_subgrad_pivots.pdf')
 
-
-
-if __name__ == '__main__':
+def compute_power():
     FDP_sample = []
     power_sample = []
     niter = 50
     for i in range(niter):
-        FDP, power = test_power()[1]
-        FDP_sample.append(FDP)
-        power_sample.append(power)
+        result = test_power()[1]
+        if result is not None:
+            FDP, power = result
+            FDP_sample.append(FDP)
+            power_sample.append(power)
         print("FDP mean", np.mean(FDP_sample))
         print("power mean", np.mean(power_sample))
+    return FDP_sample, power_sample
+
+
+def plot_power():
+    FDP_yaxis = []
+    power_yaxis = []
+    n = 500
+    niter = 50
+    npoints = 5
+    p_grid = np.linspace(100, n, npoints)
+    for i in range(npoints):
+        p = int(p_grid[i])
+        FDP_fixed_p, power_fixed_p = [], []
+        for j in range(niter):
+            print("p, iteration:", p, j)
+            result = test_power(n=n, p=p)[1]
+            if result is not None:
+                FDP, power = result
+                FDP_fixed_p.append(FDP)
+                power_fixed_p.append(power)
+                print("FDP", np.mean(FDP_fixed_p))
+                print("power:", np.mean(power_fixed_p))
+        FDP_yaxis.append(np.mean(FDP_fixed_p))
+        power_yaxis.append(np.mean(power_fixed_p))
+
+
+    print("FDP sequence:", FDP_yaxis)
+    print("power sequence:", power_yaxis)
+    return FDP_yaxis, power_yaxis
+
+if __name__ == '__main__':
+    compute_power()
