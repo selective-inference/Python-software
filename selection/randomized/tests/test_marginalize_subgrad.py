@@ -142,7 +142,7 @@ def test_marginalize(s=0,
         covered_naive, ci_length_naive = coverage(LU_naive)
         return pivots, covered, ci_length, covered_naive, ci_length_naive
 
-def report(niter=3, **kwargs):
+def report(niter=50, **kwargs):
 
     condition_report = reports.reports['test_marginalize']
     runs = reports.collect_multiple_runs(condition_report['test'],

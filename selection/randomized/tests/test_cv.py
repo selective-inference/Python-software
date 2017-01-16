@@ -30,9 +30,10 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
+def test_cv(n=1000, p=200, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
-             randomizer_scale = 0.5,
+             randomizer_scale = 1.,
+             lam_frac = 1.5,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
@@ -67,7 +68,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
     print("non-randomized lasso ", active_hat.sum())
 
     # view 2
-    W = np.ones(p) * cv.lam_CVR
+    W = lam_frac * np.ones(p) * cv.lam_CVR
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     epsilon = 1./np.sqrt(n)
@@ -154,7 +155,7 @@ def test_cv(n=300, p=20, s=10, snr=5, K=5, rho=0,
 
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 5, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
@@ -174,7 +175,7 @@ def report(niter=50, **kwargs):
 
     # fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     #fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-
+    fig.suptitle("CV pivots")
     fig.savefig('cv_pivots.pdf')  # will have both bootstrap and CLT on plot
 
 
