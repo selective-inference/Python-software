@@ -33,7 +33,7 @@ from selection.randomized.cv_view import CV_view
 def test_cv(n=1000, p=200, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
              randomizer_scale = 1.,
-             lam_frac = 1.5,
+             lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
@@ -41,7 +41,7 @@ def test_cv(n=1000, p=200, s=0, snr=5, K=5, rho=0.,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
-
+    print(n,p,s)
     if randomizer == 'laplace':
         randomizer = randomization.laplace((p,), scale=randomizer_scale)
     elif randomizer == 'gaussian':
