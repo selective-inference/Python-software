@@ -43,7 +43,7 @@ def test_marginalize(s=0,
                     nviews=1,
                     scalings=False,
                     subgrad =True):
-
+    print(n,p,s)
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
@@ -142,7 +142,7 @@ def test_marginalize(s=0,
         covered_naive, ci_length_naive = coverage(LU_naive)
         return pivots, covered, ci_length, covered_naive, ci_length_naive
 
-def report(niter=50, **kwargs):
+def report(niter=3, **kwargs):
 
     condition_report = reports.reports['test_marginalize']
     runs = reports.collect_multiple_runs(condition_report['test'],
@@ -151,7 +151,8 @@ def report(niter=50, **kwargs):
                                          reports.summarize_all,
                                          **kwargs)
 
-    fig = reports.pivot_plot_simple(runs)
+    fig = reports.pivot_plot_2in1(runs,color='b', label='marginalized subgradient')
+    fig.suptitle('Randomized Lasso marginalized subgradient')
     fig.savefig('marginalized_subgrad_pivots.pdf')
 
 
