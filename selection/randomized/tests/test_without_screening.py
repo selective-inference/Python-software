@@ -32,8 +32,8 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_without_screening(s=10,
-                        n=1000,
-                        p=500,
+                        n=3000,
+                        p=1000,
                         rho=0.,
                         snr=3.5,
                         lam_frac = 1.,
@@ -57,7 +57,6 @@ def test_without_screening(s=10,
         X_indep, y_indep, _, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, random_signs=False)
         loss_indep = rr.glm.logistic(X_indep, y_indep)
     nonzero = np.where(beta)[0]
-
 
     randomizer = randomization.isotropic_gaussian((p,), scale=1.)
     #randomizer = randomization.laplace((p,), scale=1.)
@@ -143,7 +142,7 @@ def test_without_screening(s=10,
         covered_naive, ci_length_naive = coverage(LU_naive)
         return pivots, covered, ci_length, covered_naive, ci_length_naive
 
-def report(niter=50, **kwargs):
+def report(niter=100, **kwargs):
 
     condition_report = reports.reports['test_without_screening']
     runs = reports.collect_multiple_runs(condition_report['test'],
@@ -152,7 +151,8 @@ def report(niter=50, **kwargs):
                                          reports.summarize_all,
                                          **kwargs)
 
-    fig = reports.pivot_plot_simple(runs)
+    fig = reports.pivot_plot_2in1(runs,color='b', label='no screening')
+    fig.suptitle('Testing without screening')
     fig.savefig('pivots_without_screening.pdf')
 
 
