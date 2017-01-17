@@ -30,9 +30,9 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=1000, p=200, s=0, snr=5, K=5, rho=0.,
+def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
              randomizer='laplace',
-             randomizer_scale = 1.,
+             randomizer_scale = 0.8,
              lam_frac = 1.2,
              loss = 'gaussian',
              intervals = 'old',
@@ -81,7 +81,8 @@ def test_cv(n=1000, p=200, s=0, snr=5, K=5, rho=0.,
     active_union = M_est1._overall
     nactive = np.sum(active_union)
     print("nactive", nactive)
-
+    if nactive==0:
+        return None
 
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
@@ -154,9 +155,9 @@ def test_cv(n=1000, p=200, s=0, snr=5, K=5, rho=0.,
         return pivots_truth, covered, naive_covered, active_var, BH_desicions, active_var
 
 
-def report(niter=50, **kwargs):
+def report(niter=20, **kwargs):
 
-    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
