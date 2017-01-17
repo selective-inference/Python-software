@@ -36,9 +36,9 @@ def test_marginalize(s=0,
                     p=1000,
                     rho=0.,
                     snr=3.5,
-                    lam_frac = 1.,
-                    ndraw=5000,
-                    burnin=0,
+                    lam_frac = 1.2,
+                    ndraw=10000,
+                    burnin=2000,
                     loss='gaussian',
                     nviews=1,
                     scalings=False,
@@ -53,8 +53,8 @@ def test_marginalize(s=0,
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
-    #randomizer = randomization.laplace((p,), scale=0.6)
+    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
+    randomizer = randomization.laplace((p,), scale=1.)
 
     epsilon = 1. / np.sqrt(n)
 
@@ -142,7 +142,7 @@ def test_marginalize(s=0,
         covered_naive, ci_length_naive = coverage(LU_naive)
         return pivots, covered, ci_length, covered_naive, ci_length_naive
 
-def report(niter=50, **kwargs):
+def report(niter=20, **kwargs):
 
     condition_report = reports.reports['test_marginalize']
     runs = reports.collect_multiple_runs(condition_report['test'],

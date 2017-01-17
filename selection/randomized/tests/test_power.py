@@ -40,7 +40,7 @@ def test_power(s=10,
                q = 0.2,
                cross_validation = False,
                ndraw=10000,
-               burnin=1000,
+               burnin=2000,
                loss='gaussian',
                scalings=False,
                subgrad =True):
@@ -54,7 +54,7 @@ def test_power(s=10,
         loss = rr.glm.logistic(X, y)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    #randomizer = randomization.laplace((p,), scale=2*sigma)
+    #randomizer = randomization.laplace((p,), scale=sigma)
     randomizer = randomization.isotropic_gaussian((p,), scale=1.)
 
     epsilon = 1. / np.sqrt(n)

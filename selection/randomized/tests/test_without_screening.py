@@ -36,9 +36,9 @@ def test_without_screening(s=10,
                         p=1000,
                         rho=0.,
                         snr=3.5,
-                        lam_frac = 1.,
-                        ndraw=5000,
-                        burnin=0,
+                        lam_frac = 1.2,
+                        ndraw=10000,
+                        burnin=2000,
                         loss='gaussian',
                         scalings=False,
                         subgrad =True,
@@ -58,8 +58,8 @@ def test_without_screening(s=10,
         loss_indep = rr.glm.logistic(X_indep, y_indep)
     nonzero = np.where(beta)[0]
 
-    randomizer = randomization.isotropic_gaussian((p,), scale=1.)
-    #randomizer = randomization.laplace((p,), scale=1.)
+    #randomizer = randomization.isotropic_gaussian((p,), scale=1.)
+    randomizer = randomization.laplace((p,), scale=1.)
     epsilon = 1. / np.sqrt(n)
     W = np.ones(p)*lam
     #W[0] = 0 # use at least some unpenalized
@@ -142,7 +142,7 @@ def test_without_screening(s=10,
         covered_naive, ci_length_naive = coverage(LU_naive)
         return pivots, covered, ci_length, covered_naive, ci_length_naive
 
-def report(niter=100, **kwargs):
+def report(niter=20, **kwargs):
 
     condition_report = reports.reports['test_without_screening']
     runs = reports.collect_multiple_runs(condition_report['test'],
