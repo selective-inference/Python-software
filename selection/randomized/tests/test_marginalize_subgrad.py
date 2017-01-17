@@ -36,10 +36,10 @@ def test_marginalize(s=0,
                     p=1000,
                     rho=0.,
                     snr=3.5,
-                    lam_frac = 1.5,
+                    lam_frac = 1.,
                     ndraw=5000,
                     burnin=0,
-                    loss='logistic',
+                    loss='gaussian',
                     nviews=1,
                     scalings=False,
                     subgrad =True):
@@ -53,8 +53,8 @@ def test_marginalize(s=0,
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
-    randomizer = randomization.laplace((p,), scale=0.6)
+    randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
+    #randomizer = randomization.laplace((p,), scale=0.6)
 
     epsilon = 1. / np.sqrt(n)
 
