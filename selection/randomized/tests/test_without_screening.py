@@ -36,7 +36,7 @@ def test_without_screening(s=10,
                         p=1000,
                         rho=0.,
                         snr=3.5,
-                        lam_frac = 1.2,
+                        lam_frac = 1.,
                         ndraw=10000,
                         burnin=2000,
                         loss='gaussian',
@@ -142,7 +142,8 @@ def test_without_screening(s=10,
         covered_naive, ci_length_naive = coverage(LU_naive)
         return pivots, covered, ci_length, covered_naive, ci_length_naive
 
-def report(niter=20, **kwargs):
+
+def report(niter=50, **kwargs):
 
     condition_report = reports.reports['test_without_screening']
     runs = reports.collect_multiple_runs(condition_report['test'],

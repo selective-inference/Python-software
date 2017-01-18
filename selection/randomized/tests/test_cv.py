@@ -26,14 +26,15 @@ from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, s
 from selection.randomized.cv_view import CV_view
 
 
-@register_report(['truth', 'cover', 'naive_cover', 'active', 'BH_decisions', 'active_var'])
+@register_report(['truth', 'cover', 'naive_cover', 'ci_length_naive',
+                    'active', 'BH_decisions', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
 def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
-             randomizer='laplace',
-             randomizer_scale = 0.8,
-             lam_frac = 1.2,
+             randomizer='gaussian',
+             randomizer_scale = 1.,
+             lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
@@ -138,6 +139,7 @@ def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
 
         covered = np.zeros(nactive, np.bool)
         naive_covered = np.zeros(nactive, np.bool)
+        naive_length = np.zeros(nactive)
         active_var = np.zeros(nactive, np.bool)
 
         for j in range(nactive):
@@ -145,6 +147,7 @@ def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
                 covered[j] = 1
             if (LU_naive[j, 0] <= true_vec[j]) and (LU_naive[j, 1] >= true_vec[j]):
                 naive_covered[j] = 1
+            naive_length[j] = LU_naive[j,1]-LU_naive[j,0]
             active_var[j] = active_set[j] in nonzero
 
         print("individual coverage", np.true_divide(covered.sum(),nactive))
@@ -152,7 +155,7 @@ def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
         q = 0.1
         BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
 
-        return pivots_truth, covered, naive_covered, active_var, BH_desicions, active_var
+        return pivots_truth, covered, naive_covered, naive_length, active_var, BH_desicions, active_var
 
 
 def report(niter=20, **kwargs):

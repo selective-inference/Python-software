@@ -32,13 +32,15 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_power(s=10,
-               n=1000,
-               p=500,
+               n=3000,
+               p=1000,
                rho=0.,
                snr=3.5,
-               lam_frac = 0.8,
+               lam_frac = 1.,
                q = 0.2,
                cross_validation = False,
+               randomizer = 'gaussian',
+               randomizer_scale = 1.,
                ndraw=10000,
                burnin=2000,
                loss='gaussian',
@@ -54,8 +56,10 @@ def test_power(s=10,
         loss = rr.glm.logistic(X, y)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    #randomizer = randomization.laplace((p,), scale=sigma)
-    randomizer = randomization.isotropic_gaussian((p,), scale=1.)
+    if randomizer =='laplace':
+        randomizer = randomization.laplace((p,), scale=randomizer_scale)
+    elif randomizer=='gaussian':
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomizer_scale)
 
     epsilon = 1. / np.sqrt(n)
 
@@ -89,6 +93,10 @@ def test_power(s=10,
 
     nonzero = np.where(beta)[0]
     true_vec = beta[active_union]
+
+    active_set = np.nonzero(active_union)[0]
+    print("active set", active_set)
+    print("true nonzero", np.nonzero(beta)[0])
 
     check_screen = False
     if check_screen==False:
