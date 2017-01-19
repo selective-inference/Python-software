@@ -32,7 +32,7 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_power(s=10,
-               n=3000,
+               n=2000,
                p=1000,
                rho=0.,
                snr=3.5,

@@ -32,7 +32,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_marginalize(s=0,
-                    n=3000,
+                    n=2000,
                     p=1000,
                     rho=0.,
                     snr=3.5,
@@ -53,8 +53,8 @@ def test_marginalize(s=0,
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
-    randomizer = randomization.laplace((p,), scale=1.)
+    randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
+    #randomizer = randomization.laplace((p,), scale=1.)
 
     epsilon = 1. / np.sqrt(n)
 

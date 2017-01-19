@@ -40,6 +40,8 @@ def test_without_screening(s=10,
                         ndraw=10000,
                         burnin=2000,
                         loss='gaussian',
+                        randomizer ='laplace',
+                        randomizer_scale =1.,
                         scalings=False,
                         subgrad =True,
                         check_screen = False):
@@ -58,8 +60,11 @@ def test_without_screening(s=10,
         loss_indep = rr.glm.logistic(X_indep, y_indep)
     nonzero = np.where(beta)[0]
 
-    #randomizer = randomization.isotropic_gaussian((p,), scale=1.)
-    randomizer = randomization.laplace((p,), scale=1.)
+    if randomizer == 'laplace':
+        randomizer = randomization.laplace((p,), scale=randomizer_scale)
+    elif randomizer == 'gaussian':
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomizer_scale)
+
     epsilon = 1. / np.sqrt(n)
     W = np.ones(p)*lam
     #W[0] = 0 # use at least some unpenalized
