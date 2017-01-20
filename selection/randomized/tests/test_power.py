@@ -32,8 +32,8 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_power(s=10,
-               n=3000,
-               p=1000,
+               n=600,
+               p=300,
                rho=0.,
                snr=3.5,
                lam_frac = 1.,
@@ -65,7 +65,7 @@ def test_power(s=10,
 
     views = []
     if cross_validation:
-        cv = CV_view(loss)
+        cv = CV_view(loss, scale1=0.1, scale2=0.5)
         cv.solve()
         views.append(cv)
         condition_on_CVR = True

@@ -59,12 +59,14 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
         glm_loss = rr.glm.logistic(X, y)
 
     # view 1
-    cv = CV_view(glm_loss)
+    cv = CV_view(glm_loss, scale1=0.1, scale2=0.5)
     cv.solve()
+    lam = cv.lam_CVR
     if condition_on_CVR:
         cv.condition_on_opt_state()
+        lam = cv.one_SD_rule()
 
-    problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=cv.lam_CVR))
+    problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=lam))
     beta_hat = problem.solve()
     active_hat = beta_hat !=0
     print("non-randomized lasso ", active_hat.sum())
@@ -161,7 +163,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
 def report(niter=20, **kwargs):
 
-    kwargs = {'s': 0, 'n': 1000, 'p': 500, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 600, 'p': 300, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

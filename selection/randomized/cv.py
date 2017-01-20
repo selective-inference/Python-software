@@ -4,7 +4,7 @@ import regreg.api as rr
 
 
 
-def CV_err(loss, penalty, folds, scale=0.5, solve_args={'min_its':20, 'tol':1.e-10}):
+def CV_err(loss, penalty, folds, scale=1., solve_args={'min_its':20, 'tol':1.e-10}):
 
     X, y = loss.data
     n, p = X.shape
@@ -29,11 +29,11 @@ def CV_err(loss, penalty, folds, scale=0.5, solve_args={'min_its':20, 'tol':1.e-
 
         _mu = lambda X, beta: loss_test.saturated_loss.mean_function(X.dot(beta))
         resid = y_test - _mu(X_test, beta_train)
-        cur = (resid**2).sum() / np.sqrt(n_test) # jelena: added root here
+        cur = (resid**2).sum() / n_test #np.sqrt(n_test) # jelena: added root here
 
         # there are several ways we could randomize here...
         random_noise = scale * np.random.standard_normal(n_test)
-        cur_randomized = ((resid + random_noise)**2).sum() / np.sqrt(n_test) # and here
+        cur_randomized = ((resid + random_noise)**2).sum() / n_test #np.sqrt(n_test) # and here
 
         CV_err += cur
         CV_err_squared += cur**2
