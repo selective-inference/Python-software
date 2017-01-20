@@ -32,15 +32,15 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_power(s=10,
-               n=2000,
+               n=3000,
                p=1000,
                rho=0.,
                snr=3.5,
                lam_frac = 1.,
                q = 0.2,
-               cross_validation = False,
+               cross_validation = True,
                randomizer = 'gaussian',
-               randomizer_scale = 1.,
+               randomizer_scale = 0.8,
                ndraw=10000,
                burnin=2000,
                loss='gaussian',
@@ -68,10 +68,14 @@ def test_power(s=10,
         cv = CV_view(loss)
         cv.solve()
         views.append(cv)
-        condition_on_CVR = False
+        condition_on_CVR = True
         if condition_on_CVR:
             cv.condition_on_opt_state()
         lam = cv.lam_CVR
+        print("minimizer of CVR", lam)
+        lam = cv.one_SD_rule()
+        print("one SD rule lambda", lam)
+
 
     W = lam_frac * np.ones(p) * lam
     #W[0] = 0 # use at least some unpenalized
@@ -148,6 +152,7 @@ def compute_power():
     power_sample = []
     niter = 50
     for i in range(niter):
+        print("iteration", i)
         result = test_power()[1]
         if result is not None:
             FDP, power = result
@@ -155,6 +160,8 @@ def compute_power():
             power_sample.append(power)
         print("FDP mean", np.mean(FDP_sample))
         print("power mean", np.mean(power_sample))
+    print(FDP_sample)
+    print(power_sample)
     return FDP_sample, power_sample
 
 

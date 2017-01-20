@@ -4,8 +4,7 @@ import regreg.api as rr
 from .query import query
 from selection.randomized.cv import (choose_lambda_CV,
                                      bootstrap_CV_curve)
-from selection.randomized.glm import (pairs_bootstrap_glm,
-                                      glm_nonparametric_bootstrap)
+from selection.randomized.glm import bootstrap_cov
 
 from selection.api import randomization
 
@@ -35,7 +34,7 @@ class CV_view(query):
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
         #print(self.randomization1.sample())
-        self.nboot = 1
+        self.nboot = 2
 
     def solve(self):
 
@@ -54,9 +53,21 @@ class CV_view(query):
 
         self._marginalize_subgradient = False
 
+        self.CVR_boot, self.CV1_boot = bootstrap_CV_curve(self.loss, self.lam_seq, self.folds, self.K, self.randomization1, self.randomization2)
+        #print(bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CV1_boot, nsample=2))
+
     def setup_sampler(self):
-        CV1_boot = bootstrap_CV_curve(self.loss, self.lam_seq, self.folds, self.K, self.randomization1, self.randomization2)
-        return CV1_boot
+        return self.CV1_boot
+
+    def one_SD_rule(self):
+        CVR_val = self.observed_opt_state
+        CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
+        SD = np.sqrt(np.diag(CVR_cov))
+        print("SD vector", SD)
+        print("CVR_val", CVR_val)
+        minimum_CVR = np.min(CVR_val)
+        lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + 3*SD[i]])]
+        return lam_1SD
 
     def projection(self, opt_state):
         if self.opt_transform[0] is not None:

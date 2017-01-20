@@ -68,6 +68,7 @@ def choose_lambda_CV(loss, lam_seq, folds, randomization1, randomization2):
     lam_CVR = lam_seq[np.argmin(CVR_val)] # lam_CVR minimizes CVR
     CV1_val = CV_curve[:,0]+rv1.flatten()
 
+
     return lam_CVR, CVR_val, CV1_val
 
 
@@ -79,7 +80,14 @@ def bootstrap_CV_curve(loss, lam_seq, folds, K, randomization1, randomization2):
         folds_star = np.arange(n) % K
         np.random.shuffle(folds_star)
         loss_star = loss.subsample(indices)
-        return np.array(choose_lambda_CV(loss_star, lam_seq, folds_star, randomization1, randomization2)[2])
+        _, CVR_val, CV1_val = choose_lambda_CV(loss_star, lam_seq, folds_star, randomization1, randomization2)
+        return np.array(CVR_val), np.array(CV1_val)
 
-    return functools.partial(_bootstrap_CVerr_curve, loss, lam_seq, K)
+    def _CVR_boot(indices):
+        return _bootstrap_CVerr_curve(loss, lam_seq, K, indices)[0]
+    def _CV1_boot(indices):
+        return _bootstrap_CVerr_curve(loss, lam_seq, K, indices)[1]
+
+    return _CVR_boot, _CV1_boot
+    #return functools.partial(_bootstrap_CVerr_curve, loss, lam_seq, K)
 

@@ -31,7 +31,7 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
+def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
              randomizer_scale = 1.,
              lam_frac = 1.,
@@ -42,6 +42,7 @@ def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
+
     print(n,p,s)
     if randomizer == 'laplace':
         randomizer = randomization.laplace((p,), scale=randomizer_scale)
@@ -160,7 +161,7 @@ def test_cv(n=3000, p=1000, s=0, snr=5, K=5, rho=0.,
 
 def report(niter=20, **kwargs):
 
-    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 1000, 'p': 500, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
