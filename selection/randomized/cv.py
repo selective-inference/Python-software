@@ -29,7 +29,7 @@ def CV_err(loss, penalty, folds, scale=1., solve_args={'min_its':20, 'tol':1.e-1
 
         _mu = lambda X, beta: loss_test.saturated_loss.mean_function(X.dot(beta))
         resid = y_test - _mu(X_test, beta_train)
-        cur = (resid**2).sum() / n_test #np.sqrt(n_test) # jelena: added root here
+        cur = (resid**2).sum() / np.sqrt(n_test) # #np.sqrt(n_test) # jelena: added root here
 
         # there are several ways we could randomize here...
         random_noise = scale * np.random.standard_normal(n_test)
@@ -58,6 +58,7 @@ def choose_lambda_CV(loss, lam_seq, folds, randomization1, randomization2):
         CV_curve.append(CV_err(loss, penalty, folds) + (lam,))
 
     CV_curve = np.array(CV_curve)
+    print(CV_curve[:,0])
     minCV = lam_seq[np.argmin(CV_curve[:,0])] # unrandomized
     minCV_randomized = lam_seq[np.argmin(CV_curve[:,2])] # randomized
 

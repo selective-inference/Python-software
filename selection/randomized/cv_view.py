@@ -16,7 +16,7 @@ class CV_view(query):
         self.loss = loss
         X, y = loss.data
         n, p = X.shape
-        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
+        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 10)) * np.fabs(X.T.dot(y)).max()
         folds = np.arange(n) % K
         np.random.shuffle(folds)
         (self.folds,
@@ -38,9 +38,8 @@ class CV_view(query):
 
     def solve(self):
 
-
         lam_CVR, CVR_val, CV1_val = choose_lambda_CV(self.loss, self.lam_seq, self.folds, self.randomization1, self.randomization2)
-
+        print(CVR_val)
         (self.lam_CVR,
          self.observed_opt_state,
          self.observed_score_state) = (lam_CVR,

@@ -32,8 +32,8 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_power(s=10,
-               n=600,
-               p=300,
+               n=3000,
+               p=1000,
                rho=0.,
                snr=3.5,
                lam_frac = 1.,
@@ -65,15 +65,16 @@ def test_power(s=10,
 
     views = []
     if cross_validation:
-        cv = CV_view(loss, scale1=0.1, scale2=0.5)
+        cv = CV_view(loss, scale1=1., scale2=1.)
         cv.solve()
         views.append(cv)
-        condition_on_CVR = True
+        lam = cv.lam_CVR
+        condition_on_CVR = False
         if condition_on_CVR:
             cv.condition_on_opt_state()
-        lam = cv.lam_CVR
+            lam = cv.one_SD_rule()
+
         print("minimizer of CVR", lam)
-        lam = cv.one_SD_rule()
         print("one SD rule lambda", lam)
 
 
