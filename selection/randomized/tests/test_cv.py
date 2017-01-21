@@ -59,7 +59,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
         glm_loss = rr.glm.logistic(X, y)
 
     # view 1
-    cv = CV_view(glm_loss, scale1=1., scale2=2.)
+    cv = CV_view(glm_loss, scale1=0.1, scale2=0.5)
     cv.solve()
     lam = cv.lam_CVR
     if condition_on_CVR:

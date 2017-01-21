@@ -65,7 +65,7 @@ def test_power(s=10,
 
     views = []
     if cross_validation:
-        cv = CV_view(loss, scale1=1., scale2=1.)
+        cv = CV_view(loss, scale1=0.1, scale2=0.5)
         cv.solve()
         views.append(cv)
         lam = cv.lam_CVR

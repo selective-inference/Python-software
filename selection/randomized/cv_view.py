@@ -34,12 +34,12 @@ class CV_view(query):
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
         #print(self.randomization1.sample())
-        self.nboot = 2
+        self.nboot = 5
 
     def solve(self):
 
         lam_CVR, CVR_val, CV1_val = choose_lambda_CV(self.loss, self.lam_seq, self.folds, self.randomization1, self.randomization2)
-        print(CVR_val)
+        #print(CVR_val)
         (self.lam_CVR,
          self.observed_opt_state,
          self.observed_score_state) = (lam_CVR,
