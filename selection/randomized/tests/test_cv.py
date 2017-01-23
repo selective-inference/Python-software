@@ -34,7 +34,9 @@ from selection.randomized.cv_view import CV_view
 def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
              randomizer_scale = 0.8,
-             lam_frac = 1.,
+             scale1 = 0.1,
+             scale2 = 0.4,
+             lam_fac = 1.,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
@@ -60,11 +62,11 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
     epsilon = 1./np.sqrt(n)
     # view 1
-    cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, scale1=0.1, scale2=0.5)
+    cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, scale1=scale1, scale2=scale2)
     cv.solve()
     lam = cv.lam_CVR
+    print("lam", lam)
     if condition_on_CVR:
-        print("old lam", lam)
         cv.condition_on_opt_state()
         lam = cv.one_SD_rule()
         print("new lam", lam)
