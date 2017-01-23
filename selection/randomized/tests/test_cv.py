@@ -76,7 +76,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     print("non-randomized lasso ", active_hat.sum())
 
     # view 2
-    W = lam_frac * np.ones(p) * cv.lam_CVR
+    W = lam_frac * np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)

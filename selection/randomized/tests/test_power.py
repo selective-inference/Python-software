@@ -133,6 +133,7 @@ def test_power(s=10,
         BH_TP = BH_decisions[active_var].sum()
         FDP_BH = np.true_divide(BH_decisions.sum() - BH_TP, max(BH_decisions.sum(), 1))
         power_BH = np.true_divide(BH_TP, s)
+        BH_TR_rate
 
         level_decisions = (pvalues<0.05)
         level_TP = level_decisions[active_var].sum()
