@@ -38,7 +38,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
-             condition_on_CVR = True,
+             condition_on_CVR = False,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
@@ -90,8 +90,6 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     print("nactive", nactive)
     if nactive==0:
         return None
-    #if nactive>200:
-    #    return None
 
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):

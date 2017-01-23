@@ -70,8 +70,8 @@ def choose_lambda_CV(loss,
 
     CV_curve = np.array(CV_curve)
     #print("nonradomized", CV_curve[:,0])
-    minCV = lam_seq[np.argmin(CV_curve[:,0])] # unrandomized
-    minCV_randomized = lam_seq[np.argmin(CV_curve[:,2])] # randomized
+    #minCV = lam_seq[np.argmin(CV_curve[:,0])] # unrandomized
+    #minCV_randomized = lam_seq[np.argmin(CV_curve[:,2])] # randomized
 
 
     rv1 = np.asarray(randomization1._sampler(size=(1,)))

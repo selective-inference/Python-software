@@ -11,10 +11,10 @@ from selection.api import randomization
 
 class CV_view(query):
 
-    def __init__(self, loss, lasso_randomization, epsilon, scale1=0.1, scale2=0.5, K=5):
+    def __init__(self, glm_loss, lasso_randomization, epsilon, scale1=0.1, scale2=0.5, K=5):
 
-        self.loss = loss
-        X, y = loss.data
+        self.loss = glm_loss
+        X, y = self.loss.data
         n, p = X.shape
         lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
         folds = np.arange(n) % K
@@ -32,12 +32,10 @@ class CV_view(query):
                     n,
                     p,
                     K)
-
         self.num_opt_var = self.lam_seq.shape[0]
         self.randomization1 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale1)
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
-        #print(self.randomization1.sample())
         self.nboot = 10
 
     def solve(self):

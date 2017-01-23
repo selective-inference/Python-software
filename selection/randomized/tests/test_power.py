@@ -65,7 +65,8 @@ def test_power(s=10,
 
     views = []
     if cross_validation:
-        cv = CV_view(loss, scale1=0.1, scale2=0.5)
+        cv = CV_view(loss, lasso_randomization=randomizer, epsilon=epsilon,
+                     scale1=0.1, scale2=0.5)
         cv.solve()
         views.append(cv)
         lam = cv.lam_CVR
@@ -129,12 +130,16 @@ def test_power(s=10,
 
         from statsmodels.sandbox.stats.multicomp import multipletests
         BH_decisions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
-
         BH_TP = BH_decisions[active_var].sum()
-        FDP = np.true_divide(BH_decisions.sum() - BH_TP, max(BH_decisions.sum(), 1))
-        power = np.true_divide(BH_TP, s)
+        FDP_BH = np.true_divide(BH_decisions.sum() - BH_TP, max(BH_decisions.sum(), 1))
+        power_BH = np.true_divide(BH_TP, s)
+
+        level_decisions = (pvalues<0.05)
+        level_TP = level_decisions[active_var].sum()
+        FDP_level = np.true_divide(level_decisions.sum() - level_TP, max(level_decisions.sum(), 1))
+        power_level = np.true_divide(level_TP, s)
         #return pvalues, BH_decisions, active_var # report
-        return FDP, power
+        return FDP_BH, power_BH, FDP_level, power_level
 
 def report(niter=50, **kwargs):
 
@@ -149,21 +154,24 @@ def report(niter=50, **kwargs):
     fig.savefig('marginalized_subgrad_pivots.pdf')
 
 def compute_power():
-    FDP_sample = []
-    power_sample = []
+    FDP_BH_sample, power_BH_sample = [], []
+    FDP_level_sample, power_level_sample = [], []
     niter = 50
     for i in range(niter):
         print("iteration", i)
         result = test_power()[1]
         if result is not None:
-            FDP, power = result
-            FDP_sample.append(FDP)
-            power_sample.append(power)
-        print("FDP mean", np.mean(FDP_sample))
-        print("power mean", np.mean(power_sample))
-    print(FDP_sample)
-    print(power_sample)
-    return FDP_sample, power_sample
+            FDP_BH, power_BH, FDP_level, power_level = result
+            FDP_BH_sample.append(FDP_BH)
+            power_BH_sample.append(power_BH)
+            FDP_level_sample.append(FDP_level)
+            power_level_sample.append(power_level)
+        print("FDP BH mean", np.mean(FDP_BH_sample))
+        print("power BH mean", np.mean(power_BH_sample))
+        print("FDP level mean", np.mean(FDP_level_sample))
+        print("power level mean", np.mean(power_level_sample))
+
+    return FDP_BH_sample, power_BH_sample, FDP_level_sample, power_level_sample
 
 
 def plot_power():
