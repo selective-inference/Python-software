@@ -11,20 +11,24 @@ from selection.api import randomization
 
 class CV_view(query):
 
-    def __init__(self, loss, scale1=0.1, scale2=0.5, K=5):
+    def __init__(self, loss, lasso_randomization, epsilon, scale1=0.1, scale2=0.5, K=5):
 
         self.loss = loss
         X, y = loss.data
         n, p = X.shape
-        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 10)) * np.fabs(X.T.dot(y)).max()
+        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
         folds = np.arange(n) % K
         np.random.shuffle(folds)
         (self.folds,
          self.lam_seq,
+         self.lasso_randomization,
+         self.epsilon,
          self.n,
          self.p,
          self.K) = (folds,
                     lam_seq,
+                    lasso_randomization,
+                    epsilon,
                     n,
                     p,
                     K)
@@ -34,11 +38,13 @@ class CV_view(query):
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
         #print(self.randomization1.sample())
-        self.nboot = 5
+        self.nboot = 10
 
     def solve(self):
 
-        lam_CVR, CVR_val, CV1_val = choose_lambda_CV(self.loss, self.lam_seq, self.folds, self.randomization1, self.randomization2)
+        lam_CVR, CVR_val, CV1_val = choose_lambda_CV(self.loss, self.lam_seq, self.folds,
+                                    self.randomization1, self.randomization2,
+                                    lasso_randomization=self.lasso_randomization, epsilon=self.epsilon)
         #print(CVR_val)
         (self.lam_CVR,
          self.observed_opt_state,
@@ -52,7 +58,8 @@ class CV_view(query):
 
         self._marginalize_subgradient = False
 
-        self.CVR_boot, self.CV1_boot = bootstrap_CV_curve(self.loss, self.lam_seq, self.folds, self.K, self.randomization1, self.randomization2)
+        self.CVR_boot, self.CV1_boot = bootstrap_CV_curve(self.loss, self.lam_seq, self.folds, self.K,
+                             self.randomization1, self.randomization2, self.lasso_randomization, self.epsilon)
         #print(bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CV1_boot, nsample=2))
 
     def setup_sampler(self):

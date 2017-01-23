@@ -33,12 +33,12 @@ from selection.randomized.cv_view import CV_view
 @wait_for_return_value()
 def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
-             randomizer_scale = 1.,
+             randomizer_scale = 0.8,
              lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
-             condition_on_CVR = False,
+             condition_on_CVR = True,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
@@ -58,14 +58,18 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
         glm_loss = rr.glm.logistic(X, y)
 
+    epsilon = 1./np.sqrt(n)
     # view 1
-    cv = CV_view(glm_loss, scale1=0.1, scale2=0.5)
+    cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, scale1=0.1, scale2=0.5)
     cv.solve()
     lam = cv.lam_CVR
     if condition_on_CVR:
+        print("old lam", lam)
         cv.condition_on_opt_state()
         lam = cv.one_SD_rule()
+        print("new lam", lam)
 
+    # non-randomied Lasso, just looking how many vars it selects
     problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=lam))
     beta_hat = problem.solve()
     active_hat = beta_hat !=0
@@ -75,7 +79,6 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     W = lam_frac * np.ones(p) * cv.lam_CVR
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
-    epsilon = 1./np.sqrt(n)
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([cv, M_est1])
@@ -87,6 +90,8 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     print("nactive", nactive)
     if nactive==0:
         return None
+    #if nactive>200:
+    #    return None
 
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
@@ -171,20 +176,9 @@ def report(niter=20, **kwargs):
                                              reports.summarize_all,
                                              **kwargs)
 
-    # fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
     fig = reports.pivot_plot_2in1(CLT_runs, color='b', label='CV')
-
-    #kwargs['bootstrap'] = True
-    #bootstrap_runs = reports.collect_multiple_runs(intervals_report['test'],
-    #                                               intervals_report['columns'],
-    #                                               niter,
-    #                                               reports.summarize_all,
-    #                                               **kwargs)
-
-    # fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-    #fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
     fig.suptitle("CV pivots")
-    fig.savefig('cv_pivots.pdf')  # will have both bootstrap and CLT on plot
+    fig.savefig('cv_pivots.pdf')
 
 
 if __name__ == '__main__':

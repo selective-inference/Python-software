@@ -4,7 +4,12 @@ import regreg.api as rr
 
 
 
-def CV_err(loss, penalty, folds, scale=1., solve_args={'min_its':20, 'tol':1.e-10}):
+def CV_err(loss,
+           penalty,
+           folds,
+           lasso_randomization, epsilon,
+           scale=0.5,
+           solve_args={'min_its':20, 'tol':1.e-10}):
 
     X, y = loss.data
     n, p = X.shape
@@ -24,16 +29,18 @@ def CV_err(loss, penalty, folds, scale=1., solve_args={'min_its':20, 'tol':1.e-1
         X_test, y_test = X[test], y[test]
         n_test = y_test.shape[0]
 
-        problem = rr.simple_problem(loss_train, penalty)
+        randomized_train_loss = lasso_randomization.randomize(loss_train, epsilon)
+
+        problem = rr.simple_problem(randomized_train_loss, penalty)
         beta_train = problem.solve(**solve_args)
 
         _mu = lambda X, beta: loss_test.saturated_loss.mean_function(X.dot(beta))
         resid = y_test - _mu(X_test, beta_train)
-        cur = (resid**2).sum() / n_test # #np.sqrt(n_test) # jelena: added root here
+        cur = (resid**2).sum() / n_test
 
         # there are several ways we could randomize here...
         random_noise = scale * np.random.standard_normal(n_test)
-        cur_randomized = ((resid + random_noise)**2).sum() / n_test #np.sqrt(n_test) # and here
+        cur_randomized = ((resid + random_noise)**2).sum() / n_test
 
         CV_err += cur
         CV_err_squared += cur**2
@@ -48,14 +55,18 @@ def CV_err(loss, penalty, folds, scale=1., solve_args={'min_its':20, 'tol':1.e-1
     return CV_err, SD_CV, CV_err_randomized, SD_CV_randomized
 
 
-def choose_lambda_CV(loss, lam_seq, folds, randomization1, randomization2):
+def choose_lambda_CV(loss,
+                     lam_seq,
+                     folds,
+                     randomization1, randomization2,
+                     lasso_randomization, epsilon):
 
     CV_curve = []
     X, _ = loss.data
     p = X.shape[1]
     for lam in lam_seq:
         penalty = rr.l1norm(p, lagrange=lam)
-        CV_curve.append(CV_err(loss, penalty, folds) + (lam,))
+        CV_curve.append(CV_err(loss, penalty, folds, lasso_randomization, epsilon) + (lam,))
 
     CV_curve = np.array(CV_curve)
     #print("nonradomized", CV_curve[:,0])
@@ -73,7 +84,12 @@ def choose_lambda_CV(loss, lam_seq, folds, randomization1, randomization2):
     return lam_CVR, CVR_val, CV1_val
 
 
-def bootstrap_CV_curve(loss, lam_seq, folds, K, randomization1, randomization2):
+def bootstrap_CV_curve(loss,
+                       lam_seq,
+                       folds,
+                       K,
+                       randomization1, randomization2,
+                       lasso_randomization, epsilon):
 
     def _bootstrap_CVerr_curve(loss, lam_seq, K, indices):
         X, y = loss.data
@@ -82,7 +98,7 @@ def bootstrap_CV_curve(loss, lam_seq, folds, K, randomization1, randomization2):
         np.random.shuffle(folds_star)
         #loss_star = loss.subsample(indices)
         loss_star = rr.glm.gaussian(X[indices,:], y[indices])
-        _, CVR_val, CV1_val = choose_lambda_CV(loss_star, lam_seq, folds_star, randomization1, randomization2)
+        _, CVR_val, CV1_val = choose_lambda_CV(loss_star, lam_seq, folds_star, randomization1, randomization2, lasso_randomization, epsilon)
         return np.array(CVR_val), np.array(CV1_val)
 
     def _CVR_boot(indices):
