@@ -46,7 +46,7 @@ class sel_prob_gradient_map_fs(rr.smooth_atom):
                                                            self.noise_variance,
                                                            self.randomizer)
 
-        sel_prob_primal = primal_sol.minimize2(nstep=60)[::-1]
+        sel_prob_primal = primal_sol.minimize2(nstep=100)[::-1]
         optimal_primal = (sel_prob_primal[1])[:self.n]
         sel_prob_val = -sel_prob_primal[0]
         optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
@@ -188,7 +188,7 @@ class selective_map_credible_fs(rr.smooth_atom):
         for i in range(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
-            print i, sampler.state.copy()
+            #print i, sampler.state.copy()
 
         samples = np.array(samples)
         return samples[burnin:, :]

@@ -223,7 +223,7 @@ class selective_map_credible(rr.smooth_atom):
         value = problem.objective(soln)
         return soln, value
 
-    def posterior_samples(self, Langevin_steps = 8000, burnin = 1000):
+    def posterior_samples(self, Langevin_steps = 1000, burnin = 100):
         state = self.initial_state
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x

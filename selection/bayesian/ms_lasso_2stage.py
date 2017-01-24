@@ -403,7 +403,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=4000, burnin=500):
+    def posterior_samples(self, Langevin_steps=1200, burnin=100):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
@@ -420,6 +420,35 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
 
         samples = np.array(samples)
         return samples[burnin:, :]
+
+    def posterior_risk(self, estimator_1, estimator_2, Langevin_steps=1200, burnin=0):
+        state = self.initial_state
+        print("here", state.shape)
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
+
+        post_risk_1 = 0.
+        post_risk_2 = 0.
+
+        for i in range(Langevin_steps):
+            sampler.next()
+            sample = sampler.state.copy()
+
+            #print(sample)
+            risk_1 = ((estimator_1-sample)**2).sum()
+            print("adjusted risk", risk_1)
+            post_risk_1 += risk_1
+
+            risk_2 = ((estimator_2-sample) ** 2).sum()
+            print("unadjusted risk", risk_2)
+            post_risk_2 += risk_2
+
+
+        return post_risk_1/Langevin_steps, post_risk_2/Langevin_steps
+
+
 
 
 

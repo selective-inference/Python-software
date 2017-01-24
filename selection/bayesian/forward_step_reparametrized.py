@@ -326,7 +326,7 @@ class selection_probability_objective_fs_rp(rr.smooth_atom):
         value = problem.objective(soln)
         return soln, value
 
-    def minimize2(self, step=1, nstep=30, tol=1.e-8):
+    def minimize2(self, step=1, nstep=30, tol=1.e-6):
 
         n, p = self._X.shape
 
