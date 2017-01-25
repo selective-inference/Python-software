@@ -36,7 +36,7 @@ class CV_view(query):
         self.randomization1 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale1)
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
-        self.nboot = 10
+        self.nboot = 1
 
     def solve(self):
 
@@ -65,12 +65,16 @@ class CV_view(query):
 
     def one_SD_rule(self):
         CVR_val = self.observed_opt_state
-        CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
-        SD = np.sqrt(np.diag(CVR_cov))
+        #CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
+        #SD = np.sqrt(np.diag(CVR_cov))
         #print("SD vector", SD)
         #print("CVR_val", CVR_val)
         minimum_CVR = np.min(CVR_val)
-        lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
+        #lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
+        #gap = np.max(SD)
+        #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
+        #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + gap])]
+        lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.05*minimum_CVR])]
         return lam_1SD
 
     def projection(self, opt_state):

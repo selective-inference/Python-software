@@ -33,9 +33,9 @@ from selection.randomized.cv_view import CV_view
 @wait_for_return_value()
 def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
-             randomizer_scale = 0.8,
+             randomizer_scale = 1.,
              scale1 = 0.1,
-             scale2 = 0.4,
+             scale2 = 0.1,
              lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
@@ -84,6 +84,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([cv, M_est1])
+    #mv = multiple_queries([M_est1])
     mv.solve()
 
     #active = soln != 0
@@ -168,7 +169,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
 def report(niter=20, **kwargs):
 
-    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 1000, 'p': 500, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

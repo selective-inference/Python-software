@@ -31,7 +31,7 @@ from selection.randomized.cv_view import CV_view
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_power(s=10,
+def test_power(s=30,
                n=3000,
                p=1000,
                rho=0.,
@@ -40,7 +40,7 @@ def test_power(s=10,
                q = 0.2,
                cross_validation = True,
                randomizer = 'gaussian',
-               randomizer_scale = 0.8,
+               randomizer_scale = 1.,
                ndraw=10000,
                burnin=2000,
                loss='gaussian',
@@ -66,16 +66,16 @@ def test_power(s=10,
     views = []
     if cross_validation:
         cv = CV_view(loss, lasso_randomization=randomizer, epsilon=epsilon,
-                     scale1=0.1, scale2=0.5)
+                     scale1=0.1, scale2=0.1)
         cv.solve()
-        views.append(cv)
+        #views.append(cv)
         lam = cv.lam_CVR
-        condition_on_CVR = False
+        print("minimizer of CVR", lam)
+        condition_on_CVR = True
         if condition_on_CVR:
             cv.condition_on_opt_state()
             lam = cv.one_SD_rule()
 
-        print("minimizer of CVR", lam)
         print("one SD rule lambda", lam)
 
 
@@ -133,14 +133,14 @@ def test_power(s=10,
         BH_TP = BH_decisions[active_var].sum()
         FDP_BH = np.true_divide(BH_decisions.sum() - BH_TP, max(BH_decisions.sum(), 1))
         power_BH = np.true_divide(BH_TP, s)
-        BH_TR_rate
 
         level_decisions = (pvalues<0.05)
         level_TP = level_decisions[active_var].sum()
-        FDP_level = np.true_divide(level_decisions.sum() - level_TP, max(level_decisions.sum(), 1))
+        FDP_level = np.true_divide(level_decisions.sum() - level_TP, max(level_decisions.sum(),1))
+        FP_level = np.true_divide(level_decisions.sum() - level_TP, nactive)
         power_level = np.true_divide(level_TP, s)
         #return pvalues, BH_decisions, active_var # report
-        return FDP_BH, power_BH, FDP_level, power_level
+        return FDP_BH, power_BH,  FP_level, FDP_level, power_level, nactive
 
 def report(niter=50, **kwargs):
 
@@ -156,21 +156,27 @@ def report(niter=50, **kwargs):
 
 def compute_power():
     FDP_BH_sample, power_BH_sample = [], []
+    FP_level_sample = []
     FDP_level_sample, power_level_sample = [], []
-    niter = 50
+    nactive_sample = []
+    niter = 100
     for i in range(niter):
         print("iteration", i)
         result = test_power()[1]
         if result is not None:
-            FDP_BH, power_BH, FDP_level, power_level = result
+            FDP_BH, power_BH, FP_level, FDP_level, power_level, nactive = result
             FDP_BH_sample.append(FDP_BH)
             power_BH_sample.append(power_BH)
+            FP_level_sample.append(FP_level)
             FDP_level_sample.append(FDP_level)
             power_level_sample.append(power_level)
+            nactive_sample.append(nactive)
         print("FDP BH mean", np.mean(FDP_BH_sample))
         print("power BH mean", np.mean(power_BH_sample))
+        print("FP level mean", np.mean(FP_level_sample))
         print("FDP level mean", np.mean(FDP_level_sample))
         print("power level mean", np.mean(power_level_sample))
+        print("nactive mean", np.mean(nactive_sample))
 
     return FDP_BH_sample, power_BH_sample, FDP_level_sample, power_level_sample
 
