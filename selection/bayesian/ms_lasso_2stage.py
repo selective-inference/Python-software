@@ -403,7 +403,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=1200, burnin=100):
+    def posterior_samples(self, Langevin_steps=1000, burnin=50):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
@@ -416,7 +416,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         for i in range(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
-            print i, sampler.state.copy()
+            #print i, sampler.state.copy()
 
         samples = np.array(samples)
         return samples[burnin:, :]

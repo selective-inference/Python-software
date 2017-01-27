@@ -9,10 +9,10 @@ from selection.bayesian.ms_lasso_2stage import selection_probability_objective_m
     selective_map_credible_ms_lasso
 
 def ms_lasso_risk():
-    n = 200
-    p = 100
+    n = 100
+    p = 20
     s = 10
-    snr = 2.75
+    snr = 5.
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
