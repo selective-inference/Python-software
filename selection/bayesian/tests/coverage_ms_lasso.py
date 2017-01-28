@@ -11,8 +11,8 @@ from selection.bayesian.ms_lasso_2stage import selection_probability_objective_m
 def ms_lasso_coverage():
     n = 100
     p = 200
-    s = 0
-    snr = 5.
+    s = 10
+    snr = 3.0
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
@@ -23,7 +23,7 @@ def ms_lasso_coverage():
     active_1[np.fabs(randomized_Z_stats) > 1.65] = 1
     active_signs_1 = np.sign(randomized_Z_stats[active_1])
     nactive_1 = active_1.sum()
-    print("active_1",active_1, nactive_1)
+    #print("active_1",active_1, nactive_1)
 
     threshold = 1.65 * np.ones(p)
 
@@ -34,7 +34,7 @@ def ms_lasso_coverage():
     noise_variance = 1.
     lagrange = lam * np.ones(nactive_1)
     nactive_2 = betaE.shape[0]
-    print("active_2", active_2, nactive_2)
+    #print("active_2", active_2, nactive_2)
     active_signs_2 = np.sign(betaE)
 
     #getting the active indices
@@ -119,10 +119,10 @@ def ms_lasso_coverage():
 
 #cov = ms_lasso_coverage()
 #print(cov[0], cov[1], cov[2], cov[3])
-niter = 10
+niter = 20
 #till 23
-#cov_ad = 0.861
-#cov_unad = 0.62
+#cov_ad = 0.8
+#cov_unad = 0.6
 cov_ad = 0.
 cov_unad = 0.
 for i in range(niter):
