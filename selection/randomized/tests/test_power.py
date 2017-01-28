@@ -142,7 +142,7 @@ def test_power(s=30,
         #return pvalues, BH_decisions, active_var # report
         return FDP_BH, power_BH,  FP_level, FDP_level, power_level, nactive
 
-def report(niter=50, **kwargs):
+def report(niter=20, **kwargs):
 
     condition_report = reports.reports['test_power']
     runs = reports.collect_multiple_runs(condition_report['test'],

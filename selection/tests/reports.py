@@ -227,6 +227,43 @@ def pivot_plot_2in1(multiple_results, coverage=True, color='b', label=None, fig=
 
     return fig
 
+def pivot_plot_plus_naive(multiple_results, coverage=True, color='b', label=None, fig=None):
+    """
+    Extract pivots at truth and mle.
+    """
+
+    if fig is None:
+        fig = plt.figure()
+    ax = fig.gca()
+
+    fig.suptitle('Selective and naive pivots')
+
+    if 'pivot' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['pivot'])
+    elif 'truth' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['truth'])
+    elif 'pvalue' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['pvalue'])
+
+    G = np.linspace(0, 1)
+    F_pivot = ecdf(G)
+    #print(color)
+    ax.plot(G, F_pivot, '-o', c=color, lw=2, label="Selective pivots")
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+
+    if 'naive_pvalues' in multiple_results.columns:
+        ecdf_naive = sm.distributions.ECDF(multiple_results['naive_pvalues'])
+    F_naive = ecdf_naive(G)
+    ax.plot(G, F_naive, '-o', c='r', lw=2, label="Naive pivots")
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
+    ax.legend(loc='lower right')
+
+    return fig
+
+
 
 
 

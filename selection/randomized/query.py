@@ -1242,6 +1242,15 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         LU[1,j] = observed[j] + sigma * quantile
     return LU.T
 
+def naive_pvalues(target, observed, parameter):
+    pvalues = np.zeros(target.shape[0])
+    for j in range(target.shape[0]):
+        sigma = np.sqrt(target.target_cov[j, j])
+        pval = ndist.cdf((observed[j]-parameter[j])/sigma)
+        pvalues[j] = 2*min(pval, 1-pval)
+    return pvalues
+
+
 class translate_intervals(object): # intervals_from_sample):
 
     """

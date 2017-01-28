@@ -1,24 +1,15 @@
-import functools
-
 import numpy as np
-from scipy.stats import norm as ndist
-import matplotlib.pyplot as plt
 
 import regreg.api as rr
 from selection.api import (randomization,
                            glm_group_lasso,
                            multiple_queries,
                            glm_target)
-import selection.api as sel
 from selection.tests.instance import (gaussian_instance,
                                       logistic_instance)
-from selection.randomized.glm import (pairs_bootstrap_glm,
-                                      glm_nonparametric_bootstrap)
-from selection.algorithms.lasso import (glm_sandwich_estimator,
-                                        lasso)
-from selection.constraints.affine import (constraints,
-                                          stack)
+
 from selection.randomized.query import naive_confidence_intervals
+from selection.randomized.query import naive_pvalues
 
 import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
@@ -26,7 +17,7 @@ from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, s
 from selection.randomized.cv_view import CV_view
 
 
-@register_report(['truth', 'cover', 'naive_cover', 'ci_length_naive',
+@register_report(['truth', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
                     'active', 'BH_decisions', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
@@ -142,42 +133,44 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
                                                                    parameter=np.zeros_like(true_vec),
                                                                    sample=full_sample)
 
-        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
-
         L, U = LU.T
+        sel_covered = np.zeros(nactive, np.bool)
+        sel_length = np.zeros(nactive)
 
-        covered = np.zeros(nactive, np.bool)
+        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
         naive_covered = np.zeros(nactive, np.bool)
         naive_length = np.zeros(nactive)
+        naive_pvals = naive_pvalues(target_sampler, target_observed, true_vec)
+
         active_var = np.zeros(nactive, np.bool)
 
         for j in range(nactive):
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
-                covered[j] = 1
+                sel_covered[j] = 1
             if (LU_naive[j, 0] <= true_vec[j]) and (LU_naive[j, 1] >= true_vec[j]):
                 naive_covered[j] = 1
+            sel_length[j] = U[j]-L[j]
             naive_length[j] = LU_naive[j,1]-LU_naive[j,0]
             active_var[j] = active_set[j] in nonzero
 
-        print("individual coverage", np.true_divide(covered.sum(),nactive))
+        print("individual coverage", np.true_divide(sel_covered.sum(),nactive))
         from statsmodels.sandbox.stats.multicomp import multipletests
         q = 0.1
         BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
+        return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
-        return pivots_truth, covered, naive_covered, naive_length, active_var, BH_desicions, active_var
 
-
-def report(niter=20, **kwargs):
+def report(niter=2, **kwargs):
 
     kwargs = {'s': 0, 'n': 1000, 'p': 500, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
-    CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
+    CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
                                              niter,
                                              reports.summarize_all,
                                              **kwargs)
 
-    fig = reports.pivot_plot_2in1(CLT_runs, color='b', label='CV')
+    fig = reports.pivot_plot_plus_naive(CV_runs)
     fig.suptitle("CV pivots")
     fig.savefig('cv_pivots.pdf')
 
