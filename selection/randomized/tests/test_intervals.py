@@ -23,7 +23,7 @@ def test_intervals(s=0,
                    n=200,
                    p=10,
                    snr=7,
-                   rho=0.1,
+                   rho=0.2,
                    lam_frac=1.2,
                    ndraw=10000, 
                    burnin=2000, 
@@ -34,7 +34,7 @@ def test_intervals(s=0,
     if randomizer =='laplace':
         randomizer = randomization.laplace((p,), scale=1.)
     elif randomizer=='gaussian':
-        randomizer = randomization.gaussian(np.identity(p))
+        randomizer = randomization.isotropic_gaussian((p,), scale=1.)
     elif randomizer == 'logistic':
         randomizer = randomization.logistic((p,), scale=1.)
 
@@ -136,7 +136,7 @@ def test_intervals(s=0,
 
 def report(niter=10, **kwargs):
 
-    kwargs= {'s': 0, 'n': 300, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs= {'s': 0, 'n': 100, 'p': 10, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_intervals']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
