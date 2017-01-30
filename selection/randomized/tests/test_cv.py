@@ -26,7 +26,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
              randomizer_scale = 1.5,
              scale1 = 0.1,
-             scale2 = 0.5,
+             scale2 = 0.1,
              lam_frac = 1.5,
              loss = 'gaussian',
              intervals = 'old',
@@ -160,7 +160,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
         return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
 
-def report(niter=5, **kwargs):
+def report(niter=1, **kwargs):
 
     kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
@@ -172,7 +172,7 @@ def report(niter=5, **kwargs):
 
     fig = reports.pivot_plot_plus_naive(CV_runs)
     fig.suptitle("CV pivots")
-    fig.savefig('cv_pivots.pdf')
+    fig.savefig('cv_pivots_100.pdf')
 
 
 if __name__ == '__main__':

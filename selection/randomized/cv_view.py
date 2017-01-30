@@ -36,7 +36,7 @@ class CV_view(query):
         self.randomization1 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale1)
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
-        self.nboot = 100
+        self.nboot = 1000
 
     def solve(self):
 
