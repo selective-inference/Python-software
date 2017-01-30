@@ -9,10 +9,10 @@ from selection.bayesian.ms_lasso_2stage import selection_probability_objective_m
     selective_map_credible_ms_lasso
 
 def ms_lasso_coverage():
-    n = 100
-    p = 200
+    n = 200
+    p = 100
     s = 10
-    snr = 1.5
+    snr = 0.5
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
@@ -121,8 +121,8 @@ def ms_lasso_coverage():
 #print(cov[0], cov[1], cov[2], cov[3])
 niter = 30
 #till 23
-#cov_ad = 0.86
-#cov_unad = 0.55
+#cov_ad = 0.856
+#cov_unad = 0.61
 cov_ad = 0.
 cov_unad = 0.
 for i in range(niter):
