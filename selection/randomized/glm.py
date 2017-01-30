@@ -408,7 +408,9 @@ def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
         _outer_cross = [0.] * len(cross_terms)
     _outer_target = 0.
 
-    for _ in range(nsample):
+    for j in range(nsample):
+        if j % 10==0:
+            print(j)
         indices = sampler()
         _boot_target = boot_target(indices)
 

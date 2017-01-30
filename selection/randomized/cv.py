@@ -39,20 +39,20 @@ def CV_err(loss,
         cur = (resid**2).sum() / n_test
 
         # there are several ways we could randomize here...
-        random_noise = scale * np.random.standard_normal(n_test)
-        cur_randomized = ((resid + random_noise)**2).sum() / n_test
+        #random_noise = scale * np.random.standard_normal(n_test)
+        #cur_randomized = ((resid + random_noise)**2).sum() / n_test
 
         CV_err += cur
         CV_err_squared += cur**2
 
-        CV_err_randomized += cur_randomized
-        CV_err_squared_randomized += cur_randomized**2
+        #CV_err_randomized += cur_randomized
+        #CV_err_squared_randomized += cur_randomized**2
 
     K = len(np.unique(folds))
 
-    SD_CV = np.sqrt((CV_err_squared.mean() - CV_err.mean()**2) / (K-1))
-    SD_CV_randomized = np.sqrt((CV_err_squared_randomized.mean() - CV_err_randomized.mean()**2) / (K-1))
-    return CV_err, SD_CV, CV_err_randomized, SD_CV_randomized
+    #SD_CV = np.sqrt((CV_err_squared.mean() - CV_err.mean()**2) / (K-1))
+    #SD_CV_randomized = np.sqrt((CV_err_squared_randomized.mean() - CV_err_randomized.mean()**2) / (K-1))
+    return CV_err #, SD_CV, CV_err_randomized, SD_CV_randomized
 
 
 def choose_lambda_CV(loss,
