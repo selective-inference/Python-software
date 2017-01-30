@@ -24,14 +24,14 @@ from selection.randomized.cv_view import CV_view
 @wait_for_return_value()
 def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
-             randomizer_scale = 1.5,
+             randomizer_scale = 1.,
              scale1 = 0.1,
              scale2 = 0.1,
-             lam_frac = 1.5,
+             lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
-             condition_on_CVR = False,
+             condition_on_CVR = True,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
@@ -74,8 +74,8 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
-    mv = multiple_queries([cv, M_est1])
-    #mv = multiple_queries([M_est1])
+    #mv = multiple_queries([cv, M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     #active = soln != 0
@@ -160,9 +160,9 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
         return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
 
-def report(niter=1, **kwargs):
+def report(niter=50, **kwargs):
 
-    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
@@ -172,7 +172,7 @@ def report(niter=1, **kwargs):
 
     fig = reports.pivot_plot_plus_naive(CV_runs)
     fig.suptitle("CV pivots")
-    fig.savefig('cv_pivots_100.pdf')
+    fig.savefig('cv_pivots.pdf')
 
 
 if __name__ == '__main__':

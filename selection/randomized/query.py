@@ -445,8 +445,8 @@ class targeted_sampler(object):
                                                                 nsample=multi_view.nboot[i])
             self.target_cov = target_cov
             self.score_cov.append(cross_cov)
-            if i==0:
-                print("cross cov (mean, std): ", np.mean(cross_cov), np.std(cross_cov))
+            #if i==0:
+            #    print("cross cov (mean, std): ", np.mean(cross_cov), np.std(cross_cov))
         #self.target_cov = np.atleast_2d(covariances[0])
 
         # XXX we're not really using this target_set in our tests

@@ -16,7 +16,9 @@ class CV_view(query):
         self.loss = glm_loss
         X, y = self.loss.data
         n, p = X.shape
-        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * np.fabs(X.T.dot(y)).max()
+        lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))+lasso_randomization.sample((1000,))).max(0))
+        lam_seq = np.exp(np.linspace(np.log(0.1), np.log(2), 30)) * lam_seq
+        # lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * np.fabs(X.T.dot(y)+lasso_randomization.sample((10,))).max()
         folds = np.arange(n) % K
         np.random.shuffle(folds)
         (self.folds,
@@ -74,7 +76,7 @@ class CV_view(query):
         #gap = np.max(SD)
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + gap])]
-        lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.1*minimum_CVR])]
+        lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.05*minimum_CVR])]
         return lam_1SD
 
     def projection(self, opt_state):
