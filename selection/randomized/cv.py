@@ -96,8 +96,8 @@ def bootstrap_CV_curve(loss,
         n, p = X.shape
         folds_star = np.arange(n) % K
         np.random.shuffle(folds_star)
-        loss_star = loss.subsample(indices)
-        #loss_star = rr.glm.gaussian(X[indices,:], y[indices])
+        #loss_star = loss.subsample(indices)
+        loss_star = rr.glm.gaussian(X[indices,:], y[indices])
         _, CVR_val, CV1_val = choose_lambda_CV(loss_star, lam_seq, folds_star, randomization1, randomization2, lasso_randomization, epsilon)
         return np.array(CVR_val), np.array(CV1_val)
 

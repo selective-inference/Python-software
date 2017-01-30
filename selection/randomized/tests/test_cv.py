@@ -162,7 +162,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
 def report(niter=50, **kwargs):
 
-    kwargs = {'s': 0, 'n': 500, 'p': 50, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

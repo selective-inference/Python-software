@@ -17,7 +17,7 @@ class CV_view(query):
         X, y = self.loss.data
         n, p = X.shape
         lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))+lasso_randomization.sample((1000,))).max(0))
-        lam_seq = np.exp(np.linspace(np.log(0.1), np.log(2), 30)) * lam_seq
+        lam_seq = np.exp(np.linspace(np.log(0.5), np.log(3), 30)) * lam_seq
         # lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * np.fabs(X.T.dot(y)+lasso_randomization.sample((10,))).max()
         folds = np.arange(n) % K
         np.random.shuffle(folds)
@@ -38,7 +38,7 @@ class CV_view(query):
         self.randomization1 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale1)
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
-        self.nboot = 1000
+        self.nboot = 1
 
     def solve(self):
 
