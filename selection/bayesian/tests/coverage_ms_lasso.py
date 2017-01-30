@@ -100,22 +100,25 @@ def ms_lasso_coverage():
     nsel = np.zeros(p)
     nerr = 0
 
-    try:
-        for l in range(nactive):
-            nsel[active_set[l]] += 1
-            if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
-                coverage_ad[active_set[l]] += 1
-            if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
-                coverage_unad[active_set[l]] += 1
-        print('coverage adjusted so far', coverage_ad)
-        print('coverage unadjusted so far', coverage_unad)
+    if nactive>1:
+        try:
+            for l in range(nactive):
+                nsel[active_set[l]] += 1
+                if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
+                    coverage_ad[active_set[l]] += 1
+                if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
+                    coverage_unad[active_set[l]] += 1
+            print('coverage adjusted so far', coverage_ad)
+            print('coverage unadjusted so far', coverage_unad)
 
-    except ValueError:
-        nerr += 1
-        print('ignore iteration raising ValueError')
+        except ValueError:
+            nerr += 1
+            print('ignore iteration raising ValueError')
 
+        return coverage_ad.sum() / nactive, coverage_unad.sum() / nactive, nsel, nerr
 
-    return coverage_ad.sum() / nactive, coverage_unad.sum() / nactive, nsel, nerr
+    else:
+        return 0.,0.,nsel,0.
 
 #cov = ms_lasso_coverage()
 #print(cov[0], cov[1], cov[2], cov[3])
@@ -128,11 +131,12 @@ cov_unad = 0.
 for i in range(niter):
 
     cov = ms_lasso_coverage()
-    cov_ad += cov[0]
-    cov_unad += cov[1]
-    print(cov_ad)
-    print(cov_unad)
-    print("\n")
-    print("iteration completed", i)
+    if np.any(cov[2] > 0.):
+        cov_ad += cov[0]
+        cov_unad += cov[1]
+        print(cov_ad)
+        print(cov_unad)
+        print("\n")
+        print("iteration completed", i)
 
 
