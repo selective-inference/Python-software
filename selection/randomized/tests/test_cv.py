@@ -26,12 +26,12 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              randomizer='gaussian',
              randomizer_scale = 1.,
              scale1 = 0.1,
-             scale2 = 0.1,
+             scale2 = 0.2,
              lam_frac = 1.,
-             loss = 'logistic',
+             loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
-             condition_on_CVR = True,
+             condition_on_CVR = False,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
@@ -53,7 +53,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
     epsilon = 1./np.sqrt(n)
     # view 1
-    cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, scale1=scale1, scale2=scale2)
+    cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss, scale1=scale1, scale2=scale2)
     cv.solve()
     lam = cv.lam_CVR
     print("lam", lam)
@@ -74,8 +74,8 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
-    #mv = multiple_queries([cv, M_est1])
-    mv = multiple_queries([M_est1])
+    mv = multiple_queries([cv, M_est1])
+    #mv = multiple_queries([M_est1])
     mv.solve()
 
     #active = soln != 0
@@ -160,9 +160,9 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
         return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
 
-def report(niter=50, **kwargs):
+def report(niter=10, **kwargs):
 
-    kwargs = {'s': 0, 'n': 3000, 'p': 1000, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 300, 'p': 100, 'snr': 7, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

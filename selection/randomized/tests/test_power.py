@@ -50,10 +50,10 @@ def test_power(s=30,
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-        loss = rr.glm.gaussian(X, y)
+        glm_loss = rr.glm.gaussian(X, y)
     elif loss=="logistic":
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
-        loss = rr.glm.logistic(X, y)
+        glm_loss = rr.glm.logistic(X, y)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
     if randomizer =='laplace':
@@ -65,7 +65,7 @@ def test_power(s=30,
 
     views = []
     if cross_validation:
-        cv = CV_view(loss, lasso_randomization=randomizer, epsilon=epsilon,
+        cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss,
                      scale1=0.1, scale2=0.1)
         cv.solve()
         #views.append(cv)
@@ -82,7 +82,7 @@ def test_power(s=30,
     W = lam_frac * np.ones(p) * lam
     #W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
-    Mest = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    Mest = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     views.append(Mest)
 
@@ -117,7 +117,7 @@ def test_power(s=30,
         for j in range(nactive):
             active_var[j] = active_set[j] in nonzero
 
-        target_sampler, target_observed = glm_target(loss,
+        target_sampler, target_observed = glm_target(glm_loss,
                                                      active_union,
                                                      queries,
                                                      bootstrap=False)
@@ -142,7 +142,7 @@ def test_power(s=30,
         #return pvalues, BH_decisions, active_var # report
         return FDP_BH, power_BH,  FP_level, FDP_level, power_level, nactive
 
-def report(niter=20, **kwargs):
+def report(niter=50, **kwargs):
 
     condition_report = reports.reports['test_power']
     runs = reports.collect_multiple_runs(condition_report['test'],

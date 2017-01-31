@@ -9,7 +9,7 @@ def CV_err(loss,
            folds,
            lasso_randomization, epsilon,
            scale=0.5,
-           solve_args={'min_its':20, 'tol':1.e-10}):
+           solve_args={'min_its':20, 'tol':1.e-1}):
 
     X, y = loss.data
     n, p = X.shape
