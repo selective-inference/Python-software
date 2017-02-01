@@ -42,7 +42,7 @@ class CV_view(query):
         self.randomization1 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale1)
         self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=scale2)
         query.__init__(self, self.randomization2)
-        self.nboot = 1000
+        self.nboot = 1
 
     def solve(self):
 
@@ -79,8 +79,8 @@ class CV_view(query):
         #lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
         #gap = np.max(SD)
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
-        #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + gap])]
-        lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.2*minimum_CVR])]
+        lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.1*minimum_CVR])]
+        #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.1*minimum_CVR])]
         return lam_1SD
 
     def projection(self, opt_state):

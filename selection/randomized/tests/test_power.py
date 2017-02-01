@@ -31,7 +31,7 @@ from selection.randomized.cv_view import CV_view
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_power(s=30,
+def test_power(s=10,
                n=3000,
                p=1000,
                rho=0.,
@@ -71,7 +71,7 @@ def test_power(s=30,
         #views.append(cv)
         lam = cv.lam_CVR
         print("minimizer of CVR", lam)
-        condition_on_CVR = True
+        condition_on_CVR = False
         if condition_on_CVR:
             cv.condition_on_opt_state()
             lam = cv.one_SD_rule()
@@ -139,8 +139,13 @@ def test_power(s=30,
         FDP_level = np.true_divide(level_decisions.sum() - level_TP, max(level_decisions.sum(),1))
         FP_level = np.true_divide(level_decisions.sum() - level_TP, nactive)
         power_level = np.true_divide(level_TP, s)
+
+        ## true variables that survived the second round
+        PR = np.true_divide(level_TP, active_var.sum())
+        print("true variables survived", PR)
         #return pvalues, BH_decisions, active_var # report
-        return FDP_BH, power_BH,  FP_level, FDP_level, power_level, nactive
+        print()
+        return FDP_BH, power_BH,  FP_level, FDP_level, power_level, nactive, PR
 
 def report(niter=50, **kwargs):
 
@@ -158,25 +163,27 @@ def compute_power():
     FDP_BH_sample, power_BH_sample = [], []
     FP_level_sample = []
     FDP_level_sample, power_level_sample = [], []
-    nactive_sample = []
-    niter = 100
+    nactive_sample, PR_sample = [], []
+    niter = 50
     for i in range(niter):
         print("iteration", i)
         result = test_power()[1]
         if result is not None:
-            FDP_BH, power_BH, FP_level, FDP_level, power_level, nactive = result
+            FDP_BH, power_BH, FP_level, FDP_level, power_level, nactive, PR = result
             FDP_BH_sample.append(FDP_BH)
             power_BH_sample.append(power_BH)
             FP_level_sample.append(FP_level)
             FDP_level_sample.append(FDP_level)
             power_level_sample.append(power_level)
             nactive_sample.append(nactive)
+            PR_sample.append(PR)
         print("FDP BH mean", np.mean(FDP_BH_sample))
         print("power BH mean", np.mean(power_BH_sample))
         print("FP level mean", np.mean(FP_level_sample))
         print("FDP level mean", np.mean(FDP_level_sample))
         print("power level mean", np.mean(power_level_sample))
         print("nactive mean", np.mean(nactive_sample))
+        print("true variables that survived the second round", np.mean(PR_sample))
 
     return FDP_BH_sample, power_BH_sample, FDP_level_sample, power_level_sample
 
