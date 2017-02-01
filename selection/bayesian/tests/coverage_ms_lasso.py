@@ -12,7 +12,7 @@ def ms_lasso_coverage():
     n = 200
     p = 100
     s = 10
-    snr = 2.
+    snr = 3.
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
@@ -123,9 +123,13 @@ def ms_lasso_coverage():
 #cov = ms_lasso_coverage()
 #print(cov[0], cov[1], cov[2], cov[3])
 niter = 15
-#till 14
-#cov_ad = 0.956
-#cov_unad = 0.4568027210885714
+#till 15
+#12.5625097125
+#10.6586385836
+
+#cov_ad = 0.896
+#cov_unad = 0.664
+
 cov_ad = 0.
 cov_unad = 0.
 for i in range(niter):
