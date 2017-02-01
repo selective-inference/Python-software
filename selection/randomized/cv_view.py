@@ -20,8 +20,8 @@ class CV_view(query):
             lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))+lasso_randomization.sample((1000,))).max(0))
         elif loss=='logistic':
             lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 1000)))+lasso_randomization.sample((1000,))).max(0))
-        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * lam_seq
-        #lam_seq = np.linspace(0.1, 1, 30) * lam_seq
+        lam_seq = np.exp(np.linspace(np.log(0.3), np.log(1), 30)) * lam_seq
+        #lam_seq = np.linspace(0.2, 1, 100) * lam_seq
         # lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * np.fabs(X.T.dot(y)+lasso_randomization.sample((10,))).max()
 
         folds = np.arange(n) % K
@@ -79,7 +79,7 @@ class CV_view(query):
         #print("CVR_val", CVR_val)
         minimum_CVR = np.min(CVR_val)
         #lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
-        #gap = np.max(SD)
+        #gap = np.max(SD0
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR + SD[i]])]
         lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.1*minimum_CVR])]
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.1*minimum_CVR])]
