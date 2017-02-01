@@ -20,7 +20,8 @@ class CV_view(query):
             lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))+lasso_randomization.sample((1000,))).max(0))
         elif loss=='logistic':
             lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 1000)))+lasso_randomization.sample((1000,))).max(0))
-        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * lam_seq
+        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(1), 30)) * lam_seq
+        #lam_seq = np.linspace(0.1, 1, 30) * lam_seq
         # lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * np.fabs(X.T.dot(y)+lasso_randomization.sample((10,))).max()
 
         folds = np.arange(n) % K
@@ -56,6 +57,7 @@ class CV_view(query):
                                        CVR_val,
                                        CV1_val)
         self.lam_idx = list(self.lam_seq).index(self.lam_CVR) # index of the minimizer
+        print("index of the minimizer", self.lam_idx)
         self._solved = True
         self.opt_transform = (np.identity(self.num_opt_var), np.zeros(self.num_opt_var))
         self.score_transform = (-np.identity(self.num_opt_var), np.zeros(self.num_opt_var))

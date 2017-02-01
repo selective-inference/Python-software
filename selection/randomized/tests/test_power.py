@@ -75,8 +75,7 @@ def test_power(s=10,
         if condition_on_CVR:
             cv.condition_on_opt_state()
             lam = cv.one_SD_rule()
-
-        print("one SD rule lambda", lam)
+            print("one SD rule lambda", lam)
 
 
     W = lam_frac * np.ones(p) * lam
@@ -141,7 +140,7 @@ def test_power(s=10,
         power_level = np.true_divide(level_TP, s)
 
         ## true variables that survived the second round
-        PR = np.true_divide(level_TP, active_var.sum())
+        PR = np.true_divide(BH_TP, active_var.sum())
         print("true variables survived", PR)
         #return pvalues, BH_decisions, active_var # report
         print()
