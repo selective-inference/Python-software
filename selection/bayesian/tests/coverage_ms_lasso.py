@@ -12,7 +12,7 @@ def ms_lasso_coverage():
     n = 200
     p = 100
     s = 10
-    snr = 2.5
+    snr = 2
 
     X_1, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
     random_Z = np.random.standard_normal(p)
