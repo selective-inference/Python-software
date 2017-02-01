@@ -67,8 +67,8 @@ def test_power(s=10,
     if cross_validation:
         cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss,
                      scale1=0.1, scale2=0.1)
-        cv.solve()
         #views.append(cv)
+        cv.solve()
         lam = cv.lam_CVR
         print("minimizer of CVR", lam)
         condition_on_CVR = True
@@ -132,19 +132,25 @@ def test_power(s=10,
         BH_TP = BH_decisions[active_var].sum()
         FDP_BH = np.true_divide(BH_decisions.sum() - BH_TP, max(BH_decisions.sum(), 1))
         power_BH = np.true_divide(BH_TP, s)
+        total_rejections_BH = BH_decisions.sum()
+        false_rejections_BH = total_rejections_BH-BH_TP
 
         level_decisions = (pvalues<0.05)
         level_TP = level_decisions[active_var].sum()
         FDP_level = np.true_divide(level_decisions.sum() - level_TP, max(level_decisions.sum(),1))
         FP_level = np.true_divide(level_decisions.sum() - level_TP, nactive)
         power_level = np.true_divide(level_TP, s)
+        total_rejections_level = level_decisions.sum()
+        false_rejections_level = total_rejections_level-level_TP
 
         ## true variables that survived the second round
         PR = np.true_divide(BH_TP, active_var.sum())
         print("true variables survived", PR)
         #return pvalues, BH_decisions, active_var # report
         print()
-        return FDP_BH, power_BH,  FP_level, FDP_level, power_level, nactive, PR
+        return (FDP_BH, total_rejections_BH, false_rejections_BH, power_BH,
+                FP_level, FDP_level, total_rejections_level, false_rejections_level, power_level,
+                nactive, PR)
 
 def report(niter=50, **kwargs):
 
@@ -160,26 +166,39 @@ def report(niter=50, **kwargs):
 
 def compute_power():
     FDP_BH_sample, power_BH_sample = [], []
-    FP_level_sample = []
-    FDP_level_sample, power_level_sample = [], []
+    rejections_BH_sample, false_rejections_BH_sample = [], []
+    FP_level_sample, FDP_level_sample, power_level_sample = [], [], []
+    rejections_level_sample, false_rejections_level_sample = [], []
     nactive_sample, PR_sample = [], []
     niter = 50
     for i in range(niter):
         print("iteration", i)
         result = test_power()[1]
         if result is not None:
-            FDP_BH, power_BH, FP_level, FDP_level, power_level, nactive, PR = result
+            FDP_BH, rejections_BH, false_rejections_BH, power_BH, \
+                    FP_level, FDP_level, rejections_level, false_rejections_level, power_level, nactive, PR = result
             FDP_BH_sample.append(FDP_BH)
             power_BH_sample.append(power_BH)
+            rejections_BH_sample.append(rejections_BH)
+            false_rejections_BH_sample.append(false_rejections_BH)
+
             FP_level_sample.append(FP_level)
             FDP_level_sample.append(FDP_level)
             power_level_sample.append(power_level)
             nactive_sample.append(nactive)
             PR_sample.append(PR)
+            rejections_level_sample.append(rejections_level)
+            false_rejections_level_sample.append(false_rejections_level)
+
         print("FDP BH mean", np.mean(FDP_BH_sample))
+        print("total rejections BH", np.mean(rejections_BH_sample))
+        print("false rejections BH ", np.mean(false_rejections_BH_sample))
         print("power BH mean", np.mean(power_BH_sample))
+
         print("FP level mean", np.mean(FP_level_sample))
         print("FDP level mean", np.mean(FDP_level_sample))
+        print("total rejections level", np.mean(rejections_level_sample))
+        print("false rejections level", np.mean(false_rejections_level_sample))
         print("power level mean", np.mean(power_level_sample))
         print("nactive mean", np.mean(nactive_sample))
         print("true variables that survived the second round", np.mean(PR_sample))
