@@ -71,7 +71,7 @@ def test_power(s=10,
         #views.append(cv)
         lam = cv.lam_CVR
         print("minimizer of CVR", lam)
-        condition_on_CVR = False
+        condition_on_CVR = True
         if condition_on_CVR:
             cv.condition_on_opt_state()
             lam = cv.one_SD_rule()
