@@ -15,19 +15,12 @@ import selection.tests.reports as reports
 
 from selection.api import (randomization,
                            glm_group_lasso,
-                           pairs_bootstrap_glm,
                            multiple_queries,
-                           discrete_family,
-                           projected_langevin,
-                           glm_group_lasso_parametric,
                            glm_target)
-
-from selection.randomized.query import naive_confidence_intervals
-
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
+from statsmodels.sandbox.stats.multicomp import multipletests
 from selection.randomized.cv_view import CV_view
 
-@register_report(['pvalue','BH_decisions', 'active_var'])
+@register_report(['pvalue', 'active_var'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
@@ -127,30 +120,31 @@ def test_power(s=10,
                                                      parameter=np.zeros_like(target_observed),
                                                      sample=target_sample)
 
-        from statsmodels.sandbox.stats.multicomp import multipletests
-        BH_decisions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
-        BH_TP = BH_decisions[active_var].sum()
-        FDP_BH = np.true_divide(BH_decisions.sum() - BH_TP, max(BH_decisions.sum(), 1))
-        power_BH = np.true_divide(BH_TP, s)
-        total_rejections_BH = BH_decisions.sum()
-        false_rejections_BH = total_rejections_BH-BH_TP
+        return pvalues, active_var, s
 
-        level_decisions = (pvalues<0.05)
-        level_TP = level_decisions[active_var].sum()
-        FDP_level = np.true_divide(level_decisions.sum() - level_TP, max(level_decisions.sum(),1))
-        FP_level = np.true_divide(level_decisions.sum() - level_TP, nactive)
-        power_level = np.true_divide(level_TP, s)
-        total_rejections_level = level_decisions.sum()
-        false_rejections_level = total_rejections_level-level_TP
 
-        ## true variables that survived the second round
-        PR = np.true_divide(BH_TP, active_var.sum())
-        print("true variables survived", PR)
-        #return pvalues, BH_decisions, active_var # report
-        print()
-        return (FDP_BH, total_rejections_BH, false_rejections_BH, power_BH,
-                FP_level, FDP_level, total_rejections_level, false_rejections_level, power_level,
-                nactive, PR)
+def BH(pvalues, active_var, s, q=0.2):
+    decisions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
+    TP = decisions[active_var].sum()
+    FDP = np.true_divide(decisions.sum() - TP, max(decisions.sum(), 1))
+    power = np.true_divide(TP, s)
+    total_rejections = decisions.sum()
+    false_rejections = total_rejections - TP
+    return FDP, power, total_rejections, false_rejections
+
+def simple_rejections(pvalues, active_var, s, alpha=0.05):
+    decisions = (pvalues < alpha)
+    TP = decisions[active_var].sum()
+    FDP = np.true_divide(decisions.sum() - TP, max(decisions.sum(), 1))
+    nactive = active_var.shape[0]
+    FP = np.true_divide(decisions.sum() - TP, nactive)
+    power = np.true_divide(TP, s)
+    total_rejections = decisions.sum()
+    false_rejections = total_rejections - TP
+    # selected and survived
+    survived = np.true_divide(TP, active_var.sum())
+    return FP, FDP, power, total_rejections, false_rejections, nactive, survived
+
 
 def report(niter=50, **kwargs):
 
@@ -164,46 +158,32 @@ def report(niter=50, **kwargs):
     fig = reports.pivot_plot_simple(runs)
     fig.savefig('marginalized_subgrad_pivots.pdf')
 
+
 def compute_power():
-    FDP_BH_sample, power_BH_sample = [], []
-    rejections_BH_sample, false_rejections_BH_sample = [], []
-    FP_level_sample, FDP_level_sample, power_level_sample = [], [], []
-    rejections_level_sample, false_rejections_level_sample = [], []
-    nactive_sample, PR_sample = [], []
-    niter = 50
+    BH_sample, simple_rejections_sample = [], []
+    niter = 1
     for i in range(niter):
         print("iteration", i)
         result = test_power()[1]
         if result is not None:
-            FDP_BH, rejections_BH, false_rejections_BH, power_BH, \
-                    FP_level, FDP_level, rejections_level, false_rejections_level, power_level, nactive, PR = result
-            FDP_BH_sample.append(FDP_BH)
-            power_BH_sample.append(power_BH)
-            rejections_BH_sample.append(rejections_BH)
-            false_rejections_BH_sample.append(false_rejections_BH)
+            pvalues, active_var, s = result
+            BH_sample.append(BH(pvalues, active_var,s))
+            simple_rejections_sample.append(simple_rejections(pvalues, active_var,s))
 
-            FP_level_sample.append(FP_level)
-            FDP_level_sample.append(FDP_level)
-            power_level_sample.append(power_level)
-            nactive_sample.append(nactive)
-            PR_sample.append(PR)
-            rejections_level_sample.append(rejections_level)
-            false_rejections_level_sample.append(false_rejections_level)
+        print("FDP BH mean", np.mean([i[0] for i in BH_sample]))
+        print("power BH mean", np.mean([i[1] for i in BH_sample]))
+        print("total rejections BH", np.mean([i[2] for i in BH_sample]))
+        print("false rejections BH ", np.mean([i[3] for i in BH_sample]))
 
-        print("FDP BH mean", np.mean(FDP_BH_sample))
-        print("total rejections BH", np.mean(rejections_BH_sample))
-        print("false rejections BH ", np.mean(false_rejections_BH_sample))
-        print("power BH mean", np.mean(power_BH_sample))
+        print("FP level mean", np.mean([i[0] for i in simple_rejections_sample]))
+        print("FDP level mean", np.mean([i[1] for i in simple_rejections_sample]))
+        print("power level mean", np.mean([i[2] for i in simple_rejections_sample]))
+        print("total rejections level", np.mean([i[3] for i in simple_rejections_sample]))
+        print("false rejections level", np.mean([i[4] for i in simple_rejections_sample]))
+        print("nactive mean", np.mean([i[5] for i in simple_rejections_sample]))
+        print("true variables that survived the second round", np.mean([i[6] for i in simple_rejections_sample]))
 
-        print("FP level mean", np.mean(FP_level_sample))
-        print("FDP level mean", np.mean(FDP_level_sample))
-        print("total rejections level", np.mean(rejections_level_sample))
-        print("false rejections level", np.mean(false_rejections_level_sample))
-        print("power level mean", np.mean(power_level_sample))
-        print("nactive mean", np.mean(nactive_sample))
-        print("true variables that survived the second round", np.mean(PR_sample))
-
-    return FDP_BH_sample, power_BH_sample, FDP_level_sample, power_level_sample
+    return None
 
 
 def plot_power():
