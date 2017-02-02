@@ -186,32 +186,5 @@ def compute_power():
     return None
 
 
-def plot_power():
-    FDP_yaxis = []
-    power_yaxis = []
-    n = 500
-    niter = 50
-    npoints = 5
-    p_grid = np.linspace(100, n, npoints)
-    for i in range(npoints):
-        p = int(p_grid[i])
-        FDP_fixed_p, power_fixed_p = [], []
-        for j in range(niter):
-            print("p, iteration:", p, j)
-            result = test_power(n=n, p=p)[1]
-            if result is not None:
-                FDP, power = result
-                FDP_fixed_p.append(FDP)
-                power_fixed_p.append(power)
-                print("FDP", np.mean(FDP_fixed_p))
-                print("power:", np.mean(power_fixed_p))
-        FDP_yaxis.append(np.mean(FDP_fixed_p))
-        power_yaxis.append(np.mean(power_fixed_p))
-
-
-    print("FDP sequence:", FDP_yaxis)
-    print("power sequence:", power_yaxis)
-    return FDP_yaxis, power_yaxis
-
 if __name__ == '__main__':
     compute_power()
