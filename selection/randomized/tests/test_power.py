@@ -119,7 +119,6 @@ def test_power(s=10,
         pvalues = target_sampler.coefficient_pvalues(target_observed,
                                                      parameter=np.zeros_like(target_observed),
                                                      sample=target_sample)
-
         return pvalues, active_var, s
 
 
