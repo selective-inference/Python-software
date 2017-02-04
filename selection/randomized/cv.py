@@ -86,7 +86,7 @@ class CV(object):
             SD_CV_randomized = np.sqrt((CV_err_squared_randomized - (CV_err_randomized**2/self.K)) / (self.K-1))
             return CV_err, SD_CV, CV_err_randomized, SD_CV_randomized
         else:
-            print(CV_err, SD_CV)
+            #print(CV_err, SD_CV)
             return CV_err, SD_CV
 
 

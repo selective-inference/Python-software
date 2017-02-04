@@ -24,7 +24,7 @@ from selection.randomized.cv_view import CV_view
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_power(s=10,
+def test_power(s=30,
                n=3000,
                p=1000,
                rho=0.,
