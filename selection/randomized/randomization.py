@@ -5,7 +5,6 @@ should be a gradient of the negative of the log-density. For a
 Gaussian density, this will be a convex function, not a concave function.
 """
 from __future__ import division, print_function
-
 import numpy as np
 import regreg.api as rr
 from scipy.stats import laplace, logistic, norm as ndist
@@ -82,7 +81,6 @@ class randomization(rr.smooth_atom):
         """
         Randomize the loss.
         """
-
         randomized_loss = rr.smooth_sum([loss])
         _randomZ = self.sample()
         randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -_randomZ, 0)

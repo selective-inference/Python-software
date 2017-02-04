@@ -7,7 +7,8 @@ from selection.api import (randomization,
                            glm_target)
 from selection.tests.instance import (gaussian_instance,
                                       logistic_instance)
-
+from selection.algorithms.sqrt_lasso import (sqlasso_objective,
+                                             choose_lambda)
 from selection.randomized.query import naive_confidence_intervals
 from selection.randomized.query import naive_pvalues
 
@@ -15,6 +16,16 @@ import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 from selection.randomized.cv_view import CV_view
+
+
+def choose_lambda_with_randomization(X, randomization, quantile=0.90, ndraw=10000):
+    X = rr.astransform(X)
+    n, p = X.output_shape[0], X.input_shape[0]
+    E = np.random.standard_normal((n, ndraw))
+    E /= np.sqrt(np.sum(E**2, 0))[None,:]
+    dist1 = np.fabs(X.adjoint_map(E)).max(0)
+    dist2 = np.fabs(randomization.sample((ndraw,))).max(0)
+    return np.percentile(dist1+dist2, 100*quantile)
 
 
 @register_report(['truth', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
@@ -28,7 +39,6 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              scale1 = 0.1,
              scale2 = 0.2,
              lam_frac = 1.,
-             loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
              condition_on_CVR = False,
@@ -44,38 +54,27 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     elif randomizer == 'logistic':
         randomizer = randomization.logistic((p,), scale=randomizer_scale)
 
-    if loss == "gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
-        glm_loss = rr.glm.gaussian(X, y)
-    elif loss == "logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
-        glm_loss = rr.glm.logistic(X, y)
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+    lam_nonrandom = choose_lambda(X)
+    lam_random = choose_lambda_with_randomization(X, randomizer)
+    loss = sqlasso_objective(X, y)
 
     epsilon = 1./np.sqrt(n)
-    # view 1
-    cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss, scale1=scale1, scale2=scale2)
-    cv.solve()
-    lam = cv.lam_CVR
-    print("lam", lam)
-    if condition_on_CVR:
-        cv.condition_on_opt_state()
-        lam = cv.one_SD_rule()
-        print("new lam", lam)
 
-    # non-randomied Lasso, just looking how many vars it selects
-    problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=lam))
+    # non-randomized sqrt-Lasso, just looking how many vars it selects
+    problem = rr.simple_problem(loss, rr.l1norm(p, lagrange=lam_nonrandom))
     beta_hat = problem.solve()
     active_hat = beta_hat !=0
-    print("non-randomized lasso ", active_hat.sum())
+    print("non-randomized sqrt-root Lasso active set", np.where(beta_hat)[0])
+    print("non-randomized sqrt-lasso", active_hat.sum())
 
     # view 2
-    W = lam_frac * np.ones(p) * lam
+    W = lam_frac * np.ones(p) * lam_random
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
-    M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
+    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
-    mv = multiple_queries([cv, M_est1])
-    #mv = multiple_queries([M_est1])
+    mv = multiple_queries([M_est1])
     mv.solve()
 
     #active = soln != 0
@@ -162,7 +161,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
 def report(niter=10, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 100, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 30, 'n': 3000, 'p': 1000, 'snr': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
