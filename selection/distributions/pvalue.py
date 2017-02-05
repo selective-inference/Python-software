@@ -127,6 +127,16 @@ def truncnorm_cdf(observed, lower, upper):
     x = max(x, a)
     x = min(x, b)
 
+    if np.abs(a)>5:
+        a=5*np.sign(a)
+        print("here")
+    if np.abs(b)>5:
+        b=5*np.sign(b)
+        print("here")
+    if np.abs(x) > 5:
+        x = 5 * np.sign(x)
+        print("here")
+
     if a > 0 and b > 0:
         Fx, Fa, Fb = mp.ncdf(-x), mp.ncdf(-a), mp.ncdf(-b)
         return float( ( Fa - Fx ) / ( Fa - Fb ) )
