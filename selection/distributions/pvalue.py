@@ -138,7 +138,7 @@ def truncnorm_cdf(observed, lower, upper):
         print("here")
     if a==b:
         return 1.
-    
+
     if a > 0 and b > 0:
         Fx, Fa, Fb = mp.ncdf(-x), mp.ncdf(-a), mp.ncdf(-b)
         return float( ( Fa - Fx ) / ( Fa - Fb ) )
