@@ -126,7 +126,7 @@ class CV(object):
             folds_star = np.arange(n) % self.K
             np.random.shuffle(folds_star)
             loss_star = self.loss.subsample(indices)
-            # loss_star = rr.glm.gaussian(X[indices,:], y[indices])
+            #loss_star = rr.glm.gaussian(X[indices,:], y[indices])
             _, _, _, CV_val_randomized = self.choose_lambda_CVr(scale=self.scale, loss=loss_star)
             return np.array(CV_val_randomized)
 
