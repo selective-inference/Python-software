@@ -14,6 +14,7 @@ class CV_view(query):
         X, y = self.loss.data
         n, p = X.shape
         if loss=="gaussian":
+            #lam_seq = np.mean(np.fabs(np.dot(X.T, y)))
             lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))+lasso_randomization.sample((1000,))).max(0))
         elif loss=='logistic':
             lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 1000)))+lasso_randomization.sample((1000,))).max(0))
@@ -71,14 +72,16 @@ class CV_view(query):
     def one_SD_rule(self):
         CVR_val = self.observed_opt_state
         minimum_CVR = np.min(CVR_val)
-        CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
-        SD = np.sqrt(np.diag(CVR_cov))
-        print("SD vector", SD)
+        #CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
+        #SD = np.sqrt(np.diag(CVR_cov))
+        #print("SD vector", SD)
         #print("CVR_val", CVR_val)
         #lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.05*minimum_CVR])]
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.05*minimum_CVR])]
         #print(0.05*minimum_CVR, self.SD)
-        lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD[i]])]
+        gap = np.mean(self.SD)
+        #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD[i]])]
+        lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+gap])]
         return lam_1SD
 
     def projection(self, opt_state):

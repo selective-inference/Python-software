@@ -43,6 +43,7 @@ def test_power(s=30,
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+        #print(lam)
         glm_loss = rr.glm.gaussian(X, y)
     elif loss=="logistic":
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
@@ -58,27 +59,27 @@ def test_power(s=30,
 
     views = []
     if cross_validation:
-        #cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss,
-        #             scale1=0.1, scale2=0.1)
+        cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss,
+                     scale1=0.1, scale2=0.1)
         # views.append(cv)
-        #cv.solve()
-        #lam = cv.lam_CVR
-        #print("minimizer of CVR", lam)
+        cv.solve()
+        lam = cv.lam_CVR
+        print("minimizer of CVR", lam)
 
-        #condition_on_CVR = False
-        #if condition_on_CVR:
-        #    cv.condition_on_opt_state()
-        #    lam = cv.one_SD_rule()
-        #    print("one SD rule lambda", lam)
+        condition_on_CVR = True
+        if condition_on_CVR:
+            cv.condition_on_opt_state()
+            lam = cv.one_SD_rule()
+            print("one SD rule lambda", lam)
 
-        from selection.randomized.cv import CV
-        lam_seq = np.exp(np.linspace(np.log(1.e-6), np.log(2), 30)) * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
-        K=5
-        folds = np.arange(n) % K
-        np.random.shuffle(folds)
-        CV_compute = CV(glm_loss, folds, lam_seq)
-        lam, _, _, _ = CV_compute.choose_lambda_CVr()
-        lam += 0.2*np.mean(np.fabs(randomizer.sample((1000,))).max(0))
+        #from selection.randomized.cv import CV
+        #lam_seq = np.exp(np.linspace(np.log(1.e-6), np.log(2), 30)) * np.mean(np.fabs(np.dot(X.T, y).max(0)))
+        #K = 5
+        #folds = np.arange(n) % K
+        #np.random.shuffle(folds)
+        #CV_compute = CV(glm_loss, folds, lam_seq)
+        #lam, _, _, _ = CV_compute.choose_lambda_CVr()
+        #lam += 0.1*np.mean(np.fabs(randomizer.sample((1000,))).max(0))
 
 
 
