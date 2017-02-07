@@ -34,7 +34,7 @@ def test_power(s=30,
                cross_validation = True,
                randomizer = 'gaussian',
                randomizer_scale = 1.,
-               ndraw=10000,
+               ndraw=20000,
                burnin=2000,
                loss='gaussian',
                scalings=False,
@@ -59,27 +59,27 @@ def test_power(s=30,
 
     views = []
     if cross_validation:
-        #cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss,
-        #             scale1=0.1, scale2=0.1)
-        # views.append(cv)
-        #cv.solve()
-        #lam = cv.lam_CVR
-        #print("minimizer of CVR", lam)
+        cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss,
+                     scale1=0.1, scale2=0.1)
+        #views.append(cv)
+        cv.solve()
+        lam = cv.lam_CVR
+        print("minimizer of CVR", lam)
 
-        condition_on_CVR = False
+        condition_on_CVR = True
         if condition_on_CVR:
             cv.condition_on_opt_state()
             lam = cv.one_SD_rule()
             print("one SD rule lambda", lam)
 
-        from selection.randomized.cv import CV
-        lam_seq = np.exp(np.linspace(np.log(1.e-6), np.log(2), 30)) * np.mean(np.fabs(np.dot(X.T, y).max(0)))
-        K = 5
-        folds = np.arange(n) % K
-        np.random.shuffle(folds)
-        CV_compute = CV(glm_loss, folds, lam_seq)
-        _, _, lam, _ = CV_compute.choose_lambda_CVr(scale=0.5)
-        #lam += 0.1*np.mean(np.fabs(randomizer.sample((1000,))).max(0))
+        #from selection.randomized.cv import CV
+        #lam_seq = np.exp(np.linspace(np.log(1.e-6), np.log(2), 30)) * np.mean(np.fabs(np.dot(X.T, y).max(0)))
+        #K = 5
+        #folds = np.arange(n) % K
+        #np.random.shuffle(folds)
+        #CV_compute = CV(glm_loss, folds, lam_seq)
+        #_, _, lam, _ = CV_compute.choose_lambda_CVr(scale=0.5)
+        #lam = (lam+np.mean(np.fabs(randomizer.sample((1000,))).max(0)))/np.sqrt(2)
 
 
 
@@ -172,7 +172,7 @@ def report(niter=50, **kwargs):
 
 def compute_power():
     BH_sample, simple_rejections_sample = [], []
-    niter = 50
+    niter = 200
     for i in range(niter):
         print("iteration", i)
         result = test_power()[1]
