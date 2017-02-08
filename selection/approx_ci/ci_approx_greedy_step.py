@@ -93,6 +93,7 @@ class neg_log_cube_probability_fs_laplace(rr.smooth_atom):
 
         arg_u = ((arg * np.ones(self.q)) + self.mu) / self.randomization_scale
         arg_l = (-(arg * np.ones(self.q)) + self.mu) / self.randomization_scale
+        prod_arg = -(2 * arg * np.ones(self.q)) / self.randomization_scale
 
         ind_arg_1 = np.zeros(self.q, bool)
         ind_arg_1[(arg_u < 0.)] = 1
@@ -103,10 +104,25 @@ class neg_log_cube_probability_fs_laplace(rr.smooth_atom):
         cube_prob[ind_arg_1] = np.exp(arg_u[ind_arg_1]) / 2. - np.exp(arg_l[ind_arg_1]) / 2.
         cube_prob[ind_arg_2] = -np.exp(-arg_u[ind_arg_2]) / 2. + np.exp(-arg_l[ind_arg_2]) / 2.
         cube_prob[ind_arg_3] = 1 - np.exp(-arg_u[ind_arg_3]) / 2. - np.exp(arg_l[ind_arg_3]) / 2.
-        neg_log_cube_prob = -np.log(cube_prob).sum()
+        log_cube_prob = -np.log(cube_prob).sum()
 
+        log_cube_grad_vec = np.zeros(self.q)
+        log_cube_grad_vec[~ind_arg_3] = np.true_divide(1.+ prod_arg[ind_arg_1],-1. + prod_arg[ind_arg_1])/\
+                                       self.randomization_scale
+        num_vec = 0.5* np.exp(-arg_u[ind_arg_3]) + 0.5* np.exp(arg_l[ind_arg_3])
+        den_vec = -1. + 0.5* np.exp(-arg_u[ind_arg_3]) + 0.5* np.exp(arg_l[ind_arg_3])
+        log_cube_grad_vec[ind_arg_3] = np.true_divide(num_vec, den_vec)/self.randomization_scale
 
+        log_cube_grad = log_cube_grad_vec.sum()
 
+        if mode == 'func':
+            return self.scale(log_cube_prob)
+        elif mode == 'grad':
+            return self.scale(log_cube_grad)
+        elif mode == 'both':
+            return self.scale(log_cube_prob), self.scale(log_cube_grad)
+        else:
+            raise ValueError("mode incorrectly specified")
 
 
 class approximate_conditional_prob_fs(rr.smooth_atom):
