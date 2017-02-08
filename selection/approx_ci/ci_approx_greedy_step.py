@@ -67,6 +67,47 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
+class neg_log_cube_probability_fs_laplace(rr.smooth_atom):
+
+    def __init__(self,
+                 q, #equals p - E in our case
+                 mu,
+                 randomization_scale = 1., #equals the randomization variance in our case
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+        self.randomization_scale = randomization_scale
+        self.q = q
+        self.mu = mu
+
+        rr.smooth_atom.__init__(self,
+                                (self.q,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=None,
+                                coef=coef)
+
+    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
+
+        arg = self.apply_offset(arg)
+
+        arg_u = ((arg * np.ones(self.q)) + self.mu) / self.randomization_scale
+        arg_l = (-(arg * np.ones(self.q)) + self.mu) / self.randomization_scale
+
+        ind_arg_1 = np.zeros(self.q, bool)
+        ind_arg_1[(arg_u < 0.)] = 1
+        ind_arg_2 = np.zeros(self.q, bool)
+        ind_arg_2[(arg_l > 0.)] = 1
+        ind_arg_3 = np.logical_and(~ind_arg_1, ~ind_arg_2)
+        cube_prob = np.zeros(self.q)
+        cube_prob[ind_arg_1] = np.exp(arg_u[ind_arg_1]) / 2. - np.exp(arg_l[ind_arg_1]) / 2.
+        cube_prob[ind_arg_2] = -np.exp(-arg_u[ind_arg_2]) / 2. + np.exp(-arg_l[ind_arg_2]) / 2.
+        cube_prob[ind_arg_3] = 1 - np.exp(-arg_u[ind_arg_3]) / 2. - np.exp(arg_l[ind_arg_3]) / 2.
+        neg_log_cube_prob = -np.log(cube_prob).sum()
+
+
+
+
 
 class approximate_conditional_prob_fs(rr.smooth_atom):
 
