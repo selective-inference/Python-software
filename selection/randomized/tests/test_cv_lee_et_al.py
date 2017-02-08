@@ -20,8 +20,8 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_lee_et_al(n=3000,
-                   p=1000,
+def test_lee_et_al(n=300,
+                   p=100,
                    s=10,
                    snr = 3.5,
                    rho =0.,
@@ -63,17 +63,17 @@ def test_lee_et_al(n=3000,
         sel_covered = np.zeros(nactive)
         L0 = lasso.gaussian(X, y, lam, sigma=sigma)
         L0.fit()
-
+        one_step = L.onestep_estimator
         for i in range(active.sum()):
             active_var[i] = active_set[i] in truth
 
             keep = np.zeros(active.sum())
             keep[i] = 1.
             pvalues[i] = L0.constraints.pivot(keep,
-                                         L.onestep_estimator,
+                                         one_step,
                                          alternative='twosided')
             interval = L0.constraints.interval(keep,
-                                    L.onestep_estimator, alpha=0.1)
+                                               one_step, alpha=0.1)
             sel_length[i] = interval[1] - interval[0]
             if (interval[0] <= true_vec[i]) and (interval[1] >= true_vec[i]):
                     sel_covered[i] = 1
@@ -83,9 +83,9 @@ def test_lee_et_al(n=3000,
         return  pvalues, sel_covered, sel_length, active_var, BH_desicions
 
 
-def report(niter=50, **kwargs):
+def report(niter=100, **kwargs):
 
-    kwargs = {'s': 10, 'n': 3000, 'p': 1000, 'snr': 3.5}
+    kwargs = {'s': 0, 'n': 300, 'p': 100, 'snr': 3.5}
     intervals_report = reports.reports['test_lee_et_al']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

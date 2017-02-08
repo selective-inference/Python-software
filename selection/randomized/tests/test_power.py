@@ -24,8 +24,8 @@ from selection.randomized.cv_view import CV_view
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_power(s=30,
-               n=2000,
+def test_power(s=10,
+               n=3000,
                p=1000,
                rho=0.,
                snr=3.5,
@@ -40,10 +40,10 @@ def test_power(s=30,
                scalings=False,
                subgrad =True):
 
+
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-        print(lam)
         glm_loss = rr.glm.gaussian(X, y)
     elif loss=="logistic":
         X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
@@ -80,8 +80,6 @@ def test_power(s=30,
         #CV_compute = CV(glm_loss, folds, lam_seq)
         #_, _, lam, _ = CV_compute.choose_lambda_CVr(scale=0.5)
         #lam = (lam+np.mean(np.fabs(randomizer.sample((1000,))).max(0)))/np.sqrt(2)
-
-
 
     W = lam_frac * np.ones(p) * lam
     #W[0] = 0 # use at least some unpenalized
