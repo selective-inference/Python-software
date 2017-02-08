@@ -15,6 +15,7 @@ import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 from selection.randomized.cv_view import CV_view
+from statsmodels.sandbox.stats.multicomp import multipletests
 
 
 @register_report(['truth', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
@@ -154,8 +155,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
             active_var[j] = active_set[j] in nonzero
 
         print("individual coverage", np.true_divide(sel_covered.sum(),nactive))
-        from statsmodels.sandbox.stats.multicomp import multipletests
-        q = 0.1
+        q = 0.2
         BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
         return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
