@@ -72,16 +72,17 @@ class CV_view(query):
     def one_SD_rule(self):
         CVR_val = self.observed_opt_state
         minimum_CVR = np.min(CVR_val)
-        #CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
-        #SD = np.sqrt(np.diag(CVR_cov))
+        CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
+        SD = np.sqrt(np.diag(CVR_cov))
         #print("SD vector", SD)
         #print("CVR_val", CVR_val)
         #lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.05*minimum_CVR])]
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= 1.05*minimum_CVR])]
         #print(0.05*minimum_CVR, self.SD)
-        gap = np.mean(self.SD)
+        #gap = np.mean(self.SD)
+        SD_min = SD[self.lam_idx]
+        lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD_min])]
         #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD[i]])]
-        lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+gap])]
         return lam_1SD
 
     def projection(self, opt_state):

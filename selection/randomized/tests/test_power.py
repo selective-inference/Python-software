@@ -20,6 +20,7 @@ from selection.api import (randomization,
 from statsmodels.sandbox.stats.multicomp import multipletests
 from selection.randomized.cv_view import CV_view
 
+
 @register_report(['pvalue', 'active_var'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
@@ -71,6 +72,7 @@ def test_power(s=10,
             cv.condition_on_opt_state()
             lam = cv.one_SD_rule()
             print("one SD rule lambda", lam)
+
 
         #from selection.randomized.cv import CV
         #lam_seq = np.exp(np.linspace(np.log(1.e-6), np.log(2), 30)) * np.mean(np.fabs(np.dot(X.T, y).max(0)))

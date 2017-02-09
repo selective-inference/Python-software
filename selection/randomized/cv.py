@@ -198,3 +198,26 @@ class CV(object):
             return _bootstrap_CVerr_curve(indices)[1]
 
         return _CVR_boot, _CV1_boot
+
+if __name__ == '__main__':
+    from selection.tests.instance import gaussian_instance
+    np.random.seed(1)
+    n, p = 3000, 1000
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=30, rho=0., sigma=1)
+    loss = rr.glm.gaussian(X,y)
+    lam_seq = np.exp(np.linspace(np.log(1.e-6), np.log(1), 30)) * np.fabs(np.dot(X.T,y)).max()
+    K = 5
+    folds = np.arange(n) % K
+    CV_compute = CV(loss, folds, lam_seq)
+    lam_CV, CV_val, SD_val, lam_CV_randomized, CV_val_randomized, SD_val_randomized = CV_compute.choose_lambda_CVr()
+    print("CV error curve (nonrandomized):", CV_val)
+
+    minimum_CV = np.min(CV_val)
+    lam_idx = list(lam_seq).index(lam_CV)
+    SD_min = SD_val[lam_idx]
+    lam_1SD = lam_seq[max([i for i in range(lam_seq.shape[0]) if CV_val[i] <= minimum_CV + SD_min])]
+
+    print(lam_CV, lam_1SD)
+    import matplotlib.pyplot as plt
+    plt.plot(np.log(lam_seq), CV_val)
+    plt.show()
