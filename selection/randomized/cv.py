@@ -114,12 +114,27 @@ class CV(object):
         lam_CV = self.lam_seq[np.argmin(CV_val)]
         lam_CV_randomized = self.lam_seq[np.argmin(CV_val_randomized)]
 
-        return lam_CV, CV_val, lam_CV_randomized, CV_val_randomized
+        SD_val = CV_curve[:,1]
+        SD_val_randomized = CV_curve[:,3]
+        return lam_CV, CV_val, SD_val, lam_CV_randomized, CV_val_randomized, SD_val_randomized
+
 
     def bootstrap_CVr_curve(self):
         """
         Bootstrap of CV error curve with residual randomization
         """
+
+        def _boot_CV_curve(indices):
+            X, y = self.loss.data
+            n, p = X.shape
+            folds_star = np.arange(n) % self.K
+            np.random.shuffle(folds_star)
+            loss_star = self.loss.subsample(indices)
+            # loss_star = rr.glm.gaussian(X[indices,:], y[indices])
+            result = self.choose_lambda_CVr(scale=self.scale, loss=loss_star)
+            CV_val = result[1]
+            return np.array(CV_val)
+
         def _boot_CVr_curve(indices):
             X, y = self.loss.data
             n, p = X.shape
@@ -127,10 +142,11 @@ class CV(object):
             np.random.shuffle(folds_star)
             loss_star = self.loss.subsample(indices)
             #loss_star = rr.glm.gaussian(X[indices,:], y[indices])
-            _, _, _, CV_val_randomized = self.choose_lambda_CVr(scale=self.scale, loss=loss_star)
+            result = self.choose_lambda_CVr(scale=self.scale, loss=loss_star)
+            CV_val_randomized = result[4]
             return np.array(CV_val_randomized)
 
-        return _boot_CVr_curve
+        return _boot_CV_curve, _boot_CVr_curve
 
 
     def choose_lambda_CVR(self,  randomization1=None, randomization2=None, loss=None):

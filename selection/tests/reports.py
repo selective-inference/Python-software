@@ -48,15 +48,14 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
             summary_fn(pd.concat(dfs))
     return pd.concat(dfs)
 
-def pvalue_plot(multiple_results, screening=False, fig=None, colors=['r','g']):
+def pvalue_plot(multiple_results, screening=False, fig=None, label = '$H_0$', colors=['b','r']):
     """
     Extract pvalues and group by 
     null and alternative.
     """
-
-    P0 = multiple_results['pvalue'][~multiple_results['active']]
+    P0 = multiple_results['pvalue'][~multiple_results['active_var']]
     P0 = P0[~pd.isnull(P0)]
-    PA = multiple_results['pvalue'][multiple_results['active']]
+    PA = multiple_results['pvalue'][multiple_results['active_var']]
     PA = PA[~pd.isnull(PA)]
 
     if fig is None:
@@ -70,13 +69,15 @@ def pvalue_plot(multiple_results, screening=False, fig=None, colors=['r','g']):
     if len(P0) > 0:
         ecdf0 = sm.distributions.ECDF(P0)
         F0 = ecdf0(grid)
-        ax.plot(grid, F0, '--o', c=colors[0], lw=2, label=r'$H_0$')
+        ax.plot(grid, F0, '--o', c=colors[0], lw=2, label=label)
     if len(PA) > 0:
         ecdfA = sm.distributions.ECDF(PA)
         FA = ecdfA(grid)
         ax.plot(grid, FA, '--o', c=colors[1], lw=2, label=r'$H_A$')
 
-    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+    ax.plot([0, 1], [0, 1], 'k-', lw=1)
+    ax.set_xlabel("observed p-value")
+    ax.set_ylabel("CDF")
     ax.legend(loc='lower right')
 
     if screening:
@@ -423,7 +424,7 @@ def compute_length_frac(multiple_results):
 
 def compute_FDP(multiple_results):
     result = {}
-    if 'BH_decisions' and 'active_var' in multiple_results.columns:
+    if ('BH_decisions' in multiple_results.columns) and ('active_var' in multiple_results.columns):
         BH_decisions = multiple_results['BH_decisions']
         active_var = multiple_results['active_var']
         BH_TP = BH_decisions[active_var].sum()
@@ -434,7 +435,7 @@ def compute_FDP(multiple_results):
 
 def compute_power(multiple_results):
     result = {}
-    if 'BH_decisions' and 'active_var' in multiple_results.columns:
+    if ('BH_decisions' in multiple_results.columns) and ('active_var' in multiple_results.columns):
         BH_decisions = multiple_results['BH_decisions']
         active_var = multiple_results['active_var']
         BH_TP = BH_decisions[active_var].sum()
