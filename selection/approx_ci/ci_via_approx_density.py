@@ -277,8 +277,8 @@ class approximate_conditional_density(rr.smooth_atom):
     def solve_approx(self):
 
         #defining the grid on which marginal conditional densities will be evaluated
-        grid_length = 201
-        self.grid = np.linspace(-5, 15, num=grid_length)
+        grid_length = 1601
+        self.grid = np.linspace(-15,65, num=grid_length)
         #self.grid = np.linspace(-5*np.amax(np.absolute(target_observed)), 5*np.amax(np.absolute(target_observed)), num=grid_length)
         #s_obs = np.round(self.target_observed, decimals =1)
 
@@ -387,9 +387,8 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def approximate_ci(self, j):
 
-        grid_length = 201
         #param_grid = np.linspace(-5*np.amax(np.absolute(self.target_observed)), 5*np.amax(np.absolute(self.target_observed)), num=grid_length)
-        param_grid = np.linspace(-5, 15, num=201)
+        param_grid = np.linspace(-15, 65, num=1601)
         area = np.zeros(param_grid.shape[0])
 
         for k in range(param_grid.shape[0]):
