@@ -107,7 +107,7 @@ class neg_log_cube_probability_fs_laplace(rr.smooth_atom):
         log_cube_prob = -np.log(cube_prob).sum()
 
         log_cube_grad_vec = np.zeros(self.q)
-        log_cube_grad_vec[~ind_arg_3] = np.true_divide(1.+ prod_arg[ind_arg_1],-1. + prod_arg[ind_arg_1])/\
+        log_cube_grad_vec[~ind_arg_3] = np.true_divide(1.+ prod_arg[~ind_arg_3],-1. + prod_arg[~ind_arg_3])/\
                                        self.randomization_scale
         num_vec = 0.5* np.exp(-arg_u[ind_arg_3]) + 0.5* np.exp(arg_l[ind_arg_3])
         den_vec = -1. + 0.5* np.exp(-arg_u[ind_arg_3]) + 0.5* np.exp(arg_l[ind_arg_3])
