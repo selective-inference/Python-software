@@ -93,7 +93,7 @@ class neg_log_cube_probability_fs_laplace(rr.smooth_atom):
 
         arg_u = ((arg * np.ones(self.q)) + self.mu) / self.randomization_scale
         arg_l = (-(arg * np.ones(self.q)) + self.mu) / self.randomization_scale
-        prod_arg = -(2 * arg * np.ones(self.q)) / self.randomization_scale
+        prod_arg = np.exp(-(2 * arg * np.ones(self.q))) / self.randomization_scale
 
         ind_arg_1 = np.zeros(self.q, bool)
         ind_arg_1[(arg_u < 0.)] = 1
