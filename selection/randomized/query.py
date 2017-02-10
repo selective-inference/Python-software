@@ -287,7 +287,8 @@ class multiple_queries(object):
                      target_info,
                      observed_target_state,
                      reference=None,
-                     target_set=None):
+                     target_set=None,
+                     parametric=False):
 
         '''
         Parameters
@@ -335,7 +336,8 @@ class multiple_queries(object):
                                 observed_target_state,
                                 self.form_covariances,
                                 target_set=target_set,
-                                reference=reference)
+                                reference=reference,
+                                parametric=parametric)
 
     def setup_bootstrapped_target(self,
                                   target_bootstrap,
@@ -367,7 +369,8 @@ class targeted_sampler(object):
                  observed_target_state,
                  form_covariances,
                  reference=None,
-                 target_set=None):
+                 target_set=None,
+                 parametric=False):
 
         '''
         Parameters
@@ -440,9 +443,13 @@ class targeted_sampler(object):
         self.score_cov = []
         #nsample = [1, 2000]
         for i in range(self.nqueries):
-            printing=False
-            target_cov, cross_cov = multi_view.form_covariances(target_info, cross_terms=[multi_view.score_info[i]],
-                                                                nsample=multi_view.nboot[i])
+            if parametric==False:
+                target_cov, cross_cov = multi_view.form_covariances(target_info, cross_terms=[multi_view.score_info[i]],
+                                                                        nsample=multi_view.nboot[i])
+            else:
+                print("here")
+                target_cov, cross_cov = multi_view.form_covariances(target_info, cross_terms=[multi_view.score_info[i]])
+
             self.target_cov = target_cov
             self.score_cov.append(cross_cov)
             #if i==0:

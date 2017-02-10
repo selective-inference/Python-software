@@ -42,7 +42,8 @@ def test_marginalize(s=0,
                     loss='gaussian',
                     nviews=1,
                     scalings=False,
-                    subgrad =True):
+                    subgrad =True,
+                    parametric=True):
     print(n,p,s)
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
@@ -65,7 +66,10 @@ def test_marginalize(s=0,
 
     views = []
     for i in range(nviews):
-        views.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
+        if parametric==False:
+            views.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
+        else:
+            views.append(glm_group_lasso_parametric(loss, epsilon, penalty, randomizer))
 
     queries = multiple_queries(views)
     queries.solve()
@@ -102,7 +106,8 @@ def test_marginalize(s=0,
         target_sampler, target_observed = glm_target(loss,
                                                      active_union,
                                                      queries,
-                                                     bootstrap=False)
+                                                     bootstrap=False,
+                                                     parametric=parametric)
                                                      #reference= beta[active_union])
         target_sample = target_sampler.sample(ndraw=ndraw,
                                               burnin=burnin)

@@ -218,7 +218,8 @@ def target(loss,
            subset=None, 
            bootstrap=False,
            solve_args={'min_its':50, 'tol':1.e-10},
-           reference=None):
+           reference=None,
+           parametric=False):
     """
     Form target from self.loss
     restricting to active variables.
@@ -289,13 +290,20 @@ def target(loss,
         return _subsetter(boot_target(indices))
     target_observed = _subsetter(boot_target_observed)
 
-    form_covariances = glm_nonparametric_bootstrap(n, n)
+    if parametric==False:
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+    else:
+        form_covariances = glm_parametric_covariance(loss)
 
     queries.setup_sampler(form_covariances)
     queries.setup_opt_state()
 
     if reference is None:
         reference = target_observed
+
+    if parametric:
+        linear_func = np.identity(target_observed.shape[0])
+        _target = (active,linear_func)
 
     if bootstrap:
         alpha_mat = set_alpha_matrix(loss, active, inactive=inactive)
@@ -311,7 +319,8 @@ def target(loss,
 
         target_sampler = queries.setup_target(_target,
                                               target_observed,
-                                              reference=reference)
+                                              reference=reference,
+                                              parametric=parametric)
 
     return target_sampler, target_observed
 

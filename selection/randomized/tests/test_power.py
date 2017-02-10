@@ -15,6 +15,7 @@ import selection.tests.reports as reports
 
 from selection.api import (randomization,
                            glm_group_lasso,
+                           glm_group_lasso_parametric,
                            multiple_queries,
                            glm_target)
 from statsmodels.sandbox.stats.multicomp import multipletests
@@ -39,7 +40,8 @@ def test_power(s=10,
                burnin=2000,
                loss='gaussian',
                scalings=False,
-               subgrad =True):
+               subgrad =True,
+               parametric=True):
 
 
     if loss=="gaussian":
@@ -73,7 +75,6 @@ def test_power(s=10,
             lam = cv.one_SD_rule()
             print("one SD rule lambda", lam)
 
-
         #from selection.randomized.cv import CV
         #lam_seq = np.exp(np.linspace(np.log(1.e-6), np.log(2), 30)) * np.mean(np.fabs(np.dot(X.T, y).max(0)))
         #K = 5
@@ -84,9 +85,12 @@ def test_power(s=10,
         #lam = (lam+np.mean(np.fabs(randomizer.sample((1000,))).max(0)))/np.sqrt(2)
 
     W = lam_frac * np.ones(p) * lam
-    #W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
-    Mest = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
+
+    if parametric == False:
+        Mest = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
+    else:
+        Mest = glm_group_lasso_parametric(glm_loss, epsilon, penalty, randomizer)
 
     views.append(Mest)
 
@@ -124,7 +128,8 @@ def test_power(s=10,
         target_sampler, target_observed = glm_target(glm_loss,
                                                      active_union,
                                                      queries,
-                                                     bootstrap=False)
+                                                     bootstrap=False,
+                                                     parametric=parametric)
                                                      #reference= beta[active_union])
         target_sample = target_sampler.sample(ndraw=ndraw,
                                               burnin=burnin)
