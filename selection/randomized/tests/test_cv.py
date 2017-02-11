@@ -76,7 +76,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([cv, M_est1])
-    #mv = multiple_queries([M_est1])
+    # mv = multiple_queries([M_est1])
     mv.solve()
 
     #active = soln != 0
