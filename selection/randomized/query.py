@@ -447,7 +447,6 @@ class targeted_sampler(object):
                 target_cov, cross_cov = multi_view.form_covariances(target_info, cross_terms=[multi_view.score_info[i]],
                                                                         nsample=multi_view.nboot[i])
             else:
-                print("here")
                 target_cov, cross_cov = multi_view.form_covariances(target_info, cross_terms=[multi_view.score_info[i]])
 
             self.target_cov = target_cov

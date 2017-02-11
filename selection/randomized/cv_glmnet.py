@@ -85,6 +85,7 @@ class CV_glmnet(object):
 
         return _CVR_boot, _CV1_boot
 
+
 if __name__ == '__main__':
     np.random.seed(1)
     n, p = 3000, 1000
@@ -94,7 +95,7 @@ if __name__ == '__main__':
     lam_CV, lam_1SD, lam_seq, CV_err, _ = CV_glmnet_compute.using_glmnet()
     print("CV error curve (nonrandomized):", CV_err)
     lam_grid_size = CV_glmnet_compute.lam_seq.shape[0]
-    lam_CVR = CV_glmnet_compute.choose_lambda_CVR(scale1=0.05, scale2=0.05)[0]
+    lam_CVR = CV_glmnet_compute.choose_lambda_CVR(scale1=0.02, scale2=0.02)[0]
     print(lam_CV,lam_1SD)
 
     import matplotlib.pyplot as plt
