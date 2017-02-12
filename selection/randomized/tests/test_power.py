@@ -177,7 +177,7 @@ def report(niter=50, **kwargs):
 
 def compute_power():
     BH_sample, simple_rejections_sample = [], []
-    niter = 200
+    niter = 50
     for i in range(niter):
         print("iteration", i)
         result = test_power()[1]

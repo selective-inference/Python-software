@@ -23,11 +23,11 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
+def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
              randomizer = 'gaussian',
              randomizer_scale = 1.,
-             scale1 = 0.1,
-             scale2 = 0.2,
+             scale1 = 0.05,
+             scale2 = 0.05,
              lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
@@ -37,7 +37,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
              ndraw = 10000,
              burnin = 2000):
 
-    print(n,p,s)
+    print(n,p,s, condition_on_CVR, scale1, scale2)
     if randomizer == 'laplace':
         randomizer = randomization.laplace((p,), scale=randomizer_scale)
     elif randomizer == 'gaussian':
@@ -54,10 +54,12 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
     epsilon = 1./np.sqrt(n)
     # view 1
-    cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss, scale1=scale1, scale2=scale2)
-    cv.solve()
+    cv = CV_view(glm_loss, loss_label=loss, lasso_randomization=randomizer, epsilon=epsilon,  scale1=scale1, scale2=scale2)
+    cv.solve(glmnet=True)
+
     lam = cv.lam_CVR
     print("lam", lam)
+
     if condition_on_CVR:
         cv.condition_on_opt_state()
         lam = cv.one_SD_rule()
@@ -76,7 +78,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([cv, M_est1])
-    # mv = multiple_queries([M_est1])
+    #mv = multiple_queries([M_est1])
     mv.solve()
 
     #active = soln != 0
@@ -160,9 +162,9 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
         return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
 
-def report(niter=10, **kwargs):
+def report(niter=50, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 100, 'snr': 7, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

@@ -3,6 +3,7 @@ import numpy as np
 import regreg.api as rr
 import copy
 from selection.randomized.M_estimator import restricted_Mest
+from selection.api import randomization
 
 class CV(object):
 
@@ -30,7 +31,7 @@ class CV(object):
                loss = None,
                residual_randomization = None,
                scale = None,
-               solve_args={'min_its':20, 'tol':1.e-1}):
+               solve_args = {'min_its':20, 'tol':1.e-1}):
         """
         Computes the non-randomized CV error and the one with added residual randomization
         """
@@ -149,7 +150,7 @@ class CV(object):
         return _boot_CV_curve, _boot_CVr_curve
 
 
-    def choose_lambda_CVR(self,  randomization1=None, randomization2=None, loss=None):
+    def choose_lambda_CVR(self,  scale1=None, scale2=None, loss=None):
         """
         Minimizes CV error curve with additive randomization (CVR=CV+R1+R2=CV1+R2)
         """
@@ -166,19 +167,21 @@ class CV(object):
         CV_curve = np.array(CV_curve)
 
         rv1, rv2 = np.zeros(self.lam_seq.shape[0]), np.zeros(self.lam_seq.shape[0])
-        if randomization1 is not None:
+        if scale1 is not None:
+            randomization1 = randomization.isotropic_gaussian((self.lam_seq.shape[0],), scale=scale1)
             rv1 = np.asarray(randomization1._sampler(size=(1,)))
-        if randomization2 is not None:
+        if scale2 is not None:
+            randomization2 = randomization.isotropic_gaussian((self.lam_seq.shape[0],), scale=scale2)
             rv2 = np.asarray(randomization2._sampler(size=(1,)))
         CVR_val = CV_curve[:,0]+rv1.flatten()+rv2.flatten()
         lam_CVR = self.lam_seq[np.argmin(CVR_val)] # lam_CVR minimizes CVR
         CV1_val = CV_curve[:,0]+rv1.flatten()
 
         SD = CV_curve[:,1]
-        return lam_CVR, SD, CVR_val, CV1_val
+        return lam_CVR, SD, CVR_val, CV1_val, self.lam_seq
 
 
-    def bootstrap_CVR_curve(self, randomization1=None, randomization2=None):
+    def bootstrap_CVR_curve(self, scale1=None, scale2=None):
         """
         Bootstrap of CVR=CV+R1+R2 and CV1=CV+R1 curves
         """
@@ -189,7 +192,7 @@ class CV(object):
             np.random.shuffle(folds_star)
             loss_star = self.loss.subsample(indices)
             #loss_star = rr.glm.gaussian(X[indices,:], y[indices])
-            _, _, CVR_val, CV1_val = self.choose_lambda_CVR(randomization1, randomization2, loss_star)
+            _, _, CVR_val, CV1_val, _ = self.choose_lambda_CVR(scale1, scale2, loss_star)
             return np.array(CVR_val), np.array(CV1_val)
 
         def _CVR_boot(indices):
