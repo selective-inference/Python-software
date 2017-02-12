@@ -26,8 +26,8 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
              randomizer = 'gaussian',
              randomizer_scale = 1.,
-             scale1 = 0.05,
-             scale2 = 0.05,
+             scale1 = 0.1,
+             scale2 = 0.1,
              lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
@@ -163,7 +163,7 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
 
 
 def report(niter=50, **kwargs):
-
+    np.random.seed(500)
     kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],

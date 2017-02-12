@@ -20,7 +20,7 @@ class CV_view(query):
         X, _ = glm_loss.data
         self.n = X.shape[0]
 
-        self.nboot = 1000
+        self.nboot = 2000
 
     def solve(self, glmnet=False, K=5):
 
