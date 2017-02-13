@@ -43,7 +43,7 @@ def test_power(s=30,
                subgrad =True,
                parametric=True):
 
-
+    print(n,p,s)
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
@@ -62,27 +62,27 @@ def test_power(s=30,
 
     views = []
     if cross_validation:
-        #cv = CV_view(glm_loss, lasso_randomization=randomizer, epsilon=epsilon, loss=loss,
-        #             scale1=0.1, scale2=0.1)
+        cv = CV_view(glm_loss, loss_label=loss, lasso_randomization=randomizer, epsilon=epsilon,
+                     scale1=0.1, scale2=0.1)
         #views.append(cv)
-        #cv.solve()
-        #lam = cv.lam_CVR
-        #print("minimizer of CVR", lam)
+        cv.solve(glmnet=True)
+        lam = cv.lam_CVR
+        print("minimizer of CVR", lam)
 
-        #condition_on_CVR = True
-        #if condition_on_CVR:
-        #    cv.condition_on_opt_state()
-        #    lam = cv.one_SD_rule()
-        #    print("one SD rule lambda", lam)
+        condition_on_CVR = True
+        if condition_on_CVR:
+            cv.condition_on_opt_state()
+            lam = cv.one_SD_rule()
+            print("one SD rule lambda", lam)
 
-        from selection.randomized.cv_glmnet import CV_glmnet
-        CV_glment_compute = CV_glmnet(glm_loss)
-        lam_minCV, _, _, CV_err, _ =  CV_glment_compute.using_glmnet()
+        #from selection.randomized.cv_glmnet import CV_glmnet
+        #CV_glment_compute = CV_glmnet(glm_loss)
+        #lam_minCV, _, _, CV_err, _ =  CV_glment_compute.using_glmnet()
         #print(CV_err)
-        print("nonrandomized lambda_CV:", lam_minCV)
-        lam_CVR = CV_glment_compute.choose_lambda_CVR(scale1=0.02, scale2=0.02)[0]
-        print("randomized lambda_CV:", lam_CVR)
-        lam = lam_CVR
+        #print("nonrandomized lambda_CV:", lam_minCV)
+        #lam_CVR = CV_glment_compute.choose_lambda_CVR(scale1=0.02, scale2=0.02)[0]
+        #print("randomized lambda_CV:", lam_CVR)
+        #lam = lam_CVR
 
     W = lam_frac * np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
