@@ -17,21 +17,18 @@ from selection.api import (randomization,
                            glm_group_lasso,
                            pairs_bootstrap_glm,
                            multiple_queries,
-                           discrete_family,
-                           projected_langevin,
-                           glm_group_lasso_parametric,
-                           glm_target)
+                           glm_group_lasso_parametric)
 
-from selection.randomized.query import naive_confidence_intervals
+from selection.randomized.query import (naive_confidence_intervals, naive_pvalues)
 
 from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
 
 @register_report(['truth', 'covered_clt', 'ci_length_clt',
-                  'covered_naive', 'ci_length_naive'])
+                   'naive_pvalues','covered_naive', 'ci_length_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_without_screening(s=10,
+def test_without_screening(s=30,
                         n=3000,
                         p=1000,
                         rho=0.,
@@ -145,7 +142,8 @@ def test_without_screening(s=10,
         covered, ci_length = coverage(LU)
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
         covered_naive, ci_length_naive = coverage(LU_naive)
-        return pivots, covered, ci_length, covered_naive, ci_length_naive
+        naive_pvals = naive_pvalues(target_sampler, target_observed, true_vec)
+        return pivots, covered, ci_length, naive_pvals, covered_naive, ci_length_naive
 
 
 def report(niter=50, **kwargs):
@@ -157,7 +155,7 @@ def report(niter=50, **kwargs):
                                          reports.summarize_all,
                                          **kwargs)
 
-    fig = reports.pivot_plot_2in1(runs,color='b', label='no screening')
+    fig = reports.pivot_plot_plus_naive(runs,color='b', label='no screening')
     fig.suptitle('Testing without screening')
     fig.savefig('pivots_without_screening.pdf')
 
