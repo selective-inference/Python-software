@@ -53,8 +53,9 @@ class CV_glmnet(object):
         if not hasattr(self, 'lam_seq'):
             self.lam_seq = lam_seq
         CV_err = np.array(result[3])
+        # this is stupid but glmnet sometime cuts my given seq of lambdas
         if CV_err.shape[0]<self.lam_seq.shape[0]:
-            CV_err_longer = np.zeros(self.lam_seq.shape[0])
+            CV_err_longer = np.ones(self.lam_seq.shape[0])*np.max(CV_err)
             CV_err_longer[:(self.lam_seq.shape[0]-1)]=CV_err
             CV_err = CV_err_longer
         SD = np.array(result[4])
@@ -76,7 +77,7 @@ class CV_glmnet(object):
             rv2 = np.asarray(randomization2._sampler(size=(1,)))
         CVR = CV_err+rv1.flatten()+rv2.flatten()
         lam_CVR = self.lam_seq[np.argmin(CVR)] # lam_CVR minimizes CVR
-        #print("lam_CVR", lam_CVR)
+        print("randomized index:", list(self.lam_seq).index(lam_CVR))
         CV1 = CV_err+rv1.flatten()
         return  lam_CVR, SD, CVR, CV1, self.lam_seq
 
@@ -103,19 +104,21 @@ class CV_glmnet(object):
 
 if __name__ == '__main__':
     np.random.seed(2)
-    n, p = 100, 50
-    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=0, rho=0., sigma=1)
+    n, p = 3000, 1000
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=30, rho=0., sigma=1)
     loss = rr.glm.gaussian(X,y)
     CV_glmnet_compute = CV_glmnet(loss)
     lam_CV, lam_1SD, lam_seq, CV_err, SD = CV_glmnet_compute.using_glmnet()
-    #print("CV error curve (nonrandomized):", CV_err)
-    print(SD)
+    print("CV error curve (nonrandomized):", CV_err)
     lam_grid_size = CV_glmnet_compute.lam_seq.shape[0]
-    lam_CVR = CV_glmnet_compute.choose_lambda_CVR(scale1=0.1, scale2=0.1)[0]
+    lam_CVR, SD, CVR, CV1, lam_seq = CV_glmnet_compute.choose_lambda_CVR(scale1=0.1, scale2=0.1)
+    print("nonrandomized index:", list(lam_seq).index(lam_CV)) # index of the minimizer
     print("lam for nonrandomized CV plus sigma rule:",lam_CV,lam_1SD)
     print("lam_CVR:",lam_CVR)
+    print("randomized index:", list(lam_seq).index(lam_CVR))
     import matplotlib.pyplot as plt
     plt.plot(np.log(lam_seq), CV_err)
+    plt.plot(np.log(lam_seq), CVR)
     #plt.ylabel('some numbers')
     plt.show()
 

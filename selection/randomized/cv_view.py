@@ -9,7 +9,7 @@ from selection.api import randomization
 
 class CV_view(query):
 
-    def __init__(self, glm_loss, loss_label, lasso_randomization=None, epsilon=None,  scale1=0.1, scale2=0.1):
+    def __init__(self, glm_loss, loss_label, lasso_randomization=None, epsilon=None,  scale1=None, scale2=None):
 
         self.loss = glm_loss
         self.loss_label = loss_label
@@ -20,7 +20,7 @@ class CV_view(query):
         X, _ = glm_loss.data
         self.n = X.shape[0]
 
-        self.nboot = 2000
+        self.nboot = 1000
 
     def solve(self, glmnet=False, K=5):
 
@@ -47,9 +47,9 @@ class CV_view(query):
         else:
             CV_compute = CV_glmnet(self.loss)
 
-        self.lam_CVR, SD, CVR_val, CV1_val, self.lam_seq = CV_compute.choose_lambda_CVR(self.scale1, self.scale2)
-
-        self.SD = SD +self.scale1**2+self.scale2**2
+        self.lam_CVR, self.SD, CVR_val, CV1_val, self.lam_seq = CV_compute.choose_lambda_CVR(self.scale1, self.scale2)
+        if (self.scale1 is not None) and (self.scale2 is not None):
+            self.SD = self.SD+self.scale1**2+self.scale2**2
         (self.observed_opt_state, self.observed_score_state) = (CVR_val, CV1_val)
         self.num_opt_var = self.lam_seq.shape[0]
         self.lam_idx = list(self.lam_seq).index(self.lam_CVR)  # index of the minimizer
@@ -59,25 +59,30 @@ class CV_view(query):
         self.score_transform = (-np.identity(self.num_opt_var), np.zeros(self.num_opt_var))
 
         self._marginalize_subgradient = False
-        self.randomization1 = randomization.isotropic_gaussian((self.num_opt_var,), scale=self.scale1)
-        self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=self.scale2)
-        query.__init__(self, self.randomization2)
-        self.CVR_boot, self.CV1_boot = CV_compute.bootstrap_CVR_curve(self.scale1, self.scale2)
-        self._solved = True
+        if self.scale1 is not None:
+            self.randomization1 = randomization.isotropic_gaussian((self.num_opt_var,), scale=self.scale1)
+            self.randomization2 = randomization.isotropic_gaussian((self.num_opt_var,), scale=self.scale2)
+            query.__init__(self, self.randomization2)
+            self.CVR_boot, self.CV1_boot = CV_compute.bootstrap_CVR_curve(self.scale1, self.scale2)
+            self._solved = True
 
 
     def setup_sampler(self):
         return self.CV1_boot
 
-    def one_SD_rule(self):
+    def one_SD_rule(self, direction="down"):
         CVR_val = self.observed_opt_state
         minimum_CVR = np.min(CVR_val)
         #CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)
         #SD = np.sqrt(np.diag(CVR_cov))
 
         SD_min = self.SD[self.lam_idx]
-        lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD_min])]
-        #lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD[i]])]
+        #in glment lam_seq is decreasing
+        if direction=="down":
+            lam_1SD = self.lam_seq[max([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD_min])]
+        else:
+            lam_1SD = self.lam_seq[min([i for i in range(self.lam_seq.shape[0]) if CVR_val[i] <= minimum_CVR+SD_min])]
+
         return lam_1SD
 
     def projection(self, opt_state):

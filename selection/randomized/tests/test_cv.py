@@ -27,12 +27,12 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
              randomizer = 'gaussian',
              randomizer_scale = 1.,
              scale1 = 0.1,
-             scale2 = 0.1,
+             scale2 = 0.2,
              lam_frac = 1.,
              loss = 'gaussian',
              intervals = 'old',
              bootstrap = False,
-             condition_on_CVR = False,
+             condition_on_CVR = True,
              marginalize_subgrad = True,
              ndraw = 10000,
              burnin = 2000):
@@ -164,7 +164,7 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
 
 def report(niter=50, **kwargs):
     np.random.seed(500)
-    kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'bootstrap': False}
+    kwargs = {'s': 0, 'n': 600, 'p': 100, 'snr': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

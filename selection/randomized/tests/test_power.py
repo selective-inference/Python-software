@@ -63,7 +63,7 @@ def test_power(s=30,
     views = []
     if cross_validation:
         cv = CV_view(glm_loss, loss_label=loss, lasso_randomization=randomizer, epsilon=epsilon,
-                     scale1=0.1, scale2=0.1)
+                     scale1=0.01, scale2=0.01)
         #views.append(cv)
         cv.solve(glmnet=True)
         lam = cv.lam_CVR
@@ -72,7 +72,8 @@ def test_power(s=30,
         condition_on_CVR = True
         if condition_on_CVR:
             cv.condition_on_opt_state()
-            lam = cv.one_SD_rule()
+            #lam = np.true_divide(lam+cv.one_SD_rule(direction="up"),2)
+            lam = cv.one_SD_rule(direction="up")
             print("one SD rule lambda", lam)
 
         #from selection.randomized.cv_glmnet import CV_glmnet
@@ -163,7 +164,7 @@ def simple_rejections(pvalues, active_var, s, alpha=0.05):
 
 
 def report(niter=50, **kwargs):
-
+    np.random.seed(500)
     condition_report = reports.reports['test_power']
     runs = reports.collect_multiple_runs(condition_report['test'],
                                          condition_report['columns'],
