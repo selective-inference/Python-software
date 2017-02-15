@@ -35,11 +35,30 @@ def simes_selection(X, y, sigma_hat, alpha, randomizer= 'gaussian'):
 
         #print(exceed_T, t_0, index_sort, i_0, J)
 
-        return T_stats_inactive, T_stats_active, i_0, np.sign(T_stats_active)
+        #return T_stats_inactive, T_stats_active, i_0, np.sign(T_stats_active)
+
+        return i_0, np.sign(T_stats_active)
 
     else:
 
         return 0.,0.,0.,0.
+
+
+#this function takes the nominal p-values as input, computes the Simes test statistic to delclare if gene is significant or not
+def simes_wo_randomization(p_value, alpha):
+
+    p = p_value.shape[0]
+    p_sorted = np.sort(p_value)
+
+    p_adjusted = (p/(np.arange(p) + 1.))* p_sorted
+
+    if np.any(p_adjusted)<= alpha/2.:
+        return 1
+    else:
+        return 0
+
+
+
 
 
 
