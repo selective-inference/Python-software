@@ -8,6 +8,8 @@ from ..sampling.langevin import projected_langevin
 
 class query(object):
 
+    nboot = 1000
+
     def __init__(self, randomization):
 
         self.randomization = randomization
@@ -223,10 +225,11 @@ class multiple_queries(object):
         nqueries = self.nqueries = len(self.objectives)
 
         self.score_info = []
-
+        self.nboot = []
         for objective in self.objectives:
             score_ = objective.setup_sampler()
             self.score_info.append(score_)
+            self.nboot.append(objective.nboot)
 
     def setup_opt_state(self):
         self.num_opt_var = 0
@@ -238,13 +241,15 @@ class multiple_queries(object):
 
         self.observed_opt_state = np.zeros(self.num_opt_var)
         for i in range(len(self.objectives)):
-            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
+            if self.objectives[i].num_opt_var > 0:
+                self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
                      target_info,
                      observed_target_state,
                      reference=None,
-                     target_set=None):
+                     target_set=None,
+                     parametric=False):
 
         '''
         Parameters
@@ -283,7 +288,8 @@ class multiple_queries(object):
                                 observed_target_state,
                                 self.form_covariances,
                                 target_set=target_set,
-                                reference=reference)
+                                reference=reference,
+                                parametric=parametric)
 
     def setup_bootstrapped_target(self,
                                   target_bootstrap,
@@ -315,7 +321,8 @@ class targeted_sampler(object):
                  observed_target_state,
                  form_covariances,
                  reference=None,
-                 target_set=None):
+                 target_set=None,
+                 parametric=False):
 
         '''
         Parameters
@@ -340,6 +347,9 @@ class targeted_sampler(object):
            of interest. If not None, then coordinates
            not in target_set are assumed to have 0
            mean in the sampler.
+        parametric : bool
+           Use parametric covariance estimate?
+
         Notes
         -----
         The callable `form_covariances`
@@ -375,8 +385,18 @@ class targeted_sampler(object):
         self.observed_target_state = observed_target_state
         self.shape = observed_target_state.shape
 
-        covariances = multi_view.form_covariances(target_info, cross_terms=multi_view.score_info)
-        self.target_cov = np.atleast_2d(covariances[0])
+        self.score_cov = []
+        for i in range(self.nqueries):
+            if parametric == False:
+                target_cov, cross_cov = multi_view.form_covariances(target_info,  
+                                  cross_terms=[multi_view.score_info[i]],
+                                  nsample=multi_view.nboot[i])
+            else:
+                target_cov, cross_cov = multi_view.form_covariances(target_info, 
+                                  cross_terms=[multi_view.score_info[i]])
+
+            self.target_cov = target_cov
+            self.score_cov.append(cross_cov)
 
         # XXX we're not really using this target_set in our tests
 
@@ -388,8 +408,6 @@ class targeted_sampler(object):
             for t, n in product(target_set, null_set):
                 self.target_cov[t, n] = 0.
                 self.target_cov[n, t] = 0.
-
-        self.score_cov = covariances[1:]
 
         self.target_transform = []
         for i in range(self.nqueries):

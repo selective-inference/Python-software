@@ -278,7 +278,8 @@ def test_parametric_covariance(ndraw=10000, burnin=2000):
         linear_func[1,-2] = 1. # also null
 
         target_observed = linear_func.dot(target_observed)
-        target_sampler = mv.setup_target((target, linear_func), target_observed)
+        target_sampler = mv.setup_target((target, linear_func), target_observed,
+                                         parametric=True)
 
         test_stat = lambda x: np.linalg.norm(x)
         pval = target_sampler.hypothesis_test(test_stat,
