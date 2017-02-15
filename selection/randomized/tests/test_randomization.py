@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import numpy as np
 import nose.tools as nt
 
@@ -17,6 +19,7 @@ def test_noise_dbns():
         x = np.random.standard_normal(5)
         u = np.random.standard_normal(5)
         noise.log_density(x)
+        np.testing.assert_allclose(np.exp(noise.log_density(x)), noise._density(x))
         noise.smooth_objective(x, 'func')
         noise.smooth_objective(x, 'grad')
         noise.smooth_objective(x, 'both')
