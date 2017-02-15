@@ -18,7 +18,7 @@ class query(object):
         self._solved = False
         self._randomized = False
         self._setup = False
-        self.target_offset = None
+
     # Methods reused by subclasses
 
     def randomize(self):
@@ -38,9 +38,7 @@ class query(object):
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
 
-        if self.target_offset is None:
-            self.target_offset = np.zeros(data_state.shape[0])
-        data_piece = data_linear.dot(data_state + self.target_offset) + data_offset
+        data_piece = data_linear.dot(data_state) + data_offset
 
         # value of the randomization omega
 
@@ -111,7 +109,6 @@ class query(object):
         linear_part = target_cv_cov.T.dot(np.linalg.pinv(cv_cov))
 
         offset = np.dot(linear_part, observed_cv)
-        self.target_offset = offset
         return offset
 
 
@@ -127,11 +124,7 @@ class query(object):
 
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
-        if self.target_offset is None:
-            self.target_offset = np.zeros(data_state.shape[0])
 
-        #data_piece = data_linear.dot((data_state + self.target_offset).T) + data_offset[:, None]
-        # self.target_offset is wrong shape
         data_piece = data_linear.dot(data_state) + data_offset[:, None]
         opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
 
@@ -441,8 +434,6 @@ class targeted_sampler(object):
 
         self.target_transform = []
 
-        self.target_offset = self.objectives[0].target_offset ## added target_offset
-
         for i in range(self.nqueries):
             self.target_transform.append(
                 self.objectives[i].linear_decomposition(self.score_cov[i],
@@ -521,9 +512,7 @@ class targeted_sampler(object):
             target_grad += target_grad_curr.copy()
 
         target_grad = - target_grad
-        if self.target_offset is None:
-            self.target_offset = np.zeros_like(target_state)
-        target_grad += self._reference_inv.flatten() - self.target_inv_cov.dot(target_state+self.target_offset)
+        target_grad += self._reference_inv.flatten() - self.target_inv_cov.dot(target_state)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
@@ -567,14 +556,11 @@ class targeted_sampler(object):
                                              stepsize)
 
         samples = []
-        if self.target_offset is None:
-            self.target_offset = np.zeros(self.observed_target_state.shape[0])
 
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
                 curr_state = target_langevin.state.copy()
-                curr_state[self.target_slice] += self.target_offset
                 samples.append(curr_state[keep_slice])
         return np.asarray(samples)
 
