@@ -10,9 +10,9 @@ from .threshold_score import threshold_score
 from regreg.api import glm
 
 def pairs_bootstrap_glm(glm_loss,
-                        active, 
-                        beta_full=None, 
-                        inactive=None, 
+                        active,
+                        beta_full=None,
+                        inactive=None,
                         scaling=1.,
                         solve_args={'min_its':50, 'tol':1.e-10}):
     """
@@ -82,8 +82,8 @@ def pairs_bootstrap_glm(glm_loss,
     return functools.partial(_boot_score, X_full, Y, ntotal, _bootQinv, _bootI, nactive, _sqrt_scaling, beta_overall), observed
 
 def pairs_bootstrap_score(glm_loss,
-                          active, 
-                          beta_active=None, 
+                          active,
+                          beta_active=None,
                           solve_args={'min_its':50, 'tol':1.e-10}):
     """
     pairs bootstrap of (beta_hat_active, -grad_inactive(beta_hat_active))
@@ -194,15 +194,14 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active, scaling=1.):
 
     """
     Bootstrap inactive score at \bar{\beta}_E
-
     Will be used with forward stepwise.
     """
     inactive = ~active
     beta_full = np.zeros(glm_loss.shape)
     beta_full[active] = beta_active
 
-    _full_boot_score = pairs_bootstrap_glm(glm_loss, 
-                                           active, 
+    _full_boot_score = pairs_bootstrap_glm(glm_loss,
+                                           active,
                                            beta_full=beta_full,
                                            inactive=inactive,
                                            scaling=scaling)[0]
@@ -212,55 +211,43 @@ def pairs_inactive_score_glm(glm_loss, active, beta_active, scaling=1.):
 
     return _boot_score
 
-def target(loss, 
-           active, 
+def target(loss,
+           active,
            queries,
-           subset=None, 
+           subset=None,
            bootstrap=False,
            solve_args={'min_its':50, 'tol':1.e-10},
            reference=None):
     """
     Form target from self.loss
     restricting to active variables.
-
     If subset is not None, then target returns
     only those coordinates of the active
-    variables. 
-
+    variables.
     Parameters
     ----------
-
-    loss : `smooth_atom`
-       A glm loss.
-
+    query : `query`
+       A query with a glm loss.
     active : np.bool
        Indicators of active variables.
-
     queries : `multiple_queries`
        Sampler returned for this queries.
-
     subset : np.bool
        Indicator of subset of variables
        to be returned. Includes both
        active and inactive variables.
-
     bootstrap : bool
        If True, sampler returned uses bootstrap
        otherwise uses a plugin CLT.
-
     reference : np.float (optional)
        Optional reference parameter. Defaults
-       to the observed reference parameter. 
+       to the observed reference parameter.
        Must have shape `active.sum()`.
-
     solve_args : dict
        Args used to solve restricted M estimator.
-
     Returns
     -------
-
     target_sampler : `targeted_sampler`
-
     """
 
     unpenalized_mle = restricted_Mest(loss, active, solve_args=solve_args)
@@ -280,7 +267,7 @@ def target(loss,
     boot_target, boot_target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
 
     def _subsetter(value):
-        if nactive_subset > 0:        
+        if nactive_subset > 0:
             return np.hstack([value[active_subset], value[nactive:]])
         else:
             return value[nactive:]
@@ -353,7 +340,7 @@ class glm_greedy_step(greedy_score_step, glm):
 
     def setup_sampler(self):
         greedy_score_step.setup_sampler(self)
-        bootstrap_score = pairs_inactive_score_glm(self.loss, 
+        bootstrap_score = pairs_inactive_score_glm(self.loss,
                                                    self.active,
                                                    self.beta_active)
         return bootstrap_score
@@ -362,7 +349,7 @@ class glm_threshold_score(threshold_score):
 
     def setup_sampler(self):
         threshold_score.setup_sampler(self)
-        bootstrap_score = pairs_inactive_score_glm(self.loss, 
+        bootstrap_score = pairs_inactive_score_glm(self.loss,
                                                    self.active,
                                                    self.beta_active)
         return bootstrap_score
@@ -373,9 +360,9 @@ class fixedX_group_lasso(M_estimator):
     def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
         loss = glm.gaussian(X, Y)
         M_estimator.__init__(self,
-                             loss, 
-                             epsilon, 
-                             penalty, 
+                             loss,
+                             epsilon,
+                             penalty,
                              randomization, solve_args=solve_args)
 
     def setup_sampler(self):
@@ -393,10 +380,8 @@ class fixedX_group_lasso(M_estimator):
 def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
     """
     m out of n bootstrap
-
     returns estimates of covariance matrices: boot_target with itself,
     and the blocks of (boot_target, boot_other) for other in cross_terms
-
     """
 
     _mean_target = 0.
@@ -552,5 +537,3 @@ def standard_ci_sm(X, y, active, leftout_indices, alpha=0.1):
     result = logit.fit(disp=0)
     LU = result.conf_int(alpha=alpha)
     return LU.T
-
-
