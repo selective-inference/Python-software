@@ -27,7 +27,7 @@ from selection.randomized.cv_view import CV_view
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_power(s=30,
-               n=3000,
+               n=2000,
                p=1000,
                rho=0.,
                snr=3.5,
@@ -177,6 +177,7 @@ def report(niter=50, **kwargs):
 
 
 def compute_power():
+    np.random.seed(1000)
     BH_sample, simple_rejections_sample = [], []
     niter = 50
     for i in range(niter):
