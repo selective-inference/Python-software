@@ -43,11 +43,9 @@ class query(object):
             full_state = data_piece
 
         # gradient of negative log density of randomization at omega
+        # we may have marginalized over some optimization variables here
 
-        if self._marginalize_subgradient==False:
-            randomization_derivative = self.randomization.gradient(full_state)
-        else:
-            randomization_derivative = self.construct_weights(full_state)
+        randomization_derivative = self.construct_weights(full_state)
 
         # chain rule for data, optimization parts
 
@@ -57,6 +55,9 @@ class query(object):
         else:
             opt_grad = None
         return data_grad, opt_grad #- self.grad_log_jacobian(opt_state)
+
+    def construct_weights(self):
+        self.randomization.gradient(full_state)
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
