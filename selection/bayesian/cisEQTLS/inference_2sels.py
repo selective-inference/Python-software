@@ -58,6 +58,8 @@ class selection_probability_genes_variants(rr.smooth_atom):
 
         self.coefs[:] = initial
 
+        #print("initial", self.coefs)
+
         opt_vars = np.zeros(n + 1 + E, bool)
         opt_vars[n:] = 1
 
@@ -75,8 +77,11 @@ class selection_probability_genes_variants(rr.smooth_atom):
         arg_lasso[:self.n] = 1
         arg_lasso = np.append(arg_lasso, np.ones(E, bool))
 
-        self.A_active_1 = np.hstack([np.true_divide(-X[:, index].T, sigma), np.identity(1)
-                                     * T_sign[None, :]])
+        #print("shapes", np.true_divide(-X[:, index], sigma)[None,:].shape, (np.identity(1)* T_sign[None, :]).shape, index)
+
+        self.A_active_1 = np.hstack([np.true_divide(-X[:, index], sigma)[None,:], np.identity(1)* T_sign[None, :]])
+
+        #print("scalar", T_sign, threshold[-1])
 
         self.offset_active_1 = T_sign * threshold[-1]
 
@@ -107,11 +112,11 @@ class selection_probability_genes_variants(rr.smooth_atom):
 
         self.active_conj_loss_2 = rr.affine_smooth(self.active_conjugate, self._active_lasso)
 
-        cube_obj_2 = neg_log_cube_probability(self.q, self.inactive_lagrange, randomization_scale = 1.)
+        cube_obj_2 = neg_log_cube_probability(self.q, lagrange[~active], randomization_scale = 1.)
 
         self.cube_loss_2 = rr.affine_smooth(cube_obj_2, self._inactive_lasso)
 
-        if threshold.shape[0]> 1:
+        if threshold.shape[0] > 1:
 
             J_card = J.shape[0]
             self.A_inactive_1 = np.hstack([np.true_divide(-X[:, J].T, sigma), np.zeros((J_card, 1))])
@@ -131,6 +136,7 @@ class selection_probability_genes_variants(rr.smooth_atom):
                                              self.nonnegative_barrier])
 
         else:
+
             self.total_loss = rr.smooth_sum([self.active_conj_loss_1,
                                              self.active_conj_loss_2,
                                              self.cube_loss_2,
@@ -180,7 +186,7 @@ class selection_probability_genes_variants(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize2(self, step=1, nstep=30, tol=1.e-8):
+    def minimize2(self, step=1, nstep=100, tol=1.e-6):
 
         n, p = self._X.shape
 
@@ -199,6 +205,7 @@ class selection_probability_genes_variants(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
+                #print("proposal", proposal[n:])
                 if np.all(proposal[n:] > 0):
                     break
                 step *= 0.5

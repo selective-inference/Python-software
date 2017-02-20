@@ -20,9 +20,11 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
     if randomizer == 'gaussian':
         perturb = np.random.standard_normal(p)
 
-    sigma_hat = np.sqrt((y.T.dot(y)- (X.T.dot(y)**2))/(n-2))
+    #sigma_hat = np.sqrt((y.T.dot(y)- (X.T.dot(y)**2))/(n-2))
+    sigma_hat = 1.
     T_stats = X.T.dot(y)/sigma_hat
-    tau = np.max(sigma_hat)/5.
+    #tau = np.max(sigma_hat)/5.
+    tau = 1.
     perturb = tau * perturb
 
     randomized_T_stats = T_stats + perturb
@@ -40,21 +42,24 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
 
         i_0 = significant[0]
 
-        t_0 = indices[p_val_randomized <= ((np.arange(p) + 1.)/(2*p))* alpha]
-
-        J = indices_order[:t_0[0]]
-
-        T_stats_inactive = T_stats[J]
-
         T_stats_active = T_stats[i_0]
 
-        T_stats_inf = np.append(T_stats_inactive,T_stats_active)
+        t_0 = indices[p_val_randomized <= ((np.arange(p) + 1.)/(2*p))* alpha]
 
-        return p_val_randomized-((np.arange(p) + 1.)/(2*p))* alpha, simes_p_randomized, i_0, t_0[0], np.sign(T_stats_active), T_stats_inf
+        if t_0[0] > 0:
+            J = indices_order[:t_0[0]]
+            T_stats_inactive = T_stats[J]
+            T_stats_inf = np.append(T_stats_inactive, T_stats_active)
+        else:
+            J = -1*np.ones(1)
+            T_stats_inf = T_stats_active
+
+        #return p_val_randomized-((np.arange(p) + 1.)/(2*p))* alpha, simes_p_randomized, i_0, t_0[0], np.sign(T_stats_active), T_stats_inf
+        return i_0, J, t_0[0], np.sign(T_stats_active), T_stats_inf
 
     else:
-
-        return simes_p_randomized
+        #return simes_p_randomized
+        return None
 
 
 
