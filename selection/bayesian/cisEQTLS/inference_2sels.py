@@ -282,8 +282,6 @@ class sel_prob_gradient_map_simes_lasso(rr.smooth_atom):
 
         mean_parameter = np.squeeze(self.generative_X.dot(true_param))
 
-        print("optimal primal", mean_parameter)
-
         primal_sol = selection_probability_genes_variants(self.X,
                                                           self.feasible_point,
                                                           self.index,

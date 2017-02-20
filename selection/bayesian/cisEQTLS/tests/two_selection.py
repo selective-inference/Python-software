@@ -92,7 +92,7 @@ def sel_prob_ms_lasso():
 
 def valid_inference():
     n = 100
-    p = 100
+    p = 5000
     s = 0
     snr = 0.
 
@@ -134,6 +134,7 @@ def valid_inference():
             lagrange = lam * np.ones(p)
             active_sign = np.sign(betaE)
             nactive = active.sum()
+            print("number of selected variables by Lasso", nactive)
 
             feasible_point = np.append(1, np.fabs(betaE))
 
@@ -162,9 +163,9 @@ def valid_inference():
 
             inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
 
-            sel_MAP = inf.map_solve(nstep=100)[::-1]
+            #sel_MAP = inf.map_solve(nstep=100)[::-1]
 
-            print("selective MAP- simes_lasso_screening", sel_MAP[1])
+            #print("selective MAP- simes_lasso_screening", sel_MAP[1])
 
             toc = time.time()
             samples = inf.posterior_samples()
