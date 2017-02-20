@@ -55,6 +55,7 @@ sel = selection(X, Y, random_Z, sigma=sigma_3TC)
 
 lam, epsilon, active, betaE, cube, initial_soln = sel
 
+print("lasso coefficients", betaE)
 print("value of tuning parameter",lam)
 print("nactive", active.sum())
 

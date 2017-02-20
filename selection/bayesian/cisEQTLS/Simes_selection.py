@@ -20,7 +20,7 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
     if randomizer == 'gaussian':
         perturb = np.random.standard_normal(p)
 
-    sigma_hat = np.sqrt((1.- (X.T.dot(y)**2))/(n-2))
+    sigma_hat = np.sqrt((y.T.dot(y)- (X.T.dot(y)**2))/(n-2))
     T_stats = X.T.dot(y)/sigma_hat
     tau = np.max(sigma_hat)/5.
     perturb = tau * perturb
@@ -50,7 +50,7 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
 
         T_stats_inf = np.append(T_stats_inactive,T_stats_active)
 
-        return p_val_randomized-((np.arange(p) + 1.)/(2*p))* alpha, simes_p_randomized, i_0, np.sign(T_stats_active), T_stats_inf
+        return p_val_randomized-((np.arange(p) + 1.)/(2*p))* alpha, simes_p_randomized, i_0, t_0[0], np.sign(T_stats_active), T_stats_inf
 
     else:
 
