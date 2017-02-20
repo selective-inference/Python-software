@@ -241,13 +241,224 @@ class selection_probability_genes_variants(rr.smooth_atom):
         return current, value
 
 
+class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
+    def __init__(self,
+                 X,
+                 feasible_point,  # in R^{1 + |E|}
+                 index,
+                 J,
+                 active,
+                 T_sign,
+                 active_sign,
+                 lagrange,  # in R^p
+                 threshold,  # in R^p
+                 generative_X,  # in R^{p}\times R^{n}
+                 noise_variance,
+                 randomizer,
+                 epsilon,  # ridge penalty for randomized lasso
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+
+        self.E = active.sum()
+        self.n, self.p = X.shape
+        self.dim = generative_X.shape[1]
+
+        self.noise_variance = noise_variance
+
+        (self.X, self.feasible_point, self.index, self.J, self.active, self.T_sign, self.active_sign,
+         self.lagrange, self.threshold, self.generative_X, self.noise_variance, self.randomizer, self.epsilon) \
+            = (X, feasible_point, index, J, active, T_sign, active_sign, lagrange,
+               threshold, generative_X, noise_variance, randomizer, epsilon)
+
+        rr.smooth_atom.__init__(self,
+                                (self.dim,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                coef=coef)
+
+    def smooth_objective(self, true_param, mode='both', check_feasibility=False, tol=1.e-6):
+        true_param = self.apply_offset(true_param)
+
+        mean_parameter = np.squeeze(self.generative_X.dot(true_param))
+
+        primal_sol = selection_probability_genes_variants(self.X,
+                                                          self.feasible_point,
+                                                          self.index,
+                                                          self.J,
+                                                          self.active,
+                                                          self.T_sign,
+                                                          self.active_sign,
+                                                          self.lagrange,
+                                                          self.threshold,
+                                                          self.generative_X,
+                                                          self.noise_variance,
+                                                          self.randomizer,
+                                                          self.epsilon)
+
+        sel_prob_primal = primal_sol.minimize2(nstep=100)[::-1]
+        optimal_primal = (sel_prob_primal[1])[:self.n]
+        sel_prob_val = -sel_prob_primal[0]
+        optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
+
+        if mode == 'func':
+            return sel_prob_val
+        elif mode == 'grad':
+            return optimizer
+        elif mode == 'both':
+            return sel_prob_val, optimizer
+        else:
+            raise ValueError('mode incorrectly specified')
 
 
+class selective_map_credible_ms_lasso(rr.smooth_atom):
+    def __init__(self,
+                 y,
+                 grad_map,
+                 prior_variance,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None,
+                 nstep=10):
+
+        generative_X = grad_map.generative_X
+        self.param_shape = generative_X.shape[1]
+
+        y = np.squeeze(y)
+
+        self.E = grad_map.E
+
+        self.generative_X = grad_map.generative_X
+
+        initial = np.zeros(self.E)
+
+        rr.smooth_atom.__init__(self,
+                                (self.param_shape,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        self.coefs[:] = initial
+
+        noise_variance = grad_map.noise_variance
+
+        self.set_likelihood(y, noise_variance, generative_X)
+
+        self.set_prior(prior_variance)
+
+        self.initial_state = initial
+
+        self.total_loss = rr.smooth_sum([self.likelihood_loss,
+                                         self.log_prior_loss,
+                                         grad_map])
+
+    def set_likelihood(self, y, noise_variance, generative_X):
+        likelihood_loss = rr.signal_approximator(y, coef=1. / noise_variance)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, generative_X)
+
+    def set_prior(self, prior_variance):
+        self.log_prior_loss = rr.signal_approximator(np.zeros(self.param_shape), coef=1. / prior_variance)
+
+    def smooth_objective(self, true_param, mode='both', check_feasibility=False):
+
+        true_param = self.apply_offset(true_param)
+
+        if mode == 'func':
+            f = self.total_loss.smooth_objective(true_param, 'func')
+            return self.scale(f)
+        elif mode == 'grad':
+            g = self.total_loss.smooth_objective(true_param, 'grad')
+            return self.scale(g)
+        elif mode == 'both':
+            f, g = self.total_loss.smooth_objective(true_param, 'both')
+            return self.scale(f), self.scale(g)
+        else:
+            raise ValueError("mode incorrectly specified")
+
+    def map_solve(self, step=1, nstep=100, tol=1.e-8):
+
+        current = self.coefs[:]
+        current_value = np.inf
+
+        objective = lambda u: self.smooth_objective(u, 'func')
+        grad = lambda u: self.smooth_objective(u, 'grad')
+
+        for itercount in range(nstep):
+
+            newton_step = grad(current)
+            # * self.noise_variance
+
+            # make sure proposal is a descent
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+        value = objective(current)
+        return current, value
+
+    def posterior_samples(self, Langevin_steps=2500, burnin=100):
+        state = self.initial_state
+        print("here", state.shape)
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
+
+        samples = []
+
+        for i in range(Langevin_steps):
+            sampler.next()
+            samples.append(sampler.state.copy())
+            #print i, sampler.state.copy()
+
+        samples = np.array(samples)
+        return samples[burnin:, :]
+
+    def posterior_risk(self, estimator_1, estimator_2, Langevin_steps=1200, burnin=0):
+        state = self.initial_state
+        print("here", state.shape)
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
+
+        post_risk_1 = 0.
+        post_risk_2 = 0.
+
+        for i in range(Langevin_steps):
+            sampler.next()
+            sample = sampler.state.copy()
+
+            #print(sample)
+            risk_1 = ((estimator_1-sample)**2).sum()
+            print("adjusted risk", risk_1)
+            post_risk_1 += risk_1
+
+            risk_2 = ((estimator_2-sample) ** 2).sum()
+            print("unadjusted risk", risk_2)
+            post_risk_2 += risk_2
 
 
-
-
-
+        return post_risk_1/Langevin_steps, post_risk_2/Langevin_steps
 
 
 
