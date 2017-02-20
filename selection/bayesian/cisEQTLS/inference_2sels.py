@@ -241,7 +241,7 @@ class selection_probability_genes_variants(rr.smooth_atom):
         return current, value
 
 
-class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
+class sel_prob_gradient_map_simes_lasso(rr.smooth_atom):
     def __init__(self,
                  X,
                  feasible_point,  # in R^{1 + |E|}
@@ -282,6 +282,8 @@ class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
 
         mean_parameter = np.squeeze(self.generative_X.dot(true_param))
 
+        print("optimal primal", mean_parameter)
+
         primal_sol = selection_probability_genes_variants(self.X,
                                                           self.feasible_point,
                                                           self.index,
@@ -291,7 +293,7 @@ class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
                                                           self.active_sign,
                                                           self.lagrange,
                                                           self.threshold,
-                                                          self.generative_X,
+                                                          mean_parameter,
                                                           self.noise_variance,
                                                           self.randomizer,
                                                           self.epsilon)
@@ -311,7 +313,7 @@ class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
             raise ValueError('mode incorrectly specified')
 
 
-class selective_map_credible_ms_lasso(rr.smooth_atom):
+class selective_inf_simes_lasso(rr.smooth_atom):
     def __init__(self,
                  y,
                  grad_map,
@@ -349,9 +351,9 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
 
         self.initial_state = initial
 
-        self.total_loss = rr.smooth_sum([self.likelihood_loss,
-                                         self.log_prior_loss,
-                                         grad_map])
+        self.total_loss_0 = rr.smooth_sum([self.likelihood_loss,
+                                           self.log_prior_loss,
+                                           grad_map])
 
     def set_likelihood(self, y, noise_variance, generative_X):
         likelihood_loss = rr.signal_approximator(y, coef=1. / noise_variance)
@@ -365,13 +367,13 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         true_param = self.apply_offset(true_param)
 
         if mode == 'func':
-            f = self.total_loss.smooth_objective(true_param, 'func')
+            f = self.total_loss_0.smooth_objective(true_param, 'func')
             return self.scale(f)
         elif mode == 'grad':
-            g = self.total_loss.smooth_objective(true_param, 'grad')
+            g = self.total_loss_0.smooth_objective(true_param, 'grad')
             return self.scale(g)
         elif mode == 'both':
-            f, g = self.total_loss.smooth_objective(true_param, 'both')
+            f, g = self.total_loss_0.smooth_objective(true_param, 'both')
             return self.scale(f), self.scale(g)
         else:
             raise ValueError("mode incorrectly specified")
@@ -428,7 +430,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         for i in range(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
-            #print i, sampler.state.copy()
+            print i, sampler.state.copy()
 
         samples = np.array(samples)
         return samples[burnin:, :]
