@@ -1,7 +1,7 @@
 from __future__ import print_function
 import time
 
-import numpy as np
+import os, numpy as np, pandas, statsmodels.api as sm
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection
 from selection.randomized.api import randomization
@@ -91,7 +91,7 @@ def sel_prob_ms_lasso():
 #sel_prob_ms_lasso()
 
 def valid_inference():
-    n = 100
+    n = 350
     p = 5000
     s = 0
     snr = 0.
@@ -178,4 +178,98 @@ def valid_inference():
             sel_mean = np.mean(samples, axis=0)
 
 
-valid_inference()
+#valid_inference()
+
+def test_data_file():
+
+    gene_1 = pandas.read_table("/Users/snigdhapanigrahi/tiny_example/1.txt", na_values="NA")
+    X = np.array(gene_1.ix[:, 2:])
+    n, p = X.shape
+
+    y = np.sqrt(n) * np.array(gene_1.ix[:, 1])
+
+    alpha = 0.05
+
+    sel_simes = simes_selection(X, y, alpha=0.05, randomizer='gaussian')
+
+    if sel_simes is not None:
+
+        index = sel_simes[0]
+
+        t_0 = sel_simes[2]
+
+        J = sel_simes[1]
+
+        T_sign = sel_simes[3] * np.ones(1)
+
+        T_stats = sel_simes[4] * np.ones(1)
+
+        if t_0 == 0:
+            threshold = normal.ppf(1. - alpha / (2. * p)) * np.ones(1)
+
+        else:
+            J_card = J.shape[0]
+            threshold = np.zeros(J_card + 1)
+            threshold[:J_card] = normal.ppf(1. - (alpha / (2. * p)) * (np.arange(J_card) + 1.))
+            threshold[J_card] = normal.ppf(1. - (alpha / (2. * p)) * t_0)
+
+        random_Z = np.random.standard_normal(p)
+        sel = selection(X, y, random_Z)
+        lam, epsilon, active, betaE, cube, initial_soln = sel
+
+        if sel is not None:
+            lagrange = lam * np.ones(p)
+            active_sign = np.sign(betaE)
+            nactive = active.sum()
+            print("number of selected variables by Lasso", nactive)
+
+            feasible_point = np.append(1, np.fabs(betaE))
+
+            noise_variance = 1.
+
+            randomizer = randomization.isotropic_gaussian((p,), 1.)
+
+            generative_X = X[:, active]
+            prior_variance = 100.
+
+            grad_map = sel_prob_gradient_map_simes_lasso(X,
+                                                         feasible_point,
+                                                         index,
+                                                         J,
+                                                         active,
+                                                         T_sign,
+                                                         active_sign,
+                                                         lagrange,
+                                                         threshold,
+                                                         generative_X,
+                                                         noise_variance,
+                                                         randomizer,
+                                                         epsilon)
+
+            inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
+
+            # sel_MAP = inf.map_solve(nstep=100)[::-1]
+
+            # print("selective MAP- simes_lasso_screening", sel_MAP[1])
+
+            toc = time.time()
+            samples = inf.posterior_samples()
+            tic = time.time()
+
+            Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
+            post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
+            post_var = prior_variance * np.identity(nactive) - ((prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
+            unadjusted_intervals = np.vstack([post_mean - 1.65 * (post_var.diagonal()), post_mean + 1.65 * (post_var.diagonal())])
+
+
+            adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+            print('sampling time', tic - toc)
+            print("unadjusted intervals", unadjusted_intervals)
+            print("adjusted intervals", adjusted_intervals)
+
+            sel_mean = np.mean(samples, axis=0)
+            print("unadjusted mean", post_mean)
+            print("selective mean", sel_mean)
+
+
+test_data_file()

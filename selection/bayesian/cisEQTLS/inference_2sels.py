@@ -428,7 +428,8 @@ class selective_inf_simes_lasso(rr.smooth_atom):
         for i in range(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
-            print i, sampler.state.copy()
+            #print i, sampler.state.copy()
+            print i
 
         samples = np.array(samples)
         return samples[burnin:, :]
