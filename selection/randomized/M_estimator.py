@@ -173,9 +173,7 @@ class M_estimator(query):
                                                -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
         # form linear part
-
         self.num_opt_var = self.observed_opt_state.shape[0]
-
         p = loss.shape[0] # shorthand for p
 
         # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})

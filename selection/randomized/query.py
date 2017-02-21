@@ -10,8 +10,6 @@ from ..sampling.langevin import projected_langevin
 
 class query(object):
 
-    nboot = 1000
-
     def __init__(self, randomization):
 
         self.randomization = randomization
@@ -94,22 +92,7 @@ class query(object):
 
         composition_offset = score_linear.dot(offset) + score_offset
 
-        #print(composition_linear_part)
         return (composition_linear_part, composition_offset)
-
-
-    def target_decomposition(self, cov, observed_cv):
-        """
-        """
-        cv_cov, target_cv_cov = cov
-        target_cv_cov = np.atleast_2d(target_cv_cov)
-        cv_cov = np.atleast_2d(cv_cov)
-        observed_cv = np.atleast_1d(observed_cv)
-
-        linear_part = target_cv_cov.T.dot(np.linalg.pinv(cv_cov))
-
-        offset = np.dot(linear_part, observed_cv)
-        return offset
 
 
     def reconstruction_map(self, data_state, data_transform, opt_state):
@@ -125,9 +108,8 @@ class query(object):
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
 
-        data_piece = data_linear.dot(data_state) + data_offset[:, None]
+        data_piece = data_linear.dot(data_state.reshape(data_linear.shape[1],-1)) + data_offset[:, None]
         opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
-
         # value of the randomization omega
 
         return (data_piece + opt_piece).T
@@ -458,6 +440,16 @@ class targeted_sampler(object):
         self.observed_state[self.target_slice] = self.observed_target_state
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
+        # added for the reconstruction map in case we marginalize over optimization variables
+        randomization_length_total = 0
+        self.randomization_slice = []
+        for i in range(self.nqueries):
+            self.randomization_slice.append(
+                slice(randomization_length_total, randomization_length_total + self.objectives[i].p))
+            randomization_length_total += self.objectives[i].p
+
+        self.randomization_length_total = randomization_length_total
+
     def set_reference(self, reference):
         self._reference = np.atleast_1d(reference)
         self._reference_inv = self.target_inv_cov.dot(self.reference)
@@ -560,8 +552,7 @@ class targeted_sampler(object):
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
-                curr_state = target_langevin.state.copy()
-                samples.append(curr_state[keep_slice])
+                samples.append(target_langevin.state[keep_slice].copy())
         return np.asarray(samples)
 
     def hypothesis_test(self,
@@ -788,12 +779,16 @@ class targeted_sampler(object):
             raise ValueError('expecting at most 2-dimensional array')
 
         target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
-        reconstructed = np.zeros_like(opt_state)
+
+
+        reconstructed = np.zeros((opt_state.shape[0],self.randomization_length_total))
+        #reconstructed = np.zeros_like(opt_state)
 
         for i in range(self.nqueries):
-            reconstructed[:, self.opt_slice[i]] = self.objectives[i].reconstruction_map(target_state,
+            reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
                                                                                         self.target_transform[i],
-                                                                                        opt_state[:,self.opt_slice[i]])
+                                                                                        opt_state[:, self.opt_slice[i]])
+
         return np.squeeze(reconstructed)
 
     def log_randomization_density(self, state):
@@ -817,6 +812,7 @@ class targeted_sampler(object):
             log_dens = self.objectives[i].randomization.log_density
             value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
+
 
     def hypothesis_test_translate(self,
                                   sample,

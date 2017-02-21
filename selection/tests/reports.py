@@ -357,6 +357,9 @@ def compute_pivots(multiple_results):
     if 'truth' in multiple_results.columns:
         pivots = multiple_results['truth']
         return {'pivot (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
+    if 'truth' in multiple_results.columns:
+        pivots = multiple_results['truth']
+        return {'pivot (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
     return {}
 
 def boot_clt_pivots(multiple_results):
