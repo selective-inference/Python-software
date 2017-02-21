@@ -1,7 +1,7 @@
 from __future__ import print_function
 import time
 
-import os, numpy as np, pandas, statsmodels.api as sm
+import numpy as np
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection
 from selection.randomized.api import randomization
@@ -12,7 +12,7 @@ from scipy.stats import norm as normal
 
 def test_coverage():
     n = 350
-    p = 5000
+    p = 7000
     s = 0
     snr = 0.
 
