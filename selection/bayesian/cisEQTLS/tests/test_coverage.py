@@ -106,8 +106,8 @@ def test_coverage():
                             coverage_ad[active_set[l]] += 1
                         if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
                             coverage_unad[active_set[l]] += 1
-                    print('coverage adjusted so far', coverage_ad)
-                    print('coverage unadjusted so far', coverage_unad)
+                    #print('coverage adjusted so far', coverage_ad)
+                    #print('coverage unadjusted so far', coverage_unad)
 
                 except ValueError:
                     nerr += 1
@@ -131,7 +131,7 @@ for i in range(niter):
 
         cov_ad += cov[0]
         cov_unad += cov[1]
-        print(cov_ad)
-        print(cov_unad)
+        print('coverage adjusted so far', cov_ad)
+        print('coverage unadjusted so far',cov_unad)
         print("\n")
         print("iteration completed", i)
