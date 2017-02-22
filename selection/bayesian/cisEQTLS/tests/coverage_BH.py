@@ -153,7 +153,7 @@ def test_coverage():
 cov_ad = 0.
 BH_D = 0.
 
-niter = 1
+niter = 10
 for i in range(niter):
 
     cov = test_coverage()
