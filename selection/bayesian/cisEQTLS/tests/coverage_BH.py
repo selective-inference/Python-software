@@ -152,6 +152,8 @@ def test_coverage():
 
 cov_ad = 0.
 BH_D = 0.
+fD = 0.
+tD = 0.
 
 niter = 10
 for i in range(niter):
@@ -162,8 +164,10 @@ for i in range(niter):
 
         cov_ad += cov[0]
         BH_D = cov[1]
+        fD += BH_D[1]/10.
+        tD += BH_D[0]/10.
 
         print('coverage adjusted so far', cov_ad)
-        print('fDR and power', BH_D[1], BH_D[0])
+        print('fDR and power', fD, tD)
         print("\n")
         print("iteration completed", i)
