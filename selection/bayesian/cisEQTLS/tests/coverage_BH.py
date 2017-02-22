@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 from selection.tests.instance import gaussian_instance
-from selection.bayesian.initial_soln import selection
+from selection.bayesian.initial_soln import selection , instance
 from selection.randomized.api import randomization
 from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
 from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_genes_variants, \
@@ -17,7 +17,7 @@ def test_coverage():
     s = 10
     snr = 5.
 
-    X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+    X, y, true_beta, nonzero, noise_variance = sample.generate_response()
 
     n, p = X.shape
 
@@ -120,7 +120,7 @@ def test_coverage():
 
                 index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
                 p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-                p_BH = BH_q(p_value, 0.05)
+                p_BH = BH_q(p_value, 0.05*float(nactive/p))
 
                 #print("adjusted BH intervals", adjusted_intervals[:, p_BH[1]])
                 D_BH = 0.
@@ -154,7 +154,12 @@ cov_ad = 0.
 BH_D = 0.
 fD = 0.
 tD = 0.
+n= 100
+p= 300
+s= 10
+snr =5.
 
+sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 niter = 10
 for i in range(niter):
 
