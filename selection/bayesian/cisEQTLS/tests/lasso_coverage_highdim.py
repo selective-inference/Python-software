@@ -13,10 +13,10 @@ from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 
 
 def test_coverage():
-    n = 100
-    p = 200
+    n = 350
+    p = 5000
     s = 10
-    snr = 3.
+    snr = 5.
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
 
