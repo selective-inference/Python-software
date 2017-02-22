@@ -6,7 +6,7 @@ from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection, instance
 from selection.randomized.api import randomization
 from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
-from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_variants, \
+from selection.bayesian.cisEQTLS.inference_per_gene import selection_probability_variants, \
     sel_prob_gradient_map_lasso, selective_inf_lasso
 from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
@@ -91,7 +91,7 @@ def test_coverage():
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, 0.05 * float(nactive / p))
+            p_BH = BH_q(p_value, 0.05)
 
             # print("adjusted BH intervals", adjusted_intervals[:, p_BH[1]])
             D_BH = 0.
