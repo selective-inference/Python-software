@@ -14,7 +14,7 @@ from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 
 def test_coverage():
     n = 100
-    p = 200
+    p = 300
     s = 10
     snr = 3.
 
@@ -125,7 +125,7 @@ tD = 0.
 n = 100
 p = 300
 s = 10
-snr = 5.
+snr = 3.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 niter = 10
