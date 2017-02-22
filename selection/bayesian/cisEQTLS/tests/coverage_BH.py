@@ -111,7 +111,7 @@ def test_coverage():
                     nerr += 1
                     print('ignore iteration raising ValueError')
 
-                no_BH_results = coverage_ad.sum() / nactive
+                no_BH_results = coverage_ad.sum()/nactive
 
                 ngrid = 1000
                 quantiles = np.zeros((ngrid, nactive))
@@ -122,33 +122,38 @@ def test_coverage():
                 p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
                 p_BH = BH_q(p_value, 0.05)
 
-
-                coverage_ad_BH = np.zeros(p)
+                #print("adjusted BH intervals", adjusted_intervals[:, p_BH[1]])
+                D_BH = 0.
+                fD_BH = 0.
 
                 if p_BH is not None:
 
                     indices_sig = p_BH[1]
+                    indices_nsig = np.setdiff1d(np.arange(nactive), indices_sig)
+
                     sig_total = indices_sig.shape[0]
                     for l in range(sig_total):
-                        if (adjusted_intervals[0, indices_sig[l]] <= true_val[indices_sig[l]]) and \
-                                (true_val[indices_sig[l]] <= adjusted_intervals[1, indices_sig[l]]):
-                            coverage_ad_BH[active_set[indices_sig[l]]] += 1
 
-                    BH_ad = coverage_ad_BH.sum() / sig_total
+                        if true_val[indices_sig[l]]>0:
+                            D_BH += 1
+                        else:
+                            fD_BH += 1
+
+                    BH_D = [D_BH, fD_BH]
 
                 else:
-                    BH_ad = 0.
+                    BH_D = [0.,0.]
 
-                return no_BH_results, BH_ad
+                return no_BH_results, BH_D
 
             else:
                 return None
 
 
 cov_ad = 0.
-cov_ad_BH = 0.
+BH_D = 0.
 
-niter = 10
+niter = 1
 for i in range(niter):
 
     cov = test_coverage()
@@ -156,9 +161,9 @@ for i in range(niter):
 
 
         cov_ad += cov[0]
-        cov_ad_BH += cov[1]
+        BH_D = cov[1]
 
         print('coverage adjusted so far', cov_ad)
-        print('coverage adjusted so far after BH', cov_ad_BH)
+        print('fDR and power', BH_D[1], BH_D[0])
         print("\n")
         print("iteration completed", i)
