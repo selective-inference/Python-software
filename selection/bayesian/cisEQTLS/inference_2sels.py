@@ -415,7 +415,7 @@ class selective_inf_simes_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=2500, burnin=100):
+    def posterior_samples(self, Langevin_steps=2000, burnin=100):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
@@ -434,7 +434,7 @@ class selective_inf_simes_lasso(rr.smooth_atom):
         samples = np.array(samples)
         return samples[burnin:, :]
 
-    def posterior_risk(self, estimator_1, estimator_2, Langevin_steps=1200, burnin=0):
+    def posterior_risk(self, estimator_1, estimator_2, Langevin_steps=2000, burnin=0):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')

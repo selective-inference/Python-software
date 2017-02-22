@@ -9,10 +9,11 @@ from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
 from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_genes_variants, \
     sel_prob_gradient_map_simes_lasso, selective_inf_simes_lasso
 from scipy.stats import norm as normal
+from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 
 def test_coverage():
     n = 100
-    p = 5000
+    p = 300
     s = 10
     snr = 5.
 
@@ -92,16 +93,13 @@ def test_coverage():
 
             coverage_ad = np.zeros(p)
             coverage_unad = np.zeros(p)
-            nsel = np.zeros(p)
-            nerr = 0
-
+            nerr = 0.
             true_val = true_beta[active]
             active_set = [i for i in range(p) if active[i]]
 
             if nactive > 1:
                 try:
                     for l in range(nactive):
-                        nsel[active_set[l]] += 1
                         if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
                             coverage_ad[active_set[l]] += 1
                         if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
@@ -113,25 +111,54 @@ def test_coverage():
                     nerr += 1
                     print('ignore iteration raising ValueError')
 
-                return coverage_ad.sum() / nactive, coverage_unad.sum() / nactive, nsel, nerr
+                no_BH_results = coverage_ad.sum() / nactive
+
+                ngrid = 1000
+                quantiles = np.zeros((ngrid, nactive))
+                for i in range(ngrid):
+                    quantiles[i, :] = np.percentile(samples, (i * 100.) / ngrid, axis=0)
+
+                index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
+                p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
+                p_BH = BH_q(p_value, 0.05)
+
+
+                coverage_ad_BH = np.zeros(p)
+
+                if p_BH is not None:
+
+                    indices_sig = p_BH[1]
+                    sig_total = indices_sig.shape[0]
+                    for l in range(sig_total):
+                        if (adjusted_intervals[0, indices_sig[l]] <= true_val[indices_sig[l]]) and \
+                                (true_val[indices_sig[l]] <= adjusted_intervals[1, indices_sig[l]]):
+                            coverage_ad_BH[active_set[indices_sig[l]]] += 1
+
+                    BH_ad = coverage_ad_BH.sum() / sig_total
+
+                else:
+                    BH_ad = 0.
+
+                return no_BH_results, BH_ad
 
             else:
-                return 0., 0., nsel, 0.
-
-
+                return None
 
 
 cov_ad = 0.
-cov_unad = 0.
+cov_ad_BH = 0.
+
 niter = 10
 for i in range(niter):
 
     cov = test_coverage()
-    if np.any(cov[2] > 0.):
+    if cov is not None:
+
 
         cov_ad += cov[0]
-        cov_unad += cov[1]
+        cov_ad_BH += cov[1]
+
         print('coverage adjusted so far', cov_ad)
-        print('coverage unadjusted so far',cov_unad)
+        print('coverage adjusted so far after BH', cov_ad_BH)
         print("\n")
         print("iteration completed", i)

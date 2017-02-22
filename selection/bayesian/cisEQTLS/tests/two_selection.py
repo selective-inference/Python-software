@@ -9,6 +9,7 @@ from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
 from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_genes_variants, \
     sel_prob_gradient_map_simes_lasso, selective_inf_simes_lasso
 from scipy.stats import norm as normal
+from selection.bayesian.cisEQTLS.Simes_selection import simes_selection, BH_q
 
 def sel_prob_ms_lasso():
     n = 100
@@ -92,7 +93,7 @@ def sel_prob_ms_lasso():
 
 def valid_inference():
     n = 350
-    p = 5000
+    p = 200
     s = 0
     snr = 0.
 
@@ -272,4 +273,119 @@ def test_data_file():
             print("selective mean", sel_mean)
 
 
-test_data_file()
+#test_data_file()
+
+def p_value():
+    n = 350
+    p = 100
+    s = 10
+    snr = 5.
+
+    X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+
+    n, p = X.shape
+
+    alpha = 0.05
+
+    sel_simes = simes_selection(X, y, alpha=0.05, randomizer='gaussian')
+
+    if sel_simes is not None:
+
+        index = sel_simes[0]
+
+        t_0 = sel_simes[2]
+
+        J = sel_simes[1]
+
+        T_sign = sel_simes[3]*np.ones(1)
+
+        T_stats = sel_simes[4]*np.ones(1)
+
+        if t_0 == 0:
+            threshold = normal.ppf(1.- alpha/(2.*p))*np.ones(1)
+
+        else:
+            J_card = J.shape[0]
+            threshold = np.zeros(J_card+1)
+            threshold[:J_card] = normal.ppf(1. - (alpha/(2.*p))*(np.arange(J_card)+1.))
+            threshold[J_card] = normal.ppf(1. - (alpha/(2.*p))*t_0)
+
+        random_Z = np.random.standard_normal(p)
+        sel = selection(X, y, random_Z)
+        lam, epsilon, active, betaE, cube, initial_soln = sel
+
+        if sel is not None:
+
+            lagrange = lam * np.ones(p)
+            active_sign = np.sign(betaE)
+            nactive = active.sum()
+            print("number of selected variables by Lasso", nactive)
+
+            feasible_point = np.append(1, np.fabs(betaE))
+
+            noise_variance = 1.
+
+            randomizer = randomization.isotropic_gaussian((p,), 1.)
+
+            generative_X = X[:, active]
+            prior_variance = 1000.
+
+            grad_map = sel_prob_gradient_map_simes_lasso(X,
+                                                         feasible_point,
+                                                         index,
+                                                         J,
+                                                         active,
+                                                         T_sign,
+                                                         active_sign,
+                                                         lagrange,
+                                                         threshold,
+                                                         generative_X,
+                                                         noise_variance,
+                                                         randomizer,
+                                                         epsilon)
+
+            #print("here", grad_map.smooth_objective(np.zeros(nactive), mode='both'))
+
+            inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
+
+            #sel_MAP = inf.map_solve(nstep=100)[::-1]
+
+            #print("selective MAP- simes_lasso_screening", sel_MAP[1])
+
+            toc = time.time()
+            samples = inf.posterior_samples()
+            tic = time.time()
+
+            ngrid = 1000
+            Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
+            post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
+
+            unad_pval = 2* np.minimum(1.-normal.cdf(np.abs(post_mean)), normal.cdf(-np.abs(post_mean)))
+
+
+            quantiles = np.zeros((ngrid, nactive))
+            print("shape", quantiles.shape)
+            for i  in range(ngrid):
+                quantiles[i,:] = np.percentile(samples, (i*100.)/ngrid, axis=0)
+
+            index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis = 0)
+            print(index_grid)
+            p_value = 2 * np.minimum(np.true_divide(index_grid,ngrid),1.- np.true_divide(index_grid,ngrid))
+            print(np.sort(p_value))
+
+            adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+            print("adjusted intervals", adjusted_intervals)
+
+            p_BH = BH_q(p_value, 0.05)
+
+            if p_BH is not None:
+                print("results from BH", p_BH[0], p_BH[1])
+
+            print("unadjusted p-values", unad_pval)
+
+            p_BH_unad = BH_q(unad_pval , 0.05)
+
+            if p_BH_unad is not None:
+                print("results from BH", p_BH_unad[0], p_BH_unad[1])
+
+p_value()

@@ -2,7 +2,27 @@ from __future__ import print_function
 from scipy.stats import norm as normal
 import numpy as np
 
-#this function takes the nominal p-values as input, computes the Simes test statistic to delclare if gene is significant or not
+#this function passes p-values through a BH-sieve to declare the significant ones at pre-fixed level
+def BH_q(p_value, level):
+
+    m = p_value.shape[0]
+    p_sorted = np.sort(p_value)
+    indices = np.arange(m)
+    indices_order = np.argsort(p_value)
+
+    #print("sorted p values", p_sorted-np.true_divide(level*(np.arange(m)+1.),2.*m))
+    if np.any(p_sorted - np.true_divide(level*(np.arange(m)+1.),2.*m)<=np.zeros(m)):
+        order_sig = np.max(indices[p_sorted- np.true_divide(level*(np.arange(m)+1.),2.*m)<=0])
+        #print("max index", order_sig)
+        sig_pvalues = indices_order[:order_sig]
+        return p_sorted[:order_sig], sig_pvalues
+
+    else:
+        return None
+
+
+# this function takes the nominal p-values as input, computes the Simes test statistic to delclare if gene is significant or not
+
 def simes_pvalue(p_value):
 
     p = p_value.shape[0]
