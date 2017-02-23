@@ -12,7 +12,7 @@ from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 
 
-def one_trial(n=150, p= 100, s= 10, snr = 5., seed_n = 19, method="theoretical"):
+def one_trial(n=350, p= 5000, s= 10, snr = 5., seed_n = 19, method="theoretical"):
 
     random.seed(seed_n)
 
@@ -57,6 +57,8 @@ def one_trial(n=150, p= 100, s= 10, snr = 5., seed_n = 19, method="theoretical")
 
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
+        selective_mean = np.mean(samples, axis=0)
+
         Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
         post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
         post_var = prior_variance * np.identity(nactive) - ((prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
@@ -74,6 +76,15 @@ def one_trial(n=150, p= 100, s= 10, snr = 5., seed_n = 19, method="theoretical")
         list_results.append(true_beta)
         list_results.append(active_ind)
 
+        ad_lower_credible = np.zeros(p)
+        ad_upper_credible = np.zeros(p)
+
+        unad_lower_credible = np.zeros(p)
+        unad_upper_credible = np.zeros(p)
+
+        ad_mean = np.zeros(p)
+        unad_mean = np.zeros(p)
+
         if nactive > 1:
             try:
                 for l in range(nactive):
@@ -81,6 +92,12 @@ def one_trial(n=150, p= 100, s= 10, snr = 5., seed_n = 19, method="theoretical")
                         coverage_ad[active_set[l]] += 1
                     if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
                         coverage_unad[active_set[l]] += 1
+                    ad_lower_credible[active_set[l]] = adjusted_intervals[0, l]
+                    ad_upper_credible[active_set[l]] = adjusted_intervals[1, l]
+                    unad_lower_credible[active_set[l]] = unadjusted_intervals[0, l]
+                    unad_upper_credible[active_set[l]] = unadjusted_intervals[1, l]
+                    ad_mean[active_set[l]] = selective_mean[l]
+                    unad_mean[active_set[l]] = post_mean[l]
 
             except ValueError:
                 nerr += 1
@@ -96,34 +113,57 @@ def one_trial(n=150, p= 100, s= 10, snr = 5., seed_n = 19, method="theoretical")
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, 0.05)
+            p_BH = BH_q(p_value, 0.10)
 
             D_BH = np.zeros(p)
-            fD_BH = np.zeros(p)
 
             if p_BH is not None:
-
-                indices_sig = active_set[p_BH[1]]
-                indices_nsig = np.setdiff1d(active_set, indices_sig)
-
-                sig_total = indices_sig.shape[0]
-                D_BH[indices_sig] = 1
-                fD_BH[indices_nsig] =1
+                for indx in p_BH[1]:
+                    D_BH[active_set[indx]] = 1
 
             list_results.append(D_BH)
-            list_results.append(fD_BH)
 
-            return list.results
+            list_results.append(ad_lower_credible)
+            list_results.append(ad_upper_credible)
+            list_results.append(unad_lower_credible)
+            list_results.append(unad_upper_credible)
+
+            list_results.append(ad_mean)
+            list_results.append(unad_mean)
+
+            txtfile = "/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt"
+
+            # Assuming res is a flat list
+            with open(txtfile, "w") as output:
+                for val in range(p):
+                    output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(true_beta[val],
+                                                                                       active_ind[val], coverage_ad[val],
+                                                                                       coverage_unad[val],
+                                                                                       D_BH[val], ad_lower_credible[val],
+                                                                                       ad_upper_credible[val],
+                                                                                       unad_lower_credible[val],
+                                                                                       unad_upper_credible[val],
+                                                                                       ad_mean[val],
+                                                                                       unad_mean[val]))
+
+            return list_results
 
 
 
-R = one_trial()
-print("true parameter",R[0])
-print("active indices",R[1])
-print("indices covered by adjusted",R[2])
-print("indices covered by unadjusted",R[3])
-print("indices declared significant after BH",R[4])
-print("indices declared insignificant after BH", R[5])
+#R = one_trial()
+#print("true parameter",R[0])
+#print("active indices",R[1])
+#print("indices covered by adjusted",R[2])
+#print("indices covered by unadjusted",R[3])
+#print("indices declared significant after BH",R[4])
+#print("adjusted lower bounds", R[5])
+#print("adjusted upper bounds", R[6])
+#print("unadjusted lower bounds", R[7])
+#print("unadjusted upper bounds", R[8])
+#print("selective mean", R[9])
+#print("unadjusted mean", R[10])
+
+
 
 
 
