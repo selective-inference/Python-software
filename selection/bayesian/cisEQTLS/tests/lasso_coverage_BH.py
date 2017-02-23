@@ -22,7 +22,7 @@ def test_coverage():
 
     n, p = X.shape
 
-    random_Z = np.random.standard_normal(p)
+    random_Z = np.sqrt(3)* np.random.standard_normal(p)
     sel = selection(X, y, random_Z)
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
@@ -36,7 +36,7 @@ def test_coverage():
 
         noise_variance = 1.
 
-        randomizer = randomization.isotropic_gaussian((p,), 1.)
+        randomizer = randomization.isotropic_gaussian((p,), 3.)
 
         generative_X = X[:, active]
         prior_variance = 1000.
@@ -89,7 +89,7 @@ def test_coverage():
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, 0.2)
+            p_BH = BH_q(p_value, 0.1)
 
             # print("adjusted BH intervals", adjusted_intervals[:, p_BH[1]])
             D_BH = 0.
