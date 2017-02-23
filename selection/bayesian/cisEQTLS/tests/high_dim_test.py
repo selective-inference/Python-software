@@ -1,6 +1,6 @@
 from __future__ import print_function
 import time
-
+import random
 import numpy as np
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection, instance
@@ -12,11 +12,11 @@ from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 
 
-def test_coverage():
-    n = 350
-    p = 5000
-    s = 10
-    snr = 5.
+def one_trial(n=150, p= 100, s= 10, snr = 5., seed_n = 19, method="theoretical"):
+
+    random.seed(seed_n)
+
+    sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
 
@@ -27,10 +27,10 @@ def test_coverage():
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
     if sel is not None:
+
         lagrange = lam * np.ones(p)
         active_sign = np.sign(betaE)
         nactive = active.sum()
-        print("number of selected variables by Lasso", nactive)
 
         feasible_point = np.fabs(betaE)
 
@@ -67,6 +67,12 @@ def test_coverage():
         nerr = 0.
         true_val = true_beta[active]
         active_set = [i for i in range(p) if active[i]]
+        active_ind = np.zeros(p)
+        active_ind[active_set] = 1
+
+        list_results = []
+        list_results.append(true_beta)
+        list_results.append(active_ind)
 
         if nactive > 1:
             try:
@@ -80,7 +86,8 @@ def test_coverage():
                 nerr += 1
                 print('ignore iteration raising ValueError')
 
-            no_BH_results = coverage_ad.sum() / nactive
+            list_results.append(coverage_ad)
+            list_results.append(coverage_unad)
 
             ngrid = 1000
             quantiles = np.zeros((ngrid, nactive))
@@ -89,56 +96,34 @@ def test_coverage():
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, 0.10)
+            p_BH = BH_q(p_value, 0.05)
 
-            # print("adjusted BH intervals", adjusted_intervals[:, p_BH[1]])
-            D_BH = 0.
-            fD_BH = 0.
+            D_BH = np.zeros(p)
+            fD_BH = np.zeros(p)
 
             if p_BH is not None:
 
-                indices_sig = p_BH[1]
-                indices_nsig = np.setdiff1d(np.arange(nactive), indices_sig)
+                indices_sig = active_set[p_BH[1]]
+                indices_nsig = np.setdiff1d(active_set, indices_sig)
 
                 sig_total = indices_sig.shape[0]
-                for l in range(sig_total):
-                    if true_val[indices_sig[l]] > 0:
-                        D_BH += 1
-                    else:
-                        fD_BH += 1
+                D_BH[indices_sig] = 1
+                fD_BH[indices_nsig] =1
 
-                BH_D = [D_BH, fD_BH]
+            list_results.append(D_BH)
+            list_results.append(fD_BH)
 
-            else:
-                BH_D = [0., 0.]
-
-            return no_BH_results, BH_D
-
-        else:
-            return None
+            return list.results
 
 
-cov_ad = 0.
-BH_D = 0.
-fD = 0.
-tD = 0.
-n = 350
-p = 5000
-s = 10
-snr = 5.
 
-sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
-niter = 10
-for i in range(niter):
+R = one_trial()
+print("true parameter",R[0])
+print("active indices",R[1])
+print("indices covered by adjusted",R[2])
+print("indices covered by unadjusted",R[3])
+print("indices declared significant after BH",R[4])
+print("indices declared insignificant after BH", R[5])
 
-    cov = test_coverage()
-    if cov is not None:
-        cov_ad += cov[0]
-        BH_D = cov[1]
-        fD += BH_D[1] / 10.
-        tD += BH_D[0] / 10.
 
-        print('coverage adjusted so far', cov_ad)
-        print('fDR and power', fD, tD)
-        print("\n")
-        print("iteration completed", i)
+
