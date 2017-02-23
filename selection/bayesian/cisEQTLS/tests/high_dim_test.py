@@ -23,7 +23,7 @@ def one_trial(n=350, p= 5000, s= 10, snr = 5., seed_n = 19, method="theoretical"
     n, p = X.shape
 
     random_Z = np.random.standard_normal(p)
-    sel = selection(X, y, random_Z)
+    sel = selection(X, y, random_Z, method ="theoretical")
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
     if sel is not None:
@@ -150,7 +150,7 @@ def one_trial(n=350, p= 5000, s= 10, snr = 5., seed_n = 19, method="theoretical"
 
 
 
-#R = one_trial()
+R = one_trial()
 #print("true parameter",R[0])
 #print("active indices",R[1])
 #print("indices covered by adjusted",R[2])

@@ -40,7 +40,7 @@ def tuning_parameter_glmnet(X, y):
     lam_1SE = result[1][0]
     return lam_minCV, lam_1SE
 
-sample = instance(n=100, p=50, s=10, sigma=1, rho=0, snr=5.)
+sample = instance(n=350, p=5000, s=10, sigma=1, rho=0, snr=5.)
 
 X, y, true_beta, nonzero, noise_variance = sample.generate_response()
 lam_CV, lam_1SD = tuning_parameter_glmnet(X, y)
