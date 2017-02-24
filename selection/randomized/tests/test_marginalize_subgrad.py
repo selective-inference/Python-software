@@ -32,17 +32,17 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_marginalize(s=0,
-                    n=3000,
-                    p=1000,
+                    n=600,
+                    p=200,
                     rho=0.,
                     snr=3.5,
-                    lam_frac = 2.,
+                    lam_frac = 2.5,
                     ndraw=10000,
                     burnin=2000,
                     loss='gaussian',
                     randomizer = 'gaussian',
                     randomizer_scale = 1.,
-                    nviews=1,
+                    nviews=3,
                     scalings=False,
                     subgrad =True,
                     parametric=False,
@@ -117,7 +117,6 @@ def test_marginalize(s=0,
                                                      bootstrap=False,
                                                      parametric=parametric)
                                                      #reference= beta[active_union])
-        print(queries.num_opt_var)
 
         if intervals=='old':
             target_sample = target_sampler.sample(ndraw=ndraw,
@@ -170,7 +169,7 @@ def test_marginalize(s=0,
 
         return pivots, covered, ci_length, naive_pvals, covered_naive, ci_length_naive
 
-def report(niter=5, **kwargs):
+def report(niter=50, **kwargs):
 
     condition_report = reports.reports['test_marginalize']
     runs = reports.collect_multiple_runs(condition_report['test'],
