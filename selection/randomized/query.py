@@ -129,8 +129,7 @@ class query(object):
         assume is close to Hessian at \bar{\beta}_E^*
         """
         # needs to be implemented for group lasso
-        return 0.
-        # self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
+        return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
 
 
     def jacobian(self, opt_state):
