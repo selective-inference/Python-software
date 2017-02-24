@@ -12,7 +12,7 @@ from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 
 
-def one_trial(n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.1, method="theoretical"):
+def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.1, method="theoretical"):
 
     random.seed(seed_n)
 
@@ -131,7 +131,7 @@ def one_trial(n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.1, method
             list_results.append(ad_mean)
             list_results.append(unad_mean)
 
-            txtfile = "/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt"
+            #txtfile = "/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt"
 
             # Assuming res is a flat list
             with open(txtfile, "w") as output:

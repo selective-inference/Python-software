@@ -89,7 +89,7 @@ def test_coverage():
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, 0.10)
+            p_BH = BH_q(p_value, 0.20)
 
             # print("adjusted BH intervals", adjusted_intervals[:, p_BH[1]])
             D_BH = 0.
@@ -128,7 +128,7 @@ s = 50
 snr = 5.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
-niter = 10
+niter = 15
 for i in range(niter):
 
     cov = test_coverage()
