@@ -3,19 +3,18 @@ import time
 
 import numpy as np
 from selection.tests.instance import gaussian_instance
-from selection.bayesian.cisEQTLS.initial_soln_wocv import selection, instance
 from selection.randomized.api import randomization
 from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
 from selection.bayesian.cisEQTLS.inference_per_gene import selection_probability_variants, \
     sel_prob_gradient_map_lasso, selective_inf_lasso
-from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
+from selection.bayesian.cisEQTLS.initial_sol_wocv import selection, instance
 
 
 def test_coverage():
     n = 350
     p = 5000
-    s = 0
+    s = 30
     snr = 5.
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
@@ -124,7 +123,7 @@ fD = 0.
 tD = 0.
 n = 350
 p = 5000
-s = 0
+s = 30.
 snr = 5.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
@@ -135,8 +134,8 @@ for i in range(niter):
     if cov is not None:
         cov_ad += cov[0]
         BH_D = cov[1]
-        fD += BH_D[1] / 20.
-        tD += BH_D[0] / 20.
+        fD += BH_D[1] / 30.
+        tD += BH_D[0] / 30.
 
         print('coverage adjusted so far', cov_ad)
         print('fDR and power', fD, tD)
