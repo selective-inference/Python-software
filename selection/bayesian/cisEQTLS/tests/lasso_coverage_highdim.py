@@ -123,7 +123,7 @@ fD = 0.
 tD = 0.
 n = 350
 p = 5000
-s = 30.
+s = 30
 snr = 5.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
