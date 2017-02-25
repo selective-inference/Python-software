@@ -3,7 +3,7 @@ import time
 
 import numpy as np
 from selection.tests.instance import gaussian_instance
-from selection.bayesian.initial_soln_wocv import selection, instance
+from selection.bayesian.cisEQTLS.initial_soln_wocv import selection, instance
 from selection.randomized.api import randomization
 from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
 from selection.bayesian.cisEQTLS.inference_per_gene import selection_probability_variants, \
