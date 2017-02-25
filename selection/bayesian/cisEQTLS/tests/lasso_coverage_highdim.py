@@ -15,7 +15,7 @@ from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 def test_coverage():
     n = 350
     p = 5000
-    s = 50
+    s = 0
     snr = 5.
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
@@ -89,7 +89,7 @@ def test_coverage():
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, 0.20)
+            p_BH = BH_q(p_value, 0.10)
 
             # print("adjusted BH intervals", adjusted_intervals[:, p_BH[1]])
             D_BH = 0.
@@ -124,7 +124,7 @@ fD = 0.
 tD = 0.
 n = 350
 p = 5000
-s = 50
+s = 0
 snr = 5.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
@@ -135,8 +135,8 @@ for i in range(niter):
     if cov is not None:
         cov_ad += cov[0]
         BH_D = cov[1]
-        fD += BH_D[1] / 10.
-        tD += BH_D[0] / 10.
+        fD += BH_D[1] / 20.
+        tD += BH_D[0] / 20.
 
         print('coverage adjusted so far', cov_ad)
         print('fDR and power', fD, tD)
