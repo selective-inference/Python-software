@@ -135,7 +135,7 @@ for i in range(niter):
     if cov is not None:
         cov_ad += cov[0]
         BH_D = cov[1]
-        fD += BH_D[1] / float(BH_D[1] + BH_D[0])
+        fD += BH_D[1] / max(float(BH_D[1] + BH_D[0]), 1.)
         #tD += BH_D[0] / 30.
         tD += 0.
 
