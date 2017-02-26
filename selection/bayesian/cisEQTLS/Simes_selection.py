@@ -39,15 +39,10 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
     if randomizer == 'gaussian':
         perturb = np.random.standard_normal(p)
 
-    #sigma_hat = np.sqrt((y.T.dot(y)- (X.T.dot(y)**2))/(n-2))
     sigma_hat = 1.
     T_stats = X.T.dot(y)/sigma_hat
-    #tau = np.max(sigma_hat)/5.
-    tau = 1.
-    perturb = tau * perturb
 
     randomized_T_stats = T_stats + perturb
-    randomized_T_stats_order = np.sort(np.abs(randomized_T_stats))
     p_val_randomized = np.sort(2*(1. - normal.cdf(np.abs(randomized_T_stats))))
 
     indices_order = np.argsort(2*(1. - normal.cdf(np.abs(randomized_T_stats))))
@@ -55,15 +50,17 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
 
     simes_p_randomized = np.min((p/(np.arange(p) + 1.))* p_val_randomized)
 
-    if simes_p_randomized <= alpha/2:
+    print("simes p", simes_p_randomized)
 
-        significant =  indices_order[p_val_randomized <= alpha/2]
+    if simes_p_randomized <= alpha:
+
+        significant =  indices_order[p_val_randomized <= alpha]
 
         i_0 = significant[0]
 
         T_stats_active = T_stats[i_0]
 
-        t_0 = indices[p_val_randomized <= ((np.arange(p) + 1.)/(2*p))* alpha]
+        t_0 = indices[p_val_randomized <= ((np.arange(p) + 1.)/(p))* alpha]
 
         if t_0[0] > 0:
             J = indices_order[:t_0[0]]

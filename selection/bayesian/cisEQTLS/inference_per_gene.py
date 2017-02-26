@@ -129,7 +129,7 @@ class selection_probability_variants(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize2(self, step=1, nstep=100, tol=1.e-6):
+    def minimize2(self, step=1, nstep=100, tol=1.e-8):
 
         n, p = self._X.shape
 
@@ -230,7 +230,7 @@ class sel_prob_gradient_map_lasso(rr.smooth_atom):
                                                     self.randomizer,
                                                     self.epsilon)
 
-        sel_prob_primal = primal_sol.minimize2(nstep=150)[::-1]
+        sel_prob_primal = primal_sol.minimize2(nstep=180)[::-1]
         optimal_primal = (sel_prob_primal[1])[:self.n]
         sel_prob_val = -sel_prob_primal[0]
         optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))

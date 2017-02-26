@@ -5,6 +5,7 @@ import os, numpy as np, pandas, statsmodels.api as sm
 from selection.randomized.api import randomization
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.cisEQTLS.Simes_selection import simes_selection, BH_q
+from selection.bayesian.cisEQTLS.initial_sol_wocv import selection, instance
 from selection.bayesian.cisEQTLS.randomized_lasso_sel import selection
 
 def Simes_sel_test():
@@ -27,4 +28,35 @@ def BH_test():
     if p_BH is not None:
         print("results from BH", p_BH[0], p_BH[1])
 
-BH_test()
+#BH_test()
+
+def Simes_sel_test_0():
+
+    X, y, true_beta, nonzero, noise_variance = sample.generate_response()
+
+    sel_simes = simes_selection(X, y, alpha=0.10, randomizer='gaussian')
+
+    if sel_simes is None:
+
+        return 0
+
+    else:
+
+        return 1
+
+
+n = 350
+p = 5000
+s = 0
+snr = 5.
+
+sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
+
+nsel = 0
+
+for i in range(100):
+
+    nsel += Simes_sel_test_0()
+
+print(nsel)
+

@@ -22,7 +22,7 @@ def test_coverage():
 
     n, p = X.shape
 
-    random_Z = np.sqrt(3)* np.random.standard_normal(p)
+    random_Z = np.random.standard_normal(p)
     sel = selection(X, y, random_Z)
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
@@ -36,7 +36,7 @@ def test_coverage():
 
         noise_variance = 1.
 
-        randomizer = randomization.isotropic_gaussian((p,), 3.)
+        randomizer = randomization.isotropic_gaussian((p,), 1.)
 
         generative_X = X[:, active]
         prior_variance = 1000.
