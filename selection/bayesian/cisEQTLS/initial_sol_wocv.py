@@ -10,7 +10,7 @@ def selection(X, y, random_Z, randomization_scale=1, sigma=None, method="theoret
     if sigma is None:
         sigma = 1.
     if method == "theoretical":
-        lam = 1.2 * sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
+        lam = 1 * sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
 
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p), weights = dict(zip(np.arange(p), W)), lagrange=1.)

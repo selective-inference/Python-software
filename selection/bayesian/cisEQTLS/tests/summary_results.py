@@ -1,7 +1,7 @@
 import glob
 import os, numpy as np, pandas, statsmodels.api as sm
 
-path =r'/Users/snigdhapanigrahi/Results_cisEQTLS/high_dim_test'
+path =r'/Users/snigdhapanigrahi/Results_cisEQTLS/high_dim_test_20'
 
 allFiles = glob.glob(path + "/*.txt")
 
@@ -40,7 +40,10 @@ for i in range(len(list_)):
 
 print(coverage_ad, coverage_unad, FDR, power)
 
-#(83.794666815456694, 45.708133541968493, 11.610912698412697, 43.699999999999989)
+#10 signals - (83.794666815456694, 45.708133541968493, 11.610912698412697, 43.699999999999989)
+
+#20 signals  - (75.508071787229667, 47.485970825812885, 31.872434036613146, 38.400000000000006)
+
 
 
 
