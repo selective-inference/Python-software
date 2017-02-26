@@ -54,7 +54,7 @@ sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
 nsel = 0
 
-for i in range(100):
+for i in range(1000):
 
     nsel += Simes_sel_test_0()
 

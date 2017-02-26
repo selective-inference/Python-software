@@ -14,7 +14,7 @@ from selection.bayesian.cisEQTLS.initial_sol_wocv import selection, instance
 def test_coverage():
     n = 350
     p = 5000
-    s = 30
+    s = 0
     snr = 5.
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
@@ -124,7 +124,7 @@ fD = 0.
 tD = 0.
 n = 350
 p = 5000
-s = 30
+s = 0
 snr = 5.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
@@ -135,8 +135,9 @@ for i in range(niter):
     if cov is not None:
         cov_ad += cov[0]
         BH_D = cov[1]
-        fD += BH_D[1] / 30.
-        tD += BH_D[0] / 30.
+        fD += BH_D[1] / float(BH_D[1] + BH_D[0])
+        #tD += BH_D[0] / 30.
+        tD += 0.
 
         print('coverage adjusted so far', cov_ad)
         print('fDR and power', fD, tD)

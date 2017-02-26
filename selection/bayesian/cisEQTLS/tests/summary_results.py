@@ -33,12 +33,14 @@ for i in range(len(list_)):
     false_discoveries = discoveries[s:].sum()
     true_discoveries = discoveries[:s].sum()
 
-    FDR += false_discoveries/float(s)
+    FDR += false_discoveries/float(discoveries.sum())
     power += true_discoveries/float(s)
 
 
 
 print(coverage_ad, coverage_unad, FDR, power)
+
+#(83.794666815456694, 45.708133541968493, 11.610912698412697, 43.699999999999989)
 
 
 
