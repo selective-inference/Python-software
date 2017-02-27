@@ -1,7 +1,7 @@
 import glob
 import os, numpy as np, pandas, statsmodels.api as sm
 
-path =r'/Users/snigdhapanigrahi/Results_cisEQTLS/high_dim_test_20'
+path =r'/Users/snigdhapanigrahi/Results_cisEQTLS/high_dim_test_0_TUNED'
 
 allFiles = glob.glob(path + "/*.txt")
 
@@ -21,7 +21,8 @@ for i in range(len(list_)):
 
     #getting the active indices and the number of active variables:
     true_signal = np.array(mat_0[:,0])
-    s = int(true_signal.sum()/true_signal[0])
+    #s = int(true_signal.sum()/true_signal[0])
+    s = 0
     active_ind = np.array(mat_0[:,1], np.bool)
     nactive = active_ind.sum()
 
@@ -33,12 +34,13 @@ for i in range(len(list_)):
     false_discoveries = discoveries[s:].sum()
     true_discoveries = discoveries[:s].sum()
 
-    FDR += false_discoveries/float(discoveries.sum())
-    power += true_discoveries/float(s)
+    FDR += false_discoveries /max(float(discoveries.sum()),1.)
+    #power += true_discoveries/float(s)
 
 
 
-print(coverage_ad, coverage_unad, FDR, power)
+#print(coverage_ad, coverage_unad, FDR, power)
+print(coverage_ad, coverage_unad, FDR)
 
 #10 signals - (83.794666815456694, 45.708133541968493, 11.610912698412697, 43.699999999999989)
 
