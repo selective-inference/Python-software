@@ -32,7 +32,7 @@ def simes_pvalue(p_value):
     return p_simes
 
 #arguments of function are X with normalized columns, response y, sigma_hat and randomization
-def simes_selection(X, y, alpha, randomizer= 'gaussian'):
+def simes_selection(X, y, alpha, randomizer= 'gaussian', randomization_scale = 1.):
 
     n, p = X.shape
 
@@ -42,15 +42,13 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
     sigma_hat = 1.
     T_stats = X.T.dot(y)/sigma_hat
 
-    randomized_T_stats = T_stats + perturb
+    randomized_T_stats = T_stats + randomization_scale * perturb
     p_val_randomized = np.sort(2*(1. - normal.cdf(np.abs(randomized_T_stats))))
 
     indices_order = np.argsort(2*(1. - normal.cdf(np.abs(randomized_T_stats))))
     indices = np.arange(p)
 
     simes_p_randomized = np.min((p/(np.arange(p) + 1.))* p_val_randomized)
-
-    print("simes p", simes_p_randomized)
 
     if simes_p_randomized <= alpha:
 
@@ -70,11 +68,10 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian'):
             J = -1*np.ones(1)
             T_stats_inf = T_stats_active
 
-        #return p_val_randomized-((np.arange(p) + 1.)/(2*p))* alpha, simes_p_randomized, i_0, t_0[0], np.sign(T_stats_active), T_stats_inf
         return i_0, J, t_0[0], np.sign(T_stats_active), T_stats_inf
 
     else:
-        #return simes_p_randomized
+
         return None
 
 

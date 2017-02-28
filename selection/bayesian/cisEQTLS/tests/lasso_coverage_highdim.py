@@ -136,7 +136,7 @@ for i in range(niter):
         cov_ad += cov[0]
         BH_D = cov[1]
         fD += BH_D[1] / max(float(BH_D[1] + BH_D[0]), 1.)
-        tD += BH_D[0] / 30.
+        tD += BH_D[0] / 5.
         tD += 0.
 
         print('coverage adjusted so far', cov_ad)

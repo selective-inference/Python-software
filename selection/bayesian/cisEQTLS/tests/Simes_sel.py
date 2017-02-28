@@ -30,11 +30,11 @@ def BH_test():
 
 #BH_test()
 
-def Simes_sel_test_0():
+def Simes_sel_test_0(n):
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
 
-    sel_simes = simes_selection(X, y, alpha=0.10, randomizer='gaussian')
+    sel_simes = simes_selection(X, y, alpha=0.10/n, randomizer='gaussian')
 
     if sel_simes is None:
 
@@ -47,16 +47,16 @@ def Simes_sel_test_0():
 
 n = 350
 p = 5000
-s = 0
-snr = 5.
+s = 5
+snr = 10.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
 nsel = 0
 
-for i in range(1000):
+for i in range(250):
 
-    nsel += Simes_sel_test_0()
+    nsel += Simes_sel_test_0(n = 250)
 
 print(nsel)
 

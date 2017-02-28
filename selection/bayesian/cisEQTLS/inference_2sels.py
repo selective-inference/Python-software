@@ -19,7 +19,7 @@ class selection_probability_genes_variants(rr.smooth_atom):
                  threshold,  # in R^{t_0+1}
                  mean_parameter,  # in R^n
                  noise_variance, #noise_level in data
-                 randomizer, #specified randomization
+                 randomizer,
                  epsilon,  # ridge penalty for randomized lasso
                  coef=1.,
                  offset=None,
@@ -415,7 +415,7 @@ class selective_inf_simes_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=2000, burnin=100):
+    def posterior_samples(self, Langevin_steps=1500, burnin=50):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')

@@ -1,7 +1,7 @@
 import glob
 import os, numpy as np, pandas, statsmodels.api as sm
 
-path =r'/Users/snigdhapanigrahi/Results_cisEQTLS/high_dim_test_0_TUNED'
+path =r'/Users/snigdhapanigrahi/Results_cisEQTLS/high_dim_test_0'
 
 allFiles = glob.glob(path + "/*.txt")
 
