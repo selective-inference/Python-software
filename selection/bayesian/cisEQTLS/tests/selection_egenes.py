@@ -23,11 +23,13 @@ def Simes_selection_egenes(txtfile, ngenes = 350 , n=350, p = 5000, seed_n = 19,
 
     s = np.zeros(ngenes)
 
+    simes_level = np.zeros(ngenes)
+
     for rep in range(350):
 
         X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=0, sigma=1, rho=0, snr=5.)
 
-        sel_simes = simes_selection(X, y, alpha=0.10 / ngenes, randomizer='gaussian')
+        sel_simes = simes_selection(X, y, alpha= simes_level / ngenes, randomizer='gaussian')
 
         if sel_simes is not None:
 
@@ -55,12 +57,13 @@ def Simes_selection_egenes(txtfile, ngenes = 350 , n=350, p = 5000, seed_n = 19,
 
     with open(txtfile, "w") as output:
         for val in range(ngenes):
-            output.write("{}\t{}\t{}\t{}\t{}\n".format(sel_ind[val],
+            output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(sel_ind[val],
                                                        index_ssig[val],
                                                        indices_rej[val,:],
                                                        index_order[val],
                                                        sign_T[val],
                                                        snr[rep],
-                                                       s[rep]))
+                                                       s[rep],
+                                                       simes_level[rep]))
 
 Simes_selection_egenes("/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt", ngenes = 350 , n=350, p = 5000, seed_n = 19, bh_level=0.1)

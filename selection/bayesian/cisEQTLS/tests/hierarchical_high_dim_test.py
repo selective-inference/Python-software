@@ -14,25 +14,17 @@ from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_ge
 
 
 #note that bh level is to decided upon how many we end up selecting:
-def one_trial(sel_simes, outputfile, X, y, seed_n = 19, bh_level=0.1, method="theoretical"):
+def one_trial(outputfile, index, J, t_0, T_sign, snr, s, simes_level, X, y, seed_n = 19, bh_level=0.1, method="theoretical"):
 
     random.seed(seed_n)
 
     n, p = X.shape
 
-    index = sel_simes[0]
+    T_sign = T_sign * np.ones(1)
 
-    t_0 = sel_simes[2]
+    snr = float(snr)
 
-    J = sel_simes[1]
-
-    T_sign = sel_simes[3] * np.ones(1)
-
-    simes_level = 0.1
-
-    snr = float(sel_simes[4])
-
-    s = int(sel_simes[5])
+    s = int(s)
 
     true_beta = np.zeros(p)
 
