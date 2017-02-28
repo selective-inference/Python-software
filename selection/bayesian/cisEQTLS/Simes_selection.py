@@ -62,13 +62,13 @@ def simes_selection(X, y, alpha, randomizer= 'gaussian', randomization_scale = 1
 
         if t_0[0] > 0:
             J = indices_order[:t_0[0]]
-            T_stats_inactive = T_stats[J]
-            T_stats_inf = np.append(T_stats_inactive, T_stats_active)
+            #T_stats_inactive = T_stats[J]
+            #T_stats_inf = np.append(T_stats_inactive, T_stats_active)
         else:
             J = -1*np.ones(1)
-            T_stats_inf = T_stats_active
+            #T_stats_inf = T_stats_active
 
-        return i_0, J, t_0[0], np.sign(T_stats_active), T_stats_inf
+        return i_0, J, t_0[0], np.sign(T_stats_active)
 
     else:
 

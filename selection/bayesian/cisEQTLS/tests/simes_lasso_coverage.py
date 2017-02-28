@@ -36,8 +36,6 @@ def test_coverage():
 
         T_sign = sel_simes[3]*np.ones(1)
 
-        T_stats = sel_simes[4]*np.ones(1)
-
         if t_0 == 0:
             threshold = normal.ppf(1.- alpha/(2.*p))*np.ones(1)
 
