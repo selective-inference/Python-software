@@ -19,6 +19,10 @@ def Simes_selection_egenes(txtfile, ngenes = 350 , n=350, p = 5000, seed_n = 19,
 
     sign_T = np.zeros(ngenes)
 
+    snr = np.zeros(ngenes)
+
+    s = np.zeros(ngenes)
+
     for rep in range(350):
 
         X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=n, p=p, s=0, sigma=1, rho=0, snr=5.)
@@ -37,6 +41,10 @@ def Simes_selection_egenes(txtfile, ngenes = 350 , n=350, p = 5000, seed_n = 19,
 
             index_order[rep] = sel_simes[2]
 
+            snr[rep] = 5.
+
+            s[rep] = 0
+
             if t_0 > 0:
 
                 (indices_rej[rep,:])[:sel_simes[1].shape[0]] = sel_simes[1]
@@ -51,6 +59,8 @@ def Simes_selection_egenes(txtfile, ngenes = 350 , n=350, p = 5000, seed_n = 19,
                                                        index_ssig[val],
                                                        indices_rej[val,:],
                                                        index_order[val],
-                                                       sign_T[val]))
+                                                       sign_T[val],
+                                                       snr[rep],
+                                                       s[rep]))
 
 Simes_selection_egenes("/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt", ngenes = 350 , n=350, p = 5000, seed_n = 19, bh_level=0.1)
