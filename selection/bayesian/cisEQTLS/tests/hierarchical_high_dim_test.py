@@ -13,7 +13,8 @@ from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_ge
     sel_prob_gradient_map_simes_lasso, selective_inf_simes_lasso
 
 
-def one_trial(sel_simes, outputfile, X, y, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.1, method="theoretical"):
+#note that bh level is to decided upon how many we end up selecting:
+def one_trial(sel_simes, outputfile, X, y, seed_n = 19, bh_level=0.1, method="theoretical"):
 
     random.seed(seed_n)
 
@@ -29,9 +30,9 @@ def one_trial(sel_simes, outputfile, X, y, n=350, p= 5000, s= 10, snr = 5., seed
 
     simes_level = 0.1
 
-    snr = sel_simes[4]
+    snr = float(sel_simes[4])
 
-    s = sel_simes[5]
+    s = int(sel_simes[5])
 
     true_beta = np.zeros(p)
 
