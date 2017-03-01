@@ -14,7 +14,8 @@ from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_ge
 
 
 #note that bh level is to decided upon how many we end up selecting:
-def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_level=0.1, X = None, y=None, seed_n = 19, bh_level=0.1, method="theoretical"):
+def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_level=0.1, X = None, y=None, seed_n = 19,
+              bh_level=0.1, method="theoretical"):
 
     if X is None and y is None:
         X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=350, p=5000, s=0, sigma=1, rho=0, snr=5.)
@@ -92,7 +93,9 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
         coverage_ad = np.zeros(p)
         coverage_unad = np.zeros(p)
         nerr = 0.
-        true_val = true_beta[active]
+        #true_val = true_beta[active]
+        projection_active = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T)
+        true_val = projection_active.dot(X.dot(true_beta))
         active_set = [i for i in range(p) if active[i]]
         active_ind = np.zeros(p)
         active_ind[active_set] = 1
@@ -174,7 +177,6 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
                                                                                        unad_mean[val]))
 
             return list_results
-
 
 
 

@@ -93,7 +93,8 @@ def test_coverage():
             coverage_ad = np.zeros(p)
             coverage_unad = np.zeros(p)
             nerr = 0.
-            true_val = true_beta[active]
+            projection_active  = np.linalg.inv(X[:,active].T.dot(X[:,active])).dot(X[:,active].T)
+            true_val = projection_active.dot(X.dot(true_beta))
             active_set = [i for i in range(p) if active[i]]
 
             if nactive > 1:
