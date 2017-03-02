@@ -34,7 +34,7 @@ def Simes_sel_test_0(n):
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
 
-    sel_simes = simes_selection(X, y, alpha=0.10/n, randomizer='gaussian')
+    sel_simes = simes_selection(X, y, alpha=0.10/1000, randomizer='gaussian')
 
     if sel_simes is None:
 
@@ -54,9 +54,9 @@ sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
 nsel = 0
 
-for i in range(1000):
+for i in range(250):
 
-    nsel += Simes_sel_test_0(n = 1000)
+    nsel += Simes_sel_test_0(n = 250)
 
 print(nsel)
 

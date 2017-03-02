@@ -48,7 +48,7 @@ def summary(X, list_):
 
         #coverage of adjusted and unadjusted intervals:
         projection_active = X[:, active_ind].dot(np.linalg.inv(X[:, active_ind].T.dot(X[:, active_ind])))
-        true_val = true_val = projection_active.T.dot(X.dot(true_signal))
+        true_val = projection_active.T.dot(X.dot(true_signal))
 
         coverage_ad = np.zeros(true_val.shape[0])
         coverage_unad = np.zeros(true_val.shape[0])
