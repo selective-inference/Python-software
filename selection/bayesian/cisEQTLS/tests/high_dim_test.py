@@ -59,17 +59,25 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
 
         selective_mean = np.mean(samples, axis=0)
 
-        Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
-        post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
-        post_var = prior_variance * np.identity(nactive) - ((prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
-        unadjusted_intervals = np.vstack([post_mean - 1.65 * (post_var.diagonal()), post_mean + 1.65 * (post_var.diagonal())])
+        projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
+        M_1 = prior_variance *(X.dot(X.T)) + noise_variance * np.identity(n)
+        M_2 = prior_variance *((X.dot(X.T)).dot(projection_active))
+        M_3 = prior_variance * (projection_active.T.dot(X.dot(X.T)).dot(projection_active))
+        post_mean = M_2.T.dot(np.linalg.inv(M_1)).dot(y)
+        post_var = M_3 - M_2.T.dot(np.linalg.inv(M_1)).dot(M_2)
+
+        #Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
+        #post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
+        #post_var = prior_variance * np.identity(nactive) - ((prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
+        unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
+                                          post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
 
         coverage_ad = np.zeros(p)
         coverage_unad = np.zeros(p)
         nerr = 0.
         #true_val = true_beta[active]
-        projection_active = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T)
-        true_val = projection_active.dot(X.dot(true_beta))
+
+        true_val = projection_active.T.dot(X.dot(true_beta))
         active_set = [i for i in range(p) if active[i]]
         active_ind = np.zeros(p)
         active_ind[active_set] = 1
@@ -152,7 +160,7 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
 
 
 
-R = one_trial()
+R = one_trial("/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt")
 #print("true parameter",R[0])
 #print("active indices",R[1])
 #print("indices covered by adjusted",R[2])
