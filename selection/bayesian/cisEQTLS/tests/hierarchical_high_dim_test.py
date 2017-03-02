@@ -14,7 +14,7 @@ from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_ge
 
 
 #note that bh level is to decided upon how many we end up selecting:
-def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_level=0.1, X = None, y=None, seed_n = 19,
+def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, egenes = 100, X = None, y=None, seed_n = 19,
               bh_level=0.1, method="theoretical"):
 
     if X is None and y is None:
@@ -25,14 +25,6 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
     n, p = X.shape
 
     T_sign = T_sign * np.ones(1)
-
-    snr = float(snr)
-
-    s = int(s)
-
-    true_beta = np.zeros(p)
-
-    true_beta[:s] = snr
 
     if t_0 == 0:
         threshold = normal.ppf(1. - simes_level / (2. * p)) * np.ones(1)
@@ -97,11 +89,8 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
         unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
                                           post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
 
-        coverage_ad = np.zeros(p)
-        coverage_unad = np.zeros(p)
         nerr = 0.
-        #true_val = true_beta[active]
-        true_val = projection_active.T.dot(X.dot(true_beta))
+
         active_set = [i for i in range(p) if active[i]]
         active_ind = np.zeros(p)
         active_ind[active_set] = 1
@@ -122,10 +111,6 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
         if nactive > 1:
             try:
                 for l in range(nactive):
-                    if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
-                        coverage_ad[active_set[l]] += 1
-                    if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
-                        coverage_unad[active_set[l]] += 1
                     ad_lower_credible[active_set[l]] = adjusted_intervals[0, l]
                     ad_upper_credible[active_set[l]] = adjusted_intervals[1, l]
                     unad_lower_credible[active_set[l]] = unadjusted_intervals[0, l]
@@ -137,9 +122,6 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
                 nerr += 1
                 print('ignore iteration raising ValueError')
 
-            list_results.append(coverage_ad)
-            list_results.append(coverage_unad)
-
             ngrid = 1000
             quantiles = np.zeros((ngrid, nactive))
             for i in range(ngrid):
@@ -147,7 +129,8 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, bh_level)
+            bh_level_ad = bh_level/egenes
+            p_BH = BH_q(p_value, bh_level_ad)
 
             D_BH = np.zeros(p)
 
@@ -170,17 +153,15 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, snr=5., s=5, simes_
             # Assuming res is a flat list
             with open(outputfile, "w") as output:
                 for val in range(p):
-                    output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(true_beta[val],
-                                                                                       active_ind[val],
-                                                                                       coverage_ad[val],
-                                                                                       coverage_unad[val],
-                                                                                       D_BH[val],
-                                                                                       ad_lower_credible[val],
-                                                                                       ad_upper_credible[val],
-                                                                                       unad_lower_credible[val],
-                                                                                       unad_upper_credible[val],
-                                                                                       ad_mean[val],
-                                                                                       unad_mean[val]))
+                    output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(true_beta[val],
+                                                                               active_ind[val],
+                                                                               D_BH[val],
+                                                                               ad_lower_credible[val],
+                                                                               ad_upper_credible[val],
+                                                                               unad_lower_credible[val],
+                                                                               unad_upper_credible[val],
+                                                                               ad_mean[val],
+                                                                               unad_mean[val]))
 
             return list_results
 

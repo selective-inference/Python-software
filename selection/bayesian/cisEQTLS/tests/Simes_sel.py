@@ -47,16 +47,16 @@ def Simes_sel_test_0(n):
 
 n = 350
 p = 5000
-s = 5
-snr = 10.
+s = 0
+snr = 5.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
 
 nsel = 0
 
-for i in range(250):
+for i in range(1000):
 
-    nsel += Simes_sel_test_0(n = 250)
+    nsel += Simes_sel_test_0(n = 1000)
 
 print(nsel)
 
