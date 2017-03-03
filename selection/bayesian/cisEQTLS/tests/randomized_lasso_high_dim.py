@@ -12,7 +12,7 @@ from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 
 
-def one_trial(outputfile, X = None, y=None, seed_n = 19, ngenes= 1000., bh_level=0.1, method="theoretical"):
+def one_trial(outputfile, X = None, y=None, seed_n = 19, pgenes= 0.8 , bh_level=0.1, method="theoretical"):
 
     if X is None and y is None:
         random.seed(seed_n)
@@ -106,7 +106,7 @@ def one_trial(outputfile, X = None, y=None, seed_n = 19, ngenes= 1000., bh_level
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            bh_level_ad = bh_level/ngenes
+            bh_level_ad = bh_level * pgenes
             p_BH = BH_q(p_value, bh_level_ad)
 
             D_BH = np.zeros(p)
