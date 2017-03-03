@@ -66,16 +66,12 @@ def one_trial(txtfile, n=350, p= 5000, s= 10, snr = 5., seed_n = 19, bh_level=0.
         post_mean = M_2.T.dot(np.linalg.inv(M_1)).dot(y)
         post_var = M_3 - M_2.T.dot(np.linalg.inv(M_1)).dot(M_2)
 
-        #Q = np.linalg.inv(prior_variance * (generative_X.dot(generative_X.T)) + noise_variance * np.identity(n))
-        #post_mean = prior_variance * ((generative_X.T.dot(Q)).dot(y))
-        #post_var = prior_variance * np.identity(nactive) - ((prior_variance ** 2) * (generative_X.T.dot(Q).dot(generative_X)))
         unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
                                           post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
 
         coverage_ad = np.zeros(p)
         coverage_unad = np.zeros(p)
         nerr = 0.
-        #true_val = true_beta[active]
 
         true_val = projection_active.T.dot(X.dot(true_beta))
         active_set = [i for i in range(p) if active[i]]

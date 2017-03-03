@@ -1,21 +1,18 @@
 from __future__ import print_function
 import time
 import random
-import glob
 import numpy as np
 from selection.tests.instance import gaussian_instance
 from selection.bayesian.initial_soln import selection, instance
 from selection.randomized.api import randomization
 from selection.bayesian.cisEQTLS.Simes_selection import simes_selection
+from selection.bayesian.cisEQTLS.inference_per_gene import selection_probability_variants, \
+    sel_prob_gradient_map_lasso, selective_inf_lasso
 from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
-from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_genes_variants, \
-    sel_prob_gradient_map_simes_lasso, selective_inf_simes_lasso
 
 
-#note that bh level is to decided upon how many we end up selecting:
-def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X = None, y=None, seed_n = 19,
-              bh_level=0.1, method="theoretical"):
+def one_trial(outputfile, X = None, y=None, seed_n = 19, ngenes= 1000., bh_level=0.1, method="theoretical"):
 
     if X is None and y is None:
         random.seed(seed_n)
@@ -23,28 +20,16 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
 
     n, p = X.shape
 
-    T_sign = T_sign * np.ones(1)
-
-    if t_0 == 0:
-        threshold = normal.ppf(1. - simes_level / (2. * p)) * np.ones(1)
-
-    else:
-        J_card = J.shape[0]
-        threshold = np.zeros(J_card + 1)
-        threshold[:J_card] = normal.ppf(1. - (simes_level / (2. * p)) * (np.arange(J_card) + 1.))
-        threshold[J_card] = normal.ppf(1. - (simes_level / (2. * p)) * t_0)
-
     random_Z = np.random.standard_normal(p)
-    sel = selection(X, y, random_Z)
+    sel = selection(X, y, random_Z, method="theoretical")
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
     if sel is not None:
         lagrange = lam * np.ones(p)
         active_sign = np.sign(betaE)
         nactive = active.sum()
-        print("number of selected variables by Lasso", nactive)
 
-        feasible_point = np.append(1, np.fabs(betaE))
+        feasible_point = np.fabs(betaE)
 
         noise_variance = 1.
 
@@ -53,21 +38,17 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
         generative_X = X[:, active]
         prior_variance = 1000.
 
-        grad_map = sel_prob_gradient_map_simes_lasso(X,
-                                                     feasible_point,
-                                                     index,
-                                                     J,
-                                                     active,
-                                                     T_sign,
-                                                     active_sign,
-                                                     lagrange,
-                                                     threshold,
-                                                     generative_X,
-                                                     noise_variance,
-                                                     randomizer,
-                                                     epsilon)
+        grad_map = sel_prob_gradient_map_lasso(X,
+                                               feasible_point,
+                                               active,
+                                               active_sign,
+                                               lagrange,
+                                               generative_X,
+                                               noise_variance,
+                                               randomizer,
+                                               epsilon)
 
-        inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
+        inf = selective_inf_lasso(y, grad_map, prior_variance)
 
         samples = inf.posterior_samples()
 
@@ -125,7 +106,8 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
 
             index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
             p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, bh_level)
+            bh_level_ad = bh_level/ngenes
+            p_BH = BH_q(p_value, bh_level_ad)
 
             D_BH = np.zeros(p)
 
@@ -156,7 +138,3 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
                                                                                unad_mean[val]))
 
             return list_results
-
-
-
-one_trial("/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt")

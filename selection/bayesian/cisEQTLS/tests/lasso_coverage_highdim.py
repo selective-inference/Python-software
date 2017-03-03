@@ -14,7 +14,7 @@ from selection.bayesian.cisEQTLS.initial_sol_wocv import selection, instance
 def test_coverage():
     n = 350
     p = 5000
-    s = 5
+    s = 10
     snr = 5.
 
     X, y, true_beta, nonzero, noise_variance = sample.generate_response()
@@ -130,7 +130,7 @@ fD = 0.
 tD = 0.
 n = 350
 p = 5000
-s = 5
+s = 10
 snr = 5.
 
 sample = instance(n=n, p=p, s=s, sigma=1, rho=0, snr=snr)
