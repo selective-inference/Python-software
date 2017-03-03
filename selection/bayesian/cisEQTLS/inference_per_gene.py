@@ -1,4 +1,5 @@
 import numpy as np
+import sys
 import regreg.api as rr
 from selection.algorithms.softmax import nonnegative_softmax
 from selection.bayesian.cisEQTLS.lasso_reduced import neg_log_cube_probability
@@ -351,7 +352,7 @@ class selective_inf_lasso(rr.smooth_atom):
 
     def posterior_samples(self, Langevin_steps=1500, burnin=50):
         state = self.initial_state
-        print("here", state.shape)
+        sys.stderr.write("Number of selected variables by randomized lasso: "+str(state.shape)+"\n")
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
@@ -363,14 +364,14 @@ class selective_inf_lasso(rr.smooth_atom):
             sampler.next()
             samples.append(sampler.state.copy())
             #print i, sampler.state.copy()
-            print i
+            sys.stderr.write("sample number: " + str(i)+"\n")
 
         samples = np.array(samples)
         return samples[burnin:, :]
 
     def posterior_risk(self, estimator_1, estimator_2, Langevin_steps=2000, burnin=0):
         state = self.initial_state
-        print("here", state.shape)
+        sys.stderr.write("Number of selected variables by randomized lasso: "+str(state.shape)+"\n")
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E

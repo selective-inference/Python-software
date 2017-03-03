@@ -193,6 +193,11 @@ def hierarchical_inference(outputfile=None,
 
             return list_results
 
+    else:
+
+        print("Lasso selecting null")
+        return None
+
 if __name__ == "__main__":
     X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=10, p=20, s=0, sigma=1, rho=0, snr=5.)
     # hierarchical_inference(outputfile="/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt",X=X, y=y, selection_method ="single")
