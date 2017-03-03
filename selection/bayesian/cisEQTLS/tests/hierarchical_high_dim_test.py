@@ -47,7 +47,7 @@ def hierarchical_inference(outputfile=None,
 
 
     random_Z = np.random.standard_normal(p)
-    sel = selection(X, y, random_Z)
+    sel = selection(X, y, random_Z, method="theoretical")
 
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
