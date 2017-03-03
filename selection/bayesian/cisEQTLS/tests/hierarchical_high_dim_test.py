@@ -1,4 +1,5 @@
 from __future__ import print_function
+import sys
 import time
 import random
 import glob
@@ -11,15 +12,25 @@ from scipy.stats import norm as normal
 from selection.bayesian.cisEQTLS.Simes_selection import BH_q
 from selection.bayesian.cisEQTLS.inference_2sels import selection_probability_genes_variants, \
     sel_prob_gradient_map_simes_lasso, selective_inf_simes_lasso
+from selection.bayesian.cisEQTLS.inference_per_gene import selection_probability_variants, \
+    sel_prob_gradient_map_lasso, selective_inf_lasso
 
 
 #note that bh level is to decided upon how many we end up selecting:
-def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X = None, y=None, seed_n = 19,
-              bh_level=0.1, method="theoretical"):
-
-    if X is None and y is None:
-        random.seed(seed_n)
-        X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=350, p=5000, s=0, sigma=1, rho=0, snr=5.)
+def hierarchical_inference(outputfile=None,
+                           index = 10,
+                           J=[],
+                           t_0=0,
+                           T_sign=1,
+                           simes_level = None, #simes level divided by number of genes
+                           pgenes = 0.8, #proportion of egenes in total number of genes
+                           X = None,
+                           y=None,
+                           seed_n = 19,
+                           bh_level=0.1,
+                           selection_method = "single",
+                           method = "theoretical"):
+    random.seed(seed_n)
 
     n, p = X.shape
 
@@ -34,8 +45,10 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
         threshold[:J_card] = normal.ppf(1. - (simes_level / (2. * p)) * (np.arange(J_card) + 1.))
         threshold[J_card] = normal.ppf(1. - (simes_level / (2. * p)) * t_0)
 
+
     random_Z = np.random.standard_normal(p)
     sel = selection(X, y, random_Z)
+
     lam, epsilon, active, betaE, cube, initial_soln = sel
 
     if sel is not None:
@@ -44,8 +57,6 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
         nactive = active.sum()
         print("number of selected variables by Lasso", nactive)
 
-        feasible_point = np.append(1, np.fabs(betaE))
-
         noise_variance = 1.
 
         randomizer = randomization.isotropic_gaussian((p,), 1.)
@@ -53,21 +64,47 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
         generative_X = X[:, active]
         prior_variance = 1000.
 
-        grad_map = sel_prob_gradient_map_simes_lasso(X,
-                                                     feasible_point,
-                                                     index,
-                                                     J,
-                                                     active,
-                                                     T_sign,
-                                                     active_sign,
-                                                     lagrange,
-                                                     threshold,
-                                                     generative_X,
-                                                     noise_variance,
-                                                     randomizer,
-                                                     epsilon)
+        if selection_method is "double":
 
-        inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
+            feasible_point = np.append(1, np.fabs(betaE))
+
+            grad_map = sel_prob_gradient_map_simes_lasso(X,
+                                                         feasible_point,
+                                                         index,
+                                                         J,
+                                                         active,
+                                                         T_sign,
+                                                         active_sign,
+                                                         lagrange,
+                                                         threshold,
+                                                         generative_X,
+                                                         noise_variance,
+                                                         randomizer,
+                                                         epsilon)
+
+            inf = selective_inf_simes_lasso(y, grad_map, prior_variance)
+
+        elif selection_method is "single":
+
+            feasible_point = np.fabs(betaE)
+
+            grad_map = sel_prob_gradient_map_lasso(X,
+                                                   feasible_point,
+                                                   active,
+                                                   active_sign,
+                                                   lagrange,
+                                                   generative_X,
+                                                   noise_variance,
+                                                   randomizer,
+                                                   epsilon)
+
+            inf = selective_inf_lasso(y, grad_map, prior_variance)
+
+            bh_level = bh_level * pgenes
+
+        else:
+            sys.stderr.write("Wrong method, use double or single")
+            sys.exit(1)
 
         samples = inf.posterior_samples()
 
@@ -92,7 +129,6 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
         active_ind[active_set] = 1
 
         list_results = []
-        list_results.append(true_beta)
         list_results.append(active_ind)
 
         ad_lower_credible = np.zeros(p)
@@ -145,18 +181,20 @@ def one_trial(outputfile, index = 10, J=[], t_0=0, T_sign=1, simes_level=0.1, X 
 
             with open(outputfile, "w") as output:
                 for val in range(p):
-                    output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(true_beta[val],
-                                                                               active_ind[val],
-                                                                               D_BH[val],
-                                                                               ad_lower_credible[val],
-                                                                               ad_upper_credible[val],
-                                                                               unad_lower_credible[val],
-                                                                               unad_upper_credible[val],
-                                                                               ad_mean[val],
-                                                                               unad_mean[val]))
+                    output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(active_ind[val],
+                                                                           D_BH[val],
+                                                                           ad_lower_credible[val],
+                                                                           ad_upper_credible[val],
+                                                                           unad_lower_credible[val],
+                                                                           unad_upper_credible[val],
+                                                                           ad_mean[val],
+                                                                           unad_mean[val]))
+
 
             return list_results
 
-
-
-one_trial("/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt")
+if __name__ == "__main__":
+    X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=10, p=20, s=0, sigma=1, rho=0, snr=5.)
+    # hierarchical_inference(outputfile="/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt",X=X, y=y, selection_method ="single")
+    hierarchical_inference(outputfile="/Users/snigdhapanigrahi/Results_cisEQTLS/output_double.txt",simes_level=0.01,
+                           X=X, y=y, selection_method ="double")

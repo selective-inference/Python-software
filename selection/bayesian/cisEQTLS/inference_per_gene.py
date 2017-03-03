@@ -359,7 +359,7 @@ class selective_inf_lasso(rr.smooth_atom):
 
         samples = []
 
-        for i in range(Langevin_steps):
+        for i in xrange(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
             #print i, sampler.state.copy()
