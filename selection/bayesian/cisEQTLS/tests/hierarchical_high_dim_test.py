@@ -30,7 +30,9 @@ def hierarchical_inference(outputfile=None,
                            bh_level=0.1,
                            selection_method = "single",
                            method = "theoretical"):
-    random.seed(seed_n)
+
+    np.random.seed(0)
+    print(X, y)
 
     n, p = X.shape
 
@@ -199,7 +201,9 @@ def hierarchical_inference(outputfile=None,
         return None
 
 if __name__ == "__main__":
+    np.random.seed(0)
     X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=10, p=20, s=0, sigma=1, rho=0, snr=5.)
+    print(X, y)
     # hierarchical_inference(outputfile="/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt",X=X, y=y, selection_method ="single")
     hierarchical_inference(outputfile="/Users/snigdhapanigrahi/Results_cisEQTLS/output_double.txt",simes_level=0.01,
                            X=X, y=y, selection_method ="double")
