@@ -142,58 +142,54 @@ def hierarchical_inference(outputfile=None,
         ad_mean = np.zeros(p)
         unad_mean = np.zeros(p)
 
-        if nactive > 1:
-            try:
-                for l in range(nactive):
-                    ad_lower_credible[active_set[l]] = adjusted_intervals[0, l]
-                    ad_upper_credible[active_set[l]] = adjusted_intervals[1, l]
-                    unad_lower_credible[active_set[l]] = unadjusted_intervals[0, l]
-                    unad_upper_credible[active_set[l]] = unadjusted_intervals[1, l]
-                    ad_mean[active_set[l]] = selective_mean[l]
-                    unad_mean[active_set[l]] = post_mean[l]
 
-            except ValueError:
-                nerr += 1
-                print('ignore iteration raising ValueError')
-
-            ngrid = 1000
-            quantiles = np.zeros((ngrid, nactive))
-            for i in range(ngrid):
-                quantiles[i, :] = np.percentile(samples, (i * 100.) / ngrid, axis=0)
-
-            index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
-            p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
-            p_BH = BH_q(p_value, bh_level)
-
-            D_BH = np.zeros(p)
-
-            if p_BH is not None:
-                for indx in p_BH[1]:
-                    D_BH[active_set[indx]] = 1
-
-            list_results.append(D_BH)
-
-            list_results.append(ad_lower_credible)
-            list_results.append(ad_upper_credible)
-            list_results.append(unad_lower_credible)
-            list_results.append(unad_upper_credible)
-
-            list_results.append(ad_mean)
-            list_results.append(unad_mean)
-
-            with open(outputfile, "w") as output:
-                for val in range(p):
-                    output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(active_ind[val],
-                                                                           D_BH[val],
-                                                                           ad_lower_credible[val],
-                                                                           ad_upper_credible[val],
-                                                                           unad_lower_credible[val],
-                                                                           unad_upper_credible[val],
-                                                                           ad_mean[val],
-                                                                           unad_mean[val]))
+        for l in range(nactive):
+            ad_lower_credible[active_set[l]] = adjusted_intervals[0, l]
+            ad_upper_credible[active_set[l]] = adjusted_intervals[1, l]
+            unad_lower_credible[active_set[l]] = unadjusted_intervals[0, l]
+            unad_upper_credible[active_set[l]] = unadjusted_intervals[1, l]
+            ad_mean[active_set[l]] = selective_mean[l]
+            unad_mean[active_set[l]] = post_mean[l]
 
 
-            return list_results
+        ngrid = 1000
+        quantiles = np.zeros((ngrid, nactive))
+        for i in range(ngrid):
+            quantiles[i, :] = np.percentile(samples, (i * 100.) / ngrid, axis=0)
+
+        index_grid = np.argmin(np.abs(quantiles - np.zeros((ngrid, nactive))), axis=0)
+        p_value = 2 * np.minimum(np.true_divide(index_grid, ngrid), 1. - np.true_divide(index_grid, ngrid))
+        p_BH = BH_q(p_value, bh_level)
+
+        D_BH = np.zeros(p)
+
+        if p_BH is not None:
+            for indx in p_BH[1]:
+                D_BH[active_set[indx]] = 1
+
+        list_results.append(D_BH)
+
+        list_results.append(ad_lower_credible)
+        list_results.append(ad_upper_credible)
+        list_results.append(unad_lower_credible)
+        list_results.append(unad_upper_credible)
+
+        list_results.append(ad_mean)
+        list_results.append(unad_mean)
+
+        with open(outputfile, "w") as output:
+            for val in range(p):
+                output.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(active_ind[val],
+                                                                        D_BH[val],
+                                                                        ad_lower_credible[val],
+                                                                        ad_upper_credible[val],
+                                                                        unad_lower_credible[val],
+                                                                        unad_upper_credible[val],
+                                                                        ad_mean[val],
+                                                                        unad_mean[val]))
+
+
+        return list_results
 
     else:
 
