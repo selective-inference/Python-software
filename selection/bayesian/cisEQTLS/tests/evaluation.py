@@ -68,8 +68,9 @@ def summary_files(list_):
     coverage_unad = 0.
     FDR = 0.
     power = 0.
+    length = len(list_)
 
-    for i in range(len(list_)):
+    for i in range(length):
         X = np.random.standard_normal((350, 7000))
         X /= (X.std(0)[None, :] * np.sqrt(350))
 
@@ -79,6 +80,6 @@ def summary_files(list_):
         FDR += results[2]
         power += results[3]
 
-    return coverage_ad, coverage_unad , FDR , power
+    return coverage_ad/length, coverage_unad/length , FDR/length , power/length
 
 print(summary_files(list_))
