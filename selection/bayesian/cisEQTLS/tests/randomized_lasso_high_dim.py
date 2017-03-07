@@ -16,7 +16,7 @@ def one_trial(outputfile, X = None, y=None, seed_n = 19, pgenes= 0.8 , bh_level=
 
     if X is None and y is None:
         random.seed(seed_n)
-        X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=350, p=5000, s=0, sigma=1, rho=0, snr=5.)
+        X, y, true_beta, nonzero, noise_variance = gaussian_instance(n=350, p=7000, s=10, sigma=1, rho=0, snr=5.)
 
     n, p = X.shape
 
@@ -138,3 +138,5 @@ def one_trial(outputfile, X = None, y=None, seed_n = 19, pgenes= 0.8 , bh_level=
                                                                                unad_mean[val]))
 
             return list_results
+
+one_trial("/Users/snigdhapanigrahi/Results_cisEQTLS/output.txt")
