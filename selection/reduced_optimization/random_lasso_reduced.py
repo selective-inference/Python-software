@@ -56,7 +56,6 @@ class selection_probability_random_lasso(rr.smooth_atom):
         w_1, v_1 = np.linalg.eig(self.map.score_cov)
         self.score_cov_inv_half = (v_1.T.dot(np.diag(np.power(w_1, -0.5)))).dot(v_1)
         mean_lik = self.score_cov_inv_half.dot(generative_mean)
-        self.generative_mean = np.squeeze(generative_mean)
         likelihood_loss = rr.signal_approximator(mean_lik, coef=1.)
         scaled_response_selector = rr.selector(~opt_vars, (self.r,), rr.affine_transform(self.score_cov_inv_half,
                                                                                         np.zeros(map.p)))
@@ -119,8 +118,10 @@ class selection_probability_random_lasso(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                # print("proposal", proposal[n:])
+                print("proposal", proposal[self.p:])
+                print("T/F", np.all(proposal[self.p:] > 0))
                 if np.all(proposal[self.p:] > 0):
+                    print("here")
                     break
                 step *= 0.5
                 if count >= 40:
@@ -132,6 +133,7 @@ class selection_probability_random_lasso(rr.smooth_atom):
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
+                print("here check")
                 # print(current_value, proposed_value, 'minimize')
                 if proposed_value <= current_value:
                     break
@@ -150,9 +152,10 @@ class selection_probability_random_lasso(rr.smooth_atom):
             if itercount % 4 == 0:
                 step *= 2
 
-        # print('iter', itercount)
+                # print('iter', itercount)
         value = objective(current)
         return current, value
+
 
 class sel_inf_random_lasso(rr.smooth_atom):
 
@@ -165,7 +168,7 @@ class sel_inf_random_lasso(rr.smooth_atom):
         self.param_shape = self.solver._overall.sum()
         self.prior_variance = prior_variance
 
-        initial = solver.observed_opt_state[:self.param_shape]
+        initial = self.solver.initial_soln[self.solver._overall]
         print("initial_state", initial)
 
         rr.smooth_atom.__init__(self,
@@ -179,7 +182,7 @@ class sel_inf_random_lasso(rr.smooth_atom):
 
         self.initial_state = initial
 
-    def smooth_objective(self, sel_param, mode='both', check_feasibility=False):
+    def smooth_objective_post(self, sel_param, mode='both', check_feasibility=False):
 
         sel_param = self.apply_offset(sel_param)
         generative_mean = np.zeros(self.p_shape)
@@ -267,10 +270,10 @@ class sel_inf_random_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=2000, burnin=100):
+    def posterior_samples(self, Langevin_steps=1500, burnin=100):
         state = self.initial_state
         print("here", state.shape)
-        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        gradient_map = lambda x: -self.smooth_objective_post(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.param_shape
         sampler = projected_langevin(state, gradient_map, projection_map, stepsize)

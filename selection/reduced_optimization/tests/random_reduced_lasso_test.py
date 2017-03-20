@@ -53,15 +53,15 @@ def randomized_lasso_trial(X,
 
     #print("gradient at test point", sel_split.smooth_objective(test_point, mode= "grad"))
 
-    grad_split = sel_inf_random_lasso(M_est, prior_variance)
-    samples = grad_split.posterior_samples()
+    grad_lasso = sel_inf_random_lasso(M_est, prior_variance)
+    samples = grad_lasso.posterior_samples()
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
     coverage_ad = np.zeros(nactive)
     coverage_unad = np.zeros(nactive)
     nerr = 0.
 
-    true_val = projection_active.T.dot(X.dot(beta))
+    true_val = np.zeros(nactive)
 
     if nactive >= 1:
         try:
@@ -86,7 +86,7 @@ def randomized_lasso_trial(X,
 
 if __name__ == "__main__":
     ### set parameters
-    n = 200
+    n = 50
     p = 100
     s = 0
     snr = 0.
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+1)  # ensures different y
+         np.random.seed(i+3)  # ensures different y
          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
          lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
 

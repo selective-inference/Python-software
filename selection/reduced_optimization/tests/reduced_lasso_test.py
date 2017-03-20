@@ -94,8 +94,8 @@ if __name__ == "__main__":
     ### set parameters
     n = 100
     p = 500
-    s = 10
-    snr = 0.
+    s = 0
+    snr = 5.
 
     ### GENERATE X
     np.random.seed(0)  # ensures same X

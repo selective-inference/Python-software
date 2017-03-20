@@ -41,7 +41,7 @@ class M_estimator(query):
 
     # Methods needed for subclassing a query
 
-    def Msolve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
+    def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
 
         self.randomize()
 
@@ -224,15 +224,11 @@ class M_estimator(query):
         # two transforms that encode score and optimization
         # variable roles
 
+        self.opt_transform = (_opt_linear_term, _opt_affine_term)
+        self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
         # later, we will modify `score_transform`
         # in `linear_decomposition`
-
-        _opt_linear_term = np.concatenate((_opt_linear_term[self._overall,:], _opt_linear_term[~self._overall,:]), 0)
-        _opt_affine_term = np.concatenate((_opt_affine_term[self._overall], _opt_affine_term[~self._overall]),0)
-        self.opt_transform = (_opt_linear_term, _opt_affine_term)
-
-        _score_linear_term = np.concatenate((_score_linear_term[self._overall, :], _score_linear_term[~self._overall, :]), 0)
-        self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         # now store everything needed for the projections
         # the projection acts only on the optimization
@@ -417,4 +413,3 @@ class M_estimator_split(M_estimator):
                                                 first_moment)
 
         self.randomization.set_covariance(cov)
-        return bootstrap_score, cov

@@ -3,12 +3,11 @@ import numpy as np
 from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 
-from ..distributions.api import discrete_family
-    #, intervals_from_sample
+from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
 
-
 class query(object):
+
     def __init__(self, randomization):
 
         self.randomization = randomization
@@ -57,7 +56,6 @@ class query(object):
         of the score based on the target. This decomposition
         writes the (limiting CLT version) of the data in the score as linear in the
         target and in some independent Gaussian error.
-
         This second independent piece is conditioned on, resulting
         in a reconstruction of the score as an affine function of the target
         where the offset is the part related to this independent
@@ -135,13 +133,11 @@ class query(object):
         """
         Setup query to prepare for sampling.
         Should set a few key attributes:
-
             - observed_score_state
             - num_opt_var
             - observed_opt_state
             - opt_transform
             - score_transform
-
         """
         raise NotImplementedError('abstract method -- only keyword arguments')
 
@@ -149,8 +145,8 @@ class query(object):
 
         raise NotImplementedError('abstract method -- projection of optimization variables')
 
-
 class multiple_queries(object):
+
     '''
     Combine several queries of a given data
     through randomized algorithms.
@@ -295,8 +291,8 @@ class multiple_queries(object):
                                            reference=reference,
                                            boot_size=boot_size)
 
-
 class targeted_sampler(object):
+
     '''
     Object to sample from target of a selective sampler.
     '''
@@ -459,8 +455,7 @@ class targeted_sampler(object):
 
         for i in range(self.nqueries):
             target_grad_curr, opt_grad[self.opt_slice[i]] = \
-                self.objectives[i].randomization_gradient(target_state, self.target_transform[i],
-                                                          opt_state[self.opt_slice[i]])
+                self.objectives[i].randomization_gradient(target_state, self.target_transform[i], opt_state[self.opt_slice[i]])
             target_grad += target_grad_curr.copy()
 
         target_grad = - target_grad
@@ -674,7 +669,6 @@ class targeted_sampler(object):
         Returns
         -------
         pvalues : np.float
-
         '''
 
         if alternative not in ['greater', 'less', 'twosided']:
@@ -708,13 +702,13 @@ class targeted_sampler(object):
         Returns
         -------
         lipschitz : float
-
         """
         lipschitz = np.linalg.svd(self.target_inv_cov)[1].max()
         for transform, objective in zip(self.target_transform, self.objectives):
-            lipschitz += np.linalg.svd(transform[0])[1].max() ** 2 * objective.randomization.lipschitz
-            lipschitz += np.linalg.svd(objective.score_transform[0])[1].max() ** 2 * objective.randomization.lipschitz
+            lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
+            lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
         return lipschitz
+
 
     def reconstruction_map(self, state):
         '''
@@ -729,20 +723,19 @@ class targeted_sampler(object):
         reconstructed : np.float
            Has shape of `opt_vars` with same number of rows
            as `state`.
-
         '''
 
         state = np.atleast_2d(state)
         if len(state.shape) > 2:
             raise ValueError('expecting at most 2-dimensional array')
 
-        target_state, opt_state = state[:, self.target_slice], state[:, self.overall_opt_slice]
+        target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
         reconstructed = np.zeros_like(opt_state)
 
         for i in range(self.nqueries):
             reconstructed[:, self.opt_slice[i]] = self.objectives[i].reconstruction_map(target_state,
                                                                                         self.target_transform[i],
-                                                                                        opt_state[:, self.opt_slice[i]])
+                                                                                        opt_state[:,self.opt_slice[i]])
         return np.squeeze(reconstructed)
 
     def log_randomization_density(self, state):
@@ -764,7 +757,7 @@ class targeted_sampler(object):
 
         for i in range(self.nqueries):
             log_dens = self.objectives[i].randomization.log_density
-            value += log_dens(reconstructed[:, self.opt_slice[i]])
+            value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
 
     def hypothesis_test_translate(self,
@@ -812,6 +805,7 @@ class targeted_sampler(object):
         return _intervals.pivot(test_stat,
                                 parameter,
                                 alternative=alternative)
+
 
     def confidence_intervals_translate(self,
                                        observed_target,
@@ -905,7 +899,6 @@ class targeted_sampler(object):
         -------
         pvalues : np.float
             P values for each coefficient.
-
         '''
 
         if alternative not in ['greater', 'less', 'twosided']:
@@ -935,8 +928,8 @@ class targeted_sampler(object):
 
         return np.array(pvalues)
 
-
 class bootstrapped_target_sampler(targeted_sampler):
+
     # make one of these for each hypothesis test
 
     def __init__(self,
@@ -964,6 +957,7 @@ class bootstrapped_target_sampler(targeted_sampler):
         self.target_alpha = target_alpha
         self.boot_transform = []
 
+
         for i in range(self.nqueries):
             composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
                                                                                                   self.target_cov,
@@ -978,6 +972,7 @@ class bootstrapped_target_sampler(targeted_sampler):
         self.observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
         self.observed_state[self.boot_slice] = np.ones(self.boot_size)
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+
 
     def gradient(self, state):
 
@@ -1001,7 +996,7 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         return full_grad
 
-    def sample(self, ndraw, burnin, stepsize=None, keep_opt=False):
+    def sample(self, ndraw, burnin, stepsize = None, keep_opt=False):
         if stepsize is None:
             stepsize = 1. / self.observed_state.shape[0]
 
@@ -1022,16 +1017,15 @@ class bootstrapped_target_sampler(targeted_sampler):
         samples = np.asarray(samples)
 
         if keep_opt:
-            target_samples = samples[:, self.boot_slice].dot(self.target_alpha.T) + self.reference[None, :]
-            opt_sample0 = samples[0, self.overall_opt_slice]
+            target_samples = samples[:,self.boot_slice].dot(self.target_alpha.T) + self.reference[None, :]
+            opt_sample0 = samples[0,self.overall_opt_slice]
             result = np.zeros((samples.shape[0], opt_sample0.shape[0] + target_samples.shape[1]))
-            result[:, self.overall_opt_slice] = samples[:, self.overall_opt_slice]
-            result[:, self.target_slice] = target_samples
+            result[:,self.overall_opt_slice] = samples[:,self.overall_opt_slice]
+            result[:,self.target_slice] = target_samples
             return result
         else:
             target_samples = samples.dot(self.target_alpha.T) + self.reference[None, :]
             return target_samples
-
 
 def naive_confidence_intervals(target, observed, alpha=0.1):
     """
@@ -1039,7 +1033,6 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
     intervals for target.
     Parameters
     ----------
-
     target : `targeted_sampler`
     observed : np.float
         A vector of observed data of shape `target.shape`
@@ -1050,16 +1043,25 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
     intervals : np.float
         Gaussian based confidence intervals.
     """
-    quantile = - ndist.ppf(alpha / float(2))
+    quantile = - ndist.ppf(alpha/float(2))
     LU = np.zeros((2, target.shape[0]))
     for j in range(target.shape[0]):
         sigma = np.sqrt(target.target_cov[j, j])
-        LU[0, j] = observed[j] - sigma * quantile
-        LU[1, j] = observed[j] + sigma * quantile
+        LU[0,j] = observed[j] - sigma * quantile
+        LU[1,j] = observed[j] + sigma * quantile
     return LU.T
 
 
-class translate_intervals(object):  # intervals_from_sample):
+def naive_pvalues(target, observed, parameter):
+    pvalues = np.zeros(target.shape[0])
+    for j in range(target.shape[0]):
+        sigma = np.sqrt(target.target_cov[j, j])
+        pval = ndist.cdf((observed[j]-parameter[j])/sigma)
+        pvalues[j] = 2*min(pval, 1-pval)
+    return pvalues
+
+
+class translate_intervals(object): # intervals_from_sample):
 
     """
     Location family based intervals... (cryptic)
@@ -1082,7 +1084,7 @@ class translate_intervals(object):  # intervals_from_sample):
                  sample,
                  observed):
         self.targeted_sampler = targeted_sampler
-        self.observed = observed.copy()  # this is our observed unpenalized estimator
+        self.observed = observed.copy() # this is our observed unpenalized estimator
         self._logden = targeted_sampler.log_randomization_density(sample)
         self._delta = sample.copy()
         self._delta[:, targeted_sampler.target_slice] -= targeted_sampler.reference[None, :]
@@ -1097,7 +1099,6 @@ class translate_intervals(object):  # intervals_from_sample):
         Returns
         -------
         pvalue : np.float
-
         '''
 
         if alternative not in ['greater', 'less', 'twosided']:
@@ -1107,7 +1108,7 @@ class translate_intervals(object):  # intervals_from_sample):
         observed_stat = test_statistic(observed_delta)
 
         candidate_sample, weights = self._weights(candidate)
-        # sample_stat = np.array([test_statistic(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
+        #sample_stat = np.array([test_statistic(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
         sample_stat = np.array([test_statistic(s) for s in self._delta[:, self.targeted_sampler.target_slice]])
 
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
@@ -1121,7 +1122,7 @@ class translate_intervals(object):  # intervals_from_sample):
 
     def confidence_interval(self, linear_func, level=0.95, how_many_sd=20):
 
-        target_delta = self._delta[:, self.targeted_sampler.target_slice]
+        target_delta = self._delta[:,self.targeted_sampler.target_slice]
         projected_delta = target_delta.dot(linear_func)
         projected_observed = self.observed.dot(linear_func)
 
@@ -1134,20 +1135,21 @@ class translate_intervals(object):  # intervals_from_sample):
 
         def _rootU(gamma):
             return self.pivot(lambda x: linear_func.dot(x),
-                              reference + gamma * linear_func / _norm ** 2,
+                              reference + gamma * linear_func / _norm**2,
                               alternative='less') - (1 - level) / 2.
+
 
         def _rootL(gamma):
             return self.pivot(lambda x: linear_func.dot(x),
-                              reference + gamma * linear_func / _norm ** 2,
+                              reference + gamma * linear_func / _norm**2,
                               alternative='less') - (1 + level) / 2.
 
-        upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5 * (grid_max - grid_min))
-        lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5 * (grid_max - grid_min))
+        upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+        lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
 
         return lower + projected_observed, upper + projected_observed
 
-        # Private methods
+    # Private methods
 
     def _weights(self, candidate):
 
@@ -1159,4 +1161,3 @@ class translate_intervals(object):  # intervals_from_sample):
         _logratio -= _logratio.max()
 
         return candidate_sample, np.exp(_logratio)
-
