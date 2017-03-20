@@ -17,6 +17,7 @@ class selection_probability_random_lasso(rr.smooth_atom):
         self.map = map
         self.q = map.p - map.nactive
         self.r = map.p + map.nactive
+        self.p = map.p
 
         self.inactive_conjugate = self.active_conjugate = map.randomization.CGF_conjugate
 
@@ -35,7 +36,7 @@ class selection_probability_random_lasso(rr.smooth_atom):
 
         self.coefs[:] = self.map.feasible_point
 
-        nonnegative = nonnegative_softmax_scaled(self.nactive)
+        nonnegative = nonnegative_softmax_scaled(self.map.nactive)
 
         opt_vars = np.zeros(self.r, bool)
         opt_vars[map.p:] = 1
@@ -58,13 +59,14 @@ class selection_probability_random_lasso(rr.smooth_atom):
         self.generative_mean = np.squeeze(generative_mean)
         likelihood_loss = rr.signal_approximator(mean_lik, coef=1.)
         scaled_response_selector = rr.selector(~opt_vars, (self.r,), rr.affine_transform(self.score_cov_inv_half,
-                                                                                        np.zeros(self.nactive)))
+                                                                                        np.zeros(map.p)))
+
         self.likelihood_loss = rr.affine_smooth(likelihood_loss, scaled_response_selector)
 
-        self.total_loss = rr.smooth_sum([self.randomization_loss,
+        self.total_loss = rr.smooth_sum([self.active_conj_loss,
                                          self.likelihood_loss,
                                          self.nonnegative_barrier,
-                                         self.cube_barrier])
+                                         self.cube_loss])
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
         """
@@ -109,7 +111,7 @@ class selection_probability_random_lasso(rr.smooth_atom):
         grad = lambda u: self.smooth_objective(u, 'grad')
 
         for itercount in range(nstep):
-            newton_step = grad(current) * self.noise_variance
+            newton_step = grad(current)
 
             # make sure proposal is feasible
 
@@ -197,7 +199,7 @@ class sel_inf_random_lasso(rr.smooth_atom):
 
         optimizer = full_gradient[:self.param_shape]
 
-        data_obs = sel_lasso.score_cov_inv_half.dot(sel_lasso.observed_score_state)
+        data_obs = sel_lasso.score_cov_inv_half.dot(self.solver.observed_score_state)
 
         likelihood_loss = rr.signal_approximator(data_obs, coef=1.)
 
@@ -268,7 +270,7 @@ class sel_inf_random_lasso(rr.smooth_atom):
     def posterior_samples(self, Langevin_steps=2000, burnin=100):
         state = self.initial_state
         print("here", state.shape)
-        gradient_map = lambda x: -self.smooth_objective_post(x, 'grad')
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.param_shape
         sampler = projected_langevin(state, gradient_map, projection_map, stepsize)

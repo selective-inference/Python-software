@@ -73,17 +73,13 @@ def randomized_lasso_trial(X,
 
         active_set = [i for i in range(p) if active[i]]
 
-        if nactive > 1:
-            try:
-                for l in range(nactive):
-                    if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
-                        coverage_ad[l] += 1
-                    if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
-                        coverage_unad[l] += 1
 
-            except ValueError:
-                nerr += 1
-                print('ignore iteration raising ValueError')
+        for l in range(nactive):
+            if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
+                coverage_ad[l] += 1
+            if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
+                coverage_unad[l] += 1
+
 
         sel_cov = coverage_ad.sum() / nactive
         naive_cov = coverage_unad.sum() / nactive
