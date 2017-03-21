@@ -13,7 +13,8 @@ def randomized_lasso_trial(X,
                            beta,
                            sigma,
                            lam,
-                           randomizer='gaussian'):
+                           randomizer='gaussian',
+                           estimation='bootstrap'):
 
     from selection.api import randomization
 
@@ -26,7 +27,7 @@ def randomized_lasso_trial(X,
     penalty = rr.group_lasso(np.arange(p),weights=dict(zip(np.arange(p), W)), lagrange=1.)
     randomization = randomization.isotropic_gaussian((p,), scale=1.)
 
-    M_est = M_estimator_approx(loss, epsilon, penalty, randomization, randomizer)
+    M_est = M_estimator_approx(loss, epsilon, penalty, randomization, randomizer, estimation)
     M_est.solve_approx()
     active = M_est._overall
     active_set = np.asarray([i for i in range(p) if active[i]])
@@ -86,8 +87,8 @@ def randomized_lasso_trial(X,
 
 if __name__ == "__main__":
     ### set parameters
-    n = 50
-    p = 100
+    n = 500
+    p = 50
     s = 0
     snr = 0.
 
@@ -99,7 +100,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+3)  # ensures different y
+         np.random.seed(i+2)  # ensures different y
          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
          lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
 

@@ -5,6 +5,51 @@ import regreg.api as rr
 from selection.reduced_optimization.lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability
 from selection.bayesian.credible_intervals import projected_langevin
 
+class log_likelihood(rr.smooth_atom):
+
+    def __init__(self,
+                 mean,
+                 Sigma,
+                 m,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None):
+
+        initial = np.zeros(m)
+
+        self.mean = mean
+
+        self.Sigma = Sigma
+
+        rr.smooth_atom.__init__(self,
+                                (m,),
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        self.coefs[:] = initial
+
+    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
+
+        arg = self.apply_offset(arg)
+
+        f = ((arg-self.mean).T.dot(np.linalg.inv(self.Sigma)).dot(arg-self.mean))/2.
+
+        g = (np.linalg.inv(self.Sigma)).dot(arg-self.mean)
+
+        if mode == 'func':
+            return f
+
+        elif mode == 'grad':
+            return g
+
+        elif mode == 'both':
+            return f, g
+
+        else:
+            raise ValueError('mode incorrectly specified')
+
 class selection_probability_random_lasso(rr.smooth_atom):
 
     def __init__(self,
@@ -53,14 +98,16 @@ class selection_probability_random_lasso(rr.smooth_atom):
         cube_obj = neg_log_cube_probability(self.q, self.inactive_lagrange, randomization_scale=1.)
         self.cube_loss = rr.affine_smooth(cube_obj, np.hstack([self.map.A_inactive, self.map.B_inactive]))
 
-        w_1, v_1 = np.linalg.eig(self.map.score_cov)
-        self.score_cov_inv_half = (v_1.T.dot(np.diag(np.power(w_1, -0.5)))).dot(v_1)
-        mean_lik = self.score_cov_inv_half.dot(generative_mean)
-        likelihood_loss = rr.signal_approximator(mean_lik, coef=1.)
-        scaled_response_selector = rr.selector(~opt_vars, (self.r,), rr.affine_transform(self.score_cov_inv_half,
-                                                                                        np.zeros(map.p)))
+        # w_1, v_1 = np.linalg.eig(self.map.score_cov)
+        # self.score_cov_inv_half = (v_1.T.dot(np.diag(np.power(w_1, -0.5)))).dot(v_1)
+        # likelihood_loss = rr.signal_approximator(np.squeeze(np.zeros(self.p)), coef=1.)
+        # scaled_response_selector = rr.selector(~opt_vars, (self.r,), rr.affine_transform(self.score_cov_inv_half,
+        #                                                                                  self.score_cov_inv_half.
+        #                                                                                  dot(np.squeeze(generative_mean))))
+        #print("cov", self.map.score_cov.shape )
+        likelihood_loss = log_likelihood(generative_mean, self.map.score_cov, self.p)
 
-        self.likelihood_loss = rr.affine_smooth(likelihood_loss, scaled_response_selector)
+        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
 
         self.total_loss = rr.smooth_sum([self.active_conj_loss,
                                          self.likelihood_loss,
@@ -111,6 +158,7 @@ class selection_probability_random_lasso(rr.smooth_atom):
 
         for itercount in range(nstep):
             newton_step = grad(current)
+            #print("gradient", newton_step)
 
             # make sure proposal is feasible
 
@@ -118,10 +166,10 @@ class selection_probability_random_lasso(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                print("proposal", proposal[self.p:])
-                print("T/F", np.all(proposal[self.p:] > 0))
+                #print("proposal", proposal[self.p:])
+                #print("T/F", np.all(proposal[self.p:] > 0))
                 if np.all(proposal[self.p:] > 0):
-                    print("here")
+                    #print("here")
                     break
                 step *= 0.5
                 if count >= 40:
@@ -133,7 +181,7 @@ class selection_probability_random_lasso(rr.smooth_atom):
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
-                print("here check")
+                #print("here check")
                 # print(current_value, proposed_value, 'minimize')
                 if proposed_value <= current_value:
                     break
@@ -152,8 +200,9 @@ class selection_probability_random_lasso(rr.smooth_atom):
             if itercount % 4 == 0:
                 step *= 2
 
-                # print('iter', itercount)
+
         value = objective(current)
+
         return current, value
 
 
@@ -188,7 +237,7 @@ class sel_inf_random_lasso(rr.smooth_atom):
         generative_mean = np.zeros(self.p_shape)
         generative_mean[:self.param_shape] = sel_param
 
-        cov_data_inv = np.linalg.inv(self.solver.score_cov)
+        cov_data_inv = self.solver.score_cov_inv
 
         sel_lasso = selection_probability_random_lasso(self.solver, generative_mean)
 
@@ -202,11 +251,10 @@ class sel_inf_random_lasso(rr.smooth_atom):
 
         optimizer = full_gradient[:self.param_shape]
 
-        data_obs = sel_lasso.score_cov_inv_half.dot(self.solver.observed_score_state)
+        likelihood_loss = log_likelihood(self.solver.observed_score_state, self.solver.score_cov, self.p_shape)
 
-        likelihood_loss = rr.signal_approximator(data_obs, coef=1.)
-
-        likelihood_loss = rr.affine_smooth(likelihood_loss, sel_lasso.score_cov_inv_half[:, :self.param_shape])
+        likelihood_loss = rr.affine_smooth(likelihood_loss, np.vstack([np.identity(self.param_shape),
+                                                                       np.zeros((self.p_shape -self.param_shape, self.param_shape))]))
 
         likelihood_loss_value = likelihood_loss.smooth_objective(sel_param, 'func')
 

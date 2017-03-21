@@ -4,9 +4,10 @@ from selection.randomized.glm import pairs_bootstrap_glm, bootstrap_cov
 
 class M_estimator_approx(M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization, randomizer):
+    def __init__(self, loss, epsilon, penalty, randomization, randomizer, estimation):
         M_estimator.__init__(self, loss, epsilon, penalty, randomization)
         self.randomizer = randomizer
+        self.estimation = estimation
 
     def solve_approx(self):
 
@@ -35,15 +36,25 @@ class M_estimator_approx(M_estimator):
         X, _ = self.loss.data
         n, p = X.shape
         self.p = p
-        bootstrap_score = pairs_bootstrap_glm(self.loss,
+        nactive = self._overall.sum()
+
+        if self.estimation == 'parametric':
+            score_cov = np.zeros((p,p))
+            inv_X_active = np.linalg.inv(X[:, self._overall].T.dot(X[:, self._overall]))
+            projection_X_active = X[:,self._overall].dot(np.linalg.inv(X[:, self._overall].T.dot(X[:, self._overall]))).dot(X[:,self._overall].T)
+            score_cov[:self.nactive, :self.nactive] = inv_X_active
+            score_cov[self.nactive:, self.nactive:] = X[:,~self._overall].T.dot(np.identity(n)- projection_X_active)
+
+        elif self.estimation == 'bootstrap':
+            bootstrap_score = pairs_bootstrap_glm(self.loss,
                                               self._overall,
                                               beta_full=self._beta_full,
                                               inactive=~self._overall)[0]
+            score_cov = bootstrap_cov(lambda: np.random.choice(n, size=(n,), replace=True), bootstrap_score)
 
-        score_cov = bootstrap_cov(lambda: np.random.choice(n, size=(n,), replace=True), bootstrap_score)
         self.score_cov = score_cov
+        self.score_cov_inv = np.linalg.inv(self.score_cov)
 
-        nactive = self._overall.sum()
         self.nactive = nactive
 
         self.B = self._opt_linear_term
