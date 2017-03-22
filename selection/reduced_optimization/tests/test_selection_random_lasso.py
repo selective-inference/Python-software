@@ -5,7 +5,8 @@ import regreg.api as rr
 from selection.bayesian.initial_soln import selection
 from selection.tests.instance import logistic_instance, gaussian_instance
 
-from selection.reduced_optimization.random_lasso_reduced import log_likelihood, selection_probability_random_lasso, sel_inf_random_lasso
+#from selection.reduced_optimization.random_lasso_reduced import log_likelihood, selection_probability_random_lasso, sel_inf_random_lasso
+from selection.reduced_optimization.par_random_lasso_reduced import selection_probability_random_lasso, sel_inf_random_lasso
 from selection.reduced_optimization.estimator import M_estimator_approx
 from selection.api import randomization
 
@@ -28,7 +29,7 @@ W = np.ones(p) * lam
 penalty = rr.group_lasso(np.arange(p),weights=dict(zip(np.arange(p), W)), lagrange=1.)
 randomization = randomization.isotropic_gaussian((p,), scale=1.)
 
-M_est = M_estimator_approx(loss, epsilon, penalty, randomization, 'gaussian', 'bootstrap')
+M_est = M_estimator_approx(loss, epsilon, penalty, randomization, 'gaussian', 'parametric')
 M_est.solve_approx()
 active = M_est._overall
 active_set = np.asarray([i for i in range(p) if active[i]])

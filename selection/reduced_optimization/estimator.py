@@ -37,13 +37,16 @@ class M_estimator_approx(M_estimator):
         n, p = X.shape
         self.p = p
         nactive = self._overall.sum()
+        self.nactive = nactive
+
+        self.target_observed = self.observed_score_state[:self.nactive]
 
         if self.estimation == 'parametric':
             score_cov = np.zeros((p,p))
             inv_X_active = np.linalg.inv(X[:, self._overall].T.dot(X[:, self._overall]))
             projection_X_active = X[:,self._overall].dot(np.linalg.inv(X[:, self._overall].T.dot(X[:, self._overall]))).dot(X[:,self._overall].T)
             score_cov[:self.nactive, :self.nactive] = inv_X_active
-            score_cov[self.nactive:, self.nactive:] = X[:,~self._overall].T.dot(np.identity(n)- projection_X_active)
+            score_cov[self.nactive:, self.nactive:] = X[:,~self._overall].T.dot(np.identity(n)- projection_X_active).dot(X[:,~self._overall])
 
         elif self.estimation == 'bootstrap':
             bootstrap_score = pairs_bootstrap_glm(self.loss,
@@ -55,7 +58,6 @@ class M_estimator_approx(M_estimator):
         self.score_cov = score_cov
         self.score_cov_inv = np.linalg.inv(self.score_cov)
 
-        self.nactive = nactive
 
         self.B = self._opt_linear_term
         self.A = self._score_linear_term

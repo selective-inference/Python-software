@@ -5,7 +5,8 @@ import regreg.api as rr
 from selection.bayesian.initial_soln import selection
 from selection.tests.instance import logistic_instance, gaussian_instance
 
-from selection.reduced_optimization.random_lasso_reduced import selection_probability_random_lasso, sel_inf_random_lasso
+#from selection.reduced_optimization.random_lasso_reduced import selection_probability_random_lasso, sel_inf_random_lasso
+from selection.reduced_optimization.par_random_lasso_reduced import selection_probability_random_lasso, sel_inf_random_lasso
 from selection.reduced_optimization.estimator import M_estimator_approx
 
 def randomized_lasso_trial(X,
@@ -14,7 +15,7 @@ def randomized_lasso_trial(X,
                            sigma,
                            lam,
                            randomizer='gaussian',
-                           estimation='bootstrap'):
+                           estimation='parametric'):
 
     from selection.api import randomization
 
@@ -87,8 +88,8 @@ def randomized_lasso_trial(X,
 
 if __name__ == "__main__":
     ### set parameters
-    n = 500
-    p = 50
+    n = 1000
+    p = 200
     s = 0
     snr = 0.
 
