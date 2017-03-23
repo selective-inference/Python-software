@@ -413,3 +413,5 @@ class M_estimator_split(M_estimator):
                                                 first_moment)
 
         self.randomization.set_covariance(cov)
+
+        return bootstrap_score, cov
