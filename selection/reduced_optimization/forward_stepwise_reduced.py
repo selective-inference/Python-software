@@ -9,6 +9,7 @@ from selection.bayesian.credible_intervals import projected_langevin
 class neg_log_cube_probability_fs(rr.smooth_atom):
     def __init__(self,
                  q, #equals p - E in our case
+                 p,
                  randomization_scale = 1., #equals the randomization variance in our case
                  coef=1.,
                  offset=None,
@@ -16,6 +17,7 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
 
         self.randomization_scale = randomization_scale
         self.q = q
+        self.p = p
 
         rr.smooth_atom.__init__(self,
                                 (self.q+1,),
@@ -28,13 +30,13 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
 
         par = self.apply_offset(par)
 
-        mu = par[:self.q-1]
-        arg = par[self.q-1]
+        mu = par[:self.p-1]
+        arg = par[self.p-1]
 
         arg_u = ((arg *np.ones(self.q)) + mu) / self.randomization_scale
         arg_l = (-(arg *np.ones(self.q)) + mu) / self.randomization_scale
-        prod_arg = np.exp(-(2. * self.mu * (arg *np.ones(self.q))) / (self.randomization_scale ** 2))
-        neg_prod_arg = np.exp((2. * self.mu * (arg *np.ones(self.q))) / (self.randomization_scale ** 2))
+        prod_arg = np.exp(-(2. * mu * (arg *np.ones(self.q))) / (self.randomization_scale ** 2))
+        neg_prod_arg = np.exp((2. * mu * (arg *np.ones(self.q))) / (self.randomization_scale ** 2))
 
         cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
         log_cube_prob = -np.log(cube_prob).sum()
@@ -43,7 +45,7 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
         indicator = np.zeros(self.q, bool)
         indicator[(cube_prob > threshold)] = 1
         positive_arg = np.zeros(self.q, bool)
-        positive_arg[(self.mu > 0)] = 1
+        positive_arg[(mu > 0)] = 1
         pos_index = np.logical_and(positive_arg, ~indicator)
         neg_index = np.logical_and(~positive_arg, ~indicator)
 
@@ -101,6 +103,7 @@ class selection_probability_objective_fs(rr.smooth_atom):
 
         self.n, p = X.shape
         E = 1
+        self.q = p-1
         self._X = X
         self.active = active
         self.noise_variance = noise_variance
@@ -135,14 +138,14 @@ class selection_probability_objective_fs(rr.smooth_atom):
 
         sign = np.zeros((1, 1))
         sign[0:, :] = active_sign
-        self.A_active_1 = np.hstack([-X[:, active].T, sign, ])
+        self.A_active = np.hstack([-X[:, active].T, sign])
         self.active_conj_loss = rr.affine_smooth(self.active_conjugate, self.A_active)
 
         self.A_in_1 = np.hstack([-X[:, ~active].T, np.zeros((p - 1, 1))])
         self.A_in_2 = np.hstack([np.zeros((self.n, 1)).T, np.ones((1, 1))])
         self.A_inactive = np.vstack([self.A_in_1, self.A_in_2])
 
-        cube_loss = neg_log_cube_probability_fs(self.q)
+        cube_loss = neg_log_cube_probability_fs(self.q, p)
         self.cube_loss = rr.affine_smooth(cube_loss, self.A_inactive)
 
         self.set_parameter(mean_parameter, noise_variance)
@@ -307,8 +310,6 @@ class selective_map_credible_fs(rr.smooth_atom):
         self.generative_X = grad_map.generative_X
 
         initial = np.zeros(1)
-
-        initial[0] = grad_map.primal_feasible[0]* grad_map.active_sign
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
