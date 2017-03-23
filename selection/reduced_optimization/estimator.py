@@ -86,6 +86,7 @@ class M_estimator_approx_carved(M_estimator_split):
         X, _ = self.loss.data
         n, p = X.shape
         self.p = p
+        self.target_observed = self.observed_score_state[:self.nactive]
 
         self.feasible_point = np.concatenate([self.observed_score_state, np.fabs(self.observed_opt_state[:self.nactive]),
                                               self.observed_opt_state[self.nactive:]], axis = 0)
@@ -126,6 +127,7 @@ class M_estimator_approx_carved(M_estimator_split):
             score_cov = bootstrap_cov(lambda: np.random.choice(n, size=(n,), replace=True), self.bootstrap_score)
 
         self.score_cov = score_cov
+        self.score_cov_inv = np.linalg.inv(self.score_cov)
 
 
 

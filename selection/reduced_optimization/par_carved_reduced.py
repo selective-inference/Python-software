@@ -58,7 +58,7 @@ class selection_probability_carved(rr.smooth_atom):
         self.p = map.p
 
         rr.smooth_atom.__init__(self,
-                                (self.r,),
+                                (2*self.p,),
                                 offset=offset,
                                 quadratic=quadratic,
                                 initial=self.map.feasible_point,
@@ -86,8 +86,8 @@ class selection_probability_carved(rr.smooth_atom):
         self.cube_barrier = rr.affine_smooth(cube_objective, self._opt_selector_inactive)
 
 
-        linear_map = np.hstack([self.map._score_linear_term, self._opt_linear_term])
-        randomization_loss = log_likelihood(np.zeros(self.p), self.map.randomization_cov)
+        linear_map = np.hstack([self.map._score_linear_term, self.map._opt_linear_term])
+        randomization_loss = log_likelihood(np.zeros(self.p), self.map.randomization_cov, self.p)
         self.randomization_loss = rr.affine_smooth(randomization_loss, rr.affine_transform(linear_map,
                                                                                            self.map._opt_affine_term))
 
