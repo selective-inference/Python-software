@@ -32,32 +32,30 @@ def carved_lasso_trial(X,
     active = M_est._overall
     nactive = M_est.nactive
 
-    prior_variance = 1000.
-    noise_variance = sigma ** 2
-    projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
-    M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
-    M_2 = prior_variance * ((X.dot(X.T)).dot(projection_active))
-    M_3 = prior_variance * (projection_active.T.dot(X.dot(X.T)).dot(projection_active))
-    post_mean = M_2.T.dot(np.linalg.inv(M_1)).dot(y)
-
-    print("observed data", post_mean)
-
-    post_var = M_3 - M_2.T.dot(np.linalg.inv(M_1)).dot(M_2)
-
-    unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
-                                      post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
-
-    grad_lasso = sel_inf_carved(M_est, prior_variance)
-    samples = grad_lasso.posterior_samples()
-    adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
-
-    coverage_ad = np.zeros(nactive)
-    coverage_unad = np.zeros(nactive)
-    nerr = 0.
-
-    true_val = np.zeros(nactive)
-
     if nactive >= 1:
+        prior_variance = 1000.
+        noise_variance = sigma ** 2
+        projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
+        M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
+        M_2 = prior_variance * ((X.dot(X.T)).dot(projection_active))
+        M_3 = prior_variance * (projection_active.T.dot(X.dot(X.T)).dot(projection_active))
+        post_mean = M_2.T.dot(np.linalg.inv(M_1)).dot(y)
+
+        print("observed data", post_mean)
+
+        post_var = M_3 - M_2.T.dot(np.linalg.inv(M_1)).dot(M_2)
+
+        unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
+                                          post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
+        grad_lasso = sel_inf_carved(M_est, prior_variance)
+        samples = grad_lasso.posterior_samples()
+        adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+
+        coverage_ad = np.zeros(nactive)
+        coverage_unad = np.zeros(nactive)
+        nerr = 0.
+
+        true_val = np.zeros(nactive)
         try:
             for l in range(nactive):
                 if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
@@ -80,7 +78,7 @@ def carved_lasso_trial(X,
 
 if __name__ == "__main__":
     ### set parameters
-    n = 500
+    n = 1000
     p = 100
     s = 0
     snr = 0.
@@ -89,13 +87,15 @@ if __name__ == "__main__":
     niter = 10
     ad_cov = 0.
     unad_cov = 0.
+    no_sel = 0
 
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+2)  # ensures different y
+         #i+17 was good, i+27 was good
+         np.random.seed(i+47)  # ensures different y
          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-         lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+         lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
 
          ### RUN LASSO AND TEST
          lasso = carved_lasso_trial(X,
@@ -108,9 +108,13 @@ if __name__ == "__main__":
              ad_cov += lasso[0]
              unad_cov += lasso[1]
              print("\n")
-             print("iteration completed", i)
+             print("iteration completed", i-no_sel)
              print("\n")
              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+         else:
+             no_sel += 1
+
+    print("total number of iterations with sel", niter-no_sel)
 
 
     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
