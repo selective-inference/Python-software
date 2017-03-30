@@ -29,14 +29,14 @@ from selection.randomized.cv_view import CV_view
 def test_power(s=30,
                n=2000,
                p=1000,
-               rho=0.,
+               rho=0.6,
+               equi_correlated=False,
                snr=3.5,
                lam_frac = 1.,
-               q = 0.2,
                cross_validation = True,
                randomizer = 'gaussian',
                randomizer_scale = 1.,
-               ndraw=20000,
+               ndraw=10000,
                burnin=2000,
                loss='gaussian',
                scalings=False,
@@ -45,11 +45,12 @@ def test_power(s=30,
 
     print(n,p,s)
     if loss=="gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1.,
+                                                       equi_correlated=equi_correlated)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         glm_loss = rr.glm.gaussian(X, y)
     elif loss=="logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, equi_correlated=equi_correlated)
         glm_loss = rr.glm.logistic(X, y)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
@@ -76,14 +77,6 @@ def test_power(s=30,
             lam = cv.one_SD_rule(direction="up")
             print("one SD rule lambda", lam)
 
-        #from selection.randomized.cv_glmnet import CV_glmnet
-        #CV_glment_compute = CV_glmnet(glm_loss)
-        #lam_minCV, _, _, CV_err, _ =  CV_glment_compute.using_glmnet()
-        #print(CV_err)
-        #print("nonrandomized lambda_CV:", lam_minCV)
-        #lam_CVR = CV_glment_compute.choose_lambda_CVR(scale1=0.02, scale2=0.02)[0]
-        #print("randomized lambda_CV:", lam_CVR)
-        #lam = lam_CVR
 
     W = lam_frac * np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
