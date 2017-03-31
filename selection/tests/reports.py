@@ -76,9 +76,9 @@ def pvalue_plot(multiple_results, screening=False, fig=None, label = '$H_0$', co
         ax.plot(grid, FA, '--o', c=colors[1], lw=2, label=r'$H_A$')
 
     ax.plot([0, 1], [0, 1], 'k-', lw=1)
-    ax.set_xlabel("observed p-value")
-    ax.set_ylabel("CDF")
-    ax.legend(loc='lower right')
+    ax.set_xlabel("observed p-value", fontsize=20)
+    ax.set_ylabel("empirical CDF", fontsize=20)
+    ax.legend(loc='lower right', fontsize=20)
 
     if screening:
         screen = 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])

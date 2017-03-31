@@ -53,7 +53,7 @@ class CV_view(query):
         (self.observed_opt_state, self.observed_score_state) = (CVR_val, CV1_val)
         self.num_opt_var = self.lam_seq.shape[0]
         self.lam_idx = list(self.lam_seq).index(self.lam_CVR)  # index of the minimizer
-        print("index of the minimizer", self.lam_idx)
+        #print("index of the minimizer", self.lam_idx)
 
         self.opt_transform = (np.identity(self.num_opt_var), np.zeros(self.num_opt_var))
         self.score_transform = (-np.identity(self.num_opt_var), np.zeros(self.num_opt_var))

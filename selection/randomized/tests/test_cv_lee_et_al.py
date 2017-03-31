@@ -1,19 +1,48 @@
-import functools
-
 import numpy as np
-from scipy.stats import norm as ndist
-import matplotlib.pyplot as plt
-
 import regreg.api as rr
-
+import pandas as pd
 import selection.api as sel
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import lasso
-from selection.randomized.cv import CV
 import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 from statsmodels.sandbox.stats.multicomp import multipletests
+from selection.randomized.cv_view import CV_view
+from scipy.stats import norm as ndist
+from scipy.optimize import bisect
+
+
+def restricted_gaussian(Z, interval=[-5.,5.]):
+    L_restrict, U_restrict = interval
+    Z_restrict = max(min(Z, U_restrict), L_restrict)
+    return ((ndist.cdf(Z_restrict) - ndist.cdf(L_restrict)) /
+            (ndist.cdf(U_restrict) - ndist.cdf(L_restrict)))
+
+def pivot(L_constraint, Z, U_constraint, S, truth=0):
+    F = restricted_gaussian
+    if F((U_constraint - truth) / S) != F((L_constraint -  truth) / S):
+        v = ((F((Z-truth)/S) - F((L_constraint-truth)/S)) /
+             (F((U_constraint-truth)/S) - F((L_constraint-truth)/S)))
+    elif F((U_constraint - truth) / S) < 0.1:
+        v = 1
+    else:
+        v = 0
+    return v
+
+def equal_tailed_interval(L_constraint, Z, U_constraint, S, alpha=0.05):
+
+    lb = Z - 5 * S
+    ub = Z + 5 * S
+
+    def F(param):
+        return pivot(L_constraint, Z, U_constraint, S, truth=param)
+
+    FL = lambda x: (F(x) - (1 - 0.5 * alpha))
+    FU = lambda x: (F(x) - 0.5* alpha)
+    L_conf = bisect(FL, lb, ub)
+    U_conf = bisect(FU, lb, ub)
+    return np.array([L_conf, U_conf])
 
 
 @register_report(['pvalue', 'cover', 'ci_length_clt', 'active_var','BH_decisions'])
@@ -24,11 +53,13 @@ def test_lee_et_al(n=300,
                    p=100,
                    s=10,
                    snr = 3.5,
-                   rho =0.,
+                   rho = 0.,
                    sigma = 1.,
                    cross_validation=True,
+                   condition_on_CVR=True,
+                   lam_frac = 0.6,
                    X = None,
-                   K=5):
+                   check_screen=True):
 
     print(n, p, s)
 
@@ -41,15 +72,20 @@ def test_lee_et_al(n=300,
 
     truth = np.nonzero(beta != 0)[0]
 
-    if cross_validation==True:
-        lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * np.fabs(X.T.dot(y)).max()
-        folds = np.arange(n) % K
-        np.random.shuffle(folds)
-        CV_compute = CV(rr.glm.gaussian(X,y), folds, lam_seq)
-        lam_CV, _,_, lam_CV_randomized, _,_ = CV_compute.choose_lambda_CVr()
-        lam = lam_CV
+    if cross_validation:
+        cv = CV_view(rr.glm.gaussian(X,y), loss_label="gaussian", lasso_randomization=None, epsilon=None,
+                     scale1=None, scale2=None)
+        # views.append(cv)
+        cv.solve(glmnet=True)
+        lam = cv.lam_CVR
+        print("minimizer of CVR", lam)
+
+        if condition_on_CVR:
+            cv.condition_on_opt_state()
+            lam = np.true_divide(lam+cv.one_SD_rule(direction="up"),2)
+            #lam = cv.one_SD_rule(direction="up")
+            print("one SD rule lambda", lam)
     else:
-        lam_frac = 0.6
         lam = lam_frac*np.fabs(X.T.dot(np.random.normal(1, 1. / 2, (n, 1000)))).max()
 
     L = lasso.gaussian(X, y, lam, sigma=sigma)
@@ -61,12 +97,9 @@ def test_lee_et_al(n=300,
     if nactive==0:
         return None
 
-    check_screen = False
-    if check_screen == True:
-        if set(truth).issubset(np.nonzero(active)[0]):
-            check_screen = False
+    active_signs = np.sign(soln[active])
 
-    if check_screen == False:
+    if (check_screen == False) or (set(truth).issubset(np.nonzero(active)[0])):
 
         active_set = np.nonzero(active)[0]
         print("active set", active_set)
@@ -77,40 +110,76 @@ def test_lee_et_al(n=300,
         pvalues = np.zeros(nactive)
         sel_length = np.zeros(nactive)
         sel_covered = np.zeros(nactive)
-        one_step = L.onestep_estimator
+        C = L.constraints
 
-        for i in range(active.sum()):
-            active_var[i] = active_set[i] in truth
+        if C is not None:
+            one_step = L.onestep_estimator
+            for i in range(one_step.shape[0]):
+                eta = np.zeros_like(one_step)
+                eta[i] = active_signs[i]
+                alpha = 0.1
+                if C.linear_part.shape[0] > 0:  # there were some constraints
+                    L, Z, U, S = C.bounds(eta, one_step)
+                    _pval = pivot(L, Z, U, S)
+                    # two-sided
+                    _pval = 2 * min(_pval, 1 - _pval)
+                    if _pval < 10 ** (-8):
+                        return None
+                    L, Z, U, S = C.bounds(eta, one_step)
+                    _interval = equal_tailed_interval(L, Z, U, S, alpha=alpha)
+                    _interval = sorted([_interval[0] * active_signs[i],
+                                        _interval[1] * active_signs[i]])
+                else:
+                    obs = (eta * one_step).sum()
+                    sd = np.sqrt((eta * C.covariance.dot(eta)))
+                    Z = obs / sd
+                    # use Phi truncated to [-5,5]
+                    _pval = 2 * (ndist.sf(min(np.fabs(Z))) - ndist.sf(5)) / (ndist.cdf(5) - ndist.cdf(-5))
+                    _interval = (obs - ndist.ppf(1 - alpha / 2) * sd,
+                                 obs + ndist.ppf(1 - alpha / 2) * sd)
+                pvalues[i] = _pval
 
-            keep = np.zeros(active.sum())
-            keep[i] = 1.
-            pvalues[i] = L.constraints.pivot(keep,
-                                         one_step,
-                                         alternative='twosided')
-            interval = L.constraints.interval(keep,
-                                               one_step, alpha=0.1)
-            sel_length[i] = interval[1] - interval[0]
-            if (interval[0] <= true_vec[i]) and (interval[1] >= true_vec[i]):
-                    sel_covered[i] = 1
+        #    for i in range(active.sum()):
+        #
 
+        #    keep = np.zeros(active.sum())
+        #    keep[i] = 1.
+        #    pvalues[i] = L.constraints.pivot(keep,
+        #                                 one_step,
+        #                                 alternative='twosided')
+                #interval = L.constraints.interval(keep,
+                             #              one_step, alpha=0.1)
+                sel_length[i] = _interval[1] - _interval[0]
+                if (_interval[0] <= true_vec[i]) and (_interval[1] >= true_vec[i]):
+                        sel_covered[i] = 1
+                active_var[i] = active_set[i] in truth
+
+        print(pvalues)
         q = 0.2
         BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
         return  pvalues, sel_covered, sel_length, active_var, BH_desicions
 
 
-def report(niter=100, **kwargs):
+def report(niter=200, design="fixed", **kwargs):
 
-    kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'sigma':1, 'rho':0.}
-    #X, _, _, _, _ = gaussian_instance(**kwargs)
-    #kwargs.update({'X':X})
+    kwargs = {'s': 0, 'n': 500, 'p': 100, 'snr': 3.5, 'sigma':1, 'rho':0.}
+
+    if design=="fixed":
+        X, _, _, _, _ = gaussian_instance(**kwargs)
+        kwargs.update({'X':X})
+
+    kwargs.update({'cross_validation':True, 'condition_on_CVR':False})
     intervals_report = reports.reports['test_lee_et_al']
-    CV_runs = reports.collect_multiple_runs(intervals_report['test'],
+    screened_results = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
                                              niter,
                                              reports.summarize_all,
                                              **kwargs)
-    fig = reports.pvalue_plot(CV_runs, label="Lee et al.")
-    fig.suptitle("Lee et al. pivots")
+    screened_results.to_pickle("lee_et_al_pivots.pkl")
+    results = pd.read_pickle("lee_et_al_pivots.pkl")
+
+    fig = reports.pvalue_plot(results, label="Lee et al.")
+    fig.suptitle("Lee et al. pivots", fontsize=20)
     fig.savefig('lee_et_al_pivots.pdf')
 
 
