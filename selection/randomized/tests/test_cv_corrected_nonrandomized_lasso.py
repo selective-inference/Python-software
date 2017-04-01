@@ -92,7 +92,7 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
 
         cov_est = glm_nonparametric_bootstrap(n, n)
         # compute covariance of selected parameters with CV error curve
-        cov = cov_est(coef_boot, cross_terms=[CV_boot], nsample=100)
+        cov = cov_est(coef_boot, cross_terms=[CV_boot], nsample=500)
 
         # residual is fixed
         # covariance of L.constraints is more accurate than cov[0]
