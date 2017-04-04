@@ -1,142 +1,13 @@
 import numpy as np
 import sys
-from scipy.stats import norm
 
 import regreg.api as rr
 
+from selection.bayesian.barrier import barrier_conjugate_softmax_scaled_rr
+
 from selection.bayesian.credible_intervals import projected_langevin
 
-class nonnegative_softmax_scaled(rr.smooth_atom):
-    """
-    The nonnegative softmax objective
-    .. math::
-         \mu \mapsto
-         \sum_{i=1}^{m} \log \left(1 +
-         \frac{1}{\mu_i} \right)
-    """
-
-    objective_template = r"""\text{nonneg_softmax}\left(%(var)s\right)"""
-
-    def __init__(self,
-                 shape,
-                 barrier_scale=1.,
-                 coef=1.,
-                 offset=None,
-                 quadratic=None,
-                 initial=None):
-
-        rr.smooth_atom.__init__(self,
-                             shape,
-                             offset=offset,
-                             quadratic=quadratic,
-                             initial=initial,
-                             coef=coef)
-
-        # a feasible point
-        self.coefs[:] = np.ones(shape)
-        self.barrier_scale = barrier_scale
-
-    def smooth_objective(self, mean_param, mode='both', check_feasibility=False):
-        """
-        Evaluate the smooth objective, computing its value, gradient or both.
-        Parameters
-        ----------
-        mean_param : ndarray
-            The current parameter values.
-        mode : str
-            One of ['func', 'grad', 'both'].
-        check_feasibility : bool
-            If True, return `np.inf` when
-            point is not feasible, i.e. when `mean_param` is not
-            in the domain.
-        Returns
-        -------
-        If `mode` is 'func' returns just the objective value
-        at `mean_param`, else if `mode` is 'grad' returns the gradient
-        else returns both.
-        """
-
-        slack = self.apply_offset(mean_param)
-
-        if mode in ['both', 'func']:
-            if np.all(slack > 0):
-                f = self.scale(np.log((slack + self.barrier_scale) / slack).sum())
-            else:
-                f = np.inf
-        if mode in ['both', 'grad']:
-            g = self.scale(1. / (slack + self.barrier_scale) - 1. / slack)
-
-        if mode == 'both':
-            return f, g
-        elif mode == 'grad':
-            return g
-        elif mode == 'func':
-            return f
-        else:
-            raise ValueError("mode incorrectly specified")
-
-
-class neg_log_cube_probability(rr.smooth_atom):
-    def __init__(self,
-                 q, #equals p - E in our case
-                 lagrange,
-                 randomization_scale = 1., #equals the randomization variance in our case
-                 coef=1.,
-                 offset=None,
-                 quadratic=None):
-
-        self.randomization_scale = randomization_scale
-        self.lagrange = lagrange
-        self.q = q
-
-        rr.smooth_atom.__init__(self,
-                                (self.q,),
-                                offset=offset,
-                                quadratic=quadratic,
-                                initial=None,
-                                coef=coef)
-
-    def smooth_objective(self, arg, mode='both', check_feasibility=False, tol=1.e-6):
-
-        arg = self.apply_offset(arg)
-
-        arg_u = (arg + self.lagrange)/self.randomization_scale
-        arg_l = (arg - self.lagrange)/self.randomization_scale
-        prod_arg = np.exp(-(2. * self.lagrange * arg)/(self.randomization_scale**2))
-        neg_prod_arg = np.exp((2. * self.lagrange * arg)/(self.randomization_scale**2))
-        cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
-        log_cube_prob = -np.log(cube_prob).sum()
-        threshold = 10 ** -10
-        indicator = np.zeros(self.q, bool)
-        indicator[(cube_prob > threshold)] = 1
-        positive_arg = np.zeros(self.q, bool)
-        positive_arg[(arg>0)] = 1
-        pos_index = np.logical_and(positive_arg, ~indicator)
-        neg_index = np.logical_and(~positive_arg, ~indicator)
-        log_cube_grad = np.zeros(self.q)
-        log_cube_grad[indicator] = (np.true_divide(-norm.pdf(arg_u[indicator]) + norm.pdf(arg_l[indicator]),
-                                        cube_prob[indicator]))/self.randomization_scale
-
-        log_cube_grad[pos_index] = ((-1. + prod_arg[pos_index])/
-                                     ((prod_arg[pos_index]/arg_u[pos_index])-
-                                      (1./arg_l[pos_index])))/self.randomization_scale
-
-        log_cube_grad[neg_index] = ((arg_u[neg_index] -(arg_l[neg_index]*neg_prod_arg[neg_index]))
-                                    /self.randomization_scale)/(1.- neg_prod_arg[neg_index])
-
-
-        if mode == 'func':
-            return self.scale(log_cube_prob)
-        elif mode == 'grad':
-            return self.scale(log_cube_grad)
-        elif mode == 'both':
-            return self.scale(log_cube_prob), self.scale(log_cube_grad)
-        else:
-            raise ValueError("mode incorrectly specified")
-
-
-class selection_probability_lasso(rr.smooth_atom):
-
+class selection_probability_lasso_dual(rr.smooth_atom):
     def __init__(self,
                  X,
                  feasible_point,
@@ -144,8 +15,8 @@ class selection_probability_lasso(rr.smooth_atom):
                  active_sign,  # the set of signs of active coordinates chosen by lasso
                  lagrange,  # in R^p
                  mean_parameter,  # in R^n
-                 noise_variance, #noise_level in data
-                 randomizer, #specified randomization
+                 noise_variance,  # noise_level in data
+                 randomizer,  # specified randomization
                  epsilon,  # ridge penalty for randomized lasso
                  coef=1.,
                  offset=None,
@@ -153,96 +24,91 @@ class selection_probability_lasso(rr.smooth_atom):
                  nstep=10):
 
         n, p = X.shape
-
-        self._X = X
-
         E = active.sum()
-        self.q = p - E
-
+        self._X = X
         self.active = active
         self.noise_variance = noise_variance
         self.randomization = randomizer
-        self.inactive_conjugate = self.active_conjugate = randomizer.CGF_conjugate
-        if self.active_conjugate is None:
-            raise ValueError(
-                'randomization must know its CGF_conjugate -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
-        initial = np.zeros(n + E, )
-        initial[n:] = feasible_point
-        self.n = n
+        self.CGF_randomization = randomizer.CGF
+
+        if self.CGF_randomization is None:
+            raise ValueError(
+                'randomization must know its cgf -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
+
+        self.inactive_lagrange = lagrange[~active]
+
+        initial = feasible_point
+
+        self.feasible_point = feasible_point
 
         rr.smooth_atom.__init__(self,
-                                (n + E,),
+                                (p,),
                                 offset=offset,
                                 quadratic=quadratic,
                                 initial=initial,
                                 coef=coef)
 
-        self.coefs[:] = initial
+        self.coefs[:] = feasible_point
 
-        opt_vars = np.zeros(n + E, bool)
-        opt_vars[n:] = 1
+        mean_parameter = np.squeeze(mean_parameter)
 
-        nonnegative = nonnegative_softmax_scaled(E)
+        self.active = active
 
-        self._opt_selector = rr.selector(opt_vars, (n + E,))
-        self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
-        self._response_selector = rr.selector(~opt_vars, (n + E,))
-
-        self.set_parameter(mean_parameter, noise_variance)
-
-        X_E = X[:, active]
+        X_E = self.X_E = X[:, active]
+        self.X_permute = np.hstack([self.X_E, self._X[:, ~active]])
         B = X.T.dot(X_E)
 
         B_E = B[active]
         B_mE = B[~active]
 
-        self.A_active = np.hstack([-X[:, active].T, (B_E + epsilon * np.identity(E)) * active_sign[None, :]])
+        self.active_slice = np.zeros_like(active, np.bool)
+        self.active_slice[:active.sum()] = True
 
-        self.A_inactive = np.hstack([-X[:, ~active].T, (B_mE * active_sign[None, :])])
+        self.B_active = np.hstack([(B_E + epsilon * np.identity(E)) * active_sign[None, :], np.zeros((E, p - E))])
+        self.B_inactive = np.hstack([B_mE * active_sign[None, :], np.identity((p - E))])
+        self.B_p = np.vstack((self.B_active, self.B_inactive))
+
+        self.B_p_inv = np.linalg.inv(self.B_p.T)
 
         self.offset_active = active_sign * lagrange[active]
+        self.inactive_subgrad = np.zeros(p - E)
 
-        self.offset_inactive = np.zeros(p - E)
+        self.cube_bool = np.zeros(p, np.bool)
 
-        self.active_conj_loss = rr.affine_smooth(self.active_conjugate,rr.affine_transform(self.A_active, self.offset_active))
+        self.cube_bool[E:] = 1
 
-        cube_obj = neg_log_cube_probability(self.q, lagrange[~active], randomization_scale=1.)
+        self.dual_arg = self.B_p_inv.dot(np.append(self.offset_active, self.inactive_subgrad))
 
-        self.cube_loss = rr.affine_smooth(cube_obj, self.A_inactive)
+        self._opt_selector = rr.selector(~self.cube_bool, (p,))
 
-        self.total_loss = rr.smooth_sum([self.active_conj_loss,
-                                         self.cube_loss,
-                                         self.likelihood_loss,
-                                         self.nonnegative_barrier])
+        self.set_parameter(mean_parameter, noise_variance)
+
+        _barrier_star = barrier_conjugate_softmax_scaled_rr(self.cube_bool, self.inactive_lagrange)
+
+        self.conjugate_barrier = rr.affine_smooth(_barrier_star, np.identity(p))
+
+        self.CGF_randomizer = rr.affine_smooth(self.CGF_randomization, -self.B_p_inv)
+
+        self.constant = np.true_divide(mean_parameter.dot(mean_parameter), 2 * noise_variance)
+
+        self.linear_term = rr.identity_quadratic(0, 0, self.dual_arg, -self.constant)
+
+        self.total_loss = rr.smooth_sum([self.conjugate_barrier,
+                                         self.CGF_randomizer,
+                                         self.likelihood_loss])
+
+        self.total_loss.quadratic = self.linear_term
 
     def set_parameter(self, mean_parameter, noise_variance):
-        """
-        Set $\beta_E^*$.
-        """
-        mean_parameter = np.squeeze(mean_parameter)
-        likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
-        self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
 
-    def smooth_objective(self, param, mode='both', check_feasibility=False):
-        """
-        Evaluate the smooth objective, computing its value, gradient or both.
-        Parameters
-        ----------
-        mean_param : ndarray
-            The current parameter values.
-        mode : str
-            One of ['func', 'grad', 'both'].
-        check_feasibility : bool
-            If True, return `np.inf` when
-            point is not feasible, i.e. when `mean_param` is not
-            in the domain.
-        Returns
-        -------
-        If `mode` is 'func' returns just the objective value
-        at `mean_param`, else if `mode` is 'grad' returns the gradient
-        else returns both.
-        """
+        mean_parameter = np.squeeze(mean_parameter)
+
+        self.likelihood_loss = rr.signal_approximator(mean_parameter, coef=1. / noise_variance)
+
+        self.likelihood_loss = rr.affine_smooth(self.likelihood_loss, self.X_permute.dot(self.B_p_inv))
+
+    def _smooth_objective(self, param, mode='both', check_feasibility=False):
 
         param = self.apply_offset(param)
 
@@ -253,21 +119,20 @@ class selection_probability_lasso(rr.smooth_atom):
             g = self.total_loss.smooth_objective(param, 'grad')
             return self.scale(g)
         elif mode == 'both':
-            f = self.total_loss.smooth_objective(param, 'func')
-            g = self.total_loss.smooth_objective(param, 'grad')
+            f, g = self.total_loss.smooth_objective(param, 'both')
             return self.scale(f), self.scale(g)
         else:
             raise ValueError("mode incorrectly specified")
 
-    def minimize2(self, step=1, nstep=100, tol=1.e-8):
+    def minimize2(self, step=1, nstep=30, tol=1.e-8):
 
         n, p = self._X.shape
 
-        current = self.coefs
+        current = self.feasible_point
         current_value = np.inf
 
-        objective = lambda u: self.smooth_objective(u, 'func')
-        grad = lambda u: self.smooth_objective(u, 'grad')
+        objective = lambda u: self.total_loss.objective(u)
+        grad = lambda u: self.total_loss.smooth_objective(u, 'grad') + self.dual_arg
 
         for itercount in range(nstep):
             newton_step = grad(current) * self.noise_variance
@@ -278,8 +143,7 @@ class selection_probability_lasso(rr.smooth_atom):
             while True:
                 count += 1
                 proposal = current - step * newton_step
-                # print("proposal", proposal[n:])
-                if np.all(proposal[n:] > 0):
+                if np.all(proposal[self.active_slice] < 0):
                     break
                 step *= 0.5
                 if count >= 40:
@@ -310,11 +174,6 @@ class selection_probability_lasso(rr.smooth_atom):
                 step *= 2
 
         # print('iter', itercount)
-        print("gradient components", self.active_conj_loss.smooth_objective(current, mode='grad'),
-              self.likelihood_loss.smooth_objective(current, mode='grad'),
-              self.nonnegative_barrier.smooth_objective(current, mode='grad'),
-              self.cube_loss.smooth_objective(current, mode='grad'))
-
         value = objective(current)
         return current, value
 
@@ -351,24 +210,25 @@ class sel_prob_gradient_map_lasso(rr.smooth_atom):
                                 coef=coef)
 
     def smooth_objective(self, true_param, mode='both', check_feasibility=False, tol=1.e-8):
+
         true_param = self.apply_offset(true_param)
 
         mean_parameter = np.squeeze(self.generative_X.dot(true_param))
 
-        primal_sol = selection_probability_lasso(self.X,
-                                                 self.feasible_point,
-                                                 self.active,
-                                                 self.active_sign,
-                                                 self.lagrange,
-                                                 mean_parameter,
-                                                 self.noise_variance,
-                                                 self.randomizer,
-                                                 self.epsilon)
+        dual_sol = selection_probability_lasso_dual(self.X,
+                                                    self.feasible_point,
+                                                    self.active,
+                                                    self.active_sign,
+                                                    self.lagrange,
+                                                    mean_parameter,
+                                                    self.noise_variance,
+                                                    self.randomizer,
+                                                    self.epsilon)
 
-        sel_prob_primal = primal_sol.minimize2(nstep=100)[::-1]
-        optimal_primal = (sel_prob_primal[1])[:self.n]
-        sel_prob_val = -sel_prob_primal[0]
-        optimizer = self.generative_X.T.dot(np.true_divide(optimal_primal - mean_parameter, self.noise_variance))
+        sel_prob_dual = dual_sol.minimize2(nstep=100)[::-1]
+        optimal_dual = mean_parameter - (dual_sol.X_permute.dot(np.linalg.inv(dual_sol.B_p.T))).dot(sel_prob_dual[1])
+        sel_prob_val = sel_prob_dual[0]
+        optimizer = self.generative_X.T.dot(np.true_divide(optimal_dual - mean_parameter, self.noise_variance))
 
         if mode == 'func':
             return sel_prob_val
@@ -529,3 +389,7 @@ class selective_inf_lasso(rr.smooth_atom):
 
 
         return post_risk_1/Langevin_steps, post_risk_2/Langevin_steps
+
+
+
+
