@@ -1,6 +1,9 @@
 from __future__ import print_function
 import time
 
+import sys
+import os
+
 import numpy as np
 from selection.bayesian.initial_soln import selection, instance
 
@@ -67,65 +70,99 @@ def randomized_lasso_trial(X,
 
         coverage_ad = np.zeros(nactive)
         coverage_unad = np.zeros(nactive)
-        nerr = 0.
+        ad_length = np.zeros(nactive)
+        unad_length = np.zeros(nactive)
 
         true_val = projection_active.T.dot(X.dot(beta))
-
-        active_set = [i for i in range(p) if active[i]]
-
 
         for l in range(nactive):
             if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
                 coverage_ad[l] += 1
+            ad_length[l] = adjusted_intervals[1, l] - adjusted_intervals[0, l]
             if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
                 coverage_unad[l] += 1
+            unad_length[l] = unadjusted_intervals[1, l] - unadjusted_intervals[0, l]
 
 
         sel_cov = coverage_ad.sum() / nactive
         naive_cov = coverage_unad.sum() / nactive
+        ad_len = ad_length.sum() / nactive
+        unad_len = unad_length.sum() / nactive
 
-        return sel_cov, naive_cov
+        return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
 
     else:
         return None
 
 
+# if __name__ == "__main__":
+#     ### set parameters
+#     n = 200
+#     p = 1000
+#     s = 0
+#     snr = 5.
+#
+#     ### GENERATE X
+#     np.random.seed(0)  # ensures same X
+#
+#     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+#
+#     niter = 10
+#
+#     ad_cov = 0.
+#     unad_cov = 0.
+#
+#     for i in range(niter):
+#
+#          ### GENERATE Y BASED ON SEED
+#          np.random.seed(i+1)  # ensures different y
+#          X, y, beta, nonzero, sigma = sample.generate_response()
+#
+#          ### RUN LASSO AND TEST
+#          lasso = randomized_lasso_trial(X,
+#                                         y,
+#                                         beta,
+#                                         sigma)
+#
+#          if lasso is not None:
+#              ad_cov += lasso[0]
+#              unad_cov += lasso[1]
+#              print("\n")
+#              print("iteration completed", i)
+#              print("\n")
+#              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#
+#
+#     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
+
+
 if __name__ == "__main__":
-    ### set parameters
-    n = 100
-    p = 500
+
+#read from command line
+
+    seedn = int(sys.argv[1])
+    outdir = sys.argv[2]
+
+    outfile = os.path.join(outdir,"list_result_"+str(seedn)+".txt")
+
+### set parameters
+    n = 200
+    p = 1000
     s = 0
     snr = 5.
 
-    ### GENERATE X
+### GENERATE X
     np.random.seed(0)  # ensures same X
 
     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
 
-    niter = 10
+### GENERATE Y BASED ON SEED
+    np.random.seed(seedn) # ensures different y
+    X, y, beta, nonzero, sigma = sample.generate_response()
 
-    ad_cov = 0.
-    unad_cov = 0.
+    lasso = randomized_lasso_trial(X,
+                                   y,
+                                   beta,
+                                   sigma)
 
-    for i in range(niter):
-
-         ### GENERATE Y BASED ON SEED
-         np.random.seed(i+1)  # ensures different y
-         X, y, beta, nonzero, sigma = sample.generate_response()
-
-         ### RUN LASSO AND TEST
-         lasso = randomized_lasso_trial(X,
-                                        y,
-                                        beta,
-                                        sigma)
-
-         if lasso is not None:
-             ad_cov += lasso[0]
-             unad_cov += lasso[1]
-             print("\n")
-             print("iteration completed", i)
-             print("\n")
-             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-
-
-    print("adjusted and unadjusted coverage",ad_cov, unad_cov)
+    np.savetxt(outfile, lasso)

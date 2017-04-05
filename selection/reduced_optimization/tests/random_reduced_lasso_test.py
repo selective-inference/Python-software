@@ -61,6 +61,8 @@ def randomized_lasso_trial(X,
 
     coverage_ad = np.zeros(nactive)
     coverage_unad = np.zeros(nactive)
+    ad_length = np.zeros(nactive)
+    unad_length = np.zeros(nactive)
     nerr = 0.
 
     true_val = np.zeros(nactive)
@@ -70,8 +72,11 @@ def randomized_lasso_trial(X,
             for l in range(nactive):
                 if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
                     coverage_ad[l] += 1
+
+                ad_length[l] = adjusted_intervals[1, l] - adjusted_intervals[0, l]
                 if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
                     coverage_unad[l] += 1
+                unad_length[l] = unadjusted_intervals[1, l] - unadjusted_intervals[0, l]
 
         except ValueError:
             nerr += 1
@@ -79,8 +84,10 @@ def randomized_lasso_trial(X,
 
         sel_cov = coverage_ad.sum() / nactive
         naive_cov = coverage_unad.sum() / nactive
+        ad_len = ad_length.sum()/nactive
+        unad_len = unad_length.sum()/nactive
 
-        return sel_cov, naive_cov
+        return np.vstack([sel_cov, naive_cov, ad_len , unad_len])
 
     else:
         return None
@@ -94,9 +101,11 @@ if __name__ == "__main__":
     snr = 0.
 
 
-    niter = 10
+    niter = 50
     ad_cov = 0.
     unad_cov = 0.
+    ad_len = 0.
+    unad_len = 0.
 
     for i in range(niter):
 
@@ -113,15 +122,19 @@ if __name__ == "__main__":
                                         lam)
 
          if lasso is not None:
-             ad_cov += lasso[0]
-             unad_cov += lasso[1]
+             ad_cov += lasso[0,0]
+             unad_cov += lasso[1,0]
+             ad_len += lasso[2,0]
+             unad_len += lasso[3,0]
              print("\n")
              print("iteration completed", i)
              print("\n")
              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+             print("adjusted and unadjusted lengths", ad_len, unad_len)
 
 
     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
+    print("adjusted and unadjusted lengths", ad_len, unad_len)
 
 
 
