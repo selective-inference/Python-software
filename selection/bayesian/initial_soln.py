@@ -4,11 +4,11 @@ import regreg.api as rr
 # from rpy2.robjects.packages import importr
 # from rpy2 import robjects
 # glmnet = importr('glmnet')
-from selection.tests.instance import gaussian_instance
 #import rpy2.robjects.numpy2ri
 #rpy2.robjects.numpy2ri.activate()
 import numpy as np
 import regreg.api as rr
+from selection.tests.instance import gaussian_instance
 
 
 # def tuning_parameter_glmnet(X, y):
@@ -51,9 +51,9 @@ def selection(X, y, random_Z, randomization_scale=1, sigma=None, method="theoret
         sigma = 1.
     if method == "theoretical":
         lam = 1. * sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
-    elif method == "cross-validation":
-        lam = tuning_parameter_glmnet(X, y)[1]
-        print(lam)
+    # elif method == "cross-validation":
+    #     lam = tuning_parameter_glmnet(X, y)[1]
+    #     print(lam)
 
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p), weights = dict(zip(np.arange(p), W)), lagrange=1.)
