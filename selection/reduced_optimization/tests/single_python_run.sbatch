@@ -36,4 +36,4 @@ cd /home/snigdha/src/selective-inference/selection/reduced_optimization/tests
 
 source /home/snigdha/src/selective-inference/.env/bin/activate
 
-python randomized_lasso.py $SEED $DIR
+python reduced_lasso_test.py $SEED $DIR
