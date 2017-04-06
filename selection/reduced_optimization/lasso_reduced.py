@@ -309,12 +309,6 @@ class selection_probability_lasso(rr.smooth_atom):
             if itercount % 4 == 0:
                 step *= 2
 
-        # print('iter', itercount)
-        print("gradient components", self.active_conj_loss.smooth_objective(current, mode='grad'),
-              self.likelihood_loss.smooth_objective(current, mode='grad'),
-              self.nonnegative_barrier.smooth_objective(current, mode='grad'),
-              self.cube_loss.smooth_objective(current, mode='grad'))
-
         value = objective(current)
         return current, value
 
