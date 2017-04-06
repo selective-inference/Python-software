@@ -67,20 +67,26 @@ def randomized_lasso_trial(X,
 
         coverage_ad = np.zeros(nactive)
         coverage_unad = np.zeros(nactive)
+        ad_length = np.zeros(nactive)
+        unad_length = np.zeros(nactive)
 
         true_val = projection_active.T.dot(X.dot(beta))
 
         for l in range(nactive):
             if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
                 coverage_ad[l] += 1
+            ad_length[l] = adjusted_intervals[1, l] - adjusted_intervals[0, l]
             if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
                 coverage_unad[l] += 1
+            unad_length[l] = unadjusted_intervals[1, l] - unadjusted_intervals[0, l]
 
 
         sel_cov = coverage_ad.sum() / nactive
         naive_cov = coverage_unad.sum() / nactive
+        ad_len = ad_length.sum() / nactive
+        unad_len = unad_length.sum() / nactive
 
-        return sel_cov, naive_cov
+        return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
 
     else:
         return None
@@ -89,7 +95,7 @@ def randomized_lasso_trial(X,
 if __name__ == "__main__":
     ### set parameters
     n = 1000
-    p = 100
+    p = 200
     s = 0
     snr = 5.
 
@@ -98,15 +104,17 @@ if __name__ == "__main__":
 
     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
 
-    niter = 40
+    niter = 50
 
     ad_cov = 0.
     unad_cov = 0.
+    ad_len = 0.
+    unad_len = 0.
 
     for i in range(niter):
 
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i+11)  # ensures different y
+         np.random.seed(i+1)  # ensures different y
          X, y, beta, nonzero, sigma = sample.generate_response()
 
          ### RUN LASSO AND TEST
@@ -116,11 +124,16 @@ if __name__ == "__main__":
                                         sigma)
 
          if lasso is not None:
-             ad_cov += lasso[0]
-             unad_cov += lasso[1]
+             ad_cov += lasso[0, 0]
+             unad_cov += lasso[1, 0]
+             ad_len += lasso[2, 0]
+             unad_len += lasso[3, 0]
              print("\n")
              print("iteration completed", i)
              print("\n")
              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+             print("adjusted and unadjusted lengths", ad_len, unad_len)
 
     print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+    print("adjusted and unadjusted lengths", ad_len, unad_len)
+

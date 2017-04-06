@@ -134,7 +134,7 @@ class selection_probability_lasso_dual(rr.smooth_atom):
         objective = lambda u: self.total_loss.objective(u)
         grad = lambda u: self.total_loss.smooth_objective(u, 'grad') + self.dual_arg
 
-        for itercount in range(nstep):
+        for itercount in xrange(nstep):
             newton_step = grad(current) * self.noise_variance
 
             # make sure proposal is feasible
