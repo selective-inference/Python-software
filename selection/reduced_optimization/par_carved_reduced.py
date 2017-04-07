@@ -124,7 +124,7 @@ class selection_probability_carved(rr.smooth_atom):
         objective = lambda u: self.smooth_objective(u, 'func')
         grad = lambda u: self.smooth_objective(u, 'grad')
 
-        for itercount in range(nstep):
+        for itercount in xrange(nstep):
             newton_step = grad(current)
             count = 0
             while True:
@@ -289,10 +289,10 @@ class sel_inf_carved(rr.smooth_atom):
 
         samples = []
 
-        for i in range(Langevin_steps):
+        for i in xrange(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
-            print i, sampler.state.copy()
+            sys.stderr.write("sample number: " + str(i) + "\n")
 
         samples = np.array(samples)
         return samples[burnin:, :]
