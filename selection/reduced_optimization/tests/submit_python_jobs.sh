@@ -5,7 +5,7 @@
 
 # setup dir if needed
 
-DIR=/scratch/users/snigdha/reduced_opt/outputs/fixed_lasso
+DIR=/scratch/users/snigdha/reduced_opt/outputs/carved_lasso
 
 mkdir -p $DIR
 
