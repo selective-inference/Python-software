@@ -79,48 +79,44 @@ def carved_lasso_trial(X,
         return np.vstack([0.,0.,0.,0.])
 
 
-if __name__ == "__main__":
-    ### set parameters
-    n = 1000
-    p = 200
-    s = 0
-    snr = 0.
+# if __name__ == "__main__":
+#     ### set parameters
+#     n = 1000
+#     p = 200
+#     s = 0
+#     snr = 0.
+#
+#
+#     niter = 10
+#     ad_cov = 0.
+#     unad_cov = 0.
+#     no_sel = 0
+#
+#     for i in range(niter):
+#
+#          ### GENERATE X, Y BASED ON SEED
+#          #i+17 was good, i+27 was good
+#          np.random.seed(i+17)  # ensures different y
+#          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+#          lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+#
+#          ### RUN LASSO AND TEST
+#          lasso = carved_lasso_trial(X,
+#                                     y,
+#                                     beta,
+#                                     sigma,
+#                                     lam)
+#
+#          if lasso is not None:
+#              ad_cov += lasso[0]
+#              unad_cov += lasso[1]
+#              print("\n")
+#              print("iteration completed", i-no_sel)
+#              print("\n")
+#              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#          else:
+#              no_sel += 1
 
-
-    niter = 10
-    ad_cov = 0.
-    unad_cov = 0.
-    no_sel = 0
-
-    for i in range(niter):
-
-         ### GENERATE X, Y BASED ON SEED
-         #i+17 was good, i+27 was good
-         np.random.seed(i+17)  # ensures different y
-         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-         lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-
-         ### RUN LASSO AND TEST
-         lasso = carved_lasso_trial(X,
-                                    y,
-                                    beta,
-                                    sigma,
-                                    lam)
-
-         if lasso is not None:
-             ad_cov += lasso[0]
-             unad_cov += lasso[1]
-             print("\n")
-             print("iteration completed", i-no_sel)
-             print("\n")
-             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-         else:
-             no_sel += 1
-
-    print("total number of iterations with sel", niter-no_sel)
-
-
-    print("adjusted and unadjusted coverage",ad_cov, unad_cov)
 
 if __name__ == "__main__":
 
