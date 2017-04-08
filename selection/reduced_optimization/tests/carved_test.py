@@ -90,6 +90,8 @@ def carved_lasso_trial(X,
 #     niter = 10
 #     ad_cov = 0.
 #     unad_cov = 0.
+#     ad_len = 0.
+#     unad_len = 0.
 #     no_sel = 0
 #
 #     for i in range(niter):
@@ -108,12 +110,15 @@ def carved_lasso_trial(X,
 #                                     lam)
 #
 #          if lasso is not None:
-#              ad_cov += lasso[0]
-#              unad_cov += lasso[1]
+#              ad_cov += lasso[0,0]
+#              unad_cov += lasso[1,0]
+#              ad_len += lasso[2, 0]
+#              unad_len += lasso[3, 0]
 #              print("\n")
 #              print("iteration completed", i-no_sel)
 #              print("\n")
 #              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#              print("adjusted and unadjusted lengths", ad_len, unad_len)
 #          else:
 #              no_sel += 1
 
@@ -122,7 +127,7 @@ if __name__ == "__main__":
 
     # read from command line
     print(len(sys.argv))
-    seedn = int(sys.argv[1])
+    seedn = int(sys.argv[1]) + 17
     outdir = sys.argv[2]
 
     outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")

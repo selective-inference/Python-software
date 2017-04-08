@@ -13,7 +13,7 @@
 #################
 #time you think you need; default is 2 hours
 #format could be dd-hh:mm:ss, hh:mm:ss, mm:ss, or mm
-#SBATCH --time=20:00:00
+#SBATCH --time=5:00:00
 #################
 #SBATCH --qos=normal
 #SBATCH -p normal 
@@ -33,7 +33,8 @@ DIR=$2
 
 # cd to program directory
 cd /home/snigdha/src/selective-inference/selection/reduced_optimization/tests
+#cd /Users/snigdhapanigrahi/selective-inference/selection/reduced_optimization/tests
 
 source /home/snigdha/src/selective-inference/.env/bin/activate
 
-python reduced_lasso_test.py $SEED $DIR
+python carved_test.py $SEED $DIR
