@@ -1,5 +1,4 @@
 from __future__ import print_function
-import time
 
 import sys
 import os
@@ -141,15 +140,13 @@ def randomized_lasso_trial(X,
 #     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
 #     print("adjusted and unadjusted lengths", ad_len, unad_len)
 
-
 if __name__ == "__main__":
-
-#read from command line
+# read from command line
 
     seedn = int(sys.argv[1])
     outdir = sys.argv[2]
 
-    outfile = os.path.join(outdir,"list_result_"+str(seedn)+".txt")
+    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
 
 ### set parameters
     n = 200
