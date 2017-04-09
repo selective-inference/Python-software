@@ -65,34 +65,23 @@ def randomized_lasso_trial(X,
     coverage_unad = np.zeros(nactive)
     ad_length = np.zeros(nactive)
     unad_length = np.zeros(nactive)
-    nerr = 0.
 
     true_val = np.zeros(nactive)
 
-    if nactive >= 1:
-        try:
-            for l in range(nactive):
-                if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
-                    coverage_ad[l] += 1
+    for l in range(nactive):
+        if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
+            coverage_ad[l] += 1
+        ad_length[l] = adjusted_intervals[1, l] - adjusted_intervals[0, l]
+        if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
+            coverage_unad[l] += 1
+        unad_length[l] = unadjusted_intervals[1, l] - unadjusted_intervals[0, l]
 
-                ad_length[l] = adjusted_intervals[1, l] - adjusted_intervals[0, l]
-                if (unadjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= unadjusted_intervals[1, l]):
-                    coverage_unad[l] += 1
-                unad_length[l] = unadjusted_intervals[1, l] - unadjusted_intervals[0, l]
+    sel_cov = coverage_ad.sum() / nactive
+    naive_cov = coverage_unad.sum() / nactive
+    ad_len = ad_length.sum() / nactive
+    unad_len = unad_length.sum() / nactive
 
-        except ValueError:
-            nerr += 1
-            print('ignore iteration raising ValueError')
-
-        sel_cov = coverage_ad.sum() / nactive
-        naive_cov = coverage_unad.sum() / nactive
-        ad_len = ad_length.sum()/nactive
-        unad_len = unad_length.sum()/nactive
-
-        return np.vstack([sel_cov, naive_cov, ad_len , unad_len])
-
-    else:
-        return None
+    return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
 
 
 # if __name__ == "__main__":
