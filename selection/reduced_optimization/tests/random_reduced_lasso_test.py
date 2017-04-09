@@ -1,4 +1,6 @@
 from __future__ import print_function
+import sys
+import os
 import numpy as np
 import time
 import regreg.api as rr
@@ -93,48 +95,76 @@ def randomized_lasso_trial(X,
         return None
 
 
+# if __name__ == "__main__":
+#     ### set parameters
+#     n = 1000
+#     p = 200
+#     s = 0
+#     snr = 0.
+#
+#
+#     niter = 50
+#     ad_cov = 0.
+#     unad_cov = 0.
+#     ad_len = 0.
+#     unad_len = 0.
+#
+#     for i in range(niter):
+#
+#          ### GENERATE X, Y BASED ON SEED
+#          np.random.seed(i+36)  # ensures different X and y
+#          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+#          lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+#
+#          ### RUN LASSO AND TEST
+#          lasso = randomized_lasso_trial(X,
+#                                         y,
+#                                         beta,
+#                                         sigma,
+#                                         lam)
+#
+#          if lasso is not None:
+#              ad_cov += lasso[0,0]
+#              unad_cov += lasso[1,0]
+#              ad_len += lasso[2,0]
+#              unad_len += lasso[3,0]
+#              print("\n")
+#              print("iteration completed", i)
+#              print("\n")
+#              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#              print("adjusted and unadjusted lengths", ad_len, unad_len)
+#
+#
+#     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
+#     print("adjusted and unadjusted lengths", ad_len, unad_len)
+
 if __name__ == "__main__":
+
+
+    seedn = int(sys.argv[1])
+    outdir = sys.argv[2]
+
+    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
+
     ### set parameters
     n = 1000
     p = 200
     s = 0
     snr = 0.
 
+    ### GENERATE X, Y BASED ON SEED
+    np.random.seed(seedn+50)  # ensures different X and y
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+    lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
 
-    niter = 50
-    ad_cov = 0.
-    unad_cov = 0.
-    ad_len = 0.
-    unad_len = 0.
+    ### RUN LASSO AND TEST
+    lasso = randomized_lasso_trial(X,
+                                   y,
+                                   beta,
+                                   sigma,
+                                   lam)
 
-    for i in range(niter):
-
-         ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+36)  # ensures different X and y
-         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-         lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-
-         ### RUN LASSO AND TEST
-         lasso = randomized_lasso_trial(X,
-                                        y,
-                                        beta,
-                                        sigma,
-                                        lam)
-
-         if lasso is not None:
-             ad_cov += lasso[0,0]
-             unad_cov += lasso[1,0]
-             ad_len += lasso[2,0]
-             unad_len += lasso[3,0]
-             print("\n")
-             print("iteration completed", i)
-             print("\n")
-             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-             print("adjusted and unadjusted lengths", ad_len, unad_len)
-
-
-    print("adjusted and unadjusted coverage",ad_cov, unad_cov)
-    print("adjusted and unadjusted lengths", ad_len, unad_len)
+    np.savetxt(outfile, lasso)
 
 
 
