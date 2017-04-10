@@ -142,7 +142,6 @@ def randomized_lasso_trial(X,
 
 if __name__ == "__main__":
 # read from command line
-    print(sys.argv)
     seedn=int(sys.argv[1])
     outdir=sys.argv[2]
 

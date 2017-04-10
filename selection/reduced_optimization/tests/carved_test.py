@@ -82,7 +82,7 @@ def carved_lasso_trial(X,
 if __name__ == "__main__":
     ### set parameters
     n = 1000
-    p = 200
+    p = 100
     s = 0
     snr = 0.
 
@@ -98,7 +98,7 @@ if __name__ == "__main__":
 
          ### GENERATE X, Y BASED ON SEED
          #i+17 was good, i+27 was good
-         np.random.seed(i)  # ensures different y
+         np.random.seed(i+50)  # ensures different y
          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
          lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
 
