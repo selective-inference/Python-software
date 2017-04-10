@@ -139,16 +139,6 @@ def test_lee_et_al(n=300,
                                  obs + ndist.ppf(1 - alpha / 2) * sd)
                 pvalues[i] = _pval
 
-        #    for i in range(active.sum()):
-        #
-
-        #    keep = np.zeros(active.sum())
-        #    keep[i] = 1.
-        #    pvalues[i] = L.constraints.pivot(keep,
-        #                                 one_step,
-        #                                 alternative='twosided')
-                #interval = L.constraints.interval(keep,
-                             #              one_step, alpha=0.1)
                 sel_length[i] = _interval[1] - _interval[0]
                 if (_interval[0] <= true_vec[i]) and (_interval[1] >= true_vec[i]):
                         sel_covered[i] = 1
