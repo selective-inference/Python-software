@@ -1,5 +1,7 @@
 from __future__ import print_function
 import time
+import sys
+import os
 
 import numpy as np
 from selection.bayesian.initial_soln import selection, instance
@@ -63,58 +65,97 @@ def randomized_forward_step(X,
 
     coverage_ad = np.zeros(1)
     coverage_unad = np.zeros(1)
+    ad_length = np.zeros(1)
+    unad_length = np.zeros(1)
 
     true_val = projection_active.T.dot(X.dot(beta))
 
 
     if (adjusted_intervals[0, 0] <= true_val[0]) and (true_val[0] <= adjusted_intervals[1, 0]):
         coverage_ad[0] += 1
+
+    ad_length[0] = adjusted_intervals[1, 0] - adjusted_intervals[0, 0]
     if (unadjusted_intervals[0, 0] <= true_val[0]) and (true_val[0] <= unadjusted_intervals[1, 0]):
         coverage_unad[0] += 1
 
+    unad_length[0] = unadjusted_intervals[1, 0] - unadjusted_intervals[0, 0]
+
     sel_cov = coverage_ad.sum() / 1.
     naive_cov = coverage_unad.sum() / 1.
+    ad_len = ad_length.sum() / 1.
+    unad_len = unad_length.sum() / 1.
 
-    return sel_cov, naive_cov
+    return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
 
+
+# if __name__ == "__main__":
+#     ### set parameters
+#     n = 100
+#     p = 500
+#     s = 0
+#     snr = 5.
+#
+#     ### GENERATE X
+#     np.random.seed(0)  # ensures same X
+#
+#     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+#
+#     niter = 10
+#
+#     ad_cov = 0.
+#     unad_cov = 0.
+#
+#     for i in range(niter):
+#
+#          ### GENERATE Y BASED ON SEED
+#          np.random.seed(i+30)  # ensures different y
+#          X, y, beta, nonzero, sigma = sample.generate_response()
+#
+#          ### RUN LASSO AND TEST
+#          lasso = randomized_forward_step(X,
+#                                          y,
+#                                          beta,
+#                                          sigma)
+#
+#          if lasso is not None:
+#              ad_cov += lasso[0]
+#              unad_cov += lasso[1]
+#              print("\n")
+#              print("iteration completed", i)
+#              print("\n")
+#              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#
+#
+#     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
 
 if __name__ == "__main__":
-    ### set parameters
-    n = 100
-    p = 500
+
+# read from command line
+    seedn=int(sys.argv[1])
+    outdir=sys.argv[2]
+
+    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
+
+### set parameters
+
+    n = 200
+    p = 1000
     s = 0
     snr = 5.
 
-    ### GENERATE X
+### GENERATE X
     np.random.seed(0)  # ensures same X
 
     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
 
-    niter = 10
+### GENERATE Y BASED ON SEED
+    np.random.seed(seedn) # ensures different y
+    X, y, beta, nonzero, sigma = sample.generate_response()
 
-    ad_cov = 0.
-    unad_cov = 0.
+    lasso = randomized_forward_step(X,
+                                    y,
+                                    beta,
+                                    sigma)
 
-    for i in range(niter):
-
-         ### GENERATE Y BASED ON SEED
-         np.random.seed(i+30)  # ensures different y
-         X, y, beta, nonzero, sigma = sample.generate_response()
-
-         ### RUN LASSO AND TEST
-         lasso = randomized_forward_step(X,
-                                         y,
-                                         beta,
-                                         sigma)
-
-         if lasso is not None:
-             ad_cov += lasso[0]
-             unad_cov += lasso[1]
-             print("\n")
-             print("iteration completed", i)
-             print("\n")
-             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-
-
-    print("adjusted and unadjusted coverage",ad_cov, unad_cov)
+    np.savetxt(outfile, lasso)
 
