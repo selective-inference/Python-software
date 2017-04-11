@@ -149,7 +149,7 @@ if __name__ == "__main__":
     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
 
 ### GENERATE Y BASED ON SEED
-    np.random.seed(seedn) # ensures different y
+    np.random.seed(seedn+300) # ensures different y
     X, y, beta, nonzero, sigma = sample.generate_response()
 
     lasso = randomized_forward_step(X,
