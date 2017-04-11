@@ -11,7 +11,7 @@ DIR=/scratch/users/snigdha/reduced_opt/outputs/fs
 
 mkdir -p $DIR
 
-for i in {0..200}
+for i in {0..100}
 do
 	#bash single_python_run.sbatch $i $DIR
 	sbatch single_python_run.sbatch $i $DIR
