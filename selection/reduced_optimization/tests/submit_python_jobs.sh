@@ -5,7 +5,7 @@
 
 # setup dir if needed
 
-DIR=/scratch/users/snigdha/reduced_opt/outputs/fs
+DIR=/scratch/users/snigdha/reduced_opt/bayesian/fixed_lasso
 
 #DIR=/Users/snigdhapanigrahi/scratch
 

@@ -4,7 +4,7 @@ import os, numpy as np, pandas, statsmodels.api as sm
 #path =r'/Users/snigdhapanigrahi/Results_freq_EQTL/sparsity_5/dim_1/dim_1'
 #path =r'/Users/snigdhapanigrahi/Results_bayesian/fixed_lasso/fixed_lasso'
 
-path =r'/Users/snigdhapanigrahi/Results_bayesian/fs'
+path =r'/Users/snigdhapanigrahi/Results_bayesian/fs_1/fs'
 allFiles = glob.glob(path + "/*.txt")
 
 list_ = []

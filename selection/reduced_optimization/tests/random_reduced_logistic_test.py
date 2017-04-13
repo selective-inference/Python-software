@@ -9,14 +9,15 @@ from selection.tests.instance import logistic_instance, gaussian_instance
 
 #from selection.reduced_optimization.random_lasso_reduced import selection_probability_random_lasso, sel_inf_random_lasso
 from selection.reduced_optimization.par_random_lasso_reduced import selection_probability_random_lasso, sel_inf_random_lasso
-from selection.reduced_optimization.estimator import M_estimator_approx
+from selection.reduced_optimization.estimator import M_estimator_approx, M_estimator_approx_logistic
+from selection.randomized.query import naive_confidence_intervals
 
 def randomized_lasso_trial(X,
                            y,
                            beta,
                            sigma,
                            lam,
-                           loss ='gaussian',
+                           loss ='logistic',
                            randomizer='gaussian',
                            estimation='parametric'):
 
@@ -35,43 +36,38 @@ def randomized_lasso_trial(X,
     penalty = rr.group_lasso(np.arange(p),weights=dict(zip(np.arange(p), W)), lagrange=1.)
     randomization = randomization.isotropic_gaussian((p,), scale=1.)
 
-    M_est = M_estimator_approx(loss, epsilon, penalty, randomization, randomizer, estimation)
+    M_est = M_estimator_approx_logistic(loss, epsilon, penalty, randomization, randomizer, estimation)
     M_est.solve_approx()
     active = M_est._overall
     active_set = np.asarray([i for i in range(p) if active[i]])
     nactive = np.sum(active)
 
-    prior_variance = 1000.
-    noise_variance = sigma ** 2
-    projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
-    M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
-    M_2 = prior_variance * ((X.dot(X.T)).dot(projection_active))
-    M_3 = prior_variance * (projection_active.T.dot(X.dot(X.T)).dot(projection_active))
-    post_mean = M_2.T.dot(np.linalg.inv(M_1)).dot(y)
-
-    print("observed data", post_mean)
-
-    post_var = M_3 - M_2.T.dot(np.linalg.inv(M_1)).dot(M_2)
-
-    unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
-                                      post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
-
+    prior_variance = 100000.
     #generative_mean = np.zeros(p)
     #sel_split = selection_probability_random_lasso(M_est, generative_mean)
     #test_point = np.append(M_est.observed_score_state, np.abs(M_est.initial_soln[M_est._overall]))
 
     #print("gradient at test point", sel_split.smooth_objective(test_point, mode= "grad"))
 
+
+    class target_class(object):
+        def __init__(self, target_cov):
+            self.target_cov = target_cov
+            self.shape = target_cov.shape
+
+    target = target_class(M_est.target_cov)
+    unadjusted_intervals =(naive_confidence_intervals(target, M_est.target_observed)).T
+
     grad_lasso = sel_inf_random_lasso(M_est, prior_variance)
     samples = grad_lasso.posterior_samples()
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+
+    true_val = np.zeros(nactive)
 
     coverage_ad = np.zeros(nactive)
     coverage_unad = np.zeros(nactive)
     ad_length = np.zeros(nactive)
     unad_length = np.zeros(nactive)
-
-    true_val = np.zeros(nactive)
 
     for l in range(nactive):
         if (adjusted_intervals[0, l] <= true_val[l]) and (true_val[l] <= adjusted_intervals[1, l]):
@@ -91,8 +87,8 @@ def randomized_lasso_trial(X,
 
 if __name__ == "__main__":
     ### set parameters
-    n = 1000
-    p = 200
+    n = 500
+    p = 100
     s = 0
     snr = 0.
 
@@ -106,12 +102,12 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+36)  # ensures different X and y
-         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0., snr=snr)
-         lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-         #X, y, beta, nonzero = logistic_instance(n=n, p=p, s=s, rho=0., snr=snr)
-         #lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-         #sigma = 1.
+         np.random.seed(i)  # ensures different X and y
+         #X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0., snr=snr)
+         # lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+         X, y, beta, nonzero = logistic_instance(n=n, p=p, s=s, rho=0., snr=snr)
+         lam = 1.5 * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+         sigma = 1.
 
          ### RUN LASSO AND TEST
          lasso = randomized_lasso_trial(X,
@@ -162,10 +158,3 @@ if __name__ == "__main__":
 #                                    lam)
 #
 #     np.savetxt(outfile, lasso)
-
-
-
-
-
-
-

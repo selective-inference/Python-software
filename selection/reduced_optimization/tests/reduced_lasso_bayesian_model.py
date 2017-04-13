@@ -8,6 +8,7 @@ from selection.bayesian.initial_soln import selection, instance
 
 from selection.reduced_optimization.lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability, selection_probability_lasso, \
     sel_prob_gradient_map_lasso, selective_inf_lasso
+from selection.reduced_optimization.generative_model import generate_data
 
 def randomized_lasso_trial(X,
                            y,
@@ -94,51 +95,50 @@ def randomized_lasso_trial(X,
         return None
 
 
-if __name__ == "__main__":
-    ### set parameters
-    n = 200
-    p = 1000
-    s = 0
-    snr = 5.
-
-    ### GENERATE X
-    np.random.seed(0)  # ensures same X
-
-    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-
-    niter = 5
-
-    ad_cov = 0.
-    unad_cov = 0.
-    ad_len = 0.
-    unad_len = 0.
-
-    for i in range(niter):
-
-         ### GENERATE Y BASED ON SEED
-         np.random.seed(i+1)  # ensures different y
-         X, y, beta, nonzero, sigma = sample.generate_response()
-
-         ### RUN LASSO AND TEST
-         lasso = randomized_lasso_trial(X,
-                                        y,
-                                        beta,
-                                        sigma)
-
-         if lasso is not None:
-             ad_cov += lasso[0,0]
-             unad_cov += lasso[1,0]
-             ad_len += lasso[2, 0]
-             unad_len += lasso[3, 0]
-             print("\n")
-             print("iteration completed", i)
-             print("\n")
-             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-             print("adjusted and unadjusted lengths", ad_len, unad_len)
+# if __name__ == "__main__":
+#     ### set parameters
+#     n = 200
+#     p = 1000
+#     s = 0
+#     snr = 5.
 #
+#     ### GENERATE X
+#     np.random.seed(0)  # ensures same X
 #
-#     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
-#     print("adjusted and unadjusted lengths", ad_len, unad_len)
+#     sample = generate_data(n, p)
+#
+#     niter = 5
+#
+#     ad_cov = 0.
+#     unad_cov = 0.
+#     ad_len = 0.
+#     unad_len = 0.
+#
+#     for i in range(niter):
+#
+#          ### GENERATE Y BASED ON SEED
+#          np.random.seed(i+1)  # ensures different y
+#          X, y, beta, sigma = sample.generate_response()
+#
+#          print("true value of underlying parameter", beta)
+#
+#          ### RUN LASSO AND TEST
+#          lasso = randomized_lasso_trial(X,
+#                                         y,
+#                                         beta,
+#                                         sigma)
+#
+#          if lasso is not None:
+#              ad_cov += lasso[0,0]
+#              unad_cov += lasso[1,0]
+#              ad_len += lasso[2, 0]
+#              unad_len += lasso[3, 0]
+#              print("\n")
+#              print("iteration completed", i)
+#              print("\n")
+#              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#              print("adjusted and unadjusted lengths", ad_len, unad_len)
+
 
 if __name__ == "__main__":
 # read from command line
@@ -156,11 +156,11 @@ if __name__ == "__main__":
 ### GENERATE X
     np.random.seed(0)  # ensures same X
 
-    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+    sample = generate_data(n, p)
 
 ### GENERATE Y BASED ON SEED
     np.random.seed(seedn) # ensures different y
-    X, y, beta, nonzero, sigma = sample.generate_response()
+    X, y, beta, sigma = sample.generate_response()
 
     lasso = randomized_lasso_trial(X,
                                    y,
@@ -168,3 +168,4 @@ if __name__ == "__main__":
                                    sigma)
 
     np.savetxt(outfile, lasso)
+
