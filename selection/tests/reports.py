@@ -260,7 +260,10 @@ def pivot_plot_plus_naive(multiple_results, coverage=True, color='b', label=None
 
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
-    ax.legend(loc='lower right')
+    ax.set_xlabel("Observed value", fontsize=18)
+    ax.set_ylabel("Empirical CDF", fontsize=18)
+
+    ax.legend(loc='lower right', fontsize=18)
 
     return fig
 

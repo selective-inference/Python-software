@@ -19,7 +19,7 @@ class CV_view(query):
         self.scale2 = scale2
         X, _ = glm_loss.data
         self.n = X.shape[0]
-
+        self.p = X.shape[1]
         self.nboot = 1000
 
     def solve(self, glmnet=False, K=5):
@@ -53,7 +53,6 @@ class CV_view(query):
         (self.observed_opt_state, self.observed_score_state) = (CVR_val, CV1_val)
         self.num_opt_var = self.lam_seq.shape[0]
         self.lam_idx = list(self.lam_seq).index(self.lam_CVR)  # index of the minimizer
-        print("index of the minimizer", self.lam_idx)
 
         self.opt_transform = (np.identity(self.num_opt_var), np.zeros(self.num_opt_var))
         self.score_transform = (-np.identity(self.num_opt_var), np.zeros(self.num_opt_var))
@@ -70,7 +69,7 @@ class CV_view(query):
     def setup_sampler(self):
         return self.CV1_boot
 
-    def one_SD_rule(self, direction="down"):
+    def one_SD_rule(self, direction="up"):
         CVR_val = self.observed_opt_state
         minimum_CVR = np.min(CVR_val)
         #CVR_cov = bootstrap_cov(lambda: np.random.choice(self.n, size=(self.n,), replace=True), self.CVR_boot, nsample=2)

@@ -1,5 +1,5 @@
 import numpy as np
-
+import pandas as pd
 import regreg.api as rr
 from selection.api import (randomization,
                            glm_group_lasso,
@@ -62,7 +62,7 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
 
     if condition_on_CVR:
         cv.condition_on_opt_state()
-        lam = cv.one_SD_rule()
+        lam = cv.one_SD_rule(direction="up")
         print("new lam", lam)
 
     # non-randomied Lasso, just looking how many vars it selects
@@ -156,7 +156,6 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
             naive_length[j] = LU_naive[j,1]-LU_naive[j,0]
             active_var[j] = active_set[j] in nonzero
 
-        print("individual coverage", np.true_divide(sel_covered.sum(),nactive))
         q = 0.2
         BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
         return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
@@ -164,18 +163,28 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
 
 def report(niter=50, **kwargs):
     np.random.seed(500)
-    kwargs = {'s': 0, 'n': 600, 'p': 100, 'snr': 3.5, 'bootstrap': False}
+    #kwargs = {'s': 0, 'n': 600, 'p': 100, 'snr': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
-    CV_runs = reports.collect_multiple_runs(intervals_report['test'],
+    runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
                                              niter,
                                              reports.summarize_all,
                                              **kwargs)
 
-    fig = reports.pivot_plot_plus_naive(CV_runs)
-    fig.suptitle("CV pivots")
+    label = ''.join([kwargs['loss'], "_", str(kwargs['condition_on_CVR']), "_", "test_cv.pkl"])
+    runs.to_pickle(label)
+    runs_read = pd.read_pickle(label)
+
+    fig = reports.pivot_plot_plus_naive(runs_read)
+    fig.suptitle("CV pivots", fontsize=20)
     fig.savefig('cv_pivots.pdf')
 
 
 if __name__ == '__main__':
-    report()
+    np.random.seed(500)
+    kwargs = {'n': 60, 'p': 10, 's': 0, 'snr': 3.5, 'K': 5, 'rho': 0.,
+              'randomizer': 'gaussian', 'randomizer_scale': 1.5,
+              'scale1': 0.1, 'scale2': 0.1,  'lam_frac': 1.,
+              'loss': 'gaussian', 'intervals': 'old',
+              'bootstrap': False, 'condition_on_CVR': True, 'marginalize_subgrad':  True}
+    report(niter=1, **kwargs)

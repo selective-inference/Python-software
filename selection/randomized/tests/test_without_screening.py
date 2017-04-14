@@ -1,6 +1,6 @@
 from __future__ import print_function
 import numpy as np
-
+import pandas as pd
 import regreg.api as rr
 import selection.tests.reports as reports
 
@@ -146,7 +146,7 @@ def test_without_screening(s=30,
         return pivots, covered, ci_length, naive_pvals, covered_naive, ci_length_naive
 
 
-def report(niter=50, **kwargs):
+def report(niter=1, **kwargs):
 
     condition_report = reports.reports['test_without_screening']
     runs = reports.collect_multiple_runs(condition_report['test'],
@@ -154,11 +154,17 @@ def report(niter=50, **kwargs):
                                          niter,
                                          reports.summarize_all,
                                          **kwargs)
+    runs.to_pickle("test_without_screening.pkl")
+    runs_read = pd.read_pickle("test_without_screening.pkl")
 
-    fig = reports.pivot_plot_plus_naive(runs,color='b', label='no screening')
-    fig.suptitle('Testing without screening')
+    fig = reports.pivot_plot_plus_naive(runs_read, color='b', label='no screening')
+
+    fig.suptitle('Testing without screening', fontsize=20)
     fig.savefig('pivots_without_screening.pdf')
 
 
 if __name__ == '__main__':
+    np.random.seed(500)
+    kwargs = {'s':30, 'n':3000, 'p':1000, 'snr':3.5, 'rho':0, 'loss':'gaussian', 'randomizer':'gaussian',
+                  'randomizer_scale':1.2, 'lam_frac':1.}
     report()

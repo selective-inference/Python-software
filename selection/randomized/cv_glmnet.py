@@ -77,7 +77,7 @@ class CV_glmnet(object):
             rv2 = np.asarray(randomization2._sampler(size=(1,)))
         CVR = CV_err+rv1.flatten()+rv2.flatten()
         lam_CVR = self.lam_seq[np.argmin(CVR)] # lam_CVR minimizes CVR
-        print("randomized index:", list(self.lam_seq).index(lam_CVR))
+        #print("randomized index:", list(self.lam_seq).index(lam_CVR))
         CV1 = CV_err+rv1.flatten()
         return  lam_CVR, SD, CVR, CV1, self.lam_seq
 
