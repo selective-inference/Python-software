@@ -5,13 +5,13 @@
 
 # setup dir if needed
 
-DIR=/scratch/users/snigdha/reduced_opt/bayesian/carved_lasso
+DIR=/scratch/users/snigdha/reduced_opt/bayesian/fs
 
 #DIR=/Users/snigdhapanigrahi/scratch
 
 mkdir -p $DIR
 
-for i in {0..50}
+for i in {0..100}
 do
 	#bash single_python_run.sbatch $i $DIR
 	sbatch single_python_run.sbatch $i $DIR
