@@ -76,9 +76,9 @@ def pvalue_plot(multiple_results, screening=False, fig=None, label = '$H_0$', co
         ax.plot(grid, FA, '--o', c=colors[1], lw=2, label=r'$H_A$')
 
     ax.plot([0, 1], [0, 1], 'k-', lw=1)
-    ax.set_xlabel("observed p-value", fontsize=20)
-    ax.set_ylabel("empirical CDF", fontsize=20)
-    ax.legend(loc='lower right', fontsize=20)
+    ax.set_xlabel("observed p-value", fontsize=18)
+    ax.set_ylabel("empirical CDF", fontsize=18)
+    ax.legend(loc='lower right', fontsize=18)
 
     if screening:
         screen = 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])
@@ -260,7 +260,9 @@ def pivot_plot_plus_naive(multiple_results, coverage=True, color='b', label=None
 
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
-    ax.legend(loc='lower right')
+    ax.set_xlabel("Observed value", fontsize=18)
+    ax.set_ylabel("Empirical CDF", fontsize=18)
+    ax.legend(loc='lower right', fontsize=18)
 
     return fig
 

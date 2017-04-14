@@ -168,7 +168,6 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
 
 def report(niter=100, design="random", **kwargs):
 
-    kwargs = {'s': 0, 'n': 500, 'p': 100, 'snr': 3.5, 'sigma': 1, 'rho': 0.}
     if design == "fixed":
         X, _, _, _, _ = gaussian_instance(**kwargs)
         kwargs.update({'X': X})
@@ -189,4 +188,5 @@ def report(niter=100, design="random", **kwargs):
 
 if __name__ == '__main__':
     np.random.seed(500)
+    kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'sigma': 1, 'rho': 0.}
     report()
