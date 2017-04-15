@@ -83,6 +83,8 @@ def randomized_lasso_trial(X,
 
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
+        selective_mean = np.mean(samples, axis=0)
+
         projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
         M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
         M_2 = prior_variance * ((X.dot(X.T)).dot(projection_active))
@@ -116,8 +118,10 @@ def randomized_lasso_trial(X,
         naive_cov = coverage_unad.sum() / nactive
         ad_len = ad_length.sum() / nactive
         unad_len = unad_length.sum() / nactive
+        bayes_risk_ad = np.power(selective_mean-true_val, 2.).sum()
+        bayes_risk_unad = np.power(post_mean-true_val, 2.).sum()
 
-        return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
+        return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
 
     else:
         return None
