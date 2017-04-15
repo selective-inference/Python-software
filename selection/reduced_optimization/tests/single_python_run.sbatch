@@ -13,7 +13,7 @@
 #################
 #time you think you need; default is 2 hours
 #format could be dd-hh:mm:ss, hh:mm:ss, mm:ss, or mm
-#SBATCH --time=4:00:00
+#SBATCH --time=15:00:00
 #################
 #SBATCH --qos=normal
 #SBATCH -p normal 
@@ -37,4 +37,4 @@ cd /home/snigdha/src/selective-inference/selection/reduced_optimization/tests
 
 source /home/snigdha/src/selective-inference/.env/bin/activate
 
-python forward_stepwise_bayesian.py $SEED $DIR
+python reduced_lasso_bayesian_model.py $SEED $DIR
