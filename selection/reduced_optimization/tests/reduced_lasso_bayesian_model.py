@@ -25,12 +25,14 @@ class generate_data():
          beta_true = np.zeros(p)
          u = np.random.uniform(0.,1.,p)
          for i in range(p):
-             if u[i]<= 0.9:
-                 beta_true[i] = np.random.laplace(loc=0., scale=0.1)
+             if u[i]<= 0.95:
+                 beta_true[i] = np.random.laplace(loc=0., scale= 0.05)
              else:
-                 beta_true[i] = np.random.laplace(loc=0., scale=1.)
+                 beta_true[i] = np.random.laplace(loc=0., scale= 0.5)
 
          self.beta = beta_true
+         #print(max(abs(self.beta)), min(abs(self.beta)))
+         #print(self.beta[np.where(self.beta>3.)].shape)
 
     def generate_response(self):
 

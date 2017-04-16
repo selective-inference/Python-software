@@ -37,4 +37,4 @@ cd /home/snigdha/src/selective-inference/selection/reduced_optimization/tests
 
 source /home/snigdha/src/selective-inference/.env/bin/activate
 
-python dual_bayesian.py $SEED $DIR
+python reduced_lasso_bayesian_model.py $SEED $DIR
