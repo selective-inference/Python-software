@@ -181,7 +181,7 @@ if __name__ == "__main__":
 
 ### set parameters
     n = 300
-    p = 5000
+    p = 3000
     s = 0
     snr = 5.
 

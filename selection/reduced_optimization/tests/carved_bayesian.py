@@ -164,11 +164,11 @@ def carved_lasso_trial(X,
 
 if __name__ == "__main__":
 
-    # read from command line
-    seedn = int(sys.argv[1])
-    outdir = sys.argv[2]
-
-    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
+    # # read from command line
+    # seedn = int(sys.argv[1])
+    # outdir = sys.argv[2]
+    #
+    # outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
 
     ### set parameters
     n = 1000
@@ -176,14 +176,30 @@ if __name__ == "__main__":
     s = 0
     snr = 0.
 
-    np.random.seed(seedn)
-    X, y, beta, sigma = generate_data_random(n=n, p=p)
-    lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+    niter = 5
+    ad_cov = 0.
+    unad_cov = 0.
+    ad_len = 0.
+    unad_len = 0.
 
-    lasso = carved_lasso_trial(X,
-                               y,
-                               beta,
-                               sigma,
-                               lam)
+    for i in range(niter):
+        np.random.seed(i+45)
+        X, y, beta, sigma = generate_data_random(n=n, p=p)
+        lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+        lasso = carved_lasso_trial(X,
+                                   y,
+                                   beta,
+                                   sigma,
+                                   lam)
 
-    np.savetxt(outfile, lasso)
+        ad_cov += lasso[0, 0]
+        unad_cov += lasso[1, 0]
+        ad_len += lasso[2, 0]
+        unad_len += lasso[3, 0]
+        print("\n")
+        print("iteration completed", i)
+        print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+        print("adjusted and unadjusted lengths", ad_len, unad_len)
+
+    print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+    print("adjusted and unadjusted lengths", ad_len, unad_len)
