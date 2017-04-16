@@ -5,7 +5,7 @@
 
 # setup dir if needed
 
-DIR=/scratch/users/snigdha/reduced_opt/bayesian/example
+DIR=/scratch/users/snigdha/reduced_opt/bayesian/dual
 
 #DIR=/Users/snigdhapanigrahi/scratch
 
