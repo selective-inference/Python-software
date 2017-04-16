@@ -118,8 +118,8 @@ def randomized_lasso_trial(X,
         naive_cov = coverage_unad.sum() / nactive
         ad_len = ad_length.sum() / nactive
         unad_len = unad_length.sum() / nactive
-        bayes_risk_ad = np.power(selective_mean-true_val, 2.).sum()
-        bayes_risk_unad = np.power(post_mean-true_val, 2.).sum()
+        bayes_risk_ad = np.power(selective_mean-true_val, 2.).sum()/nactive
+        bayes_risk_unad = np.power(post_mean-true_val, 2.).sum()/nactive
 
         return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
 
