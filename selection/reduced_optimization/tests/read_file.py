@@ -23,7 +23,6 @@ def summary_files(list_):
 
     length = len(list_)
     print("number of simulations", length)
-    length = length - 50
 
     for i in range(length):
         print("iteration", i)
@@ -32,8 +31,8 @@ def summary_files(list_):
         coverage_unad += lasso[1,0]
         length_ad += lasso[2,0]
         length_unad += lasso[3,0]
-        #loss_ad += lasso[4,0]
-        #loss_unad += lasso[5, 0]
+        loss_ad += lasso[4,0]
+        loss_unad += lasso[5, 0]
 
     return coverage_ad / length, coverage_unad / length, length_ad / length, length_unad / length,\
            loss_ad/length, loss_unad/length
