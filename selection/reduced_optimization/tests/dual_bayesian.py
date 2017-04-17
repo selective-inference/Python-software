@@ -121,31 +121,76 @@ def randomized_lasso_trial(X,
     else:
         return np.vstack([0., 0., 0., 0.])
 
+# if __name__ == "__main__":
+# # read from command line
+#     seedn=int(sys.argv[1])
+#     outdir=sys.argv[2]
+#
+#     outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
+#
+# ### set parameters
+#     n = 1000
+#     p = 200
+#     s = 0
+#     snr = 5.
+#
+# ### GENERATE X
+#     np.random.seed(0)  # ensures same X
+#
+#     sample = generate_data(n, p)
+#
+# ### GENERATE Y BASED ON SEED
+#     np.random.seed(seedn) # ensures different y
+#     X, y, beta, sigma = sample.generate_response()
+#
+#     lasso = randomized_lasso_trial(X,
+#                                    y,
+#                                    beta,
+#                                    sigma)
+#
+#     np.savetxt(outfile, lasso)
+
 if __name__ == "__main__":
-# read from command line
-    seedn=int(sys.argv[1])
-    outdir=sys.argv[2]
-
-    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
-
-### set parameters
+    ### set parameters
     n = 1000
     p = 200
     s = 0
     snr = 5.
 
-### GENERATE X
+    ### GENERATE X
     np.random.seed(0)  # ensures same X
 
     sample = generate_data(n, p)
 
-### GENERATE Y BASED ON SEED
-    np.random.seed(seedn) # ensures different y
-    X, y, beta, sigma = sample.generate_response()
+    niter = 50
 
-    lasso = randomized_lasso_trial(X,
-                                   y,
-                                   beta,
-                                   sigma)
+    ad_cov = 0.
+    unad_cov = 0.
+    ad_len = 0.
+    unad_len = 0.
 
-    np.savetxt(outfile, lasso)
+    for i in range(niter):
+
+         ### GENERATE Y BASED ON SEED
+         np.random.seed(i+6)  # ensures different y
+         X, y, beta, sigma = sample.generate_response()
+
+         ### RUN LASSO AND TEST
+         lasso = randomized_lasso_trial(X,
+                                        y,
+                                        beta,
+                                        sigma)
+
+         if lasso is not None:
+             ad_cov += lasso[0, 0]
+             unad_cov += lasso[1, 0]
+             ad_len += lasso[2, 0]
+             unad_len += lasso[3, 0]
+             print("\n")
+             print("iteration completed", i)
+             print("\n")
+             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+             print("adjusted and unadjusted lengths", ad_len, unad_len)
+
+    print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+    print("adjusted and unadjusted lengths", ad_len, unad_len)

@@ -182,8 +182,8 @@ if __name__ == "__main__":
     outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
 
 ### set parameters
-    n = 300
-    p = 3000
+    n = 200
+    p = 1000
     s = 0
     snr = 5.
 

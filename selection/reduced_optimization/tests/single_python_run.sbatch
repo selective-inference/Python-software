@@ -13,7 +13,7 @@
 #################
 #time you think you need; default is 2 hours
 #format could be dd-hh:mm:ss, hh:mm:ss, mm:ss, or mm
-#SBATCH --time=10:00:00
+#SBATCH --time=6:00:00
 #################
 #SBATCH --qos=normal
 #SBATCH -p normal 
