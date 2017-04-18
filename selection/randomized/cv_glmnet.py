@@ -10,19 +10,28 @@ from selection.api import randomization
 
 class CV_glmnet(object):
 
-    def __init__(self, loss):
+    def __init__(self, loss, loss_label):
         self.loss = loss
+        if loss_label=="gaussian":
+            self.family=robjects.StrVector('g')
+        elif loss_label=="logistic":
+            self.family=robjects.StrVector('b')
 
     def using_glmnet(self, loss=None):
         robjects.r('''
-            glmnet_cv = function(X,y, lam_seq=NA){
+            glmnet_cv = function(X,y, family, lam_seq=NA){
             y = as.matrix(y)
             X = as.matrix(X)
+            if (family=="b"){
+                family.full = "binomial"
+            } else if (family=="g"){
+                family.full = "gaussian"
+            }
             if (is.na(lam_seq)){
-                G_CV = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
+                G_CV = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE, family=family.full)
             }
             else {
-                G_CV = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE, lambda=lam_seq)
+                G_CV = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE, lambda=lam_seq, family=family.full)
 
             }
             lam_1SE = G_CV$lambda.1se
@@ -43,10 +52,10 @@ class CV_glmnet(object):
         r_X = robjects.r.matrix(X, nrow=n, ncol=p)
         r_y = robjects.r.matrix(y, nrow=n, ncol=1)
         if not hasattr(self, 'lam_seq'):
-            result = r_glmnet_cv(r_X,r_y)
+            result = r_glmnet_cv(r_X, r_y, self.family)
         else:
             r_lam_seq = robjects.r.matrix(np.true_divide(self.lam_seq, n), nrow=self.lam_seq.shape[0], ncol=1)
-            result = r_glmnet_cv(r_X, r_y, r_lam_seq)
+            result = r_glmnet_cv(r_X, r_y, self.family, r_lam_seq)
         lam_minCV = result[0][0]
         lam_1SE = result[1][0]
         lam_seq = np.array(result[2])

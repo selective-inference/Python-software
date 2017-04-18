@@ -182,9 +182,9 @@ def report(niter=50, **kwargs):
 
 if __name__ == '__main__':
     np.random.seed(500)
-    kwargs = {'n': 60, 'p': 10, 's': 0, 'snr': 3.5, 'K': 5, 'rho': 0.,
+    kwargs = {'n': 600, 'p': 100, 's': 0, 'snr': 3.5, 'K': 5, 'rho': 0.,
               'randomizer': 'gaussian', 'randomizer_scale': 1.5,
               'scale1': 0.1, 'scale2': 0.1,  'lam_frac': 1.,
-              'loss': 'gaussian', 'intervals': 'old',
+              'loss': 'logistic', 'intervals': 'old',
               'bootstrap': False, 'condition_on_CVR': True, 'marginalize_subgrad':  True}
     report(niter=1, **kwargs)

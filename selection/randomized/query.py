@@ -118,9 +118,7 @@ class query(object):
 
         full_data = self.reconstruction_map(data_state, data_transform, opt_state)
         return self.randomization.log_density(full_data)
-
-    # Abstract methods to be
-    # implemented by subclasses
+     # implemented by subclasses
 
     def grad_log_jacobian(self, opt_state):
         """

@@ -45,7 +45,7 @@ class CV_view(query):
                             objective_randomization=self.lasso_randomization,
                             epsilon=self.epsilon)
         else:
-            CV_compute = CV_glmnet(self.loss)
+            CV_compute = CV_glmnet(self.loss, self.loss_label)
 
         self.lam_CVR, self.SD, CVR_val, CV1_val, self.lam_seq = CV_compute.choose_lambda_CVR(self.scale1, self.scale2)
         if (self.scale1 is not None) and (self.scale2 is not None):
