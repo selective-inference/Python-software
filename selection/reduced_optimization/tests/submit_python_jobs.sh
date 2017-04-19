@@ -5,7 +5,7 @@
 
 # setup dir if needed
 
-DIR=/scratch/users/snigdha/reduced_opt/bayes_fs
+DIR=/scratch/users/snigdha/reduced_opt/bayes_fs_1
 
 #DIR=/Users/snigdhapanigrahi/scratch
 
