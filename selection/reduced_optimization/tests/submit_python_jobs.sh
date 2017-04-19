@@ -11,7 +11,7 @@ DIR=/scratch/users/snigdha/reduced_opt/bayes
 
 mkdir -p $DIR
 
-for i in {0..100}
+for i in {0..50}
 do
 	#bash single_python_run.sbatch $i $DIR
 	sbatch single_python_run.sbatch $i $DIR
