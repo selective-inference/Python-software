@@ -491,7 +491,7 @@ class selective_inf_lasso(rr.smooth_atom):
         for i in xrange(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
-            #print i, sampler.state.copy()
+            print i, sampler.state.copy()
             sys.stderr.write("sample number: " + str(i)+"\n")
 
         samples = np.array(samples)
