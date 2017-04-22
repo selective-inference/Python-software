@@ -101,7 +101,7 @@ if __name__ == "__main__":
     snr = 0.
 
 
-    niter = 28
+    niter = 10
     ad_cov = 0.
     unad_cov = 0.
     ad_len = 0.
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+58)  # ensures different X and y
+         np.random.seed(i+76)  # ensures different X and y
          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0., snr=snr)
          lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
          #X, y, beta, nonzero = logistic_instance(n=n, p=p, s=s, rho=0., snr=snr)

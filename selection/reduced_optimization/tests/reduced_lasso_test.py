@@ -97,13 +97,13 @@ def randomized_lasso_trial(X,
     else:
         return None
 
-
+#
 # if __name__ == "__main__":
 #     ### set parameters
-#     n = 200
-#     p = 1000
-#     s = 0
-#     snr = 5.
+#     n = 500
+#     p = 3000
+#     s = 5
+#     snr = 7.
 #
 #     ### GENERATE X
 #     np.random.seed(0)  # ensures same X
@@ -148,10 +148,10 @@ if __name__ == "__main__":
     outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
 
 ### set parameters
-    n = 200
-    p = 1000
-    s = 0
-    snr = 5.
+    n = 500
+    p = 3000
+    s = 5
+    snr = 7.
 
 ### GENERATE X
     np.random.seed(0)  # ensures same X
