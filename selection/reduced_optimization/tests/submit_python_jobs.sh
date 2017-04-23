@@ -5,7 +5,7 @@
 
 # setup dir if needed
 
-DIR=/scratch/users/snigdha/reduced_opt/outputs/experiment
+DIR=/scratch/users/snigdha/reduced_opt/outputs/experiment_10
 
 #DIR=/Users/snigdhapanigrahi/scratch
 
