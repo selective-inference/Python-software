@@ -99,10 +99,10 @@ def randomized_lasso_trial(X,
 
 # if __name__ == "__main__":
 #     ### set parameters
-#     n = 1000
-#     p = 200
-#     s = 0
-#     snr = 5.
+#     n = 3000
+#     p = 500
+#     s = 10
+#     snr = 7.
 #
 #     ### GENERATE X
 #     np.random.seed(0)  # ensures same X
