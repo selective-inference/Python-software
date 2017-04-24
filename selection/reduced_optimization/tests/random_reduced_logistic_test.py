@@ -39,10 +39,10 @@ def randomized_lasso_trial(X,
     M_est = M_estimator_approx_logistic(loss, epsilon, penalty, randomization, randomizer, estimation)
     M_est.solve_approx()
     active = M_est._overall
-    glm = M_est.initial_soln[active]
     #print("here",glm.shape)
     active_set = np.asarray([i for i in range(p) if active[i]])
     nactive = np.sum(active)
+    glm = M_est.observed_score_state[:nactive]
 
     prior_variance = 100000.
     #generative_mean = np.zeros(p)
@@ -99,7 +99,7 @@ if __name__ == "__main__":
     snr = 0.
 
 
-    niter = 44
+    niter = 50
     ad_cov = 0.
     unad_cov = 0.
     ad_len = 0.
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+6)  # ensures different X and y
+         np.random.seed(i)  # ensures different X and y
          #X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0., snr=snr)
          # lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
          X, y, beta, nonzero = logistic_instance(n=n, p=p, s=s, rho=0., snr=snr)
