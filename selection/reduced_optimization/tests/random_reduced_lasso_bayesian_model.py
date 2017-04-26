@@ -67,6 +67,8 @@ def randomized_lasso_trial(X,
     samples = grad_lasso.posterior_samples()
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
+    selective_mean = np.mean(samples, axis=0)
+
     coverage_ad = np.zeros(nactive)
     coverage_unad = np.zeros(nactive)
     ad_length = np.zeros(nactive)
@@ -86,8 +88,10 @@ def randomized_lasso_trial(X,
     naive_cov = coverage_unad.sum() / nactive
     ad_len = ad_length.sum() / nactive
     unad_len = unad_length.sum() / nactive
+    bayes_risk_ad = np.power(selective_mean - true_val, 2.).sum() / nactive
+    bayes_risk_unad = np.power(post_mean - true_val, 2.).sum() / nactive
 
-    return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
+    return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
 
 
 if __name__ == "__main__":
@@ -103,11 +107,13 @@ if __name__ == "__main__":
     unad_cov = 0.
     ad_len = 0.
     unad_len = 0.
+    ad_risk = 0.
+    unad_risk = 0.
 
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+76)  # ensures different X and y
+         np.random.seed(i+36)  # ensures different X and y
          X, y, beta, sigma = generate_data_random(n=n, p=p)
          lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
          #X, y, beta, nonzero = logistic_instance(n=n, p=p, s=s, rho=0., snr=snr)
@@ -126,12 +132,17 @@ if __name__ == "__main__":
              unad_cov += lasso[1,0]
              ad_len += lasso[2,0]
              unad_len += lasso[3,0]
+             ad_risk += lasso[4, 0]
+             unad_risk += lasso[5, 0]
+
              print("\n")
              print("iteration completed", i)
              print("\n")
              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
              print("adjusted and unadjusted lengths", ad_len, unad_len)
+             print("adjusted and unadjusted risks", ad_risk, unad_risk)
 
 
     print("adjusted and unadjusted coverage",ad_cov, unad_cov)
     print("adjusted and unadjusted lengths", ad_len, unad_len)
+    print("adjusted and unadjusted risks", ad_risk, unad_risk)

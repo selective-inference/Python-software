@@ -158,7 +158,7 @@ if __name__ == "__main__":
 ### set parameters
     n = 3000
     p = 500
-    s = 10
+    s = 5
     snr = 7.
 
 ### GENERATE X
