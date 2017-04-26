@@ -46,7 +46,7 @@ OLS_3TC = ols_fit.params
 
 # Design matrix
 # Columns are site / amino acid pairs
-print(X.shape)
+
 
 #solving the Lasso at theoretical lambda
 tau = 1.0
