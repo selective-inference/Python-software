@@ -82,6 +82,8 @@ def randomized_lasso_trial(X,
 
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
+        selective_mean = np.mean(samples, axis=0)
+
         projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
         M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
         M_2 = prior_variance * ((X.dot(X.T)).dot(projection_active))
@@ -115,82 +117,84 @@ def randomized_lasso_trial(X,
         naive_cov = coverage_unad.sum() / nactive
         ad_len = ad_length.sum() / nactive
         unad_len = unad_length.sum() / nactive
+        bayes_risk_ad = np.power(selective_mean - true_val, 2.).sum() / nactive
+        bayes_risk_unad = np.power(post_mean - true_val, 2.).sum() / nactive
 
-        return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
+        return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
 
     else:
-        return np.vstack([0., 0., 0., 0.])
-
-# if __name__ == "__main__":
-# # read from command line
-#     seedn=int(sys.argv[1])
-#     outdir=sys.argv[2]
-#
-#     outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
-#
-# ### set parameters
-#     n = 1000
-#     p = 200
-#     s = 0
-#     snr = 5.
-#
-# ### GENERATE X
-#     np.random.seed(0)  # ensures same X
-#
-#     sample = generate_data(n, p)
-#
-# ### GENERATE Y BASED ON SEED
-#     np.random.seed(seedn) # ensures different y
-#     X, y, beta, sigma = sample.generate_response()
-#
-#     lasso = randomized_lasso_trial(X,
-#                                    y,
-#                                    beta,
-#                                    sigma)
-#
-#     np.savetxt(outfile, lasso)
+        return np.vstack([0., 0., 0., 0., 0., 0.])
 
 if __name__ == "__main__":
-    ### set parameters
+# read from command line
+    seedn=int(sys.argv[1])
+    outdir=sys.argv[2]
+
+    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
+
+### set parameters
     n = 1000
     p = 200
     s = 0
     snr = 5.
 
-    ### GENERATE X
+### GENERATE X
     np.random.seed(0)  # ensures same X
 
     sample = generate_data(n, p)
 
-    niter = 5
+### GENERATE Y BASED ON SEED
+    np.random.seed(seedn) # ensures different y
+    X, y, beta, sigma = sample.generate_response()
 
-    ad_cov = 0.
-    unad_cov = 0.
-    ad_len = 0.
-    unad_len = 0.
+    lasso = randomized_lasso_trial(X,
+                                   y,
+                                   beta,
+                                   sigma)
 
-    for i in range(niter):
+    np.savetxt(outfile, lasso)
 
-         ### GENERATE Y BASED ON SEED
-         np.random.seed(i+45)  # ensures different y
-         X, y, beta, sigma = sample.generate_response()
-
-         ### RUN LASSO AND TEST
-         lasso = randomized_lasso_trial(X,
-                                        y,
-                                        beta,
-                                        sigma)
-
-         if lasso is not None:
-             ad_cov += lasso[0, 0]
-             unad_cov += lasso[1, 0]
-             ad_len += lasso[2, 0]
-             unad_len += lasso[3, 0]
-             print("\n")
-             print("iteration completed", i)
-             print("\n")
-             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-             print("adjusted and unadjusted lengths", ad_len, unad_len)
-
-    print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-    print("adjusted and unadjusted lengths", ad_len, unad_len)
+# if __name__ == "__main__":
+#     ### set parameters
+#     n = 1000
+#     p = 200
+#     s = 0
+#     snr = 5.
+#
+#     ### GENERATE X
+#     np.random.seed(0)  # ensures same X
+#
+#     sample = generate_data(n, p)
+#
+#     niter = 5
+#
+#     ad_cov = 0.
+#     unad_cov = 0.
+#     ad_len = 0.
+#     unad_len = 0.
+#
+#     for i in range(niter):
+#
+#          ### GENERATE Y BASED ON SEED
+#          np.random.seed(i+45)  # ensures different y
+#          X, y, beta, sigma = sample.generate_response()
+#
+#          ### RUN LASSO AND TEST
+#          lasso = randomized_lasso_trial(X,
+#                                         y,
+#                                         beta,
+#                                         sigma)
+#
+#          if lasso is not None:
+#              ad_cov += lasso[0, 0]
+#              unad_cov += lasso[1, 0]
+#              ad_len += lasso[2, 0]
+#              unad_len += lasso[3, 0]
+#              print("\n")
+#              print("iteration completed", i)
+#              print("\n")
+#              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#              print("adjusted and unadjusted lengths", ad_len, unad_len)
+#
+#     print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+#     print("adjusted and unadjusted lengths", ad_len, unad_len)
