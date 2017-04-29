@@ -101,7 +101,7 @@ def randomized_lasso_trial(X,
 #     ### set parameters
 #     n = 3000
 #     p = 500
-#     s = 10
+#     s = 20
 #     snr = 7.
 #
 #     ### GENERATE X
@@ -158,7 +158,7 @@ if __name__ == "__main__":
 ### set parameters
     n = 3000
     p = 500
-    s = 5
+    s = 20
     snr = 7.
 
 ### GENERATE X
