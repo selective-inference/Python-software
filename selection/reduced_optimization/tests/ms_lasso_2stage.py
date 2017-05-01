@@ -139,7 +139,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i)  # ensures different y
+         np.random.seed(i+40)  # ensures different y
          X, y, beta, nonzero, sigma = sample.generate_response()
 
          ### RUN LASSO AND TEST
