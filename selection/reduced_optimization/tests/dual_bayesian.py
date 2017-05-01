@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     sample = generate_data(n, p)
 
-    niter = 5
+    niter = 20
 
     ad_cov = 0.
     unad_cov = 0.
@@ -178,7 +178,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i+45)  # ensures different y
+         np.random.seed(i+30)  # ensures different y
          X, y, beta, sigma = sample.generate_response()
 
          ### RUN LASSO AND TEST

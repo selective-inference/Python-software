@@ -90,8 +90,8 @@ def randomized_marginal_screening(X,
 
 if __name__ == "__main__":
     ### set parameters
-    n = 100
-    p = 500
+    n = 200
+    p = 1000
     s = 0
     snr = 5.
 

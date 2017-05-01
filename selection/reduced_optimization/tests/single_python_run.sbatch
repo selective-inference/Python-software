@@ -13,7 +13,7 @@
 #################
 #time you think you need; default is 2 hours
 #format could be dd-hh:mm:ss, hh:mm:ss, mm:ss, or mm
-#SBATCH --time=48:00:00
+#SBATCH --time=10:00:00
 #################
 #SBATCH --qos=normal
 #SBATCH -p normal 
@@ -37,4 +37,4 @@ cd /home/snigdha/src/selective-inference/selection/reduced_optimization/tests
 
 source /home/snigdha/src/selective-inference/.env/bin/activate
 
-python dual_lasso_test.py $SEED $DIR
+python reduced_lasso_test.py $SEED $DIR
