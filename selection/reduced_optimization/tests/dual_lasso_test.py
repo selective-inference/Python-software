@@ -97,82 +97,82 @@ def randomized_lasso_trial(X,
     else:
         return np.vstack([0., 0., 0., 0., 0., 0.])
 
-# if __name__ == "__main__":
-#     ### set parameters
-#     n = 3000
-#     p = 500
-#     s = 20
-#     snr = 7.
-#
-#     ### GENERATE X
-#     np.random.seed(0)  # ensures same X
-#
-#     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-#
-#     niter = 50
-#
-#     ad_cov = 0.
-#     unad_cov = 0.
-#     ad_len = 0.
-#     unad_len = 0.
-#     ad_risk = 0.
-#     unad_risk = 0.
-#
-#     for i in range(niter):
-#
-#          ### GENERATE Y BASED ON SEED
-#          np.random.seed(i+1)  # ensures different y
-#          X, y, beta, nonzero, sigma = sample.generate_response()
-#
-#          ### RUN LASSO AND TEST
-#          lasso = randomized_lasso_trial(X,
-#                                         y,
-#                                         beta,
-#                                         sigma)
-#
-#          if lasso is not None:
-#              ad_cov += lasso[0, 0]
-#              unad_cov += lasso[1, 0]
-#              ad_len += lasso[2, 0]
-#              unad_len += lasso[3, 0]
-#              ad_risk += lasso[4,0]
-#              unad_risk += lasso[5, 0]
-#              print("\n")
-#              print("iteration completed", i)
-#              print("\n")
-#              print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-#              print("adjusted and unadjusted lengths", ad_len, unad_len)
-#              print("adjusted and unadjusted risks", ad_risk, unad_risk)
-#
-#     print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-#     print("adjusted and unadjusted lengths", ad_len, unad_len)
-#     print("adjusted and unadjusted risks", ad_risk, unad_risk)
-
 if __name__ == "__main__":
-# read from command line
-    seedn = int(sys.argv[1])
-    outdir = sys.argv[2]
-
-    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
-
-### set parameters
+    ### set parameters
     n = 3000
     p = 500
     s = 0
     snr = 7.
 
-### GENERATE X
+    ### GENERATE X
     np.random.seed(0)  # ensures same X
 
     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
 
-### GENERATE Y BASED ON SEED
-    np.random.seed(seedn) # ensures different y
-    X, y, beta, nonzero, sigma = sample.generate_response()
+    niter = 50
 
-    lasso = randomized_lasso_trial(X,
-                                   y,
-                                   beta,
-                                   sigma)
+    ad_cov = 0.
+    unad_cov = 0.
+    ad_len = 0.
+    unad_len = 0.
+    ad_risk = 0.
+    unad_risk = 0.
 
-    np.savetxt(outfile, lasso)
+    for i in range(niter):
+
+         ### GENERATE Y BASED ON SEED
+         np.random.seed(i+1)  # ensures different y
+         X, y, beta, nonzero, sigma = sample.generate_response()
+
+         ### RUN LASSO AND TEST
+         lasso = randomized_lasso_trial(X,
+                                        y,
+                                        beta,
+                                        sigma)
+
+         if lasso is not None:
+             ad_cov += lasso[0, 0]
+             unad_cov += lasso[1, 0]
+             ad_len += lasso[2, 0]
+             unad_len += lasso[3, 0]
+             ad_risk += lasso[4,0]
+             unad_risk += lasso[5, 0]
+             print("\n")
+             print("iteration completed", i)
+             print("\n")
+             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+             print("adjusted and unadjusted lengths", ad_len, unad_len)
+             print("adjusted and unadjusted risks", ad_risk, unad_risk)
+
+    print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+    print("adjusted and unadjusted lengths", ad_len, unad_len)
+    print("adjusted and unadjusted risks", ad_risk, unad_risk)
+
+# if __name__ == "__main__":
+# # read from command line
+#     seedn = int(sys.argv[1])
+#     outdir = sys.argv[2]
+#
+#     outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
+#
+# ### set parameters
+#     n = 3000
+#     p = 500
+#     s = 0
+#     snr = 7.
+#
+# ### GENERATE X
+#     np.random.seed(0)  # ensures same X
+#
+#     sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+#
+# ### GENERATE Y BASED ON SEED
+#     np.random.seed(seedn) # ensures different y
+#     X, y, beta, nonzero, sigma = sample.generate_response()
+#
+#     lasso = randomized_lasso_trial(X,
+#                                    y,
+#                                    beta,
+#                                    sigma)
+#
+#     np.savetxt(outfile, lasso)
