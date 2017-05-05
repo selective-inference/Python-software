@@ -5,41 +5,42 @@ import os
 import regreg.api as rr
 
 import numpy as np
-from selection.reduced_optimization.generative_model import generate_data_random
+from selection.reduced_optimization.generative_model import generate_data, generate_data_random
+from selection.bayesian.initial_soln import selection, instance
 
-def selection(X, y, random_Z, randomization_scale=1, sigma=None, method="theoretical"):
-    n, p = X.shape
-    loss = rr.glm.gaussian(X,y)
-    epsilon = 1. / np.sqrt(n)
-    lam_frac = 1.
-    if sigma is None:
-        sigma = 1.
-    if method == "theoretical":
-        lam = 1. * sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
-    # elif method == "cross-validation":
-    #     lam = tuning_parameter_glmnet(X, y)[1]
-    #     print(lam)
-
-    W = np.ones(p)*lam
-    penalty = rr.group_lasso(np.arange(p), weights = dict(zip(np.arange(p), W)), lagrange=1.)
-
-    # initial solution
-
-    problem = rr.simple_problem(loss, penalty)
-    random_term = rr.identity_quadratic(epsilon, 0, 0, 0)
-    solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
-
-
-    solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
-    initial_soln = problem.solve(random_term, **solve_args)
-    active = (initial_soln != 0)
-    if np.sum(active) == 0:
-        return None
-    initial_grad = loss.smooth_objective(initial_soln, mode='grad')
-    betaE = initial_soln[active]
-    subgradient = -(initial_grad+epsilon*initial_soln-randomization_scale*random_Z)
-    cube = subgradient[~active]/lam
-    return lam, epsilon, active, betaE, cube, initial_soln
+# def selection(X, y, random_Z, randomization_scale=1, sigma=None, method="theoretical"):
+#     n, p = X.shape
+#     loss = rr.glm.gaussian(X,y)
+#     epsilon = 1. / np.sqrt(n)
+#     lam_frac = 1.
+#     if sigma is None:
+#         sigma = 1.
+#     if method == "theoretical":
+#         lam = 1. * sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 10000)))).max(0))
+#     # elif method == "cross-validation":
+#     #     lam = tuning_parameter_glmnet(X, y)[1]
+#     #     print(lam)
+#
+#     W = np.ones(p)*lam
+#     penalty = rr.group_lasso(np.arange(p), weights = dict(zip(np.arange(p), W)), lagrange=1.)
+#
+#     # initial solution
+#
+#     problem = rr.simple_problem(loss, penalty)
+#     random_term = rr.identity_quadratic(epsilon, 0, 0, 0)
+#     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
+#
+#
+#     solve_args = {'tol': 1.e-10, 'min_its': 100, 'max_its': 500}
+#     initial_soln = problem.solve(random_term, **solve_args)
+#     active = (initial_soln != 0)
+#     if np.sum(active) == 0:
+#         return None
+#     initial_grad = loss.smooth_objective(initial_soln, mode='grad')
+#     betaE = initial_soln[active]
+#     subgradient = -(initial_grad+epsilon*initial_soln-randomization_scale*random_Z)
+#     cube = subgradient[~active]/lam
+#     return lam, epsilon, active, betaE, cube, initial_soln
 
 def lasso_selection(X,
                     y,
@@ -100,7 +101,7 @@ if __name__ == "__main__":
     p = 1000
 
     ### GENERATE X
-    niter = 100
+    niter = 50
 
     unad_cov = 0.
     unad_len = 0.
@@ -108,9 +109,13 @@ if __name__ == "__main__":
 
     for i in range(niter):
 
+         np.random.seed(0)
+
+         sample = instance(n=n, p=p, s=0, sigma=1., rho=0, snr=7.)
+
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i+1)  # ensures different y
-         X, y, beta, sigma = generate_data_random(n=n, p=p)
+         np.random.seed(i)  # ensures different y
+         X, y, beta, nonzero, sigma = sample.generate_response()
 
          #samp = np.random.choice(range(200), 100, replace=False)
          #y_samp = y[samp]
