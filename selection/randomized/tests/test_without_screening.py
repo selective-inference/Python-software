@@ -154,17 +154,23 @@ def report(niter=1, **kwargs):
                                          niter,
                                          reports.summarize_all,
                                          **kwargs)
-    runs.to_pickle("test_without_screening.pkl")
-    runs_read = pd.read_pickle("test_without_screening.pkl")
+
+    pkl_label = ''.join(["test_without_screening.pkl", "_", kwargs['loss'],"_",\
+                         kwargs['randomizer'], ".pkl"])
+    pdf_label = ''.join(["test_without_screening.pkl", "_", kwargs['loss'], "_", \
+                         kwargs['randomizer'], ".pdf"])
+    runs.to_pickle(pkl_label)
+    runs_read = pd.read_pickle(pkl_label)
 
     fig = reports.pivot_plot_plus_naive(runs_read, color='b', label='no screening')
 
+
     fig.suptitle('Testing without screening', fontsize=20)
-    fig.savefig('pivots_without_screening.pdf')
+    fig.savefig(pdf_label)
 
 
 if __name__ == '__main__':
     np.random.seed(500)
     kwargs = {'s':30, 'n':3000, 'p':1000, 'snr':3.5, 'rho':0, 'loss':'gaussian', 'randomizer':'gaussian',
                   'randomizer_scale':1.2, 'lam_frac':1.}
-    report()
+    report(niter=1, **kwargs)
