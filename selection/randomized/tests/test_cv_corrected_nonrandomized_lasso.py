@@ -16,7 +16,9 @@ from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 from selection.randomized.tests.test_cv_lee_et_al import pivot, equal_tailed_interval
 
-@register_report(['pvalue', 'cover', 'ci_length_clt', 'active_var'])
+@register_report(['pvalue', 'cover', 'ci_length_clt',
+                  'naive_pvalues', 'covered_naive', 'ci_length_naive',
+                  'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
@@ -29,7 +31,8 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
                                     K = 5,
                                     loss="gaussian",
                                     X = None,
-                                    check_screen=True):
+                                    check_screen=True,
+                                    intervals=False):
 
     print (n, p, s, rho)
     if X is not None:
@@ -125,6 +128,10 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
         sel_covered = np.zeros(nactive)
         active_var = np.zeros(nactive, np.bool)
 
+        naive_pvalues = np.zeros(nactive)
+        naive_length = np.zeros(nactive)
+        naive_covered = np.zeros(nactive)
+
         #if not full_constraints(one_step):
         #    raise ValueError('constraints are wrong')
 
@@ -140,11 +147,12 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
                     _pval = pivot(L, Z, U, S)
                     # two-sided
                     _pval = 2 * min(_pval, 1 - _pval)
-                    if _pval < 10 ** (-8):
-                        return None
-                    L, Z, U, S = C.bounds(eta, one_step)
-                    _interval = equal_tailed_interval(L, Z, U, S, alpha=alpha)
-                    _interval = sorted([_interval[0] * active_signs[i],
+                    if intervals==True:
+                        if _pval < 10 ** (-8):
+                            return None
+                        L, Z, U, S = C.bounds(eta, one_step)
+                        _interval = equal_tailed_interval(L, Z, U, S, alpha=alpha)
+                        _interval = sorted([_interval[0] * active_signs[i],
                                         _interval[1] * active_signs[i]])
                 else:
                     obs = (eta * one_step).sum()
@@ -152,18 +160,44 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
                     Z = obs / sd
                     # use Phi truncated to [-5,5]
                     _pval = 2 * (ndist.sf(min(np.fabs(Z))) - ndist.sf(5)) / (ndist.cdf(5) - ndist.cdf(-5))
-                    _interval = (obs - ndist.ppf(1 - alpha / 2) * sd,
+                    if intervals==True:
+                        _interval = (obs - ndist.ppf(1 - alpha / 2) * sd,
                                  obs + ndist.ppf(1 - alpha / 2) * sd)
                 pvalues[i] = _pval
-                sel_length[i] = _interval[1] - _interval[0]
-                if (_interval[0] <= true_vec[i]) and (_interval[1] >= true_vec[i]):
-                    sel_covered[i] = 1
+
+                def naive_inference():
+                    obs = (eta * one_step).sum()
+                    sd = np.sqrt(np.dot(eta.T, C.covariance.dot(eta)))
+                    Z = obs / sd
+                    # use Phi truncated to [-5,5]
+                    _pval = ndist.cdf(obs / sigma)
+                    _pval = 2 * min(_pval, 1 - _pval)
+                    _interval = (obs - ndist.ppf(1 - alpha / 2) * sd,
+                                 obs + ndist.ppf(1 - alpha / 2) * sd)
+                    return _pval, _interval
+
+                naive_pvalues[i], _naive_interval = naive_inference()
+
+                # print(_naive_interval)
+
+                def coverage(LU):
+                    L, U = LU[0], LU[1]
+                    _length = U - L
+                    _covered = 0
+                    if (L <= true_vec[i]) and (U >= true_vec[i]):
+                        _covered = 1
+                    return _covered, _length
+
+                if intervals == True:
+                    sel_covered[i], sel_length[i] = coverage(_interval)
+                    naive_covered[i], naive_length[i] = coverage(_naive_interval)
                 active_var[i] = active_set[i] in truth
 
         print(pvalues)
         #q = 0.2
         #BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
-        return pvalues, sel_covered, sel_length, active_var #, BH_desicions
+        return pvalues, sel_covered, sel_length, \
+               naive_pvalues, naive_covered, naive_length, active_var
 
 
 def report(niter=100, design="random", **kwargs):
@@ -188,5 +222,5 @@ def report(niter=100, design="random", **kwargs):
 
 if __name__ == '__main__':
     np.random.seed(500)
-    kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'sigma': 1, 'rho': 0.}
-    report()
+    kwargs = {'s': 0, 'n': 500, 'p': 100, 'snr': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False}
+    report(niter=1, **kwargs)

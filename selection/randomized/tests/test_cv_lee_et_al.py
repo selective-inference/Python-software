@@ -62,7 +62,8 @@ def test_lee_et_al(n=300,
                    condition_on_CVR=True,
                    lam_frac = 0.6,
                    X = None,
-                   check_screen=True):
+                   check_screen=True,
+                   intervals=False):
 
     print(n, p, s)
 
@@ -143,20 +144,23 @@ def test_lee_et_al(n=300,
                     _pval = pivot(L, Z, U, S)
                     # two-sided
                     _pval = 2 * min(_pval, 1 - _pval)
-                    if _pval < 10 ** (-8):
-                        return None
-                    L, Z, U, S = C.bounds(eta, one_step)
-                    _interval = equal_tailed_interval(L, Z, U, S, alpha=alpha)
-                    _interval = sorted([_interval[0] * active_signs[i],
-                                        _interval[1] * active_signs[i]])
+
+                    if intervals==True:
+                        if _pval < 10 ** (-8):
+                            return None
+                        L, Z, U, S = C.bounds(eta, one_step)
+                        _interval = equal_tailed_interval(L, Z, U, S, alpha=alpha)
+                        _interval = sorted([_interval[0] * active_signs[i],
+                                     _interval[1] * active_signs[i]])
                 else:
                     obs = (eta * one_step).sum()
                     ## jelena: should be this sd = np.sqrt(np.dot(eta.T, C.covariance.dot(eta))), no?
                     sd = np.sqrt((eta * C.covariance.dot(eta)))
                     Z = obs / sd
                     _pval = 2 * (ndist.sf(min(np.fabs(Z))) - ndist.sf(5)) / (ndist.cdf(5) - ndist.cdf(-5))
-                    _interval = (obs - ndist.ppf(1 - alpha / 2) * sd,
-                                 obs + ndist.ppf(1 - alpha / 2) * sd)
+                    if intervals==True:
+                        _interval = (obs - ndist.ppf(1 - alpha / 2) * sd,
+                                     obs + ndist.ppf(1 - alpha / 2) * sd)
 
                 pvalues[i] = _pval
 
@@ -172,8 +176,9 @@ def test_lee_et_al(n=300,
                         _covered = 1
                     return _covered, _length
 
-                sel_covered[i], sel_length[i] = coverage(_interval)
-                naive_covered[i], naive_length[i] = coverage(_naive_interval)
+                if intervals==True:
+                    sel_covered[i], sel_length[i] = coverage(_interval)
+                    naive_covered[i], naive_length[i] = coverage(_naive_interval)
 
                 active_var[i] = active_set[i] in truth
         else:
@@ -201,6 +206,7 @@ def report(niter=100, design="random", **kwargs):
                                              niter,
                                              reports.summarize_all,
                                              **kwargs)
+
     screened_results.to_pickle("lee_et_al_pivots.pkl")
     results = pd.read_pickle("lee_et_al_pivots.pkl")
 
@@ -211,6 +217,9 @@ def report(niter=100, design="random", **kwargs):
 
 
 if __name__ == '__main__':
+
     np.random.seed(500)
-    kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'sigma': 1, 'rho': 0.}
-    report()
+    kwargs = {'s': 0, 'n': 500, 'p': 100, 'snr': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False}
+    report(niter=100, **kwargs)
+
+
