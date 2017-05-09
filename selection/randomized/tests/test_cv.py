@@ -171,18 +171,19 @@ def report(niter=50, **kwargs):
                                              reports.summarize_all,
                                              **kwargs)
 
-    label = ''.join([kwargs['loss'], "_", str(kwargs['condition_on_CVR']), "_", "test_cv.pkl"])
-    runs.to_pickle(label)
-    runs_read = pd.read_pickle(label)
+    pkl_label = ''.join([kwargs['loss'], "_", str(kwargs['condition_on_CVR']), "_", "test_cv.pkl"])
+    pdf_label = ''.join([kwargs['loss'], "_", str(kwargs['condition_on_CVR']), "_", "test_cv.pdf"])
+    runs.to_pickle(pkl_label)
+    runs_read = pd.read_pickle(pkl_label)
 
     fig = reports.pivot_plot_plus_naive(runs_read)
     fig.suptitle("CV pivots", fontsize=20)
-    fig.savefig('cv_pivots.pdf')
+    fig.savefig(pdf_label)
 
 
 if __name__ == '__main__':
     np.random.seed(500)
-    kwargs = {'n': 600, 'p': 100, 's': 0, 'snr': 3.5, 'K': 5, 'rho': 0.,
+    kwargs = {'n': 600, 'p': 20, 's': 0, 'snr': 3.5, 'K': 5, 'rho': 0.,
               'randomizer': 'gaussian', 'randomizer_scale': 1.5,
               'scale1': 0.1, 'scale2': 0.1,  'lam_frac': 1.,
               'loss': 'logistic', 'intervals': 'old',
