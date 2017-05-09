@@ -77,6 +77,7 @@ def randomized_forward_step(X,
     samples = inf.posterior_samples()
 
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+    selective_mean = np.mean(samples, axis=0)
 
     projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
     M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
@@ -112,16 +113,18 @@ def randomized_forward_step(X,
     naive_cov = coverage_unad.sum() / 1.
     ad_len = ad_length.sum() / 1.
     unad_len = unad_length.sum() / 1.
+    bayes_risk_ad = np.power(selective_mean - true_val, 2.).sum() / 1.
+    bayes_risk_unad = np.power(post_mean - true_val, 2.).sum() / 1.
 
-    return np.vstack([sel_cov, naive_cov, ad_len, unad_len])
+    return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
 
 if __name__ == "__main__":
 
 # read from command line
-    seedn=int(sys.argv[1])
-    outdir=sys.argv[2]
+    #seedn=int(sys.argv[1])
+    #outdir=sys.argv[2]
 
-    outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
+    #outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
 
 ### set parameters
 
@@ -130,18 +133,43 @@ if __name__ == "__main__":
     s = 0
     snr = 5.
 
+    niter = 50
+    ad_cov = 0.
+    unad_cov = 0.
+    ad_len = 0.
+    unad_len = 0.
+    ad_risk = 0.
+    unad_risk = 0.
 ### GENERATE X
     np.random.seed(0)  # ensures same X
 
     sample = generate_data(n, p)
 
 ### GENERATE Y BASED ON SEED
-    np.random.seed(seedn) # ensures different y
-    X, y, beta, sigma = sample.generate_response()
+    for i in range(niter):
+        np.random.seed(i) # ensures different y
+        X, y, beta, sigma = sample.generate_response()
+        lasso = randomized_forward_step(X,
+                                        y,
+                                        beta,
+                                        sigma)
 
-    lasso = randomized_forward_step(X,
-                                    y,
-                                    beta,
-                                    sigma)
+        ad_cov += lasso[0, 0]
+        unad_cov += lasso[1, 0]
+        ad_len += lasso[2, 0]
+        unad_len += lasso[3, 0]
+        ad_risk += lasso[4, 0]
+        unad_risk += lasso[5, 0]
 
-    np.savetxt(outfile, lasso)
+        print("\n")
+        print("iteration completed", i)
+        print("\n")
+        print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+        print("adjusted and unadjusted lengths", ad_len, unad_len)
+        print("adjusted and unadjusted risks", ad_risk, unad_risk)
+
+    print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+    print("adjusted and unadjusted lengths", ad_len, unad_len)
+    print("adjusted and unadjusted risks", ad_risk, unad_risk)
+
+    #np.savetxt(outfile, lasso)

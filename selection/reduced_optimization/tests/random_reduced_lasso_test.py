@@ -41,7 +41,7 @@ def randomized_lasso_trial(X,
     active_set = np.asarray([i for i in range(p) if active[i]])
     nactive = np.sum(active)
 
-    prior_variance = 1000.
+    prior_variance = 10000.
     noise_variance = sigma ** 2
     projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
     M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE X, Y BASED ON SEED
-         np.random.seed(i+76)  # ensures different X and y
+         np.random.seed(i+100)  # ensures different X and y
          X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0., snr=snr)
          lam = 1. * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
          #X, y, beta, nonzero = logistic_instance(n=n, p=p, s=s, rho=0., snr=snr)
