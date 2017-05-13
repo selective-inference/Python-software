@@ -5,7 +5,7 @@ import numpy as np
 from selection.bayesian.initial_soln import selection, instance
 from selection.reduced_optimization.ms_lasso_2stage_reduced import selection_probability_objective_ms_lasso, sel_prob_gradient_map_ms_lasso, \
     selective_map_credible_ms_lasso
-
+from selection.reduced_optimization.tests.mixed_model import instance_mixed
 
 def randomized_marginal_lasso_screening(X,
                                         y,
@@ -119,14 +119,14 @@ if __name__ == "__main__":
     ### set parameters
     n = 200
     p = 1000
-    s = 0
+    s = 5
     snr = 5.
 
     ### GENERATE X
     np.random.seed(0)  # ensures same X
 
-    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-
+    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=3.)
+    #sample = instance(n=n, p=p, s=s, sigma=1., rho=0)
     niter = 10
 
     ad_cov = 0.
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i+40)  # ensures different y
+         np.random.seed(i)  # ensures different y
          X, y, beta, nonzero, sigma = sample.generate_response()
 
          ### RUN LASSO AND TEST
