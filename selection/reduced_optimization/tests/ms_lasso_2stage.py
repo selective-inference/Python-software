@@ -7,6 +7,36 @@ from selection.reduced_optimization.ms_lasso_2stage_reduced import selection_pro
     selective_map_credible_ms_lasso
 from selection.reduced_optimization.tests.mixed_model import instance_mixed
 
+class generate_data():
+
+    def __init__(self, n, p, sigma=1., rho=0., scale =True, center=True):
+         (self.n, self.p, self.sigma, self.rho) = (n, p, sigma, rho)
+
+         self.X = (np.sqrt(1 - self.rho) * np.random.standard_normal((self.n, self.p)) +
+                   np.sqrt(self.rho) * np.random.standard_normal(self.n)[:, None])
+         if center:
+             self.X -= self.X.mean(0)[None, :]
+         if scale:
+             self.X /= (self.X.std(0)[None, :] * np.sqrt(self.n))
+
+         beta_true = np.zeros(p)
+         u = np.random.uniform(0.,1.,p)
+         for i in range(p):
+             if u[i]<= 0.95:
+                 beta_true[i] = np.random.laplace(loc=0., scale= 0.05)
+             else:
+                 beta_true[i] = np.random.laplace(loc=0., scale= 0.5)
+
+         self.beta = beta_true
+         #print(max(abs(self.beta)), min(abs(self.beta)))
+         #print(self.beta[np.where(self.beta>3.)].shape)
+
+    def generate_response(self):
+
+        Y = (self.X.dot(self.beta) + np.random.standard_normal(self.n)) * self.sigma
+
+        return self.X, Y, self.beta * self.sigma, self.sigma
+
 def randomized_marginal_lasso_screening(X,
                                         y,
                                         beta,
@@ -119,15 +149,16 @@ if __name__ == "__main__":
     ### set parameters
     n = 200
     p = 1000
-    s = 5
-    snr = 5.
+    #s = 5
+    #snr = 5.
 
     ### GENERATE X
     np.random.seed(0)  # ensures same X
 
-    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=3.)
+    #sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=3.)
     #sample = instance(n=n, p=p, s=s, sigma=1., rho=0)
-    niter = 10
+    sample = generate_data(n, p)
+    niter = 7
 
     ad_cov = 0.
     unad_cov = 0.
@@ -139,8 +170,9 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i)  # ensures different y
-         X, y, beta, nonzero, sigma = sample.generate_response()
+         np.random.seed(i+13)  # ensures different y
+         #X, y, beta, nonzero, sigma = sample.generate_response()
+         X, y, beta, sigma = sample.generate_response()
 
          ### RUN LASSO AND TEST
          lasso = randomized_marginal_lasso_screening(X,
