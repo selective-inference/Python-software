@@ -158,7 +158,7 @@ if __name__ == "__main__":
     #sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=3.)
     #sample = instance(n=n, p=p, s=s, sigma=1., rho=0)
     sample = generate_data(n, p)
-    niter = 7
+    niter = 10
 
     ad_cov = 0.
     unad_cov = 0.
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i+13)  # ensures different y
+         np.random.seed(i+52)  # ensures different y
          #X, y, beta, nonzero, sigma = sample.generate_response()
          X, y, beta, sigma = sample.generate_response()
 
