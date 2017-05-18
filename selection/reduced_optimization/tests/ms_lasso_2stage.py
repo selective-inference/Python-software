@@ -147,8 +147,8 @@ def randomized_marginal_lasso_screening(X,
 
 if __name__ == "__main__":
     ### set parameters
-    n = 200
-    p = 1000
+    n = 1000
+    p = 200
     #s = 5
     #snr = 5.
 
@@ -170,7 +170,7 @@ if __name__ == "__main__":
     for i in range(niter):
 
          ### GENERATE Y BASED ON SEED
-         np.random.seed(i+52)  # ensures different y
+         np.random.seed(i+41)  # ensures different y
          #X, y, beta, nonzero, sigma = sample.generate_response()
          X, y, beta, sigma = sample.generate_response()
 
