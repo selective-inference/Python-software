@@ -213,14 +213,14 @@ if __name__ == '__main__':
     folds = np.arange(n) % K
     CV_compute = CV(loss, folds, lam_seq)
     lam_CV, CV_val, SD_val, lam_CV_randomized, CV_val_randomized, SD_val_randomized = CV_compute.choose_lambda_CVr()
-    print("CV error curve (nonrandomized):", CV_val)
+    #print("CV error curve (nonrandomized):", CV_val)
 
     minimum_CV = np.min(CV_val)
     lam_idx = list(lam_seq).index(lam_CV)
     SD_min = SD_val[lam_idx]
     lam_1SD = lam_seq[max([i for i in range(lam_seq.shape[0]) if CV_val[i] <= minimum_CV + SD_min])]
 
-    print(lam_CV, lam_1SD)
+    #print(lam_CV, lam_1SD)
     import matplotlib.pyplot as plt
     plt.plot(np.log(lam_seq), CV_val)
     plt.show()
