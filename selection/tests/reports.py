@@ -23,6 +23,7 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
     dfs = [] 
     for i in range(nrun):
         count, result = test_fn(*args, **kwargs)
+        print(i)
         #print(result)
         #print(len(np.atleast_1d(result[0])))
         if hasattr(result, "__len__"):
