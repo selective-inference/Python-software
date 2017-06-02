@@ -104,13 +104,16 @@ class threshold_score(query):
         weights[self.positive_boundary] = self.randomization._density(threshold[self.positive_boundary] - full_state[self.positive_boundary])  / \
                                   (1 - self.randomization._cdf(threshold[self.positive_boundary] - full_state[self.positive_boundary]))
 
+
         weights[self.negative_boundary] = - self.randomization._density(-threshold[self.negative_boundary] - full_state[self.negative_boundary]) / \
                                            (self.randomization._cdf(-threshold[self.negative_boundary] - full_state[self.negative_boundary]))
+
 
         weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
                                    (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
 
-        return -weights
+        #return -weights
+        return weights
 
     def setup_sampler(self):
 
