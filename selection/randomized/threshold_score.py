@@ -74,8 +74,8 @@ class threshold_score(query):
 
         self.boundary = np.fabs(randomized_score) > threshold
 
-        self.positive_boundary  = (randomized_score > threshold)
-        self.negative_boundary = (-randomized_score < threshold)
+        #self.positive_boundary  = (randomized_score > threshold)
+        #self.negative_boundary = (-randomized_score < threshold)
 
         self.interior = ~self.boundary
 
@@ -98,22 +98,22 @@ class threshold_score(query):
         threshold = self.threshold
         weights = np.zeros_like(self.boundary, np.float)
 
-        #weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary]) - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
-        #                          (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
+        weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary]) - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
+                                  (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
 
-        weights[self.positive_boundary] = self.randomization._density(threshold[self.positive_boundary] - full_state[self.positive_boundary])  / \
-                                  (1 - self.randomization._cdf(threshold[self.positive_boundary] - full_state[self.positive_boundary]))
+        #weights[self.positive_boundary] = self.randomization._density(threshold[self.positive_boundary] - full_state[self.positive_boundary])  / \
+        #                          (1 - self.randomization._cdf(threshold[self.positive_boundary] - full_state[self.positive_boundary]))
 
 
-        weights[self.negative_boundary] = - self.randomization._density(-threshold[self.negative_boundary] - full_state[self.negative_boundary]) / \
-                                           (self.randomization._cdf(-threshold[self.negative_boundary] - full_state[self.negative_boundary]))
+        #weights[self.negative_boundary] = - self.randomization._density(-threshold[self.negative_boundary] - full_state[self.negative_boundary]) / \
+        #                                   (self.randomization._cdf(-threshold[self.negative_boundary] - full_state[self.negative_boundary]))
 
 
         weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
                                    (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
 
         #return -weights
-        return weights
+        return weights ## tested
 
     def setup_sampler(self):
 
