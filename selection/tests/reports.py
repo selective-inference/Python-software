@@ -91,9 +91,9 @@ def naive_pvalue_plot(multiple_results, screening=False, fig=None, colors=['r', 
     null and alternative.
     """
 
-    P0 = multiple_results['naive_pvalue'][~multiple_results['active']]
+    P0 = multiple_results['naive_pvalues'][~multiple_results['active_var']]
     P0 = P0[~pd.isnull(P0)]
-    PA = multiple_results['naive_pvalue'][multiple_results['active']]
+    PA = multiple_results['naive_pvalues'][multiple_results['active_var']]
     PA = PA[~pd.isnull(PA)]
 
     if fig is None:
@@ -107,14 +107,16 @@ def naive_pvalue_plot(multiple_results, screening=False, fig=None, colors=['r', 
     if len(P0) > 0:
         ecdf0 = sm.distributions.ECDF(P0)
         F0 = ecdf0(grid)
-        ax.plot(grid, F0, '--o', c=colors[0], lw=2, label=r'$H_0$ naive')
+        ax.plot(grid, F0, '--o', c=colors[0], lw=2, label=r'Naive p-values')
     if len(PA) > 0:
         ecdfA = sm.distributions.ECDF(PA)
         FA = ecdfA(grid)
         ax.plot(grid, FA, '--o', c=colors[1], lw=2, label=r'$H_A$ naive')
 
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
-    ax.legend(loc='lower right')
+    ax.set_xlabel("Observed p-pvalue", fontsize=18)
+    ax.set_ylabel("Empirical CDF", fontsize=18)
+    ax.legend(loc='lower right', fontsize=18)
 
     if screening:
         screen = 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])
@@ -237,7 +239,7 @@ def pivot_plot_plus_naive(multiple_results, coverage=True, color='b', label=None
         fig = plt.figure()
     ax = fig.gca()
 
-    fig.suptitle('Selective and naive pivots')
+    fig.suptitle('Lee et al. and naive p-values')
 
     if 'pivot' in multiple_results.columns:
         ecdf = sm.distributions.ECDF(multiple_results['pivot'])
@@ -249,13 +251,13 @@ def pivot_plot_plus_naive(multiple_results, coverage=True, color='b', label=None
     G = np.linspace(0, 1)
     F_pivot = ecdf(G)
     #print(color)
-    ax.plot(G, F_pivot, '-o', c=color, lw=2, label="Selective pivots")
+    ax.plot(G, F_pivot, '-o', c=color, lw=2, label="Lee et al. p-values")
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
 
     if 'naive_pvalues' in multiple_results.columns:
         ecdf_naive = sm.distributions.ECDF(multiple_results['naive_pvalues'])
     F_naive = ecdf_naive(G)
-    ax.plot(G, F_naive, '-o', c='r', lw=2, label="Naive pivots")
+    ax.plot(G, F_naive, '-o', c='r', lw=2, label="Naive p-values")
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
 
     ax.set_xlim([0, 1])
@@ -362,6 +364,15 @@ def compute_pivots(multiple_results):
     if 'truth' in multiple_results.columns:
         pivots = multiple_results['truth']
         return {'pivot (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
+    if 'pvalue' in multiple_results.columns:
+        pivots = multiple_results['pvalue']
+        return {'selective pvalues (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
+    return {}
+
+def compute_naive_pivots(multiple_results):
+    if 'naive_pvalues' in multiple_results.columns:
+        pivots = multiple_results['naive_pvalues']
+        return {'naive pvalues (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
     return {}
 
 def boot_clt_pivots(multiple_results):
@@ -463,6 +474,7 @@ def summarize_all(multiple_results):
     result.update(compute_length_frac(multiple_results))
     result.update(compute_FDP(multiple_results))
     result.update(compute_power(multiple_results))
+    result.update(compute_naive_pivots(multiple_results))
     for i in result:
         print(i, result[i])
 

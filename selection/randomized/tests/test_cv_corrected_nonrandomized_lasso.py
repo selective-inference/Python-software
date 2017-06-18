@@ -194,8 +194,6 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
                 active_var[i] = active_set[i] in truth
 
         print(pvalues)
-        #q = 0.2
-        #BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
         return pvalues, sel_covered, sel_length, \
                naive_pvalues, naive_covered, naive_length, active_var
 
