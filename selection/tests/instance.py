@@ -90,7 +90,17 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
 
 _cholesky_factors = {} # should we store them?
 
-def ARinstance(n=2000, p=2500, s=30, sigma=2, rho=0.25, signal=4.5):
+def _AR_cov(p, rho=0.25):
+    idx = np.arange(p)
+    return rho**np.fabs(np.subtract.outer(idx, idx))
+
+def _AR_sqrt_cov(p, rho=0.25):
+    idx = np.arange(p)
+    C = rho**np.fabs(np.subtract.outer(idx, idx))
+    return np.linalg.cholesky(C)
+
+
+def AR_instance(n=2000, p=2500, s=30, sigma=2, rho=0.25, signal=4.5):
     """
     Used to compare to Barber and Candes high-dim knockoff.
 
@@ -118,8 +128,8 @@ def ARinstance(n=2000, p=2500, s=30, sigma=2, rho=0.25, signal=4.5):
     """
 
     if (rho, p) not in _cholesky_factors.keys():
-        _sqrt_cov = _cholesky_factors[(rho, p)]
-    _sqrt_cov = cholesky_factors[(rho, p)]
+        _cholesky_factors[(rho, p)] = _AR_sqrt_cov(p, rho)
+    _sqrt_cov = _cholesky_factors[(rho, p)]
 
     X = np.random.standard_normal((n, p)).dot(_sqrt_cov.T)
 
