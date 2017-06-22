@@ -3,7 +3,7 @@ import pandas as pd
 
 from scipy.stats import t as tdist
 
-def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
+def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
                       random_signs=False, df=np.inf,
                       scale=True, center=True):
     """
@@ -33,7 +33,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     rho : float
         Equicorrelation value (must be in interval [0,1])
 
-    snr : float
+    signal : float
         Size of each coefficient
 
     random_signs : bool
@@ -70,7 +70,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     if scale:
         X /= (X.std(0)[None,:] * np.sqrt(n))
     beta = np.zeros(p) 
-    beta[:s] = snr 
+    beta[:s] = signal 
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     active = np.zeros(p, np.bool)
@@ -88,7 +88,51 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, snr=7,
     Y = (X.dot(beta) + _noise(n, df)) * sigma
     return X, Y, beta * sigma, np.nonzero(active)[0], sigma
 
-def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=14,
+_cholesky_factors = {} # should we store them?
+
+def ARinstance(n=2000, p=2500, s=30, sigma=2, rho=0.25, signal=4.5):
+    """
+    Used to compare to Barber and Candes high-dim knockoff.
+
+    Parameters
+    ----------
+
+    n : int
+        Sample size
+
+    p : int
+        Number of features
+
+    s : int
+        True sparsity
+
+    sigma : float
+        Noise level
+
+    rho : float
+        AR(1) parameter.
+
+    signal : float
+        Size of each coefficient
+
+    """
+
+    if (rho, p) not in _cholesky_factors.keys():
+        _sqrt_cov = _cholesky_factors[(rho, p)]
+    _sqrt_cov = cholesky_factors[(rho, p)]
+
+    X = np.random.standard_normal((n, p)).dot(_sqrt_cov.T)
+
+    X /= (np.sqrt((X**2).sum(0))) # like normc
+    beta = np.zeros(p)
+    beta[:s] = signal * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1) 
+    np.random.shuffle(beta)
+
+    Y = (X.dot(beta) + np.random.standard_normal(n)) * sigma
+    true_active = np.nonzero(beta != 0)[0]
+    return X, Y, beta * sigma, true_active, sigma
+
+def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
                       random_signs=False, 
                       scale=True, center=True):
     """
@@ -111,7 +155,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=14,
     rho : float
         Equicorrelation value (must be in interval [0,1])
 
-    snr : float
+    signal : float
         Size of each coefficient
 
     random_signs : bool
@@ -143,7 +187,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, snr=14,
         X /= X.std(0)[None,:]
     X /= np.sqrt(n)
     beta = np.zeros(p) 
-    beta[:s] = snr 
+    beta[:s] = signal 
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
 

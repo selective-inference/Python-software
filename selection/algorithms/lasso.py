@@ -553,6 +553,7 @@ class lasso(object):
                    feature_weights, 
                    quadratic=None,
                    covariance='parametric',
+                   sigma_estimate='truncated',
                    solve_args={'min_its':200}):
         r"""
         Use sqrt-LASSO to choose variables.
@@ -590,6 +591,11 @@ class lasso(object):
             One of 'parametric' or 'sandwich'. Method
             used to estimate covariance for inference
             in second stage.
+
+        sigma_estimate : str
+            One of 'truncated' or 'OLS'. Method
+            used to estimate $\sigma$ when using
+            parametric covariance.
 
         solve_args : dict
             Arguments passed to solver.
@@ -670,7 +676,12 @@ class lasso(object):
                                      lower_bound, 
                                      upper_bound)
 
-            _sigma_hat = estimate_sigma(*_sigma_estimator_args)
+            if sigma_estimate == 'truncated':
+                _sigma_hat = estimate_sigma(*_sigma_estimator_args)
+            elif sigma_estimate == 'OLS':
+                _sigma_hat = sigma_E
+            else:
+                raise ValueError('sigma_estimate must be one of ["truncated", "OLS"]')
         else:
             _sigma_hat = np.linalg.norm(Y) / np.sqrt(n)
             multiplier = np.sqrt(n)
