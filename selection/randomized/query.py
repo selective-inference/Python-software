@@ -100,16 +100,19 @@ class query(object):
         # reconstruction of randoimzation omega
 
         data_state = np.atleast_2d(data_state)
-        opt_state = np.atleast_2d(opt_state)
-
         opt_linear, opt_offset = self.opt_transform
+
         data_linear, data_offset = data_transform
         data_piece = data_linear.dot(data_state.T) + data_offset[:, None]
-        opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
-
-        # value of the randomization omega
-
-        return (data_piece + opt_piece).T
+        if opt_linear is not None:
+            opt_state = np.atleast_2d(opt_state)
+            opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
+            #
+            # print((data_piece.T+opt_piece.T).shape)
+            return (data_piece + opt_piece).T
+        else:
+            #print((data_piece.T).shape)
+            return data_piece.T
 
     def log_density(self, data_state, data_transform, opt_state):
 
@@ -231,6 +234,16 @@ class multiple_queries(object):
             self.score_info.append(score_)
             self.nboot.append(objective.nboot)
 
+        curr_randomization_length = 0
+        self.randomization_slice = []
+        for objective in self.objectives:
+            randomization_length = objective._beta_full.shape[0]
+            #print(randomization_length)
+            self.randomization_slice.append(slice(curr_randomization_length,
+                                                  curr_randomization_length + randomization_length))
+            curr_randomization_length = curr_randomization_length + randomization_length
+        self.total_randomization_length = curr_randomization_length
+
     def setup_opt_state(self):
         self.num_opt_var = 0
         self.opt_slice = []
@@ -238,7 +251,6 @@ class multiple_queries(object):
         for objective in self.objectives:
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
-
         self.observed_opt_state = np.zeros(self.num_opt_var)
         for i in range(len(self.objectives)):
             if self.objectives[i].num_opt_var > 0:
@@ -384,6 +396,9 @@ class targeted_sampler(object):
 
         self.observed_target_state = observed_target_state
         self.shape = observed_target_state.shape
+
+        self.total_randomization_length = multi_view.total_randomization_length
+        self.randomization_slice = multi_view.randomization_slice
 
         self.score_cov = []
         for i in range(self.nqueries):
@@ -759,14 +774,15 @@ class targeted_sampler(object):
         '''
 
         state = np.atleast_2d(state)
+        #print(state.shape)
         if len(state.shape) > 2:
             raise ValueError('expecting at most 2-dimensional array')
 
         target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
-        reconstructed = np.zeros_like(opt_state)
-
+        #reconstructed = np.zeros_like(opt_state)
+        reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
         for i in range(self.nqueries):
-            reconstructed[:, self.opt_slice[i]] = self.objectives[i].reconstruction_map(target_state,
+            reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
                                                                                         self.target_transform[i],
                                                                                         opt_state[:,self.opt_slice[i]])
         return np.squeeze(reconstructed)

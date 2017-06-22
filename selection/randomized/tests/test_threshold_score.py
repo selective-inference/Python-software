@@ -29,7 +29,7 @@ from selection.tests.instance import logistic_instance
 @wait_for_return_value()
 def test_threshold_score(ndraw=10000, burnin=2000, nsim=None): # nsim needed for decorator
 
-    s, n, p = 5, 200, 20 
+    s, n, p = 5, 200, 20
     threshold = 0.5
 
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
@@ -90,7 +90,9 @@ def test_threshold_score(ndraw=10000, burnin=2000, nsim=None): # nsim needed for
                                               alternative='twosided',
                                               ndraw=ndraw,
                                               burnin=burnin)
+        print pval
         return pval, False
+
 
 def report(niter=50, **kwargs):
     # these are all our null tests
@@ -108,3 +110,7 @@ def report(niter=50, **kwargs):
     fig = reports.pvalue_plot(dfs, colors=['r', 'g'])
 
     fig.savefig('threshold_pvalues.pdf') # will have both bootstrap and CLT on plot
+
+
+if __name__== '__main__':
+    report()

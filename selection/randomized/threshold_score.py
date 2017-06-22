@@ -73,6 +73,10 @@ class threshold_score(query):
         # TODO: make this test use group LASSO
 
         self.boundary = np.fabs(randomized_score) > threshold
+
+        #self.positive_boundary  = (randomized_score > threshold)
+        #self.negative_boundary = (-randomized_score < threshold)
+
         self.interior = ~self.boundary
 
         self.observed_score_state = inactive_score
@@ -96,10 +100,20 @@ class threshold_score(query):
 
         weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary]) - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
                                   (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
-        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) / 
+
+        #weights[self.positive_boundary] = self.randomization._density(threshold[self.positive_boundary] - full_state[self.positive_boundary])  / \
+        #                          (1 - self.randomization._cdf(threshold[self.positive_boundary] - full_state[self.positive_boundary]))
+
+
+        #weights[self.negative_boundary] = - self.randomization._density(-threshold[self.negative_boundary] - full_state[self.negative_boundary]) / \
+        #                                   (self.randomization._cdf(-threshold[self.negative_boundary] - full_state[self.negative_boundary]))
+
+
+        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
                                    (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
 
-        return -weights
+        #return -weights
+        return weights ## tested
 
     def setup_sampler(self):
 
