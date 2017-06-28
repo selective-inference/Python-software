@@ -50,7 +50,7 @@ class M_estimator(query):
          
     # Methods needed for subclassing a query
 
-    def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
+    def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}, nboot=2000):
 
         self.randomize()
 
@@ -173,9 +173,7 @@ class M_estimator(query):
                                                -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
         # form linear part
-
         self.num_opt_var = self.observed_opt_state.shape[0]
-
         p = loss.shape[0] # shorthand for p
 
         # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})
@@ -270,12 +268,12 @@ class M_estimator(query):
         self._marginalize_subgradient = False
         self.scaling_slice = scaling_slice
         self.unpenalized_slice = unpenalized_slice
-        self.p = loss.shape[0]
+        self.ndim = loss.shape[0]
 
         self.Q = ((_hessian + epsilon * np.identity(p))[:,active])[active,:]
         self.Qinv = np.linalg.inv(self.Q)
         self.form_VQLambda()
-        self.nboot = 2000
+        self.nboot = nboot
 
     def form_VQLambda(self):
         nactive_groups = len(self.active_directions_list)
@@ -448,6 +446,7 @@ class M_estimator(query):
         #self.scaling_slice = slice(None, None, None)
         #self.subgrad_slice = np.zeros(new_linear.shape[1], np.bool)
         self.num_opt_var = new_linear.shape[1]
+
 
     def condition_on_scalings(self):
         """

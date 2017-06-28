@@ -6,9 +6,9 @@ from scipy.optimize import bisect
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
 
-class query(object):
 
-    nboot = 1000
+
+class query(object):
 
     def __init__(self, randomization):
 
@@ -25,6 +25,7 @@ class query(object):
             self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
+
     def randomization_gradient(self, data_state, data_transform, opt_state):
         """
         Randomization derivative at full state.
@@ -34,6 +35,7 @@ class query(object):
 
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
+
         data_piece = data_linear.dot(data_state) + data_offset
 
         # value of the randomization omega
@@ -92,6 +94,7 @@ class query(object):
 
         return (composition_linear_part, composition_offset)
 
+
     def reconstruction_map(self, data_state, data_transform, opt_state):
 
         if not self._setup:
@@ -107,20 +110,15 @@ class query(object):
         if opt_linear is not None:
             opt_state = np.atleast_2d(opt_state)
             opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
-            #
-            # print((data_piece.T+opt_piece.T).shape)
             return (data_piece + opt_piece).T
         else:
-            #print((data_piece.T).shape)
             return data_piece.T
 
     def log_density(self, data_state, data_transform, opt_state):
 
         full_data = self.reconstruction_map(data_state, data_transform, opt_state)
         return self.randomization.log_density(full_data)
-
-    # Abstract methods to be
-    # implemented by subclasses
+     # implemented by subclasses
 
     def grad_log_jacobian(self, opt_state):
         """
@@ -129,7 +127,8 @@ class query(object):
         assume is close to Hessian at \bar{\beta}_E^*
         """
         # needs to be implemented for group lasso
-        return 0.
+        return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
+
 
     def jacobian(self, opt_state):
         """
@@ -425,12 +424,12 @@ class targeted_sampler(object):
                 self.target_cov[n, t] = 0.
 
         self.target_transform = []
+
         for i in range(self.nqueries):
             self.target_transform.append(
                 self.objectives[i].linear_decomposition(self.score_cov[i],
                                                         self.target_cov,
                                                         self.observed_target_state))
-
         self.target_inv_cov = np.linalg.inv(self.target_cov)
         # size of reference? should it only be target_set?
         if reference is None:
@@ -449,6 +448,16 @@ class targeted_sampler(object):
         self.observed_state = np.zeros(multi_view.num_opt_var + self._reference_inv.shape[0])
         self.observed_state[self.target_slice] = self.observed_target_state
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+
+        # added for the reconstruction map in case we marginalize over optimization variables
+        randomization_length_total = 0
+        self.randomization_slice = []
+        for i in range(self.nqueries):
+            self.randomization_slice.append(
+                slice(randomization_length_total, randomization_length_total + self.objectives[i].ndim))
+            randomization_length_total += self.objectives[i].ndim
+
+        self.randomization_length_total = randomization_length_total
 
     def set_reference(self, reference):
         self._reference = np.atleast_1d(reference)
@@ -548,11 +557,11 @@ class targeted_sampler(object):
                                              stepsize)
 
         samples = []
+
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
                 samples.append(target_langevin.state[keep_slice].copy())
-
         return np.asarray(samples)
 
     def hypothesis_test(self,
@@ -608,10 +617,11 @@ class targeted_sampler(object):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
-
         if parameter is None:
             parameter = self.reference
+
+        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
+
 
         delta = self.target_inv_cov.dot(parameter - self.reference)
         W = np.exp(sample.dot(delta))
@@ -779,12 +789,14 @@ class targeted_sampler(object):
             raise ValueError('expecting at most 2-dimensional array')
 
         target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
-        #reconstructed = np.zeros_like(opt_state)
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
+        #reconstructed = np.zeros((opt_state.shape[0],self.randomization_length_total))
+
         for i in range(self.nqueries):
             reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
                                                                                         self.target_transform[i],
-                                                                                        opt_state[:,self.opt_slice[i]])
+                                                                                        opt_state[:, self.opt_slice[i]])
+
         return np.squeeze(reconstructed)
 
     def log_randomization_density(self, state):
@@ -808,6 +820,7 @@ class targeted_sampler(object):
             log_dens = self.objectives[i].randomization.log_density
             value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
+
 
     def hypothesis_test_translate(self,
                                   sample,
@@ -1101,7 +1114,6 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
     return LU.T
-
 
 def naive_pvalues(target, observed, parameter):
     pvalues = np.zeros(target.shape[0])

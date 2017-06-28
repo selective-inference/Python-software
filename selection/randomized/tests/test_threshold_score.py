@@ -90,7 +90,7 @@ def test_threshold_score(ndraw=10000, burnin=2000, nsim=None): # nsim needed for
                                               alternative='twosided',
                                               ndraw=ndraw,
                                               burnin=burnin)
-        print pval
+        print(pval)
         return pval, False
 
 

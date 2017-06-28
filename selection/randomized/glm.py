@@ -535,11 +535,11 @@ def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10})
     return functools.partial(parametric_cov, glm_loss, solve_args=solve_args)
 
 
-def standard_ci(X, y , active, leftout_indices, alpha=0.1):
+def standard_ci(glm_loss, X, y , active, leftout_indices, alpha=0.1):
 
     import regreg.api as rr
 
-    loss = rr.glm.logistic(X[leftout_indices, ], y[leftout_indices])
+    loss = glm_loss(X[leftout_indices, ], y[leftout_indices])
     boot_target, target_observed = pairs_bootstrap_glm(loss, active)
     nactive = np.sum(active)
     size= np.sum(leftout_indices)
