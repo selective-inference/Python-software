@@ -1,0 +1,6 @@
+- Marginalize group LASSO
+- SLOPE: randomized and non-randomized
+- selective debiased LASSO
+- randomized sqrt LASSO
+- alternate randomization
+- user's choice of model for non-randomized
