@@ -9,8 +9,11 @@ from selection.constraints.estimation import (softmax,
                                               gaussian_cumulant_known,
                                               gaussian_cumulant_conjugate_known)
 
+from selection.tests.flags import SET_SEED
+from selection.tests.decorators import set_seed_iftrue
 from selection.constraints.affine import constraints
 
+@set_seed_iftrue(SET_SEED)
 def test_softmax():
 
     A = np.array([[-1.,0.]])
@@ -34,6 +37,7 @@ def test_softmax():
     np.testing.assert_allclose(loss.smooth_objective(simple_estimator, 'grad'), observed)
     loss.smooth_objective(coefs, 'both')
 
+@set_seed_iftrue(SET_SEED)
 def test_softmax_sigma_not1():
 
     sigma=2
@@ -70,6 +74,7 @@ def test_softmax_sigma_not1():
     G2 = loss.smooth_objective(G1, 'grad')
     np.testing.assert_allclose(softmax_loss.smooth_objective(G2, 'grad'), G1)
 
+@set_seed_iftrue(SET_SEED)
 def test_gaussian_unknown():
 
     n, p = 20, 5
@@ -89,7 +94,7 @@ def test_gaussian_unknown():
     cumulant.coefs[:] = 1.
     MLE2 = cumulant.solve(linear, tol=1.e-12, min_its=400)
 
-    np.testing.assert_allclose(MLE2, conj.smooth_objective(sufficient_stat, 'grad'))
+    np.testing.assert_allclose(MLE2, conj.smooth_objective(sufficient_stat, 'grad'), rtol=1.e-4, atol=1.e-4)
 
     beta_hat = np.linalg.pinv(X).dot(Y)
     sigmasq_hat = np.sum(((Y - X.dot(beta_hat))**2) / n)
@@ -105,6 +110,7 @@ def test_gaussian_unknown():
     M = conj.smooth_objective(G, 'grad')
     np.testing.assert_allclose(MLE2, M)
 
+@set_seed_iftrue(SET_SEED)
 def test_gaussian_known():
 
     n, p = 20, 5

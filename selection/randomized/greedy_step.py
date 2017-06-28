@@ -1,15 +1,24 @@
 import numpy as np
 import regreg.api as rr
 
-from .M_estimator import M_estimator, restricted_Mest
+from .query import query
+from .M_estimator import restricted_Mest
 
-class greedy_score_step(M_estimator):
+class greedy_score_step(query):
 
-    def __init__(self, loss, penalty, active_groups, inactive_groups, randomization, solve_args={'min_its':50, 'tol':1.e-10},
+    def __init__(self, 
+                 loss, 
+                 penalty, 
+                 active_groups, 
+                 inactive_groups, 
+                 randomization, 
+                 solve_args={'min_its':50, 'tol':1.e-10},
                  beta_active=None):
         """
         penalty is a group_lasso object that assigns weights to groups
         """
+
+        query.__init__(self, randomization)
 
         (self.loss,
          self.penalty,
@@ -40,7 +49,7 @@ class greedy_score_step(M_estimator):
 
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, lagrange=1.)
 
-    def solve(self):
+    def solve(self, nboot=2000):
 
         (loss,
          penalty,
@@ -103,7 +112,12 @@ class greedy_score_step(M_estimator):
         self.maximizing_variables = padding_map.dot(winning_variables) > 0
         
         self.selection_variable = {'maximizing_group':maximizing_group, 
-                                   'maximizing_direction':self.maximizing_subgrad}
+                                   'maximizing_direction':self.maximizing_subgrad,
+                                   'variables':self.maximizing_variables}
+
+        # need to implement Jacobian
+        self.nboot = nboot
+        self.ndim = self.loss.shape[0]
 
     def setup_sampler(self):
 
@@ -119,6 +133,9 @@ class greedy_score_step(M_estimator):
 
         self.opt_transform = (_opt_linear_term, np.zeros(_opt_linear_term.shape[0]))
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
+        self._solved = True
+        self._setup = True
 
     def projection(self, opt_state):
         """

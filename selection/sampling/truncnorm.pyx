@@ -485,7 +485,8 @@ def sample_truncnorm_white_sphere(np.ndarray[DTYPE_float_t, ndim=2] A,
                 lower_bound = - discriminant
 
         if lower_bound > upper_bound:
-            raise BoundViolation
+            if not ignore_bound_violations:
+                raise BoundViolation
 
         # sample from the line segment
 

@@ -6,6 +6,8 @@ from scipy.optimize import bisect
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
 
+
+
 class query(object):
 
     def __init__(self, randomization):
@@ -23,6 +25,7 @@ class query(object):
             self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
+
     def randomization_gradient(self, data_state, data_transform, opt_state):
         """
         Randomization derivative at full state.
@@ -32,23 +35,33 @@ class query(object):
 
         opt_linear, opt_offset = self.opt_transform
         data_linear, data_offset = data_transform
+
         data_piece = data_linear.dot(data_state) + data_offset
-        opt_piece = opt_linear.dot(opt_state) + opt_offset
 
         # value of the randomization omega
 
-        full_state = (data_piece + opt_piece)
+        if opt_linear is not None: # this can happen if we marginalize all of omega!
+            opt_piece = opt_linear.dot(opt_state) + opt_offset
+            full_state = (data_piece + opt_piece)
+        else:
+            full_state = data_piece
 
         # gradient of negative log density of randomization at omega
+        # we may have marginalized over some optimization variables here
 
-        randomization_derivative = self.randomization.gradient(full_state)
+        randomization_derivative = self.construct_weights(full_state)
 
         # chain rule for data, optimization parts
 
         data_grad = data_linear.T.dot(randomization_derivative)
-        opt_grad = opt_linear.T.dot(randomization_derivative)
+        if opt_linear is not None:
+            opt_grad = opt_linear.T.dot(randomization_derivative)
+        else:
+            opt_grad = None
+        return data_grad, opt_grad #- self.grad_log_jacobian(opt_state)
 
-        return data_grad, opt_grad - self.grad_log_jacobian(opt_state)
+    def construct_weights(self, full_state):
+        return self.randomization.gradient(full_state)
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
         """
@@ -56,6 +69,7 @@ class query(object):
         of the score based on the target. This decomposition
         writes the (limiting CLT version) of the data in the score as linear in the
         target and in some independent Gaussian error.
+
         This second independent piece is conditioned on, resulting
         in a reconstruction of the score as an affine function of the target
         where the offset is the part related to this independent
@@ -80,6 +94,7 @@ class query(object):
 
         return (composition_linear_part, composition_offset)
 
+
     def reconstruction_map(self, data_state, data_transform, opt_state):
 
         if not self._setup:
@@ -88,24 +103,22 @@ class query(object):
         # reconstruction of randoimzation omega
 
         data_state = np.atleast_2d(data_state)
-        opt_state = np.atleast_2d(opt_state)
-
         opt_linear, opt_offset = self.opt_transform
+
         data_linear, data_offset = data_transform
         data_piece = data_linear.dot(data_state.T) + data_offset[:, None]
-        opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
-
-        # value of the randomization omega
-
-        return (data_piece + opt_piece).T
+        if opt_linear is not None:
+            opt_state = np.atleast_2d(opt_state)
+            opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
+            return (data_piece + opt_piece).T
+        else:
+            return data_piece.T
 
     def log_density(self, data_state, data_transform, opt_state):
 
         full_data = self.reconstruction_map(data_state, data_transform, opt_state)
         return self.randomization.log_density(full_data)
-
-    # Abstract methods to be
-    # implemented by subclasses
+     # implemented by subclasses
 
     def grad_log_jacobian(self, opt_state):
         """
@@ -114,7 +127,8 @@ class query(object):
         assume is close to Hessian at \bar{\beta}_E^*
         """
         # needs to be implemented for group lasso
-        return 0.
+        return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
+
 
     def jacobian(self, opt_state):
         """
@@ -133,11 +147,13 @@ class query(object):
         """
         Setup query to prepare for sampling.
         Should set a few key attributes:
+
             - observed_score_state
             - num_opt_var
             - observed_opt_state
             - opt_transform
             - score_transform
+
         """
         raise NotImplementedError('abstract method -- only keyword arguments')
 
@@ -211,10 +227,21 @@ class multiple_queries(object):
         nqueries = self.nqueries = len(self.objectives)
 
         self.score_info = []
-
+        self.nboot = []
         for objective in self.objectives:
             score_ = objective.setup_sampler()
             self.score_info.append(score_)
+            self.nboot.append(objective.nboot)
+
+        curr_randomization_length = 0
+        self.randomization_slice = []
+        for objective in self.objectives:
+            randomization_length = objective._beta_full.shape[0]
+            #print(randomization_length)
+            self.randomization_slice.append(slice(curr_randomization_length,
+                                                  curr_randomization_length + randomization_length))
+            curr_randomization_length = curr_randomization_length + randomization_length
+        self.total_randomization_length = curr_randomization_length
 
     def setup_opt_state(self):
         self.num_opt_var = 0
@@ -223,16 +250,17 @@ class multiple_queries(object):
         for objective in self.objectives:
             self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
             self.num_opt_var += objective.num_opt_var
-
         self.observed_opt_state = np.zeros(self.num_opt_var)
         for i in range(len(self.objectives)):
-            self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
+            if self.objectives[i].num_opt_var > 0:
+                self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
 
     def setup_target(self,
                      target_info,
                      observed_target_state,
                      reference=None,
-                     target_set=None):
+                     target_set=None,
+                     parametric=False):
 
         '''
         Parameters
@@ -271,7 +299,8 @@ class multiple_queries(object):
                                 observed_target_state,
                                 self.form_covariances,
                                 target_set=target_set,
-                                reference=reference)
+                                reference=reference,
+                                parametric=parametric)
 
     def setup_bootstrapped_target(self,
                                   target_bootstrap,
@@ -303,7 +332,8 @@ class targeted_sampler(object):
                  observed_target_state,
                  form_covariances,
                  reference=None,
-                 target_set=None):
+                 target_set=None,
+                 parametric=False):
 
         '''
         Parameters
@@ -328,6 +358,9 @@ class targeted_sampler(object):
            of interest. If not None, then coordinates
            not in target_set are assumed to have 0
            mean in the sampler.
+        parametric : bool
+           Use parametric covariance estimate?
+
         Notes
         -----
         The callable `form_covariances`
@@ -363,8 +396,21 @@ class targeted_sampler(object):
         self.observed_target_state = observed_target_state
         self.shape = observed_target_state.shape
 
-        covariances = multi_view.form_covariances(target_info, cross_terms=multi_view.score_info)
-        self.target_cov = np.atleast_2d(covariances[0])
+        self.total_randomization_length = multi_view.total_randomization_length
+        self.randomization_slice = multi_view.randomization_slice
+
+        self.score_cov = []
+        for i in range(self.nqueries):
+            if parametric == False:
+                target_cov, cross_cov = multi_view.form_covariances(target_info,  
+                                  cross_terms=[multi_view.score_info[i]],
+                                  nsample=multi_view.nboot[i])
+            else:
+                target_cov, cross_cov = multi_view.form_covariances(target_info, 
+                                  cross_terms=[multi_view.score_info[i]])
+
+            self.target_cov = target_cov
+            self.score_cov.append(cross_cov)
 
         # XXX we're not really using this target_set in our tests
 
@@ -377,15 +423,13 @@ class targeted_sampler(object):
                 self.target_cov[t, n] = 0.
                 self.target_cov[n, t] = 0.
 
-        self.score_cov = covariances[1:]
-
         self.target_transform = []
+
         for i in range(self.nqueries):
             self.target_transform.append(
                 self.objectives[i].linear_decomposition(self.score_cov[i],
                                                         self.target_cov,
                                                         self.observed_target_state))
-
         self.target_inv_cov = np.linalg.inv(self.target_cov)
         # size of reference? should it only be target_set?
         if reference is None:
@@ -404,6 +448,16 @@ class targeted_sampler(object):
         self.observed_state = np.zeros(multi_view.num_opt_var + self._reference_inv.shape[0])
         self.observed_state[self.target_slice] = self.observed_target_state
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+
+        # added for the reconstruction map in case we marginalize over optimization variables
+        randomization_length_total = 0
+        self.randomization_slice = []
+        for i in range(self.nqueries):
+            self.randomization_slice.append(
+                slice(randomization_length_total, randomization_length_total + self.objectives[i].ndim))
+            randomization_length_total += self.objectives[i].ndim
+
+        self.randomization_length_total = randomization_length_total
 
     def set_reference(self, reference):
         self._reference = np.atleast_1d(reference)
@@ -503,11 +557,11 @@ class targeted_sampler(object):
                                              stepsize)
 
         samples = []
+
         for i in range(ndraw + burnin):
             target_langevin.next()
             if (i >= burnin):
                 samples.append(target_langevin.state[keep_slice].copy())
-
         return np.asarray(samples)
 
     def hypothesis_test(self,
@@ -563,10 +617,11 @@ class targeted_sampler(object):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
-
         if parameter is None:
             parameter = self.reference
+
+        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
+
 
         delta = self.target_inv_cov.dot(parameter - self.reference)
         W = np.exp(sample.dot(delta))
@@ -669,6 +724,7 @@ class targeted_sampler(object):
         Returns
         -------
         pvalues : np.float
+
         '''
 
         if alternative not in ['greater', 'less', 'twosided']:
@@ -702,6 +758,7 @@ class targeted_sampler(object):
         Returns
         -------
         lipschitz : float
+
         """
         lipschitz = np.linalg.svd(self.target_inv_cov)[1].max()
         for transform, objective in zip(self.target_transform, self.objectives):
@@ -723,19 +780,23 @@ class targeted_sampler(object):
         reconstructed : np.float
            Has shape of `opt_vars` with same number of rows
            as `state`.
+
         '''
 
         state = np.atleast_2d(state)
+        #print(state.shape)
         if len(state.shape) > 2:
             raise ValueError('expecting at most 2-dimensional array')
 
         target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
-        reconstructed = np.zeros_like(opt_state)
+        reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
+        #reconstructed = np.zeros((opt_state.shape[0],self.randomization_length_total))
 
         for i in range(self.nqueries):
-            reconstructed[:, self.opt_slice[i]] = self.objectives[i].reconstruction_map(target_state,
+            reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
                                                                                         self.target_transform[i],
-                                                                                        opt_state[:,self.opt_slice[i]])
+                                                                                        opt_state[:, self.opt_slice[i]])
+
         return np.squeeze(reconstructed)
 
     def log_randomization_density(self, state):
@@ -759,6 +820,7 @@ class targeted_sampler(object):
             log_dens = self.objectives[i].randomization.log_density
             value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
+
 
     def hypothesis_test_translate(self,
                                   sample,
@@ -899,6 +961,7 @@ class targeted_sampler(object):
         -------
         pvalues : np.float
             P values for each coefficient.
+
         '''
 
         if alternative not in ['greater', 'less', 'twosided']:
@@ -1033,6 +1096,7 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
     intervals for target.
     Parameters
     ----------
+
     target : `targeted_sampler`
     observed : np.float
         A vector of observed data of shape `target.shape`
@@ -1050,7 +1114,6 @@ def naive_confidence_intervals(target, observed, alpha=0.1):
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
     return LU.T
-
 
 def naive_pvalues(target, observed, parameter):
     pvalues = np.zeros(target.shape[0])
@@ -1099,6 +1162,7 @@ class translate_intervals(object): # intervals_from_sample):
         Returns
         -------
         pvalue : np.float
+
         '''
 
         if alternative not in ['greater', 'less', 'twosided']:
@@ -1161,3 +1225,5 @@ class translate_intervals(object): # intervals_from_sample):
         _logratio -= _logratio.max()
 
         return candidate_sample, np.exp(_logratio)
+
+

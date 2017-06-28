@@ -153,6 +153,7 @@ class forward_step(object):
             con = constraints(linear_part, offset,
                               covariance=self.covariance)
 
+            #use_identity = False
             if use_identity:
                 con = stack(con, identity_con)
                 con.covariance = self.covariance
@@ -160,22 +161,21 @@ class forward_step(object):
                 XA = self.subset_X[:,self.variables]
                 # TODO allow other regressors here
                 XA = np.hstack([self.fixed_regressors, XA])
-                self.sequential_con = con.conditional(XA.T,
-                                                      np.dot(XA.T, Y))
+                sequential_con = con.conditional(XA.T,
+                                                 np.dot(XA.T, Y))
             else:
-                self.sequential_con = con
+                sequential_con = con
 
             def maxT(Z, L=adjusted_X[:,inactive], S=scale[inactive]):
                 Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
                 return Tstat
 
-            B = self.sequential_con.offset
-            d = B.shape[0]/2
-            pos, neg = B[:d], B[d:]
-            pos -= XI.T.dot(self.sequential_con.mean)
-            neg += XI.T.dot(self.sequential_con.mean)
+            B = sequential_con.offset
+            d = offset_pos.shape[0]
+            sequential_con.offset[:d] -= XI.T.dot(sequential_con.mean)
+            sequential_con.offset[d:(2*d)] += XI.T.dot(sequential_con.mean)
 
-            pval = gibbs_test(self.sequential_con,
+            pval = gibbs_test(sequential_con,
                               Y,
                               eta,
                               sigma_known=sigma_known,

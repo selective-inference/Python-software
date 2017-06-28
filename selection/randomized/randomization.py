@@ -5,26 +5,32 @@ should be a gradient of the negative of the log-density. For a
 Gaussian density, this will be a convex function, not a concave function.
 """
 from __future__ import division, print_function
-
 import numpy as np
 import regreg.api as rr
-from scipy.stats import laplace, norm as ndist
+from scipy.stats import laplace, logistic, norm as ndist
 
 class randomization(rr.smooth_atom):
 
     def __init__(self,
                  shape,
                  density,
+                 cdf,
+                 pdf,
+                 derivative_log_density,
                  grad_negative_log_density,
                  sampler,
+                 lipschitz=1,
+                 log_density=None,
                  CGF=None,  # cumulant generating function and gradient
                  CGF_conjugate=None,  # convex conjugate of CGF and gradient
-                 lipschitz=1,
-                 log_density=None):
+                 ):
 
         rr.smooth_atom.__init__(self,
                                 shape)
         self._density = density
+        self._cdf = cdf
+        self._pdf = pdf
+        self._derivative_log_density = derivative_log_density
         self._grad_negative_log_density = grad_negative_log_density
         self._sampler = sampler
         self.lipschitz = lipschitz
@@ -80,7 +86,6 @@ class randomization(rr.smooth_atom):
         """
         Randomize the loss.
         """
-
         randomized_loss = rr.smooth_sum([loss])
         _randomZ = self.sample()
         randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -_randomZ, 0)
@@ -99,6 +104,9 @@ class randomization(rr.smooth_atom):
         """
         rv = ndist(scale=scale, loc=0.)
         density = lambda x: np.product(rv.pdf(x))
+        cdf = lambda x: ndist.cdf(x, loc=0., scale=scale)
+        pdf = lambda x: ndist.pdf(x, loc=0., scale=scale)
+        derivative_log_density = lambda x: -x/(scale**2)
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
         CGF = isotropic_gaussian_CGF(shape, scale)
@@ -108,12 +116,16 @@ class randomization(rr.smooth_atom):
         constant = -0.5 * p * np.log(2 * np.pi * scale**2)
         return randomization(shape,
                              density,
+                             cdf,
+                             pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
+                             lipschitz=1./scale**2,
+                             log_density = lambda x: -0.5 * (np.atleast_2d(x)**2).sum(1) / scale**2 + constant,
                              CGF=CGF,
                              CGF_conjugate=CGF_conjugate,
-                             lipschitz=1./scale**2,
-                             log_density = lambda x: -0.5 * (np.atleast_2d(x)**2).sum(1) / scale**2 + constant)
+                             )
 
     @staticmethod
     def gaussian(covariance):
@@ -131,11 +143,17 @@ class randomization(rr.smooth_atom):
         p = covariance.shape[0]
         _const = np.sqrt((2*np.pi)**p * _det)
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
+        cdf = lambda x: None
+        pdf = lambda x: None
+        derivative_log_density = lambda x: None
         grad_negative_log_density = lambda x: precision.dot(x)
         sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
 
         return randomization((p,),
                              density,
+                             cdf,
+                             pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=np.linalg.svd(precision)[1].max(),
@@ -154,19 +172,29 @@ class randomization(rr.smooth_atom):
         """
         rv = laplace(scale=scale, loc=0.)
         density = lambda x: np.product(rv.pdf(x))
+
+        grad_negative_log_density = lambda x: np.sign(x) / scale
+        sampler = lambda size: rv.rvs(size=shape + size)
+        cdf = lambda x: laplace.cdf(x, loc=0., scale = scale)
+        pdf = lambda x: laplace.pdf(x, loc=0., scale = scale)
+        derivative_log_density = lambda x: -np.sign(x)/scale
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
         CGF = laplace_CGF(shape, scale)
         CGF_conjugate = laplace_CGF_conjugate(shape, scale)
         constant = -np.product(shape) * np.log(2 * scale)
+
         return randomization(shape,
                              density,
+                             cdf,
+                             pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
-                             CGF=CGF,
-                             CGF_conjugate=CGF_conjugate,
                              lipschitz=1./scale**2,
-                             log_density = lambda x: -np.fabs(np.atleast_2d(x)).sum(1) / scale - np.log(scale) + constant)
+                             log_density = lambda x: -np.fabs(np.atleast_2d(x)).sum(1) / scale - np.log(scale) + constant,
+                             CGF=CGF,
+                             CGF_conjugate=CGF_conjugate,)
 
     @staticmethod
     def logistic(shape, scale):
@@ -183,6 +211,9 @@ class randomization(rr.smooth_atom):
         density = lambda x: (np.product(np.exp(-x / scale) /
                                         (1 + np.exp(-x / scale))**2)
                              / scale**(np.product(x.shape)))
+        cdf = lambda x: logistic.cdf(x, loc=0., scale = scale)
+        pdf = lambda x: logistic.pdf(x, loc=0., scale = scale)
+        derivative_log_density = lambda x: (np.exp(-x/scale)-1)/(scale*np.exp(-x/scale)+1)
         # negative log density is (with \mu=0)
         # x/s + log(s) + 2 \log (1 + e(-x/s))
         grad_negative_log_density = lambda x: (1 - np.exp(-x / scale)) / ((1 + np.exp(-x / scale)) * scale)
@@ -191,6 +222,9 @@ class randomization(rr.smooth_atom):
         constant = - np.product(shape) * np.log(scale)
         return randomization(shape,
                              density,
+                             cdf,
+                             pdf,
+                             derivative_log_density,
                              grad_negative_log_density,
                              sampler,
                              lipschitz=.25/scale**2,
@@ -380,3 +414,4 @@ class cumulant_conjugate(from_grad_func):
     Class for conjugate of a CGF.
     """
     pass
+

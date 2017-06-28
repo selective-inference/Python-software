@@ -6,6 +6,14 @@ import nose.tools as nt
 
 import regreg.api as rr
 
+from selection.tests.instance import gaussian_instance as instance
+from selection.tests.decorators import (set_sampling_params_iftrue, 
+                                        set_seed_iftrue, 
+                                        wait_for_return_value,
+                                        register_report)
+import selection.tests.reports as reports
+
+from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, 
                                              choose_lambda,
                                              goodness_of_fit,
@@ -14,14 +22,15 @@ from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso,
                                              solve_sqrt_lasso_fat,
                                              solve_sqrt_lasso_skinny)
 
-from selection.tests.instance import gaussian_instance as instance
-from selection.algorithms.lasso import lasso
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_for_test
 
-@set_sampling_params_iftrue(True)
+from selection.algorithms.lasso import lasso
+
+@register_report(['pvalue', 'active'])
+@wait_for_return_value()
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, burnin=10, ndraw=10)
 @dec.slow
 def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
-                         nsim=1000, burnin=2000, ndraw=8000):
+                         nsim=10, burnin=2000, ndraw=8000):
     P = []
     while True:
         y = np.random.standard_normal(n) * sigma
@@ -42,25 +51,9 @@ def test_goodness_of_fit(n=20, p=25, s=10, sigma=20.,
         if (~np.isnan(np.array(Pa))).sum() >= nsim:
             break
 
-    plot = False
-
-    if plot:
-        # make any plots not use display
-
-        from matplotlib import use
-        use('Agg')
-        import matplotlib.pyplot as plt
-
-        # used for ECDF
-
-        import statsmodels.api as sm
-
-        U = np.linspace(0,1,101)
-        plt.plot(U, sm.distributions.ECDF(Pa)(U))
-        plt.plot([0,1], [0,1])
-        plt.savefig("goodness_of_fit_uniform", format="pdf")
+    return Pa, np.zeros_like(Pa, np.bool)
     
-@set_seed_for_test(10)
+@set_seed_iftrue(SET_SEED)
 def test_skinny_fat():
 
     X, Y = instance()[:2]
@@ -82,4 +75,16 @@ def test_skinny_fat():
     soln2 = solve_sqrt_lasso_skinny(X, Y, weights=np.ones(p) * lam, solve_args={'min_its':500})[0]
 
     np.testing.assert_allclose(soln1, soln2, rtol=1.e-3)
+
+def report(niter=50, **kwargs):
+
+    _report = goodness_of_fit_report = reports.reports['test_goodness_of_fit']
+    runs = reports.collect_multiple_runs(_report['test'],
+                                         _report['columns'],
+                                         niter,
+                                         reports.summarize_all,
+                                         **kwargs)
+    fig = reports.pvalue_plot(runs)
+    fig.savefig('sqrtlasso_goodness_of_fit.pdf')
+
 

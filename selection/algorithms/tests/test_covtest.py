@@ -4,12 +4,14 @@ import numpy as np
 import numpy.testing.decorators as dec
 
 from selection.tests.instance import gaussian_instance
+from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.algorithms.lasso import lasso
 from selection.algorithms.covtest import covtest, selected_covtest
 from selection.constraints.affine import gibbs_test
-from selection.tests.decorators import set_sampling_params_iftrue
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
-@set_sampling_params_iftrue(True)
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_covtest(nsim=None, ndraw=8000, burnin=2000):
 
     n, p = 30, 50
@@ -31,8 +33,8 @@ def test_covtest(nsim=None, ndraw=8000, burnin=2000):
 
     return pval
 
-@set_sampling_params_iftrue(True)
-@dec.slow
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, nsim=5, ndraw=10, burnin=20)
 def test_tilting(nsim=100, ndraw=50000, burnin=10000):
 
     P = []
