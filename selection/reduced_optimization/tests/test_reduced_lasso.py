@@ -4,7 +4,7 @@ import sys
 import os
 
 import numpy as np
-from selection.bayesian.initial_soln import selection, instance
+from selection.reduced_optimization.initial_soln import selection, instance
 
 from selection.reduced_optimization.lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability, selection_probability_lasso, \
     sel_prob_gradient_map_lasso, selective_inf_lasso

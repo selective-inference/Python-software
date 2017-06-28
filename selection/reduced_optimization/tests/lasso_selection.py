@@ -6,7 +6,7 @@ import regreg.api as rr
 
 import numpy as np
 from selection.reduced_optimization.generative_model import generate_data, generate_data_random
-from selection.bayesian.initial_soln import instance
+from selection.reduced_optimization.initial_soln import instance
 from selection.tests.instance import logistic_instance, gaussian_instance
 
 def selection_nonrandomized(X, y, sigma=None, method="theoretical"):

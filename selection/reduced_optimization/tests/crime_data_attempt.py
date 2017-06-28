@@ -3,7 +3,7 @@ import os, numpy as np, pandas, statsmodels.api as sm
 import time
 import matplotlib.pyplot as plt
 import regreg.api as rr
-from selection.bayesian.initial_soln import selection
+from selection.reduced_optimization.initial_soln import selection
 from selection.randomized.api import randomization
 from selection.reduced_optimization.lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability, selection_probability_lasso, \
     sel_prob_gradient_map_lasso, selective_inf_lasso

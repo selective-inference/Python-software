@@ -2,7 +2,7 @@ import os, numpy as np, pandas, statsmodels.api as sm
 import time
 import matplotlib.pyplot as plt
 import regreg.api as rr
-from selection.bayesian.initial_soln import selection
+from selection.reduced_optimization.initial_soln import selection
 from selection.randomized.api import randomization
 from selection.reduced_optimization.lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability, selection_probability_lasso, \
     sel_prob_gradient_map_lasso, selective_inf_lasso
@@ -178,7 +178,7 @@ print('here')
 
 #plt.show()                              # render the plot
 
-plt.savefig('/Users/snigdhapanigrahi/Results_bayesian/credible_hiv_selected_0.pdf', bbox_inches='tight')
+plt.savefig('/Users/snigdhapanigrahi/Results_reduced_optimization/credible_hiv_selected_0.pdf', bbox_inches='tight')
 
 ##################################################
 ind = np.zeros(len(active_set), np.bool)
@@ -238,4 +238,4 @@ ax.legend((rects1[0], rects2[0]), ('Unadjusted', 'Adjusted'), loc='upper right')
 
 print('here')
 
-plt.savefig('/Users/snigdhapanigrahi/Results_bayesian/credible_hiv_selected_1.pdf', bbox_inches='tight')
+plt.savefig('/Users/snigdhapanigrahi/Results_reduced_optimization/credible_hiv_selected_1.pdf', bbox_inches='tight')

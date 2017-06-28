@@ -2,7 +2,7 @@ from __future__ import print_function
 import numpy as np
 import time
 import regreg.api as rr
-from selection.bayesian.initial_soln import selection
+from selection.reduced_optimization.initial_soln import selection
 from selection.tests.instance import logistic_instance, gaussian_instance
 
 from selection.reduced_optimization.par_carved_reduced import selection_probability_carved, sel_inf_carved

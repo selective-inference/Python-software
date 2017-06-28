@@ -3,9 +3,8 @@ import sys
 
 import regreg.api as rr
 
-from selection.bayesian.barrier import barrier_conjugate_softmax_scaled_rr
-
-from selection.bayesian.credible_intervals import projected_langevin
+from .barrier import barrier_conjugate_softmax_scaled_rr
+from .credible_intervals import projected_langevin
 
 class selection_probability_lasso_dual(rr.smooth_atom):
     def __init__(self,

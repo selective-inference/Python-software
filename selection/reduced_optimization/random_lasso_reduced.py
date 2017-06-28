@@ -2,8 +2,8 @@ import numpy as np
 import sys
 
 import regreg.api as rr
-from selection.reduced_optimization.lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability
-from selection.bayesian.credible_intervals import projected_langevin
+from .lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability
+from .credible_intervals import projected_langevin
 
 class log_likelihood(rr.smooth_atom):
 

@@ -4,8 +4,8 @@ import numpy as np
 import regreg.api as rr
 from scipy.stats import norm
 
-from selection.reduced_optimization.lasso_reduced import nonnegative_softmax_scaled
-from selection.bayesian.credible_intervals import projected_langevin
+from .lasso_reduced import nonnegative_softmax_scaled
+from .credible_intervals import projected_langevin
 
 class neg_log_cube_probability_fs(rr.smooth_atom):
     def __init__(self,

@@ -2,7 +2,7 @@ from __future__ import print_function
 import time
 
 import numpy as np
-from selection.bayesian.initial_soln import selection, instance
+from selection.reduced_optimization.initial_soln import selection, instance
 from selection.reduced_optimization.ms_lasso_2stage_reduced import selection_probability_objective_ms_lasso, sel_prob_gradient_map_ms_lasso, \
     selective_map_credible_ms_lasso
 from selection.reduced_optimization.tests.mixed_model import instance_mixed

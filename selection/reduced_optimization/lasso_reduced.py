@@ -4,7 +4,7 @@ from scipy.stats import norm
 
 import regreg.api as rr
 
-from selection.bayesian.credible_intervals import projected_langevin
+from .credible_intervals import projected_langevin
 
 class nonnegative_softmax_scaled(rr.smooth_atom):
     """

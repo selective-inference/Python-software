@@ -4,7 +4,7 @@ import sys
 import os
 
 import numpy as np
-from selection.bayesian.initial_soln import selection, instance
+from selection.reduced_optimization.initial_soln import selection, instance
 from selection.reduced_optimization.forward_stepwise_reduced import neg_log_cube_probability_fs, \
     selection_probability_objective_fs, sel_prob_gradient_map_fs, selective_map_credible_fs
 

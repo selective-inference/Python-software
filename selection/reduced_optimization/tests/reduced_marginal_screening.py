@@ -2,7 +2,7 @@ from __future__ import print_function
 import time
 
 import numpy as np
-from selection.bayesian.initial_soln import selection, instance
+from selection.reduced_optimization.initial_soln import selection, instance
 from selection.reduced_optimization.marginal_screening_reduced import selection_probability_ms, sel_prob_gradient_map_ms, selective_inf_ms
 
 def randomized_marginal_screening(X,

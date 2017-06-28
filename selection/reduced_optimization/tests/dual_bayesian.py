@@ -4,7 +4,7 @@ import os
 import time
 
 import numpy as np
-from selection.bayesian.initial_soln import selection, instance
+from selection.reduced_optimization.initial_soln import selection, instance
 
 from selection.reduced_optimization.dual_lasso import selection_probability_lasso_dual, sel_prob_gradient_map_lasso, selective_inf_lasso
 
