@@ -191,7 +191,7 @@ class selection_probability_objective_fs(rr.smooth_atom):
         objective = lambda u: self.smooth_objective(u, 'func')
         grad = lambda u: self.smooth_objective(u, 'grad')
 
-        for itercount in xrange(nstep):
+        for itercount in range(nstep):
             newton_step = grad(current) * self.noise_variance
 
             # make sure proposal is feasible
@@ -405,7 +405,7 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         samples = []
 
-        for i in xrange(Langevin_steps):
+        for i in range(Langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
             #print i, sampler.state.copy()

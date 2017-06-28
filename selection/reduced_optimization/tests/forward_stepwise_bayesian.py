@@ -118,15 +118,7 @@ def randomized_forward_step(X,
 
     return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
 
-if __name__ == "__main__":
-
-# read from command line
-    #seedn=int(sys.argv[1])
-    #outdir=sys.argv[2]
-
-    #outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
-
-### set parameters
+def test_FS():
 
     n = 200
     p = 1000
@@ -140,12 +132,13 @@ if __name__ == "__main__":
     unad_len = 0.
     ad_risk = 0.
     unad_risk = 0.
-### GENERATE X
+
+    ### GENERATE X
     np.random.seed(0)  # ensures same X
 
     sample = generate_data(n, p)
 
-### GENERATE Y BASED ON SEED
+    ### GENERATE Y BASED ON SEED
     for i in range(niter):
         np.random.seed(i) # ensures different y
         X, y, beta, sigma = sample.generate_response()
