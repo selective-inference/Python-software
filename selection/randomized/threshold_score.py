@@ -39,7 +39,7 @@ class threshold_score(query):
                              randomization,
                              solve_args)
 
-    def solve(self):
+    def solve(self, nboot=2000):
 
         (loss,
          threshold,
@@ -86,6 +86,8 @@ class threshold_score(query):
         self._solved = True
 
         #self.num_opt_var = self.boundary.shape[0]
+        self.nboot = nboot
+        self.ndim = self.loss.shape[0]
 
     def construct_weights(self, full_state):
         """

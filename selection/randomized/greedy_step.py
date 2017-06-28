@@ -49,7 +49,7 @@ class greedy_score_step(query):
 
         self.group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, lagrange=1.)
 
-    def solve(self):
+    def solve(self, nboot=2000):
 
         (loss,
          penalty,
@@ -116,6 +116,8 @@ class greedy_score_step(query):
                                    'variables':self.maximizing_variables}
 
         # need to implement Jacobian
+        self.nboot = nboot
+        self.ndim = self.loss.shape[0]
 
     def setup_sampler(self):
 
