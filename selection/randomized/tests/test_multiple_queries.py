@@ -23,7 +23,7 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 def test_multiple_queries(s=3,
                           n=200,
                           p=20,
-                          snr=7,
+                          signal=7,
                           rho=0.1,
                           lam_frac=0.7,
                           nview=4,
@@ -33,7 +33,7 @@ def test_multiple_queries(s=3,
 
     #randomizer = randomization.laplace((p,), scale=1)
     randomizer = randomization.logistic((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
 
     nonzero = np.where(beta)[0]
 
@@ -115,7 +115,7 @@ def test_multiple_queries(s=3,
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_multiple_queries_translate(s=3, n=200, p=20,
-                                    snr=7,
+                                    signal=7,
                                     rho=0.1,
                                     lam_frac=0.7,
                                     nview=4,
@@ -123,7 +123,7 @@ def test_multiple_queries_translate(s=3, n=200, p=20,
                                     bootstrap=True):
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -188,7 +188,7 @@ def test_multiple_queries_translate(s=3, n=200, p=20,
 def test_multiple_queries_individual_coeff(s=3,
                                            n=100,
                                            p=10,
-                                           snr=7,
+                                           signal=7,
                                            rho=0.1,
                                            lam_frac=0.7,
                                            nview=4,
@@ -196,7 +196,7 @@ def test_multiple_queries_individual_coeff(s=3,
                                            bootstrap=True):
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
 
     nonzero = np.where(beta)[0]
 
@@ -262,7 +262,7 @@ def test_parametric_covariance(ndraw=10000, burnin=2000):
     s, n, p = 3, 120, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=12)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, signal=12)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -322,7 +322,7 @@ def test_parametric_covariance(ndraw=10000, burnin=2000):
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_multiple_queries_translate(s=3, n=200, p=20,
-                                    snr=7,
+                                    signal=7,
                                     rho=0.1,
                                     lam_frac=0.7,
                                     nview=4,
@@ -330,7 +330,7 @@ def test_multiple_queries_translate(s=3, n=200, p=20,
                                     bootstrap=True):
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -390,8 +390,8 @@ def test_multiple_queries_translate(s=3, n=200, p=20,
 
 def report(niter=1, **kwargs):
 
-    #kwargs = {'s':3, 'n':300, 'p':20, 'snr':7, 'nview':4, 'test': 'global'}
-    kwargs = {'s': 3, 'n': 300, 'p': 20, 'snr': 7, 'nview': 1}
+    #kwargs = {'s':3, 'n':300, 'p':20, 'signal':7, 'nview':4, 'test': 'global'}
+    kwargs = {'s': 3, 'n': 300, 'p': 20, 'signal': 7, 'nview': 1}
     kwargs['bootstrap'] = False
     intervals_report = reports.reports['test_multiple_queries']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],

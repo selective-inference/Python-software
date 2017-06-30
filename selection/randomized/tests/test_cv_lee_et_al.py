@@ -55,7 +55,7 @@ def equal_tailed_interval(L_constraint, Z, U_constraint, S, alpha=0.05):
 def test_lee_et_al(n=300,
                    p=100,
                    s=10,
-                   snr = 3.5,
+                   signal = 3.5,
                    rho = 0.,
                    sigma = 1.,
                    cross_validation=True,
@@ -68,10 +68,10 @@ def test_lee_et_al(n=300,
     print(n, p, s)
 
     if X is None:
-        X, y, beta, truth, sigma = gaussian_instance(n=n, p=p, s=s, snr=snr, sigma=sigma, scale=True, center=True)
+        X, y, beta, truth, sigma = gaussian_instance(n=n, p=p, s=s, signal=signal, sigma=sigma, scale=True, center=True)
     else:
         beta = np.zeros(p)
-        beta[:s] = snr
+        beta[:s] = signal
         y = X.dot(beta) + np.random.standard_normal(n)*sigma
 
     truth = np.nonzero(beta != 0)[0]
@@ -221,7 +221,7 @@ def report(niter=100, design="random", **kwargs):
 if __name__ == '__main__':
 
     np.random.seed(500)
-    kwargs = {'s': 0, 'n': 500, 'p': 100, 'snr': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False,
+    kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False,
               'cross_validation': True, 'condition_on_CVR': False}
     report(niter=100, **kwargs)
 

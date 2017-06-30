@@ -25,7 +25,7 @@ from selection.randomized.tests.test_cv_lee_et_al import pivot, equal_tailed_int
 def test_cv_corrected_nonrandomized_lasso(n=3000,
                                     p=1000,
                                     s=10,
-                                    snr = 3.5,
+                                    signal = 3.5,
                                     rho = 0.,
                                     sigma = 1.,
                                     K = 5,
@@ -37,17 +37,17 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
     print (n, p, s, rho)
     if X is not None:
         beta = np.zeros(p)
-        beta[:s] = snr
+        beta[:s] = signal
 
     if loss == "gaussian":
         if X is None:
-            X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1, scale=True, center=True)
+            X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1, scale=True, center=True)
         else:
             y = X.dot(beta) + np.random.standard_normal(n)*sigma
         glm_loss = rr.glm.gaussian(X, y)
     elif loss == "logistic":
         if X is None:
-            X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=True, center=True)
+            X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal, scale=True, center=True)
         else:
             eta = np.dot(X, beta)
             pi = np.exp(eta) / (1 + np.exp(eta))
@@ -220,5 +220,5 @@ def report(niter=100, design="random", **kwargs):
 
 if __name__ == '__main__':
     np.random.seed(500)
-    kwargs = {'s': 0, 'n': 500, 'p': 100, 'snr': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False}
+    kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False}
     report(niter=1, **kwargs)

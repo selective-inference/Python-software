@@ -33,7 +33,7 @@ def test_overall_null_two_queries(ndraw=10000, burnin=2000, nsim=None): # nsim n
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, signal=7)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.

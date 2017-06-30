@@ -35,7 +35,7 @@ def test_marginalize(s=0,
                     n=600,
                     p=200,
                     rho=0.,
-                    snr=3.5,
+                    signal=3.5,
                     lam_frac = 2.5,
                     ndraw=10000,
                     burnin=2000,
@@ -57,11 +57,11 @@ def test_marginalize(s=0,
         randomizer = randomization.logistic((p,), scale=randomizer_scale)
 
     if loss=="gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000))))) * sigma
         loss = rr.glm.gaussian(X, y)
     elif loss=="logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 

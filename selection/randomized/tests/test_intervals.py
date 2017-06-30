@@ -23,7 +23,7 @@ from selection.randomized.query import (naive_pvalues, naive_confidence_interval
 def test_intervals(s=0,
                    n=200,
                    p=10,
-                   snr=7,
+                   signal=7,
                    rho=0.,
                    lam_frac=6.,
                    ndraw=10000, 
@@ -42,11 +42,11 @@ def test_intervals(s=0,
         randomizer = randomization.logistic((p,), scale=1.)
 
     if loss == "gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000))))) * sigma
         loss = rr.glm.gaussian(X, y)
     elif loss == "logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
@@ -145,7 +145,7 @@ def test_intervals(s=0,
 
 def report_both(niter=10, **kwargs):
 
-    kwargs = {'s': 0, 'n': 500, 'p': 100, 'snr': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
+    kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
     intervals_report = reports.reports['test_intervals']
     CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
@@ -168,7 +168,7 @@ def report_both(niter=10, **kwargs):
     fig.savefig('intervals_pivots.pdf') # will have both bootstrap and CLT on plot
 
 def report(niter=50, **kwargs):
-    kwargs = {'s': 0, 'n': 600, 'p': 100, 'snr': 7, 'bootstrap': False, 'randomizer':'gaussian',
+    kwargs = {'s': 0, 'n': 600, 'p': 100, 'signal': 7, 'bootstrap': False, 'randomizer':'gaussian',
                     'loss':'gaussian', 'intervals':'old'}
     intervals_report = reports.reports['test_intervals']
     runs = reports.collect_multiple_runs(intervals_report['test'],

@@ -20,7 +20,7 @@ def test_fixedX(ndraw=10000, burnin=2000): # nsim needed for decorator
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, Y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.1, snr=7)
+    X, Y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.1, signal=7)
 
     lam_frac = 1.
     lam = lam_frac * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 50000)))).max(0)) * sigma

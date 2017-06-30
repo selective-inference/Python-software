@@ -16,17 +16,17 @@ from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 def test_nonrandomized(s=0,
                        n=200,
                        p=10,
-                       snr=7,
+                       signal=7,
                        rho=0,
                        lam_frac=0.8,
                        loss='gaussian',
                        solve_args={'min_its': 20, 'tol': 1.e-10}):
     if loss == "gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         loss = rr.glm.gaussian(X, y)
     elif loss == "logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
@@ -77,7 +77,7 @@ def test_nonrandomized(s=0,
 
 def report(niter=100, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 10, 'snr': 7}
+    kwargs = {'s': 0, 'n': 300, 'p': 10, 'signal': 7}
     split_report = reports.reports['test_nonrandomized']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],

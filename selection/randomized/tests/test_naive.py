@@ -13,7 +13,7 @@ from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 from selection.randomized.query import (naive_pvalues, naive_confidence_intervals)
 
-def compute_projection_parameters(n, p, s, snr, rho, sigma, active):
+def compute_projection_parameters(n, p, s, signal, rho, sigma, active):
     multiple = 10**2
     n_large = multiple*n
     X_large = np.zeros((n_large,p))
@@ -21,7 +21,7 @@ def compute_projection_parameters(n, p, s, snr, rho, sigma, active):
 
     for i in range(multiple):
         X_large[(i*n):((i+1)*n), :], y_large[(i*n):((i+1)*n)], _, _, _ = \
-            gaussian_instance(n=n, p=p, s=s, snr=snr, rho=rho, sigma=sigma, scale=True, center=True)
+            gaussian_instance(n=n, p=p, s=s, signal=signal, rho=rho, sigma=sigma, scale=True, center=True)
 
     proj_param = np.linalg.lstsq(X_large[:, active], y_large)[0]
     print(proj_param)
@@ -37,7 +37,7 @@ def compute_projection_parameters(n, p, s, snr, rho, sigma, active):
 def test_naive(n=300,
                p=100,
                s=10,
-               snr = 3.5,
+               signal = 3.5,
                rho = 0.,
                sigma = 1.,
                cross_validation=True,
@@ -52,11 +52,11 @@ def test_naive(n=300,
     print(n, p, s)
 
     if X is None:
-        X, y, beta, truth, sigma = gaussian_instance(n=n, p=p, s=s, snr=snr, rho=rho, \
+        X, y, beta, truth, sigma = gaussian_instance(n=n, p=p, s=s, signal=signal, rho=rho, \
                                                      sigma=sigma, scale=True, center=True)
     else:
         beta = np.zeros(p)
-        beta[:s] = snr
+        beta[:s] = signal
         y = X.dot(beta) + np.random.standard_normal(n)*sigma
 
     truth = np.nonzero(beta != 0)[0]
@@ -89,9 +89,9 @@ def test_naive(n=300,
 
     if (check_screen==False):
         if check_projection_param==True:
-            true_vec = compute_projection_parameters(n, p, s, snr, rho, sigma, active)
+            true_vec = compute_projection_parameters(n, p, s, signal, rho, sigma, active)
         else:
-            true_vec = snr*np.array([active_set[i] in truth for i in range(nactive)], int)
+            true_vec = signal*np.array([active_set[i] in truth for i in range(nactive)], int)
         print(true_vec)
     else:
         true_vec = beta[active]
@@ -172,7 +172,7 @@ def report(niter=50, design="random", **kwargs):
 if __name__ == '__main__':
 
     np.random.seed(500)
-    kwargs = {'s': 0, 'n': 100, 'p': 50, 'snr': 3.5, 'sigma': 1, 'rho': 0., 'intervals':True}
+    kwargs = {'s': 0, 'n': 100, 'p': 50, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':True}
     report(niter=100, **kwargs)
 
 

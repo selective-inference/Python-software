@@ -33,7 +33,7 @@ def choose_lambda_with_randomization(X, randomization, quantile=0.90, ndraw=1000
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
+def test_cv(n=500, p=20, s=0, signal=5, K=5, rho=0.,
              randomizer = 'gaussian',
              randomizer_scale = 1.,
              scale1 = 0.1,
@@ -54,7 +54,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
     elif randomizer == 'logistic':
         randomizer = randomization.logistic((p,), scale=randomizer_scale)
 
-    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
     lam_nonrandom = choose_lambda(X)
     lam_random = choose_lambda_with_randomization(X, randomizer)
     loss = sqlasso_objective(X, y)
@@ -161,7 +161,7 @@ def test_cv(n=500, p=20, s=0, snr=5, K=5, rho=0.,
 
 def report(niter=10, **kwargs):
 
-    kwargs = {'s': 30, 'n': 3000, 'p': 1000, 'snr': 3.5, 'bootstrap': False}
+    kwargs = {'s': 30, 'n': 3000, 'p': 1000, 'signal': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     CV_runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],

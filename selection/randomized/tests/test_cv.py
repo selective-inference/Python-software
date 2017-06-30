@@ -23,7 +23,7 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
+def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
              randomizer = 'gaussian',
              randomizer_scale = 1.,
              scale1 = 0.1,
@@ -46,10 +46,10 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
         randomizer = randomization.logistic((p,), scale=randomizer_scale)
 
     if loss == "gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
         glm_loss = rr.glm.gaussian(X, y)
     elif loss == "logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
         glm_loss = rr.glm.logistic(X, y)
 
     epsilon = 1./np.sqrt(n)
@@ -163,7 +163,7 @@ def test_cv(n=100, p=50, s=0, snr=3.5, K=5, rho=0.,
 
 def report(niter=50, **kwargs):
     np.random.seed(500)
-    #kwargs = {'s': 0, 'n': 600, 'p': 100, 'snr': 3.5, 'bootstrap': False}
+    #kwargs = {'s': 0, 'n': 600, 'p': 100, 'signal': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
@@ -183,7 +183,7 @@ def report(niter=50, **kwargs):
 
 if __name__ == '__main__':
     np.random.seed(500)
-    kwargs = {'n': 600, 'p': 20, 's': 0, 'snr': 3.5, 'K': 5, 'rho': 0.,
+    kwargs = {'n': 600, 'p': 20, 's': 0, 'signal': 3.5, 'K': 5, 'rho': 0.,
               'randomizer': 'gaussian', 'randomizer_scale': 1.5,
               'scale1': 0.1, 'scale2': 0.1,  'lam_frac': 1.,
               'loss': 'logistic', 'intervals': 'old',

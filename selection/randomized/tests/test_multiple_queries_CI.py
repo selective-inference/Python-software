@@ -25,7 +25,7 @@ from selection.randomized.query import naive_confidence_intervals
 def test_multiple_queries(s=3,
                          n=300,
                          p=20,
-                         snr=7,
+                         signal=7,
                          rho=0.1,
                          lam_frac=0.7,
                          nviews=4,
@@ -34,7 +34,7 @@ def test_multiple_queries(s=3,
                          solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
 
     nonzero = np.where(beta)[0]
 
@@ -155,7 +155,7 @@ def test_multiple_queries(s=3,
 
 def report(niter=10, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 10, 'snr': 7, 'nviews':3, 'intervals':'old'}
+    kwargs = {'s': 0, 'n': 300, 'p': 10, 'signal': 7, 'nviews':3, 'intervals':'old'}
     split_report = reports.reports['test_multiple_queries']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],

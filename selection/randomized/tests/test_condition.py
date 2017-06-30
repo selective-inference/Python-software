@@ -32,7 +32,7 @@ def test_condition(s=0,
                    n=100,
                    p=200,
                    rho=0.1,
-                   snr=10,
+                   signal=10,
                    lam_frac = 1.4,
                    ndraw=10000, burnin=2000,
                    loss='logistic',
@@ -40,11 +40,11 @@ def test_condition(s=0,
                    scalings=False):
 
     if loss=="gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         loss = rr.glm.gaussian(X, y)
     elif loss=="logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 

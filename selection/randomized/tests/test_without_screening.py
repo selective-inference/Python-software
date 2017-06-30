@@ -32,7 +32,7 @@ def test_without_screening(s=30,
                         n=3000,
                         p=1000,
                         rho=0.,
-                        snr=3.5,
+                        signal=3.5,
                         lam_frac = 1.,
                         ndraw=10000,
                         burnin=2000,
@@ -44,16 +44,16 @@ def test_without_screening(s=30,
                         check_screen = False):
 
     if loss=="gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1, random_signs=False)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1, random_signs=False)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         loss = rr.glm.gaussian(X, y)
-        X_indep, y_indep, _, _, _ = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1)
+        X_indep, y_indep, _, _, _ = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
         loss_indep = rr.glm.gaussian(X_indep, y_indep)
     elif loss=="logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-        X_indep, y_indep, _, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, random_signs=False)
+        X_indep, y_indep, _, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal, random_signs=False)
         loss_indep = rr.glm.logistic(X_indep, y_indep)
     nonzero = np.where(beta)[0]
 
@@ -171,6 +171,6 @@ def report(niter=1, **kwargs):
 
 if __name__ == '__main__':
     np.random.seed(500)
-    kwargs = {'s':30, 'n':3000, 'p':1000, 'snr':3.5, 'rho':0, 'loss':'gaussian', 'randomizer':'gaussian',
+    kwargs = {'s':30, 'n':3000, 'p':1000, 'signal':3.5, 'rho':0, 'loss':'gaussian', 'randomizer':'gaussian',
                   'randomizer_scale':1.2, 'lam_frac':1.}
     report(niter=1, **kwargs)
