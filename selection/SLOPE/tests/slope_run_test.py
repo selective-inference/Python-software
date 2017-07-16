@@ -15,7 +15,7 @@ from regreg.atoms.slope import slope
 import regreg.api as rr
 
 
-def test_slope_R(X, Y):
+def test_slope_R(X, Y, W):
     robjects.r('''
     slope = function(X, Y, W=NA, fdr = 0.1){
 
@@ -34,16 +34,24 @@ def test_slope_R(X, Y):
     n, p = X.shape
     r_X = robjects.r.matrix(X, nrow=n, ncol=p)
     r_Y = robjects.r.matrix(Y, nrow=n, ncol=1)
+    r_W = robjects.r.matrix(W, nrow=p, ncol=1)
+    result = r_slope(r_X, r_Y, r_W)
 
-    result = r_slope(r_X, r_Y)
+    return result[0]
 
-    print("output", result[0])
-    return result[0][0]
+def compare_outputs():
 
-n, p = 500, 200
+    n, p = 500, 200
 
-X = np.random.standard_normal((n, p))
-Y = np.random.standard_normal(n)
+    X = np.random.standard_normal((n, p))
+    Y = np.random.standard_normal(n)
+    W = np.linspace(3, 3.5, p)[::-1]
 
-test_slope_R(X, Y)
+    output_R = test_slope_R(X, Y, W)
 
+    pen = slope(W, lagrange=1.)
+    loss = rr.squared_error(X, Y)
+    problem = rr.simple_problem(loss, pen)
+    soln = problem.solve()
+
+compare_outputs()
