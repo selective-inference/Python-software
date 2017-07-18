@@ -95,6 +95,7 @@ def compare_outputs_SLOPE_weights():
 
     X = np.random.standard_normal((n, p))
     #Y = np.random.standard_normal(n)
+    X -= X.mean(0)[None, :]
     X /= (X.std(0)[None, :] * np.sqrt(n))
     beta = np.zeros(p)
     beta[:5] = 5.
