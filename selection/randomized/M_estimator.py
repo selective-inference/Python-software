@@ -482,7 +482,7 @@ class M_estimator(query):
             raise ValueError('setup_sampler should be called before using this function')
 
         if self._marginalize_subgradient:
-            p = self.p
+            p = self.penalty.shape[0]
             weights = np.zeros(p)
 
             if self.inactive_marginal_groups.sum()>0:

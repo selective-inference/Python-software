@@ -32,8 +32,8 @@ class lasso(object):
                  loglike, 
                  feature_weights,
                  ridge_term,
-                 randomization_scale,
-                 randomization='gaussian',
+                 randomizer_scale,
+                 randomizer='gaussian',
                  covariance_estimator=None):
         r"""
 
@@ -52,10 +52,10 @@ class lasso(object):
         ridge_term : float
             How big a ridge term to add?
 
-        randomization_scale : float
+        randomizer_scale : float
             Scale for IID components of randomization.
 
-        randomization : str
+        randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
 
         covariance_estimator : callable (optional)
@@ -76,20 +76,25 @@ class lasso(object):
         """
 
         self.loglike = loglike
+        self.nfeature = p = self.loglike.shape[0]
+
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
 
         self.covariance_estimator = covariance_estimator
 
-        if randomization == 'laplace':
+        if randomizer == 'laplace':
             self.randomizer = randomization.laplace((p,), scale=randomizer_scale)
-        elif randomization == 'gaussian':
+        elif randomizer == 'gaussian':
             self.randomizer = randomization.isotropic_gaussian((p,),randomizer_scale)
-        elif randomization == 'logistic':
+        elif randomizer == 'logistic':
             self.randomizer = randomization.logistic((p,), scale=randomizer_scale)
 
         self.ridge_term = ridge_term
+
+        self.penalty = rr.group_lasso(np.arange(p),
+                                      weights=dict(zip(np.arange(p), self.feature_weights)), lagrange=1.)
 
     def fit(self, solve_args={'tol':1.e-12, 'min_its':50}, marginalize_subgrad=True,
             views=[]):
@@ -116,16 +121,16 @@ class lasso(object):
              
         """
 
-        self.penalty = rr.group_lasso(np.arange(p),
-                                      weights=dict(zip(np.arange(p), self.feature_weights)), lagrange=1.)
+        p = self.nfeature
         self._view = glm_group_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
+        self._view.solve()
 
         views = copy(views); views.append(self._view)
         self._queries = multiple_queries(views)
         self._queries.solve()
 
         if marginalize_subgrad == True:
-            self.view.decompose_subgradient(conditioning_groups=np.zeros(p, np.bool),
+            self._view.decompose_subgradient(conditioning_groups=np.zeros(p, np.bool),
                                             marginalizing_groups=np.ones(p, np.bool))
         
         self.signs = np.sign(self._view.initial_soln)
@@ -150,7 +155,7 @@ class lasso(object):
         """
         if not hasattr(self, "_queries"):
             raise ValueError('run `fit` method before producing summary.')
-        target_sampler, target_observed = glm_target(glm_loss,
+        target_sampler, target_observed = glm_target(self.loglike,
                                                      selected_features,
                                                      self._queries,
                                                      bootstrap=bootstrap)
@@ -174,19 +179,19 @@ class lasso(object):
                  covariance_estimator=None,
                  quadratic=None,
                  ridge_term=None,
-                 randomization_scale=None,
-                 randomization='gaussian'):
+                 randomizer_scale=None,
+                 randomizer='gaussian'):
         r"""
         Squared-error LASSO with feature weights.
 
-        Objective function (before randomization) is 
+        Objective function (before randomizer) is 
         $$
         \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
 
         where $\lambda$ is `feature_weights`. The ridge term
         is determined by the Hessian and `np.std(Y)` by default,
-        as is the randomization scale.
+        as is the randomizer scale.
 
         Parameters
         ----------
@@ -219,10 +224,10 @@ class lasso(object):
         ridge_term : float
             How big a ridge term to add?
 
-        randomization_scale : float
-            Scale for IID components of randomization.
+        randomizer_scale : float
+            Scale for IID components of randomizer.
 
-        randomization : str
+        randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
 
         Returns
@@ -245,7 +250,7 @@ class lasso(object):
         """
         if covariance_estimator is not None:
             sigma = 1.
-        loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
+        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
         n, p = X.shape
 
         mean_diag = np.mean((X**2).sum(0))
@@ -253,7 +258,7 @@ class lasso(object):
         randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y)
 
         return lasso(loglike, np.asarray(feature_weights) / sigma**2,
-                     ridge_term, randomizer_scale, randomization=randomization)
+                     ridge_term, randomizer_scale, randomizer=randomizer)
 
     @staticmethod
     def logistic(X, 
@@ -307,10 +312,10 @@ class lasso(object):
         ridge_term : float
             How big a ridge term to add?
 
-        randomization_scale : float
-            Scale for IID components of randomization.
+        randomizer_scale : float
+            Scale for IID components of randomizer.
 
-        randomization : str
+        randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
 
         Returns
@@ -330,7 +335,7 @@ class lasso(object):
         the unpenalized estimator.
 
         """
-        loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
+        loglike = rr.glm.logistic(X, successes, trials=trials, quadratic=quadratic)
 
         mean_diag = np.mean((X**2).sum(0))
         ridge_term = np.std(Y)**2 * mean_diag / np.sqrt(n)
@@ -391,10 +396,10 @@ class lasso(object):
         ridge_term : float
             How big a ridge term to add?
 
-        randomization_scale : float
-            Scale for IID components of randomization.
+        randomizer_scale : float
+            Scale for IID components of randomizer.
 
-        randomization : str
+        randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
 
         Returns
@@ -423,7 +428,7 @@ class lasso(object):
         randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y)
 
         return lasso(loglike, feature_weights, ridge_term,
-                     randomizer_scale, randomization=randomization,
+                     randomizer_scale, randomizer=randomizer,
                      covariance_estimator=covariance_estimator)
 
     @staticmethod
@@ -471,10 +476,10 @@ class lasso(object):
         ridge_term : float
             How big a ridge term to add?
 
-        randomization_scale : float
-            Scale for IID components of randomization.
+        randomizer_scale : float
+            Scale for IID components of randomizer.
 
-        randomization : str
+        randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
 
         Returns
@@ -494,16 +499,16 @@ class lasso(object):
         the unpenalized estimator.
 
         """
-        loglike = glm.poisson(X, counts, quadratic=quadratic)
+        loglike = rr.glm.poisson(X, counts, quadratic=quadratic)
 
-        # scale for randomization seems kind of meaningless here...
+        # scale for randomizer seems kind of meaningless here...
 
         mean_diag = np.mean((X**2).sum(0))
         ridge_term = np.std(Y)**2 * mean_diag / np.sqrt(n)
         randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y)
 
         return lasso(loglike, feature_weights, ridge_term,
-                     randomizer_scale, randomization=randomization,
+                     randomizer_scale, randomizer=randomizer,
                      covariance_estimator=covariance_estimator)
 
     @staticmethod
@@ -562,10 +567,10 @@ class lasso(object):
         ridge_term : float
             How big a ridge term to add?
 
-        randomization_scale : float
-            Scale for IID components of randomization.
+        randomizer_scale : float
+            Scale for IID components of randomizer.
 
-        randomization : str
+        randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
 
         Returns
@@ -672,7 +677,7 @@ class lasso(object):
             qc.linear_term *= np.sqrt(n - nactive) / sigma_E
             quadratic = qc
 
-        loglike = glm.gaussian(X, Y, quadratic=quadratic)
+        loglike = rr.glm.gaussian(X, Y, quadratic=quadratic)
 
         if covariance == 'parametric':
             cov_est = glm_parametric_estimator(loglike, dispersion=_sigma_hat)
