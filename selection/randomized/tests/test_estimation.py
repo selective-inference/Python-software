@@ -3,15 +3,15 @@ import numpy as np
 
 from selection.tests.instance import gaussian_instance
 
-def MSE(snr=1, n=100, p=10, s=1):
+def MSE(signal=1, n=100, p=10, s=1):
 
     ninstance = 1
     total_mse = 0
     nvalid_instance = 0
-    data_instance = gaussian_instance(n, p, s, snr)
+    data_instance = gaussian_instance(n, p, s, signal)
     tau = 1.
     for i in range(ninstance):
-        X, y, true_beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, snr=snr)
+        X, y, true_beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, signal=signal)
         random_Z = np.random.standard_normal(p)
         lam, epsilon, active, betaE, cube, initial_soln = selection(X, y, random_Z) # selection not defined -- is in a file that was deleted
         print("active set", np.where(active)[0])
@@ -29,12 +29,12 @@ def MSE(snr=1, n=100, p=10, s=1):
     return np.true_divide(total_mse, nvalid_instance)
 
 
-def MSE_three(snr=5, n=100, p=10, s=0):
+def MSE_three(signal=5, n=100, p=10, s=0):
 
     ninstance = 5
     total_mse_mle, total_mse_unbiased, total_mse_umvu = 0, 0, 0
     nvalid_instance = 0
-    data_instance = instance(n, p, s, snr)
+    data_instance = instance(n, p, s, signal)
     tau = 1.
     for i in range(ninstance):
         X, y, true_beta, nonzero, sigma = data_instance.generate_response()
@@ -62,13 +62,13 @@ def MSE_three(snr=5, n=100, p=10, s=0):
 
 
 def plot_estimation_three():
-    snr_seq = np.linspace(-10, 10, num=50)
-    filter = np.zeros(snr_seq.shape[0], dtype=bool)
+    signal_seq = np.linspace(-10, 10, num=50)
+    filter = np.zeros(signal_seq.shape[0], dtype=bool)
     mse_mle_seq, mse_unbiased_seq, mse_umvu_seq = [], [], []
 
-    for i in range(snr_seq.shape[0]):
-            print("parameter value", snr_seq[i])
-            mse = MSE_three(snr_seq[i])
+    for i in range(signal_seq.shape[0]):
+            print("parameter value", signal_seq[i])
+            mse = MSE_three(signal_seq[i])
             if mse is not None:
                 mse_mle, mse_unbiased, mse_umvu = mse
                 mse_mle_seq.append(mse_mle)
@@ -79,9 +79,9 @@ def plot_estimation_three():
     plt.clf()
     plt.title("MSE")
     fig, ax = plt.subplots()
-    ax.plot(snr_seq[filter], mse_mle_seq, label = "MLE", linestyle=':', marker='o')
-    ax.plot(snr_seq[filter], mse_unbiased_seq, label = "Unbiased")
-    ax.plot(snr_seq[filter], mse_umvu_seq, label ="UMVU")
+    ax.plot(signal_seq[filter], mse_mle_seq, label = "MLE", linestyle=':', marker='o')
+    ax.plot(signal_seq[filter], mse_unbiased_seq, label = "Unbiased")
+    ax.plot(signal_seq[filter], mse_umvu_seq, label ="UMVU")
 
     legend = ax.legend(loc='upper center', shadow=True)
     frame = legend.get_frame()
@@ -97,11 +97,11 @@ def plot_estimation_three():
 
 
 def make_a_plot(plot=False):
-    snr_seq = np.linspace(-10, 10, num=20)
+    signal_seq = np.linspace(-10, 10, num=20)
     mse_seq = []
-    for i in range(snr_seq.shape[0]):
-        print("parameter value", snr_seq[i])
-        mse = MSE(snr_seq[i])
+    for i in range(signal_seq.shape[0]):
+        print("parameter value", signal_seq[i])
+        mse = MSE(signal_seq[i])
         print("MSE", mse)
         mse_seq.append(mse)
 
@@ -109,7 +109,7 @@ def make_a_plot(plot=False):
         import matplotlib.pyplot as plt
         plt.clf()
         plt.title("MSE")
-        plt.plot(snr_seq, mse_seq)
+        plt.plot(signal_seq, mse_seq)
         plt.pause(0.01)
         plt.savefig("MSE")
 

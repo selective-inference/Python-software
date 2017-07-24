@@ -299,6 +299,14 @@ class truncated_gaussian_old(object):
         def F(param):
             self.mu = param
             return self.cdf(observed)
+
+        #from scipy.optimize import bisect
+        #FL = lambda x: (F(x) - (1 - 0.5 * alpha))
+        #FU = lambda x: (F(x) - 0.5 * alpha)
+        #L_conf = bisect(FL, lb, ub)
+        #U_conf = bisect(FU, lb, ub)
+        #return np.array([L_conf, U_conf])
+
         L = find_root(F, 1.0 - 0.5 * alpha, lb, ub)
         U = find_root(F, 0.5 * alpha, lb, ub)
         self.mu = old_mu

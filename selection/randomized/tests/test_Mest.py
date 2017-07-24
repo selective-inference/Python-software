@@ -24,7 +24,7 @@ def test_overall_null_two_queries():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=0.5)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, signal=14)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -138,7 +138,7 @@ def test_one_inactive_coordinate_handcoded():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, signal=14)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -250,7 +250,7 @@ def test_logistic_selected_inactive_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, signal=14)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -314,7 +314,7 @@ def test_logistic_saturated_inactive_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, signal=14)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -373,7 +373,7 @@ def test_logistic_selected_active_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, signal=14)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -431,7 +431,7 @@ def test_logistic_saturated_active_coordinate():
     s, n, p = 5, 200, 20 
 
     randomizer = randomization.laplace((p,), scale=1.)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, snr=14)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0.1, signal=14)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.

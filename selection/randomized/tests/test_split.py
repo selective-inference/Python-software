@@ -19,7 +19,7 @@ from selection.randomized.query import naive_confidence_intervals
 def test_split(s=3,
                n=200,
                p=50, 
-               snr=7,
+               signal=7,
                rho=0.1,
                split_frac=0.8,
                lam_frac=0.7,
@@ -29,7 +29,7 @@ def test_split(s=3,
                solve_args={'min_its':50, 'tol':1.e-10},
                reference_known=False): 
 
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
 
     m = int(split_frac * n)
     nonzero = np.where(beta)[0]

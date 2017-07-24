@@ -177,7 +177,10 @@ class intervals_from_sample(object):
         log_gaussian_tilt /= var
         emp_exp = self._empirical_exp(linear_func, param)
         likelihood_ratio = np.exp(log_gaussian_tilt) / emp_exp
-        return np.clip(np.mean(indicator * likelihood_ratio), 0, 1)
+        if emp_exp>0:
+            return np.clip(np.mean(indicator * likelihood_ratio), 0, 1)
+        else:
+            return 0.
 
     def _pivots_grid(self, linear_func, npts=1000, num_sd=10):
         """
@@ -186,7 +189,10 @@ class intervals_from_sample(object):
         """
         linear_func = np.atleast_1d(linear_func)
         stdev = np.sqrt(np.sum(linear_func * self.covariance.dot(linear_func)))
-        grid = np.linspace(-10*stdev, 10*stdev, 1000) + (self.reference * linear_func).sum()
+        #grid = np.linspace(-300*stdev, 300*stdev, 30000) + (self.reference * linear_func).sum()
+        grid = np.linspace(-50, 50, 10000) #+ (self.reference * linear_func).sum()
+        #print(self.observed.dot(linear_func), 300*stdev)
+
         pivots_at_grid = [self._pivot_param(linear_func, grid[i])
                           for i in range(grid.shape[0])]
         pivots_at_grid = [2*min(pval, 1-pval) for pval in pivots_at_grid]

@@ -21,7 +21,7 @@ try:
 except ImportError:
     statsmodels_available = False
 
-instance_opts = {'snr':15,
+instance_opts = {'signal':15,
                  's':5,
                  'p':20,
                  'n':200,
@@ -31,16 +31,16 @@ def generate_data(s=5,
                   n=200, 
                   p=20, 
                   rho=0.1, 
-                  snr=15):
+                  signal=15):
 
-    return logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr, scale=False, center=False)
+    return logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal, scale=False, center=False)
 
 DEBUG = False
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_scaling(snr=15, 
+def test_scaling(signal=15, 
                  s=5, 
                  n=200, 
                  p=20, 
@@ -52,7 +52,7 @@ def test_scaling(snr=15,
                  frac=0.5): # 0.9 has roughly same screening probability as 50% data splitting, i.e. around 10%
 
     randomizer = randomization.laplace((p,), scale=scale)
-    X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
+    X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, signal=signal)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -241,7 +241,7 @@ def test_scaling(snr=15,
 
         # oracle p-value -- draws a new data set
 
-        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, signal=signal)
         X_E = X[:,active_set]
 
         active_var = [False, True, False, True]
@@ -261,7 +261,7 @@ def test_scaling(snr=15,
         # frac is presumed to be how much data was used in stage 1, we get (1-frac)*n for stage 2
         # frac defaults to 0.5
 
-        Xs, ys, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
+        Xs, ys, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, signal=signal)
         Xs = Xs[:int((1-frac)*n)]
         ys = ys[:int((1-frac)*n)]
         X_Es = Xs[:,active_set]
@@ -280,13 +280,13 @@ def test_scaling(snr=15,
 
         return pvalues, active_var
 
-def data_splitting_screening(frac=0.5, snr=15, s=5, n=200, p=20, rho=0.1):
+def data_splitting_screening(frac=0.5, signal=15, s=5, n=200, p=20, rho=0.1):
 
     count = 0
     
     while True:
         count += 1
-        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, signal=signal)
 
         n2 = int(frac * n)
         X = X[:n2]
@@ -311,7 +311,7 @@ def data_splitting_screening(frac=0.5, snr=15, s=5, n=200, p=20, rho=0.1):
         if set(nonzero).issubset(active_set):
             return count
 
-def randomization_screening(scale=1., snr=15, s=5, n=200, p=20, rho=0.1):
+def randomization_screening(scale=1., signal=15, s=5, n=200, p=20, rho=0.1):
 
     count = 0
 
@@ -319,7 +319,7 @@ def randomization_screening(scale=1., snr=15, s=5, n=200, p=20, rho=0.1):
 
     while True:
         count += 1
-        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, snr=snr)
+        X, y, beta, _ = generate_data(n=n, p=p, s=s, rho=rho, signal=signal)
 
         nonzero = np.where(beta)[0]
         lam_frac = 1.

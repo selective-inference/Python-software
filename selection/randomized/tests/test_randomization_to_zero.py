@@ -36,7 +36,7 @@ def test_multiple_queries_small(ndraw=10000, burnin=2000, nsim=None): # nsim nee
     s, n, p = 2, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=3)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, signal=3)
 
     nonzero = np.where(beta)[0]
     lam_frac = .6
@@ -128,7 +128,7 @@ def test_multiple_queries_individual_coeff_small(ndraw=10000,
     s, n, p = 3, 100, 20
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=20.)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, signal=20.)
 
     nonzero = np.where(beta)[0]
     lam_frac = 3.
@@ -188,7 +188,7 @@ def test_parametric_covariance_small(ndraw=10000, burnin=2000, nsim=None): # nsi
     s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, snr=10)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, signal=10)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.

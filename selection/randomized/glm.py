@@ -218,7 +218,8 @@ def target(loss,
            subset=None, 
            bootstrap=False,
            solve_args={'min_its':50, 'tol':1.e-10},
-           reference=None):
+           reference=None,
+           parametric=False):
     """
     Form target from self.loss
     restricting to active variables.
@@ -230,8 +231,8 @@ def target(loss,
     Parameters
     ----------
 
-    loss : `smooth_atom`
-       A glm loss.
+    query : `query`
+       A query with a glm loss.
 
     active : np.bool
        Indicators of active variables.
@@ -289,12 +290,20 @@ def target(loss,
         return _subsetter(boot_target(indices))
     target_observed = _subsetter(boot_target_observed)
 
-    form_covariances = glm_nonparametric_bootstrap(n, n)
+    if parametric==False:
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+    else:
+        form_covariances = glm_parametric_covariance(loss)
+
     queries.setup_sampler(form_covariances)
     queries.setup_opt_state()
 
     if reference is None:
         reference = target_observed
+
+    if parametric:
+        linear_func = np.identity(target_observed.shape[0])
+        _target = (active,linear_func)
 
     if bootstrap:
         alpha_mat = set_alpha_matrix(loss, active, inactive=inactive)
@@ -307,9 +316,12 @@ def target(loss,
                                                            alpha_mat,
                                                            reference=reference)
     else:
+
         target_sampler = queries.setup_target(_target,
                                               target_observed,
-                                              reference=reference)
+                                              reference=reference,
+                                              parametric=parametric)
+
     return target_sampler, target_observed
 
 class glm_group_lasso(M_estimator):
@@ -405,7 +417,9 @@ def bootstrap_cov(sampler, boot_target, cross_terms=(), nsample=2000):
         _outer_cross = [0.] * len(cross_terms)
     _outer_target = 0.
 
-    for _ in range(nsample):
+    for j in range(nsample):
+        #if j % 100==0:
+        #    print(j)
         indices = sampler()
         _boot_target = boot_target(indices)
 
@@ -521,11 +535,11 @@ def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10})
     return functools.partial(parametric_cov, glm_loss, solve_args=solve_args)
 
 
-def standard_ci(X, y , active, leftout_indices, alpha=0.1):
+def standard_ci(glm_loss, X, y , active, leftout_indices, alpha=0.1):
 
     import regreg.api as rr
 
-    loss = rr.glm.logistic(X[leftout_indices, ], y[leftout_indices])
+    loss = glm_loss(X[leftout_indices, ], y[leftout_indices])
     boot_target, target_observed = pairs_bootstrap_glm(loss, active)
     nactive = np.sum(active)
     size= np.sum(leftout_indices)
@@ -552,5 +566,3 @@ def standard_ci_sm(X, y, active, leftout_indices, alpha=0.1):
     result = logit.fit(disp=0)
     LU = result.conf_int(alpha=alpha)
     return LU.T
-
-
