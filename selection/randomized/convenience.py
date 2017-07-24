@@ -137,7 +137,7 @@ class lasso(object):
         return self.signs
 
     def summary(self, selected_features, 
-                null_values=None,
+                null_value=None,
                 ndraw=10000, 
                 burnin=2000,
                 bootstrap=False):
@@ -151,6 +151,18 @@ class lasso(object):
         selected_features : np.bool
             Binary encoding of which features to use in final
             model and targets.
+
+        null_value : np.array
+            Hypothesized value for null -- defaults to 0.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        bootstrap : bool
+            Use wild bootstrap instead of Gaussian plugin.
 
         """
         if not hasattr(self, "_queries"):
@@ -166,8 +178,11 @@ class lasso(object):
         LU = target_sampler.confidence_intervals_translate(target_observed,
                                                            sample=full_sample,
                                                            level=0.9)
+
+        if null_value is None:
+            null_value = np.zeros(self.loglike.shape[0])
         pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                               parameter=np.zeros_like(true_vec),
+                                                               parameter=null_value,
                                                                sample=full_sample)
         return LU, pvalues
 
