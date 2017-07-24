@@ -54,7 +54,12 @@ def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
 
     epsilon = 1./np.sqrt(n)
     # view 1
-    cv = CV_view(glm_loss, loss_label=loss, lasso_randomization=randomizer, epsilon=epsilon,  scale1=scale1, scale2=scale2)
+    cv = CV_view(glm_loss, 
+                 loss_label=loss, 
+                 lasso_randomization=randomizer, 
+                 epsilon=epsilon, 
+                 scale1=scale1, 
+                 scale2=scale2)
     cv.solve(glmnet=True)
 
     lam = cv.lam_CVR
