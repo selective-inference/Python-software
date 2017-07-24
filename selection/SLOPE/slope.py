@@ -15,11 +15,12 @@ try:
 except ImportError:
     raise ValueError('unable to import isotonic regression from sklearn')
 
-from .seminorms import seminorm
 
-from ..atoms import _work_out_conjugate
-from ..objdoctemplates import objective_doc_templater
-from ..doctemplates import (doc_template_user, doc_template_provider)
+from regreg.atoms.seminorms import seminorm
+
+from regreg.atoms import _work_out_conjugate
+from regreg.objdoctemplates import objective_doc_templater
+from regreg.doctemplates import (doc_template_user, doc_template_provider)
 
 
 @objective_doc_templater()
@@ -255,7 +256,6 @@ def _projection_onto_selected_subgradients(prox_arg,
         cur_idx += cluster_size
 
     # Now, run appropriate SLOPE prox on each cluster
-
     cur_idx = 0
     for i, cluster in enumerate(ordered_clustering):
         prox_subarg = np.array([prox_arg[j] for j in cluster])
@@ -270,23 +270,25 @@ def _projection_onto_selected_subgradients(prox_arg,
             if len(cluster) == 1:
                 result[cluster[0]] = weights[cur_idx] * active_signs[cluster[0]]
             else:
-                indices = np.array([ j + cur_idx for j in range(len(cluster))])
-                weights = weights[indices]
+                indices = [j + cur_idx for j in range(len(cluster))]
+                cluster_weights = weights[indices]
 
                 ir = IsotonicRegression()
-                _ir_result = ir.fit_transform(np.arange(len(cluster)), weights[::-1])[::-1]
-                result[indices] = np.multiply(active_signs[indices], _ir_result/2.)
+                _ir_result = ir.fit_transform(np.arange(len(cluster)), cluster_weights[::-1])[::-1]
+                result[indices] = -np.multiply(active_signs[indices], _ir_result/2.)
 
         else:
             indices = np.array([j + cur_idx for j in range(len(cluster))])
-            weights = weights[indices]
+            cluster_weights = weights[indices]
 
-            pen = slope(weights, lagrange=1.)
+            pen = slope(cluster_weights, lagrange=1.)
             loss = rr.squared_error(np.identity(len(cluster)), prox_subarg)
             slope_problem = rr.simple_problem(loss, pen)
             result[indices] = prox_subarg - slope_problem.solve()
 
         cur_idx += len(cluster)
+
+    return result
 
 """
 For a cluster of size bigger than 1, we solve
