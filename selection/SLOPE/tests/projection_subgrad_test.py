@@ -1,8 +1,4 @@
 import numpy as np
-import sys
-
-from regreg.atoms.slope import slope
-import regreg.api as rr
 
 from selection.SLOPE.slope import _projection_onto_selected_subgradients
 
