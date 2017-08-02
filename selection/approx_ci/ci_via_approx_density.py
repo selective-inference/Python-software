@@ -307,7 +307,7 @@ class approximate_conditional_density(rr.smooth_atom):
         for i in range(self.grid.shape[0]):
 
             approx = approximate_conditional_prob(self.grid[i], self.sel_alg)
-            h_hat.append(-(approx.minimize2(j, nstep=50)[::-1])[0])
+            h_hat.append(-(approx.minimize2(step=1, nstep=50)[::-1])[0])
 
         return np.array(h_hat)
 
