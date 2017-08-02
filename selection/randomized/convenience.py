@@ -138,8 +138,11 @@ class lasso(object):
 
     def summary(self, selected_features, 
                 null_value=None,
+                level=0.9,
                 ndraw=10000, 
                 burnin=2000,
+                reference_type='translate',
+                compute_intervals=False,
                 bootstrap=False):
         """
         Produce p-values and confidence intervals for targets
@@ -155,11 +158,17 @@ class lasso(object):
         null_value : np.array
             Hypothesized value for null -- defaults to 0.
 
+        level : float
+            Confidence level.
+
         ndraw : int (optional)
             Defaults to 1000.
 
         burnin : int (optional)
             Defaults to 1000.
+
+        reference_type : str
+            One of ['translate', 'tilt']. 
 
         bootstrap : bool
             Use wild bootstrap instead of Gaussian plugin.
@@ -167,24 +176,45 @@ class lasso(object):
         """
         if not hasattr(self, "_queries"):
             raise ValueError('run `fit` method before producing summary.')
+
+        if reference_type not in ['translate', 'tilt']:
+            raise ValueError('reference_type must be one of ["translate", "tilt"]')
+
         target_sampler, target_observed = glm_target(self.loglike,
                                                      selected_features,
                                                      self._queries,
                                                      bootstrap=bootstrap)
 
-        full_sample = target_sampler.sample(ndraw=ndraw,
-                                            burnin=burnin,
-                                            keep_opt=True)
-        LU = target_sampler.confidence_intervals_translate(target_observed,
-                                                           sample=full_sample,
-                                                           level=0.9)
-
         if null_value is None:
             null_value = np.zeros(self.loglike.shape[0])
-        pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                               parameter=null_value,
-                                                               sample=full_sample)
-        return LU, pvalues
+
+        intervals = None
+        if reference_type == 'translate':
+            full_sample = target_sampler.sample(ndraw=ndraw,
+                                                burnin=burnin,
+                                                keep_opt=True)
+
+            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
+                                                                   parameter=null_value,
+                                                                   sample=full_sample)
+
+            if compute_intervals:
+                intervals = target_sampler.confidence_intervals_translate(target_observed,
+                                                                          sample=full_sample,
+                                                                          level=level)
+        else:
+            full_sample = target_sampler.sample(ndraw=ndraw,
+                                                burnin=burnin,
+                                                keep_opt=False)
+            pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                         parameter=null_value,
+                                                         sample=full_sample)
+            if compute_intervals:
+                intervals = target_sampler.confidence_intervals(target_observed,
+                                                                sample=full_sample,
+                                                                level=level)
+            
+        return intervals, pvalues
 
     @staticmethod
     def gaussian(X, 
