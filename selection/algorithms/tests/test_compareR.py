@@ -214,7 +214,7 @@ def test_coxph():
     print(G1, 'glmnet')
     print(G2, 'regreg')
 
-    yield np.testing.assert_equal, L.active + 1, selected_vars
+    yield np.testing.assert_equal, np.array(L.active) + 1, selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'cox coeff'
     yield np.testing.assert_allclose, L.summary('onesided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
 
