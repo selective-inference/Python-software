@@ -3,6 +3,7 @@ import numpy as np
 import regreg.api as rr
 from selection.bayesian.selection_probability_rr import nonnegative_softmax_scaled
 from scipy.stats import norm
+import sys
 
 def myround(a, decimals=1):
     a_x = np.round(a, decimals=1)* 10.
@@ -277,10 +278,12 @@ class approximate_conditional_density(rr.smooth_atom):
     def solve_approx(self):
 
         #defining the grid on which marginal conditional densities will be evaluated
-        grid_length = 1601
-        self.grid = np.linspace(-15,65, num=grid_length)
+        grid_length = 301
+
+        #self.grid = np.linspace(-15,65, num=grid_length)
         #self.grid = np.linspace(-5*np.amax(np.absolute(target_observed)), 5*np.amax(np.absolute(target_observed)), num=grid_length)
         #s_obs = np.round(self.target_observed, decimals =1)
+        self.grid = np.zeros((self.nactive, grid_length))
 
         print("observed values", self.target_observed)
         self.ind_obs = np.zeros(self.nactive, int)
@@ -289,13 +292,16 @@ class approximate_conditional_density(rr.smooth_atom):
 
         for j in range(self.nactive):
             obs = self.target_observed[j]
+            self.grid[j, :] = np.linspace(self.target_observed[j] - 15., self.target_observed[j] + 15., num=grid_length)
             self.norm[j] = self.target_cov[j,j]
             if obs < self.grid[0]:
                 self.ind_obs[j] = 0
             elif obs > np.max(self.grid):
                 self.ind_obs[j] = grid_length-1
             else:
-                self.ind_obs[j] = np.argmin(np.abs(self.grid-obs))
+                self.ind_obs[j] = np.argmin(np.abs(self.grid[j,:]-obs))
+
+            sys.stderr.write("number of variable being computed: " + str(j) + "\n")
             self.h_approx[j, :] = self.approx_conditional_prob(j)
 
 
@@ -304,12 +310,14 @@ class approximate_conditional_density(rr.smooth_atom):
 
         self.sel_alg.setup_map(j)
 
-        for i in range(self.grid.shape[0]):
+        for i in xrange(self.grid[j, :].shape[0]):
+            approx = approximate_conditional_prob((self.grid[j, :])[i], self.sel_alg)
+            val = -(approx.minimize2(step=1, nstep=100)[::-1])[0]
 
-            approx = approximate_conditional_prob(self.grid[i], self.sel_alg)
-            h_hat.append(-(approx.minimize2(step=1, nstep=50)[::-1])[0])
-
-        return np.array(h_hat)
+            if val != -float('Inf'):
+                h_hat.append(val)
+            else:
+                h_hat.append(h_hat[i - 1])
 
     def area_normalized_density(self, j, mean):
 
@@ -318,10 +326,10 @@ class approximate_conditional_density(rr.smooth_atom):
         approx_nonnormalized = []
 
         for i in range(self.grid.shape[0]):
-            approx_density = np.exp(-np.true_divide((self.grid[i] - mean) ** 2, 2 * self.norm[j])
+            approx_density = np.exp(-np.true_divide(((self.grid[j,:])[i] - mean) ** 2, 2 * self.norm[j])
                                     + (self.h_approx[j,:])[i])
             normalizer += approx_density
-            grad_normalizer +=  (-mean/self.norm[j] + self.grid[i]/self.norm[j])* approx_density
+            grad_normalizer += (-mean / self.norm[j] + (self.grid[j, :])[i] / self.norm[j]) * approx_density
             approx_nonnormalized.append(approx_density)
 
         return np.cumsum(np.array(approx_nonnormalized / normalizer)), normalizer, grad_normalizer
@@ -387,8 +395,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def approximate_ci(self, j):
 
-        #param_grid = np.linspace(-5*np.amax(np.absolute(self.target_observed)), 5*np.amax(np.absolute(self.target_observed)), num=grid_length)
-        param_grid = np.linspace(-15, 65, num=1601)
+        param_grid = np.linspace(-15., 15., num=301)
         area = np.zeros(param_grid.shape[0])
 
         for k in range(param_grid.shape[0]):
