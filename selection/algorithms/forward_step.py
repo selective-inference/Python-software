@@ -29,7 +29,6 @@ class forward_step(object):
     """
     Forward stepwise model selection.
 
-   
     """
 
     def __init__(self, X, Y, 
@@ -108,11 +107,12 @@ class forward_step(object):
             self.subset_X = self.X.copy()[subset]
             self.subset_Y = self.Y.copy()[subset]
             self.subset_selector = np.identity(self.X.shape[0])[subset]
-
+            self.subset_fixed = self.fixed_regressors[subset]
         else:
             self.adjusted_X = self.X.copy()
             self.subset_Y = self.Y.copy()
             self.subset_X = self.X.copy()
+            self.subset_fixed = self.fixed_regressors
 
         # scale columns of X to have length 1
         self.adjusted_X /= np.sqrt((self.adjusted_X**2).sum(0))[None, :]
@@ -182,16 +182,16 @@ class forward_step(object):
         Zstat = np.dot(Zfunc, Y) / scale # [inactive]
 
         winning_var = np.argmax(np.fabs(Zstat))
-        winning_func = adjusted_X[:,winning_var] / scale[winning_var]
         winning_sign = np.sign(Zstat[winning_var])
+        winning_func = Zfunc[winning_var] / scale[winning_var] * winning_sign
 
         realized_maxZ = Zstat[winning_var] * winning_sign 
         self.Z.append(realized_maxZ)
 
         if self.subset is not None:
-            self.Zfunc.append(np.dot(Zfunc[winning_var], self.subset_selector) * winning_sign / scale[winning_var])
+            self.Zfunc.append(winning_func.dot(self.subset_selector))
         else:
-            self.Zfunc.append(Zfunc[winning_var] * winning_sign / scale[winning_var])
+            self.Zfunc.append(winning_func)
 
         # keep track of identity for testing
         # variables other than the last one added
@@ -201,16 +201,15 @@ class forward_step(object):
         # losing_vars are variables that are inactive (i.e. not in self.variables)
         # and did not win in this step
 
-        losing_vars = np.zeros(p, np.bool)
-        losing_vars[inactive] = True
+        losing_vars = inactive.copy()
         losing_vars[winning_var] = False
 
         identity_linpart = np.vstack([ 
-                adjusted_X[:,losing_vars].T / scale[losing_vars,None]-
-                winning_sign * winning_func,
+                adjusted_X[:,losing_vars].T / scale[losing_vars,None] -
+                winning_func,
                 -adjusted_X[:,losing_vars].T / scale[losing_vars,None] -
-                winning_sign * winning_func,
-                -winning_sign * winning_func.reshape((1,-1))])
+                winning_func,
+                - winning_func.reshape((1,-1))])
 
         if self.subset is not None:
             identity_linpart = np.dot(identity_linpart, 
@@ -219,7 +218,7 @@ class forward_step(object):
         identity_con = constraints(identity_linpart,
                                    np.zeros(identity_linpart.shape[0]))
 
-        if not identity_con(self.subset_Y):
+        if not identity_con(self.Y):
             raise ValueError('identity fail!')
 
         self.identity_constraints.append(identity_linpart)
@@ -228,11 +227,18 @@ class forward_step(object):
 
         XI = self.subset_X[:,self.inactive]
         linear_part = np.vstack([XI.T, -XI.T])
+        if self.subset is not None:
+            linear_part = np.dot(linear_part, 
+                                 self.subset_selector)
+
         _offset = np.array(self.maxZ_offset)
         _offset = _offset[:,:,self.inactive]
-        offset_pos = np.min(_offset[:,0], 0) # this corresponds to X_L^TY \leq (Z_max + V) * S_L
+        offset_pos = np.min(_offset[:,0], 0) # this corresponds to X_L^TY \leq (Z_max + V) * S_L 
         offset_neg = np.min(_offset[:,1], 0) # this corresponds to -X_L^TY \leq (Z_max - V) * S_L
+                                             # both minimized over all previous steps
+
         offset = np.hstack([offset_pos, offset_neg])
+
         maxZ_con = constraints(linear_part, offset,
                                covariance=self.covariance)
 
@@ -242,10 +248,14 @@ class forward_step(object):
 
         if len(self.variables) > 0 or (self.fixed_regressors != []):
             XA = self.subset_X[:, self.variables]
-            XA = np.hstack([self.fixed_regressors, XA])
+            XA = np.hstack([self.subset_fixed, XA])
             # the RHS, i.e. offset is fixed by this conditioning
-            conditional_con = maxZ_con.conditional(XA.T,  
-                                            np.dot(XA.T, Y))
+            if self.subset is not None:
+                conditional_con = maxZ_con.conditional(XA.T.dot(self.subset_selector),
+                                                       np.dot(XA.T, Y))
+            else:
+                conditional_con = maxZ_con.conditional(XA.T,
+                                                       np.dot(XA.T, Y))
         else:
             conditional_con = maxZ_con
 
@@ -255,7 +265,7 @@ class forward_step(object):
                                         sigma_known=sigma_known,
                                         accept_reject_params=accept_reject_params)
 
-        # now update state for next step
+        # now update for next step
 
         # update the offsets for maxZ
 
@@ -271,17 +281,17 @@ class forward_step(object):
         # where P is the current "model"
 
         # let V=PY and S_L the losing scales, we rewrite this as
-        # $$\|X^T_LY / S_L - V\|_{\infty} \leq Z_max $$
+        # $$\|(X^T_LY - V) / S_L\|_{\infty} \leq Z_max $$
         # and again
-        # $$X^T_LY / S_L - V \leq Z_max, -(X^T_LY / S_L - V) \leq Z_max $$
+        # $$X^T_LY / S_L - V / S_L \leq Z_max, -(X^T_LY / S_L - V / S_L) \leq Z_max $$
         # or,
-        # $$X^T_LY \leq (Z_max + V) * S_L, -X^T_LY \leq (Z_max - V) * S_L $$
+        # $$X^T_LY \leq Z_max * S_L + V, -X^T_LY \leq Z_max * S_L - V $$
 
         # where, at the next step Z_max and V are measurable with respect to
         # the appropriate sigma algebra
 
         realized_Z_adjustment = realized_maxZ * scale                      # Z_max * S_L
-        fit_adjustment = np.dot(self.subset_X.T, Y - resid_vector) * scale # V * S_L
+        fit_adjustment = np.dot(self.subset_X.T, Y - resid_vector)         # V * S_L
         self.maxZ_offset.append([realized_Z_adjustment + fit_adjustment,   # (Z_max + V) * S_L
                                  realized_Z_adjustment - fit_adjustment])  # (Z_max - V) * S_L
 
@@ -293,13 +303,13 @@ class forward_step(object):
 
         # update residual, and adjust X
 
-        resid_vector -= realized_maxZ * winning_sign * winning_func
+        resid_vector -= realized_maxZ * winning_func
         adjusted_X -= (np.multiply.outer(winning_func, winning_func.dot(adjusted_X)) /
                        (winning_func**2).sum())
 
         check_resid = True
         if check_resid:
-            X = np.hstack([self.subset_X[:, self.variables], self.fixed_regressors]) 
+            X = np.hstack([self.subset_X[:, self.variables], self.subset_fixed]) 
             resid_vector2 = Y - X.dot(np.linalg.pinv(X).dot(Y))
             print(np.linalg.norm(resid_vector - resid_vector2) / np.linalg.norm(resid_vector), 'resids')
 
@@ -589,7 +599,7 @@ class forward_step(object):
         return quadratic_test(self.Y, P_LS, self.constraints(step=which_step))
 
 def info_crit_stop(Y, X, sigma, cost=2,
-                   subset=[]):
+                   subset=None):
     """
     Fit model using forward stepwise,
     stopping using a rule like AIC or BIC.
@@ -612,8 +622,9 @@ def info_crit_stop(Y, X, sigma, cost=2,
     cost : float
         Cost per parameter. For BIC use cost=log(X.shape[0])
 
-    subset : []
-        Subset of cases to use for selection, defaults to [].
+    subset : ndarray (optional)
+        Shape (n,) -- boolean indicator of which cases to use.
+        Defaults to np.ones(n, np.bool)
 
     Returns
     -------
@@ -628,8 +639,7 @@ def info_crit_stop(Y, X, sigma, cost=2,
     FS = forward_step(X, Y, covariance=sigma**2 * np.identity(n), subset=subset)
 
     while True:
-        FS.next()
-
+        FS.step()
         if FS.Z[-1] < sigma * np.sqrt(cost):
             break
 
@@ -638,8 +648,8 @@ def info_crit_stop(Y, X, sigma, cost=2,
     new_offset = -sigma * np.sqrt(cost) * np.ones(new_linear_part.shape[0])
     new_offset[-1] *= -1
 
-    new_con = stack(FS.constraints(), constraints(new_linear_part,
-                                                  new_offset))
+    new_con = stack_con(FS.constraints(), constraints(new_linear_part,
+                                                      new_offset))
     new_con.covariance[:] = sigma**2 * np.identity(n)
     FS._constraints = new_con
     FS.active = FS.variables[:-1]
