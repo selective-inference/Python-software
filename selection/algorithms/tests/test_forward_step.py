@@ -8,11 +8,11 @@ from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftr
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_FS(k=10, ndraw=5000, burnin=5000):
 
-    n, p = 100, 50
+    n, p = 100, 200
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
     X /= (X.std(0)[None,:] * np.sqrt(n))
     
-    Y = np.random.standard_normal(100) * 0.5
+    Y = np.random.standard_normal(n) * 0.5
     
     FS = forward_step(X, Y, covariance=0.5**2 * np.identity(n))
 
