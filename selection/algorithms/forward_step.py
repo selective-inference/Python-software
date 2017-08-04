@@ -307,16 +307,6 @@ class forward_step(object):
         adjusted_X -= (np.multiply.outer(winning_func, winning_func.dot(adjusted_X)) /
                        (winning_func**2).sum())
 
-        check_resid = True
-        if check_resid:
-            X = np.hstack([self.subset_X[:, self.variables], self.subset_fixed]) 
-            resid_vector2 = Y - X.dot(np.linalg.pinv(X).dot(Y))
-            print(np.linalg.norm(resid_vector - resid_vector2) / np.linalg.norm(resid_vector), 'resids')
-
-        if check_resid:
-            adjusted_X2 = self.subset_X - X.dot(np.linalg.pinv(X).dot(self.subset_X))
-            print(np.linalg.norm(adjusted_X - adjusted_X2) / np.linalg.norm(adjusted_X), 'adjusted')
-
         if compute_maxZ_pval:
             return maxZ_pval
 

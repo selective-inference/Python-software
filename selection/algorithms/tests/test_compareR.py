@@ -110,11 +110,13 @@ def test_forward_step():
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(x.shape[1]):
-        FS.next()
+        FS.step()
         steps.extend(FS.model_pivots(i+1, 
                                      which_var=FS.variables[-1:],
                                      alternative='onesided'))
 
+    print(selected_vars, [i+1 for i, p in steps])
+    print(FS.variables, FS.signs)
     np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
     np.testing.assert_allclose([p for i, p in steps], R_pvals, atol=tol, rtol=tol)
 
@@ -152,7 +154,7 @@ def test_forward_step_all():
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(5):
-        FS.next()
+        FS.step()
     steps = FS.model_pivots(5, 
                             alternative='onesided')
 
