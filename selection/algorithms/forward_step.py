@@ -244,7 +244,7 @@ class forward_step(object):
 
         if use_identity:
             maxZ_con = stack_con(maxZ_con, identity_con)
-            con.covariance = self.covariance
+            maxZ_con.covariance = self.covariance
 
         if len(self.variables) > 0 or (self.fixed_regressors != []):
             XA = self.subset_X[:, self.variables]
