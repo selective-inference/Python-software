@@ -46,6 +46,7 @@ def test_fixed_lambda():
 
         vlo = out$vlo
         vup = out$vup
+
         sdvar = out$sd
         pval=out$pv
         coef0=out$coef0
@@ -95,6 +96,8 @@ def test_forward_step():
     out.seq = fsInf(fsfit,sigma=sigma)
     vars = out.seq$vars
     pval = out.seq$pv
+    vlo = out.seq$vlo
+    vup = out.seq$vup
     """
 
     rpy.r(R_code)
@@ -107,6 +110,10 @@ def test_forward_step():
     y = y.reshape(-1)
     y -= y.mean()
     x -= x.mean(0)[None,:]
+
+    vlo = np.asarray(rpy.r('vlo'))
+    vup = np.asarray(rpy.r('vup'))
+    print(np.vstack([vlo, vup]).T)
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(x.shape[1]):
@@ -151,6 +158,10 @@ def test_forward_step_all():
     y = y.reshape(-1)
     y -= y.mean()
     x -= x.mean(0)[None,:]
+
+    vlo = np.asarray(rpy.r('vlo'))
+    vup = np.asarray(rpy.r('vup'))
+    print(np.vstack([vlo, vup]).T)
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(5):
