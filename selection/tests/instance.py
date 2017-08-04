@@ -15,8 +15,6 @@ def _equicor_design(n, p, rho, equi_correlated):
 
         sigmaX, cholX = AR1(rho=rho, p=p)
         X = np.random.standard_normal((n, p)).dot(cholX.T)
-        # X = np.random.multivariate_normal(mean=np.zeros(p), cov = sigmaX, size = (n,))
-        # print(X.shape)
     return X
 
 def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
