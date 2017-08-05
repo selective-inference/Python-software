@@ -295,7 +295,6 @@ class forward_step(object):
         self.maxZ_offset.append([realized_Z_adjustment + fit_adjustment,   # (Z_max + V) * S_L
                                  realized_Z_adjustment - fit_adjustment])  # (Z_max - V) * S_L
 
-
         # update our list of variables and signs
 
         self.inactive[winning_var] = False # inactive is now losing_vars
@@ -322,7 +321,8 @@ class forward_step(object):
                           covariance=self.covariance)
         return con
 
-    def _maxZ_test(self, ndraw, burnin,
+    def _maxZ_test(self, ndraw, 
+                   burnin,
                    sigma_known=True,
                    accept_reject_params=(100, 15, 2000)
                    ):
@@ -361,69 +361,6 @@ class forward_step(object):
                                       accept_reject_params=accept_reject_params
                                       )
         return pval
-
-
-
-    def mcmc_test(self, step, variable=None,
-                  nstep=100,
-                  ndraw=20,
-                  method='parallel', 
-                  burnin=1000,):
-
-        if method not in ['parallel', 'serial']:
-            raise ValueError("method must be in ['parallel', 'serial']")
-
-        X, Y = self.subset_X, self.subset_Y
-
-        variables = self.variables[:step]
-
-        if variable is None:
-            variable = variables[-1]
-
-        if variable not in variables:
-            raise ValueError('variable not included at given step')
-
-        A = np.vstack(self.identity_constraints[:step])
-        con = constraints(A, 
-                          np.zeros(A.shape[0]), 
-                          covariance=self.covariance)
-
-        XA = X[:,variables]
-        con_final = con.conditional(XA.T, XA.T.dot(Y))
-        
-        if burnin > 0:
-            chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
-            chain_final.step()
-            new_Y = chain_final.state
-        else:
-            new_Y = Y
-
-        keep = np.ones(XA.shape[1], np.bool)
-        keep[list(variables).index(variable)] = 0
-        nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
-
-        if nuisance_variables:
-            XA_0 = X[:,nuisance_variables]
-            beta_dir = np.linalg.solve(XA_0.T.dot(XA_0), XA_0.T.dot(X[:,variable]))
-            adjusted_direction = X[:,variable] - XA_0.dot(beta_dir)
-            con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
-        else:
-            con_test = con
-            adjusted_direction = X[:,variable]
-
-        chain_test = gaussian_hit_and_run(con_test, new_Y, nstep=nstep)
-        test_stat = lambda y: -np.fabs(adjusted_direction.dot(y))
-
-        if method == 'parallel':
-            rank = parallel_test(chain_test,
-                                 new_Y,
-                                 test_stat)
-        else:
-            rank = serial_test(chain_test,
-                               new_Y,
-                               test_stat)
-            
-        return rank
 
     def model_pivots(self, which_step, alternative='onesided',
                      saturated=True,
@@ -788,3 +725,63 @@ def data_carving_IC(y, X, sigma,
                    splitting_pvalues,
                    splitting_intervals), FS
 
+def mcmc_test(fs_obj, step, variable=None,
+              nstep=100,
+              ndraw=20,
+              method='parallel', 
+              burnin=1000,):
+
+    if method not in ['parallel', 'serial']:
+        raise ValueError("method must be in ['parallel', 'serial']")
+
+    X, Y = fs_obj.subset_X, fs_obj.subset_Y
+
+    variables = fs_obj.variables[:step]
+
+    if variable is None:
+        variable = variables[-1]
+
+    if variable not in variables:
+        raise ValueError('variable not included at given step')
+
+    A = np.vstack(fs_obj.identity_constraints[:step])
+    con = constraints(A, 
+                      np.zeros(A.shape[0]), 
+                      covariance=fs_obj.covariance)
+
+    XA = X[:,variables]
+    con_final = con.conditional(XA.T, XA.T.dot(Y))
+
+    if burnin > 0:
+        chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
+        chain_final.step()
+        new_Y = chain_final.state
+    else:
+        new_Y = Y
+
+    keep = np.ones(XA.shape[1], np.bool)
+    keep[list(variables).index(variable)] = 0
+    nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
+
+    if nuisance_variables:
+        XA_0 = X[:,nuisance_variables]
+        beta_dir = np.linalg.solve(XA_0.T.dot(XA_0), XA_0.T.dot(X[:,variable]))
+        adjusted_direction = X[:,variable] - XA_0.dot(beta_dir)
+        con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
+    else:
+        con_test = con
+        adjusted_direction = X[:,variable]
+
+    chain_test = gaussian_hit_and_run(con_test, new_Y, nstep=nstep)
+    test_stat = lambda y: -np.fabs(adjusted_direction.dot(y))
+
+    if method == 'parallel':
+        rank = parallel_test(chain_test,
+                             new_Y,
+                             test_stat)
+    else:
+        rank = serial_test(chain_test,
+                           new_Y,
+                           test_stat)
+
+    return rank
