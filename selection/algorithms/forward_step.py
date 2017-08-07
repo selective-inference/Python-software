@@ -103,19 +103,19 @@ class forward_step(object):
 
         if self.subset is not None:
 
-            self.adjusted_X = self.X.copy()[subset]
+            self.working_X = self.X.copy()[subset]
             self.subset_X = self.X.copy()[subset]
             self.subset_Y = self.Y.copy()[subset]
             self.subset_selector = np.identity(self.X.shape[0])[subset]
             self.subset_fixed = self.fixed_regressors[subset]
         else:
-            self.adjusted_X = self.X.copy()
+            self.working_X = self.X.copy()
             self.subset_Y = self.Y.copy()
             self.subset_X = self.X.copy()
             self.subset_fixed = self.fixed_regressors
 
         # scale columns of X to have length 1
-        self.adjusted_X /= np.sqrt((self.adjusted_X**2).sum(0))[None, :]
+        self.working_X /= np.sqrt((self.working_X**2).sum(0))[None, :]
 
         self.variables = [] # the sequence of selected variables
         self.Z = []         # the achieved Z scores
@@ -129,8 +129,8 @@ class forward_step(object):
 
         self.identity_constraints = []    # this will store linear functionals that identify the variables
         self.inactive = np.ones(p, np.bool)   # current inactive set
-        self.maxZ_offset = [[np.ones(p) * np.inf, np.ones(p) * np.inf]] # stored for computing
-                                                                   # the limits of maxZ selected test
+        self.maxZ_offset = np.array([np.ones(p) * np.inf, np.ones(p) * np.inf]) # stored for computing
+                                                                                # the limits of maxZ selected test
         self.maxZ_constraints = []
 
     def step(self, 
@@ -167,18 +167,18 @@ class forward_step(object):
 
         """
         
-        adjusted_X, Y = self.adjusted_X, self.subset_Y
+        working_X, Y = self.working_X, self.subset_Y
         resid_vector = self._resid_vector
-        n, p = adjusted_X.shape
+        n, p = working_X.shape
 
         # up to now inactive
         inactive = self.inactive
 
         # compute Z scores
 
-        scale = self.scale = np.sqrt(np.sum(adjusted_X**2, 0))
+        scale = self.scale = np.sqrt(np.sum(working_X**2, 0))
         scale[~inactive] = np.inf # should never be used in any case
-        Zfunc = adjusted_X.T # [inactive] 
+        Zfunc = working_X.T # [inactive] 
         Zstat = np.dot(Zfunc, Y) / scale # [inactive]
 
         winning_var = np.argmax(np.fabs(Zstat))
@@ -205,9 +205,9 @@ class forward_step(object):
         losing_vars[winning_var] = False
 
         identity_linpart = np.vstack([ 
-                adjusted_X[:,losing_vars].T / scale[losing_vars,None] -
+                working_X[:,losing_vars].T / scale[losing_vars,None] -
                 winning_func,
-                -adjusted_X[:,losing_vars].T / scale[losing_vars,None] -
+                -working_X[:,losing_vars].T / scale[losing_vars,None] -
                 winning_func,
                 - winning_func.reshape((1,-1))])
 
@@ -231,15 +231,9 @@ class forward_step(object):
             linear_part = np.dot(linear_part, 
                                  self.subset_selector)
 
-        _offset = np.array(self.maxZ_offset)
-        _offset = _offset[:,:,self.inactive]
-        offset_pos = np.min(_offset[:,0], 0) # this corresponds to X_L^TY \leq (Z_max + V) * S_L 
-        offset_neg = np.min(_offset[:,1], 0) # this corresponds to -X_L^TY \leq (Z_max - V) * S_L
-                                             # both minimized over all previous steps
+        inactive_offset = self.maxZ_offset[:, self.inactive]
 
-        offset = np.hstack([offset_pos, offset_neg])
-
-        maxZ_con = constraints(linear_part, offset,
+        maxZ_con = constraints(linear_part, np.hstack(inactive_offset),
                                covariance=self.covariance)
 
         if use_identity:
@@ -273,7 +267,7 @@ class forward_step(object):
         # and including winning_var, the Z_scores are fixed
         
         # then, the losing variables at this stage can be expressed as
-        # abs(adjusted_X.T.dot(Y)[:,inactive] / scale[inactive]) < realized_maxZ
+        # abs(working_X.T.dot(Y)[:,inactive] / scale[inactive]) < realized_maxZ
         # where inactive is the updated inactive 
 
         # the event we have witnessed this step is 
@@ -292,8 +286,8 @@ class forward_step(object):
 
         realized_Z_adjustment = realized_maxZ * scale                      # Z_max * S_L
         fit_adjustment = np.dot(self.subset_X.T, Y - resid_vector)         # V * S_L
-        self.maxZ_offset.append([realized_Z_adjustment + fit_adjustment,   # (Z_max + V) * S_L
-                                 realized_Z_adjustment - fit_adjustment])  # (Z_max - V) * S_L
+        self.maxZ_offset[0] = np.minimum(self.maxZ_offset[0], realized_Z_adjustment + fit_adjustment)   # (Z_max + V) * S_L
+        self.maxZ_offset[1] = np.minimum(self.maxZ_offset[1], realized_Z_adjustment - fit_adjustment)  # (Z_max - V) * S_L
 
         # update our list of variables and signs
 
@@ -303,7 +297,7 @@ class forward_step(object):
         # update residual, and adjust X
 
         resid_vector -= realized_maxZ * winning_func
-        adjusted_X -= (np.multiply.outer(winning_func, winning_func.dot(adjusted_X)) /
+        working_X -= (np.multiply.outer(winning_func, winning_func.dot(working_X)) /
                        (winning_func**2).sum())
 
         if compute_maxZ_pval:
@@ -331,10 +325,10 @@ class forward_step(object):
         XI, Y = self.subset_X[:, self.inactive], self.subset_Y
         sequential_con = self.maxZ_constraints[-1]
         if not sequential_con(Y):
-            raise ValueError('doh!')
+            raise ValueError('Constraints on Y not satisfied')
 
         # use partial
-        def maxT(Z, L=self.adjusted_X[:,self.inactive], S=self.scale[self.inactive]):
+        def maxT(Z, L=self.working_X[:,self.inactive], S=self.scale[self.inactive]):
             Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
             return Tstat
 
