@@ -3,8 +3,11 @@ import pandas as pd
 
 from scipy.stats import t as tdist
 
-def _equicor_design(n, p, rho, equi_correlated):
-    if equi_correlated:
+def _design(n, p, rho, equicorrelated):
+    """
+    Create an equicorrelated or AR(1) design.
+    """
+    if equicorrelated:
         X = (np.sqrt(1 - rho) * np.random.standard_normal((n, p)) +
              np.sqrt(rho) * np.random.standard_normal(n)[:, None])
     else:
@@ -20,14 +23,14 @@ def _equicor_design(n, p, rho, equi_correlated):
 def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
                       random_signs=False, df=np.inf,
                       scale=True, center=True,
-                      equi_correlated=True):
+                      equicorrelated=True):
 
 
     """
     A testing instance for the LASSO.
-    If equi_correlated is True design is equi-correlated in the population,
+    If equicorrelated is True design is equi-correlated in the population,
     normalized to have columns of norm 1.
-    If equi_correlated is False design is auto-regressive.
+    If equicorrelated is False design is auto-regressive.
     For the default settings, a $\lambda$ of around 13.5
     corresponds to the theoretical $E(\|X^T\epsilon\|_{\infty})$
     with $\epsilon \sim N(0, \sigma^2 I)$.
@@ -44,8 +47,9 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
     rho : float
         Equicorrelation value (must be in interval [0,1])
 
-    signal : float
-        Size of each coefficient
+    signal : float or (float, float)
+        Sizes for the coefficients. If a tuple -- then coefficients
+        are equally spaced between these values using np.linspace.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -54,7 +58,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
     df : int
         Degrees of freedom for noise (from T distribution).
 
-    equi_correlated: bool
+    equicorrelated: bool
         If true, design in equi-correlated,
         Else design is AR.
 
@@ -77,19 +81,23 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
         Noise level.
     """
 
-    X = _equicor_design(n,p, rho, equi_correlated)
+    X = _design(n,p, rho, equicorrelated)
 
     if center:
         X -= X.mean(0)[None, :]
     if scale:
         X /= (X.std(0)[None,:] * np.sqrt(n))
     beta = np.zeros(p) 
-    beta[:s] = signal 
-
+    if type(signal) != type((3,4)):
+        beta[:s] = signal 
+    else:
+        beta[:s] = np.linspace(signal[0], signal[1], s)
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    np.random.shuffle(beta)
+
     active = np.zeros(p, np.bool)
-    active[:s] = True
+    active[beta != 0] = True
 
     # noise model
     def _noise(n, df=np.inf):
@@ -102,63 +110,12 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
     Y = (X.dot(beta) + _noise(n, df)) * sigma
     return X, Y, beta * sigma, np.nonzero(active)[0], sigma
 
-_cholesky_factors = {} # should we store them?
-
-def _AR_cov(p, rho=0.25):
-    idx = np.arange(p)
-    return rho**np.fabs(np.subtract.outer(idx, idx))
-
-def _AR_sqrt_cov(p, rho=0.25):
-    idx = np.arange(p)
-    C = rho**np.fabs(np.subtract.outer(idx, idx))
-    return np.linalg.cholesky(C)
-
-
-def AR_instance(n=2000, p=2500, s=30, sigma=2, rho=0.25, signal=4.5):
-    """
-    Used to compare to Barber and Candes high-dim knockoff.
-
-    Parameters
-    ----------
-
-    n : int
-        Sample size
-
-    p : int
-        Number of features
-
-    s : int
-        True sparsity
-
-    sigma : float
-        Noise level
-
-    rho : float
-        AR(1) parameter.
-
-    signal : float
-        Size of each coefficient
-
-    """
-
-    if (rho, p) not in _cholesky_factors.keys():
-        _cholesky_factors[(rho, p)] = _AR_sqrt_cov(p, rho)
-    _sqrt_cov = _cholesky_factors[(rho, p)]
-
-    X = np.random.standard_normal((n, p)).dot(_sqrt_cov.T)
-
-    X /= (np.sqrt((X**2).sum(0))) # like normc
-    beta = np.zeros(p)
-    beta[:s] = signal * (2 * np.random.binomial(1, 0.5, size=(s,)) - 1) 
-    np.random.shuffle(beta)
-
-    Y = (X.dot(beta) + np.random.standard_normal(n)) * sigma
-    true_active = np.nonzero(beta != 0)[0]
-    return X, Y, beta * sigma, true_active, sigma
 
 def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
                       random_signs=False, 
-                      scale=True, center=True, equi_correlated=True):
+                      scale=True, 
+                      center=True, 
+                      equicorrelated=True):
     """
     A testing instance for the LASSO.
     Design is equi-correlated in the population,
@@ -179,8 +136,9 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     rho : float
         Equicorrelation value (must be in interval [0,1])
 
-    signal : float
-        Size of each coefficient
+    signal : float or (float, float)
+        Sizes for the coefficients. If a tuple -- then coefficients
+        are equally spaced between these values using np.linspace.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -203,7 +161,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
 
     """
 
-    X = _equicor_design(n,p, rho, equi_correlated)
+    X = _design(n,p, rho, equicorrelated)
 
     if center:
         X -= X.mean(0)[None,:]
@@ -211,12 +169,16 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
         X /= X.std(0)[None,:]
     X /= np.sqrt(n)
     beta = np.zeros(p) 
-    beta[:s] = signal 
+    if type(signal) != type((3,4)):
+        beta[:s] = signal 
+    else:
+        beta[:s] = np.linspace(signal[0], signal[1], s)
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    np.random.shuffle(beta)
 
     active = np.zeros(p, np.bool)
-    active[:s] = True
+    active[beta != 0] = True
 
     eta = linpred = np.dot(X, beta) 
     pi = np.exp(eta) / (1 + np.exp(eta))

@@ -30,7 +30,7 @@ def test_power(s=30,
                n=2000,
                p=1000,
                rho=0.6,
-               equi_correlated=False,
+               equicorrelated=False,
                signal=3.5,
                lam_frac = 1.,
                cross_validation = True,
@@ -47,11 +47,11 @@ def test_power(s=30,
     print(n,p,s)
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1.,
-                                                       equi_correlated=equi_correlated)
+                                                       equicorrelated=equicorrelated)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         glm_loss = rr.glm.gaussian(X, y)
     elif loss=="logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal, equi_correlated=equi_correlated)
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal, equicorrelated=equicorrelated)
         glm_loss = rr.glm.logistic(X, y)
         lam = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
@@ -199,7 +199,7 @@ def compute_power(**kwargs):
 if __name__ == '__main__':
     np.random.seed(500)
     kwargs = {'s':30, 'n':2000, 'p':1000, 'rho':0.6,
-              'equi_correlated':False,
+              'equicorrelated':False,
               'signal':3.5,
               'lam_frac':1.,
               'cross_validation':True,
