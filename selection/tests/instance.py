@@ -88,8 +88,9 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
     if scale:
         X /= (X.std(0)[None,:] * np.sqrt(n))
     beta = np.zeros(p) 
-    if type(signal) != type((3,4)):
-        beta[:s] = signal 
+    signal = np.atleast_1d(signal)
+    if signal.shape == (1,):
+        beta[:s] = signal[0] 
     else:
         beta[:s] = np.linspace(signal[0], signal[1], s)
     if random_signs:
@@ -169,8 +170,9 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
         X /= X.std(0)[None,:]
     X /= np.sqrt(n)
     beta = np.zeros(p) 
-    if type(signal) != type((3,4)):
-        beta[:s] = signal 
+    signal = np.atleast_1d(signal)
+    if signal.shape == (1,):
+        beta[:s] = signal[0] 
     else:
         beta[:s] = np.linspace(signal[0], signal[1], s)
     if random_signs:

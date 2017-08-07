@@ -321,7 +321,8 @@ class forward_step(object):
                           covariance=self.covariance)
         return con
 
-    def _maxZ_test(self, ndraw, 
+    def _maxZ_test(self, 
+                   ndraw, 
                    burnin,
                    sigma_known=True,
                    accept_reject_params=(100, 15, 2000)
@@ -336,14 +337,6 @@ class forward_step(object):
         def maxT(Z, L=self.adjusted_X[:,self.inactive], S=self.scale[self.inactive]):
             Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
             return Tstat
-
-        #B = sequential_con.offset
-        #d = offset_pos.shape[0]
-        #sequential_con.offset[:d] += XI.T.dot(sequential_con.mean)
-        #sequential_con.offset[d:(2*d)] -= XI.T.dot(sequential_con.mean)
-
-        #if not sequential_con(Y):
-        #    raise ValueError('doh!')
 
         pval, _, _, dfam = gibbs_test(sequential_con,
                                       Y,
