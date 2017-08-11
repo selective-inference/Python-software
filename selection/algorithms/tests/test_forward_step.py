@@ -2,8 +2,12 @@ import numpy as np
 
 from selection.tests.flags import SET_SEED, SMALL_SAMPLES
 from selection.tests.instance import gaussian_instance
-from selection.algorithms.forward_step import forward_step, info_crit_stop, data_carving_IC
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from selection.algorithms.forward_step import (forward_step, 
+                                               info_crit_stop, 
+                                               data_carving_IC)
+import selection.algorithms.forward_step as forward_mod
+from selection.tests.decorators import (set_sampling_params_iftrue, 
+                                        set_seed_iftrue)
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_FS(k=10, ndraw=5000, burnin=5000):
@@ -244,14 +248,17 @@ def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, signal=5, ndraw=None, burnin=2000
         FS.step()
 
         if extra_steps <= 0:
-            null_rank = FS.mcmc_test(i+1, variable=FS.variables[i-2], 
-                                     nstep=nstep,
-                                     burnin=burnin,
-                                     method="serial")
-            alt_rank = FS.mcmc_test(i+1, variable=FS.variables[0], 
-                                    burnin=burnin,
-                                    nstep=nstep, 
-                                    method="parallel")
+            null_rank = forward_mod.mcmc_test(FS, 
+                                              i+1, 
+                                              variable=FS.variables[i-2], 
+                                              nstep=nstep,
+                                              burnin=burnin,
+                                              method="serial")
+            alt_rank = forward_mod.mcmc_test(FS, i+1,
+                                             variable=FS.variables[0], 
+                                             burnin=burnin,
+                                             nstep=nstep, 
+                                             method="parallel")
             break
 
         if set(active).issubset(FS.variables):
@@ -276,10 +283,12 @@ def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, signal=5,
         FS.step()
 
         if completed and extra_steps > 0:
-            null_rank = FS.mcmc_test(i+1, variable=FS.variables[-1], 
-                                     nstep=nstep,
-                                     burnin=burnin,
-                                     method="serial")
+            null_rank = forward_mod.mcmc_test(FS, 
+                                              i+1, 
+                                              variable=FS.variables[-1], 
+                                              nstep=nstep,
+                                              burnin=burnin,
+                                              method="serial")
             null_ranks.append(int(null_rank))
 
         if extra_steps <= 0:
