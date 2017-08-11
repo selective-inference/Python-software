@@ -302,9 +302,8 @@ def test_data_carving_sqrt_lasso(n=200,
 def test_data_carving_logistic(n=700,
                                p=300,
                                s=5,
-                               sigma=5,
                                rho=0.05,
-                               signal=4.,
+                               signal=12.,
                                split_frac=0.8,
                                ndraw=8000,
                                burnin=2000, 
@@ -669,9 +668,8 @@ def test_gaussian_sandwich_pvals(n=200,
 def test_logistic_pvals(n=500,
                         p=200,
                         s=3,
-                        sigma=2,
                         rho=0.3,
-                        signal=10.):
+                        signal=15.):
 
     X, y, beta, true_active = logistic_instance(n=n, 
                                                 p=p, 
@@ -682,6 +680,7 @@ def test_logistic_pvals(n=500,
 
     X = np.hstack([np.ones((n,1)), X])
 
+    print(true_active, 'true')
     active = np.array(true_active)
     active += 1
     active = [0] + list(active)
@@ -691,7 +690,7 @@ def test_logistic_pvals(n=500,
     L.fit()
     S = L.summary('onesided')
 
-    true_active = np.nonzero(active)[0]
+    print(true_active, L.active)
     if set(true_active).issubset(L.active):
         return S['pval'], [v in true_active for v in S['variable']]
 
