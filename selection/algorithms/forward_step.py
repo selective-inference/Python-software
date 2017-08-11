@@ -349,7 +349,8 @@ class forward_step(object):
                                       )
         return pval
 
-    def model_pivots(self, which_step, alternative='onesided',
+    def model_pivots(self, which_step, 
+                     alternative='onesided',
                      saturated=True,
                      ndraw=5000,
                      burnin=2000,

@@ -20,11 +20,12 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
     """
     Assumes a wait_for_return_value test...
     """
+
     dfs = [] 
     for i in range(nrun):
         print(i)
         count, result = test_fn(*args, **kwargs)
-        print(i)
+
         #print(result)
         #print(len(np.atleast_1d(result[0])))
         if hasattr(result, "__len__"):
@@ -88,7 +89,7 @@ def pvalue_plot(multiple_results, screening=False, fig=None, label = '$H_0$', co
 
 def naive_pvalue_plot(multiple_results, screening=False, fig=None, colors=['r', 'g']):
     """
-    Extract naive pvalues and group by 
+    Extract naive pvalues and group by
     null and alternative.
     """
 
@@ -115,6 +116,7 @@ def naive_pvalue_plot(multiple_results, screening=False, fig=None, colors=['r', 
         ax.plot(grid, FA, '--o', c=colors[1], lw=2, label=r'$H_A$ naive')
 
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
+
     ax.set_xlabel("Observed p-pvalue", fontsize=18)
     ax.set_ylabel("Empirical CDF", fontsize=18)
     ax.legend(loc='lower right', fontsize=18)
@@ -231,6 +233,36 @@ def pivot_plot_2in1(multiple_results, coverage=True, color='b', label=None, fig=
 
     return fig
 
+def pivot_plot_2in1(multiple_results, coverage=True, color='b', label=None, fig=None):
+    """
+    Extract pivots at truth and mle.
+    """
+
+    if fig is None:
+        fig = plt.figure()
+    ax = fig.gca()
+
+    fig.suptitle('Plugin CLT and bootstrap pivots')
+
+    if 'pivot' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['pivot'])
+    elif 'truth' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['truth'])
+    elif 'pvalue' in multiple_results.columns:
+        ecdf = sm.distributions.ECDF(multiple_results['pvalue'])
+
+    G = np.linspace(0, 1)
+    F_pivot = ecdf(G)
+    #print(color)
+    ax.plot(G, F_pivot, '-o', c=color, lw=2, label=label)
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+    ax.set_xlim([0, 1])
+    ax.set_ylim([0, 1])
+    ax.legend(loc='lower right')
+
+    return fig
+
+
 def pivot_plot_plus_naive(multiple_results, coverage=True, color='b', label=None, fig=None):
     """
     Extract pivots at truth and mle.
@@ -252,26 +284,25 @@ def pivot_plot_plus_naive(multiple_results, coverage=True, color='b', label=None
     G = np.linspace(0, 1)
     F_pivot = ecdf(G)
     #print(color)
+
     ax.plot(G, F_pivot, '-o', c=color, lw=2, label="Lee et al. p-values")
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
 
     if 'naive_pvalues' in multiple_results.columns:
         ecdf_naive = sm.distributions.ECDF(multiple_results['naive_pvalues'])
     F_naive = ecdf_naive(G)
+
     ax.plot(G, F_naive, '-o', c='r', lw=2, label="Naive p-values")
     ax.plot([0, 1], [0, 1], 'k-', lw=2)
 
     ax.set_xlim([0, 1])
     ax.set_ylim([0, 1])
+
     ax.set_xlabel("Observed value", fontsize=18)
     ax.set_ylabel("Empirical CDF", fontsize=18)
     ax.legend(loc='lower right', fontsize=18)
 
     return fig
-
-
-
-
 
 
 def pivot_plot(multiple_results, coverage=True, color='b', label=None, fig=None):
@@ -362,6 +393,7 @@ def compute_pivots(multiple_results):
     if 'truth' in multiple_results.columns:
         pivots = multiple_results['truth']
         return {'pivot (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
+
     if 'truth' in multiple_results.columns:
         pivots = multiple_results['truth']
         return {'pivot (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
@@ -387,6 +419,11 @@ def boot_clt_pivots(multiple_results):
     if 'pivot' in multiple_results.columns:
         pivots = multiple_results['pivot']
         pivot_summary['pivots'] = {'pivots (mean, SD, type I):': (np.mean(pivots), np.std(pivots), np.mean(pivots < 0.05))}
+
+    if 'naive_pvalues' in multiple_results.columns:
+        naive_pvalues = multiple_results['naive_pvalues']
+        pivot_summary['naive_pvalues'] = {'pivots (mean, SD, type I):': (np.mean(naive_pvalues), np.std(naive_pvalues), np.mean(naive_pvalues < 0.05))}
+
 
     return pivot_summary
 
@@ -421,6 +458,9 @@ def compute_lengths(multiple_results):
         result['ci_length_split'] = np.mean(multiple_results['ci_length_split'])
     if 'ci_length_naive' in multiple_results.columns:
         result['ci_length_naive'] = np.mean(multiple_results['ci_length_naive'])
+
+    if 'ci_length' in multiple_results.columns:
+        result['ci_length'] = np.mean(multiple_results['ci_length'])
     return result
 
 def compute_length_frac(multiple_results):
@@ -459,7 +499,6 @@ def compute_power(multiple_results):
         power = BH_TP
         result['power'] = power
     return result
-
 
 def compute_screening(multiple_results):
     return {'screening:': 1. / np.mean(multiple_results.loc[multiple_results.index == 0,'count'])}

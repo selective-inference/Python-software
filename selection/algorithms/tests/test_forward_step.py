@@ -147,12 +147,12 @@ def test_data_carving_IC(nsim=500,
     while counter < nsim:
         counter += 1
         X, y, beta, active, sigma = gaussian_instance(n=n, 
-                                             p=p, 
-                                             s=s, 
-                                             sigma=sigma, 
-                                             rho=rho, 
-                                             signal=signal, 
-                                             df=df)
+                                                      p=p, 
+                                                      s=s, 
+                                                      sigma=sigma, 
+                                                      rho=rho, 
+                                                      signal=signal, 
+                                                      df=df)
         mu = np.dot(X, beta)
         splitn = int(n*split_frac)
         indices = np.arange(n)
@@ -161,7 +161,7 @@ def test_data_carving_IC(nsim=500,
 
         FS = info_crit_stop(y, X, sigma, cost=np.log(n), subset=stage_one)
 
-        if set(range(s)).issubset(FS.active):
+        if set(active).issubset(FS.active):
             results, FS = data_carving_IC(y, X, sigma,
                                           stage_one=stage_one,
                                           splitting=True, 
