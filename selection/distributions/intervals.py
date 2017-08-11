@@ -1,11 +1,9 @@
 """
-
 This module contains a class for
 forming confindence intervals and
 testing 1-dimensional linear hypotheses
 about the underlying mean vector of
 a Gaussian subjected to selection.
-
 """
 
 from __future__ import print_function, division
@@ -177,6 +175,7 @@ class intervals_from_sample(object):
         log_gaussian_tilt /= var
         emp_exp = self._empirical_exp(linear_func, param)
         likelihood_ratio = np.exp(log_gaussian_tilt) / emp_exp
+
         if emp_exp>0:
             return np.clip(np.mean(indicator * likelihood_ratio), 0, 1)
         else:
@@ -189,6 +188,7 @@ class intervals_from_sample(object):
         """
         linear_func = np.atleast_1d(linear_func)
         stdev = np.sqrt(np.sum(linear_func * self.covariance.dot(linear_func)))
+
         #grid = np.linspace(-300*stdev, 300*stdev, 30000) + (self.reference * linear_func).sum()
         grid = np.linspace(-50, 50, 10000) #+ (self.reference * linear_func).sum()
         #print(self.observed.dot(linear_func), 300*stdev)
@@ -213,4 +213,5 @@ class intervals_from_sample(object):
         _sample = self.sample.dot(linear_func)
 
         tilted_sample = np.exp(_sample * factor)
+
         return tilted_sample.mean()
