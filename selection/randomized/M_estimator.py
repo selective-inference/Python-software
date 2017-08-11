@@ -277,7 +277,7 @@ class M_estimator(query):
 
     def form_VQLambda(self):
         nactive_groups = len(self.active_directions_list)
-        nactive_vars = np.sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
+        nactive_vars = sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
         V = np.zeros((nactive_vars, nactive_vars-nactive_groups))
         #U = np.zeros((nvariables, ngroups))
         Lambda = np.zeros((nactive_vars,nactive_vars))
