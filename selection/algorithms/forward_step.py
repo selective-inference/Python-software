@@ -16,7 +16,7 @@ from scipy.stats import norm as ndist
 
 from ..constraints.affine import (constraints, 
                                   gibbs_test, 
-                                  stack,
+                                  stack as stack_con,
                                   gaussian_hit_and_run)
 from ..distributions.chain import parallel_test, serial_test
 from ..distributions.chisq import quadratic_test
@@ -27,20 +27,64 @@ DEBUG = False
 class forward_step(object):
 
     """
-    Centers columns of X!
+    Forward stepwise model selection.
+
     """
 
     def __init__(self, X, Y, 
-                 subset=[],
-                 fixed_regressors=[],
+                 subset=None,
+                 fixed_regressors=None,
                  intercept=True,
                  covariance=None):
+
+        """
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        Y : ndarray
+            Shape (n,) -- the response.
+
+        subset : ndarray (optional)
+            Shape (n,) -- boolean indicator of which cases to use.
+            Defaults to np.ones(n, np.bool)
+
+        fixed_regressors: ndarray (optional)
+            Shape (n, *) -- fixed regressors to regress out before
+            computing score.
+
+        intercept : bool
+            Remove intercept -- this effectively includes np.ones(n) to fixed_regressors.
+
+        covariance : ndarray (optional)
+            Covariance matrix of errors. Defaults to np.identity(n).
+
+        Returns
+        -------
+
+        FS : `selection.algorithms.forward_step.forward_step`
+        
+        Notes
+        -----
+
+        """
+
         self.subset = subset
         self.X, self.Y = X, Y
 
+        n, p = self.X.shape
+        if fixed_regressors is not None:
+            fixed_regressors = np.asarray(fixed_regressors).reshape((n,-1))
+
         if intercept:
-            fixed_regressors = fixed_regressors + [np.ones((X.shape[0], 1))]
-        if fixed_regressors != []:
+            if fixed_regressors is not None:
+                fixed_regressors = np.hstack([fixed_regressors, np.ones((n, 1))])
+            else:
+                fixed_regressors = np.ones((n, 1))
+
+        if fixed_regressors is not None:
             self.fixed_regressors = np.hstack(fixed_regressors)
             if self.fixed_regressors.ndim == 1:
                 self.fixed_regressors = self.fixed_regressors.reshape((-1,1))
@@ -55,237 +99,255 @@ class forward_step(object):
             self.X = self.X - np.dot(self.fixed_regressors, 
                                      np.dot(self.fixed_pinv, self.X))
         else:
-            self.fixed_regressors = []
+            self.fixed_regressors = None
 
-        if subset != []:
-            self.adjusted_X = self.X.copy()[subset]
+        if self.subset is not None:
+
+            self.working_X = self.X.copy()[subset]
             self.subset_X = self.X.copy()[subset]
             self.subset_Y = self.Y.copy()[subset]
             self.subset_selector = np.identity(self.X.shape[0])[subset]
+            self.subset_fixed = self.fixed_regressors[subset]
         else:
-            self.adjusted_X = self.X.copy()
+            self.working_X = self.X.copy()
             self.subset_Y = self.Y.copy()
             self.subset_X = self.X.copy()
+            self.subset_fixed = self.fixed_regressors
 
-        self.adjusted_X /= np.sqrt((self.adjusted_X**2).sum(0))[None, :]
+        # scale columns of X to have length 1
+        self.working_X /= np.sqrt((self.working_X**2).sum(0))[None, :]
 
-        self.variables = []
-        self.Z = []
-        self.Zfunc = []
-        self.signs = []
-        self.covariance = covariance
-        self._resid_vector = self.subset_Y.copy() 
+        self.variables = [] # the sequence of selected variables
+        self.Z = []         # the achieved Z scores
+        self.Zfunc = []     # the linear functionals of Y that achieve the Z scores
+        self.signs = []     # the signs of the achieved Z scores
+
+        self.covariance = covariance               # the covariance of errors
+        self._resid_vector = self.subset_Y.copy()  # the current residual -- already adjusted for fixed regressors
 
         # setup for iteration
 
-        iter(self)
+        self.identity_constraints = []    # this will store linear functionals that identify the variables
+        self.inactive = np.ones(p, np.bool)   # current inactive set
+        self.maxZ_offset = np.array([np.ones(p) * np.inf, np.ones(p) * np.inf]) # stored for computing
+                                                                                # the limits of maxZ selected test
+        self.maxZ_constraints = []
 
-    def __iter__(self):
-        n, p = self.X.shape
-        self.identity_cone = []
-        self.inactive = range(p)
-        self.offset = [[np.ones(p) * np.inf, np.ones(p) * np.inf]]
-        return self
-
-    def next(self, compute_pval=False,
+    def step(self, 
+             compute_maxZ_pval=False,
              use_identity=False,
-             burnin=2000,
              ndraw=8000,
+             burnin=2000,
              sigma_known=True,
              accept_reject_params=(100, 15, 2000)):
         """
+        Parameters
+        ----------
+
+        compute_maxZ_pval : bool
+            Compute a p-value for this step? Requires MCMC sampling.
+
+        use_identity : bool
+            If computing a p-value condition on the identity of the variable?
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        sigma_known : bool
+            Is $\sigma$ assumed known?
+
+        accept_reject_params : tuple
+            If not () should be a tuple (num_trial, min_accept, num_draw).
+            In this case, we first try num_trial accept-reject samples,
+            if at least min_accept of them succeed, we just draw num_draw
+            accept_reject samples.
+
         """
         
-        adjusted_X, Y = self.adjusted_X, self.subset_Y
+        working_X, Y = self.working_X, self.subset_Y
         resid_vector = self._resid_vector
-        n, p = adjusted_X.shape
+        n, p = working_X.shape
 
         # up to now inactive
-        inactive = self.inactive = sorted(set(range(p)).difference(self.variables))
-        scale = np.sqrt(np.sum(adjusted_X**2, 0))
+        inactive = self.inactive
 
-        Zfunc = adjusted_X.T[inactive] 
-        Zstat = np.dot(Zfunc, Y)
-        idx = np.argmax(np.fabs(Zstat))
-        next_var = inactive[idx]
-        next_sign = np.sign(Zstat[idx])
+        # compute Z scores
 
-        realized_Z_max = Zstat[idx]
-        self.Z.append(realized_Z_max)
+        scale = self.scale = np.sqrt(np.sum(working_X**2, 0))
+        scale[~inactive] = np.inf # should never be used in any case
+        Zfunc = working_X.T # [inactive] 
+        Zstat = np.dot(Zfunc, Y) / scale # [inactive]
 
-        if self.subset != []:
-            self.Zfunc.append(np.dot(Zfunc[idx], self.subset_selector) * next_sign)
+        winning_var = np.argmax(np.fabs(Zstat))
+        winning_sign = np.sign(Zstat[winning_var])
+        winning_func = Zfunc[winning_var] / scale[winning_var] * winning_sign
+
+        realized_maxZ = Zstat[winning_var] * winning_sign 
+        self.Z.append(realized_maxZ)
+
+        if self.subset is not None:
+            self.Zfunc.append(winning_func.dot(self.subset_selector))
         else:
-            self.Zfunc.append(Zfunc[idx] * next_sign)
+            self.Zfunc.append(winning_func)
 
         # keep track of identity for testing
         # variables other than the last one added
 
-        keep = np.zeros(p, np.bool)
-        keep[inactive] = True
-        keep[next_var] = False
-        identity_linpart = np.vstack([adjusted_X[:,keep].T -
-                                      next_sign * adjusted_X[:,next_var],
-                                      -adjusted_X[:,keep].T -
-                                      next_sign * adjusted_X[:,next_var],
-                                      -next_sign * adjusted_X[:,next_var].reshape((1,-1))])
+        # this adds a constraint to self.identity_constraints
 
-        if self.subset != []:
+        # losing_vars are variables that are inactive (i.e. not in self.variables)
+        # and did not win in this step
+
+        losing_vars = inactive.copy()
+        losing_vars[winning_var] = False
+
+        identity_linpart = np.vstack([ 
+                working_X[:,losing_vars].T / scale[losing_vars,None] -
+                winning_func,
+                -working_X[:,losing_vars].T / scale[losing_vars,None] -
+                winning_func,
+                - winning_func.reshape((1,-1))])
+
+        if self.subset is not None:
             identity_linpart = np.dot(identity_linpart, 
                                       self.subset_selector)
 
         identity_con = constraints(identity_linpart,
                                    np.zeros(identity_linpart.shape[0]))
 
-        self.identity_cone.append(identity_linpart)
+        if not identity_con(self.Y):
+            raise ValueError('identity fail!')
 
-        eta = adjusted_X[:,next_var]
+        self.identity_constraints.append(identity_linpart)
 
-        if compute_pval:
+        # form the maxZ constraint
 
-            XI = self.subset_X[:,inactive]
-            linear_part = np.vstack([XI.T, -XI.T])
-            offset = np.array(self.offset)
-            offset = offset[:,:,inactive]
-            offset_pos = np.min(offset[:,0], 0)
-            offset_neg = np.min(offset[:,1], 0)
-            offset = np.hstack([offset_pos, offset_neg])
-            con = constraints(linear_part, offset,
-                              covariance=self.covariance)
+        XI = self.subset_X[:,self.inactive]
+        linear_part = np.vstack([XI.T, -XI.T])
+        if self.subset is not None:
+            linear_part = np.dot(linear_part, 
+                                 self.subset_selector)
 
-            #use_identity = False
-            if use_identity:
-                con = stack(con, identity_con)
-                con.covariance = self.covariance
-            if self.variables or (self.fixed_regressors != []):
-                XA = self.subset_X[:,self.variables]
-                # TODO allow other regressors here
-                XA = np.hstack([self.fixed_regressors, XA])
-                sequential_con = con.conditional(XA.T,
-                                                 np.dot(XA.T, Y))
+        inactive_offset = self.maxZ_offset[:, self.inactive]
+
+        maxZ_con = constraints(linear_part, np.hstack(inactive_offset),
+                               covariance=self.covariance)
+
+        if use_identity:
+            maxZ_con = stack_con(maxZ_con, identity_con)
+            maxZ_con.covariance = self.covariance
+
+        if len(self.variables) > 0 or (self.fixed_regressors != []):
+            XA = self.subset_X[:, self.variables]
+            XA = np.hstack([self.subset_fixed, XA])
+            # the RHS, i.e. offset is fixed by this conditioning
+            if self.subset is not None:
+                conditional_con = maxZ_con.conditional(XA.T.dot(self.subset_selector),
+                                                       np.dot(XA.T, Y))
             else:
-                sequential_con = con
+                conditional_con = maxZ_con.conditional(XA.T,
+                                                       np.dot(XA.T, Y))
+        else:
+            conditional_con = maxZ_con
 
-            def maxT(Z, L=adjusted_X[:,inactive], S=scale[inactive]):
-                Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
-                return Tstat
+        self.maxZ_constraints.append(conditional_con)
+        if compute_maxZ_pval:
+            maxZ_pval = self._maxZ_test(ndraw, burnin,
+                                        sigma_known=sigma_known,
+                                        accept_reject_params=accept_reject_params)
 
-            B = sequential_con.offset
-            d = offset_pos.shape[0]
-            sequential_con.offset[:d] -= XI.T.dot(sequential_con.mean)
-            sequential_con.offset[d:(2*d)] += XI.T.dot(sequential_con.mean)
+        # now update for next step
 
-            pval = gibbs_test(sequential_con,
-                              Y,
-                              eta,
-                              sigma_known=sigma_known,
-                              white=False,
-                              ndraw=ndraw,
-                              burnin=burnin,
-                              how_often=-1,
-                              UMPU=False,
-                              use_random_directions=False,
-                              tilt=None,
-                              alternative='greater',
-                              test_statistic=maxT,
-                              accept_reject_params=accept_reject_params
-                              )[0]
+        # update the offsets for maxZ
 
-        # now update state for next step
+        # when we condition on the sufficient statistics up to
+        # and including winning_var, the Z_scores are fixed
+        
+        # then, the losing variables at this stage can be expressed as
+        # abs(working_X.T.dot(Y)[:,inactive] / scale[inactive]) < realized_maxZ
+        # where inactive is the updated inactive 
 
-        inactive.pop(idx)
-        self.inactive = inactive # unnecessary?
-        self.variables.append(next_var); self.signs.append(next_sign)
+        # the event we have witnessed this step is 
+        # $$\|X^T_L(I-P)Y / diag(X^T_L(I-P)X_L)\|_{\infty} \leq X^T_W(I-P)Y / \sqrt(X^T_W(I-P)X_W)$$
+        # where P is the current "model"
 
-        realized_Z_adjusted = np.fabs(realized_Z_max) * scale
-        offset_shift = np.dot(self.subset_X.T, Y - resid_vector)
-        self.offset.append([realized_Z_adjusted + offset_shift,
-                            realized_Z_adjusted - offset_shift])
+        # let V=PY and S_L the losing scales, we rewrite this as
+        # $$\|(X^T_LY - V) / S_L\|_{\infty} \leq Z_max $$
+        # and again
+        # $$X^T_LY / S_L - V / S_L \leq Z_max, -(X^T_LY / S_L - V / S_L) \leq Z_max $$
+        # or,
+        # $$X^T_LY \leq Z_max * S_L + V, -X^T_LY \leq Z_max * S_L - V $$
 
-        resid_vector -= realized_Z_max * adjusted_X[:,next_var] / scale[next_var]
-        adjusted_X -= (np.multiply.outer(eta, 
-                                         np.dot(eta,
-                                                adjusted_X)) / 
-                       (eta**2).sum())
-        # maintain the scale
-        adjusted_X /= np.sqrt(np.sum(adjusted_X**2, 0))[None, :]
-        if compute_pval:
-            return pval
+        # where, at the next step Z_max and V are measurable with respect to
+        # the appropriate sigma algebra
 
-    __next__ = next # Python3 compatibility
+        realized_Z_adjustment = realized_maxZ * scale                      # Z_max * S_L
+        fit_adjustment = np.dot(self.subset_X.T, Y - resid_vector)         # V * S_L
+        self.maxZ_offset[0] = np.minimum(self.maxZ_offset[0], realized_Z_adjustment + fit_adjustment)   # (Z_max + V) * S_L
+        self.maxZ_offset[1] = np.minimum(self.maxZ_offset[1], realized_Z_adjustment - fit_adjustment)  # (Z_max - V) * S_L
+
+        # update our list of variables and signs
+
+        self.inactive[winning_var] = False # inactive is now losing_vars
+        self.variables.append(winning_var); self.signs.append(winning_sign)
+
+        # update residual, and adjust X
+
+        resid_vector -= realized_maxZ * winning_func
+        working_X -= (np.multiply.outer(winning_func, winning_func.dot(working_X)) /
+                       (winning_func**2).sum())
+
+        if compute_maxZ_pval:
+            return maxZ_pval
 
     def constraints(self, step=np.inf, identify_last_variable=True):
         default_step = len(self.variables)
         if default_step > 0 and not identify_last_variable:
             default_step -= 1
         step = min(step, default_step)
-        A = np.vstack(self.identity_cone[:step])
+        A = np.vstack(self.identity_constraints[:step])
 
         con = constraints(A, 
                           np.zeros(A.shape[0]), 
                           covariance=self.covariance)
         return con
 
-    def mcmc_test(self, step, variable=None,
-                  nstep=100,
-                  ndraw=20,
-                  method='parallel', 
-                  burnin=1000,):
+    def _maxZ_test(self, 
+                   ndraw, 
+                   burnin,
+                   sigma_known=True,
+                   accept_reject_params=(100, 15, 2000)
+                   ):
 
-        if method not in ['parallel', 'serial']:
-            raise ValueError("method must be in ['parallel', 'serial']")
+        XI, Y = self.subset_X[:, self.inactive], self.subset_Y
+        sequential_con = self.maxZ_constraints[-1]
+        if not sequential_con(Y):
+            raise ValueError('Constraints on Y not satisfied')
 
-        X, Y = self.subset_X, self.subset_Y
+        # use partial
+        def maxT(Z, L=self.working_X[:,self.inactive], S=self.scale[self.inactive]):
+            Tstat = np.fabs(np.dot(Z, L) / S[None,:]).max(1)
+            return Tstat
 
-        variables = self.variables[:step]
-
-        if variable is None:
-            variable = variables[-1]
-
-        if variable not in variables:
-            raise ValueError('variable not included at given step')
-
-        A = np.vstack(self.identity_cone[:step])
-        con = constraints(A, 
-                          np.zeros(A.shape[0]), 
-                          covariance=self.covariance)
-
-        XA = X[:,variables]
-        con_final = con.conditional(XA.T, XA.T.dot(Y))
-        
-        if burnin > 0:
-            chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
-            chain_final.step()
-            new_Y = chain_final.state
-        else:
-            new_Y = Y
-
-        keep = np.ones(XA.shape[1], np.bool)
-        keep[list(variables).index(variable)] = 0
-        nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
-
-        if nuisance_variables:
-            XA_0 = X[:,nuisance_variables]
-            beta_dir = np.linalg.solve(XA_0.T.dot(XA_0), XA_0.T.dot(X[:,variable]))
-            adjusted_direction = X[:,variable] - XA_0.dot(beta_dir)
-            con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
-        else:
-            con_test = con
-            adjusted_direction = X[:,variable]
-
-        chain_test = gaussian_hit_and_run(con_test, new_Y, nstep=nstep)
-        test_stat = lambda y: -np.fabs(adjusted_direction.dot(y))
-
-        if method == 'parallel':
-            rank = parallel_test(chain_test,
-                                 new_Y,
-                                 test_stat)
-        else:
-            rank = serial_test(chain_test,
-                               new_Y,
-                               test_stat)
-            
-        return rank
+        pval, _, _, dfam = gibbs_test(sequential_con,
+                                      Y,
+                                      self.Zfunc[-1],
+                                      sigma_known=sigma_known,
+                                      white=False,
+                                      ndraw=ndraw,
+                                      burnin=burnin,
+                                      how_often=-1,
+                                      UMPU=False,
+                                      use_random_directions=False,
+                                      tilt=None,
+                                      alternative='greater',
+                                      test_statistic=maxT,
+                                      accept_reject_params=accept_reject_params
+                                      )
+        return pval
 
     def model_pivots(self, which_step, alternative='onesided',
                      saturated=True,
@@ -451,7 +513,7 @@ class forward_step(object):
         return quadratic_test(self.Y, P_LS, self.constraints(step=which_step))
 
 def info_crit_stop(Y, X, sigma, cost=2,
-                   subset=[]):
+                   subset=None):
     """
     Fit model using forward stepwise,
     stopping using a rule like AIC or BIC.
@@ -474,8 +536,9 @@ def info_crit_stop(Y, X, sigma, cost=2,
     cost : float
         Cost per parameter. For BIC use cost=log(X.shape[0])
 
-    subset : []
-        Subset of cases to use for selection, defaults to [].
+    subset : ndarray (optional)
+        Shape (n,) -- boolean indicator of which cases to use.
+        Defaults to np.ones(n, np.bool)
 
     Returns
     -------
@@ -490,8 +553,7 @@ def info_crit_stop(Y, X, sigma, cost=2,
     FS = forward_step(X, Y, covariance=sigma**2 * np.identity(n), subset=subset)
 
     while True:
-        FS.next()
-
+        FS.step()
         if FS.Z[-1] < sigma * np.sqrt(cost):
             break
 
@@ -500,8 +562,8 @@ def info_crit_stop(Y, X, sigma, cost=2,
     new_offset = -sigma * np.sqrt(cost) * np.ones(new_linear_part.shape[0])
     new_offset[-1] *= -1
 
-    new_con = stack(FS.constraints(), constraints(new_linear_part,
-                                                  new_offset))
+    new_con = stack_con(FS.constraints(), constraints(new_linear_part,
+                                                      new_offset))
     new_con.covariance[:] = sigma**2 * np.identity(n)
     FS._constraints = new_con
     FS.active = FS.variables[:-1]
@@ -650,3 +712,63 @@ def data_carving_IC(y, X, sigma,
                    splitting_pvalues,
                    splitting_intervals), FS
 
+def mcmc_test(fs_obj, step, variable=None,
+              nstep=100,
+              ndraw=20,
+              method='parallel', 
+              burnin=1000,):
+
+    if method not in ['parallel', 'serial']:
+        raise ValueError("method must be in ['parallel', 'serial']")
+
+    X, Y = fs_obj.subset_X, fs_obj.subset_Y
+
+    variables = fs_obj.variables[:step]
+
+    if variable is None:
+        variable = variables[-1]
+
+    if variable not in variables:
+        raise ValueError('variable not included at given step')
+
+    A = np.vstack(fs_obj.identity_constraints[:step])
+    con = constraints(A, 
+                      np.zeros(A.shape[0]), 
+                      covariance=fs_obj.covariance)
+
+    XA = X[:,variables]
+    con_final = con.conditional(XA.T, XA.T.dot(Y))
+
+    if burnin > 0:
+        chain_final = gaussian_hit_and_run(con_final, Y, nstep=burnin)
+        chain_final.step()
+        new_Y = chain_final.state
+    else:
+        new_Y = Y
+
+    keep = np.ones(XA.shape[1], np.bool)
+    keep[list(variables).index(variable)] = 0
+    nuisance_variables = [v for i, v in enumerate(variables) if keep[i]]
+
+    if nuisance_variables:
+        XA_0 = X[:,nuisance_variables]
+        beta_dir = np.linalg.solve(XA_0.T.dot(XA_0), XA_0.T.dot(X[:,variable]))
+        adjusted_direction = X[:,variable] - XA_0.dot(beta_dir)
+        con_test = con.conditional(XA_0.T, XA_0.T.dot(Y))
+    else:
+        con_test = con
+        adjusted_direction = X[:,variable]
+
+    chain_test = gaussian_hit_and_run(con_test, new_Y, nstep=nstep)
+    test_stat = lambda y: -np.fabs(adjusted_direction.dot(y))
+
+    if method == 'parallel':
+        rank = parallel_test(chain_test,
+                             new_Y,
+                             test_stat)
+    else:
+        rank = serial_test(chain_test,
+                           new_Y,
+                           test_stat)
+
+    return rank

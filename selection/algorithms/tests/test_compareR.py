@@ -46,6 +46,7 @@ def test_fixed_lambda():
 
         vlo = out$vlo
         vup = out$vup
+
         sdvar = out$sd
         pval=out$pv
         coef0=out$coef0
@@ -95,6 +96,8 @@ def test_forward_step():
     out.seq = fsInf(fsfit,sigma=sigma)
     vars = out.seq$vars
     pval = out.seq$pv
+    vlo = out.seq$vlo
+    vup = out.seq$vup
     """
 
     rpy.r(R_code)
@@ -107,14 +110,20 @@ def test_forward_step():
     y = y.reshape(-1)
     y -= y.mean()
     x -= x.mean(0)[None,:]
+
+    vlo = np.asarray(rpy.r('vlo'))
+    vup = np.asarray(rpy.r('vup'))
+    print(np.vstack([vlo, vup]).T)
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(x.shape[1]):
-        FS.next()
+        FS.step()
         steps.extend(FS.model_pivots(i+1, 
                                      which_var=FS.variables[-1:],
                                      alternative='onesided'))
 
+    print(selected_vars, [i+1 for i, p in steps])
+    print(FS.variables, FS.signs)
     np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
     np.testing.assert_allclose([p for i, p in steps], R_pvals, atol=tol, rtol=tol)
 
@@ -149,10 +158,14 @@ def test_forward_step_all():
     y = y.reshape(-1)
     y -= y.mean()
     x -= x.mean(0)[None,:]
+
+    vlo = np.asarray(rpy.r('vlo'))
+    vup = np.asarray(rpy.r('vup'))
+    print(np.vstack([vlo, vup]).T)
     FS = forward_step(x, y, covariance=sigma**2 * np.identity(y.shape[0]))
     steps = []
     for i in range(5):
-        FS.next()
+        FS.step()
     steps = FS.model_pivots(5, 
                             alternative='onesided')
 
@@ -214,7 +227,7 @@ def test_coxph():
     print(G1, 'glmnet')
     print(G2, 'regreg')
 
-    yield np.testing.assert_equal, L.active + 1, selected_vars
+    yield np.testing.assert_equal, np.array(L.active) + 1, selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'cox coeff'
     yield np.testing.assert_allclose, L.summary('onesided')['pval'], R_pvals, tol, tol, False, 'cox pvalues'
 

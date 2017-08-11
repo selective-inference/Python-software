@@ -12,12 +12,12 @@ def test_FS(k=10, ndraw=5000, burnin=5000):
     X = np.random.standard_normal((n,p)) + 0.4 * np.random.standard_normal(n)[:,None]
     X /= (X.std(0)[None,:] * np.sqrt(n))
     
-    Y = np.random.standard_normal(100) * 0.5
+    Y = np.random.standard_normal(n) * 0.5
     
     FS = forward_step(X, Y, covariance=0.5**2 * np.identity(n))
 
     for i in range(k):
-        FS.next(compute_pval=True)
+        print(FS.step(compute_maxZ_pval=True), 'pvalues')
 
     print('first %s variables selected' % k, FS.variables)
 
@@ -39,7 +39,7 @@ def test_FS_unknown(k=10, ndraw=5000, burnin=5000):
     FS = forward_step(X, Y)
 
     for i in range(k):
-        FS.next()
+        FS.step()
 
     print('first %s variables selected' % k, FS.variables)
 
@@ -62,7 +62,7 @@ def test_subset(k=10, ndraw=5000, burnin=5000):
                           covariance=0.5**2 * np.identity(n))
 
     for i in range(k):
-        FS.next()
+        FS.step()
 
     print('first %s variables selected' % k, FS.variables)
 
@@ -74,7 +74,7 @@ def test_subset(k=10, ndraw=5000, burnin=5000):
     FS = forward_step(X, Y, subset=subset)
 
     for i in range(k):
-        FS.next()
+        FS.step()
     print(FS.model_pivots(3, saturated=False, which_var=[FS.variables[2]], burnin=burnin, ndraw=ndraw))
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
@@ -108,7 +108,7 @@ def simulate_null(saturated=True, ndraw=8000, burnin=2000):
     FS = forward_step(X, Y, covariance=0.5**2 * np.identity(n))
     
     for i in range(5):
-        FS.next()
+        FS.step()
 
     return [p[-1] for p in FS.model_pivots(3, saturated=saturated, ndraw=ndraw, burnin=burnin)]
 
@@ -134,7 +134,7 @@ def test_data_carving_IC(nsim=500,
                          s=7,
                          sigma=5,
                          rho=0.3,
-                         snr=7.,
+                         signal=7.,
                          split_frac=0.9,
                          ndraw=5000,
                          burnin=1000, 
@@ -151,7 +151,7 @@ def test_data_carving_IC(nsim=500,
                                              s=s, 
                                              sigma=sigma, 
                                              rho=rho, 
-                                             snr=snr, 
+                                             signal=signal, 
                                              df=df)
         mu = np.dot(X, beta)
         splitn = int(n*split_frac)
@@ -196,16 +196,16 @@ def test_data_carving_IC(nsim=500,
 
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000):
+def test_full_pvals(n=100, p=40, rho=0.3, signal=4, ndraw=8000, burnin=2000):
 
-    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, snr=snr, rho=rho)
+    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, signal=signal, rho=rho)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     from scipy.stats import norm as ndist
     pval = []
     completed_yet = False
     for i in range(min(n, p)):
-        FS.next()
+        FS.step()
         var_select, pval_select = FS.model_pivots(i+1, alternative='twosided',
                                                   which_var=[FS.variables[-1]],
                                                   saturated=False,
@@ -229,11 +229,11 @@ def test_full_pvals(n=100, p=40, rho=0.3, snr=4, ndraw=8000, burnin=2000):
     return X, y, beta, active, sigma, np.array(pval), completion_index
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
+def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, signal=5, ndraw=None, burnin=2000,
                     nstep=200,
                     method='serial'):
 
-    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, snr=snr, rho=rho, s=s)
+    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, signal=signal, rho=rho, s=s)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     extra_steps = 4
@@ -241,7 +241,7 @@ def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
     null_rank, alt_rank = None, None
 
     for i in range(min(n, p)):
-        FS.next()
+        FS.step()
 
         if extra_steps <= 0:
             null_rank = FS.mcmc_test(i+1, variable=FS.variables[i-2], 
@@ -260,12 +260,12 @@ def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, snr=5, ndraw=None, burnin=2000,
     return null_rank, alt_rank
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, snr=5, 
+def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, signal=5, 
                                 ndraw=None, burnin=2000,
                                 nstep=200,
                                 method='serial'):
 
-    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, snr=snr, rho=rho, s=s)
+    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, signal=signal, rho=rho, s=s)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     extra_steps = 4
@@ -273,7 +273,7 @@ def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, snr=5,
 
     null_ranks = []
     for i in range(min(n, p)):
-        FS.next()
+        FS.step()
 
         if completed and extra_steps > 0:
             null_rank = FS.mcmc_test(i+1, variable=FS.variables[-1], 

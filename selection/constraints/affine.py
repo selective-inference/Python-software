@@ -278,7 +278,10 @@ class constraints(object):
                                     Y,
                                     direction_of_interest)
 
-    def pivot(self, direction_of_interest, Y,
+    def pivot(self, 
+              direction_of_interest, 
+              Y,
+              null_value=None,
               alternative='greater'):
         r"""
         For a realization $Y$ of the random variable $N(\mu,\Sigma)$
@@ -316,12 +319,14 @@ class constraints(object):
         then we return $1-F$; if it is 'less' we return $F$
         and if it is 'twosided' we return $2 \min(F,1-F)$.
 
-        
         """
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
         L, Z, U, S = self.bounds(direction_of_interest, Y)
-        meanZ = (direction_of_interest * self.mean).sum()
+        if null_value is None:
+            meanZ = (direction_of_interest * self.mean).sum()
+        else:
+            meanZ = null_value
         P = truncnorm_cdf((Z-meanZ)/S, (L-meanZ)/S, (U-meanZ)/S)
         if alternative == 'greater':
             return 1 - P
