@@ -6,7 +6,7 @@ from regreg.api import (quadratic_loss,
 
 from ..constraints.affine import constraints
 
-def _find_row_approx_inverse(Sigma, j, delta):
+def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1.e-6, 'max_its':500}):
     """
 
     Find an approximation of j-th row of inverse of Sigma.
@@ -19,8 +19,19 @@ def _find_row_approx_inverse(Sigma, j, delta):
     penalty = l1norm(p, lagrange=delta)
     iq = identity_quadratic(0, 0, elem_basis, 0)
     problem = simple_problem(loss, penalty)
-    linfunc = problem.solve(iq, min_its=100)
-    return -linfunc
+    dual_soln = problem.solve(iq, **solve_args)
+
+    soln = -dual_soln
+
+    # check feasibility -- if it fails miserably
+    # presume delta was too small
+
+    feasibility_gap = np.fabs(Sigma.dot(soln) - elem_basis).max()
+    if feasibility_gap > (1.01) * delta:
+        raise ValueError('does not seem to be a feasible point -- try increasing delta')
+
+    return soln
+
 
 def debiased_lasso_inference(lasso_obj, variables, delta):
 

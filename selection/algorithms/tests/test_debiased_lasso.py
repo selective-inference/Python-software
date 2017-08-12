@@ -6,7 +6,8 @@ from selection.tests.instance import gaussian_instance as instance
 import selection.tests.reports as reports
 
 from selection.algorithms.lasso import lasso 
-from selection.algorithms.debiased_lasso import debiased_lasso_inference
+from selection.algorithms.debiased_lasso import (debiased_lasso_inference,
+                                                 _find_row_approx_inverse)
 import regreg.api as rr
 
 def test_gaussian(n=100, p=20):
@@ -24,3 +25,23 @@ def test_gaussian(n=100, p=20):
 
     print(debiased_lasso_inference(L, L.active, np.sqrt(2 * np.log(p) / n)))
     print(beta)
+
+def test_approx_inverse():
+
+    n, p = 50, 100
+    X = np.random.standard_normal((n, p))
+    S = X.T.dot(X) / n
+    j = 5
+    delta = 0.60
+    
+    soln = _find_row_approx_inverse(S, j, delta)
+
+    basis_vector = np.zeros(p)
+    basis_vector[j] = 1.
+
+    nt.assert_true(np.fabs(S.dot(soln) - basis_vector).max() < delta * 1.001)
+
+    U = - S.dot(-soln) - basis_vector
+    nt.assert_true(np.fabs(U).max() < delta * 1.001)
+    nt.assert_equal(np.argmax(np.fabs(U)), j)
+    nt.assert_equal(np.sign(U[j]), -np.sign(soln[j]))
