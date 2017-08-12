@@ -13,7 +13,7 @@ from selection.api import (randomization,
                            glm_target)
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
-from selection.randomized.glm import standard_ci, standard_ci_sm
+from selection.randomized.glm import standard_ci
 from selection.randomized.query import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot',
