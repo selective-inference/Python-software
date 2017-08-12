@@ -45,3 +45,4 @@ def test_approx_inverse():
     nt.assert_true(np.fabs(U).max() < delta * 1.001)
     nt.assert_equal(np.argmax(np.fabs(U)), j)
     nt.assert_equal(np.sign(U[j]), -np.sign(soln[j]))
+    nt.assert_raises(ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta)

@@ -11,6 +11,18 @@ def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1
 
     Find an approximation of j-th row of inverse of Sigma.
 
+    Solves the problem
+
+    .. math::
+
+        \text{min}_{\theta} \frac{1}{2} \theta^TS\theta
+
+    subject to $\|\Sigma \hat{\theta} - e_j\|_{\infty} \leq \delta$ with
+    $e_j$ the $j$-th elementary basis vector and `S` as $\Sigma$, 
+    and `delta` as $\delta$.
+
+    Described in Table 1, display (4) of https://arxiv.org/pdf/1306.3171.pdf
+
     """
     p = Sigma.shape[0]
     elem_basis = np.zeros(p, np.float)
