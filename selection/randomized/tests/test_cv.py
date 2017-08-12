@@ -13,7 +13,10 @@ from selection.randomized.query import naive_pvalues
 
 import selection.tests.reports as reports
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+from selection.tests.decorators import (wait_for_return_value, 
+                                        set_seed_iftrue, 
+                                        set_sampling_params_iftrue, 
+                                        register_report)
 from selection.randomized.cv_view import CV_view
 from statsmodels.sandbox.stats.multicomp import multipletests
 
