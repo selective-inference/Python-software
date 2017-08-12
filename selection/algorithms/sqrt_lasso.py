@@ -11,6 +11,7 @@ from scipy.interpolate import interp1d
 import regreg.api as rr
 import regreg.affine as ra
 from regreg.smooth.glm import gaussian_loglike
+from regreg.affine import astransform
 
 from ..constraints.affine import (constraints as affine_constraints, 
                                   sample_from_sphere)
@@ -46,8 +47,20 @@ class sqlasso_objective(rr.smooth_atom):
 
         self.X = X
         self.Y = Y
+        self.data = (X, Y)
         self._sqerror = rr.squared_error(X, Y)
 
+    def get_data(self):
+        return self._X, self._Y
+
+    def set_data(self, data):
+        X, Y = data
+        self._transform = astransform(X)
+        self._X = X
+        self._is_transform = id(self._X) == id(self._transform) # i.e. astransform was a nullop
+        self._Y = Y
+
+    data = property(get_data, set_data, doc="Data for the sqrt LASSO objective.")
 
     def smooth_objective(self, x, mode='both', check_feasibility=False):
 

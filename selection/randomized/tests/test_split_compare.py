@@ -13,7 +13,7 @@ from selection.api import (randomization,
                            glm_target)
 from selection.tests.instance import logistic_instance
 from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
-from selection.randomized.glm import standard_ci, standard_ci_sm 
+from selection.randomized.glm import standard_ci
 from selection.randomized.query import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot', 
@@ -125,10 +125,9 @@ def test_split_compare(s=3,
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
         if X.shape[0] - leftout_indices.sum() > nactive:
-            LU_split = standard_ci(X, y, active_union, leftout_indices)
-            LU_split_sm = standard_ci_sm(X, y, active_union, leftout_indices)
+            LU_split = standard_ci(rr.glm.logistic, X, y, active_union, leftout_indices)
         else:
-            LU_split = LU_split_sm = np.ones((nactive, 2)) * np.nan
+            LU_split = np.ones((nactive, 2)) * np.nan
 
         def coverage(LU):
             L, U = LU[:,0], LU[:,1]

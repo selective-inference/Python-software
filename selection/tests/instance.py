@@ -34,16 +34,22 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
     For the default settings, a $\lambda$ of around 13.5
     corresponds to the theoretical $E(\|X^T\epsilon\|_{\infty})$
     with $\epsilon \sim N(0, \sigma^2 I)$.
+
     Parameters
     ----------
+
     n : int
         Sample size
+
     p : int
         Number of features
+
     s : int
         True sparsity
+
     sigma : float
         Noise level
+
     rho : float
         Equicorrelation value (must be in interval [0,1])
 
@@ -81,7 +87,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
         Noise level.
     """
 
-    X = _design(n,p, rho, equicorrelated)
+    X = _design(n, p, rho, equicorrelated)
 
     if center:
         X -= X.mean(0)[None, :]
@@ -162,7 +168,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
 
     """
 
-    X = _design(n,p, rho, equicorrelated)
+    X = _design(n, p, rho, equicorrelated)
 
     if center:
         X -= X.mean(0)[None,:]

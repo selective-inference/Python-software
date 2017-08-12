@@ -557,12 +557,3 @@ def standard_ci(glm_loss, X, y , active, leftout_indices, alpha=0.1):
         LU[1, j] = observed[j] + sigma * quantile
     return LU.T
 
-
-def standard_ci_sm(X, y, active, leftout_indices, alpha=0.1):
-    XE = X[:, active]
-    X2, y2 = XE[leftout_indices, :], y[leftout_indices]
-    import statsmodels.discrete.discrete_model as sm
-    logit = sm.Logit(y2, X2)
-    result = logit.fit(disp=0)
-    LU = result.conf_int(alpha=alpha)
-    return LU.T

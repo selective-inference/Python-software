@@ -6,3 +6,4 @@ mpmath
 pyinter
 statsmodels
 sklearn
+pyinter

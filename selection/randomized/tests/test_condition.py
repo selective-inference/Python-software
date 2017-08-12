@@ -80,11 +80,13 @@ def test_condition(s=0,
 
         if scalings: # try condition on some scalings
             for i in range(nviews):
-                views[i].condition_on_subgradient()
+                views[i].decompose_subgradient(conditioning_groups=np.zeros(p, bool),
+                                               marginalizing_groups=np.ones(p, bool))
                 views[i].condition_on_scalings()
         else:
             for i in range(nviews):
-               views[i].condition_on_subgradient()
+               views[i].decompose_subgradient(conditioning_groups=np.zeros(p, bool),
+                                               marginalizing_groups=np.ones(p, bool))
 
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,
