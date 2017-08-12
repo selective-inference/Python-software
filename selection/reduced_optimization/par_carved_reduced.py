@@ -279,7 +279,7 @@ class sel_inf_carved(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=1500, burnin=100):
+    def posterior_samples(self, langevin_steps=1500, burnin=100):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective_post(x, 'grad')
@@ -289,7 +289,7 @@ class sel_inf_carved(rr.smooth_atom):
 
         samples = []
 
-        for i in xrange(Langevin_steps):
+        for i in xrange(langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
             sys.stderr.write("sample number: " + str(i) + "\n")

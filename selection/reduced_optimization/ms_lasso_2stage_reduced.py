@@ -407,7 +407,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, Langevin_steps=1500, burnin=50):
+    def posterior_samples(self, langevin_steps=1500, burnin=50):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
@@ -417,7 +417,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
 
         samples = []
 
-        for i in range(Langevin_steps):
+        for i in range(langevin_steps):
             sampler.next()
             samples.append(sampler.state.copy())
             #print i, sampler.state.copy()
@@ -426,7 +426,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         samples = np.array(samples)
         return samples[burnin:, :]
 
-    def posterior_risk(self, estimator_1, estimator_2, Langevin_steps=1200, burnin=0):
+    def posterior_risk(self, estimator_1, estimator_2, langevin_steps=1200, burnin=0):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
@@ -437,7 +437,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         post_risk_1 = 0.
         post_risk_2 = 0.
 
-        for i in range(Langevin_steps):
+        for i in range(langevin_steps):
             sampler.next()
             sample = sampler.state.copy()
 
@@ -451,7 +451,7 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
             post_risk_2 += risk_2
 
 
-        return post_risk_1/Langevin_steps, post_risk_2/Langevin_steps
+        return post_risk_1/langevin_steps, post_risk_2/langevin_steps
 
 
 
