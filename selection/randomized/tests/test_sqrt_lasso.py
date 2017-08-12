@@ -33,18 +33,18 @@ def choose_lambda_with_randomization(X, randomization, quantile=0.90, ndraw=1000
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=500, p=20, s=0, signal=5, K=5, rho=0.,
-             randomizer = 'gaussian',
-             randomizer_scale = 1.,
-             scale1 = 0.1,
-             scale2 = 0.2,
-             lam_frac = 1.,
-             intervals = 'old',
-             bootstrap = False,
-             condition_on_CVR = False,
-             marginalize_subgrad = True,
-             ndraw = 10000,
-             burnin = 2000):
+def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
+                    randomizer = 'gaussian',
+                    randomizer_scale = 1.,
+                    scale1 = 0.1,
+                    scale2 = 0.2,
+                    lam_frac = 1.,
+                    intervals = 'old',
+                    bootstrap = False,
+                    condition_on_CVR = False,
+                    marginalize_subgrad = True,
+                    ndraw = 10000,
+                    burnin = 2000):
 
     print(n,p,s)
     if randomizer == 'laplace':
@@ -59,7 +59,7 @@ def test_cv(n=500, p=20, s=0, signal=5, K=5, rho=0.,
     lam_random = choose_lambda_with_randomization(X, randomizer)
     loss = sqlasso_objective(X, y)
 
-    epsilon = 1./np.sqrt(n)
+    epsilon = 1./n
 
     # non-randomized sqrt-Lasso, just looking how many vars it selects
     problem = rr.simple_problem(loss, rr.l1norm(p, lagrange=lam_nonrandom))
@@ -71,7 +71,7 @@ def test_cv(n=500, p=20, s=0, signal=5, K=5, rho=0.,
     # view 2
     W = lam_frac * np.ones(p) * lam_random
     penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
+                             weights=dict(zip(np.arange(p), W)), lagrange=1. / np.sqrt(n))
     M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([M_est1])
@@ -83,6 +83,9 @@ def test_cv(n=500, p=20, s=0, signal=5, K=5, rho=0.,
     print("nactive", nactive)
     if nactive==0:
         return None
+
+    import sys
+    sys.stderr.write(`(nonzero, active_union )` + '\n')
 
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):

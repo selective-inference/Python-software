@@ -23,7 +23,7 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
+def test_cv(n=100, p=50, s=0, signal=7.5, K=5, rho=0.,
              randomizer = 'gaussian',
              randomizer_scale = 1.,
              scale1 = 0.1,
@@ -70,7 +70,7 @@ def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
         lam = cv.one_SD_rule(direction="up")
         print("new lam", lam)
 
-    # non-randomied Lasso, just looking how many vars it selects
+    # non-randomized Lasso, just looking how many vars it selects
     problem = rr.simple_problem(glm_loss, rr.l1norm(p, lagrange=lam))
     beta_hat = problem.solve()
     active_hat = beta_hat !=0
@@ -83,10 +83,8 @@ def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     mv = multiple_queries([cv, M_est1])
-    #mv = multiple_queries([M_est1])
     mv.solve()
 
-    #active = soln != 0
     active_union = M_est1._overall
     nactive = np.sum(active_union)
     print("nactive", nactive)
@@ -100,7 +98,7 @@ def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
         true_vec = beta[active_union]
 
         if marginalize_subgrad == True:
-            M_est1.decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool),
+            M_est1.decompose_subgradient(conditioning_groups=np.zeros(p, bool),
                                          marginalizing_groups=np.ones(p, bool))
 
         target_sampler, target_observed = glm_target(glm_loss,
@@ -115,9 +113,6 @@ def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
                                                      sample=target_sample,
                                                      level=0.9)
 
-            #pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-            #                                                parameter=target_sampler.reference,
-            #                                                sample=target_sample)
             pivots_truth = target_sampler.coefficient_pvalues(target_observed,
                                                               parameter=true_vec,
                                                               sample=target_sample)
@@ -131,9 +126,6 @@ def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
             LU = target_sampler.confidence_intervals_translate(target_observed,
                                                                sample=full_sample,
                                                                level=0.9)
-            #pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
-            #                                                          parameter=target_sampler.reference,
-            #                                                          sample=full_sample)
             pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
                                                                         parameter=true_vec,
                                                                         sample=full_sample)
@@ -168,7 +160,6 @@ def test_cv(n=100, p=50, s=0, signal=3.5, K=5, rho=0.,
 
 def report(niter=50, **kwargs):
     np.random.seed(500)
-    #kwargs = {'s': 0, 'n': 600, 'p': 100, 'signal': 3.5, 'bootstrap': False}
     intervals_report = reports.reports['test_cv']
     runs = reports.collect_multiple_runs(intervals_report['test'],
                                              intervals_report['columns'],
