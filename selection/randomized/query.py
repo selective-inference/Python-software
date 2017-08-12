@@ -236,8 +236,7 @@ class multiple_queries(object):
         curr_randomization_length = 0
         self.randomization_slice = []
         for objective in self.objectives:
-            randomization_length = objective._beta_full.shape[0]
-            #print(randomization_length)
+            randomization_length = objective.loss.shape[0]
             self.randomization_slice.append(slice(curr_randomization_length,
                                                   curr_randomization_length + randomization_length))
             curr_randomization_length = curr_randomization_length + randomization_length
@@ -430,6 +429,7 @@ class targeted_sampler(object):
                 self.objectives[i].linear_decomposition(self.score_cov[i],
                                                         self.target_cov,
                                                         self.observed_target_state))
+        self.target_cov = np.atleast_2d(self.target_cov)
         self.target_inv_cov = np.linalg.inv(self.target_cov)
         # size of reference? should it only be target_set?
         if reference is None:
