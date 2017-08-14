@@ -12,10 +12,10 @@ class CV_glmnet(object):
 
     def __init__(self, loss, loss_label):
         self.loss = loss
-        if loss_label=="gaussian":
-            self.family=robjects.StrVector('g')
-        elif loss_label=="logistic":
-            self.family=robjects.StrVector('b')
+        if loss_label == "gaussian":
+            self.family = robjects.StrVector('g')
+        elif loss_label == "logistic":
+            self.family = robjects.StrVector('b')
 
     def using_glmnet(self, loss=None):
         robjects.r('''
@@ -62,13 +62,14 @@ class CV_glmnet(object):
         if not hasattr(self, 'lam_seq'):
             self.lam_seq = lam_seq
         CV_err = np.array(result[3])
+
         # this is stupid but glmnet sometime cuts my given seq of lambdas
         if CV_err.shape[0]<self.lam_seq.shape[0]:
             CV_err_longer = np.ones(self.lam_seq.shape[0])*np.max(CV_err)
             CV_err_longer[:(self.lam_seq.shape[0]-1)]=CV_err
             CV_err = CV_err_longer
         SD = np.array(result[4])
-        #print("lam_minCV", lam_minCV)
+
         return lam_minCV, lam_1SE, lam_seq, CV_err, SD
 
 
@@ -98,7 +99,6 @@ class CV_glmnet(object):
 
         def _bootstrap_CVerr_curve(indices):
             loss_star = self.loss.subsample(indices)
-            # loss_star = rr.glm.gaussian(X[indices,:], y[indices])
             _, _, CVR_val, CV1_val, _ = self.choose_lambda_CVR(scale1, scale2, loss_star)
             return np.array(CVR_val), np.array(CV1_val)
 
@@ -109,26 +109,5 @@ class CV_glmnet(object):
             return _bootstrap_CVerr_curve(indices)[1]
 
         return _CVR_boot, _CV1_boot
-
-
-if __name__ == '__main__':
-    np.random.seed(2)
-    n, p = 3000, 1000
-    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=30, rho=0., sigma=1)
-    loss = rr.glm.gaussian(X,y)
-    CV_glmnet_compute = CV_glmnet(loss)
-    lam_CV, lam_1SD, lam_seq, CV_err, SD = CV_glmnet_compute.using_glmnet()
-    print("CV error curve (nonrandomized):", CV_err)
-    lam_grid_size = CV_glmnet_compute.lam_seq.shape[0]
-    lam_CVR, SD, CVR, CV1, lam_seq = CV_glmnet_compute.choose_lambda_CVR(scale1=0.1, scale2=0.1)
-    print("nonrandomized index:", list(lam_seq).index(lam_CV)) # index of the minimizer
-    print("lam for nonrandomized CV plus sigma rule:",lam_CV,lam_1SD)
-    print("lam_CVR:",lam_CVR)
-    print("randomized index:", list(lam_seq).index(lam_CVR))
-    import matplotlib.pyplot as plt
-    plt.plot(np.log(lam_seq), CV_err)
-    plt.plot(np.log(lam_seq), CVR)
-    #plt.ylabel('some numbers')
-    plt.show()
 
 
