@@ -9,7 +9,7 @@ addons:
     packages:
         - libblas-dev
         - liblapack-dev
-	- r-base-dev
+        - r-base-dev
 env:
     global:
         # Maximal dependencies
