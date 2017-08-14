@@ -9,11 +9,17 @@ addons:
     packages:
         - libblas-dev
         - liblapack-dev
-        - r-base-dev
 env:
     global:
         # Maximal dependencies
         - DEPENDS="cython numpy scipy matplotlib"
+matrix:
+  include:
+    - python: 3.5
+      sudo: true
+      dist: trusty
+      env:
+        - DOC_BUILD=1
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
@@ -35,7 +41,7 @@ script:
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
     - 'echo "backend : agg" > matplotlibrc'
     - sudo apt-get update
-    - sudo apt-get install -y r-base r-base-dev
+    - sudo apt-get install -y r-base r-base-dev python-rpy2
     - sudo Rscript -e "install.packages(c('glmnet', 'Matrix'), repos='http://cloud.r-project.org');"
     - pip install -r doc-requirements.txt # installs rpy2 among other things
 
