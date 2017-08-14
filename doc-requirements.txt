@@ -7,4 +7,3 @@ matplotlib
 texext
 rpy2
 nb2plots
-sklearn
