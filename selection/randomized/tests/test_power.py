@@ -1,25 +1,25 @@
 from __future__ import print_function
 import numpy as np
+from statsmodels.sandbox.stats.multicomp import multipletests
 
 import regreg.api as rr
-import selection.tests.reports as reports
 
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ...tests.instance import logistic_instance, gaussian_instance
+from ...tests.decorators import (wait_for_return_value,
+                                 set_seed_iftrue,
+                                 set_sampling_params_iftrue,
+                                 register_report)
+from ...tests.reports import (reports,
+                              collect_multiple_runs,
+                              pivot_plot_simple)
 
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
-from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.tests.decorators import (wait_for_return_value,
-                                        set_seed_iftrue,
-                                        set_sampling_params_iftrue,
-                                        register_report)
-import selection.tests.reports as reports
-
-from selection.api import (randomization,
-                           glm_group_lasso,
-                           glm_group_lasso_parametric,
-                           multiple_queries,
-                           glm_target)
-from statsmodels.sandbox.stats.multicomp import multipletests
-from selection.randomized.cv_view import CV_view
+from ..api import (randomization,
+                   glm_group_lasso,
+                   glm_group_lasso_parametric,
+                   multiple_queries,
+                   glm_target)
+from ..cv_view import CV_view, have_glmnet
 
 
 @register_report(['pvalue', 'active_var'])
@@ -42,7 +42,8 @@ def test_power(s=30,
                loss='gaussian',
                scalings=False,
                subgrad =True,
-               parametric=True):
+               parametric=True,
+               glmnet=True):
 
     print(n,p,s)
     if loss=="gaussian":
@@ -67,7 +68,7 @@ def test_power(s=30,
         cv = CV_view(glm_loss, loss_label=loss, lasso_randomization=randomizer, epsilon=epsilon,
                      scale1=0.01, scale2=0.01)
         #views.append(cv)
-        cv.solve(glmnet=True)
+        cv.solve(glmnet=glmnet and have_glmnet)
         lam = cv.lam_CVR
         print("minimizer of CVR", lam)
 
@@ -157,14 +158,14 @@ def simple_rejections(pvalues, active_var, s, alpha=0.05):
 
 def report(niter=50, **kwargs):
     np.random.seed(500)
-    condition_report = reports.reports['test_power']
-    runs = reports.collect_multiple_runs(condition_report['test'],
-                                         condition_report['columns'],
-                                         niter,
-                                         reports.summarize_all,
-                                         **kwargs)
+    condition_report = reports['test_power']
+    runs = collect_multiple_runs(condition_report['test'],
+                                 condition_report['columns'],
+                                 niter,
+                                 reports.summarize_all,
+                                 **kwargs)
 
-    fig = reports.pivot_plot_simple(runs)
+    fig = pivot_plot_simple(runs)
     fig.savefig('marginalized_subgrad_pivots.pdf')
 
 
