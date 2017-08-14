@@ -1,0 +1,10 @@
+# Requirements for building docs
+# Check these dependencies against doc/conf.py
+-r dev-requirements.txt
+sphinx>=1.4
+numpydoc
+matplotlib
+texext
+rpy2
+nb2plots
+sklearn
