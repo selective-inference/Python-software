@@ -20,7 +20,8 @@ try:
     have_rpy2 = True
 except ImportError:
     warnings.warn('rpy2 seems not to be installed -- CV_glmnet class will not work')
-    hav_rpy2 = False
+    have_rpy2 = False
+    pass
 
 class CV_glmnet(object):
 
