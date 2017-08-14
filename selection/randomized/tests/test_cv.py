@@ -36,6 +36,7 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
             scale1 = 0.1,
             scale2 = 0.2,
             lam_frac = 1.,
+            glmnet = True,
             loss = 'gaussian',
             intervals = 'old',
             bootstrap = False,
@@ -69,7 +70,23 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
                  epsilon=epsilon, 
                  scale1=scale1, 
                  scale2=scale2)
-    cv.solve(glmnet=True)
+    if glmnet:
+        try:
+            cv.solve(glmnet=glmnet)
+        except ImportError:
+            cv.solve(glmnet=False)
+    else:
+        cv.solve(glmnet=False)
+
+    # for the test make sure we also run the python code
+
+    cv_py = CV_view(glm_loss, 
+                    loss_label=loss, 
+                    lasso_randomization=randomizer, 
+                    epsilon=epsilon, 
+                    scale1=scale1, 
+                    scale2=scale2)
+    cv_py.solve(glmnet=False)
 
     lam = cv.lam_CVR
     print("lam", lam)

@@ -28,14 +28,12 @@ class CV_view(query):
             X, y = self.loss.data
             n, p = X.shape
             if self.loss_label == "gaussian":
-                # lam_seq = np.mean(np.fabs(np.dot(X.T, y)))
-                lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000))) +\
+                lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000))) +
                                           self.lasso_randomization.sample((1000,))).max(0))
             elif self.loss_label == 'logistic':
                 lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 1000))) +\
                           self.lasso_randomization.sample((1000,))).max(0))
             self.lam_seq = np.exp(np.linspace(np.log(1.e-3), np.log(1), 30)) * lam_seq
-            # lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * np.fabs(X.T.dot(y)+lasso_randomization.sample((10,))).max()
 
             folds = np.arange(n) % K
             np.random.shuffle(folds)
@@ -67,7 +65,6 @@ class CV_view(query):
             self.CVR_boot, self.CV1_boot = CV_compute.bootstrap_CVR_curve(self.scale1, self.scale2)
             self._solved = True
 
-
     def setup_sampler(self):
         return self.CV1_boot
 
@@ -96,7 +93,6 @@ class CV_view(query):
         self.opt_transform = (None, self.observed_opt_state)
 
 
-#DEBUG = True
 def projection(Z, idx):
     Z = np.asarray(Z)
     keep = np.ones_like(Z, np.bool)
@@ -117,8 +113,6 @@ def projection(Z, idx):
     if root_found:
         val = (np.sum(Z_sort[:(i+1)]) + Z[idx]) / (i+2)
         dval = val - Z[idx] + np.sum(keep * (Z <= val) * (val - Z))
-        #if DEBUG:
-        #    print('derivative is:', dval)
     else:
         val = np.mean(Z)
 

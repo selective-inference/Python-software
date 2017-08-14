@@ -1,12 +1,23 @@
-from rpy2.robjects.packages import importr
-from rpy2 import robjects
-glmnet = importr('glmnet')
-from selection.tests.instance import gaussian_instance
-import rpy2.robjects.numpy2ri
-rpy2.robjects.numpy2ri.activate()
+"""
+This module uses glmnet to run CV as part of cv_view.
+
+If a user attempts to import the module without rpy2 installed, it
+will raise an ImportError. So, this should not be in any api import.
+"""
+
 import numpy as np
 import regreg.api as rr
-from selection.api import randomization
+
+from ..tests.instance import gaussian_instance
+from .randomization import randomization
+
+try:
+    from rpy2.robjects.packages import importr
+    from rpy2 import robjects
+    import rpy2.robjects.numpy2ri
+    rpy2.robjects.numpy2ri.activate()
+except ImportError:
+    raise ImportError('rpy2 seems not to be installed')
 
 class CV_glmnet(object):
 
@@ -64,7 +75,7 @@ class CV_glmnet(object):
         CV_err = np.array(result[3])
 
         # this is stupid but glmnet sometime cuts my given seq of lambdas
-        if CV_err.shape[0]<self.lam_seq.shape[0]:
+        if CV_err.shape[0] < self.lam_seq.shape[0]:
             CV_err_longer = np.ones(self.lam_seq.shape[0])*np.max(CV_err)
             CV_err_longer[:(self.lam_seq.shape[0]-1)]=CV_err
             CV_err = CV_err_longer
