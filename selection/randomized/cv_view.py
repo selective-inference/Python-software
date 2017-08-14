@@ -1,11 +1,12 @@
 import functools
 import numpy as np
 import regreg.api as rr
+
 from .query import query
-from selection.randomized.cv import CV
-from selection.randomized.cv_glmnet import CV_glmnet
-from selection.randomized.glm import bootstrap_cov
-from selection.api import randomization
+from .cv import CV
+from .cv_glmnet import CV_glmnet
+from .glm import bootstrap_cov
+from .randomization import randomization
 
 class CV_view(query):
 
