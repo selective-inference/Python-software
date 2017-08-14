@@ -4,7 +4,7 @@ import regreg.api as rr
 
 from .query import query
 from .cv import CV
-from .cv_glmnet import CV_glmnet
+from .cv_glmnet import CV_glmnet, have_glmnet
 from .glm import bootstrap_cov
 from .randomization import randomization
 

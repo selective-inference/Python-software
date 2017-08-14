@@ -17,26 +17,26 @@ try:
     from rpy2 import robjects
     import rpy2.robjects.numpy2ri
     rpy2.robjects.numpy2ri.activate()
-    have_rpy2 = True
+    importr('glmnet')
+    have_glmnet = True
 except ImportError:
     warnings.warn('rpy2 seems not to be installed -- CV_glmnet class will not work')
-    have_rpy2 = False
+    have_glmnet = False
     pass
 
 class CV_glmnet(object):
 
     def __init__(self, loss, loss_label):
         self.loss = loss
-        if have_rpy2:
+        if have_glmnet:
             if loss_label == "gaussian":
                 self.family = robjects.StrVector('g')
             elif loss_label == "logistic":
                 self.family = robjects.StrVector('b')
-            importr('glmnet')
 
     def using_glmnet(self, loss=None):
-        if not have_rpy2:
-            raise ImportError("""rpy2 failed to load""")
+        if not have_glmnet:
+            raise ImportError("""glmnet failed to load with rpy2""")
         robjects.r('''
             glmnet_cv = function(X,y, family, lam_seq=NA){
             y = as.matrix(y)
