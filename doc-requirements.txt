@@ -6,3 +6,4 @@ numpydoc
 matplotlib
 texext
 nb2plots
+rpy2
