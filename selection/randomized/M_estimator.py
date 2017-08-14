@@ -362,15 +362,17 @@ class M_estimator(query):
 
     def decompose_subgradient(self, conditioning_groups, marginalizing_groups=None):
         """
-        Maybe we should allow subgradients of only some variables...
+        ADD DOCSTRING
+
+        conditioning_groups and marginalizing_groups should be disjoint
         """
+
+        if (conditioning_groups * marginalizing_groups).sum() > 0:
+            raise ValueError("cannot simultaneously condition and marginalize over a group's subgradient")
+
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-        #if marginalizing_groups is not None and self._inactive is not None:
-
-
-        #idx = 0
         groups = np.unique(self.penalty.groups)
         condition_inactive_groups = np.zeros_like(groups, dtype=bool)
         condition_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
@@ -438,8 +440,10 @@ class M_estimator(query):
 
 
         self.opt_transform = (new_linear, new_offset)
+
         # for group LASSO this should not induce a bigger jacobian as
         # the subgradients are in the interior of a ball
+
         self.selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
 
         # reset variables

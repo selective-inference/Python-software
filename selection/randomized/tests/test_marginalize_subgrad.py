@@ -31,22 +31,22 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_marginalize(s=0,
-                    n=600,
-                    p=200,
-                    rho=0.,
-                    signal=3.5,
-                    lam_frac = 2.5,
-                    ndraw=10000,
-                    burnin=2000,
-                    loss='gaussian',
-                    randomizer = 'gaussian',
-                    randomizer_scale = 1.,
-                    nviews=3,
-                    scalings=False,
-                    subgrad =True,
-                    parametric=False,
-                    intervals='old'):
+def test_marginalize(s=4,
+                     n=600,
+                     p=200,
+                     rho=0.,
+                     signal=3.5,
+                     lam_frac = 2.5,
+                     ndraw=10000,
+                     burnin=2000,
+                     loss='gaussian',
+                     randomizer = 'gaussian',
+                     randomizer_scale = 1.,
+                     nviews=3,
+                     scalings=True,
+                     subgrad =True,
+                     parametric=False,
+                     intervals='old'):
     print(n,p,s)
 
     if randomizer == 'laplace':
@@ -98,9 +98,11 @@ def test_marginalize(s=0,
         if nactive==s:
             return None
 
+        # BUG: if this scalings code is moveed after the decompose_subgradient,
+        # code seems to run fine
+
         if scalings: # try condition on some scalings
             for i in range(nviews):
-                views[i].condition_on_subgradient()
                 views[i].condition_on_scalings()
         if subgrad:
             for i in range(nviews):
@@ -108,7 +110,8 @@ def test_marginalize(s=0,
                conditioning_groups[:(p/2)] = True
                marginalizing_groups = np.zeros(p, dtype=bool)
                marginalizing_groups[(p/2):] = True
-               views[i].decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool), marginalizing_groups=np.ones(p, bool))
+               views[i].decompose_subgradient(conditioning_groups=conditioning_groups, 
+                                              marginalizing_groups=marginalizing_groups)
 
         active_set = np.nonzero(active_union)[0]
         target_sampler, target_observed = glm_target(loss,
@@ -184,5 +187,3 @@ def report(niter=50, **kwargs):
     fig.savefig('marginalized_subgrad_pivots.pdf')
 
 
-if __name__ == '__main__':
-    report()

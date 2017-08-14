@@ -26,6 +26,8 @@ class CV(object):
                 self.epsilon = np.true_divide(1, np.sqrt(n))
         self.K = len(np.unique(self.folds))
 
+        self.ndim = len(lam_seq)
+
     def CV_err(self,
                penalty,
                loss = None,

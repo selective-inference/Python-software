@@ -20,26 +20,31 @@ from selection.tests.decorators import (wait_for_return_value,
 from selection.randomized.cv_view import CV_view
 from statsmodels.sandbox.stats.multicomp import multipletests
 
+if SMALL_SAMPLES:
+    nboot = 10
+else: 
+    nboot = -1
 
 @register_report(['truth', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
                     'active', 'BH_decisions', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv(n=100, p=50, s=0, signal=7.5, K=5, rho=0.,
-             randomizer = 'gaussian',
-             randomizer_scale = 1.,
-             scale1 = 0.1,
-             scale2 = 0.2,
-             lam_frac = 1.,
-             loss = 'gaussian',
-             intervals = 'old',
-             bootstrap = False,
-             condition_on_CVR = True,
-             marginalize_subgrad = True,
-             ndraw = 10000,
-             burnin = 2000):
-
+def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
+            randomizer = 'gaussian',
+            randomizer_scale = 1.,
+            scale1 = 0.1,
+            scale2 = 0.2,
+            lam_frac = 1.,
+            loss = 'gaussian',
+            intervals = 'old',
+            bootstrap = False,
+            condition_on_CVR = True,
+            marginalize_subgrad = True,
+            ndraw = 10000,
+            burnin = 2000,
+            nboot = nboot):
+    
     print(n,p,s, condition_on_CVR, scale1, scale2)
     if randomizer == 'laplace':
         randomizer = randomization.laplace((p,), scale=randomizer_scale)
@@ -56,6 +61,7 @@ def test_cv(n=100, p=50, s=0, signal=7.5, K=5, rho=0.,
         glm_loss = rr.glm.logistic(X, y)
 
     epsilon = 1./np.sqrt(n)
+
     # view 1
     cv = CV_view(glm_loss, 
                  loss_label=loss, 
@@ -85,6 +91,9 @@ def test_cv(n=100, p=50, s=0, signal=7.5, K=5, rho=0.,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
     M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
+    if nboot > 0:
+        cv.nboot = M_est1.nboot = nboot
+
     mv = multiple_queries([cv, M_est1])
     mv.solve()
 
@@ -95,6 +104,7 @@ def test_cv(n=100, p=50, s=0, signal=7.5, K=5, rho=0.,
         return None
 
     nonzero = np.where(beta)[0]
+
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
         active_set = np.nonzero(active_union)[0]
@@ -180,7 +190,7 @@ def report(niter=50, **kwargs):
     fig.savefig(pdf_label)
 
 
-if __name__ == '__main__':
+def main():
     np.random.seed(500)
     kwargs = {'n': 600, 'p': 20, 's': 0, 'signal': 3.5, 'K': 5, 'rho': 0.,
               'randomizer': 'gaussian', 'randomizer_scale': 1.5,

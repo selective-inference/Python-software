@@ -28,20 +28,20 @@ from selection.randomized.glm import glm_parametric_covariance, glm_nonparametri
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_without_screening(s=30,
-                        n=3000,
-                        p=1000,
-                        rho=0.,
-                        signal=3.5,
-                        lam_frac = 1.,
-                        ndraw=10000,
-                        burnin=2000,
-                        loss='gaussian',
-                        randomizer ='laplace',
-                        randomizer_scale =1.,
-                        scalings=False,
-                        subgrad =True,
-                        check_screen = False):
+def test_without_screening(s=10,
+                           n=300,
+                           p=100,
+                           rho=0.,
+                           signal=3.5,
+                           lam_frac = 1.,
+                           ndraw=10000,
+                           burnin=2000,
+                           loss='gaussian',
+                           randomizer ='laplace',
+                           randomizer_scale =1.,
+                           scalings=False,
+                           subgrad =True,
+                           check_screen=False):
 
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1, random_signs=False)
@@ -93,7 +93,6 @@ def test_without_screening(s=30,
             M_est.condition_on_scalings()
         if subgrad:
             M_est.decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool), marginalizing_groups=np.ones(p, bool))
-
 
         boot_target1, boot_target_observed1 = pairs_bootstrap_glm(loss, active_union, inactive=~active_union)
         boot_target2, boot_target_observed2 = pairs_bootstrap_glm(loss_indep, active_union, inactive=~active_union)

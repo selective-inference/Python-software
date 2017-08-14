@@ -77,7 +77,6 @@ def test_power(s=30,
             lam = cv.one_SD_rule(direction="up")
             print("one SD rule lambda", lam)
 
-
     W = lam_frac * np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
 

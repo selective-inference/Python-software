@@ -24,7 +24,7 @@ class CV_view(query):
 
     def solve(self, glmnet=False, K=5):
 
-        if glmnet==False:
+        if glmnet == False:
             X, y = self.loss.data
             n, p = X.shape
             if self.loss_label == "gaussian":
@@ -48,6 +48,8 @@ class CV_view(query):
             CV_compute = CV_glmnet(self.loss, self.loss_label)
 
         self.lam_CVR, self.SD, CVR_val, CV1_val, self.lam_seq = CV_compute.choose_lambda_CVR(self.scale1, self.scale2)
+        self.ndim = self.lam_seq.shape[0]
+
         if (self.scale1 is not None) and (self.scale2 is not None):
             self.SD = self.SD+self.scale1**2+self.scale2**2
         (self.observed_opt_state, self.observed_score_state) = (CVR_val, CV1_val)

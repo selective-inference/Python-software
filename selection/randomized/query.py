@@ -402,11 +402,11 @@ class targeted_sampler(object):
         for i in range(self.nqueries):
             if parametric == False:
                 target_cov, cross_cov = multi_view.form_covariances(target_info,  
-                                  cross_terms=[multi_view.score_info[i]],
-                                  nsample=multi_view.nboot[i])
+                                                                    cross_terms=[multi_view.score_info[i]],
+                                                                    nsample=multi_view.nboot[i])
             else:
                 target_cov, cross_cov = multi_view.form_covariances(target_info, 
-                                  cross_terms=[multi_view.score_info[i]])
+                                                                    cross_terms=[multi_view.score_info[i]])
 
             self.target_cov = target_cov
             self.score_cov.append(cross_cov)

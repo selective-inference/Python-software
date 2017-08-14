@@ -128,10 +128,10 @@ def test_multiple_queries_individual_coeff_small(ndraw=10000,
     s, n, p = 3, 100, 20
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, signal=20.)
+    X, y, beta, true_active = logistic_instance(n=n, p=p, s=s, rho=0, signal=20.)
 
     nonzero = np.where(beta)[0]
-    lam_frac = 3.
+    lam_frac = 1.2
 
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
@@ -155,7 +155,6 @@ def test_multiple_queries_individual_coeff_small(ndraw=10000,
     pvalues = []
     true_beta = beta[active_vars]
 
-    print(nonzero, active_set)
     if set(nonzero).issubset(active_set):
 
         for j in range(nactive):
@@ -188,7 +187,7 @@ def test_parametric_covariance_small(ndraw=10000, burnin=2000, nsim=None): # nsi
     s, n, p = 3, 100, 10
 
     randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, signal=10)
+    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=0, signal=15)
 
     nonzero = np.where(beta)[0]
     lam_frac = 1.
@@ -229,7 +228,7 @@ def test_parametric_covariance_small(ndraw=10000, burnin=2000, nsim=None): # nsi
         linear_func[1,-2] = 1. # also null
 
         target_observed = linear_func.dot(target_observed)
-        target_sampler = mv.setup_target((target, linear_func), target_observed)
+        target_sampler = mv.setup_target((target, linear_func), target_observed, parametric=True)
 
         test_stat = lambda x: np.linalg.norm(x)
         pval = target_sampler.hypothesis_test(test_stat, 

@@ -28,11 +28,8 @@ def compute_projection_parameters(n, p, s, signal, rho, sigma, active):
     return proj_param
 
 
-
-
 @register_report(['naive_pvalues', 'covered_naive', 'ci_length_naive', 'active_var'])
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
 def test_naive(n=300,
                p=100,
@@ -168,9 +165,7 @@ def report(niter=50, design="random", **kwargs):
     fig.suptitle("Naive p-values", fontsize=20)
     fig.savefig('naive_pvalues.pdf')
 
-
-if __name__ == '__main__':
-
+def main():
     np.random.seed(500)
     kwargs = {'s': 0, 'n': 100, 'p': 50, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':True}
     report(niter=100, **kwargs)

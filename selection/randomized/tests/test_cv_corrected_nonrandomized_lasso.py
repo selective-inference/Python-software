@@ -20,19 +20,18 @@ from selection.randomized.tests.test_cv_lee_et_al import pivot, equal_tailed_int
                   'naive_pvalues', 'covered_naive', 'ci_length_naive',
                   'active_var'])
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
-def test_cv_corrected_nonrandomized_lasso(n=3000,
-                                    p=1000,
-                                    s=10,
-                                    signal = 3.5,
-                                    rho = 0.,
-                                    sigma = 1.,
-                                    K = 5,
-                                    loss="gaussian",
-                                    X = None,
-                                    check_screen=True,
-                                    intervals=False):
+def test_cv_corrected_nonrandomized_lasso(n=300,
+                                          p=100,
+                                          s=3,
+                                          signal = 3.5,
+                                          rho = 0.,
+                                          sigma = 1.,
+                                          K = 5,
+                                          loss="gaussian",
+                                          X = None,
+                                          check_screen=True,
+                                          intervals=False):
 
     print (n, p, s, rho)
     if X is not None:
@@ -71,7 +70,6 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
     L.covariance_estimator = glm_sandwich_estimator(L.loglike, B=2000)
     soln = L.fit()
 
-
     active = soln !=0
     nactive = active.sum()
     print("nactive", nactive)
@@ -85,7 +83,6 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
     def coef_boot(indices):
         # bootstrap of just coefficients
         return selected_boot(indices)[:active.sum()]
-
 
     if (check_screen==False) or (set(truth).issubset(np.nonzero(active)[0])):
 
@@ -101,7 +98,7 @@ def test_cv_corrected_nonrandomized_lasso(n=3000,
         # covariance of L.constraints is more accurate than cov[0]
         # but estimates the same thing (i.e. more bootstrap replicates)
         A = cov[1].T.dot(np.linalg.pinv(L.constraints.covariance))
-        residual = CV_val_randomized- A.dot(one_step)
+        residual = CV_val_randomized - A.dot(one_step)
 
         # minimizer indicator
 
