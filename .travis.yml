@@ -32,15 +32,16 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
     - pip install nose
-    # Change into an innocuous directory and find tests from installation
-    - mkdir for_testing
-    - cd for_testing
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
     - 'echo "backend : agg" > matplotlibrc'
     - sudo apt-get update
     - sudo apt-get install -y r-base r-base-dev
     - sudo Rscript -e "install.packages(c('glmnet', 'Matrix'), repos='http://cloud.r-project.org');"
     - pip install -r doc-requirements.txt # installs rpy2 among other things
+
+    # Change into an innocuous directory and find tests from installation
+    - mkdir for_testing
+    - cd for_testing
 
     # Doctests only on platforms that have compatible fp output
     - if [ `uname` == "Darwin" ] ||
