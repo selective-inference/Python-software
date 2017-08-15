@@ -37,7 +37,7 @@ before_install:
   # - sudo Rscript -e "install.packages(c('glmnet', 'Matrix', 'lars'), repos='http://cloud.r-project.org');"
   - git clone https://github.com/selective-inference/R-software.git
   - cd R-software
-  - sudo R CMD install selectiveInference
+  - sudo R CMD INSTALL selectiveInference
   - cd ..
 
 install:
