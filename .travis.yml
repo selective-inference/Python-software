@@ -18,7 +18,6 @@ env:
 matrix:
   include:
     - python: 3.5
-      dist: trusty
       env:
         - R_TESTS=1
 before_install:
