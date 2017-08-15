@@ -38,7 +38,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y r-base r-base-dev r-cran-devtools
   - 'echo "library(devtools); install_github('selective-inference/R-software', subdir='selectiveInference')" > install.R'
-  - sudo Rscript install.R
+  - sudo Rscript -e "library(devtools)" -e "install_github('selective-inference/R-software', subdir='selectiveInference')"
 
 
 install:
