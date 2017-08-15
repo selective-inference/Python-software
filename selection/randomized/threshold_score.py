@@ -6,41 +6,74 @@ from .M_estimator import restricted_Mest
 
 class threshold_score(query):
 
+    """
+
+    Randomly threshold the score of a linear 
+    model.
+
+    """
+
     def __init__(self, 
                  loss, 
                  threshold, 
                  randomization, 
                  active, 
-                 inactive, 
+                 candidate, 
                  beta_active=None,
                  solve_args={'min_its': 50, 'tol': 1.e-10}):
         """
-        penalty is a group_lasso object that assigns weights to groups
+
+        Parameters
+        ----------
+
+        loss : regreg.smooth.smooth_atom
+            Loss whose score (gradient) will be thresholded.
+
+        threshold_value : [float, sequence]
+            Thresholding for each feature. If 1d defaults
+            it is treated as a multiple of np.ones.
+
+        randomization : selection.randomized.randomization.randomization
+            Instance of a randomizer.
+
+        active : np.bool
+            Loss is first partially minimized over the active coordinates.
+            May be all zeros.
+
+        candidate : np.bool
+            Candidate coordinates for thresholding.
+        
+        beta_active : np.float (optional)
+            If supplied this is taken as solution 
+            of partial minimization.
+
+        solve_args : dict (optional)
+            Arguments passed in solving the partial minimization.
         """
 
         query.__init__(self, randomization)
 
-        # threshold could be a vector size inactive
+        # threshold could be a vector size candidate
 
         active_bool = np.zeros(loss.shape, np.bool)
         active_bool[active] = 1
         active = active_bool
 
         if np.array(threshold).shape in [(), (1,)]:
-            threshold = np.ones(inactive.sum()) * threshold
+            threshold = np.ones(candidate.sum()) * threshold
 
         self.epsilon = 0.  # for randomized loss
 
         (self.loss,
          self.threshold,
          self.active,
-         self.inactive,
+         self.candidate,
          self.beta_active,
          self.randomization,
          self.solve_args) = (loss,
                              threshold,
                              active,
-                             inactive,
+                             candidate,
                              beta_active,
                              randomization,
                              solve_args)
@@ -50,12 +83,12 @@ class threshold_score(query):
         (loss,
          threshold,
          active,
-         inactive,
+         candidate,
          beta_active,
          randomization) = (self.loss,
                            self.threshold,
                            self.active,
-                           self.inactive,
+                           self.candidate,
                            self.beta_active,
                            self.randomization)
 
@@ -70,11 +103,11 @@ class threshold_score(query):
         beta_full[active] = beta_active
         self._beta_full = beta_full
 
-        inactive_score = self.loss.smooth_objective(beta_full, 'grad')[inactive]
-        randomized_score = inactive_score + randomization.sample()
+        candidate_score = self.loss.smooth_objective(beta_full, 'grad')[candidate]
+        randomized_score = candidate_score + randomization.sample()
 
         # find the current active group, i.e.
-        # subset of inactive that pass the threshold
+        # subset of candidate that pass the threshold
 
         # TODO: make this test use group LASSO
 
@@ -82,7 +115,7 @@ class threshold_score(query):
 
         self.interior = ~self.boundary
 
-        self.observed_score_state = inactive_score
+        self.observed_score_state = candidate_score
 
         self.selection_variable = {'boundary_set': self.boundary}
 

@@ -832,7 +832,7 @@ class step(lasso):
     def __init__(self, 
                  loglike, 
                  feature_weights,
-                 inactive,
+                 candidate,
                  randomizer_scale,
                  active=None,
                  randomizer='gaussian',
@@ -851,7 +851,7 @@ class step(lasso):
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
 
-        inactive : np.bool
+        candidate : np.bool
             Which groups of variables are candidates
             for inclusion in this step.
 
@@ -873,17 +873,17 @@ class step(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
         """
 
         self.active = active
-        self.inactive = inactive
+        self.candidate = candidate
 
         self.loglike = loglike
         self.nfeature = p = loglike.shape[0]
@@ -894,7 +894,7 @@ class step(lasso):
 
         self.covariance_estimator = covariance_estimator
 
-        nrandom = inactive.sum()
+        nrandom = candidate.sum()
         if randomizer == 'laplace':
             self.randomizer = randomization.laplace((nrandom,), scale=randomizer_scale)
         elif randomizer == 'gaussian':
@@ -931,7 +931,7 @@ class step(lasso):
         self._view = glm_greedy_step(self.loglike, 
                                      self.penalty, 
                                      self.active,
-                                     self.inactive,
+                                     self.candidate,
                                      self.randomizer)
         self._view.solve()
 
@@ -947,7 +947,7 @@ class step(lasso):
                               marginalizing_groups=None):
         """
 
-        Marginalize over some if inactive part of subgradient
+        Marginalize over some if candidate part of subgradient
         if applicable.
 
         Parameters
@@ -971,7 +971,7 @@ class step(lasso):
     def gaussian(X, 
                  Y, 
                  feature_weights, 
-                 inactive=None,
+                 candidate=None,
                  active=None,
                  covariance_estimator=None,
                  randomizer_scale=None,
@@ -994,7 +994,7 @@ class step(lasso):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1022,11 +1022,11 @@ class step(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of some of the
         rows and columns of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1036,8 +1036,8 @@ class step(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         if randomizer_scale is None:
             mean_diag = np.mean((X**2).sum(0))
@@ -1045,7 +1045,7 @@ class step(lasso):
 
         return step(loglike, 
                     feature_weights,
-                    inactive, 
+                    candidate, 
                     randomizer_scale, 
                     active=active,
                     randomizer=randomizer,
@@ -1056,7 +1056,7 @@ class step(lasso):
                  successes, 
                  feature_weights, 
                  active=None,
-                 inactive=None,
+                 candidate=None,
                  trials=None, 
                  covariance_estimator=None,
                  randomizer_scale=None,
@@ -1081,7 +1081,7 @@ class step(lasso):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1113,10 +1113,10 @@ class step(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1126,8 +1126,8 @@ class step(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         if randomizer_scale is None:
             mean_diag = np.mean((X**2).sum(0))
@@ -1135,7 +1135,7 @@ class step(lasso):
 
         return step(loglike, 
                     feature_weights, 
-                    inactive,
+                    candidate,
                     randomizer_scale,
                     active=active,
                     covariance_estimator=covariance_estimator)
@@ -1145,7 +1145,7 @@ class step(lasso):
               times, 
               status, 
               feature_weights, 
-              inactive=None,
+              candidate=None,
               active=None,
               covariance_estimator=None,
               randomizer_scale=None,
@@ -1173,7 +1173,7 @@ class step(lasso):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1201,10 +1201,10 @@ class step(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1214,15 +1214,15 @@ class step(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         if randomizer_scale is None:
             randomizer_scale = 1. / np.sqrt(n)
 
         return step(loglike, 
                     feature_weights, 
-                    inactive,
+                    candidate,
                     randomizer_scale,
                     active=active,
                     randomizer=randomizer,
@@ -1232,7 +1232,7 @@ class step(lasso):
     def poisson(X, 
                 counts, 
                 feature_weights, 
-                inactive=None,
+                candidate=None,
                 active=None,
                 covariance_estimator=None,
                 randomizer_scale=None,
@@ -1255,7 +1255,7 @@ class step(lasso):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1283,10 +1283,10 @@ class step(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1298,8 +1298,8 @@ class step(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         mean_diag = np.mean((X**2).sum(0))
         if randomizer_scale is None:
@@ -1307,7 +1307,7 @@ class step(lasso):
 
         return step(loglike, 
                     feature_weights, 
-                    inactive,
+                    candidate,
                     randomizer_scale, 
                     active=active,
                     randomizer=randomizer,
@@ -1333,7 +1333,7 @@ class threshold(lasso):
     def __init__(self, 
                  loglike, 
                  threshold_value,
-                 inactive,
+                 candidate,
                  randomizer_scale,
                  active=None,
                  randomizer='gaussian',
@@ -1348,11 +1348,11 @@ class threshold(lasso):
         loglike : `regreg.smooth.glm.glm`
             A (negative) log-likelihood as implemented in `regreg`.
 
-        threshold_value : np.ndarray
+        threshold_value : [float, sequence]
             Thresholding for each feature. If 1d defaults
             it is treated as a multiple of np.ones.
 
-        inactive : np.bool
+        candidate : np.bool
             Which groups of variables are candidates
             for thresholding.
 
@@ -1374,28 +1374,28 @@ class threshold(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
         """
 
         self.active = active
-        self.inactive = inactive
+        self.candidate = candidate
 
         self.loglike = loglike
         self.nfeature = p = self.loglike.shape[0]
 
         if np.asarray(threshold_value).shape == ():
             threshold = np.ones(loglike.shape) * threshold_value
-        self.threshold_value = np.asarray(threshold_value)[self.inactive]
+        self.threshold_value = np.asarray(threshold_value)[self.candidate]
 
         self.covariance_estimator = covariance_estimator
 
-        nrandom = inactive.sum()
+        nrandom = candidate.sum()
         if randomizer == 'laplace':
             self.randomizer = randomization.laplace((nrandom,), scale=randomizer_scale)
         elif randomizer == 'gaussian':
@@ -1430,7 +1430,7 @@ class threshold(lasso):
                                          self.threshold_value,
                                          self.randomizer,
                                          self.active,
-                                         self.inactive)
+                                         self.candidate)
         self._view.solve()
 
         views = copy(views); views.append(self._view)
@@ -1445,7 +1445,7 @@ class threshold(lasso):
                               marginalizing_groups=None):
         """
 
-        Marginalize over some if inactive part of subgradient
+        Marginalize over some if candidate part of subgradient
         if applicable.
 
         Parameters
@@ -1469,7 +1469,7 @@ class threshold(lasso):
     def gaussian(X, 
                  Y, 
                  threshold_value, 
-                 inactive=None,
+                 candidate=None,
                  active=None,
                  covariance_estimator=None,
                  randomizer_scale=None,
@@ -1492,7 +1492,7 @@ class threshold(lasso):
             `threshold` to 0. If `threshold` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1520,11 +1520,11 @@ class threshold(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of some of the
         rows and columns of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1535,8 +1535,8 @@ class threshold(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         if randomizer_scale is None:
             mean_diag = np.mean((X**2).sum(0))
@@ -1544,7 +1544,7 @@ class threshold(lasso):
 
         return threshold(loglike, 
                          threshold_value,
-                         inactive, 
+                         candidate, 
                          randomizer_scale, 
                          active=active,
                          randomizer=randomizer,
@@ -1555,7 +1555,7 @@ class threshold(lasso):
                  successes, 
                  threshold_value, 
                  active=None,
-                 inactive=None,
+                 candidate=None,
                  trials=None, 
                  covariance_estimator=None,
                  randomizer_scale=None,
@@ -1580,7 +1580,7 @@ class threshold(lasso):
             `threshold` to 0. If `threshold` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1612,10 +1612,10 @@ class threshold(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1625,8 +1625,8 @@ class threshold(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         if randomizer_scale is None:
             mean_diag = np.mean((X**2).sum(0))
@@ -1634,7 +1634,7 @@ class threshold(lasso):
 
         return threshold(loglike, 
                          threshold_value,
-                         inactive,
+                         candidate,
                          randomizer_scale,
                          active=active,
                          covariance_estimator=covariance_estimator)
@@ -1644,7 +1644,7 @@ class threshold(lasso):
               times, 
               status, 
               threshold_value,
-              inactive=None,
+              candidate=None,
               active=None,
               covariance_estimator=None,
               randomizer_scale=None,
@@ -1672,7 +1672,7 @@ class threshold(lasso):
             `threshold` to 0. If `threshold` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1700,10 +1700,10 @@ class threshold(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1713,15 +1713,15 @@ class threshold(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         if randomizer_scale is None:
             randomizer_scale = 1. / np.sqrt(n)
 
         return threshold(loglike, 
                          threshold_value,
-                         inactive,
+                         candidate,
                          randomizer_scale,
                          active=active,
                          randomizer=randomizer,
@@ -1731,7 +1731,7 @@ class threshold(lasso):
     def poisson(X, 
                 counts, 
                 threshold_value,
-                inactive=None,
+                candidate=None,
                 active=None,
                 covariance_estimator=None,
                 randomizer_scale=None,
@@ -1754,7 +1754,7 @@ class threshold(lasso):
             `threshold` to 0. If `threshold` is 
             a float, then all parameters are penalized equally.
 
-        inactive : np.bool (optional)
+        candidate : np.bool (optional)
             Which groups of variables are candidates
             for inclusion in this step. Defaults to ~active.
 
@@ -1782,10 +1782,10 @@ class threshold(lasso):
         -----
 
         If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
+        take arguments (beta, active, candidate)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
+        the unpenalized estimator and the candidate
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
 
@@ -1797,8 +1797,8 @@ class threshold(lasso):
 
         if active is None:
             active = np.zeros(p, np.bool)
-        if inactive is None:
-            inactive = ~active
+        if candidate is None:
+            candidate = ~active
 
         mean_diag = np.mean((X**2).sum(0))
         if randomizer_scale is None:
@@ -1806,7 +1806,7 @@ class threshold(lasso):
 
         return threshold(loglike, 
                          threshold_value,
-                         inactive,
+                         candidate,
                          randomizer_scale, 
                          active=active,
                          randomizer=randomizer,

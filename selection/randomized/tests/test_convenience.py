@@ -71,16 +71,16 @@ def test_step_constructors(ndraw=1000, burnin=200):
         active = np.zeros(p, np.bool)
         active[:int(p/2)] = True
 
-        inactive = ~active
-        inactive[-int(p/4):] = False
+        candidate = ~active
+        candidate[-int(p/4):] = False
 
         conv1 = const(X, Y, W, active=active)
         conv1.fit()
 
-        conv2 = const(X, Y, W, inactive=inactive)
+        conv2 = const(X, Y, W, candidate=candidate)
         conv2.fit()
         
-        conv3 = const(X, Y, W, inactive=inactive, active=active)
+        conv3 = const(X, Y, W, candidate=candidate, active=active)
         conv3.fit()
         
         selected_features = np.zeros(p, np.bool)
@@ -110,16 +110,16 @@ def test_threshold_constructors(ndraw=1000, burnin=200):
         active = np.zeros(p, np.bool)
         active[:int(p/2)] = True
 
-        inactive = ~active
-        inactive[-int(p/4):] = False
+        candidate = ~active
+        candidate[-int(p/4):] = False
 
         conv1 = const(X, Y, W, active=active)
         conv1.fit()
 
-        conv2 = const(X, Y, W, inactive=inactive)
+        conv2 = const(X, Y, W, candidate=candidate)
         conv2.fit()
         
-        conv3 = const(X, Y, W, inactive=inactive, active=active)
+        conv3 = const(X, Y, W, candidate=candidate, active=active)
         conv3.fit()
         
         selected_features = np.zeros(p, np.bool)

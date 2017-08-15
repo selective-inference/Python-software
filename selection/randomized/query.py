@@ -236,7 +236,7 @@ class multiple_queries(object):
         curr_randomization_length = 0
         self.randomization_slice = []
         for objective in self.objectives:
-            randomization_length = objective.loss.shape[0]
+            randomization_length = objective.randomization.shape[0]
             self.randomization_slice.append(slice(curr_randomization_length,
                                                   curr_randomization_length + randomization_length))
             curr_randomization_length = curr_randomization_length + randomization_length

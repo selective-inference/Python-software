@@ -123,6 +123,7 @@ def pairs_inactive_score_glm(glm_loss,
                              active, 
                              beta_active, 
                              scaling=1.,
+                             inactive=None,
                              solve_args={'min_its':50, 'tol':1.e-10}):
 
     """
@@ -148,6 +149,10 @@ def pairs_inactive_score_glm(glm_loss,
         are multiplied by sqrt(scaling) inactive ones are divided
         by sqrt(scaling).
 
+    inactive : np.bool (optional)
+        Which coordinates to return. If None, defaults
+        to ~active.
+
     solve_args : dict
         Arguments passed to solver of restricted problem (`restricted_Mest`) if 
         beta_full is None.
@@ -161,7 +166,9 @@ def pairs_inactive_score_glm(glm_loss,
 
     """
 
-    inactive = ~active
+    if inactive is None:
+        inactive = ~active
+
     beta_full = np.zeros(glm_loss.shape)
     beta_full[active] = beta_active
 
@@ -541,7 +548,8 @@ class glm_greedy_step(greedy_score_step, glm):
         greedy_score_step.setup_sampler(self)
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
-                                                   self.beta_active)
+                                                   self.beta_active,
+                                                   inactive=self.candidate)
         return bootstrap_score
 
 class glm_threshold_score(threshold_score):
@@ -550,7 +558,8 @@ class glm_threshold_score(threshold_score):
         threshold_score.setup_sampler(self)
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
-                                                   self.beta_active)
+                                                   self.beta_active,
+                                                   inactive=self.candidate)
         return bootstrap_score
 
 
