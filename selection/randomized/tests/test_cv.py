@@ -4,12 +4,12 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 
 import regreg.api as rr
 
-from selection.api import (randomization,
-                           glm_group_lasso,
-                           multiple_queries,
-                           glm_target)
+from ...api import (randomization,
+                    glm_group_lasso,
+                    multiple_queries,
+                    glm_target)
 from ...tests.instance import (gaussian_instance,
-                                      logistic_instance)
+                               logistic_instance)
 
 from ..query import naive_confidence_intervals, naive_pvalues
 

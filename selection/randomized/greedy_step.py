@@ -35,12 +35,13 @@ class greedy_score_step(query):
                               beta_active)
          
         self.active = np.zeros(self.loss.shape, np.bool)
+        self.inactive = np.zeros(self.loss.shape, np.bool)
         for i, g in enumerate(np.unique(self.penalty.groups)):
             if self.active_groups[i]:
                 self.active[self.penalty.groups == g] = True
-
-        self.inactive = ~self.active
-
+            elif self.inactive_groups[i]:
+                self.inactive[self.penalty.groups == g] = True
+                
         # we form a dual group lasso object
         # to compute the max score
 
@@ -75,6 +76,8 @@ class greedy_score_step(query):
 
         self.observed_score_state = - self.loss.smooth_objective(beta_full, 'grad')[inactive]
         self._randomZ = self.randomization.sample()
+
+        self.num_opt_var = self._randomZ.shape[0]
 
         # find the randomized maximizer
 

@@ -367,7 +367,7 @@ class M_estimator(query):
         conditioning_groups and marginalizing_groups should be disjoint
         """
 
-        if (conditioning_groups * marginalizing_groups).sum() > 0:
+        if marginalizing_groups is not None and (conditioning_groups * marginalizing_groups).sum() > 0:
             raise ValueError("cannot simultaneously condition and marginalize over a group's subgradient")
 
         if not self._setup:

@@ -1391,16 +1391,17 @@ class threshold(lasso):
 
         if np.asarray(threshold_value).shape == ():
             threshold = np.ones(loglike.shape) * threshold_value
-        self.threshold_value = np.asarray(threshold_value)
+        self.threshold_value = np.asarray(threshold_value)[self.inactive]
 
         self.covariance_estimator = covariance_estimator
 
+        nrandom = inactive.sum()
         if randomizer == 'laplace':
-            self.randomizer = randomization.laplace((p,), scale=randomizer_scale)
+            self.randomizer = randomization.laplace((nrandom,), scale=randomizer_scale)
         elif randomizer == 'gaussian':
-            self.randomizer = randomization.isotropic_gaussian((p,),randomizer_scale)
+            self.randomizer = randomization.isotropic_gaussian((nrandom,),randomizer_scale)
         elif randomizer == 'logistic':
-            self.randomizer = randomization.logistic((p,), scale=randomizer_scale)
+            self.randomizer = randomization.logistic((nrandom,), scale=randomizer_scale)
 
     def fit(self, 
             views=[]):
