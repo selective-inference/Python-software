@@ -7,23 +7,23 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import (wait_for_return_value, 
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import (wait_for_return_value, 
                                         set_seed_iftrue, 
                                         set_sampling_params_iftrue, 
                                         register_report)
-from selection.tests.instance import logistic_instance
-import selection.tests.reports as reports
+from ...tests.instance import logistic_instance
+import ...tests.reports as reports
 
-from selection.randomized.api import (randomization, 
-                                      multiple_queries, 
-                                      pairs_bootstrap_glm, 
-                                      glm_group_lasso, 
-                                      glm_greedy_step, 
-                                      pairs_inactive_score_glm)
-from selection.randomized.glm import bootstrap_cov
-from selection.distributions.discrete_family import discrete_family
-from selection.sampling.langevin import projected_langevin
+from ..api import (randomization, 
+                   multiple_queries, 
+                   pairs_bootstrap_glm, 
+                   glm_group_lasso, 
+                   glm_greedy_step, 
+                   pairs_inactive_score_glm)
+from ..glm import bootstrap_cov
+from ...distributions.discrete_family import discrete_family
+from ...sampling.langevin import projected_langevin
 
 @register_report(['pvalue', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
@@ -59,7 +59,8 @@ def test_overall_null_two_queries(ndraw=10000, burnin=2000, nsim=None): # nsim n
     inactive = ~active
     inactive_randomizer = randomization.laplace((inactive.sum(),), scale=0.5)
 
-    step = glm_greedy_step(loss, penalty,
+    step = glm_greedy_step(loss, 
+                           penalty,
                            active,
                            inactive,
                            inactive_randomizer)

@@ -27,7 +27,7 @@ else:
     nboot = -1
 
 @register_report(['truth', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
-                    'active', 'BH_decisions', 'active_var'])
+                  'active', 'BH_decisions', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()

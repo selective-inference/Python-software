@@ -3,24 +3,24 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.decorators import (wait_for_return_value, 
+from ...tests.decorators import (wait_for_return_value, 
                                         set_seed_iftrue, 
                                         set_sampling_params_iftrue,
                                         register_report)
-import selection.tests.reports as reports
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
+import ...tests.reports as reports
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ...tests.instance import logistic_instance
 
-from selection.randomized.api import (randomization, 
-                                      multiple_queries, 
-                                      pairs_bootstrap_glm, 
-                                      glm_nonparametric_bootstrap,
-                                      glm_threshold_score)
+from ...distributions.discrete_family import discrete_family
+from ...sampling.langevin import projected_langevin
 
-from selection.randomized.glm import bootstrap_cov
-from selection.distributions.discrete_family import discrete_family
-from selection.sampling.langevin import projected_langevin
+from ..api import (randomization, 
+                   multiple_queries, 
+                   pairs_bootstrap_glm, 
+                   glm_nonparametric_bootstrap,
+                   glm_threshold_score)
+from ..glm import bootstrap_cov
 
-from selection.tests.instance import logistic_instance
 
 
 @register_report(['pvalue', 'active'])

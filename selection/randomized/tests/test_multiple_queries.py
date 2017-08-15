@@ -2,19 +2,28 @@ from __future__ import print_function
 import numpy as np
 import pandas as pd
 import regreg.api as rr
-import selection.tests.reports as reports
 
+import ...tests.reports as reports
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ...tests.instance import logistic_instance
+from ...tests.decorators import (wait_for_return_value, 
+                                 set_seed_iftrue, 
+                                 set_sampling_params_iftrue,
+                                 register_report)
+import ...tests.reports as reports
 
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
-from selection.tests.instance import logistic_instance
-from selection.tests.decorators import (wait_for_return_value, 
-                                        set_seed_iftrue, 
-                                        set_sampling_params_iftrue,
-                                        register_report)
-import selection.tests.reports as reports
-
-from selection.api import randomization, glm_group_lasso, pairs_bootstrap_glm, multiple_queries, discrete_family, projected_langevin, glm_group_lasso_parametric, glm_target
-from selection.randomized.glm import glm_parametric_covariance, glm_nonparametric_bootstrap, restricted_Mest, set_alpha_matrix
+from ...api import (randomization, 
+                    glm_group_lasso, 
+                    pairs_bootstrap_glm, 
+                    multiple_queries, 
+                    discrete_family, 
+                    projected_langevin, 
+                    glm_group_lasso_parametric, 
+                    glm_target)
+from ..glm import (glm_parametric_covariance, 
+                   glm_nonparametric_bootstrap, 
+                   restricted_Mest, 
+                   set_alpha_matrix)
 
 @register_report(['truth', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
