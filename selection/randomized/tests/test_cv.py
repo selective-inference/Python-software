@@ -1,24 +1,25 @@
 import numpy as np
 import pandas as pd
+from statsmodels.sandbox.stats.multicomp import multipletests
+
 import regreg.api as rr
+
 from selection.api import (randomization,
                            glm_group_lasso,
                            multiple_queries,
                            glm_target)
-from selection.tests.instance import (gaussian_instance,
+from ...tests.instance import (gaussian_instance,
                                       logistic_instance)
 
-from selection.randomized.query import naive_confidence_intervals
-from selection.randomized.query import naive_pvalues
+from ..query import naive_confidence_intervals, naive_pvalues
 
-import selection.tests.reports as reports
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import (wait_for_return_value, 
-                                        set_seed_iftrue, 
-                                        set_sampling_params_iftrue, 
-                                        register_report)
-from selection.randomized.cv_view import CV_view
-from statsmodels.sandbox.stats.multicomp import multipletests
+import ...tests.reports as reports
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import (wait_for_return_value, 
+                                 set_seed_iftrue, 
+                                 set_sampling_params_iftrue, 
+                                 register_report)
+from ..cv_view import CV_view
 
 if SMALL_SAMPLES:
     nboot = 10
