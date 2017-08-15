@@ -20,6 +20,10 @@ matrix:
     - python: 3.5
       env:
         - R_TESTS=1
+  include:
+    - python: 2.7
+      env:
+        - R_TESTS=1
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
