@@ -2,7 +2,8 @@ language: python
 dist: trusty
 python:
   - 2.7
-  - 3.3
+  - 3.4
+  - 3.5
 notifications:
   email: false
 addons:
