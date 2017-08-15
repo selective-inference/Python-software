@@ -20,7 +20,6 @@ matrix:
     - python: 3.5
       env:
         - R_TESTS=1
-  include:
     - python: 2.7
       env:
         - R_TESTS=1
