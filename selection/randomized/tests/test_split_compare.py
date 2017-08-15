@@ -6,15 +6,15 @@ import regreg.api as rr
 import selection.tests.reports as reports
 
 
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import (randomization, 
                            split_glm_group_lasso, 
                            multiple_queries, 
                            glm_target)
-from selection.tests.instance import logistic_instance
-from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
-from selection.randomized.glm import standard_ci
-from selection.randomized.query import naive_confidence_intervals
+from ...tests.instance import logistic_instance
+from ...tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
+from ..glm import standard_split_ci
+from ..query import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot', 
                   'covered_clt', 'ci_length_clt', 
@@ -125,7 +125,7 @@ def test_split_compare(s=3,
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 
         if X.shape[0] - leftout_indices.sum() > nactive:
-            LU_split = standard_ci(rr.glm.logistic, X, y, active_union, leftout_indices)
+            LU_split = standard_split_ci(rr.glm.logistic, X, y, active_union, leftout_indices)
         else:
             LU_split = np.ones((nactive, 2)) * np.nan
 

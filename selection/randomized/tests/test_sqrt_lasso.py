@@ -93,7 +93,7 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
             M_est1.decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool),
                                          marginalizing_groups=np.ones(p, bool))
 
-        target_sampler, target_observed = glm_target(glm_loss,
+        target_sampler, target_observed = glm_target(loss,
                                                      active_union,
                                                      mv,
                                                      bootstrap=bootstrap)

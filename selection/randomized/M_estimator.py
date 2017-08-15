@@ -536,7 +536,7 @@ def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
         X_restricted = X[:,active]
         loss_restricted = rr.affine_smooth(Mest_loss.saturated_loss, X_restricted)
     else:
-        I_restricted = ra.selector(active, X.input_shape[0], ra.identity((active.sum(),)))
+        I_restricted = ra.selector(active, ra.astransform(X).input_shape[0], ra.identity((active.sum(),)))
         loss_restricted = rr.affine_smooth(Mest_loss, I_restricted.T)
     beta_E = loss_restricted.solve(**solve_args)
     
