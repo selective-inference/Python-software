@@ -46,7 +46,7 @@ install:
 
 # command to run tests, e.g. python setup.py test
 script:
-    - 'echo "backend : agg" > matplotlibrc'
+
     - pip install nose
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
     - pip install -r doc-requirements.txt # installs rpy2 among other things
@@ -54,6 +54,7 @@ script:
     # Change into an innocuous directory and find tests from installation
     - mkdir for_testing
     - cd for_testing
+    - 'echo "backend : agg" > matplotlibrc'
 
     # Doctests only on platforms that have compatible fp output
     - if [ `uname` == "Darwin" ] ||
