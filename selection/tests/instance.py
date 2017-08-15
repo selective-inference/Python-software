@@ -194,6 +194,82 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     Y = np.random.binomial(1, pi)
     return X, Y, beta, np.nonzero(active)[0]
 
+def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=14,
+                    random_signs=False, 
+                    scale=True, 
+                    center=True, 
+                    equicorrelated=True):
+    """
+    A testing instance for the LASSO.
+    Design is equi-correlated in the population,
+    normalized to have columns of norm 1.
+
+    Parameters
+    ----------
+
+    n : int
+        Sample size
+
+    p : int
+        Number of features
+
+    s : int
+        True sparsity
+
+    rho : float
+        Equicorrelation value (must be in interval [0,1])
+
+    signal : float or (float, float)
+        Sizes for the coefficients. If a tuple -- then coefficients
+        are equally spaced between these values using np.linspace.
+
+    random_signs : bool
+        If true, assign random signs to coefficients.
+        Else they are all positive.
+
+    Returns
+    -------
+
+    X : np.float((n,p))
+        Design matrix.
+
+    y : np.float(n)
+        Response vector.
+
+    beta : np.float(p)
+        True coefficients.
+
+    active : np.int(s)
+        Non-zero pattern.
+
+    """
+
+    X = _design(n, p, rho, equicorrelated)
+
+    if center:
+        X -= X.mean(0)[None,:]
+    if scale:
+        X /= X.std(0)[None,:]
+    X /= np.sqrt(n)
+    beta = np.zeros(p) 
+    signal = np.atleast_1d(signal)
+    if signal.shape == (1,):
+        beta[:s] = signal[0] 
+    else:
+        beta[:s] = np.linspace(signal[0], signal[1], s)
+    if random_signs:
+        beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+    np.random.shuffle(beta)
+
+    active = np.zeros(p, np.bool)
+    active[beta != 0] = True
+
+    eta = linpred = np.dot(X, beta) 
+    mu = np.exp(eta)
+
+    Y = np.random.poisson(mu)
+    return X, Y, beta, np.nonzero(active)[0]
+
 def HIV_NRTI(drug='3TC', 
              standardize=True, 
              datafile=None,
