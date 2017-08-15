@@ -36,7 +36,7 @@ before_install:
   - sudo apt-get update
   - sudo apt-get install -y r-base r-base-dev 
   - sudo Rscript -e "install.packages(c('devtools'), repos='http://cloud.r-project.org');"
-  - sudo Rscript -e "install_github('selective-inference/R-software', subdir='selectiveInference')"
+  - sudo Rscript -e "library(devtools); install_github('selective-inference/R-software', subdir='selectiveInference')"
 
 install:
   # Install selection
