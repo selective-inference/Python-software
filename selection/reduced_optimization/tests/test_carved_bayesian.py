@@ -1,18 +1,24 @@
 from __future__ import print_function
-import numpy as np
-import time
-import regreg.api as rr
-from selection.reduced_optimization.initial_soln import selection
-from selection.tests.instance import logistic_instance, gaussian_instance
-
-from selection.reduced_optimization.par_carved_reduced import selection_probability_carved, sel_inf_carved
-
-#from selection.reduced_optimization.estimator import M_estimator_approx_carved
-from selection.randomized.M_estimator import M_estimator, M_estimator_split
-from selection.randomized.glm import pairs_bootstrap_glm, bootstrap_cov
-
 import sys
 import os
+
+import numpy as np
+import regreg.api as rr
+
+from selection.api import randomization
+from ..initial_soln import selection, instance
+from ..lasso_reduced import (nonnegative_softmax_scaled, 
+                             neg_log_cube_probability, 
+                             selection_probability_lasso, 
+                             sel_prob_gradient_map_lasso, 
+                             selective_inf_lasso)
+from ..par_carved_reduced import selection_probability_carved, sel_inf_carved
+from ...randomized.M_estimator import M_estimator, M_estimator_split
+from ...randomized.glm import pairs_bootstrap_glm, bootstrap_cov
+
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import (set_sampling_params_iftrue,
+                                        set_seed_iftrue)
 
 def generate_data_random(n, p, sigma=1., rho=0., scale =True, center=True):
 
@@ -100,7 +106,9 @@ def carved_lasso_trial(X,
                        beta,
                        sigma,
                        lam,
-                       estimation='parametric'):
+                       estimation='parametric',
+                       ndraw=1000,
+                       burnin=100):
     n, p = X.shape
 
     loss = rr.glm.gaussian(X, y)
@@ -120,7 +128,7 @@ def carved_lasso_trial(X,
 
     if nactive >= 1:
         prior_variance = 1000.
-        noise_variance = sigma ** 2
+        noise_variance = sigma**2
         projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
         M_1 = prior_variance * (X.dot(X.T)) + noise_variance * np.identity(n)
         M_2 = prior_variance * ((X.dot(X.T)).dot(projection_active))
@@ -134,7 +142,7 @@ def carved_lasso_trial(X,
         unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
                                           post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
         grad_lasso = sel_inf_carved(M_est, prior_variance)
-        samples = grad_lasso.posterior_samples()
+        samples = grad_lasso.posterior_samples(langevin_steps=ndraw, burnin=burnin)
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
         selective_mean = np.mean(samples, axis=0)
@@ -165,16 +173,11 @@ def carved_lasso_trial(X,
     else:
         return np.vstack([0.,0.,0.,0.,0.,0.])
 
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=20)
+def test_carved_bayesian(ndraw=1000,
+                         burnin=100):
 
-if __name__ == "__main__":
-
-    # # read from command line
-    # seedn = int(sys.argv[1])
-    # outdir = sys.argv[2]
-    #
-    # outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
-
-    ### set parameters
     n = 1000
     p = 100
     s = 0
@@ -188,28 +191,28 @@ if __name__ == "__main__":
     ad_risk = 0.
     unad_risk = 0.
 
-    for i in range(niter):
-        np.random.seed(i)
-        X, y, beta, sigma = generate_data_random(n=n, p=p)
-        lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-        lasso = carved_lasso_trial(X,
-                                   y,
-                                   beta,
-                                   sigma,
-                                   lam)
+    X, y, beta, sigma = generate_data_random(n=n, p=p)
+    lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+    lasso = carved_lasso_trial(X,
+                               y,
+                               beta,
+                               sigma,
+                               lam,
+                               ndraw=ndraw,
+                               burnin=burnin)
 
-        ad_cov += lasso[0, 0]
-        unad_cov += lasso[1, 0]
-        ad_len += lasso[2, 0]
-        unad_len += lasso[3, 0]
-        ad_risk += lasso[4, 0]
-        unad_risk += lasso[5, 0]
+    ad_cov += lasso[0, 0]
+    unad_cov += lasso[1, 0]
+    ad_len += lasso[2, 0]
+    unad_len += lasso[3, 0]
+    ad_risk += lasso[4, 0]
+    unad_risk += lasso[5, 0]
 
-        print("\n")
-        print("iteration completed", i)
-        print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-        print("adjusted and unadjusted lengths", ad_len, unad_len)
-        print("adjusted and unadjusted risks", ad_risk, unad_risk)
+    print("\n")
+    print("iteration completed", i)
+    print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+    print("adjusted and unadjusted lengths", ad_len, unad_len)
+    print("adjusted and unadjusted risks", ad_risk, unad_risk)
 
     print("adjusted and unadjusted coverage", ad_cov, unad_cov)
     print("adjusted and unadjusted lengths", ad_len, unad_len)
