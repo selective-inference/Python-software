@@ -18,7 +18,6 @@ env:
 matrix:
   include:
     - python: 3.5
-      sudo: true
       dist: trusty
       env:
         - R_TESTS=1
