@@ -18,8 +18,9 @@ matrix:
   include:
     - python: 3.5
       sudo: true
+      dist: trusty
       env:
-        - DOC_BUILD=1
+        - R_TESTS=1
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
@@ -66,6 +67,11 @@ script:
       cp ../.coveragerc .;
       COVER_ARGS="--with-coverage --cover-package selection";
       fi
-    - env USE_SMALL_SAMPLES=1 SET_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+    - |
+      if [ "$R_TESTS" ]; then
+        nosetests ../selection/algorithms/tests/test_compareR.py
+      else 
+        env USE_SMALL_SAMPLES=1 SET_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+      fi
 after_success:
     - if [ "${COVERAGE}" == "1" ]; then coveralls; fi
