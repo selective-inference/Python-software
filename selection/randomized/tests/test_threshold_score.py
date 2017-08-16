@@ -7,7 +7,7 @@ from ...tests.decorators import (wait_for_return_value,
                                         set_seed_iftrue, 
                                         set_sampling_params_iftrue,
                                         register_report)
-import ...tests.reports as reports
+import selection.tests.reports as reports
 from ...tests.flags import SET_SEED, SMALL_SAMPLES
 from ...tests.instance import logistic_instance
 

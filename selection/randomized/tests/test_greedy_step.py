@@ -13,7 +13,7 @@ from ...tests.decorators import (wait_for_return_value,
                                         set_sampling_params_iftrue, 
                                         register_report)
 from ...tests.instance import logistic_instance
-import ...tests.reports as reports
+import selection.tests.reports as reports
 
 from ..api import (randomization, 
                    multiple_queries, 
