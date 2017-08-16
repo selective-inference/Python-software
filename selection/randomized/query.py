@@ -1,12 +1,13 @@
 from itertools import product
 import numpy as np
+
 from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 
+from regreg.affine import power_L
+
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
-
-
 
 class query(object):
 
@@ -760,10 +761,10 @@ class targeted_sampler(object):
         lipschitz : float
 
         """
-        lipschitz = np.linalg.svd(self.target_inv_cov)[1].max()
+        lipschitz = power_L(self.target_inv_cov)
         for transform, objective in zip(self.target_transform, self.objectives):
-            lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
-            lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
+            lipschitz += power_L(transform[0])**2 * objective.randomization.lipschitz
+            lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
         return lipschitz
 
 

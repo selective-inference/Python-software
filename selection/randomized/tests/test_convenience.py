@@ -40,7 +40,8 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
 
         conv.summary(selected_features,
                      ndraw=ndraw,
-                     burnin=burnin)
+                     burnin=burnin,
+                     compute_intervals=True)
 
         conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
                                    conditioning_groups=conditioning_groups)
@@ -88,7 +89,8 @@ def test_step_constructors(ndraw=1000, burnin=200):
 
         conv3.summary(selected_features,
                       ndraw=ndraw,
-                      burnin=burnin)
+                      burnin=burnin,
+                      compute_intervals=True)
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_threshold_constructors(ndraw=1000, burnin=200):
