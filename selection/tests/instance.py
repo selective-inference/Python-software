@@ -194,11 +194,11 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     Y = np.random.binomial(1, pi)
     return X, Y, beta, np.nonzero(active)[0]
 
-def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=14,
-                    random_signs=False, 
-                    scale=True, 
-                    center=True, 
-                    equicorrelated=True):
+def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
+                     random_signs=False, 
+                     scale=True, 
+                     center=True, 
+                     equicorrelated=True):
     """
     A testing instance for the LASSO.
     Design is equi-correlated in the population,

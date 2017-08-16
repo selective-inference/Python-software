@@ -43,6 +43,8 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
                      burnin=burnin,
                      compute_intervals=True)
 
+        print(`const_info` + ' OK')
+
         conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
                                    conditioning_groups=conditioning_groups)
 
