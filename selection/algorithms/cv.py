@@ -1,9 +1,8 @@
-import functools
+import functools, copy
 import numpy as np
 import regreg.api as rr
-import copy
-from selection.randomized.M_estimator import restricted_Mest
-from selection.api import randomization
+
+from ..randomized.randomization import randomization
 
 class CV(object):
 
@@ -67,11 +66,6 @@ class CV(object):
                 problem = rr.simple_problem(loss_train, penalty)
             beta_train = problem.solve(**solve_args)
 
-            #active = beta_train!=0
-            #_beta_unpenalized = restricted_Mest(loss_train, active, solve_args=solve_args)
-            #beta_full = np.zeros(p)
-            #beta_full[active] = _beta_unpenalized
-
             _mu = lambda X, beta: loss_test.saturated_loss.mean_function(X.dot(beta))
             resid = y_test - _mu(X_test, beta_train)
             cur = (resid**2).sum() / n_test
@@ -89,7 +83,6 @@ class CV(object):
             SD_CV_randomized = np.sqrt((CV_err_squared_randomized - (CV_err_randomized**2/self.K)) / (self.K-1))
             return CV_err, SD_CV, CV_err_randomized, SD_CV_randomized
         else:
-            #print(CV_err, SD_CV)
             return CV_err, SD_CV
 
 
@@ -204,7 +197,7 @@ class CV(object):
 
         return _CVR_boot, _CV1_boot
 
-if __name__ == '__main__':
+def main():
     from selection.tests.instance import gaussian_instance
     np.random.seed(1)
     n, p = 3000, 1000

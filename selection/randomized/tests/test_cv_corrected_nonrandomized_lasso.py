@@ -25,7 +25,7 @@ from .test_cv_lee_et_al import pivot, equal_tailed_interval
 def test_cv_corrected_nonrandomized_lasso(n=300,
                                           p=100,
                                           s=3,
-                                          signal=3.5,
+                                          signal=7.5,
                                           rho=0.,
                                           sigma=1.,
                                           K=5,
@@ -33,7 +33,8 @@ def test_cv_corrected_nonrandomized_lasso(n=300,
                                           X=None,
                                           check_screen=True,
                                           glmnet=True,
-                                          intervals=False):
+                                          intervals=False,
+                                          nsample=2): # number of bootstrap samples
 
     print (n, p, s, rho)
     if X is not None:
@@ -87,14 +88,14 @@ def test_cv_corrected_nonrandomized_lasso(n=300,
         return selected_boot(indices)[:active.sum()]
 
     if (check_screen==False) or (set(truth).issubset(np.nonzero(active)[0])):
-
+        print('blah')
         active_set = np.nonzero(active)[0]
         true_vec = beta[active]
         one_step = L.onestep_estimator
 
         cov_est = glm_nonparametric_bootstrap(n, n)
         # compute covariance of selected parameters with CV error curve
-        cov = cov_est(coef_boot, cross_terms=[CV_boot], nsample=500)
+        cov = cov_est(coef_boot, cross_terms=[CV_boot], nsample=nsample)
 
         # residual is fixed
         # covariance of L.constraints is more accurate than cov[0]
@@ -114,6 +115,8 @@ def test_cv_corrected_nonrandomized_lasso(n=300,
         keep[lam_idx_randomized] = 0
         B = B[keep]
         C = B.dot(A)
+
+        print('huh')
 
         CV_constraints = constraints(C, -B.dot(residual))
 
@@ -217,7 +220,7 @@ def report(niter=100, design="random", **kwargs):
     fig.savefig('cv_corrected_nonrandomized_lasso_pivots.pdf')
 
 
-if __name__ == '__main__':
+def main():
     np.random.seed(500)
     kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False}
     report(niter=1, **kwargs)

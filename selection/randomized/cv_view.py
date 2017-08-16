@@ -2,9 +2,10 @@ import functools
 import numpy as np
 import regreg.api as rr
 
+from ..algorithms.cv import CV
+from ..algorithms.cv_glmnet import CV_glmnet, have_glmnet
+
 from .query import query
-from .cv import CV
-from .cv_glmnet import CV_glmnet, have_glmnet
 from .glm import bootstrap_cov
 from .randomization import randomization
 

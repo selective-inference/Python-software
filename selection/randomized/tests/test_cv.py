@@ -13,7 +13,7 @@ from ...tests.instance import (gaussian_instance,
 
 from ..query import naive_confidence_intervals, naive_pvalues
 
-import ...tests.reports as reports
+import selection.tests.reports as reports
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from ...tests.decorators import (wait_for_return_value, 
                                  set_seed_iftrue, 
