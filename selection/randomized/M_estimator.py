@@ -258,7 +258,6 @@ class M_estimator(query):
         new_groups = penalty.groups[inactive]
         new_weights = dict([(g, penalty.weights[g] / _sqrt_scaling) for g in penalty.weights.keys() if g in np.unique(new_groups)])
 
-
         # we form a dual group lasso object
         # to do the projection
 
@@ -422,7 +421,9 @@ class M_estimator(query):
         for _i, _s in zip(inactive_moving_idx, subgrad_idx):
             new_linear[_i, _s] = 1.
 
-        observed_opt_state = self.observed_opt_state[:(self._active_groups.sum()+self._unpenalized_groups.sum()+moving_inactive_variables.sum())]
+        observed_opt_state = self.observed_opt_state[:(self._active_groups.sum() +
+                                                       self._unpenalized_groups.sum() +
+                                                       moving_inactive_variables.sum())]
         observed_opt_state[subgrad_slice] = self.initial_subgrad[moving_inactive_variables]
 
         self.observed_opt_state = observed_opt_state
@@ -438,7 +439,6 @@ class M_estimator(query):
 
         new_offset = condition_linear[:,subgrad_condition_slice].dot(self.initial_subgrad[condition_inactive_variables]) + opt_offset
 
-
         self.opt_transform = (new_linear, new_offset)
 
         # for group LASSO this should not induce a bigger jacobian as
@@ -451,7 +451,6 @@ class M_estimator(query):
         #self.scaling_slice = slice(None, None, None)
         #self.subgrad_slice = np.zeros(new_linear.shape[1], np.bool)
         self.num_opt_var = new_linear.shape[1]
-
 
     def condition_on_scalings(self):
         """

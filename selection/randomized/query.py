@@ -32,12 +32,15 @@ class query(object):
         Randomization derivative at full state.
         """
 
-        # reconstruction of randoimzation omega
+        # reconstruction of randomization omega
 
         opt_linear, opt_offset = self.opt_transform
-        data_linear, data_offset = data_transform
 
-        data_piece = data_linear.dot(data_state) + data_offset
+        data_linear, data_offset = data_transform
+        if data_linear is not None:
+            data_piece = data_linear.dot(data_state) + data_offset
+        else: # this can be none if we are not moving a target
+            data_piece = data_offset
 
         # value of the randomization omega
 
@@ -54,45 +57,16 @@ class query(object):
 
         # chain rule for data, optimization parts
 
-        data_grad = data_linear.T.dot(randomization_derivative)
+        if data_linear is not None:
+            data_grad = data_linear.T.dot(randomization_derivative)
+        else:
+            data_grad = None
+
         if opt_linear is not None:
             opt_grad = opt_linear.T.dot(randomization_derivative)
         else:
             opt_grad = None
         return data_grad, opt_grad #- self.grad_log_jacobian(opt_state)
-
-    def randomization_gradient_opt(self, data_state, data_transform, opt_state):
-        """
-        Randomization derivative at full state.
-        """
-
-        # reconstruction of randoimzation omega
-
-        opt_linear, opt_offset = self.opt_transform
-        data_linear, data_offset = data_transform
-
-        data_piece = data_offset
-
-        # value of the randomization omega
-
-        if opt_linear is not None: # this can happen if we marginalize all of omega!
-            opt_piece = opt_linear.dot(opt_state) + opt_offset
-            full_state = (data_piece + opt_piece)
-        else:
-            full_state = data_piece
-
-        # gradient of negative log density of randomization at omega
-        # we may have marginalized over some optimization variables here
-
-        randomization_derivative = self.construct_weights(full_state)
-
-        # chain rule for data, optimization parts
-
-        if opt_linear is not None:
-            opt_grad = opt_linear.T.dot(randomization_derivative)
-        else:
-            opt_grad = None
-        return None, opt_grad 
 
     def construct_weights(self, full_state):
         return self.randomization.gradient(full_state)
@@ -300,25 +274,32 @@ class multiple_queries(object):
         ----------
         target_info : object
            Passed as first argument to `self.form_covariances`.
+
         observed_target_state : np.float
            Observed value of the target estimator.
+
         reference : np.float (optional)
            Reference parameter for Gaussian approximation
            of target.
+
         target_set : sequence (optional)
            Which coordinates of target are really
            of interest. If not None, then coordinates
            not in target_set are assumed to have 0
            mean in the sampler.
+
         Notes
         -----
+
         The variable `target_set` can be used for
         a selected model test when some functionals
         are assumed to have 0 mean in the limiting
         Gaussian approximation. This can
         sometimes mean an increase in power.
+
         Returns
         -------
+
         target : targeted_sampler
             An instance of `targeted_sampler` that
             can be used to sample, test hypotheses,
@@ -371,26 +352,33 @@ class targeted_sampler(object):
         '''
         Parameters
         ----------
+
         multi_view : `multiple_queries`
            Instance of `multiple_queries`. Attributes
            `objectives`, `score_info` are key
            attributed. (Should maybe change constructor
            to reflect only what is needed.)
+
         target_info : object
            Passed as first argument to `self.form_covariances`.
+
         observed_target_state : np.float
            Observed value of the target estimator.
+
         form_covariances : callable
            Used in linear decomposition of each score
            and the target.
+
         reference : np.float (optional)
            Reference parameter for Gaussian approximation
            of target.
+
         target_set : sequence (optional)
            Which coordinates of target are really
            of interest. If not None, then coordinates
            not in target_set are assumed to have 0
            mean in the sampler.
+
         parametric : bool
            Use parametric covariance estimate?
 
@@ -433,6 +421,7 @@ class targeted_sampler(object):
         self.randomization_slice = multi_view.randomization_slice
 
         self.score_cov = []
+        target_cov_sum = 0
         for i in range(self.nqueries):
             if parametric == False:
                 target_cov, cross_cov = multi_view.form_covariances(target_info,  
@@ -442,8 +431,10 @@ class targeted_sampler(object):
                 target_cov, cross_cov = multi_view.form_covariances(target_info, 
                                                                     cross_terms=[multi_view.score_info[i]])
 
-            self.target_cov = target_cov
+            target_cov_sum += target_cov
             self.score_cov.append(cross_cov)
+
+        self.target_cov = target_cov_sum / self.nqueries
 
         # XXX we're not really using this target_set in our tests
 
@@ -463,9 +454,12 @@ class targeted_sampler(object):
                 self.objectives[i].linear_decomposition(self.score_cov[i],
                                                         self.target_cov,
                                                         self.observed_target_state))
+
         self.target_cov = np.atleast_2d(self.target_cov)
         self.target_inv_cov = np.linalg.inv(self.target_cov)
+
         # size of reference? should it only be target_set?
+
         if reference is None:
             reference = np.zeros(self.target_inv_cov.shape[0])
         self.reference = reference
@@ -524,27 +518,6 @@ class targeted_sampler(object):
         state[self.overall_opt_slice] = new_opt_state
         return state
 
-    def projection_opt(self, state):
-        '''
-        Projection map of projected Langevin sampler.
-        Parameters
-        ----------
-        state : np.float
-           State of sampler made up of `(target, opt_vars)`.
-           Typically, the projection will only act on
-           `opt_vars`.
-        Returns
-        -------
-        projected_state : np.float
-        '''
-
-        opt_state = state[self.overall_opt_slice]
-        new_opt_state = np.zeros_like(opt_state)
-        for i in range(self.nqueries):
-            new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
-        state[self.overall_opt_slice] = new_opt_state
-        return state[self.overall_opt_slice]
-
     def gradient(self, state):
         '''
         Gradient of log-density at current state.
@@ -574,26 +547,6 @@ class targeted_sampler(object):
         full_grad[self.overall_opt_slice] = -opt_grad
 
         return full_grad
-
-    def gradient_opt(self, state):
-        """
-        Gradient only w.r.t. opt variables
-        """
-
-        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
-        target_grad, opt_grad = np.zeros_like(target_state), np.zeros_like(opt_state)
-        full_grad = np.zeros_like(state)
-
-        # randomization_gradient are gradients of a CONVEX function
-
-        for i in range(self.nqueries):
-            target_grad_curr, opt_grad[self.opt_slice[i]] = \
-                self.objectives[i].randomization_gradient_opt(target_state, self.target_transform[i], opt_state[self.opt_slice[i]])
-
-        full_grad[self.target_slice] = 0
-        full_grad[self.overall_opt_slice] = -opt_grad
-
-        return full_grad[self.overall_opt_slice]
 
 
     def sample(self, ndraw, burnin, stepsize=None, keep_opt=False):
@@ -642,11 +595,549 @@ class targeted_sampler(object):
                 samples.append(target_langevin.state[keep_slice].copy())
         return np.asarray(samples)
 
-    def sample_opt(self, ndraw, burnin, stepsize=None):
+    def hypothesis_test(self,
+                        test_stat,
+                        observed_value,
+                        ndraw=10000,
+                        burnin=2000,
+                        stepsize=None,
+                        sample=None,
+                        parameter=None,
+                        alternative='twosided'):
+
         '''
-        Sample optimization variables 
-        using projected Langevin sampler 
-        keeping the data fixed.
+        Sample `target` from selective density
+        using projected Langevin sampler with
+        gradient map `self.gradient` and
+        projection map `self.projection`.
+        Parameters
+        ----------
+        test_stat : callable
+           Test statistic to evaluate on sample from
+           selective distribution.
+        observed_value : float
+           Observed value of test statistic.
+           Used in p-value calculation.
+        ndraw : int
+           How long a chain to return?
+        burnin : int
+           How many samples to discard?
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc. If not None,
+           `ndraw, burnin, stepsize` are ignored.
+        parameter : np.float (optional)
+           If not None, defaults to `self.reference`.
+           Otherwise, sample is reweighted using Gaussian tilting.
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+        Returns
+        -------
+        gradient : np.float
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        if parameter is None:
+            parameter = self.reference
+
+        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
+
+
+        delta = self.target_inv_cov.dot(parameter - self.reference)
+        W = np.exp(sample.dot(delta))
+
+        family = discrete_family(sample_test_stat, W)
+        pval = family.cdf(0, observed_value)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * min(pval, 1 - pval)
+
+    def confidence_intervals(self,
+                             observed,
+                             ndraw=10000,
+                             burnin=2000,
+                             stepsize=None,
+                             sample=None,
+                             level=0.9):
+        '''
+        Parameters
+        ----------
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+        ndraw : int
+           How long a chain to return?
+        burnin : int
+           How many samples to discard?
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc.
+        level : float (optional)
+            Specify the
+            confidence level.
+        Notes
+        -----
+        Construct selective confidence intervals
+        for each parameter of the target.
+        Returns
+        -------
+        intervals : [(float, float)]
+            List of confidence intervals.
+        '''
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        nactive = observed.shape[0]
+        intervals_instance = intervals_from_sample(self.reference,
+                                                   sample,
+                                                   observed,
+                                                   self.target_cov)
+
+        return intervals_instance.confidence_intervals_all(level=level)
+
+    def coefficient_pvalues(self,
+                            observed,
+                            parameter=None,
+                            ndraw=10000,
+                            burnin=2000,
+                            stepsize=None,
+                            sample=None,
+                            alternative='twosided'):
+        '''
+        Construct selective p-values
+        for each parameter of the target.
+        Parameters
+        ----------
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+        parameter : np.float (optional)
+            A vector of parameters with shape `self.shape`
+            at which to evaluate p-values. Defaults
+            to `np.zeros(self.shape)`.
+        ndraw : int
+           How long a chain to return?
+        burnin : int
+           How many samples to discard?
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc.
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+        Returns
+        -------
+        pvalues : np.float
+
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize)
+
+        if parameter is None:
+            parameter = np.zeros(self.shape)
+
+        nactive = observed.shape[0]
+        intervals_instance = intervals_from_sample(self.reference,
+                                                   sample,
+                                                   observed,
+                                                   self.target_cov)
+
+        pval = intervals_instance.pivots_all(parameter)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * np.minimum(pval, 1 - pval)
+
+    def crude_lipschitz(self):
+        """
+        A crude Lipschitz constant for the
+        gradient of the log-density.
+        Returns
+        -------
+        lipschitz : float
+
+        """
+        lipschitz = power_L(self.target_inv_cov)
+        for transform, objective in zip(self.target_transform, self.objectives):
+            lipschitz += power_L(transform[0])**2 * objective.randomization.lipschitz
+            lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
+        return lipschitz
+
+
+    def reconstruction_map(self, state):
+        '''
+        Reconstruction of randomization at current state.
+        Parameters
+        ----------
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Can be array with each row a state.
+        Returns
+        -------
+        reconstructed : np.float
+           Has shape of `opt_vars` with same number of rows
+           as `state`.
+
+        '''
+
+        state = np.atleast_2d(state)
+        #print(state.shape)
+        if len(state.shape) > 2:
+            raise ValueError('expecting at most 2-dimensional array')
+
+        target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
+        reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
+        #reconstructed = np.zeros((opt_state.shape[0],self.randomization_length_total))
+
+        for i in range(self.nqueries):
+            reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
+                                                                                        self.target_transform[i],
+                                                                                        opt_state[:, self.opt_slice[i]])
+
+        return np.squeeze(reconstructed)
+
+    def log_randomization_density(self, state):
+        '''
+        Log of randomization density at current state.
+        Parameters
+        ----------
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Can be two-dimensional with each row a state.
+        Returns
+        -------
+        density : np.float
+            Has number of rows as `state` if 2-dimensional.
+        '''
+
+        reconstructed = self.reconstruction_map(state)
+        value = np.zeros(reconstructed.shape[0])
+
+        for i in range(self.nqueries):
+            log_dens = self.objectives[i].randomization.log_density
+            value += log_dens(reconstructed[:,self.opt_slice[i]])
+        return np.squeeze(value)
+
+
+    def hypothesis_test_translate(self,
+                                  sample,
+                                  test_stat,
+                                  observed_target,
+                                  parameter=None,
+                                  alternative='twosided'):
+
+        '''
+        Carry out a hypothesis test
+        based on the distribution of the
+        residual `observed_target - target`
+        sampled at `self.reference`.
+        Parameters
+        ----------
+        sample : np.array
+           Sample of target and optimization variables drawn at `self.reference`.
+        test_stat : callable
+           Test statistic to evaluate on sample from
+           selective distribution.
+        observed_target : np.float
+           Observed value of target estimate.
+           Used in p-value calculation.
+        parameter : np.float (optional)
+           If not None, defaults to `self.reference`.
+           Otherwise, sample is reweighted using Gaussian tilting.
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+        Returns
+        -------
+        gradient : np.float
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        _intervals = translate_intervals(self,
+                                         sample,
+                                         observed_target)
+
+        if parameter is None:
+            parameter = self.reference
+
+        return _intervals.pivot(test_stat,
+                                parameter,
+                                alternative=alternative)
+
+
+    def confidence_intervals_translate(self,
+                                       observed_target,
+                                       ndraw=10000,
+                                       burnin=2000,
+                                       stepsize=None,
+                                       sample=None,
+                                       level=0.9):
+        '''
+        Parameters
+        ----------
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+        ndraw : int
+           How long a chain to return?
+        burnin : int
+           How many samples to discard?
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc.
+        level : float (optional)
+            Specify the
+            confidence level.
+        Notes
+        -----
+        Construct selective confidence intervals
+        for each parameter of the target.
+        Returns
+        -------
+        intervals : [(float, float)]
+            List of confidence intervals.
+        '''
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize, keep_opt=True)
+
+        _intervals = translate_intervals(self,
+                                         sample,
+                                         observed_target)
+
+        limits = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            limits.append(_intervals.confidence_interval(keep, level=level))
+
+        return np.array(limits)
+
+    def coefficient_pvalues_translate(self,
+                                      observed_target,
+                                      parameter=None,
+                                      ndraw=10000,
+                                      burnin=2000,
+                                      stepsize=None,
+                                      sample=None,
+                                      alternative='twosided'):
+        '''
+        Parameters
+        ----------
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+        parameter : np.float (optional)
+            A vector of parameters with shape `self.shape`
+            at which to evaluate p-values. Defaults
+            to `np.zeros(self.shape)`.
+        ndraw : int
+           How long a chain to return?
+        burnin : int
+           How many samples to discard?
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc.
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+        Returns
+        -------
+        pvalues : np.float
+            P values for each coefficient.
+
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+            sample = self.sample(ndraw, burnin, stepsize=stepsize, keep_opt=True)
+
+        if parameter is None:
+            parameter = np.zeros_like(observed_target)
+
+        _intervals = translate_intervals(self,
+                                         sample,
+                                         observed_target)
+
+        pvalues = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+
+            _parameter = self.reference.copy()
+            _parameter[i] = parameter[i]
+            pvalues.append(_intervals.pivot(lambda x: keep.dot(x),
+                                            _parameter,
+                                            alternative=alternative))
+
+        return np.array(pvalues)
+
+
+class optimization_sampler(targeted_sampler):
+
+    '''
+    Object to sample only optimization variables of a selective sampler
+    fixing the observed score.
+    '''
+
+    def __init__(self,
+                 multi_view):
+
+        '''
+        Parameters
+        ----------
+
+        multi_view : `multiple_queries`
+           Instance of `multiple_queries`. Attributes
+           `objectives`, `score_info` are key
+           attributed. (Should maybe change constructor
+           to reflect only what is needed.)
+
+
+        '''
+
+        # sampler will draw samples for bootstrap
+        # these are arguments to target_info and score_bootstrap
+        # nonparamteric bootstrap is np.random.choice(n, size=(n,), replace=True)
+        # residual bootstrap might be X_E.dot(\bar{\beta}_E)
+        # + np.random.choice(resid, size=(n,), replace=True)
+
+        # if target_set is not None, we assume that
+        # these coordinates (specified by a list of coordinates) of target
+        # is assumed to be independent of the rest
+        # the corresponding block of `target_cov` is zeroed out
+
+        # we need these attributes of multi_view
+
+        self.nqueries = len(multi_view.objectives)
+        self.opt_slice = multi_view.opt_slice
+        self.objectives = multi_view.objectives
+
+        self.total_randomization_length = multi_view.total_randomization_length
+        self.randomization_slice = multi_view.randomization_slice
+
+        # set the observed state
+
+        self.observed_state = np.zeros_like(multi_view.observed_opt_state)
+        self.observed_state[:] = multi_view.observed_opt_state
+
+        # added for the reconstruction map in case we marginalize over optimization variables
+
+        randomization_length_total = 0
+        self.randomization_slice = []
+        for i in range(self.nqueries):
+            self.randomization_slice.append(
+                slice(randomization_length_total, randomization_length_total + self.objectives[i].ndim))
+            randomization_length_total += self.objectives[i].ndim
+
+        self.randomization_length_total = randomization_length_total
+
+        # We implicitly assume that we are sampling a target
+        # independent of the data in each view
+
+        self.target_transform = []
+        for i in range(self.nqueries):
+            obj = self.objectives[i]
+            
+            _, observed_score = obj.linear_decomposition(np.zeros(obj.ndim),
+                                                         np.array([[1.]]),
+                                                         0.)
+            self.target_transform.append((None, observed_score)) 
+
+    def projection(self, state):
+        '''
+        Projection map of projected Langevin sampler.
+        Parameters
+        ----------
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Typically, the projection will only act on
+           `opt_vars`.
+        Returns
+        -------
+        projected_state : np.float
+        '''
+
+        opt_state = state
+        new_opt_state = np.zeros_like(opt_state)
+        for i in range(self.nqueries):
+            new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
+        return new_opt_state
+
+    def gradient(self, state):
+        """
+        Gradient only w.r.t. opt variables
+        """
+
+        opt_state = state
+        opt_grad = np.zeros_like(opt_state)
+
+        # randomization_gradient are gradients of a CONVEX function
+
+        for i in range(self.nqueries):
+            # the 0 is our fictitious target independent of all the data
+            _, opt_grad[self.opt_slice[i]] = \
+                self.objectives[i].randomization_gradient(0., self.target_transform[i], opt_state[self.opt_slice[i]])
+
+        return opt_grad
+
+
+    def sample(self, ndraw, burnin, stepsize=None):
+        '''
+        Sample `target` from selective density
+        using projected Langevin sampler with
+        gradient map `self.gradient` and
+        projection map `self.projection`.
 
         Parameters
         ----------
@@ -667,11 +1158,11 @@ class targeted_sampler(object):
         '''
 
         if stepsize is None:
-            stepsize = 1. / self.crude_lipschitz() # should be lipschitz of randomization
+            stepsize = 1. / self.crude_lipschitz()
 
-        target_langevin = projected_langevin(self.observed_state.copy()[self.overall_opt_slice],
-                                             self.gradient_opt,
-                                             self.projection_opt,
+        target_langevin = projected_langevin(self.observed_state.copy(),
+                                             self.gradient,
+                                             self.projection,
                                              stepsize)
 
         samples = []
@@ -1108,6 +1599,8 @@ class targeted_sampler(object):
                                             alternative=alternative))
 
         return np.array(pvalues)
+
+
 
 class bootstrapped_target_sampler(targeted_sampler):
 

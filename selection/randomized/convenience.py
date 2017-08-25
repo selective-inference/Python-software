@@ -162,6 +162,8 @@ class lasso(object):
         self._view.decompose_subgradient(conditioning_groups=conditioning_groups,
                                          marginalizing_groups=marginalizing_groups)
 
+        self._queries.setup_opt_state()
+
     def summary(self, selected_features, 
                 null_value=None,
                 level=0.9,
