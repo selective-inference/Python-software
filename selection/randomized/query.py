@@ -451,6 +451,7 @@ class targeted_sampler(object):
         self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
 
         # added for the reconstruction map in case we marginalize over optimization variables
+
         randomization_length_total = 0
         self.randomization_slice = []
         for i in range(self.nqueries):
@@ -462,7 +463,7 @@ class targeted_sampler(object):
 
     def set_reference(self, reference):
         self._reference = np.atleast_1d(reference)
-        self._reference_inv = self.target_inv_cov.dot(self.reference)
+        self._reference_inv = self.target_inv_cov.dot(self.reference).flatten()
 
     def get_reference(self):
         return self._reference
@@ -514,7 +515,7 @@ class targeted_sampler(object):
             target_grad += target_grad_curr.copy()
 
         target_grad = - target_grad
-        target_grad += self._reference_inv.flatten() - self.target_inv_cov.dot(target_state)
+        target_grad += self._reference_inv - self.target_inv_cov.dot(target_state)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
 
