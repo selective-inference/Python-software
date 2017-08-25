@@ -61,6 +61,39 @@ class query(object):
             opt_grad = None
         return data_grad, opt_grad #- self.grad_log_jacobian(opt_state)
 
+    def randomization_gradient_opt(self, data_state, data_transform, opt_state):
+        """
+        Randomization derivative at full state.
+        """
+
+        # reconstruction of randoimzation omega
+
+        opt_linear, opt_offset = self.opt_transform
+        data_linear, data_offset = data_transform
+
+        data_piece = data_offset
+
+        # value of the randomization omega
+
+        if opt_linear is not None: # this can happen if we marginalize all of omega!
+            opt_piece = opt_linear.dot(opt_state) + opt_offset
+            full_state = (data_piece + opt_piece)
+        else:
+            full_state = data_piece
+
+        # gradient of negative log density of randomization at omega
+        # we may have marginalized over some optimization variables here
+
+        randomization_derivative = self.construct_weights(full_state)
+
+        # chain rule for data, optimization parts
+
+        if opt_linear is not None:
+            opt_grad = opt_linear.T.dot(randomization_derivative)
+        else:
+            opt_grad = None
+        return None, opt_grad 
+
     def construct_weights(self, full_state):
         return self.randomization.gradient(full_state)
 
@@ -491,6 +524,27 @@ class targeted_sampler(object):
         state[self.overall_opt_slice] = new_opt_state
         return state
 
+    def projection_opt(self, state):
+        '''
+        Projection map of projected Langevin sampler.
+        Parameters
+        ----------
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Typically, the projection will only act on
+           `opt_vars`.
+        Returns
+        -------
+        projected_state : np.float
+        '''
+
+        opt_state = state[self.overall_opt_slice]
+        new_opt_state = np.zeros_like(opt_state)
+        for i in range(self.nqueries):
+            new_opt_state[self.opt_slice[i]] = self.objectives[i].projection(opt_state[self.opt_slice[i]])
+        state[self.overall_opt_slice] = new_opt_state
+        return state[self.overall_opt_slice]
+
     def gradient(self, state):
         '''
         Gradient of log-density at current state.
@@ -521,12 +575,34 @@ class targeted_sampler(object):
 
         return full_grad
 
+    def gradient_opt(self, state):
+        """
+        Gradient only w.r.t. opt variables
+        """
+
+        target_state, opt_state = state[self.target_slice], state[self.overall_opt_slice]
+        target_grad, opt_grad = np.zeros_like(target_state), np.zeros_like(opt_state)
+        full_grad = np.zeros_like(state)
+
+        # randomization_gradient are gradients of a CONVEX function
+
+        for i in range(self.nqueries):
+            target_grad_curr, opt_grad[self.opt_slice[i]] = \
+                self.objectives[i].randomization_gradient_opt(target_state, self.target_transform[i], opt_state[self.opt_slice[i]])
+
+        full_grad[self.target_slice] = 0
+        full_grad[self.overall_opt_slice] = -opt_grad
+
+        return full_grad[self.overall_opt_slice]
+
+
     def sample(self, ndraw, burnin, stepsize=None, keep_opt=False):
         '''
         Sample `target` from selective density
         using projected Langevin sampler with
         gradient map `self.gradient` and
         projection map `self.projection`.
+
         Parameters
         ----------
         ndraw : int
@@ -564,6 +640,46 @@ class targeted_sampler(object):
             target_langevin.next()
             if (i >= burnin):
                 samples.append(target_langevin.state[keep_slice].copy())
+        return np.asarray(samples)
+
+    def sample_opt(self, ndraw, burnin, stepsize=None):
+        '''
+        Sample optimization variables 
+        using projected Langevin sampler 
+        keeping the data fixed.
+
+        Parameters
+        ----------
+        ndraw : int
+           How long a chain to return?
+        burnin : int
+           How many samples to discard?
+        stepsize : float
+           Stepsize for Langevin sampler. Defaults
+           to a crude estimate based on the
+           dimension of the problem.
+        keep_opt : bool
+           Should we return optimization variables
+           as well as the target?
+        Returns
+        -------
+        gradient : np.float
+        '''
+
+        if stepsize is None:
+            stepsize = 1. / self.crude_lipschitz() # should be lipschitz of randomization
+
+        target_langevin = projected_langevin(self.observed_state.copy()[self.overall_opt_slice],
+                                             self.gradient_opt,
+                                             self.projection_opt,
+                                             stepsize)
+
+        samples = []
+
+        for i in range(ndraw + burnin):
+            target_langevin.next()
+            if (i >= burnin):
+                samples.append(target_langevin.state.copy())
         return np.asarray(samples)
 
     def hypothesis_test(self,
