@@ -23,7 +23,7 @@ class query(object):
     def randomize(self):
 
         if not self._randomized:
-            self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
+            self.randomized_loss, self._initial_omega = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
 

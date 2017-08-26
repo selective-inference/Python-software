@@ -89,7 +89,7 @@ class randomization(rr.smooth_atom):
         randomized_loss = rr.smooth_sum([loss])
         _randomZ = self.sample()
         randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -_randomZ, 0)
-        return randomized_loss
+        return randomized_loss, _randomZ
 
     @staticmethod
     def isotropic_gaussian(shape, scale):
@@ -302,7 +302,7 @@ class split(randomization):
 
         randomized_loss.quadratic = quadratic
 
-        return randomized_loss
+        return randomized_loss, None
 
 # Conjugate generating function for Gaussian
 
