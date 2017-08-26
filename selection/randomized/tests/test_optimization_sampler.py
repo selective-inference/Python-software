@@ -39,13 +39,13 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
         selected_features = np.zeros(p, np.bool)
         selected_features[:3] = True
 
+        conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
+                                   conditioning_groups=conditioning_groups)
+
         conv.summary(selected_features,
                      ndraw=ndraw,
                      burnin=burnin,
                      compute_intervals=True)
-
-        conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
-                                   conditioning_groups=conditioning_groups)
 
         target_sampler = optimization_sampler(conv._queries)
 
