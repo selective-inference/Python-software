@@ -1,17 +1,13 @@
 from __future__ import print_function
-
-import sys
-import os
-
 import numpy as np
 
 from selection.api import randomization
-from ..initial_soln import selection, instance
-from ..lasso_reduced import (nonnegative_softmax_scaled, 
-                             neg_log_cube_probability, 
-                             selection_probability_lasso, 
-                             sel_prob_gradient_map_lasso, 
-                             selective_inf_lasso)
+from selection.reduced_optimization.initial_soln import selection, instance
+from selection.reduced_optimization.lasso_reduced import (nonnegative_softmax_scaled,
+                                                          neg_log_cube_probability,
+                                                          selection_probability_lasso,
+                                                          sel_prob_gradient_map_lasso,
+                                                          selective_inf_lasso)
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import (set_sampling_params_iftrue,
@@ -140,4 +136,3 @@ def test_reduced_lasso():
         print("\n")
         print("adjusted and unadjusted coverage", ad_cov, unad_cov)
         print("adjusted and unadjusted lengths", ad_len, unad_len)
-        

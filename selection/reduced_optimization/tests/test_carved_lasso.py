@@ -1,16 +1,12 @@
 from __future__ import print_function
 import numpy as np
-import time
 import regreg.api as rr
-from selection.reduced_optimization.initial_soln import selection
 from selection.tests.instance import logistic_instance, gaussian_instance
 
 from selection.reduced_optimization.par_carved_reduced import selection_probability_carved, sel_inf_carved
 
 from selection.reduced_optimization.estimator import M_estimator_approx_carved
 
-import sys
-import os
 
 def carved_lasso_trial(X,
                        y,
@@ -80,83 +76,41 @@ def carved_lasso_trial(X,
         return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
 
     else:
-        return np.vstack([0.,0.,0.,0., 0., 0.])
+        return np.vstack([0.,0.,0.,0.,0.,0.])
 
-
-if __name__ == "__main__":
+def test_carved_lasso():
     ### set parameters
     n = 1000
     p = 100
-    s = 0
-    snr = 0.
+    s = 20
+    snr = 7.
 
-
-    niter = 24
     ad_cov = 0.
     unad_cov = 0.
     ad_len = 0.
     unad_len = 0.
-    no_sel = 0
     ad_risk = 0.
     unad_risk = 0.
 
-    for i in range(niter):
-
-         ### GENERATE X, Y BASED ON SEED
-         #i+17 was good, i+27 was good
-         np.random.seed(37)  # ensures different y
-         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-         lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-
-         ### RUN LASSO AND TEST
-         lasso = carved_lasso_trial(X,
-                                    y,
-                                    beta,
-                                    sigma,
-                                    lam)
-
-         if lasso is not None:
-             ad_cov += lasso[0,0]
-             unad_cov += lasso[1,0]
-             ad_len += lasso[2, 0]
-             unad_len += lasso[3, 0]
-             ad_risk += lasso[4, 0]
-             unad_risk += lasso[5, 0]
-             print("\n")
-             print("iteration completed", i - no_sel)
-             print("\n")
-             print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-             print("adjusted and unadjusted lengths", ad_len, unad_len)
-             print("adjusted and unadjusted risks", ad_risk, unad_risk)
-         else:
-             no_sel += 1
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, signal=snr)
+    lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+    lasso = carved_lasso_trial(X,
+                               y,
+                               beta,
+                               sigma,
+                               lam)
 
 
-# if __name__ == "__main__":
-#
-#     # read from command line
-#     print(len(sys.argv))
-#     seedn = int(sys.argv[1]) + 17
-#     outdir = sys.argv[2]
-#
-#     outfile = os.path.join(outdir, "list_result_" + str(seedn) + ".txt")
-#
-#     ### set parameters
-#     n = 1000
-#     p = 200
-#     s = 0
-#     snr = 0.
-#
-#     np.random.seed(seedn)  # ensures different X and y
-#     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
-#
-#     lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-#
-#     ### RUN LASSO AND SAVE
-#     lasso = carved_lasso_trial(X,
-#                                y,
-#                                beta,
-#                                sigma,
-#                                lam)
-#
-#     np.savetxt(outfile, lasso)
+    if lasso is not None:
+        ad_cov += lasso[0,0]
+        unad_cov += lasso[1,0]
+        ad_len += lasso[2, 0]
+        unad_len += lasso[3, 0]
+        ad_risk += lasso[4, 0]
+        unad_risk += lasso[5, 0]
+        print("\n")
+        print("\n")
+        print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+        print("adjusted and unadjusted lengths", ad_len, unad_len)
+
+test_carved_lasso()
