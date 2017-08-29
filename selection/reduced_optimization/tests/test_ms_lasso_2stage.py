@@ -20,8 +20,6 @@ def randomized_marginal_lasso_screening(X,
                                         beta,
                                         sigma):
 
-    from selection.api import randomization
-
     n, p = X.shape
 
     random_Z = np.random.standard_normal(p)
