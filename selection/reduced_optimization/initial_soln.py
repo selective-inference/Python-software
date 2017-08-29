@@ -33,14 +33,14 @@ def selection(X, y, random_Z, randomization_scale=1, sigma=None, method="theoret
 
 class instance(object):
 
-    def __init__(self, n, p, s, snr=5, sigma=1., rho=0, random_signs=False, scale =True, center=True):
+    def __init__(self, n, p, s, signal=5, sigma=1., rho=0, random_signs=False, scale =True, center=True):
          (self.n, self.p, self.s,
-         self.snr,
+         self.signal,
          self.sigma,
          self.rho) = (n, p, s,
-                     snr,
-                     sigma,
-                     rho)
+                      signal,
+                      sigma,
+                      rho)
 
          self.X = (np.sqrt(1 - self.rho) * np.random.standard_normal((self.n, self.p)) +
               np.sqrt(self.rho) * np.random.standard_normal(self.n)[:, None])
@@ -50,7 +50,7 @@ class instance(object):
              self.X /= (self.X.std(0)[None, :] * np.sqrt(self.n))
 
          self.beta = np.zeros(p)
-         self.beta[:self.s] = self.snr
+         self.beta[:self.s] = self.signal
          if random_signs:
              self.beta[:self.s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
          self.active = np.zeros(p, np.bool)

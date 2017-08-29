@@ -104,7 +104,7 @@ def test_fs():
     s = 10
     snr = 7.
 
-    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, signal=snr)
 
     ad_cov = 0.
     unad_cov = 0.

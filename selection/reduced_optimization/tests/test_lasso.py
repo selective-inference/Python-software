@@ -112,7 +112,7 @@ def test_reduced_lasso():
     s = 10
     snr = 7.
 
-    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, snr=snr)
+    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, signal=snr)
 
     ad_cov = 0.
     unad_cov = 0.
@@ -136,3 +136,5 @@ def test_reduced_lasso():
         print("adjusted and unadjusted coverage", ad_cov, unad_cov)
         print("\n")
         print("adjusted and unadjusted lengths", ad_len, unad_len)
+
+test_reduced_lasso()
