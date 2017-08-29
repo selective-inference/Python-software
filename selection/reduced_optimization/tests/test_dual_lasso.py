@@ -3,11 +3,10 @@ import numpy as np
 
 from selection.api import randomization
 from selection.reduced_optimization.initial_soln import selection, instance
-from selection.reduced_optimization.lasso_reduced import (nonnegative_softmax_scaled,
-                                                          neg_log_cube_probability,
-                                                          selection_probability_lasso,
-                                                          sel_prob_gradient_map_lasso,
-                                                          selective_inf_lasso)
+
+from selection.reduced_optimization.dual_lasso import (selection_probability_lasso_dual,
+                                                       sel_prob_gradient_map_lasso,
+                                                       selective_inf_lasso)
 
 from selection.tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.tests.decorators import (set_sampling_params_iftrue,
@@ -15,12 +14,13 @@ from selection.tests.decorators import (set_sampling_params_iftrue,
 
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=20)
+
 def randomized_lasso_trial(X,
                            y,
                            beta,
-                           sigma,
-                           ndraw=1000,
-                           burnin=50):
+                           sigma):
+
+    from selection.api import randomization
 
     n, p = X.shape
 
@@ -35,7 +35,8 @@ def randomized_lasso_trial(X,
         nactive = active.sum()
         print("number of selected variables by Lasso", nactive)
 
-        feasible_point = np.fabs(betaE)
+        feasible_point = np.ones(p)
+        feasible_point[:nactive] = -np.fabs(betaE)
 
         noise_variance = sigma ** 2
 
@@ -56,8 +57,7 @@ def randomized_lasso_trial(X,
 
         inf = selective_inf_lasso(y, grad_map, prior_variance)
 
-        # for the tests, just take a few steps
-        samples = inf.posterior_samples(langevin_steps=ndraw, burnin=burnin)
+        samples = inf.posterior_samples()
 
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
@@ -104,11 +104,10 @@ def randomized_lasso_trial(X,
     else:
         return None
 
-
-def test_lasso():
+def test_dual_lasso():
     ### set parameters
-    n = 50
-    p = 300
+    n = 300
+    p = 100
     s = 10
     snr = 7.
 
@@ -136,3 +135,4 @@ def test_lasso():
         print("adjusted and unadjusted coverage", ad_cov, unad_cov)
         print("\n")
         print("adjusted and unadjusted lengths", ad_len, unad_len)
+
