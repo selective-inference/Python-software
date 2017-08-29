@@ -64,3 +64,31 @@ class instance(object):
         Y = (self.X.dot(self.beta) + self._noise()) * self.sigma
         return self.X, Y, self.beta * self.sigma, np.nonzero(self.active)[0], self.sigma
 
+
+class generate_data_bayesian():
+
+    def __init__(self, n, p, sigma=1., rho=0., scale =True, center=True):
+         (self.n, self.p, self.sigma, self.rho) = (n, p, sigma, rho)
+
+         self.X = (np.sqrt(1 - self.rho) * np.random.standard_normal((self.n, self.p)) +
+                   np.sqrt(self.rho) * np.random.standard_normal(self.n)[:, None])
+         if center:
+             self.X -= self.X.mean(0)[None, :]
+         if scale:
+             self.X /= (self.X.std(0)[None, :] * np.sqrt(self.n))
+
+         beta_true = np.zeros(p)
+         u = np.random.uniform(0.,1.,p)
+         for i in range(p):
+             if u[i]<= 0.95:
+                 beta_true[i] = np.random.laplace(loc=0., scale= 0.05)
+             else:
+                 beta_true[i] = np.random.laplace(loc=0., scale= 0.5)
+
+         self.beta = beta_true
+
+    def generate_response(self):
+
+        Y = (self.X.dot(self.beta) + np.random.standard_normal(self.n)) * self.sigma
+
+        return self.X, Y, self.beta * self.sigma, self.sigma
