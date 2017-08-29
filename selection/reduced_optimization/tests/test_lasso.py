@@ -136,5 +136,3 @@ def test_lasso():
         print("adjusted and unadjusted coverage", ad_cov, unad_cov)
         print("\n")
         print("adjusted and unadjusted lengths", ad_len, unad_len)
-
-test_lasso()
