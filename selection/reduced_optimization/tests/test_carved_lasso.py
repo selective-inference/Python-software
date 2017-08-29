@@ -7,7 +7,6 @@ from selection.reduced_optimization.par_carved_reduced import selection_probabil
 
 from selection.reduced_optimization.estimator import M_estimator_approx_carved
 
-
 def carved_lasso_trial(X,
                        y,
                        beta,
@@ -113,4 +112,3 @@ def test_carved_lasso():
         print("adjusted and unadjusted coverage", ad_cov, unad_cov)
         print("adjusted and unadjusted lengths", ad_len, unad_len)
 
-test_carved_lasso()

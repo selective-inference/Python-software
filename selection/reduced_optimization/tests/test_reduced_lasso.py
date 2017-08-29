@@ -96,10 +96,10 @@ def randomized_lasso_trial(X,
         naive_cov = coverage_unad.sum() / nactive
         ad_len = ad_length.sum() / nactive
         unad_len = unad_length.sum() / nactive
-        bayes_risk_ad = np.power(selective_mean - true_val, 2.).sum() / nactive
-        bayes_risk_unad = np.power(post_mean - true_val, 2.).sum() / nactive
+        risk_ad = np.power(selective_mean - true_val, 2.).sum() / nactive
+        risk_unad = np.power(post_mean - true_val, 2.).sum() / nactive
 
-        return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
+        return np.vstack([sel_cov, naive_cov, ad_len, unad_len, risk_ad, risk_unad])
 
     else:
         return None
@@ -133,6 +133,6 @@ def test_reduced_lasso():
         ad_len += lasso[2, 0]
         unad_len += lasso[3, 0]
         print("\n")
-        print("\n")
         print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+        print("\n")
         print("adjusted and unadjusted lengths", ad_len, unad_len)
