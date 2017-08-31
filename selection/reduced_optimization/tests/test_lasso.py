@@ -1,20 +1,18 @@
 from __future__ import print_function
 import numpy as np
 
-from selection.api import randomization
-from selection.reduced_optimization.initial_soln import selection, instance
-from selection.reduced_optimization.lasso_reduced import (nonnegative_softmax_scaled,
-                                                          neg_log_cube_probability,
-                                                          selection_probability_lasso,
-                                                          sel_prob_gradient_map_lasso,
-                                                          selective_inf_lasso)
+from ...randomized.api import randomization
+from ..initial_soln import selection, instance
+from ..lasso_reduced import (nonnegative_softmax_scaled,
+                             neg_log_cube_probability,
+                             selection_probability_lasso,
+                             sel_prob_gradient_map_lasso,
+                             selective_inf_lasso)
 
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import (set_sampling_params_iftrue,
-                                        set_seed_iftrue)
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import (set_sampling_params_iftrue,
+                                 set_seed_iftrue)
 
-@set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=20)
 def randomized_lasso_trial(X,
                            y,
                            beta,
@@ -57,7 +55,7 @@ def randomized_lasso_trial(X,
         inf = selective_inf_lasso(y, grad_map, prior_variance)
 
         # for the tests, just take a few steps
-        samples = inf.posterior_samples(langevin_steps=ndraw, burnin=burnin)
+        samples = inf.posterior_samples(ndraw=ndraw, burnin=burnin)
 
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
@@ -105,7 +103,9 @@ def randomized_lasso_trial(X,
         return None
 
 
-def test_lasso():
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=20)
+def test_lasso(ndraw=1000, burnin=100):
     ### set parameters
     n = 50
     p = 300
@@ -125,7 +125,9 @@ def test_lasso():
     lasso = randomized_lasso_trial(X,
                                    y,
                                    beta,
-                                   sigma)
+                                   sigma,
+                                   ndraw=ndraw,
+                                   burnin=burnin)
 
     if lasso is not None:
         ad_cov += lasso[0,0]
