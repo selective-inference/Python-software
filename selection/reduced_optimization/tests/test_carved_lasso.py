@@ -89,9 +89,6 @@ def test_carved_lasso(ndraw=1000, burnin=100):
     s = 20
     snr = 7.
 
-    import sys
-    sys.stderr.write(`(ndraw, burnin)`)
-
     ad_cov = 0.
     unad_cov = 0.
     ad_len = 0.
