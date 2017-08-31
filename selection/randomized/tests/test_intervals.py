@@ -181,5 +181,3 @@ def report(niter=50, **kwargs):
     fig.savefig('Group_lasso.pdf')
 
 
-if __name__== '__main__':
-    report()

@@ -39,6 +39,7 @@ class projected_langevin(object):
             if not np.all(np.isfinite(self.gradient_map(candidate))):
                 nattempt += 1
                 self._sqrt_step *= 0.8
+                self.stepsize = self._sqrt_step**2
                 if nattempt >= 10:
                     raise ValueError('unable to find feasible step')
             else:

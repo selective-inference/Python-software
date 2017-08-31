@@ -1,46 +1,23 @@
 from __future__ import print_function
-import time
-import sys
-import os
-
 import numpy as np
-from selection.reduced_optimization.initial_soln import selection, instance
-from selection.reduced_optimization.forward_stepwise_reduced import neg_log_cube_probability_fs, \
-    selection_probability_objective_fs, sel_prob_gradient_map_fs, selective_map_credible_fs
 
-class generate_data():
+from ...randomized.api import randomization
+from ..initial_soln import selection, instance
+from ..forward_stepwise_reduced import (neg_log_cube_probability_fs,
+                                        selection_probability_objective_fs,
+                                        sel_prob_gradient_map_fs,
+                                        selective_map_credible_fs)
 
-    def __init__(self, n, p, sigma=1., rho=0., scale =True, center=True):
-         (self.n, self.p, self.sigma, self.rho) = (n, p, sigma, rho)
-
-         self.X = (np.sqrt(1 - self.rho) * np.random.standard_normal((self.n, self.p)) +
-                   np.sqrt(self.rho) * np.random.standard_normal(self.n)[:, None])
-         if center:
-             self.X -= self.X.mean(0)[None, :]
-         if scale:
-             self.X /= (self.X.std(0)[None, :] * np.sqrt(self.n))
-
-         beta_true = np.zeros(p)
-         u = np.random.uniform(0.,1.,p)
-         for i in range(p):
-             if u[i]<= 0.9:
-                 beta_true[i] = np.random.laplace(loc=0., scale=0.1)
-             else:
-                 beta_true[i] = np.random.laplace(loc=0., scale=1.)
-
-         self.beta = beta_true
-
-    def generate_response(self):
-
-        Y = (self.X.dot(self.beta) + np.random.standard_normal(self.n)) * self.sigma
-
-        return self.X, Y, self.beta * self.sigma, self.sigma
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import (set_sampling_params_iftrue,
+                                 set_seed_iftrue)
 
 def randomized_forward_step(X,
                             y,
                             beta,
-                            sigma):
-    from selection.api import randomization
+                            sigma,
+                            ndraw=1000,
+                            burnin=100):
 
     n, p = X.shape
 
@@ -74,9 +51,10 @@ def randomized_forward_step(X,
 
     inf = selective_map_credible_fs(y, grad_map, prior_variance)
 
-    samples = inf.posterior_samples()
+    samples = inf.posterior_samples(ndraw=ndraw, burnin=burnin)
 
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
+
     selective_mean = np.mean(samples, axis=0)
 
     projection_active = X[:, active].dot(np.linalg.inv(X[:, active].T.dot(X[:, active])))
@@ -113,56 +91,40 @@ def randomized_forward_step(X,
     naive_cov = coverage_unad.sum() / 1.
     ad_len = ad_length.sum() / 1.
     unad_len = unad_length.sum() / 1.
-    bayes_risk_ad = np.power(selective_mean - true_val, 2.).sum() / 1.
-    bayes_risk_unad = np.power(post_mean - true_val, 2.).sum() / 1.
+    risk_ad = np.power(selective_mean - true_val, 2.).sum() / 1.
+    risk_unad = np.power(post_mean - true_val, 2.).sum() / 1.
 
-    return np.vstack([sel_cov, naive_cov, ad_len, unad_len, bayes_risk_ad, bayes_risk_unad])
+    return np.vstack([sel_cov, naive_cov, ad_len, unad_len, risk_ad, risk_unad])
 
-def test_FS():
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=20, burnin=10)
+def test_fs(ndraw=1000, burnin=100):
+    n = 50
+    p = 300
+    s = 10
+    snr = 7.
 
-    n = 200
-    p = 1000
-    s = 0
-    snr = 5.
+    sample = instance(n=n, p=p, s=s, sigma=1., rho=0, signal=snr)
 
-    niter = 50
     ad_cov = 0.
     unad_cov = 0.
     ad_len = 0.
     unad_len = 0.
-    ad_risk = 0.
-    unad_risk = 0.
 
-    ### GENERATE X
-    np.random.seed(0)  # ensures same X
+    X, y, beta, nonzero, sigma = sample.generate_response()
 
-    sample = generate_data(n, p)
+    fs = randomized_forward_step(X,
+                                 y,
+                                 beta,
+                                 sigma,
+                                 ndraw=ndraw,
+                                 burnin=burnin)
 
-    ### GENERATE Y BASED ON SEED
-    for i in range(niter):
-        np.random.seed(i) # ensures different y
-        X, y, beta, sigma = sample.generate_response()
-        lasso = randomized_forward_step(X,
-                                        y,
-                                        beta,
-                                        sigma)
-
-        ad_cov += lasso[0, 0]
-        unad_cov += lasso[1, 0]
-        ad_len += lasso[2, 0]
-        unad_len += lasso[3, 0]
-        ad_risk += lasso[4, 0]
-        unad_risk += lasso[5, 0]
-
-        print("\n")
-        print("iteration completed", i)
-        print("\n")
-        print("adjusted and unadjusted coverage", ad_cov, unad_cov)
-        print("adjusted and unadjusted lengths", ad_len, unad_len)
-        print("adjusted and unadjusted risks", ad_risk, unad_risk)
-
+    ad_cov += fs[0, 0]
+    unad_cov += fs[1, 0]
+    ad_len += fs[2, 0]
+    unad_len += fs[3, 0]
+    print("\n")
     print("adjusted and unadjusted coverage", ad_cov, unad_cov)
+    print("\n")
     print("adjusted and unadjusted lengths", ad_len, unad_len)
-    print("adjusted and unadjusted risks", ad_risk, unad_risk)
-
-    #np.savetxt(outfile, lasso)

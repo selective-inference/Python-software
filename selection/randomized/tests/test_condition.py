@@ -36,8 +36,8 @@ def test_condition(s=0,
                    lam_frac = 1.4,
                    ndraw=10000, burnin=2000,
                    loss='logistic',
-                   nviews=1,
-                   scalings=False):
+                   nviews=4,
+                   scalings=True):
 
     if loss=="gaussian":
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
@@ -48,13 +48,12 @@ def test_condition(s=0,
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    #randomizer = randomization.isotropic_gaussian((p,), scale=sigma)
     randomizer = randomization.laplace((p,), scale=0.6)
 
     epsilon = 1. / np.sqrt(n)
 
     W = np.ones(p)*lam
-    #W[0] = 0 # use at least some unpenalized
+    W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
@@ -79,9 +78,13 @@ def test_condition(s=0,
             return None
 
         if scalings: # try condition on some scalings
-            for i in range(nviews):
-                views[i].decompose_subgradient(conditioning_groups=np.zeros(p, bool),
-                                               marginalizing_groups=np.ones(p, bool))
+            for i in range(int(nviews)/2):
+                conditioning_groups = np.zeros(p, bool)
+                conditioning_groups[:int(p/2)] = True
+                marginalizing_groups = np.ones(p, bool)
+                marginalizing_groups[:int(p/2)] = False
+                views[i].decompose_subgradient(conditioning_groups=conditioning_groups,
+                                               marginalizing_groups=marginalizing_groups)
                 views[i].condition_on_scalings()
         else:
             for i in range(nviews):
@@ -92,8 +95,7 @@ def test_condition(s=0,
         target_sampler, target_observed = glm_target(loss,
                                                      active_union,
                                                      queries)
-                                                     #reference= beta[active_union])
-        #print(target_sampler.target_cov)
+
         test_stat = lambda x: np.linalg.norm(x - beta[active_union])
         observed_test_value = test_stat(target_observed)
 

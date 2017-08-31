@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import numpy as np
+import regreg.api as rr
 import nose.tools as nt
 
 try:
@@ -285,5 +286,53 @@ def test_logistic():
     yield np.testing.assert_equal, L.active[1:], selected_vars
     yield np.testing.assert_allclose, beta2, beta_hat, tol, tol, False, 'logistic coef'
     yield np.testing.assert_allclose, L.summary('onesided')['pval'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
+
+
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+def test_solve_QP(): # check the R coordinate descent LASSO solver
+
+    n, p = 100, 200
+    lam = 10
+    np.random.seed(0)
+
+    X = np.random.standard_normal((n, p))
+    Y = np.random.standard_normal(n)
+
+    loss = rr.squared_error(X, Y)
+    pen = rr.l1norm(p, lagrange=lam)
+    problem = rr.simple_problem(loss, pen)
+    soln = problem.solve(min_its=500, tol=1.e-12)
+
+    import rpy2.robjects.numpy2ri
+    rpy2.robjects.numpy2ri.activate()
+
+    tol = 1.e-5
+    rpy.r.assign('X', X)
+    rpy.r.assign('Y', Y)
+    rpy.r.assign('lam', lam)
+    
+    R_code = """
+
+    library(selectiveInference)
+    p = ncol(X)
+    soln_R = rep(0, p)
+    grad = -t(X) %*% Y
+    ever_active = c(1, rep(0, p-1))
+    nactive = as.integer(1)
+    kkt_tol = 1.e-12
+    objective_tol = 1.e-12
+    maxiter = 500
+    soln_R = selectiveInference:::solve_QP(t(X) %*% X, lam, maxiter, soln_R, -t(X) %*% Y, grad, ever_active, nactive, kkt_tol, objective_tol)$soln
+
+    """ 
+
+    rpy.r(R_code)
+
+    soln_R = np.asarray(rpy.r('soln_R'))
+
+    rpy2.robjects.numpy2ri.deactivate()
+
+    yield np.testing.assert_allclose, soln, soln_R, tol, tol, False, 'checking coordinate QP solver'
 
 

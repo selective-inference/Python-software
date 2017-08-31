@@ -1,7 +1,9 @@
 language: python
+dist: trusty
 python:
   - 2.7
-  - 3.3
+  - 3.4
+  - 3.5
 notifications:
   email: false
 addons:
@@ -13,6 +15,14 @@ env:
     global:
         # Maximal dependencies
         - DEPENDS="cython numpy scipy matplotlib"
+matrix:
+  include:
+    - python: 3.5
+      env:
+        - RUN_R_TESTS=1
+    - python: 2.7
+      env:
+        - RUN_R_TESTS=1
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
@@ -23,19 +33,32 @@ before_install:
   - pip install -r requirements.txt
   - pip install -e .
   - cd ..
+  - sudo apt-get install software-properties-common
+  - sudo add-apt-repository -y ppa:marutter/c2d4u
+  - sudo add-apt-repository -y ppa:marutter/rrutter
+  - sudo apt-get update
+  - sudo apt-get install -y r-base r-base-dev r-cran-devtools
+  - sudo Rscript -e "library(devtools)" -e "install_github('selective-inference/R-software', subdir='selectiveInference')"
+
+
 install:
   # Install selection
   - pip install -r requirements.txt
   - pip install -e .
   - travis_install $INSTALL_TYPE
+
 # command to run tests, e.g. python setup.py test
 script:
+
     - pip install nose
+    # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
+    - pip install -r doc-requirements.txt # installs rpy2 among other things
+
     # Change into an innocuous directory and find tests from installation
     - mkdir for_testing
     - cd for_testing
-    # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
     - 'echo "backend : agg" > matplotlibrc'
+
     # Doctests only on platforms that have compatible fp output
     - if [ `uname` == "Darwin" ] ||
       [ "${TRAVIS_PYTHON_VERSION:0:1}" == "3" ]; then
@@ -45,6 +68,11 @@ script:
       cp ../.coveragerc .;
       COVER_ARGS="--with-coverage --cover-package selection";
       fi
-    - env USE_SMALL_SAMPLES=1 SET_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+    - |
+      if [ "$R_TESTS" ]; then
+        nosetests ../selection/algorithms/tests/test_compareR.py
+      else 
+        env USE_SMALL_SAMPLES=1 SET_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+      fi
 after_success:
     - if [ "${COVERAGE}" == "1" ]; then coveralls; fi

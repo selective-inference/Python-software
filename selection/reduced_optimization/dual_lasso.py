@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 
 import regreg.api as rr
 
@@ -154,7 +153,6 @@ class selection_probability_lasso_dual(rr.smooth_atom):
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
-                # print(current_value, proposed_value, 'minimize')
                 if proposed_value <= current_value:
                     break
                 step *= 0.5
@@ -172,7 +170,6 @@ class selection_probability_lasso_dual(rr.smooth_atom):
             if itercount % 4 == 0:
                 step *= 2
 
-        # print('iter', itercount)
         value = objective(current)
         return current, value
 
@@ -240,6 +237,7 @@ class sel_prob_gradient_map_lasso(rr.smooth_atom):
 
 
 class selective_inf_lasso(rr.smooth_atom):
+
     def __init__(self,
                  y,
                  grad_map,
@@ -343,9 +341,8 @@ class selective_inf_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, langevin_steps=1500, burnin=50):
+    def posterior_samples(self, ndraw=1500, burnin=50):
         state = self.initial_state
-        sys.stderr.write("Number of selected variables by randomized lasso: "+str(state.shape)+"\n")
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
@@ -353,18 +350,17 @@ class selective_inf_lasso(rr.smooth_atom):
 
         samples = []
 
-        for i in xrange(langevin_steps):
+        for i in xrange(ndraw + burnin):
             sampler.next()
-            samples.append(sampler.state.copy())
-            #print i, sampler.state.copy()
-            sys.stderr.write("sample number: " + str(i)+"\n")
+            if i >= burnin:
+                samples.append(sampler.state.copy())
 
         samples = np.array(samples)
-        return samples[burnin:, :]
+        return samples
 
-    def posterior_risk(self, estimator_1, estimator_2, langevin_steps=2000, burnin=0):
+    def posterior_risk(self, estimator_1, estimator_2, ndraw=2000, burnin=0):
         state = self.initial_state
-        sys.stderr.write("Number of selected variables by randomized lasso: "+str(state.shape)+"\n")
+
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
@@ -373,11 +369,10 @@ class selective_inf_lasso(rr.smooth_atom):
         post_risk_1 = 0.
         post_risk_2 = 0.
 
-        for i in range(langevin_steps):
+        for i in range(ndraw):
             sampler.next()
             sample = sampler.state.copy()
 
-            #print(sample)
             risk_1 = ((estimator_1-sample)**2).sum()
             print("adjusted risk", risk_1)
             post_risk_1 += risk_1
@@ -387,7 +382,7 @@ class selective_inf_lasso(rr.smooth_atom):
             post_risk_2 += risk_2
 
 
-        return post_risk_1/langevin_steps, post_risk_2/langevin_steps
+        return post_risk_1/ndraw, post_risk_2/ndraw
 
 
 

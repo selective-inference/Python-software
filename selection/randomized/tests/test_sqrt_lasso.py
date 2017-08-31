@@ -1,22 +1,18 @@
 import numpy as np
 
 import regreg.api as rr
-from selection.api import (randomization,
-                           glm_group_lasso,
-                           multiple_queries,
-                           glm_target)
-from selection.tests.instance import (gaussian_instance,
+from ..api import (randomization,
+                   glm_group_lasso,
+                   multiple_queries,
+                   glm_target)
+from ...tests.instance import (gaussian_instance,
                                       logistic_instance)
-from selection.algorithms.sqrt_lasso import (sqlasso_objective,
-                                             choose_lambda)
-from selection.randomized.query import naive_confidence_intervals
-from selection.randomized.query import naive_pvalues
+from ...algorithms.sqrt_lasso import (sqlasso_objective,
+                                      choose_lambda)
+from ..query import naive_confidence_intervals, naive_pvalues
 
-import selection.tests.reports as reports
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
-from selection.randomized.cv_view import CV_view
-
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 
 def choose_lambda_with_randomization(X, randomization, quantile=0.90, ndraw=10000):
     X = rr.astransform(X)
@@ -97,7 +93,7 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
             M_est1.decompose_subgradient(conditioning_groups=np.zeros(p, dtype=bool),
                                          marginalizing_groups=np.ones(p, bool))
 
-        target_sampler, target_observed = glm_target(glm_loss,
+        target_sampler, target_observed = glm_target(loss,
                                                      active_union,
                                                      mv,
                                                      bootstrap=bootstrap)
@@ -162,20 +158,3 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
         return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
 
-def report(niter=10, **kwargs):
-
-    kwargs = {'s': 30, 'n': 3000, 'p': 1000, 'signal': 3.5, 'bootstrap': False}
-    intervals_report = reports.reports['test_cv']
-    CV_runs = reports.collect_multiple_runs(intervals_report['test'],
-                                             intervals_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-
-    fig = reports.pivot_plot_plus_naive(CV_runs)
-    fig.suptitle("CV pivots")
-    fig.savefig('cv_pivots.pdf')
-
-
-if __name__ == '__main__':
-    report()

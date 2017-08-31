@@ -1,0 +1,4 @@
+# Requirements for developing regreg
+# Check these dependencies against regreg/info.py
+-r requirements.txt
+nose

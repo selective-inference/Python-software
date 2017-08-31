@@ -1,11 +1,13 @@
 import functools
 import numpy as np
 import regreg.api as rr
+
+from ..algorithms.cv import CV
+from ..algorithms.cv_glmnet import CV_glmnet, have_glmnet
+
 from .query import query
-from selection.randomized.cv import CV
-from selection.randomized.cv_glmnet import CV_glmnet
-from selection.randomized.glm import bootstrap_cov
-from selection.api import randomization
+from .glm import bootstrap_cov
+from .randomization import randomization
 
 class CV_view(query):
 
@@ -24,18 +26,16 @@ class CV_view(query):
 
     def solve(self, glmnet=False, K=5):
 
-        if glmnet==False:
+        if glmnet == False:
             X, y = self.loss.data
             n, p = X.shape
             if self.loss_label == "gaussian":
-                # lam_seq = np.mean(np.fabs(np.dot(X.T, y)))
-                lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000))) +\
+                lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000))) +
                                           self.lasso_randomization.sample((1000,))).max(0))
             elif self.loss_label == 'logistic':
                 lam_seq = np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 1000))) +\
                           self.lasso_randomization.sample((1000,))).max(0))
             self.lam_seq = np.exp(np.linspace(np.log(1.e-3), np.log(1), 30)) * lam_seq
-            # lam_seq = np.exp(np.linspace(np.log(1.e-2), np.log(2), 30)) * np.fabs(X.T.dot(y)+lasso_randomization.sample((10,))).max()
 
             folds = np.arange(n) % K
             np.random.shuffle(folds)
@@ -48,6 +48,8 @@ class CV_view(query):
             CV_compute = CV_glmnet(self.loss, self.loss_label)
 
         self.lam_CVR, self.SD, CVR_val, CV1_val, self.lam_seq = CV_compute.choose_lambda_CVR(self.scale1, self.scale2)
+        self.ndim = self.lam_seq.shape[0]
+
         if (self.scale1 is not None) and (self.scale2 is not None):
             self.SD = self.SD+self.scale1**2+self.scale2**2
         (self.observed_opt_state, self.observed_score_state) = (CVR_val, CV1_val)
@@ -64,7 +66,6 @@ class CV_view(query):
             query.__init__(self, self.randomization2)
             self.CVR_boot, self.CV1_boot = CV_compute.bootstrap_CVR_curve(self.scale1, self.scale2)
             self._solved = True
-
 
     def setup_sampler(self):
         return self.CV1_boot
@@ -94,7 +95,6 @@ class CV_view(query):
         self.opt_transform = (None, self.observed_opt_state)
 
 
-#DEBUG = True
 def projection(Z, idx):
     Z = np.asarray(Z)
     keep = np.ones_like(Z, np.bool)
@@ -115,8 +115,6 @@ def projection(Z, idx):
     if root_found:
         val = (np.sum(Z_sort[:(i+1)]) + Z[idx]) / (i+2)
         dval = val - Z[idx] + np.sum(keep * (Z <= val) * (val - Z))
-        #if DEBUG:
-        #    print('derivative is:', dval)
     else:
         val = np.mean(Z)
 

@@ -1,17 +1,22 @@
 import numpy as np
 import regreg.api as rr
 import pandas as pd
-import selection.api as sel
-from selection.tests.instance import gaussian_instance
-from selection.algorithms.lasso import lasso
-import selection.tests.reports as reports
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
-from statsmodels.sandbox.stats.multicomp import multipletests
-from selection.randomized.cv_view import CV_view
 from scipy.stats import norm as ndist
 from scipy.optimize import bisect
-from selection.randomized.query import (naive_pvalues, naive_confidence_intervals)
+from statsmodels.sandbox.stats.multicomp import multipletests
+
+from ...tests.instance import gaussian_instance
+from ...algorithms.lasso import lasso
+
+import selection.tests.reports as reports
+from ...tests.flags import SET_SEED
+from ...tests.decorators import (wait_for_return_value, 
+                                 set_seed_iftrue, 
+                                 set_sampling_params_iftrue, 
+                                 register_report)
+
+from ..cv_view import (CV_view, have_glmnet)
+from ..query import (naive_pvalues, naive_confidence_intervals)
 
 
 def restricted_gaussian(Z, interval=[-5.,5.]):
@@ -50,18 +55,18 @@ def equal_tailed_interval(L_constraint, Z, U_constraint, S, alpha=0.05):
                   'naive_pvalues', 'covered_naive', 'ci_length_naive',
                   'active_var','BH_decisions'])
 @set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
 def test_lee_et_al(n=300,
                    p=100,
                    s=10,
-                   signal = 3.5,
+                   signal=3.5,
                    rho = 0.,
                    sigma = 1.,
                    cross_validation=True,
                    condition_on_CVR=False,
-                   lam_frac = 0.6,
-                   X = None,
+                   lam_frac=0.6,
+                   glmnet=True,
+                   X=None,
                    check_screen=True,
                    intervals=False):
 
@@ -80,7 +85,7 @@ def test_lee_et_al(n=300,
         cv = CV_view(rr.glm.gaussian(X,y), loss_label="gaussian", lasso_randomization=None, epsilon=None,
                      scale1=None, scale2=None)
         # views.append(cv)
-        cv.solve(glmnet=True)
+        cv.solve(glmnet=glmnet and have_glmnet)
         lam = cv.lam_CVR
         print("minimizer of CVR", lam)
 
@@ -218,7 +223,7 @@ def report(niter=100, design="random", **kwargs):
     fig1.savefig('naive_pvalues.pdf')
 
 
-if __name__ == '__main__':
+def main():
 
     np.random.seed(500)
     kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False,

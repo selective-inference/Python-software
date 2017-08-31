@@ -52,14 +52,15 @@ def _grad_log_wishart_white(eigenvals, n):
 
 def main(n=50):
 
-    from sklearn.isotonic import IsotonicRegression
+    from regreg.atoms._isotonic import _isotonic_regression
     import matplotlib.pyplot as plt
     initial = np.ones(n) + 0.01 * np.random.standard_normal(n)
     grad_map = lambda val: _grad_log_wishart_white(val, n)
 
     def projection_map(vals):
-        iso = IsotonicRegression(y_min=1.e-6)
-        vals = np.asarray(vals)
+        iso = np.zeros_like(vals)
+        _isotonic_regression(vals, np.ones_like(vals), iso)
+        vals = np.asarray(iso)
         return np.maximum(vals, 1.e-6)
 
     sampler = projected_langevin(initial,

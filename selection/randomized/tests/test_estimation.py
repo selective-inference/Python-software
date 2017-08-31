@@ -1,9 +1,10 @@
 from __future__ import print_function
 import numpy as np
+import matplotlib.pyplot as plt
 
 from selection.tests.instance import gaussian_instance
 
-def MSE(signal=1, n=100, p=10, s=1):
+def test_MSE(signal=1, n=100, p=10, s=1):
 
     ninstance = 1
     total_mse = 0
@@ -11,6 +12,7 @@ def MSE(signal=1, n=100, p=10, s=1):
     data_instance = gaussian_instance(n, p, s, signal)
     tau = 1.
     for i in range(ninstance):
+
         X, y, true_beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, signal=signal)
         random_Z = np.random.standard_normal(p)
         lam, epsilon, active, betaE, cube, initial_soln = selection(X, y, random_Z) # selection not defined -- is in a file that was deleted
@@ -60,21 +62,20 @@ def MSE_three(signal=5, n=100, p=10, s=0):
     if nvalid_instance > 0:
         return total_mse_mle/float(nvalid_instance), total_mse_unbiased/float(nvalid_instance), total_mse_umvu/float(nvalid_instance)
 
-
 def plot_estimation_three():
     signal_seq = np.linspace(-10, 10, num=50)
     filter = np.zeros(signal_seq.shape[0], dtype=bool)
     mse_mle_seq, mse_unbiased_seq, mse_umvu_seq = [], [], []
 
     for i in range(signal_seq.shape[0]):
-            print("parameter value", signal_seq[i])
-            mse = MSE_three(signal_seq[i])
-            if mse is not None:
-                mse_mle, mse_unbiased, mse_umvu = mse
-                mse_mle_seq.append(mse_mle)
-                mse_unbiased_seq.append(mse_unbiased)
-                mse_umvu_seq.append(mse_umvu)
-                filter[i] = True
+        print("parameter value", signal_seq[i])
+        mse = MSE_three(signal_seq[i])
+        if mse is not None:
+            mse_mle, mse_unbiased, mse_umvu = mse
+            mse_mle_seq.append(mse_mle)
+            mse_unbiased_seq.append(mse_unbiased)
+            mse_umvu_seq.append(mse_umvu)
+            filter[i] = True
 
     plt.clf()
     plt.title("MSE")

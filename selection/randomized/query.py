@@ -1,12 +1,13 @@
 from itertools import product
 import numpy as np
+
 from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 
+from regreg.affine import power_L
+
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
-
-
 
 class query(object):
 
@@ -236,7 +237,7 @@ class multiple_queries(object):
         curr_randomization_length = 0
         self.randomization_slice = []
         for objective in self.objectives:
-            randomization_length = objective.loss.shape[0]
+            randomization_length = objective.randomization.shape[0]
             self.randomization_slice.append(slice(curr_randomization_length,
                                                   curr_randomization_length + randomization_length))
             curr_randomization_length = curr_randomization_length + randomization_length
@@ -402,11 +403,11 @@ class targeted_sampler(object):
         for i in range(self.nqueries):
             if parametric == False:
                 target_cov, cross_cov = multi_view.form_covariances(target_info,  
-                                  cross_terms=[multi_view.score_info[i]],
-                                  nsample=multi_view.nboot[i])
+                                                                    cross_terms=[multi_view.score_info[i]],
+                                                                    nsample=multi_view.nboot[i])
             else:
                 target_cov, cross_cov = multi_view.form_covariances(target_info, 
-                                  cross_terms=[multi_view.score_info[i]])
+                                                                    cross_terms=[multi_view.score_info[i]])
 
             self.target_cov = target_cov
             self.score_cov.append(cross_cov)
@@ -760,10 +761,10 @@ class targeted_sampler(object):
         lipschitz : float
 
         """
-        lipschitz = np.linalg.svd(self.target_inv_cov)[1].max()
+        lipschitz = power_L(self.target_inv_cov)
         for transform, objective in zip(self.target_transform, self.objectives):
-            lipschitz += np.linalg.svd(transform[0])[1].max()**2 * objective.randomization.lipschitz
-            lipschitz += np.linalg.svd(objective.score_transform[0])[1].max()**2 * objective.randomization.lipschitz
+            lipschitz += power_L(transform[0])**2 * objective.randomization.lipschitz
+            lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
         return lipschitz
 
 

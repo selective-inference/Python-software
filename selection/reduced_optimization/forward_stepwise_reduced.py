@@ -1,5 +1,4 @@
 from math import log
-import sys
 import numpy as np
 import regreg.api as rr
 from scipy.stats import norm
@@ -212,7 +211,6 @@ class selection_probability_objective_fs(rr.smooth_atom):
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
-                # print(current_value, proposed_value, 'minimize')
                 if proposed_value <= current_value:
                     break
                 step *= 0.5
@@ -230,7 +228,6 @@ class selection_probability_objective_fs(rr.smooth_atom):
             if itercount % 4 == 0:
                 step *= 2
 
-        # print('iter', itercount)
         value = objective(current)
         return current, value
 
@@ -395,9 +392,8 @@ class selective_map_credible_fs(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, langevin_steps=1000, burnin=100):
+    def posterior_samples(self, ndraw=1000, burnin=100):
         state = self.initial_state
-        print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
@@ -405,11 +401,10 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         samples = []
 
-        for i in range(langevin_steps):
+        for i in xrange(ndraw + burnin):
             sampler.next()
-            samples.append(sampler.state.copy())
-            #print i, sampler.state.copy()
-            sys.stderr.write("sample number: " + str(i) + "\n")
+            if i >= burnin:
+                samples.append(sampler.state.copy())
 
         samples = np.array(samples)
-        return samples[burnin:, :]
+        return samples

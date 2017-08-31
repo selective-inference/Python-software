@@ -3,6 +3,7 @@ Module to solve sqrt-LASSO convex program using regreg.
 """
 
 import numpy as np
+from scipy import sparse
 from scipy.stats import norm as ndist, chi as chidist
 from scipy.interpolate import interp1d
 
@@ -37,9 +38,8 @@ class sqlasso_objective(rr.smooth_atom):
                  initial=None,
                  offset=None):
 
-        X = rr.astransform(X)
         rr.smooth_atom.__init__(self,
-                                X.input_shape,
+                                rr.astransform(X).input_shape,
                                 coef=1.,
                                 offset=offset,
                                 quadratic=quadratic,
@@ -74,6 +74,40 @@ class sqlasso_objective(rr.smooth_atom):
             return f
         else:
             raise ValueError("mode incorrectly specified")
+
+    def hessian(self, beta):
+        """
+
+        Compute the Hessian of the loss $ \nabla^2 \ell(X\beta)$.
+
+        Parameters
+        ----------
+
+        beta : ndarray
+            Parameters.
+
+        Returns
+        -------
+
+        hess : ndarray
+            Hessian of the loss at $\beta$, defined everywhere 
+            the residual is not 0.
+
+        """
+
+        f, g = self._sqerror.smooth_objective(beta, mode='both')
+
+        if self._is_transform:
+            raise ValueError('refusing to form Hessian for arbitrary affine_transform, use an ndarray or scipy.sparse')
+
+        if not hasattr(self, "_H"):
+            X = self.data[0]            
+            if not sparse.issparse(X): # assuming it is an ndarray
+                self._H = X.T.dot(X)
+            else:
+                self._H = X.T * X
+
+        return self._H / f - np.multiply.outer(g, g) / f**3
 
 def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_args={}):
     """
