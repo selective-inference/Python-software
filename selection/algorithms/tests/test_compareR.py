@@ -323,7 +323,7 @@ def test_solve_QP(): # check the R coordinate descent LASSO solver
     kkt_tol = 1.e-12
     objective_tol = 1.e-12
     maxiter = 500
-    soln_R = selectiveInference:::solve_QP(t(X) %*% X, lam, maxiter, soln_R, -t(X) %*% Y, grad, ever_active, nactive, kkt_tol, objective_tol)$soln
+    soln_R = selectiveInference:::solve_QP(t(X) %*% X, lam, maxiter, soln_R, -t(X) %*% Y, grad, ever_active, nactive, kkt_tol, objective_tol, p)$soln
 
     """ 
 
