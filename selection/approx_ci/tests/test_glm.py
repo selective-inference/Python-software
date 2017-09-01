@@ -118,3 +118,4 @@ def test_lasso(n, p, s, signal):
         print("output of selection adjusted inference", lasso)
         return(lasso)
 
+test_lasso(n=100, p=200, s=5, signal=5.)

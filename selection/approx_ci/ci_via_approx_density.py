@@ -532,7 +532,7 @@ class approximate_conditional_density(rr.smooth_atom):
     def approximate_ci(self, j):
 
         grid_num = 301
-        param_grid = np.linspace(-10,10, num=grid_num)
+        param_grid = np.linspace(-15.,15., num=grid_num)
         area = np.zeros(param_grid.shape[0])
 
         for k in range(param_grid.shape[0]):
