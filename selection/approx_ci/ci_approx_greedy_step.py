@@ -1,9 +1,148 @@
 from math import log
 import numpy as np
+import sys
 import regreg.api as rr
-from selection.bayesian.selection_probability_rr import nonnegative_softmax_scaled
 from scipy.stats import norm
+from selection.randomized.glm import pairs_bootstrap_glm, bootstrap_cov
+from selection.randomized.greedy_step import greedy_score_step
 
+
+class greedy_score_step_map(greedy_score_step):
+    def __init__(self, loss,
+                 penalty,
+                 active_groups,
+                 inactive_groups,
+                 randomization,
+                 randomization_scale=1.):
+
+        greedy_score_step.__init__(self, loss,
+                                   penalty,
+                                   active_groups,
+                                   inactive_groups,
+                                   randomization)
+
+        self.randomization_scale = randomization_scale
+
+    def solve_approx(self):
+        self.solve()
+        self.setup_sampler()
+        p = self.inactive.sum()
+        self.feasible_point = self.observed_scaling
+        self._overall = np.zeros(p, dtype=bool)
+        # print(self.selection_variable['variables'])
+        self._overall[self.selection_variable['variables']] = 1
+
+        self.observed_opt_state = np.hstack([self.observed_scaling, self.observed_subgradients])
+
+        _opt_linear_term = np.concatenate((np.atleast_2d(self.maximizing_subgrad).T, self.losing_padding_map), 1)
+        self._opt_linear_term = np.concatenate(
+            (_opt_linear_term[self._overall, :], _opt_linear_term[~self._overall, :]), 0)
+
+        self.opt_transform = (self._opt_linear_term, np.zeros(p))
+
+        (self._score_linear_term, _) = self.score_transform
+
+        self.inactive_lagrange = self.observed_scaling * self.penalty.weights[0] * np.ones(p - 1)
+
+        X, _ = self.loss.data
+        n, p = X.shape
+        self.p = p
+        bootstrap_score = pairs_bootstrap_glm(self.loss,
+                                              self.active,
+                                              inactive=~self.active)[0]
+
+        bootstrap_target, target_observed = pairs_bootstrap_glm(self.loss,
+                                                                self._overall,
+                                                                beta_full=None,
+                                                                inactive=None)
+
+        sampler = lambda: np.random.choice(n, size=(n,), replace=True)
+        self.target_cov, target_score_cov = bootstrap_cov(sampler, bootstrap_target, cross_terms=(bootstrap_score,))
+        self.score_target_cov = np.atleast_2d(target_score_cov).T
+        self.target_observed = target_observed
+
+        nactive = self._overall.sum()
+        self.nactive = nactive
+
+        self.B_active = self._opt_linear_term[:nactive, :nactive]
+        self.B_inactive = self._opt_linear_term[nactive:, :nactive]
+
+    def setup_map(self, j):
+        self.A = np.dot(self._score_linear_term, self.score_target_cov[:, j]) / self.target_cov[j, j]
+        self.null_statistic = self._score_linear_term.dot(self.observed_score_state) - self.A * self.target_observed[j]
+
+        self.offset_active = self.null_statistic[:self.nactive]
+        self.offset_inactive = self.null_statistic[self.nactive:]
+
+
+class nonnegative_softmax_scaled(rr.smooth_atom):
+    """
+    The nonnegative softmax objective
+    .. math::
+         \mu \mapsto
+         \sum_{i=1}^{m} \log \left(1 +
+         \frac{1}{\mu_i} \right)
+    """
+
+    objective_template = r"""\text{nonneg_softmax}\left(%(var)s\right)"""
+
+    def __init__(self,
+                 shape,
+                 barrier_scale=1.,
+                 coef=1.,
+                 offset=None,
+                 quadratic=None,
+                 initial=None):
+
+        rr.smooth_atom.__init__(self,
+                                shape,
+                                offset=offset,
+                                quadratic=quadratic,
+                                initial=initial,
+                                coef=coef)
+
+        # a feasible point
+        self.coefs[:] = np.ones(shape)
+        self.barrier_scale = barrier_scale
+
+    def smooth_objective(self, mean_param, mode='both', check_feasibility=False):
+        """
+        Evaluate the smooth objective, computing its value, gradient or both.
+        Parameters
+        ----------
+        mean_param : ndarray
+            The current parameter values.
+        mode : str
+            One of ['func', 'grad', 'both'].
+        check_feasibility : bool
+            If True, return `np.inf` when
+            point is not feasible, i.e. when `mean_param` is not
+            in the domain.
+        Returns
+        -------
+        If `mode` is 'func' returns just the objective value
+        at `mean_param`, else if `mode` is 'grad' returns the gradient
+        else returns both.
+        """
+
+        slack = self.apply_offset(mean_param)
+
+        if mode in ['both', 'func']:
+            if np.all(slack > 0):
+                f = self.scale(np.log((slack + self.barrier_scale) / slack).sum())
+            else:
+                f = np.inf
+        if mode in ['both', 'grad']:
+            g = self.scale(1. / (slack + self.barrier_scale) - 1. / slack)
+
+        if mode == 'both':
+            return f, g
+        elif mode == 'grad':
+            return g
+        elif mode == 'func':
+            return f
+        else:
+            raise ValueError("mode incorrectly specified")
 
 class neg_log_cube_probability_fs(rr.smooth_atom):
     def __init__(self,
@@ -51,10 +190,11 @@ class neg_log_cube_probability_fs(rr.smooth_atom):
 
         log_cube_grad_vec[pos_index] = ((1. + prod_arg[pos_index]) /
                                     ((prod_arg[pos_index] / arg_u[pos_index]) +
-                                     (1. / arg_l[pos_index]))) / (self.randomization_scale ** 2)
+                                     (1. / arg_l[pos_index]))) / (self.randomization_scale)
 
-        log_cube_grad_vec[neg_index] = ((arg_u[neg_index] - (arg_l[neg_index] * neg_prod_arg[neg_index]))
-                                    / (self.randomization_scale ** 2)) / (1. + neg_prod_arg[neg_index])
+        log_cube_grad_vec[neg_index] = ((1. + neg_prod_arg[neg_index]) /
+                                    (-(neg_prod_arg[neg_index] / arg_l[neg_index]) +
+                                     (1. / arg_u[neg_index]))) / (self.randomization_scale)
 
         log_cube_grad = log_cube_grad_vec.sum()
 
@@ -169,10 +309,7 @@ class approximate_conditional_prob_fs(rr.smooth_atom):
         active_conj_loss = rr.affine_smooth(self.active_conjugate,
                                             rr.affine_transform(self.map.B_active, offset_active))
 
-        #if self.map.randomizer == 'laplace':
-        #    cube_obj = neg_log_cube_probability_laplace(self.q, self.inactive_lagrange, randomization_scale = 1.)
-        #elif self.map.randomizer == 'gaussian':
-        cube_loss = neg_log_cube_probability_fs(self.q, offset_inactive, randomization_scale = 1.)
+        cube_loss = neg_log_cube_probability_fs(self.q, offset_inactive, randomization_scale = self.map.randomization_scale)
 
         total_loss = rr.smooth_sum([active_conj_loss,
                                     cube_loss,
@@ -268,52 +405,63 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def solve_approx(self):
 
-        #defining the grid on which marginal conditional densities will be evaluated
-        grid_length = 201
-        self.grid = np.linspace(-5, 15, num=grid_length)
-        #self.grid = np.linspace(-5*np.amax(np.absolute(target_observed)), 5*np.amax(np.absolute(target_observed)), num=grid_length)
-        #s_obs = np.round(self.target_observed, decimals =1)
+        self.grid_length = 241
 
-        print("observed values", self.target_observed)
+        # print("observed values", self.target_observed)
         self.ind_obs = np.zeros(self.nactive, int)
         self.norm = np.zeros(self.nactive)
-        self.h_approx = np.zeros((self.nactive, self.grid.shape[0]))
+        self.h_approx = np.zeros((self.nactive, self.grid_length))
+        self.grid = np.zeros((self.nactive, self.grid_length))
 
         for j in range(self.nactive):
             obs = self.target_observed[j]
-            self.norm[j] = self.target_cov[j,j]
-            if obs < self.grid[0]:
-                self.ind_obs[j] = 0
-            elif obs > np.max(self.grid):
-                self.ind_obs[j] = grid_length-1
-            else:
-                self.ind_obs[j] = np.argmin(np.abs(self.grid-obs))
-            self.h_approx[j, :] = self.approx_conditional_prob(j)
 
+            self.grid[j, :] = np.linspace(self.target_observed[j] - 12., self.target_observed[j] + 12.,
+                                          num=self.grid_length)
+
+            self.norm[j] = self.target_cov[j, j]
+            if obs < self.grid[j, 0]:
+                self.ind_obs[j] = 0
+            elif obs > np.max(self.grid[j, :]):
+                self.ind_obs[j] = self.grid_length - 1
+            else:
+                self.ind_obs[j] = np.argmin(np.abs(self.grid[j, :] - obs))
+
+            sys.stderr.write("number of variable being computed: " + str(j) + "\n")
+            self.h_approx[j, :] = self.approx_conditional_prob(j)
 
     def approx_conditional_prob(self, j):
         h_hat = []
 
         self.sel_alg.setup_map(j)
 
-        for i in range(self.grid.shape[0]):
+        for i in range(self.grid[j, :].shape[0]):
+            approx = approximate_conditional_prob_fs((self.grid[j, :])[i], self.sel_alg)
+            val = -(approx.minimize2(step=1, nstep=200)[::-1])[0]
 
-            approx = approximate_conditional_prob_fs(self.grid[i], self.sel_alg)
-            h_hat.append(-(approx.minimize2(j, nstep=50)[::-1])[0])
+            if val != -float('Inf'):
+                h_hat.append(val)
+            elif val == -float('Inf') and i == 0:
+                h_hat.append(-500.)
+            elif val == -float('Inf') and i > 0:
+                h_hat.append(h_hat[i - 1])
+
+        # sys.stderr.write("point on grid: " + str(i) + "\n")
+        # sys.stderr.write("value on grid: " + str(h_hat[i]) + "\n")
 
         return np.array(h_hat)
 
     def area_normalized_density(self, j, mean):
 
         normalizer = 0.
-        grad_normalizer = 0.
         approx_nonnormalized = []
+        grad_normalizer = 0.
 
-        for i in range(self.grid.shape[0]):
-            approx_density = np.exp(-np.true_divide((self.grid[i] - mean) ** 2, 2 * self.norm[j])
+        for i in range(self.grid_length):
+            approx_density = np.exp(-np.true_divide(((self.grid[j,:])[i] - mean) ** 2, 2 * self.norm[j])
                                     + (self.h_approx[j,:])[i])
             normalizer += approx_density
-            grad_normalizer +=  (-mean/self.norm[j] + self.grid[i]/self.norm[j])* approx_density
+            grad_normalizer += (-mean / self.norm[j] + (self.grid[j, :])[i] / self.norm[j]) * approx_density
             approx_nonnormalized.append(approx_density)
 
         return np.cumsum(np.array(approx_nonnormalized / normalizer)), normalizer, grad_normalizer
@@ -322,13 +470,13 @@ class approximate_conditional_density(rr.smooth_atom):
 
         param = self.apply_offset(param)
 
-        approx_normalizer = self.area_normalized_density(j,param)
+        approx_normalizer = self.area_normalized_density(j, param)
 
-        f = (param**2)/(2*self.norm[j]) - (self.target_observed[j]*param)/self.norm[j] + \
+        f = (param ** 2) / (2 * self.norm[j]) - (self.target_observed[j] * param) / self.norm[j] + \
             log(approx_normalizer[1])
 
-        g = param/self.norm[j] - self.target_observed[j]/self.norm[j] + \
-            approx_normalizer[2]/approx_normalizer[1]
+        g = param / self.norm[j] - self.target_observed[j] / self.norm[j] + \
+            approx_normalizer[2] / approx_normalizer[1]
 
         if mode == 'func':
             return self.scale(f)
@@ -339,7 +487,7 @@ class approximate_conditional_density(rr.smooth_atom):
         else:
             raise ValueError("mode incorrectly specified")
 
-    def approx_MLE_solver(self, j, step=1, nstep=100, tol=1.e-5):
+    def approx_MLE_solver(self, j, step=1, nstep=150, tol=1.e-5):
 
         current = self.target_observed[j]
         current_value = np.inf
@@ -375,13 +523,13 @@ class approximate_conditional_density(rr.smooth_atom):
                 step *= 2
 
         value = objective(current)
+
         return current, value
 
     def approximate_ci(self, j):
 
-        grid_length = 201
-        #param_grid = np.linspace(-5*np.amax(np.absolute(self.target_observed)), 5*np.amax(np.absolute(self.target_observed)), num=grid_length)
-        param_grid = np.linspace(-5, 15, num=201)
+        grid_num = 301
+        param_grid = np.linspace(-10,10, num=grid_num)
         area = np.zeros(param_grid.shape[0])
 
         for k in range(param_grid.shape[0]):
@@ -399,4 +547,4 @@ class approximate_conditional_density(rr.smooth_atom):
         area_vec = self.area_normalized_density(j, param)[0]
         area = area_vec[self.ind_obs[j]]
 
-        return 2*min(area, 1-area)
+        return 2*min(area, 1.-area)
