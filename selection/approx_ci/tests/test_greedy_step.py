@@ -3,8 +3,9 @@ import sys
 import numpy as np
 import regreg.api as rr
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.approx_ci.ci_approx_greedy_step import (greedy_score_map,
-                                                       approximate_conditional_density)
+from selection.approx_ci.selection_map import greedy_score_map
+from selection.approx_ci.ci_approx_greedy_step import approximate_conditional_density
+
 
 from selection.randomized.query import naive_confidence_intervals
 

@@ -1,8 +1,8 @@
 from __future__ import print_function
 import os, numpy as np, pandas, statsmodels.api as sm
 import regreg.api as rr
-from selection.approx_ci.ci_via_approx_density import (M_estimator_map,
-                                                      approximate_conditional_density)
+from selection.approx_ci.selection_map import M_estimator_map
+from selection.approx_ci.ci_approx_density import approximate_conditional_density
 
 from selection.randomized.query import naive_confidence_intervals
 

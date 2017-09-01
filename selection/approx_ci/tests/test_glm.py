@@ -3,8 +3,9 @@ import numpy as np
 import sys
 import regreg.api as rr
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.approx_ci.randomized_lasso import (M_estimator_map,
-                                                  approximate_conditional_density)
+from selection.approx_ci.selection_map import M_estimator_map
+from selection.approx_ci.ci_approx_density import approximate_conditional_density
+
 from selection.randomized.query import naive_confidence_intervals
 
 def test_approximate_inference(X,

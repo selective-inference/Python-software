@@ -3,8 +3,8 @@ import numpy as np
 import sys
 import regreg.api as rr
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.approx_ci.ci_via_approx_density import (threshold_score_map,
-                                                       approximate_conditional_density)
+from selection.approx_ci.selection_map import threshold_score_map
+from selection.approx_ci.ci_approx_density import approximate_conditional_density
 
 from selection.randomized.query import naive_confidence_intervals
 
