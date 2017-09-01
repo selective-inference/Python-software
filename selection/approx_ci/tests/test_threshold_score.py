@@ -1,76 +1,59 @@
 from __future__ import print_function
 import numpy as np
-import time
+import sys
 import regreg.api as rr
-import selection.tests.reports as reports
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.approx_ci.ci_via_approx_density import approximate_conditional_density
-from selection.approx_ci.estimator_approx import threshold_score_approx
+from selection.approx_ci.ci_via_approx_density import (threshold_score_map,
+                                                       approximate_conditional_density)
 
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
 from selection.randomized.query import naive_confidence_intervals
-from selection.randomized.query import naive_pvalues
 
-
-@register_report(['cover', 'ci_length', 'truth', 'naive_cover', 'naive_pvalues'])
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-@wait_for_return_value()
-def test_approximate_ci(n=200,
-                        p=50,
-                        s=0,
-                        snr=5,
-                        threshold = 3.,
-                        rho=0.1,
-                        lam_frac = 1.,
-                        loss='gaussian',
-                        randomizer='gaussian'):
+def test_approximate_inference(X,
+                               y,
+                               true_mean,
+                               sigma,
+                               threshold = 3.,
+                               seed_n = 0,
+                               lam_frac = 1.,
+                               loss='gaussian',
+                               randomization_scale = 1.):
 
     from selection.api import randomization
-
+    n, p = X.shape
+    np.random.seed(seed_n)
     if loss == "gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1.)
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         loss = rr.glm.gaussian(X, y)
     elif loss == "logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
         loss = rr.glm.logistic(X, y)
 
-    if randomizer=='gaussian':
-        randomization = randomization.isotropic_gaussian((p,), scale=1.)
-    elif randomizer=='laplace':
-        randomization = randomization.laplace((p,), scale=1.)
-
     active_bool = np.zeros(p, np.bool)
-    #active_bool[range(3)] = 1
     inactive_bool = ~active_bool
 
-    TS = threshold_score_approx(loss,
-                                threshold,
-                                randomization,
-                                active_bool,
-                                inactive_bool,
-                                randomizer)
+    randomization = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+    TS = threshold_score_map(loss,
+                             threshold,
+                             randomization,
+                             active_bool,
+                             inactive_bool,
+                             randomization_scale)
 
     TS.solve_approx()
     active = TS._overall
-    print("nactive", active.sum())
-
-    ci = approximate_conditional_density(TS)
-    ci.solve_approx()
-
     active_set = np.asarray([i for i in range(p) if active[i]])
-    true_support = np.asarray([i for i in range(p) if i < s])
     nactive = np.sum(active)
-    print("active set, true_support", active_set, true_support)
-    true_vec = beta[active]
-    print("true coefficients", true_vec)
+    sys.stderr.write("number of active selected by thresholding" + str(nactive) + "\n")
+    sys.stderr.write("Active set selected by thresholding" + str(active_set) + "\n")
+    sys.stderr.write("Observed target" + str(TS.target_observed) + "\n")
 
-    if (set(active_set).intersection(set(true_support)) == set(true_support))== True:
+    if nactive == 0:
+        return None
 
-        ci_active = np.zeros((nactive, 2))
-        covered = np.zeros(nactive, np.bool)
-        ci_length = np.zeros(nactive)
-        pivots = np.zeros(nactive)
+    else:
+        true_vec = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
+
+        sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
 
         class target_class(object):
             def __init__(self, target_cov):
@@ -78,43 +61,65 @@ def test_approximate_ci(n=200,
                 self.shape = target_cov.shape
 
         target = target_class(TS.target_cov)
+
         ci_naive = naive_confidence_intervals(target, TS.target_observed)
-        naive_pvals = naive_pvalues(target, TS.target_observed, true_vec)
         naive_covered = np.zeros(nactive)
-        toc = time.time()
+        naive_risk = np.zeros(nactive)
+
+        ci = approximate_conditional_density(TS)
+        ci.solve_approx()
+
+        ci_sel = np.zeros((nactive, 2))
+        sel_MLE = np.zeros(nactive)
+        sel_length = np.zeros(nactive)
 
         for j in range(nactive):
-            ci_active[j, :] = np.array(ci.approximate_ci(j))
-            if (ci_active[j, 0] <= true_vec[j]) and (ci_active[j,1] >= true_vec[j]):
-                covered[j] = 1
-            ci_length[j] = ci_active[j,1] - ci_active[j,0]
-            print(ci_active[j, :])
-            pivots[j] = ci.approximate_pvalue(j, true_vec[j])
+            ci_sel[j, :] = np.array(ci.approximate_ci(j))
+            sel_MLE[j] = ci.approx_MLE_solver(j, step=1, nstep=150)[0]
+            sel_length[j] = ci_sel[j, 1] - ci_sel[j, 0]
 
-            # naive ci
-            if (ci_naive[j,0]<=true_vec[j]) and (ci_naive[j,1]>=true_vec[j]):
-                naive_covered[j]+=1
+        sel_covered = np.zeros(nactive, np.bool)
+        sel_risk = np.zeros(nactive)
 
-        tic = time.time()
-        print('ci time now', tic - toc)
+        for j in range(nactive):
 
-        return covered, ci_length, pivots, naive_covered, naive_pvals
-    #else:
-    #    return 0
+            sel_risk[j] = (sel_MLE[j] - true_vec[j]) ** 2.
+            naive_risk[j] = (TS.target_observed[j]- true_vec[j]) ** 2.
 
-def report(niter=200, **kwargs):
+            if (ci_sel[j, 0] <= true_vec[j]) and (ci_sel[j, 1] >= true_vec[j]):
+                sel_covered[j] = 1
+            if (ci_naive[j, 0] <= true_vec[j]) and (ci_naive[j, 1] >= true_vec[j]):
+                naive_covered[j] = 1
 
-    kwargs = {'s': 0, 'n': 200, 'p': 20, 'snr': 7, 'loss': 'gaussian', 'randomizer': 'gaussian'}
-    split_report = reports.reports['test_approximate_ci']
-    screened_results = reports.collect_multiple_runs(split_report['test'],
-                                                     split_report['columns'],
-                                                     niter,
-                                                     reports.summarize_all,
-                                                     **kwargs)
+        print("lengths", sel_length.sum()/nactive)
+        print("selective intervals", ci_sel.T)
+        print("risks", sel_risk.sum()/nactive)
 
-    fig = reports.pivot_plot_plus_naive(screened_results)
-    fig.savefig('approx_pivots_threshold.pdf')
+        return np.transpose(np.vstack((ci_sel[:, 0],
+                                       ci_sel[:, 1],
+                                       ci_naive[:,0],
+                                       ci_naive[:, 1],
+                                       sel_MLE,
+                                       TS.target_observed,
+                                       sel_covered,
+                                       naive_covered,
+                                       sel_risk,
+                                       naive_risk)))
 
 
-if __name__=='__main__':
-    report()
+def test_threshold(n, p, s, signal):
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
+    true_mean = X.dot(beta)
+    threshold = test_approximate_inference(X,
+                                           y,
+                                           true_mean,
+                                           sigma,
+                                           seed_n=0,
+                                           lam_frac=1.,
+                                           loss='gaussian')
+
+    if threshold is not None:
+        print("output of selection adjusted inference", threshold)
+        return(threshold)
+
+test_threshold(n=100, p=50, s=0, signal=5.)
