@@ -1,24 +1,22 @@
 from __future__ import print_function
 import numpy as np
 
-from selection.api import randomization
-from selection.reduced_optimization.initial_soln import selection, instance
+from ...randomized.api import randomization
+from ..initial_soln import selection, instance
+from ..ms_lasso_2stage_reduced import (selection_probability_objective_ms_lasso,
+                                       sel_prob_gradient_map_ms_lasso,
+                                       selective_map_credible_ms_lasso)
 
-from selection.reduced_optimization.ms_lasso_2stage_reduced import (selection_probability_objective_ms_lasso,
-                                                                    sel_prob_gradient_map_ms_lasso,
-                                                                    selective_map_credible_ms_lasso)
-
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import (set_sampling_params_iftrue,
-                                        set_seed_iftrue)
-
-@set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=20)
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import (set_sampling_params_iftrue,
+                           set_seed_iftrue)
 
 def randomized_marginal_lasso_screening(X,
                                         y,
                                         beta,
-                                        sigma):
+                                        sigma,
+                                        ndraw=1000,
+                                        burnin=100):
 
     n, p = X.shape
 
@@ -90,7 +88,7 @@ def randomized_marginal_lasso_screening(X,
                                          grad_map,
                                          prior_variance)
 
-    samples = ms.posterior_samples()
+    samples = ms.posterior_samples(ndraw=ndraw, burnin=burnin)
 
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
@@ -120,7 +118,9 @@ def randomized_marginal_lasso_screening(X,
 
     return np.vstack([sel_cov, naive_cov, ad_len, unad_len, risk_ad, risk_unad])
 
-def test_ms_lasso():
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=20)
+def test_ms_lasso(ndraw=1000, burnin=100):
     n = 500
     p = 100
     s = 10
@@ -138,7 +138,9 @@ def test_ms_lasso():
     ms_lasso = randomized_marginal_lasso_screening(X,
                                                    y,
                                                    beta,
-                                                   sigma)
+                                                   sigma,
+                                                   ndraw=ndraw,
+                                                   burnin=burnin)
 
     ad_cov += ms_lasso[0, 0]
     unad_cov += ms_lasso[1, 0]
@@ -149,4 +151,3 @@ def test_ms_lasso():
     print("adjusted and unadjusted coverage", ad_cov, unad_cov)
     print("\n")
     print("adjusted and unadjusted lengths", ad_len, unad_len)
-

@@ -1,25 +1,23 @@
 from __future__ import print_function
 import numpy as np
 
-from selection.reduced_optimization.initial_soln import selection, instance
-from selection.reduced_optimization.forward_stepwise_reduced import (neg_log_cube_probability_fs,
-                                                                     selection_probability_objective_fs,
-                                                                     sel_prob_gradient_map_fs,
-                                                                     selective_map_credible_fs)
+from ...randomized.api import randomization
+from ..initial_soln import selection, instance
+from ..forward_stepwise_reduced import (neg_log_cube_probability_fs,
+                                        selection_probability_objective_fs,
+                                        sel_prob_gradient_map_fs,
+                                        selective_map_credible_fs)
 
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.decorators import (set_sampling_params_iftrue,
-                                        set_seed_iftrue)
-
-@set_seed_iftrue(SET_SEED)
-@set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=20)
-
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.decorators import (set_sampling_params_iftrue,
+                                 set_seed_iftrue)
 
 def randomized_forward_step(X,
                             y,
                             beta,
-                            sigma):
-    from selection.api import randomization
+                            sigma,
+                            ndraw=1000,
+                            burnin=100):
 
     n, p = X.shape
 
@@ -53,7 +51,7 @@ def randomized_forward_step(X,
 
     inf = selective_map_credible_fs(y, grad_map, prior_variance)
 
-    samples = inf.posterior_samples()
+    samples = inf.posterior_samples(ndraw=ndraw, burnin=burnin)
 
     adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
@@ -98,7 +96,9 @@ def randomized_forward_step(X,
 
     return np.vstack([sel_cov, naive_cov, ad_len, unad_len, risk_ad, risk_unad])
 
-def test_fs():
+@set_seed_iftrue(SET_SEED)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=20, burnin=10)
+def test_fs(ndraw=1000, burnin=100):
     n = 50
     p = 300
     s = 10
@@ -116,7 +116,9 @@ def test_fs():
     fs = randomized_forward_step(X,
                                  y,
                                  beta,
-                                 sigma)
+                                 sigma,
+                                 ndraw=ndraw,
+                                 burnin=burnin)
 
     ad_cov += fs[0, 0]
     unad_cov += fs[1, 0]

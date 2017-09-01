@@ -1,18 +1,22 @@
 from __future__ import print_function
 import numpy as np
 import regreg.api as rr
-from selection.tests.instance import logistic_instance, gaussian_instance
 
-from selection.reduced_optimization.par_carved_reduced import selection_probability_carved, sel_inf_carved
+from ...tests.instance import logistic_instance, gaussian_instance
+from ...tests.flags import SMALL_SAMPLES
+from ...tests.decorators import set_sampling_params_iftrue
 
-from selection.reduced_optimization.estimator import M_estimator_approx_carved
+from ..par_carved_reduced import selection_probability_carved, sel_inf_carved
+from ..estimator import M_estimator_approx_carved
 
 def carved_lasso_trial(X,
                        y,
                        beta,
                        sigma,
                        lam,
-                       estimation='parametric'):
+                       estimation='parametric',
+                       ndraw=1000,
+                       burnin=100):
     n, p = X.shape
 
     loss = rr.glm.gaussian(X, y)
@@ -46,7 +50,7 @@ def carved_lasso_trial(X,
         unadjusted_intervals = np.vstack([post_mean - 1.65 * (np.sqrt(post_var.diagonal())),
                                           post_mean + 1.65 * (np.sqrt(post_var.diagonal()))])
         grad_lasso = sel_inf_carved(M_est, prior_variance)
-        samples = grad_lasso.posterior_samples()
+        samples = grad_lasso.posterior_samples(ndraw=ndraw, burnin=burnin)
         adjusted_intervals = np.vstack([np.percentile(samples, 5, axis=0), np.percentile(samples, 95, axis=0)])
 
         selective_mean = np.mean(samples, axis=0)
@@ -77,7 +81,8 @@ def carved_lasso_trial(X,
     else:
         return np.vstack([0.,0.,0.,0.,0.,0.])
 
-def test_carved_lasso():
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+def test_carved_lasso(ndraw=1000, burnin=100):
     ### set parameters
     n = 1000
     p = 100
@@ -92,12 +97,14 @@ def test_carved_lasso():
     unad_risk = 0.
 
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, sigma=1., rho=0, signal=snr)
-    lam = 0.8 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+    lam = 0.8 * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 2000)))).max(0)) * sigma
     lasso = carved_lasso_trial(X,
                                y,
                                beta,
                                sigma,
-                               lam)
+                               lam,
+                               ndraw=ndraw,
+                               burnin=burnin)
 
 
     if lasso is not None:
