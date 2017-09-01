@@ -7,13 +7,13 @@ from selection.randomized.glm import pairs_bootstrap_glm, bootstrap_cov
 from selection.randomized.greedy_step import greedy_score_step
 
 
-class greedy_score_step_map(greedy_score_step):
+class greedy_score_map(greedy_score_step):
     def __init__(self, loss,
-                 penalty,
-                 active_groups,
-                 inactive_groups,
-                 randomization,
-                 randomization_scale=1.):
+                       penalty,
+                       active_groups,
+                       inactive_groups,
+                       randomization,
+                       randomization_scale=1.):
 
         greedy_score_step.__init__(self, loss,
                                    penalty,
@@ -26,7 +26,9 @@ class greedy_score_step_map(greedy_score_step):
     def solve_approx(self):
         self.solve()
         self.setup_sampler()
-        p = self.inactive.sum()
+        X, _ = self.loss.data
+        n, p = X.shape
+        self.p = p
         self.feasible_point = self.observed_scaling
         self._overall = np.zeros(p, dtype=bool)
         # print(self.selection_variable['variables'])
@@ -44,9 +46,6 @@ class greedy_score_step_map(greedy_score_step):
 
         self.inactive_lagrange = self.observed_scaling * self.penalty.weights[0] * np.ones(p - 1)
 
-        X, _ = self.loss.data
-        n, p = X.shape
-        self.p = p
         bootstrap_score = pairs_bootstrap_glm(self.loss,
                                               self.active,
                                               inactive=~self.active)[0]
@@ -405,7 +404,7 @@ class approximate_conditional_density(rr.smooth_atom):
 
     def solve_approx(self):
 
-        self.grid_length = 241
+        self.grid_length = 301
 
         # print("observed values", self.target_observed)
         self.ind_obs = np.zeros(self.nactive, int)
@@ -416,8 +415,7 @@ class approximate_conditional_density(rr.smooth_atom):
         for j in range(self.nactive):
             obs = self.target_observed[j]
 
-            self.grid[j, :] = np.linspace(self.target_observed[j] - 12., self.target_observed[j] + 12.,
-                                          num=self.grid_length)
+            self.grid[j, :] = np.linspace(-15.,15.,num=self.grid_length)
 
             self.norm[j] = self.target_cov[j, j]
             if obs < self.grid[j, 0]:
@@ -446,8 +444,8 @@ class approximate_conditional_density(rr.smooth_atom):
             elif val == -float('Inf') and i > 0:
                 h_hat.append(h_hat[i - 1])
 
-        # sys.stderr.write("point on grid: " + str(i) + "\n")
-        # sys.stderr.write("value on grid: " + str(h_hat[i]) + "\n")
+            sys.stderr.write("point on grid: " + str(i) + "\n")
+            sys.stderr.write("value on grid: " + str(h_hat[i]) + "\n")
 
         return np.array(h_hat)
 
@@ -529,7 +527,7 @@ class approximate_conditional_density(rr.smooth_atom):
     def approximate_ci(self, j):
 
         grid_num = 301
-        param_grid = np.linspace(-10,10, num=grid_num)
+        param_grid = np.linspace(-15,15, num=grid_num)
         area = np.zeros(param_grid.shape[0])
 
         for k in range(param_grid.shape[0]):

@@ -6,7 +6,6 @@ from selection.tests.instance import logistic_instance, gaussian_instance
 from selection.approx_ci.randomized_lasso import (M_estimator_map,
                                                   approximate_conditional_density)
 from selection.randomized.query import naive_confidence_intervals
-from selection.randomized.query import naive_pvalues
 
 def test_approximate_inference(X,
                                y,
@@ -60,7 +59,8 @@ def test_approximate_inference(X,
         target = target_class(M_est.target_cov)
 
         ci_naive = naive_confidence_intervals(target, M_est.target_observed)
-        naive_pvals = naive_pvalues(target, M_est.target_observed, true_vec)
+        naive_covered = np.zeros(nactive)
+        naive_risk = np.zeros(nactive)
 
         ci = approximate_conditional_density(M_est)
         ci.solve_approx()
@@ -76,8 +76,6 @@ def test_approximate_inference(X,
 
         sel_covered = np.zeros(nactive, np.bool)
         sel_risk = np.zeros(nactive)
-        naive_covered = np.zeros(nactive)
-        naive_risk = np.zeros(nactive)
 
         for j in range(nactive):
 
@@ -91,7 +89,7 @@ def test_approximate_inference(X,
 
         print("lengths", sel_length.sum()/nactive)
         print("selective intervals", ci_sel.T)
-        print("risks", sel_risk.sum() / nactive)
+        print("risks", sel_risk.sum()/nactive)
 
         return np.transpose(np.vstack((ci_sel[:, 0],
                                        ci_sel[:, 1],
