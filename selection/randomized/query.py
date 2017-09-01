@@ -1129,7 +1129,7 @@ class optimization_sampler(targeted_sampler):
             _, opt_grad[self.opt_slice[i]] = \
                 self.objectives[i].randomization_gradient(0., self.target_transform[i], opt_state[self.opt_slice[i]])
 
-        return opt_grad
+        return -opt_grad
 
 
     def sample(self, ndraw, burnin, stepsize=None):

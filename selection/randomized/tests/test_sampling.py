@@ -35,20 +35,21 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     active_set = np.where(active)[0]
 
     for i in range(nactive):
+        var = active_set[i]
         if signs[i]>0:
-            lower[i] = -np.dot(X[:, active_set[i]].T,y) + lam*signs[i]
+            lower[i] = -np.dot(X[:, var].T,y) + lam*signs[var]
             upper[i] = np.inf
         else:
             lower[i] = -np.inf
-            upper[i] = -np.dot(X[:,active_set[i]].T,y) + lam*signs[i]
+            upper[i] = -np.dot(X[:,var].T,y) + lam*signs[var]
 
     lower[range(nactive,p)] = -lam-np.dot(X[:, ~active].T, y)
     upper[range(nactive,p)]= lam-np.dot(X[:,~active].T, y)
 
     omega_samples = sampling_truncated_dist(lower, upper, randomization)
 
-    beta_samples = (omega_samples[:,:nactive]+np.dot(X[:,active].T, y))/(epsilon+1)
-    u_samples = (omega_samples[:, nactive:]+np.dot(X[:,~active].T, y))/lam
+    beta_samples = (omega_samples[:,:nactive]+np.dot(X[:,active].T, y)-lam*signs[active])/(epsilon+1)
+    u_samples = (omega_samples[:, nactive:]+np.dot(X[:,~active].T, y))
 
     return np.concatenate((beta_samples, u_samples), axis=1)
 
@@ -83,7 +84,7 @@ def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
 
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_optimization_sampler(ndraw=1000, burnin=200):
+def test_optimization_sampler(ndraw=10000, burnin=2000):
 
     cls = lasso
     for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace']):
