@@ -1058,7 +1058,7 @@ class optimization_sampler(targeted_sampler):
         # the corresponding block of `target_cov` is zeroed out
 
         # we need these attributes of multi_view
-
+        self.multi_view = multi_view
         self.nqueries = len(multi_view.objectives)
         self.opt_slice = multi_view.opt_slice
         self.objectives = multi_view.objectives
@@ -1173,6 +1173,25 @@ class optimization_sampler(targeted_sampler):
                 samples.append(target_langevin.state.copy())
         return np.asarray(samples)
 
+
+    def setup_target(self,
+                     target_info,
+                     observed_target_state,
+                     form_covariances,
+                     target_set=None,
+                     parametric=False):
+
+        targeted_sampler.__init__(self,
+                                  self.multi_view,
+                                  target_info=target_info,
+                                  observed_target_state=observed_target_state,
+                                  form_covariances=form_covariances,
+                                  reference=None,
+                                  target_set=target_set,
+                                  parametric=parametric)
+        self._setup_target=True
+
+
     def hypothesis_test(self,
                         test_stat,
                         observed_value,
@@ -1231,7 +1250,6 @@ class optimization_sampler(targeted_sampler):
 
         sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
 
-
         delta = self.target_inv_cov.dot(parameter - self.reference)
         W = np.exp(sample.dot(delta))
 
@@ -1246,7 +1264,7 @@ class optimization_sampler(targeted_sampler):
             return 2 * min(pval, 1 - pval)
 
     def confidence_intervals(self,
-                             observed,
+                             observed_target,
                              ndraw=10000,
                              burnin=2000,
                              stepsize=None,
@@ -1287,13 +1305,20 @@ class optimization_sampler(targeted_sampler):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        nactive = observed.shape[0]
-        intervals_instance = intervals_from_sample(self.reference,
-                                                   sample,
-                                                   observed,
-                                                   self.target_cov)
+        _intervals = opt_weighted_intervals(self,
+                                            sample,
+                                            observed_target)
 
-        return intervals_instance.confidence_intervals_all(level=level)
+        limits = []
+
+        for i in range(observed_target.shape[0]):
+            print("ci", i)
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            limits.append(_intervals.confidence_interval(keep, level=level))
+
+        return np.array(limits)
+
 
     def coefficient_pvalues(self,
                             observed,
@@ -1830,6 +1855,120 @@ class translate_intervals(object): # intervals_from_sample):
 
         candidate_sample = self._delta.copy()
         candidate_sample[:, self.targeted_sampler.target_slice] += candidate[None, :]
+        _lognum = self.targeted_sampler.log_randomization_density(candidate_sample)
+
+        _logratio = _lognum - self._logden
+        _logratio -= _logratio.max()
+
+        return candidate_sample, np.exp(_logratio)
+
+
+class opt_weighted_intervals(object): # intervals_from_sample):
+
+    """
+    Location family based intervals... (cryptic)
+    randomization density should be `g` composed with the affine
+    mapping and take an argument like one row of sample
+    target_linear is the linear part of the affine mapping with
+    respect to target
+    weights for a given candidate will look like
+          randomization_density(sample + (candidate, 0, 0) - (reference, 0, 0)) /
+          randomization_density(sample)
+    if the samples are samples of \bar{\beta}. if we have samples of
+    \Delta from our reference, then the weights will look like
+    randomization_density(sample + (candidate, 0, 0))
+    randomization_density(sample + (reference, 0, 0))
+    WE ARE ASSUMING sample is sampled from targeted_sampler.reference
+    """
+
+    def __init__(self,
+                 targeted_sampler,
+                 sample,
+                 observed):
+
+        self.targeted_sampler = targeted_sampler
+        self.observed = observed.copy() # this is our observed unpenalized estimator
+        nactive = targeted_sampler.observed_target_state.shape[0]
+
+        self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), cov=targeted_sampler.target_cov, size =(sample.shape[0]))
+        print(self._normal_sample.shape)
+        self._sample = np.concatenate((sample, np.tile(self.observed, (sample.shape[0], 1))), axis=1)
+        self._logden = targeted_sampler.log_randomization_density(self._sample)
+        self._delta = np.concatenate((sample, self._normal_sample), axis=1)
+
+
+    def pivot(self,
+              linear_func,
+              candidate,
+              alternative='twosided'):
+        '''
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+        Returns
+        -------
+        pvalue : np.float
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        observed_stat = self.targeted_sampler.observed_target_state.dot(linear_func)
+
+        candidate_sample, weights = self._weights(linear_func, candidate)
+        #print("candidate", candidate)
+        sample_stat = np.array([linear_func.dot(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
+
+        pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
+
+        if alternative == 'twosided':
+            return 2 * min(pivot, 1 - pivot)
+        elif alternative == 'less':
+            return pivot
+        else:
+            return 1 - pivot
+
+    def confidence_interval(self, linear_func, level=0.90, how_many_sd=20):
+
+        target_delta = self._delta[:,self.targeted_sampler.target_slice]
+        projected_delta = target_delta.dot(linear_func)
+        projected_observed = self.observed.dot(linear_func)
+        std_projected_delta = np.sqrt(np.dot(linear_func.T, self.targeted_sampler.target_cov).dot(linear_func))
+
+        delta_min, delta_max = projected_delta.min(), projected_delta.max()
+
+        _norm = np.linalg.norm(linear_func)
+        grid_min, grid_max = -how_many_sd * np.std(projected_delta), how_many_sd * np.std(projected_delta)
+        print("grid", grid_min, grid_max)
+
+        def _rootU(gamma):
+            return self.pivot(linear_func,
+                              projected_observed + gamma,
+                              alternative='less') - (1 - level) / 2.
+        def _rootL(gamma):
+            return self.pivot(linear_func,
+                              projected_observed + gamma,
+                              alternative='less') - (1 + level) / 2.
+
+        upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+        lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+
+        return lower + projected_observed, upper + projected_observed
+
+    # Private methods
+
+    def _weights(self, linear_func, candidate):
+
+        candidate_sample = self._sample.copy()
+
+        _norm = np.linalg.norm(linear_func)
+        projection_matrix = np.true_divide(np.dot(linear_func, linear_func.T), _norm**2)
+        residual_matrix = np.identity(linear_func.shape[0])-projection_matrix
+        candidate_sample[:, self.targeted_sampler.target_slice] = \
+            candidate_sample[:, self.targeted_sampler.target_slice].dot(residual_matrix)
+
+        candidate_sample[:, self.targeted_sampler.target_slice] += \
+            (self._normal_sample+np.ones(self._normal_sample.shape)*candidate).dot(projection_matrix)
+
         _lognum = self.targeted_sampler.log_randomization_density(candidate_sample)
 
         _logratio = _lognum - self._logden

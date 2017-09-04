@@ -27,7 +27,7 @@ def sampling_truncated_dist(lower, upper, randomization, nsamples=1000):
     return samples
 
 
-def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =1000):
+def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =10000):
     p = X.shape[1]
     nactive = active.sum()
     lower = np.zeros(p)
@@ -36,7 +36,7 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
 
     for i in range(nactive):
         var = active_set[i]
-        if signs[i]>0:
+        if signs[var]>0:
             lower[i] = -np.dot(X[:, var].T,y) + lam*signs[var]
             upper[i] = np.inf
         else:
@@ -46,12 +46,13 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     lower[range(nactive,p)] = -lam-np.dot(X[:, ~active].T, y)
     upper[range(nactive,p)]= lam-np.dot(X[:,~active].T, y)
 
-    omega_samples = sampling_truncated_dist(lower, upper, randomization)
+    omega_samples = sampling_truncated_dist(lower, upper, randomization, nsamples=nsamples)
 
-    beta_samples = (omega_samples[:,:nactive]+np.dot(X[:,active].T, y)-lam*signs[active])/(epsilon+1)
+    abs_beta_samples = np.true_divide(omega_samples[:,:nactive]+np.dot(X[:,active].T, y)-lam*signs[active], (epsilon+1)*signs[active])
     u_samples = (omega_samples[:, nactive:]+np.dot(X[:,~active].T, y))
 
-    return np.concatenate((beta_samples, u_samples), axis=1)
+    return np.concatenate((abs_beta_samples, u_samples), axis=1)
+
 
 def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
     X = np.identity(n)[:,:p]
@@ -84,7 +85,7 @@ def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
 
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_optimization_sampler(ndraw=10000, burnin=2000):
+def test_optimization_sampler(ndraw=20000, burnin=2000):
 
     cls = lasso
     for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace']):
@@ -113,6 +114,7 @@ def test_optimization_sampler(ndraw=10000, burnin=2000):
 
         #conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
         #                           conditioning_groups=conditioning_groups)
+
         conv._queries.setup_sampler(form_covariances=None)
         conv._queries.setup_opt_state()
         target_sampler = optimization_sampler(conv._queries)
