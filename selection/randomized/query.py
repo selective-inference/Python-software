@@ -1430,13 +1430,11 @@ class optimization_sampler(targeted_sampler):
         '''
 
         state = np.atleast_2d(state)
-        #print(state.shape)
         if len(state.shape) > 2:
             raise ValueError('expecting at most 2-dimensional array')
 
         target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
-        #reconstructed = np.zeros((opt_state.shape[0],self.randomization_length_total))
 
         for i in range(self.nqueries):
             reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
@@ -1875,3 +1873,115 @@ class translate_intervals(object): # intervals_from_sample):
         return candidate_sample, np.exp(_logratio)
 
 
+class opt_weighted_intervals(object): # intervals_from_sample):
+
+    """
+    Location family based intervals... (cryptic)
+    randomization density should be `g` composed with the affine
+    mapping and take an argument like one row of sample
+    target_linear is the linear part of the affine mapping with
+    respect to target
+    weights for a given candidate will look like
+          randomization_density(sample + (candidate, 0, 0) - (reference, 0, 0)) /
+          randomization_density(sample)
+    if the samples are samples of \bar{\beta}. if we have samples of
+    \Delta from our reference, then the weights will look like
+    randomization_density(sample + (candidate, 0, 0))
+    randomization_density(sample + (reference, 0, 0))
+    WE ARE ASSUMING sample is sampled from targeted_sampler.reference
+    """
+
+    def __init__(self,
+                 targeted_sampler,
+                 sample,
+                 observed):
+
+        self.targeted_sampler = targeted_sampler
+        self.observed = observed.copy() # this is our observed unpenalized estimator
+        nactive = targeted_sampler.observed_target_state.shape[0]
+
+        self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), cov=targeted_sampler.target_cov, size =(sample.shape[0]))
+        print(self._normal_sample.shape)
+        self._sample = np.concatenate((sample, np.tile(self.observed, (sample.shape[0], 1))), axis=1)
+        self._logden = targeted_sampler.log_randomization_density(self._sample)
+        self._delta = np.concatenate((sample, self._normal_sample), axis=1)
+
+
+    def pivot(self,
+              linear_func,
+              candidate,
+              alternative='twosided'):
+        '''
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+        Returns
+        -------
+        pvalue : np.float
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        observed_stat = self.targeted_sampler.observed_target_state.dot(linear_func)
+
+        candidate_sample, weights = self._weights(linear_func, candidate)
+
+        sample_stat = np.array([linear_func.dot(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
+
+        pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
+
+        if alternative == 'twosided':
+            return 2 * min(pivot, 1 - pivot)
+        elif alternative == 'less':
+            return pivot
+        else:
+            return 1 - pivot
+
+    def confidence_interval(self, linear_func, level=0.90, how_many_sd=20):
+
+        target_delta = self._delta[:,self.targeted_sampler.target_slice]
+        projected_delta = target_delta.dot(linear_func)
+        projected_observed = self.observed.dot(linear_func)
+        std_projected_delta = np.sqrt(np.dot(linear_func.T, self.targeted_sampler.target_cov).dot(linear_func))
+
+        delta_min, delta_max = projected_delta.min(), projected_delta.max()
+
+        _norm = np.linalg.norm(linear_func)
+        grid_min, grid_max = -how_many_sd * np.std(projected_delta), how_many_sd * np.std(projected_delta)
+        print("grid", grid_min, grid_max)
+
+        def _rootU(gamma):
+            return self.pivot(linear_func,
+                              projected_observed + gamma,
+                              alternative='less') - (1 - level) / 2.
+        def _rootL(gamma):
+            return self.pivot(linear_func,
+                              projected_observed + gamma,
+                              alternative='less') - (1 + level) / 2.
+
+        upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+        lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+
+        return lower + projected_observed, upper + projected_observed
+
+    # Private methods
+
+    def _weights(self, linear_func, candidate):
+
+        candidate_sample = self._sample.copy()
+
+        _norm = np.linalg.norm(linear_func)
+        projection_matrix = np.true_divide(np.dot(linear_func, linear_func.T), _norm**2)
+        residual_matrix = np.identity(linear_func.shape[0])-projection_matrix
+        candidate_sample[:, self.targeted_sampler.target_slice] = \
+            candidate_sample[:, self.targeted_sampler.target_slice].dot(residual_matrix)
+
+        candidate_sample[:, self.targeted_sampler.target_slice] += \
+            (self._normal_sample+np.ones(self._normal_sample.shape)*candidate).dot(projection_matrix)
+
+        _lognum = self.targeted_sampler.log_randomization_density(candidate_sample)
+
+        _logratio = _lognum - self._logden
+        _logratio -= _logratio.max()
+
+        return candidate_sample, np.exp(_logratio)
