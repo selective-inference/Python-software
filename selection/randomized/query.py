@@ -823,9 +823,10 @@ class targeted_sampler(object):
         #reconstructed = np.zeros((opt_state.shape[0],self.randomization_length_total))
 
         for i in range(self.nqueries):
-            reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
-                                                                                        self.target_transform[i],
-                                                                                        opt_state[:, self.opt_slice[i]])
+            reconstructed[:, self.randomization_slice[i]] = \
+                   self.objectives[i].reconstruction_map(target_state,
+                                                         self.target_transform[i],
+                                                         opt_state[:, self.opt_slice[i]])
 
         return np.squeeze(reconstructed)
 
@@ -1146,7 +1147,7 @@ class optimization_sampler(targeted_sampler):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        _intervals = opt_weighted_intervals(self,
+        _intervals = optimization_intervals(self,
                                             sample,
                                             observed_target)
 
@@ -1424,21 +1425,22 @@ def naive_pvalues(target, observed, parameter):
         pvalues[j] = 2*min(pval, 1-pval)
     return pvalues
 
-class opt_weighted_intervals(object):
+class optimization_intervals(object):
 
     def __init__(self,
-                 targeted_sampler,
+                 opt_sampler,
                  sample,
                  observed):
 
-        self.targeted_sampler = targeted_sampler
+        self.opt_sampler = opt_sampler
         self.observed = observed.copy() # this is our observed unpenalized estimator
-        nactive = targeted_sampler.observed_target_state.shape[0]
 
-        self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), cov=targeted_sampler.target_cov, size =(sample.shape[0]))
+        self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), 
+                                                            cov=opt_sampler.target_cov, 
+                                                            size=(sample.shape[0],))
 
-        self._sample = np.concatenate((sample, np.tile(self.observed, (sample.shape[0], 1))), axis=1)
-        self._logden = targeted_sampler.log_randomization_density(self._sample)
+        self._sample = sample
+        self._logden = opt_sampler.log_randomization_density(self._sample)
         self._delta = np.concatenate((sample, self._normal_sample), axis=1)
 
     def pivot(self,
@@ -1456,12 +1458,10 @@ class opt_weighted_intervals(object):
         if alternative not in ['greater', 'less', 'twosided']:
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
-        observed_stat = self.targeted_sampler.observed_target_state.dot(linear_func)
+        observed_stat = self.observed.dot(linear_func)
+        sample_stat = self._normal_sample.dot(linear_func)
 
         candidate_sample, weights = self._weights(linear_func, candidate)
-
-        sample_stat = np.array([linear_func.dot(s) for s in candidate_sample[:, self.targeted_sampler.target_slice]])
-
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
 
         if alternative == 'twosided':
@@ -1504,16 +1504,10 @@ class opt_weighted_intervals(object):
 
         candidate_sample = self._sample.copy()
 
-        _norm = np.linalg.norm(linear_func)
-        projection_matrix = np.true_divide(np.dot(linear_func, linear_func.T), _norm**2)
-        residual_matrix = np.identity(linear_func.shape[0])-projection_matrix
-        candidate_sample[:, self.targeted_sampler.target_slice] = \
-            candidate_sample[:, self.targeted_sampler.target_slice].dot(residual_matrix)
-
-        candidate_sample[:, self.targeted_sampler.target_slice] += \
-            (self._normal_sample+np.ones(self._normal_sample.shape)*candidate).dot(projection_matrix)
-
-        _lognum = self.targeted_sampler.log_randomization_density(candidate_sample)
+        # Here we should loop through the views
+        # and move the score of each view 
+        # for each projected (through linear_func) normal sample
+        # using the linear decomposition
 
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
