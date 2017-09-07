@@ -35,7 +35,6 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
                     scale1 = 0.1,
                     scale2 = 0.2,
                     lam_frac = 1.,
-                    intervals = 'old',
                     bootstrap = False,
                     condition_on_CVR = False,
                     marginalize_subgrad = True,
@@ -98,38 +97,21 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
                                                      mv,
                                                      bootstrap=bootstrap)
 
-        if intervals == 'old':
-            target_sample = target_sampler.sample(ndraw=ndraw,
-                                                  burnin=burnin)
-            LU = target_sampler.confidence_intervals(target_observed,
-                                                     sample=target_sample,
-                                                     level=0.9)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample,
+                                                 level=0.9)
 
-            #pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-            #                                                parameter=target_sampler.reference,
-            #                                                sample=target_sample)
-            pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                              parameter=true_vec,
-                                                              sample=target_sample)
-            pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                         parameter=np.zeros_like(true_vec),
-                                                         sample=target_sample)
-        else:
-            full_sample = target_sampler.sample(ndraw=ndraw,
-                                                burnin=burnin,
-                                                keep_opt=True)
-            LU = target_sampler.confidence_intervals_translate(target_observed,
-                                                               sample=full_sample,
-                                                               level=0.9)
-            #pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
-            #                                                          parameter=target_sampler.reference,
-            #                                                          sample=full_sample)
-            pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                        parameter=true_vec,
-                                                                        sample=full_sample)
-            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                   parameter=np.zeros_like(true_vec),
-                                                                   sample=full_sample)
+        #pivots_mle = target_sampler.coefficient_pvalues(target_observed,
+        #                                                parameter=target_sampler.reference,
+        #                                                sample=target_sample)
+        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
+                                                          parameter=true_vec,
+                                                          sample=target_sample)
+        pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                     parameter=np.zeros_like(true_vec),
+                                                     sample=target_sample)
 
         L, U = LU.T
         sel_covered = np.zeros(nactive, np.bool)

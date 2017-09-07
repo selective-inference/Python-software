@@ -39,7 +39,6 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
             lam_frac = 1.,
             glmnet = True,
             loss = 'gaussian',
-            intervals = 'old',
             bootstrap = False,
             condition_on_CVR = True,
             marginalize_subgrad = True,
@@ -137,32 +136,18 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
                                                      mv,
                                                      bootstrap=bootstrap)
 
-        if intervals == 'old':
-            target_sample = target_sampler.sample(ndraw=ndraw,
-                                                  burnin=burnin)
-            LU = target_sampler.confidence_intervals(target_observed,
-                                                     sample=target_sample,
-                                                     level=0.9)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample,
+                                                 level=0.9)
 
-            pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                              parameter=true_vec,
-                                                              sample=target_sample)
-            pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                         parameter=np.zeros_like(true_vec),
-                                                         sample=target_sample)
-        else:
-            full_sample = target_sampler.sample(ndraw=ndraw,
-                                                burnin=burnin,
-                                                keep_opt=True)
-            LU = target_sampler.confidence_intervals_translate(target_observed,
-                                                               sample=full_sample,
-                                                               level=0.9)
-            pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                        parameter=true_vec,
-                                                                        sample=full_sample)
-            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                   parameter=np.zeros_like(true_vec),
-                                                                   sample=full_sample)
+        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
+                                                          parameter=true_vec,
+                                                          sample=target_sample)
+        pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                     parameter=np.zeros_like(true_vec),
+                                                     sample=target_sample)
 
         L, U = LU.T
         sel_covered = np.zeros(nactive, np.bool)
