@@ -102,13 +102,12 @@ class query(object):
 
         return (composition_linear_part, composition_offset)
 
-
     def reconstruction_map(self, data_state, data_transform, opt_state):
 
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-        # reconstruction of randoimzation omega
+        # reconstruction of randomization omega
 
         data_state = np.atleast_2d(data_state)
         opt_linear, opt_offset = self.opt_transform
@@ -897,6 +896,7 @@ class optimization_sampler(targeted_sampler):
         self.nqueries = len(multi_view.objectives)
         self.opt_slice = multi_view.opt_slice
         self.objectives = multi_view.objectives
+        self.nboot = multi_view.nboot
 
         self.total_randomization_length = multi_view.total_randomization_length
         self.randomization_slice = multi_view.randomization_slice
@@ -1016,23 +1016,25 @@ class optimization_sampler(targeted_sampler):
         self.score_cov = []
         target_cov_sum = 0
 
-        # we could pararallelize this over all views at once
-
+        # we should pararallelize this over all views at once ?
+        self.observed_score = []
         for i in range(self.nqueries):
             view = self.objectives[i]
             score_info = view.setup_sampler(form_covariances)
             if parametric == False:
                 target_cov, cross_cov = form_covariances(target_info,  
                                                          cross_terms=[score_info],
-                                                         nsample=self.multi_view.nboot[i])
+                                                         nsample=self.nboot[i])
             else:
                 target_cov, cross_cov = form_covariances(target_info, 
                                                          cross_terms=[score_info])
 
             target_cov_sum += target_cov
             self.score_cov.append(cross_cov)
+            self.observed_score.append(view.observed_score_state)
 
         self.target_cov = target_cov_sum / self.nqueries
+        self.target_invcov = np.linalg.inv(self.target_cov)
 
     def hypothesis_test(self,
                         test_stat,
@@ -1461,7 +1463,23 @@ class optimization_intervals(object):
         observed_stat = self.observed.dot(linear_func)
         sample_stat = self._normal_sample.dot(linear_func)
 
-        candidate_sample, weights = self._weights(linear_func, candidate)
+        target_cov = linear_func.dot(self.target_cov.dot(linear_func))
+
+        nuisance = []
+        score_cov = []
+        for i in range(len(self.objectives)):
+            cur_score_cov = linear_func.dot(self.score_cov[i])
+            cur_nuisance = self.observed_score[i] - cur_score_cov * observed_stat / target_cov
+            nuisance.append(cur_nuisance)
+            score_cov.append(cur_score_cov)
+
+        candidate_sample, weights = self._weights(linear_func, 
+                                                  candidate, 
+                                                  observed_stat, 
+                                                  sample_stat, 
+                                                  nuisance,
+                                                  score_cov)
+
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
 
         if alternative == 'twosided':
@@ -1500,14 +1518,31 @@ class optimization_intervals(object):
 
     # Private methods
 
-    def _weights(self, linear_func, candidate):
+    def _weights(self, 
+                 linear_func, 
+                 candidate, 
+                 observed_stat, 
+                 sample_stat,
+                 nuisance,
+                 score_cov):
 
-        candidate_sample = self._sample.copy()
+        candidate_sample = sample_stat.copy()
 
         # Here we should loop through the views
         # and move the score of each view 
         # for each projected (through linear_func) normal sample
         # using the linear decomposition
+
+        # We need access to the map that takes observed_score for each view
+        # and constructs the full randomization -- this is the reconstruction map
+        # for each view
+
+        # The data state for each view will be set to be N_i + A_i \hat{\theta}_i
+        # where N_i is the nuisance sufficient stat for the i-th view's
+        # data with respect to \hat{\theta} and N_i  will not change because
+        # it depends on the observed \hat{\theta} and observed score of i-th view
+
+        # In this function, \hat{\theta}_i will change with the Monte Carlo sample
 
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
