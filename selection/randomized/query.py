@@ -113,7 +113,11 @@ class query(object):
         opt_linear, opt_offset = self.opt_transform
 
         data_linear, data_offset = data_transform
-        data_piece = data_linear.dot(data_state.T) + data_offset[:, None]
+        if data_linear is not None:
+            data_piece = data_linear.dot(data_state) + data_offset
+        else:
+            data_piece = np.multiply.outer(data_offset, np.ones(opt_state.shape[0]))
+
         if opt_linear is not None:
             opt_state = np.atleast_2d(opt_state)
             opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
@@ -1014,12 +1018,15 @@ class optimization_sampler(targeted_sampler):
         """
 
         self.score_cov = []
+        self.observed_score = []
+        self.log_density = []
+
         target_cov_sum = 0
 
         # we should pararallelize this over all views at once ?
-        self.observed_score = []
         for i in range(self.nqueries):
             view = self.objectives[i]
+            self.log_density.append(view.log_randomization_density)
             score_info = view.setup_sampler(form_covariances)
             if parametric == False:
                 target_cov, cross_cov = form_covariances(target_info,  
@@ -1242,7 +1249,6 @@ class optimization_sampler(targeted_sampler):
             lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
         return lipschitz
 
-
     def reconstruction_map(self, state):
         '''
         Reconstruction of randomization at current state.
@@ -1263,13 +1269,13 @@ class optimization_sampler(targeted_sampler):
         if len(state.shape) > 2:
             raise ValueError('expecting at most 2-dimensional array')
 
-        target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
 
         for i in range(self.nqueries):
-            reconstructed[:, self.randomization_slice[i]] = self.objectives[i].reconstruction_map(target_state,
-                                                                                        self.target_transform[i],
-                                                                                        opt_state[:, self.opt_slice[i]])
+            reconstructed[:,self.randomization_slice[i]] = self.objectives[i].reconstruction_map(  
+                0.,
+                self.target_transform[i],
+                state[:,self.opt_slice[i]])
 
         return np.squeeze(reconstructed)
 
@@ -1431,19 +1437,17 @@ class optimization_intervals(object):
 
     def __init__(self,
                  opt_sampler,
-                 sample,
+                 opt_sample,
                  observed):
 
-        self.opt_sampler = opt_sampler
+        self.reconstructed_sample = opt_sampler.reconstruction_map(opt_sample) 
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
         self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), 
                                                             cov=opt_sampler.target_cov, 
                                                             size=(sample.shape[0],))
 
-        self._sample = sample
-        self._logden = opt_sampler.log_randomization_density(self._sample)
-        self._delta = np.concatenate((sample, self._normal_sample), axis=1)
+        self._logden = opt_sampler.log_randomization_density(self.reconstructed_sample)
 
     def pivot(self,
               linear_func,
@@ -1467,18 +1471,17 @@ class optimization_intervals(object):
 
         nuisance = []
         score_cov = []
-        for i in range(len(self.objectives)):
-            cur_score_cov = linear_func.dot(self.score_cov[i])
+        for i in range(len(self.opt_sampler.objectives)):
+            cur_score_cov = linear_func.dot(self.opt_sampler.score_cov[i])
             cur_nuisance = self.observed_score[i] - cur_score_cov * observed_stat / target_cov
             nuisance.append(cur_nuisance)
             score_cov.append(cur_score_cov)
 
-        candidate_sample, weights = self._weights(linear_func, 
-                                                  candidate, 
-                                                  observed_stat, 
-                                                  sample_stat, 
-                                                  nuisance,
-                                                  score_cov)
+        candidate_sample, weights = self._weights(self.opt_sample,          # sample of optimization variables
+                                                  sample_stat + candidate,  # normal sample under candidate
+                                                  nuisance,                 # nuisance sufficient stats for each view
+                                                  score_cov,                # points will be moved like sample * score_cov
+                                                  self.opt_sampler.log_density)
 
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
 
@@ -1519,14 +1522,10 @@ class optimization_intervals(object):
     # Private methods
 
     def _weights(self, 
-                 linear_func, 
-                 candidate, 
-                 observed_stat, 
                  sample_stat,
                  nuisance,
-                 score_cov):
-
-        candidate_sample = sample_stat.copy()
+                 score_cov,
+                 log_density):
 
         # Here we should loop through the views
         # and move the score of each view 
@@ -1544,6 +1543,10 @@ class optimization_intervals(object):
 
         # In this function, \hat{\theta}_i will change with the Monte Carlo sample
 
+        _lognum = 0
+        for i in range(len(log_density)):
+            density_arg = nuisance[i] + score_cov[i].dot(sample_stat)  
+            _lognum += log_density[i](density_arg)
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
 

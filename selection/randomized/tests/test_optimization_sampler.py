@@ -39,7 +39,10 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
             marginalizing_groups = None
 
         if condition:
-            conditioning_groups = ~marginalizing_groups
+            if marginalizing_groups is not None:
+                conditioning_groups = ~marginalizing_groups
+            else:
+                conditioning_groups = np.ones(p, np.bool)
             conditioning_groups[-int(p/4):] = False
         else:
             conditioning_groups = None
@@ -50,10 +53,11 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
         conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
                                    conditioning_groups=conditioning_groups)
 
-        target_sampler = optimization_sampler(conv._queries)
+        opt_sampler = optimization_sampler(conv._queries)
 
-        S = target_sampler.sample(ndraw,
-                                  burnin,
-                                  stepsize=1.e-3)
+        S = opt_sampler.sample(ndraw,
+                               burnin,
+                               stepsize=1.e-3)
 
-        stop
+        opt_sampler.reconstruction_map(S)
+        
