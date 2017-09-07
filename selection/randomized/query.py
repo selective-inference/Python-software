@@ -855,7 +855,7 @@ class targeted_sampler(object):
             value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
 
-class optimization_sampler(targeted_sampler):
+class optimization_sampler(object):
 
     '''
     Object to sample only optimization variables of a selective sampler
