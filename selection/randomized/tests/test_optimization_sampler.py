@@ -14,13 +14,15 @@ from ...tests.decorators import set_sampling_params_iftrue
 def test_optimization_sampler(ndraw=1000, burnin=200):
 
     cls = lasso
-    for const_info, rand in product(zip([gaussian_instance,
-                                         logistic_instance,
-                                         poisson_instance],
-                                        [cls.gaussian,
-                                         cls.logistic,
-                                         cls.poisson]),
-                              ['gaussian', 'logistic', 'laplace']):
+    for const_info, rand, marginalize, condition in product(zip([gaussian_instance,
+                                                                 logistic_instance,
+                                                                 poisson_instance],
+                                                                [cls.gaussian,
+                                                                 cls.logistic,
+                                                                 cls.poisson]),
+                                                                ['gaussian', 'logistic', 'laplace'],
+                                                                [False, True],
+                                                                [False, True]):
 
         inst, const = const_info
         X, Y = inst()[:2]
@@ -30,19 +32,20 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
         conv = const(X, Y, W, randomizer=rand)
         signs = conv.fit()
 
-        marginalizing_groups = np.zeros(p, np.bool)
-        marginalizing_groups[:int(p/2)] = True
-        
-        conditioning_groups = ~marginalizing_groups
-        conditioning_groups[-int(p/4):] = False
+        if marginalize:
+            marginalizing_groups = np.zeros(p, np.bool)
+            marginalizing_groups[:int(p/2)] = True
+        else:
+            marginalizing_groups = None
+
+        if condition:
+            conditioning_groups = ~marginalizing_groups
+            conditioning_groups[-int(p/4):] = False
+        else:
+            conditioning_groups = None
 
         selected_features = np.zeros(p, np.bool)
         selected_features[:3] = True
-
-        conv.summary(selected_features,
-                     ndraw=ndraw,
-                     burnin=burnin,
-                     compute_intervals=True)
 
         conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
                                    conditioning_groups=conditioning_groups)
@@ -53,3 +56,4 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
                                   burnin,
                                   stepsize=1.e-3)
 
+        stop

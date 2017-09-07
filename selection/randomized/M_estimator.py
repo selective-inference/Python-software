@@ -359,20 +359,27 @@ class M_estimator(query):
 
     # optional things to condition on
 
-    def decompose_subgradient(self, conditioning_groups, marginalizing_groups=None):
+    def decompose_subgradient(self, conditioning_groups=None, marginalizing_groups=None):
         """
         ADD DOCSTRING
 
         conditioning_groups and marginalizing_groups should be disjoint
         """
 
-        if marginalizing_groups is not None and (conditioning_groups * marginalizing_groups).sum() > 0:
+        groups = np.unique(self.penalty.groups)
+
+        if conditioning_groups is None:
+            conditioning_groups = np.zeros_like(groups, np.bool)
+
+        if marginalizing_groups is None:
+            marginalizing_groups = np.zeros_like(groups, np.bool)
+
+        if (conditioning_groups * marginalizing_groups).sum() > 0:
             raise ValueError("cannot simultaneously condition and marginalize over a group's subgradient")
 
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-        groups = np.unique(self.penalty.groups)
         condition_inactive_groups = np.zeros_like(groups, dtype=bool)
         condition_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
         moving_inactive_groups = np.zeros_like(groups, dtype=bool)

@@ -268,7 +268,6 @@ class multiple_queries(object):
                      reference=None,
                      target_set=None,
                      parametric=False):
-
         '''
         Parameters
         ----------
@@ -1057,7 +1056,14 @@ class optimization_sampler(targeted_sampler):
         # is assumed to be independent of the rest
         # the corresponding block of `target_cov` is zeroed out
 
+        # make sure we setup the queries
+
+        multi_view.setup_sampler(form_covariances=None)
+        multi_view.setup_opt_state()
+
         # we need these attributes of multi_view
+
+        self.multi_view = multi_view
 
         self.nqueries = len(multi_view.objectives)
         self.opt_slice = multi_view.opt_slice
@@ -1129,8 +1135,7 @@ class optimization_sampler(targeted_sampler):
             _, opt_grad[self.opt_slice[i]] = \
                 self.objectives[i].randomization_gradient(0., self.target_transform[i], opt_state[self.opt_slice[i]])
 
-        return opt_grad
-
+        return -opt_grad
 
     def sample(self, ndraw, burnin, stepsize=None):
         '''
@@ -1172,6 +1177,33 @@ class optimization_sampler(targeted_sampler):
             if (i >= burnin):
                 samples.append(target_langevin.state.copy())
         return np.asarray(samples)
+
+    def setup_target(self, target_info, form_covariances, parametric=False):
+        """
+        This computes the matrices used in the linear decomposition
+        that will be used in computing weights for the sampler.
+        """
+
+        self.score_cov = []
+        target_cov_sum = 0
+
+        # we could pararallelize this over all views at once
+
+        for i in range(self.nqueries):
+            view = self.objectives[i]
+            score_info = view.setup_sampler(form_covariances)
+            if parametric == False:
+                target_cov, cross_cov = form_covariances(target_info,  
+                                                         cross_terms=[score_info],
+                                                         nsample=self.multi_view.nboot[i])
+            else:
+                target_cov, cross_cov = form_covariances(target_info, 
+                                                         cross_terms=[score_info])
+
+            target_cov_sum += target_cov
+            self.score_cov.append(cross_cov)
+
+        self.target_cov = target_cov_sum / self.nqueries
 
     def hypothesis_test(self,
                         test_stat,
@@ -1287,13 +1319,18 @@ class optimization_sampler(targeted_sampler):
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
-        nactive = observed.shape[0]
-        intervals_instance = intervals_from_sample(self.reference,
-                                                   sample,
-                                                   observed,
-                                                   self.target_cov)
+        _intervals = opt_weighted_intervals(self,
+                                            sample,
+                                            observed_target)
 
-        return intervals_instance.confidence_intervals_all(level=level)
+        limits = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            limits.append(_intervals.confidence_interval(keep, level=level))
+
+        return np.array(limits)
 
     def coefficient_pvalues(self,
                             observed,
