@@ -1440,7 +1440,8 @@ class optimization_intervals(object):
                  opt_sample,
                  observed):
 
-        self.reconstructed_sample = opt_sampler.reconstruction_map(opt_sample) 
+        self.reconstructed_sample = opt_sampler.reconstruction_map(opt_sample) # observed_score + affine(opt_sample)
+
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
         self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), 
