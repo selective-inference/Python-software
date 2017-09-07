@@ -1062,7 +1062,6 @@ class optimization_sampler(targeted_sampler):
         multi_view.setup_opt_state()
 
         # we need these attributes of multi_view
-
         self.multi_view = multi_view
 
         self.nqueries = len(multi_view.objectives)
@@ -1263,7 +1262,6 @@ class optimization_sampler(targeted_sampler):
 
         sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
 
-
         delta = self.target_inv_cov.dot(parameter - self.reference)
         W = np.exp(sample.dot(delta))
 
@@ -1278,7 +1276,7 @@ class optimization_sampler(targeted_sampler):
             return 2 * min(pval, 1 - pval)
 
     def confidence_intervals(self,
-                             observed,
+                             observed_target,
                              ndraw=10000,
                              burnin=2000,
                              stepsize=None,
@@ -1985,3 +1983,4 @@ class opt_weighted_intervals(object): # intervals_from_sample):
         _logratio -= _logratio.max()
 
         return candidate_sample, np.exp(_logratio)
+

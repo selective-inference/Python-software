@@ -16,6 +16,7 @@ class randomization(rr.smooth_atom):
                  density,
                  cdf,
                  pdf,
+                 ppf,
                  derivative_log_density,
                  grad_negative_log_density,
                  sampler,
@@ -30,6 +31,7 @@ class randomization(rr.smooth_atom):
         self._density = density
         self._cdf = cdf
         self._pdf = pdf
+        self._ppf = ppf
         self._derivative_log_density = derivative_log_density
         self._grad_negative_log_density = grad_negative_log_density
         self._sampler = sampler
@@ -177,6 +179,7 @@ class randomization(rr.smooth_atom):
         sampler = lambda size: rv.rvs(size=shape + size)
         cdf = lambda x: laplace.cdf(x, loc=0., scale = scale)
         pdf = lambda x: laplace.pdf(x, loc=0., scale = scale)
+        ppf = lambda x: laplace.ppf(x, loc=0, scale=scale)
         derivative_log_density = lambda x: -np.sign(x)/scale
         grad_negative_log_density = lambda x: np.sign(x) / scale
         sampler = lambda size: rv.rvs(size=shape + size)
@@ -188,6 +191,7 @@ class randomization(rr.smooth_atom):
                              density,
                              cdf,
                              pdf,
+                             ppf,
                              derivative_log_density,
                              grad_negative_log_density,
                              sampler,
