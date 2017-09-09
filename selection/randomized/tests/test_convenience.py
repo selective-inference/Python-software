@@ -56,8 +56,8 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
                                                      conv._queries,
                                                      bootstrap=False)
 
-        S = target_sampler.sample_opt(ndraw,
-                                      burnin)
+        S = target_sampler.sample(ndraw,
+                                  burnin)
 
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)

@@ -13,7 +13,7 @@ def test_randomized_lasso(n=300, p=500, s=5, signal=7.5, rho=0.2):
 
     print(np.nonzero(signs != 0)[0])
     print(np.nonzero(beta != 0)[0])
-    print(L.summary(signs != 0, ndraw=10000, burnin=2000, reference_type='tilt', compute_intervals=False))
+    print(L.summary(signs != 0, ndraw=1000, burnin=200, compute_intervals=False))
 
 
 if __name__ == "__main__":

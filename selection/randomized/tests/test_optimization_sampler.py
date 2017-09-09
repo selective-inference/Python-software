@@ -50,14 +50,14 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
         selected_features = np.zeros(p, np.bool)
         selected_features[:3] = True
 
-        conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
-                                   conditioning_groups=conditioning_groups)
+        print(const_info, condition, marginalize, rand)
+
+        conv.decompose_subgradient(conditioning_groups, marginalizing_groups)
 
         opt_sampler = optimization_sampler(conv._queries)
-
         S = opt_sampler.sample(ndraw,
                                burnin,
-                               stepsize=1.e-3)
+                               stepsize=1.e-10)
 
-        opt_sampler.reconstruction_map(S)
+        opt_sampler.reconstruct(S)
         

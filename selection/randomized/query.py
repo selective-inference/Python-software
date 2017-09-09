@@ -26,48 +26,6 @@ class query(object):
             self.randomized_loss = self.randomization.randomize(self.loss, self.epsilon)
         self._randomized = True
 
-
-    def randomization_gradient(self, data_state, data_transform, opt_state):
-        """
-        Randomization derivative at full state.
-        """
-
-        # reconstruction of randomization omega
-
-        opt_linear, opt_offset = self.opt_transform
-
-        data_linear, data_offset = data_transform
-        if data_linear is not None:
-            data_piece = data_linear.dot(data_state) + data_offset
-        else: # this can be none if we are not moving a target
-            data_piece = data_offset
-
-        # value of the randomization omega
-
-        if opt_linear is not None: # this can happen if we marginalize all of omega!
-            opt_piece = opt_linear.dot(opt_state) + opt_offset
-            full_state = (data_piece + opt_piece)
-        else:
-            full_state = data_piece
-
-        # gradient of negative log density of randomization at omega
-        # we may have marginalized over some optimization variables here
-
-        randomization_derivative = self.construct_weights(full_state)
-
-        # chain rule for data, optimization parts
-
-        if data_linear is not None:
-            data_grad = data_linear.T.dot(randomization_derivative)
-        else:
-            data_grad = None
-
-        if opt_linear is not None:
-            opt_grad = opt_linear.T.dot(randomization_derivative)
-        else:
-            opt_grad = None
-        return data_grad, opt_grad #- self.grad_log_jacobian(opt_state)
-
     def construct_weights(self, full_state):
         return self.randomization.gradient(full_state)
 
@@ -102,33 +60,26 @@ class query(object):
 
         return (composition_linear_part, composition_offset)
 
-    def reconstruction_map(self, data_state, data_transform, opt_state):
+    # Reconstruct different parts of 
+    # randomization: optimization, data and full
+
+    def reconstruct_opt(self, opt_state):
 
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-        # reconstruction of randomization omega
-
-        data_state = np.atleast_2d(data_state)
         opt_linear, opt_offset = self.opt_transform
-
-        data_linear, data_offset = data_transform
-        if data_linear is not None:
-            data_piece = data_linear.dot(data_state) + data_offset
-        else:
-            data_piece = np.multiply.outer(data_offset, np.ones(opt_state.shape[0]))
-
         if opt_linear is not None:
             opt_state = np.atleast_2d(opt_state)
-            opt_piece = opt_linear.dot(opt_state.T) + opt_offset[:, None]
-            return (data_piece + opt_piece).T
+            return np.squeeze(opt_linear.dot(opt_state.T) + opt_offset[:, None]).T
         else:
-            return data_piece.T
+            return opt_offset
 
     def log_density(self, data_state, data_transform, opt_state):
 
-        full_data = self.reconstruction_map(data_state, data_transform, opt_state)
+        full_data = reconstruct_full(data_state, data_transform, self, opt_state)
         return self.randomization.log_density(full_data)
+
      # implemented by subclasses
 
     def grad_log_jacobian(self, opt_state):
@@ -139,7 +90,6 @@ class query(object):
         """
         # needs to be implemented for group lasso
         return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
-
 
     def jacobian(self, opt_state):
         """
@@ -171,6 +121,25 @@ class query(object):
     def projection(self, opt_state):
 
         raise NotImplementedError('abstract method -- projection of optimization variables')
+
+def reconstruct_data(data_state, data_transform):
+
+    data_state = np.atleast_2d(data_state)
+    data_linear, data_offset = data_transform
+    if data_linear is not None:
+        return np.squeeze(data_linear.dot(data_state.T) + data_offset[:,None]).T
+    else:
+        return np.squeeze(data_offset)
+
+def reconstruct_full(data_state, data_transform, query, opt_state):
+
+    if not query._setup:
+        raise ValueError('setup_sampler should be called before using this function')
+
+    data_piece = reconstruct_data(data_state, data_transform)
+    opt_piece =  query.reconstruct_opt(opt_state)
+
+    return np.squeeze((data_piece + opt_piece))
 
 class multiple_queries(object):
 
@@ -539,11 +508,21 @@ class targeted_sampler(object):
         # randomization_gradient are gradients of a CONVEX function
 
         for i in range(self.nqueries):
-            target_grad_curr, opt_grad[self.opt_slice[i]] = \
-                self.objectives[i].randomization_gradient(target_state, self.target_transform[i], opt_state[self.opt_slice[i]])
-            target_grad += target_grad_curr.copy()
 
-        target_grad = - target_grad
+            randomization_state = reconstruct_full(target_state, 
+                                                   self.target_transform[i], 
+                                                   self.objectives[i],
+                                                   opt_state[self.opt_slice[i]])
+
+            grad = self.objectives[i].construct_weights(randomization_state)
+            target_linear, target_offset = self.target_transform[i]
+            opt_linear, opt_offset = self.objectives[i].opt_transform
+            if target_linear is not None:
+                target_grad += target_linear.T.dot(grad)
+            if opt_linear is not None:
+                opt_grad[self.opt_slice[i]] = opt_offset.T.dot(grad)
+
+        target_grad = -target_grad
         target_grad += self._reference_inv - self.target_inv_cov.dot(target_state)
         full_grad[self.target_slice] = target_grad
         full_grad[self.overall_opt_slice] = -opt_grad
@@ -800,7 +779,7 @@ class targeted_sampler(object):
         return lipschitz
 
 
-    def reconstruction_map(self, state):
+    def reconstruct(self, state):
         '''
         Reconstruction of randomization at current state.
         Parameters
@@ -817,19 +796,17 @@ class targeted_sampler(object):
         '''
 
         state = np.atleast_2d(state)
-        #print(state.shape)
         if len(state.shape) > 2:
             raise ValueError('expecting at most 2-dimensional array')
 
         target_state, opt_state = state[:,self.target_slice], state[:,self.overall_opt_slice]
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
-        #reconstructed = np.zeros((opt_state.shape[0],self.randomization_length_total))
 
         for i in range(self.nqueries):
-            reconstructed[:, self.randomization_slice[i]] = \
-                   self.objectives[i].reconstruction_map(target_state,
-                                                         self.target_transform[i],
-                                                         opt_state[:, self.opt_slice[i]])
+            reconstructed[:, self.randomization_slice[i]] = reconstruct_full(target_state,
+                                                                             self.target_transform[i],
+                                                                             self.objectives[i],
+                                                                             opt_state[:, self.opt_slice[i]])
 
         return np.squeeze(reconstructed)
 
@@ -847,7 +824,7 @@ class targeted_sampler(object):
             Has number of rows as `state` if 2-dimensional.
         '''
 
-        reconstructed = self.reconstruction_map(state)
+        reconstructed = self.reconstruct(state)
         value = np.zeros(reconstructed.shape[0])
 
         for i in range(self.nqueries):
@@ -874,8 +851,6 @@ class optimization_sampler(object):
            `objectives`, `score_info` are key
            attributed. (Should maybe change constructor
            to reflect only what is needed.)
-
-
         '''
 
         # sampler will draw samples for bootstrap
@@ -924,14 +899,11 @@ class optimization_sampler(object):
         # We implicitly assume that we are sampling a target
         # independent of the data in each view
 
-        self.target_transform = []
+        self.observed_scores = []
         for i in range(self.nqueries):
             obj = self.objectives[i]
-            
-            _, observed_score = obj.linear_decomposition(np.zeros(obj.ndim),
-                                                         np.array([[1.]]),
-                                                         0.)
-            self.target_transform.append((None, observed_score)) 
+            score_linear, score_offset = obj.score_transform
+            self.observed_scores.append(score_linear.dot(obj.observed_score_state) + score_offset)
 
     def projection(self, state):
         '''
@@ -964,10 +936,10 @@ class optimization_sampler(object):
         # randomization_gradient are gradients of a CONVEX function
 
         for i in range(self.nqueries):
-            # the 0 is our fictitious target independent of all the data
-            _, opt_grad[self.opt_slice[i]] = \
-                self.objectives[i].randomization_gradient(0., self.target_transform[i], opt_state[self.opt_slice[i]])
-
+            reconstructed_opt_state = self.objectives[i].reconstruct_opt(opt_state[self.opt_slice[i]])
+            opt_linear, opt_offset = self.objectives[i].opt_transform
+            opt_grad[self.opt_slice[i]] = \
+                opt_linear.T.dot(self.objectives[i].construct_weights(reconstructed_opt_state + self.observed_scores[i]))
         return -opt_grad
 
     def sample(self, ndraw, burnin, stepsize=None):
@@ -1249,7 +1221,7 @@ class optimization_sampler(object):
             lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
         return lipschitz
 
-    def reconstruction_map(self, state):
+    def reconstruct(self, state):
         '''
         Reconstruction of randomization at current state.
         Parameters
@@ -1257,6 +1229,7 @@ class optimization_sampler(object):
         state : np.float
            State of sampler made up of `(target, opt_vars)`.
            Can be array with each row a state.
+
         Returns
         -------
         reconstructed : np.float
@@ -1266,15 +1239,42 @@ class optimization_sampler(object):
         '''
 
         state = np.atleast_2d(state)
-        if len(state.shape) > 2:
+        if state.ndim > 2:
             raise ValueError('expecting at most 2-dimensional array')
 
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
 
         for i in range(self.nqueries):
-            reconstructed[:,self.randomization_slice[i]] = self.objectives[i].reconstruction_map(  
-                0.,
-                self.target_transform[i],
+            reconstructed[:,self.randomization_slice[i]] = self.objectives[i].reconstruct_opt(  
+                state[:,self.opt_slice[i]]) + self.observed_scores[i]
+
+        return np.squeeze(reconstructed)
+
+    def reconstruct_opt(self, state):
+        '''
+        Reconstruction of randomization at current state.
+        Parameters
+        ----------
+        state : np.float
+           State of sampler made up of `(target, opt_vars)`.
+           Can be array with each row a state.
+
+        Returns
+        -------
+        reconstructed : np.float
+           Has shape of `opt_vars` with same number of rows
+           as `state`.
+
+        '''
+
+        state = np.atleast_2d(state)
+        if state.ndim > 2:
+            raise ValueError('expecting at most 2-dimensional array')
+
+        reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
+
+        for i in range(self.nqueries):
+            reconstructed[:,self.randomization_slice[i]] = self.objectives[i].reconstruct_opt(  
                 state[:,self.opt_slice[i]])
 
         return np.squeeze(reconstructed)
@@ -1293,7 +1293,7 @@ class optimization_sampler(object):
             Has number of rows as `state` if 2-dimensional.
         '''
 
-        reconstructed = self.reconstruction_map(state)
+        reconstructed = self.reconstruct(state)
         value = np.zeros(reconstructed.shape[0])
 
         for i in range(self.nqueries):
@@ -1330,7 +1330,6 @@ class bootstrapped_target_sampler(targeted_sampler):
         self.target_alpha = target_alpha
         self.boot_transform = []
 
-
         for i in range(self.nqueries):
             composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
                                                                                                   self.target_cov,
@@ -1356,10 +1355,19 @@ class bootstrapped_target_sampler(targeted_sampler):
         # randomization_gradient are gradients of a CONVEX function
 
         for i in range(self.nqueries):
-            boot_grad_curr, opt_grad[self.opt_slice[i]] = \
-                self.objectives[i].randomization_gradient(boot_state, self.boot_transform[i],
-                                                          opt_state[self.opt_slice[i]])
-            boot_grad += boot_grad_curr.copy()
+
+            randomization_state = reconstruct_full(boot_state, 
+                                                   self.boot_transform[i], 
+                                                   self.objectives[i],
+                                                   opt_state[self.opt_slice[i]])
+
+            grad = self.objectives[i].construct_weights(randomization_state)
+            boot_linear, boot_offset = self.boot_transform[i]
+            opt_linear, opt_offset = self.objectives[i].opt_transform
+            if boot_linear is not None:
+                boot_grad += boot_linear.T.dot(grad)
+            if opt_linear is not None:
+                opt_grad[self.opt_slice[i]] = opt_offset.T.dot(grad)
 
         boot_grad = -boot_grad
         boot_grad -= boot_state
@@ -1440,15 +1448,16 @@ class optimization_intervals(object):
                  opt_sample,
                  observed):
 
-        self.reconstructed_sample = opt_sampler.reconstruction_map(opt_sample) # observed_score + affine(opt_sample)
+        full_sample = opt_sampler.reconstruct_full(opt_sample) # observed_score + affine(opt_sample)
+        self._logden = opt_sampler.log_randomization_density(full_sample)
 
+        # we now remove the observed_score from full_sample
+        self.reconstructed_sample = opt_sampler.reconstruct_opt(opt_sample) # affine(opt_sample)
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
         self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), 
                                                             cov=opt_sampler.target_cov, 
                                                             size=(sample.shape[0],))
-
-        self._logden = opt_sampler.log_randomization_density(self.reconstructed_sample)
 
     def pivot(self,
               linear_func,
@@ -1546,8 +1555,8 @@ class optimization_intervals(object):
 
         _lognum = 0
         for i in range(len(log_density)):
-            density_arg = nuisance[i] + score_cov[i].dot(sample_stat)  
-            _lognum += log_density[i](density_arg)
+            density_arg = score_cov[i].dot(sample_stat) + nuisance[i][:,None]
+            _lognum += log_density[i](density_arg + self.reconstructed_sample)
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
 

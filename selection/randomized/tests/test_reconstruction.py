@@ -60,6 +60,6 @@ def test_reconstruction(s=3,
                                               burnin=burnin,
                                               keep_opt=True)
         
-        reconstruction = target_sampler.reconstruction_map(target_sample)
+        reconstruction = target_sampler.reconstruct(target_sample)
         logdens = target_sampler.log_randomization_density(target_sample)
         return logdens.shape
