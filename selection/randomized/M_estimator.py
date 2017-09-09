@@ -323,9 +323,6 @@ class M_estimator(query):
         der[self.scaling_slice] = np.array([np.matrix.trace(jacobian_inv_blocks[i]) for i in range(scalings.shape[0])])
         return der
 
-
-
-
     def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
         pass
 
@@ -338,7 +335,6 @@ class M_estimator(query):
 
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
-
 
         if ('subgradient' not in self.selection_variable and 
             'scaling' not in self.selection_variable): # have not conditioned on any thing else
