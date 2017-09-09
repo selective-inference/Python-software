@@ -8,7 +8,8 @@ from ..api import (randomization,
 from ...tests.instance import (gaussian_instance,
                                       logistic_instance)
 from ...algorithms.sqrt_lasso import (sqlasso_objective,
-                                      choose_lambda)
+                                      choose_lambda,
+                                      l2norm_glm)
 from ..query import naive_confidence_intervals, naive_pvalues
 
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
@@ -52,8 +53,8 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
     lam_nonrandom = choose_lambda(X)
     lam_random = choose_lambda_with_randomization(X, randomizer)
-    loss = sqlasso_objective(X, y)
-
+    loss = l2norm_glm(X, y)
+    #sqloss = rr.glm.gaussian(X, y)
     epsilon = 1./n
 
     # non-randomized sqrt-Lasso, just looking how many vars it selects
