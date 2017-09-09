@@ -1,7 +1,7 @@
 import numpy as np
 import regreg.api as rr
 
-from ..cv_glmnet import CV_glmnet
+from ...algorithms.cv_glmnet import CV_glmnet
 from ...tests.instance import gaussian_instance
 
 def test_cv_glmnet():

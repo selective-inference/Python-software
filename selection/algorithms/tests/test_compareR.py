@@ -330,6 +330,7 @@ def test_solve_QP(): # check the R coordinate descent LASSO solver
     rpy.r(R_code)
 
     soln_R = np.asarray(rpy.r('soln_R'))
+    rpy2.robjects.numpy2ri.deactivate()
 
     yield np.testing.assert_allclose, soln, soln_R, tol, tol, False, 'checking coordinate QP solver'
 

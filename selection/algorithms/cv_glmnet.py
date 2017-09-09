@@ -15,6 +15,7 @@ try:
     from rpy2 import robjects
     import rpy2.robjects.numpy2ri
     rpy2.robjects.numpy2ri.activate()
+    rpy2.robjects.numpy2ri.deactivate()
     importr('glmnet')
     have_glmnet = True
 except ImportError:
@@ -35,6 +36,7 @@ class CV_glmnet(object):
     def using_glmnet(self, loss=None):
         if not have_glmnet:
             raise ImportError("""glmnet failed to load with rpy2""")
+        rpy2.robjects.numpy2ri.activate()
         robjects.r('''
             glmnet_cv = function(X,y, family, lam_seq=NA){
             y = as.matrix(y)
@@ -87,6 +89,7 @@ class CV_glmnet(object):
             CV_err = CV_err_longer
         SD = np.array(result[4])
 
+        rpy2.robjects.numpy2ri.deactivate()
         return lam_minCV, lam_1SE, lam_seq, CV_err, SD
 
 
