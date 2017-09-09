@@ -1,5 +1,4 @@
 import numpy as np
-import sys
 
 import regreg.api as rr
 from .lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability
@@ -181,7 +180,6 @@ class sel_inf_carved(rr.smooth_atom):
         self.prior_variance = prior_variance
 
         initial = self.solver.initial_soln[self.solver._overall]
-        print("initial_state", initial)
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -257,7 +255,6 @@ class sel_inf_carved(rr.smooth_atom):
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
-                # print("proposal", proposal)
 
                 if proposed_value <= current_value:
                     break
@@ -279,9 +276,9 @@ class sel_inf_carved(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, langevin_steps=1500, burnin=100):
+    def posterior_samples(self, ndraw=1500, burnin=100):
         state = self.initial_state
-        print("here", state.shape)
+
         gradient_map = lambda x: -self.smooth_objective_post(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.param_shape
@@ -289,13 +286,13 @@ class sel_inf_carved(rr.smooth_atom):
 
         samples = []
 
-        for i in xrange(langevin_steps):
+        for i in xrange(ndraw + burnin):
             sampler.next()
-            samples.append(sampler.state.copy())
-            sys.stderr.write("sample number: " + str(i) + "\n")
+            if i >= burnin:
+                samples.append(sampler.state.copy())
 
         samples = np.array(samples)
-        return samples[burnin:, :]
+        return samples
 
 
 

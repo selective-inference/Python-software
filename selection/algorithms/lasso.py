@@ -806,6 +806,7 @@ class lasso(object):
                                                              'upper_trunc',
                                                              'sd'], 
                                                             np.array(result).T)]))
+        df['variable'] = df['variable'].astype(int)
         return df
 
 

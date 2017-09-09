@@ -1,7 +1,57 @@
 import numpy as np
 import regreg.api as rr
 from scipy.optimize import bisect, minimize
-from selection.bayesian.selection_probability_rr import cube_barrier_scaled, cube_gradient_scaled, cube_hessian_scaled
+
+def cube_barrier_scaled(argument, lagrange, cube_scale= 1.):
+    '''
+    Barrier approximation to the
+    cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+    The function is
+    $$
+    z \mapsto \log(1 + 1 / (\lambda - z)) + \log(1 + 1 / (z + \lambda))
+    $$
+    with $z$ being `argument`
+    '''
+    BIG = 10 ** 10  # our Newton method will never evaluate this
+    # with any violations, but `scipy.minimize` does
+    _diff = argument - lagrange  # z - \lambda < 0
+    _sum = argument + lagrange  # z + \lambda > 0
+    violations = ((_diff >= 0).sum() + (_sum <= 0).sum() > 0)
+    return np.log((_diff - (cube_scale*lagrange)) * (_sum + (cube_scale*lagrange)) / (_diff * _sum)).sum() + BIG * violations
+
+
+def cube_gradient_scaled(argument, lagrange, cube_scale= 1.):
+    """
+    Gradient of approximation to the
+    cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+    The function is
+    $$
+    z \mapsto \frac{2}{\lambda - z} - \frac{1}{\lambda - z + 1} +
+    \frac{1}{z - \lambda + 1}
+    $$
+    with $z$ being `argument`
+    """
+    _diff = argument - lagrange  # z - \lambda < 0
+    _sum = argument + lagrange  # z + \lambda > 0
+    return 1. / (_diff - (cube_scale*lagrange)) - 1. / _diff + 1. / (_sum + (cube_scale*lagrange)) - 1. / _sum
+
+
+def cube_hessian_scaled(argument, lagrange, cube_scale= 1.):
+    """
+    (Diagonal) Heissian of approximation to the
+    cube $[-\lambda,\lambda]^k$ with $\lambda$ being `lagrange`.
+    The function is
+    $$
+    z \mapsto \frac{2}{\lambda - z} - \frac{1}{\lambda - z + 1} +
+    \frac{1}{z - \lambda + 1}
+    $$
+    with $z$ being `argument`
+    """
+    _diff = argument - lagrange  # z - \lambda < 0
+    _sum = argument + lagrange  # z + \lambda > 0
+    return 1. / _diff ** 2 - 1. / (_diff - (cube_scale*lagrange)) ** 2 + 1. / _sum ** 2 - \
+           1. / (_sum + (cube_scale*lagrange)) ** 2
+
 
 def cube_barrier_softmax_coord(z, lam):
     _diff = z - lam

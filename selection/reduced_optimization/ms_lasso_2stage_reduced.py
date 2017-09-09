@@ -407,9 +407,9 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, langevin_steps=1500, burnin=50):
+    def posterior_samples(self, ndraw=1000, burnin=100):
         state = self.initial_state
-        print("here", state.shape)
+
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
@@ -417,16 +417,15 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
 
         samples = []
 
-        for i in range(langevin_steps):
+        for i in range(ndraw + burnin):
             sampler.next()
-            samples.append(sampler.state.copy())
-            #print i, sampler.state.copy()
-            sys.stderr.write("sample number: " + str(i) + "\n")
+            if i >= burnin:
+                samples.append(sampler.state.copy())
 
         samples = np.array(samples)
-        return samples[burnin:, :]
+        return samples
 
-    def posterior_risk(self, estimator_1, estimator_2, langevin_steps=1200, burnin=0):
+    def posterior_risk(self, estimator_1, estimator_2, ndraw=1000, burnin=0):
         state = self.initial_state
         print("here", state.shape)
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
@@ -437,21 +436,21 @@ class selective_map_credible_ms_lasso(rr.smooth_atom):
         post_risk_1 = 0.
         post_risk_2 = 0.
 
-        for i in range(langevin_steps):
+        for i in range(ndraw + burnin):
             sampler.next()
-            sample = sampler.state.copy()
+            if i >= burnin:
+                sample = sampler.state.copy()
 
-            #print(sample)
-            risk_1 = ((estimator_1-sample)**2).sum()
-            print("adjusted risk", risk_1)
-            post_risk_1 += risk_1
+                #print(sample)
+                risk_1 = ((estimator_1-sample)**2).sum()
+                print("adjusted risk", risk_1)
+                post_risk_1 += risk_1
 
-            risk_2 = ((estimator_2-sample) ** 2).sum()
-            print("unadjusted risk", risk_2)
-            post_risk_2 += risk_2
+                risk_2 = ((estimator_2-sample) ** 2).sum()
+                print("unadjusted risk", risk_2)
+                post_risk_2 += risk_2
 
-
-        return post_risk_1/langevin_steps, post_risk_2/langevin_steps
+        return post_risk_1/ndraw, post_risk_2/ndraw
 
 
 
