@@ -150,7 +150,7 @@ class threshold_score(query):
 
         p = self.boundary.shape[0]  # shorthand
         self.num_opt_var = 0
-        self.opt_transform = (None, None)
+        self.opt_transform = (np.array([], np.float), np.zeros(p, np.float))
         self.observed_opt_state = np.array([])
         _score_linear_term = -np.identity(p)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))

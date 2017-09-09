@@ -1,16 +1,16 @@
 from itertools import product
-import numpy as np
 import nose.tools as nt
 
-from selection.randomized.convenience import lasso, step, threshold
-from selection.randomized.query import optimization_sampler
-from selection.tests.instance import (gaussian_instance,
-                               logistic_instance,
-                               poisson_instance)
-from selection.tests.flags import SMALL_SAMPLES
-from selection.tests.decorators import set_sampling_params_iftrue
+import numpy as np
 from scipy.stats import t as tdist
 
+from ..convenience import lasso, step, threshold
+from ..query import optimization_sampler
+from ...tests.instance import (gaussian_instance,
+                               logistic_instance,
+                               poisson_instance)
+from ...tests.flags import SMALL_SAMPLES
+from ...tests.decorators import set_sampling_params_iftrue
 
 def inverse_truncated_cdf(x, lower, upper, randomization):
     #if (x<0 or x>1):
@@ -18,14 +18,12 @@ def inverse_truncated_cdf(x, lower, upper, randomization):
     arg = randomization._cdf(lower) + np.multiply(x, randomization._cdf(upper) - randomization._cdf(lower))
     return randomization._ppf(arg)
 
-
 def sampling_truncated_dist(lower, upper, randomization, nsamples=1000):
     uniform_samples = np.random.uniform(0,1, size=(nsamples,randomization.shape[0]))
     samples = np.zeros((nsamples, randomization.shape[0]))
     for i in range(nsamples):
         samples[i,:] = inverse_truncated_cdf(uniform_samples[i,:], lower, upper, randomization)
     return samples
-
 
 def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =10000):
     p = X.shape[1]
@@ -100,20 +98,7 @@ def test_optimization_sampler(ndraw=20000, burnin=2000):
         signs = conv.fit()
         print("signs", signs)
 
-        marginalizing_groups = np.zeros(p, np.bool)
-        #marginalizing_groups[:int(p/2)] = True
-        conditioning_groups = ~marginalizing_groups
-        #conditioning_groups[-int(p/4):] = False
-
         selected_features = conv._view.selection_variable['variables']
-
-        #conv.summary(selected_features,
-        #             ndraw=ndraw,
-        #             burnin=burnin,
-        #             compute_intervals=True)
-
-        #conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
-        #                           conditioning_groups=conditioning_groups)
 
         conv._queries.setup_sampler(form_covariances=None)
         conv._queries.setup_opt_state()
@@ -131,5 +116,3 @@ def test_optimization_sampler(ndraw=20000, burnin=2000):
         print([np.mean(opt_samples[:,i]) for i in range(p)])
 
 
-
-test_optimization_sampler()
