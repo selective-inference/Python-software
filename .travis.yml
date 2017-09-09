@@ -52,6 +52,7 @@ install:
   - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
   - sudo Rscript -e "install.packages(c('glmnet', 'intervals'), repos='http://cloud.r-project.org')"
   - sudo R CMD INSTALL selectiveInference
+  - cd ..
   - travis_install $INSTALL_TYPE
 
 # command to run tests, e.g. python setup.py test
