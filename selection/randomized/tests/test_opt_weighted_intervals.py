@@ -60,14 +60,12 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         form_covariances = glm_nonparametric_bootstrap(n, n)
         conv._queries.setup_sampler(form_covariances)
         boot_target, boot_target_observed = pairs_bootstrap_glm(conv.loglike, selected_features, inactive=None)
-        opt_sampler.setup_target(target_info=boot_target,
-                                 observed_target_state=unpenalized_mle,
-                                 form_covariances=form_covariances)
+        opt_sampler.setup_target(boot_target,
+                                 form_covariances)
 
-        selective_CI = opt_sampler.confidence_intervals(opt_sampler.observed_target_state, sample=S)
+        selective_CI = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
         print(selective_CI)
 
         return selective_CI
 
 
-test_opt_weighted_intervals()

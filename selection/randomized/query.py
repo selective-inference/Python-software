@@ -75,9 +75,7 @@ class query(object):
         else:
             return opt_offset
 
-    def log_density(self, data_state, data_transform, opt_state):
-
-        full_data = reconstruct_full(data_state, data_transform, self, opt_state)
+    def log_density(self, full_data):
         return self.randomization.log_density(full_data)
 
      # implemented by subclasses
@@ -810,7 +808,7 @@ class targeted_sampler(object):
 
         return np.squeeze(reconstructed)
 
-    def log_randomization_density(self, state):
+    def log_density(self, state):
         '''
         Log of randomization density at current state.
         Parameters
@@ -983,7 +981,10 @@ class optimization_sampler(object):
                 samples.append(target_langevin.state.copy())
         return np.asarray(samples)
 
-    def setup_target(self, target_info, form_covariances, parametric=False):
+    def setup_target(self, 
+                     target_info, 
+                     form_covariances, 
+                     parametric=False):
         """
         This computes the matrices used in the linear decomposition
         that will be used in computing weights for the sampler.
@@ -991,14 +992,14 @@ class optimization_sampler(object):
 
         self.score_cov = []
         self.observed_score = []
-        self.log_density = []
+        self.log_densities = []
 
         target_cov_sum = 0
 
         # we should pararallelize this over all views at once ?
         for i in range(self.nqueries):
             view = self.objectives[i]
-            self.log_density.append(view.log_randomization_density)
+            self.log_densities.append(view.log_density)
             score_info = view.setup_sampler(form_covariances)
             if parametric == False:
                 target_cov, cross_cov = form_covariances(target_info,  
@@ -1279,7 +1280,7 @@ class optimization_sampler(object):
 
         return np.squeeze(reconstructed)
 
-    def log_randomization_density(self, state):
+    def log_density(self, state):
         '''
         Log of randomization density at current state.
         Parameters
@@ -1448,17 +1449,21 @@ class optimization_intervals(object):
                  opt_sample,
                  observed):
 
-        full_sample = opt_sampler.reconstruct_full(opt_sample) # observed_score + affine(opt_sample)
-        self._logden = opt_sampler.log_randomization_density(full_sample)
+        full_sample = opt_sampler.reconstruct(opt_sample) # observed_score + affine(opt_sample)
+        self._logden = opt_sampler.log_density(full_sample)
 
         # we now remove the observed_score from full_sample
         self.reconstructed_sample = opt_sampler.reconstruct_opt(opt_sample) # affine(opt_sample)
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
-        self._normal_sample = np.random.multivariate_normal(mean=np.zeros(nactive), 
-                                                            cov=opt_sampler.target_cov, 
-                                                            size=(sample.shape[0],))
+        # setup_target has been called on opt_sampler
+        self.opt_sampler = opt_sampler
+        self.opt_sample = opt_sample
 
+        self.target_cov = opt_sampler.target_cov
+        self._normal_sample = np.random.multivariate_normal(mean=np.zeros(self.target_cov.shape[0]), 
+                                                            cov=self.target_cov, 
+                                                            size=(opt_sample.shape[0],))
     def pivot(self,
               linear_func,
               candidate,
@@ -1483,16 +1488,15 @@ class optimization_intervals(object):
         score_cov = []
         for i in range(len(self.opt_sampler.objectives)):
             cur_score_cov = linear_func.dot(self.opt_sampler.score_cov[i])
-            cur_nuisance = self.observed_score[i] - cur_score_cov * observed_stat / target_cov
+            cur_nuisance = self.opt_sampler.observed_score[i] - cur_score_cov * observed_stat / target_cov
             nuisance.append(cur_nuisance)
             score_cov.append(cur_score_cov)
 
-        candidate_sample, weights = self._weights(self.opt_sample,          # sample of optimization variables
-                                                  sample_stat + candidate,  # normal sample under candidate
-                                                  nuisance,                 # nuisance sufficient stats for each view
-                                                  score_cov,                # points will be moved like sample * score_cov
-                                                  self.opt_sampler.log_density)
-
+        weights = self._weights(sample_stat + candidate,  # normal sample under candidate
+                                nuisance,                 # nuisance sufficient stats for each view
+                                score_cov,                # points will be moved like sample * score_cov
+                                self.opt_sampler.log_densities)
+        
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
 
         if alternative == 'twosided':
@@ -1504,16 +1508,11 @@ class optimization_intervals(object):
 
     def confidence_interval(self, linear_func, level=0.90, how_many_sd=20):
 
-        target_delta = self._delta[:,self.targeted_sampler.target_slice]
-        projected_delta = target_delta.dot(linear_func)
+        sample_stat = self._normal_sample.dot(linear_func)
         projected_observed = self.observed.dot(linear_func)
-        std_projected_delta = np.sqrt(np.dot(linear_func.T, self.targeted_sampler.target_cov).dot(linear_func))
-
-        delta_min, delta_max = projected_delta.min(), projected_delta.max()
-
+        
         _norm = np.linalg.norm(linear_func)
-        grid_min, grid_max = -how_many_sd * np.std(projected_delta), how_many_sd * np.std(projected_delta)
-        print("grid", grid_min, grid_max)
+        grid_min, grid_max = -how_many_sd * np.std(sample_stat), how_many_sd * np.std(sample_stat)
 
         def _rootU(gamma):
             return self.pivot(linear_func,
@@ -1535,7 +1534,7 @@ class optimization_intervals(object):
                  sample_stat,
                  nuisance,
                  score_cov,
-                 log_density):
+                 log_densities):
 
         # Here we should loop through the views
         # and move the score of each view 
@@ -1554,11 +1553,11 @@ class optimization_intervals(object):
         # In this function, \hat{\theta}_i will change with the Monte Carlo sample
 
         _lognum = 0
-        for i in range(len(log_density)):
-            density_arg = score_cov[i].dot(sample_stat) + nuisance[i][:,None]
-            _lognum += log_density[i](density_arg + self.reconstructed_sample)
+        for i in range(len(log_densities)):
+            density_arg = np.multiply.outer(score_cov[i], sample_stat) + nuisance[i][:,None]
+            _lognum += log_densities[i](density_arg.T + self.reconstructed_sample)
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
 
-        return candidate_sample, np.exp(_logratio)
+        return np.exp(_logratio)
 
