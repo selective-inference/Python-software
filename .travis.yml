@@ -76,7 +76,7 @@ script:
       fi
     - |
       if [ "$R_TESTS" ]; then
-        nosetests ../selection/algorithms/tests/test_compareR.py
+        nosetests -v ../selection/algorithms/tests/test_compareR.py
       else 
         env USE_SMALL_SAMPLES=1 USE_TEST_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
       fi
