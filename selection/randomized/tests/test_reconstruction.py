@@ -61,5 +61,5 @@ def test_reconstruction(s=3,
                                               keep_opt=True)
         
         reconstruction = target_sampler.reconstruct(target_sample)
-        logdens = target_sampler.log_randomization_density(target_sample)
+        logdens = target_sampler.log_density(target_sample)
         return logdens.shape
