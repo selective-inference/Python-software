@@ -88,7 +88,6 @@ def test_multiple_queries(s=3,
                                                          bootstrap=bootstrap,
                                                          reference=reference)
             test_stat = lambda x: np.linalg.norm(x-reference)
-            observed_test_value = test_stat(target_observed)
 
         else:
             reference = beta[active_union]
@@ -98,8 +97,8 @@ def test_multiple_queries(s=3,
                                                          bootstrap=bootstrap,
                                                          reference = reference)
             test_stat = lambda x: np.linalg.norm(x-beta[active_union])
-            observed_test_value = test_stat(target_observed)
 
+        observed_test_value = test_stat(target_observed)
         pivot = target_sampler.hypothesis_test(test_stat,
                                                observed_test_value,
                                                alternative='twosided',
@@ -108,13 +107,8 @@ def test_multiple_queries(s=3,
                                                parameter=reference)
 
         full_sample = target_sampler.sample(ndraw=ndraw,
-                                       burnin=burnin,
-                                       keep_opt=True)
-
-        pivot = target_sampler.hypothesis_test(full_sample,
-                                               test_stat,
-                                               target_observed,
-                                               alternative='twosided')
+                                            burnin=burnin,
+                                            keep_opt=True)
 
         return [pivot], [False]
 
@@ -248,12 +242,16 @@ def test_multiple_queries(s=3, n=200, p=20,
                                             burnin=burnin,
                                             keep_opt=True)
 
-        pivot = target_sampler.hypothesis_test(full_sample,
-                                               test_stat,
-                                               target_observed,
-                                               alternative='twosided')
+        pivot = target_sampler.hypothesis_test(test_stat,
+                                               observed_test_value,
+                                               alternative='twosided',
+                                               ndraw=ndraw,
+                                               burnin=burnin,
+                                               parameter=reference)
 
         return [pivot], [False]
+
+
 
 def report(niter=1, **kwargs):
 
