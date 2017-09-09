@@ -9,14 +9,14 @@ from selection.approx_ci.ci_approx_greedy_step import approximate_conditional_de
 
 from selection.randomized.query import naive_confidence_intervals
 
-def test_approximate_inference(X,
-                               y,
-                               beta,
-                               sigma,
-                               seed_n = 0,
-                               lam_frac = 1.,
-                               loss='gaussian',
-                               randomization_scale = 1.):
+def approximate_inference(X,
+                          y,
+                          beta,
+                          sigma,
+                          seed_n = 0,
+                          lam_frac = 1.,
+                          loss='gaussian',
+                          randomization_scale = 1.):
 
     from selection.api import randomization
     n, p = X.shape
@@ -106,15 +106,15 @@ def test_approximate_inference(X,
                                            naive_risk)))
 
 
-def test_greedy_step(n, p, s, signal):
+def test_greedy_step(n=50, p=100, s=5, signal=5):
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
-    greedy_step = test_approximate_inference(X,
-                                             y,
-                                             beta,
-                                             sigma,
-                                             seed_n=0,
-                                             lam_frac=1.,
-                                             loss='gaussian')
+    greedy_step = approximate_inference(X,
+                                        y,
+                                        beta,
+                                        sigma,
+                                        seed_n=0,
+                                        lam_frac=1.,
+                                        loss='gaussian')
 
     if greedy_step is not None:
         print("output of selection adjusted inference", greedy_step)
