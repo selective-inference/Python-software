@@ -151,4 +151,3 @@ def test_ms_lasso(ndraw=1000, burnin=100):
     print("adjusted and unadjusted coverage", ad_cov, unad_cov)
     print("\n")
     print("adjusted and unadjusted lengths", ad_len, unad_len)
-
