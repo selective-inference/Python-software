@@ -897,11 +897,12 @@ class optimization_sampler(object):
         # We implicitly assume that we are sampling a target
         # independent of the data in each view
 
-        self.observed_scores = []
+        self.observed_raw_score = [] # in the data coordinates, not the view's coordinates
+                                     # will typically be \nabla \ell(\bar{\beta}_E) - \nabla^2 \ell(\bar{\beta}_E) \bar{\beta}_E
         for i in range(self.nqueries):
             obj = self.objectives[i]
             score_linear, score_offset = obj.score_transform
-            self.observed_scores.append(score_linear.dot(obj.observed_score_state) + score_offset)
+            self.observed_raw_score.append(score_linear.dot(obj.observed_score_state) + score_offset)
 
     def projection(self, state):
         '''
@@ -937,7 +938,7 @@ class optimization_sampler(object):
             reconstructed_opt_state = self.objectives[i].reconstruct_opt(opt_state[self.opt_slice[i]])
             opt_linear, opt_offset = self.objectives[i].opt_transform
             opt_grad[self.opt_slice[i]] = \
-                opt_linear.T.dot(self.objectives[i].construct_weights(reconstructed_opt_state + self.observed_scores[i]))
+                opt_linear.T.dot(self.objectives[i].construct_weights(reconstructed_opt_state + self.observed_raw_score[i]))
         return -opt_grad
 
     def sample(self, ndraw, burnin, stepsize=None):
@@ -991,7 +992,6 @@ class optimization_sampler(object):
         """
 
         self.score_cov = []
-        self.observed_score = []
         self.log_densities = []
 
         target_cov_sum = 0
@@ -1011,7 +1011,6 @@ class optimization_sampler(object):
 
             target_cov_sum += target_cov
             self.score_cov.append(cross_cov)
-            self.observed_score.append(view.observed_score_state)
 
         self.target_cov = target_cov_sum / self.nqueries
         self.target_invcov = np.linalg.inv(self.target_cov)
@@ -1247,7 +1246,7 @@ class optimization_sampler(object):
 
         for i in range(self.nqueries):
             reconstructed[:,self.randomization_slice[i]] = self.objectives[i].reconstruct_opt(  
-                state[:,self.opt_slice[i]]) + self.observed_scores[i]
+                state[:,self.opt_slice[i]]) + self.observed_raw_score[i]
 
         return np.squeeze(reconstructed)
 
@@ -1488,7 +1487,7 @@ class optimization_intervals(object):
         score_cov = []
         for i in range(len(self.opt_sampler.objectives)):
             cur_score_cov = linear_func.dot(self.opt_sampler.score_cov[i])
-            cur_nuisance = self.opt_sampler.observed_score[i] - cur_score_cov * observed_stat / target_cov
+            cur_nuisance = self.opt_sampler.observed_raw_score[i] - cur_score_cov * observed_stat / target_cov
             nuisance.append(cur_nuisance)
             score_cov.append(cur_score_cov)
 
@@ -1509,24 +1508,25 @@ class optimization_intervals(object):
     def confidence_interval(self, linear_func, level=0.90, how_many_sd=20):
 
         sample_stat = self._normal_sample.dot(linear_func)
-        projected_observed = self.observed.dot(linear_func)
+        observed_stat = self.observed.dot(linear_func)
         
         _norm = np.linalg.norm(linear_func)
         grid_min, grid_max = -how_many_sd * np.std(sample_stat), how_many_sd * np.std(sample_stat)
 
         def _rootU(gamma):
             return self.pivot(linear_func,
-                              projected_observed + gamma,
+                              observed_stat + gamma,
                               alternative='less') - (1 - level) / 2.
         def _rootL(gamma):
             return self.pivot(linear_func,
-                              projected_observed + gamma,
+                              observed_stat + gamma,
                               alternative='less') - (1 + level) / 2.
 
         upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
         lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
 
-        return lower + projected_observed, upper + projected_observed
+        print(_rootU(upper), _rootL(lower), 'pivot')
+        return lower + observed_stat, upper + observed_stat
 
     # Private methods
 
