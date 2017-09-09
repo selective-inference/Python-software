@@ -830,6 +830,113 @@ class targeted_sampler(object):
             value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
 
+class bootstrapped_target_sampler(targeted_sampler):
+
+    # make one of these for each hypothesis test
+
+    def __init__(self,
+                 multi_view,
+                 target_info,
+                 observed_target_state,
+                 target_alpha,
+                 target_set=None,
+                 reference=None,
+                 boot_size=None):
+
+        # sampler will draw bootstrapped weights for the target
+
+        if boot_size is None:
+            boot_size = target_alpha.shape[1]
+
+        targeted_sampler.__init__(self, multi_view,
+                                  target_info,
+                                  observed_target_state,
+                                  target_set,
+                                  reference)
+        # for bootstrap
+
+        self.boot_size = boot_size
+        self.target_alpha = target_alpha
+        self.boot_transform = []
+
+        for i in range(self.nqueries):
+            composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
+                                                                                                  self.target_cov,
+                                                                                                  self.observed_target_state)
+            boot_linear_part = np.dot(composition_linear_part, target_alpha)
+            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
+            self.boot_transform.append((boot_linear_part, boot_offset))
+
+        # set the observed state for bootstrap
+
+        self.boot_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.boot_size)
+        self.observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
+        self.observed_state[self.boot_slice] = np.ones(self.boot_size)
+        self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
+
+
+    def gradient(self, state):
+
+        boot_state, opt_state = state[self.boot_slice], state[self.overall_opt_slice]
+        boot_grad, opt_grad = np.zeros_like(boot_state), np.zeros_like(opt_state)
+        full_grad = np.zeros_like(state)
+
+        # randomization_gradient are gradients of a CONVEX function
+
+        for i in range(self.nqueries):
+
+            randomization_state = reconstruct_full(boot_state, 
+                                                   self.boot_transform[i], 
+                                                   self.objectives[i],
+                                                   opt_state[self.opt_slice[i]])
+
+            grad = self.objectives[i].construct_weights(randomization_state)
+            boot_linear, boot_offset = self.boot_transform[i]
+            opt_linear, opt_offset = self.objectives[i].opt_transform
+            if boot_linear is not None:
+                boot_grad += boot_linear.T.dot(grad)
+            if opt_linear is not None:
+                opt_grad[self.opt_slice[i]] = opt_offset.T.dot(grad)
+
+        boot_grad = -boot_grad
+        boot_grad -= boot_state
+
+        full_grad[self.boot_slice] = boot_grad
+        full_grad[self.overall_opt_slice] = -opt_grad
+
+        return full_grad
+
+    def sample(self, ndraw, burnin, stepsize = None, keep_opt=False):
+        if stepsize is None:
+            stepsize = 1. / self.observed_state.shape[0]
+
+        bootstrap_langevin = projected_langevin(self.observed_state.copy(),
+                                                self.gradient,
+                                                self.projection,
+                                                stepsize)
+        if keep_opt:
+            boot_slice = slice(None, None, None)
+        else:
+            boot_slice = self.boot_slice
+
+        samples = []
+        for i in range(ndraw + burnin):
+            bootstrap_langevin.next()
+            if (i >= burnin):
+                samples.append(bootstrap_langevin.state[boot_slice].copy())
+        samples = np.asarray(samples)
+
+        if keep_opt:
+            target_samples = samples[:,self.boot_slice].dot(self.target_alpha.T) + self.reference[None, :]
+            opt_sample0 = samples[0,self.overall_opt_slice]
+            result = np.zeros((samples.shape[0], opt_sample0.shape[0] + target_samples.shape[1]))
+            result[:,self.overall_opt_slice] = samples[:,self.overall_opt_slice]
+            result[:,self.target_slice] = target_samples
+            return result
+        else:
+            target_samples = samples.dot(self.target_alpha.T) + self.reference[None, :]
+            return target_samples
+
 class optimization_sampler(object):
 
     '''
@@ -899,10 +1006,12 @@ class optimization_sampler(object):
 
         self.observed_raw_score = [] # in the data coordinates, not the view's coordinates
                                      # will typically be \nabla \ell(\bar{\beta}_E) - \nabla^2 \ell(\bar{\beta}_E) \bar{\beta}_E
+        self.score_info = []
         for i in range(self.nqueries):
             obj = self.objectives[i]
             score_linear, score_offset = obj.score_transform
             self.observed_raw_score.append(score_linear.dot(obj.observed_score_state) + score_offset)
+            self.score_info.append(obj.score_transform)
 
     def projection(self, state):
         '''
@@ -1301,146 +1410,6 @@ class optimization_sampler(object):
             value += log_dens(reconstructed[:,self.opt_slice[i]])
         return np.squeeze(value)
 
-class bootstrapped_target_sampler(targeted_sampler):
-
-    # make one of these for each hypothesis test
-
-    def __init__(self,
-                 multi_view,
-                 target_info,
-                 observed_target_state,
-                 target_alpha,
-                 target_set=None,
-                 reference=None,
-                 boot_size=None):
-
-        # sampler will draw bootstrapped weights for the target
-
-        if boot_size is None:
-            boot_size = target_alpha.shape[1]
-
-        targeted_sampler.__init__(self, multi_view,
-                                  target_info,
-                                  observed_target_state,
-                                  target_set,
-                                  reference)
-        # for bootstrap
-
-        self.boot_size = boot_size
-        self.target_alpha = target_alpha
-        self.boot_transform = []
-
-        for i in range(self.nqueries):
-            composition_linear_part, composition_offset = self.objectives[i].linear_decomposition(self.score_cov[i],
-                                                                                                  self.target_cov,
-                                                                                                  self.observed_target_state)
-            boot_linear_part = np.dot(composition_linear_part, target_alpha)
-            boot_offset = composition_offset + np.dot(composition_linear_part, self.reference).flatten()
-            self.boot_transform.append((boot_linear_part, boot_offset))
-
-        # set the observed state for bootstrap
-
-        self.boot_slice = slice(multi_view.num_opt_var, multi_view.num_opt_var + self.boot_size)
-        self.observed_state = np.zeros(multi_view.num_opt_var + self.boot_size)
-        self.observed_state[self.boot_slice] = np.ones(self.boot_size)
-        self.observed_state[self.overall_opt_slice] = multi_view.observed_opt_state
-
-
-    def gradient(self, state):
-
-        boot_state, opt_state = state[self.boot_slice], state[self.overall_opt_slice]
-        boot_grad, opt_grad = np.zeros_like(boot_state), np.zeros_like(opt_state)
-        full_grad = np.zeros_like(state)
-
-        # randomization_gradient are gradients of a CONVEX function
-
-        for i in range(self.nqueries):
-
-            randomization_state = reconstruct_full(boot_state, 
-                                                   self.boot_transform[i], 
-                                                   self.objectives[i],
-                                                   opt_state[self.opt_slice[i]])
-
-            grad = self.objectives[i].construct_weights(randomization_state)
-            boot_linear, boot_offset = self.boot_transform[i]
-            opt_linear, opt_offset = self.objectives[i].opt_transform
-            if boot_linear is not None:
-                boot_grad += boot_linear.T.dot(grad)
-            if opt_linear is not None:
-                opt_grad[self.opt_slice[i]] = opt_offset.T.dot(grad)
-
-        boot_grad = -boot_grad
-        boot_grad -= boot_state
-
-        full_grad[self.boot_slice] = boot_grad
-        full_grad[self.overall_opt_slice] = -opt_grad
-
-        return full_grad
-
-    def sample(self, ndraw, burnin, stepsize = None, keep_opt=False):
-        if stepsize is None:
-            stepsize = 1. / self.observed_state.shape[0]
-
-        bootstrap_langevin = projected_langevin(self.observed_state.copy(),
-                                                self.gradient,
-                                                self.projection,
-                                                stepsize)
-        if keep_opt:
-            boot_slice = slice(None, None, None)
-        else:
-            boot_slice = self.boot_slice
-
-        samples = []
-        for i in range(ndraw + burnin):
-            bootstrap_langevin.next()
-            if (i >= burnin):
-                samples.append(bootstrap_langevin.state[boot_slice].copy())
-        samples = np.asarray(samples)
-
-        if keep_opt:
-            target_samples = samples[:,self.boot_slice].dot(self.target_alpha.T) + self.reference[None, :]
-            opt_sample0 = samples[0,self.overall_opt_slice]
-            result = np.zeros((samples.shape[0], opt_sample0.shape[0] + target_samples.shape[1]))
-            result[:,self.overall_opt_slice] = samples[:,self.overall_opt_slice]
-            result[:,self.target_slice] = target_samples
-            return result
-        else:
-            target_samples = samples.dot(self.target_alpha.T) + self.reference[None, :]
-            return target_samples
-
-def naive_confidence_intervals(target, observed, alpha=0.1):
-    """
-    Compute naive Gaussian based confidence
-    intervals for target.
-    Parameters
-    ----------
-
-    target : `targeted_sampler`
-    observed : np.float
-        A vector of observed data of shape `target.shape`
-    alpha : float (optional)
-        1 - confidence level.
-    Returns
-    -------
-    intervals : np.float
-        Gaussian based confidence intervals.
-    """
-    quantile = - ndist.ppf(alpha/float(2))
-    LU = np.zeros((2, target.shape[0]))
-    for j in range(target.shape[0]):
-        sigma = np.sqrt(target.target_cov[j, j])
-        LU[0,j] = observed[j] - sigma * quantile
-        LU[1,j] = observed[j] + sigma * quantile
-    return LU.T
-
-def naive_pvalues(target, observed, parameter):
-    pvalues = np.zeros(target.shape[0])
-    for j in range(target.shape[0]):
-        sigma = np.sqrt(target.target_cov[j, j])
-        pval = ndist.cdf((observed[j]-parameter[j])/sigma)
-        pvalues[j] = 2*min(pval, 1-pval)
-    return pvalues
-
 class optimization_intervals(object):
 
     def __init__(self,
@@ -1488,8 +1457,12 @@ class optimization_intervals(object):
         for i in range(len(self.opt_sampler.objectives)):
             cur_score_cov = linear_func.dot(self.opt_sampler.score_cov[i])
             cur_nuisance = self.opt_sampler.observed_raw_score[i] - cur_score_cov * observed_stat / target_cov
-            nuisance.append(cur_nuisance)
-            score_cov.append(cur_score_cov)
+            # cur_nuisance is in the view's internal coordinates
+            score_linear, score_offset = self.opt_sampler.score_info[i]
+            # final_nuisance is on the scale of the original randomization
+            final_nuisance = score_linear.dot(cur_nuisance) + score_offset
+            nuisance.append(final_nuisance)
+            score_cov.append(score_linear.dot(cur_score_cov))
 
         weights = self._weights(sample_stat + candidate,  # normal sample under candidate
                                 nuisance,                 # nuisance sufficient stats for each view
@@ -1561,3 +1534,35 @@ class optimization_intervals(object):
 
         return np.exp(_logratio)
 
+def naive_confidence_intervals(target, observed, alpha=0.1):
+    """
+    Compute naive Gaussian based confidence
+    intervals for target.
+    Parameters
+    ----------
+
+    target : `targeted_sampler`
+    observed : np.float
+        A vector of observed data of shape `target.shape`
+    alpha : float (optional)
+        1 - confidence level.
+    Returns
+    -------
+    intervals : np.float
+        Gaussian based confidence intervals.
+    """
+    quantile = - ndist.ppf(alpha/float(2))
+    LU = np.zeros((2, target.shape[0]))
+    for j in range(target.shape[0]):
+        sigma = np.sqrt(target.target_cov[j, j])
+        LU[0,j] = observed[j] - sigma * quantile
+        LU[1,j] = observed[j] + sigma * quantile
+    return LU.T
+
+def naive_pvalues(target, observed, parameter):
+    pvalues = np.zeros(target.shape[0])
+    for j in range(target.shape[0]):
+        sigma = np.sqrt(target.target_cov[j, j])
+        pval = ndist.cdf((observed[j]-parameter[j])/sigma)
+        pvalues[j] = 2*min(pval, 1-pval)
+    return pvalues
