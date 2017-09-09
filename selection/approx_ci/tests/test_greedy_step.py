@@ -120,4 +120,3 @@ def test_greedy_step(n, p, s, signal):
         print("output of selection adjusted inference", greedy_step)
         return(greedy_step)
 
-test_greedy_step(n=200, p=30, s=0, signal=5.)
