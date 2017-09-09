@@ -8,14 +8,14 @@ from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
 from ...tests.flags import SMALL_SAMPLES
-from ...tests.decorators import set_sampling_params_iftrue
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 from scipy.stats import t as tdist
 from ..glm import target as glm_target, glm_nonparametric_bootstrap, pairs_bootstrap_glm
 from ..M_estimator import restricted_Mest
 
-
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+@set_seed_iftrue(True, 200)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=1000, burnin=100)
 def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
     cls = lasso
