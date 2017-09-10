@@ -401,7 +401,7 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         samples = []
 
-        for i in xrange(ndraw + burnin):
+        for i in range(ndraw + burnin):
             sampler.next()
             if i >= burnin:
                 samples.append(sampler.state.copy())

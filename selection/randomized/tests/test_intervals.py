@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import numpy as np
 
 import regreg.api as rr
@@ -54,7 +54,7 @@ def test_intervals(s=0,
 
     W = lam_frac*np.ones(p)*lam
     # W[0] = 0 # use at least some unpenalized
-    groups = np.concatenate([np.arange(10) for i in range(p/10)])
+    groups = np.concatenate([np.arange(10) for i in range(p//10)])
     #print(groups)
     #groups = np.arange(p)
     penalty = rr.group_lasso(groups,
