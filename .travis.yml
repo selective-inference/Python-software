@@ -24,11 +24,6 @@ matrix:
       env:
         - RUN_R_TESTS=1
 before_install:
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
-      pip install  -r requirements.txt -c constraints.txt; 
-    else
-      pip install  -r requirements.txt; 
-    fi
   - source travis-tools/utils.sh
   - travis_before_install
   # Install regreg 
