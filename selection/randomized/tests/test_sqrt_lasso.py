@@ -80,9 +80,6 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
     if nactive==0:
         return None
 
-    import sys
-    sys.stderr.write(`(nonzero, active_union )` + '\n')
-
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
