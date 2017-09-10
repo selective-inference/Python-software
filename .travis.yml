@@ -24,11 +24,10 @@ matrix:
       env:
         - RUN_R_TESTS=1
 before_install:
-  - if [[$TRAVIS_PYTHON_VERSION == 2.7]]; then 
-      pip install -r requirements.txt -c constraints.txt; 
-    fi
-  - if [[$TRAVIS_PYTHON_VERSION != 2.7]]; then 
-      pip install -r requirements.txt; 
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
+      pip install  -r requirements.txt -c constraints.txt; 
+    else
+      pip install  -r requirements.txt; 
     fi
   - source travis-tools/utils.sh
   - travis_before_install
@@ -48,12 +47,11 @@ before_install:
 
 install:
   # Install selection
-  - if [[$TRAVIS_PYTHON_VERSION == 2.7]]; then 
-      pip install -r requirements.txt -c constraints.txt; 
-    fi
-  - if [[$TRAVIS_PYTHON_VERSION != 2.7]]; then 
-      pip install -r requirements.txt; 
-    fi
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
+        pip install  -r requirements.txt -c constraints.txt; 
+      else
+        pip install  -r requirements.txt; 
+      fi
   - pip install -e .
   - cd R-software
   - git submodule init
@@ -71,10 +69,9 @@ script:
 
     - pip install nose
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
-    - if [[$TRAVIS_PYTHON_VERSION == 2.7]]; then 
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
         pip install  -r doc-requirements.txt -c constraints.txt; 
-      fi
-    - if [[$TRAVIS_PYTHON_VERSION != 2.7]]; then 
+      else
         pip install  -r doc-requirements.txt; 
       fi
     # Change into an innocuous directory and find tests from installation
