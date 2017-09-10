@@ -42,7 +42,8 @@ before_install:
 
 install:
   # Install selection
-  - pip install -r requirements.txt
+  - if ["${TRAVIS_PYTHON_VERSION:0:1}" == "2"]; then pip install  -r requirements.txt -c py2constraints.txt; fi
+  - if ["${TRAVIS_PYTHON_VERSION:0:1}" == "3"]; then pip install  -r requirements.txt; fi
   - pip install -e .
   - cd R-software
   - git submodule init
@@ -60,7 +61,8 @@ script:
 
     - pip install nose
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
-    - pip install -r doc-requirements.txt # installs rpy2 among other things
+    - if ["${TRAVIS_PYTHON_VERSION:0:1}" == "2"]; then pip install  -r doc-requirements.txt -c py2constraints.txt; fi
+    - if ["${TRAVIS_PYTHON_VERSION:0:1}" == "3"]; then pip install  -r doc-requirements.txt; fi
 
     # Change into an innocuous directory and find tests from installation
     - mkdir for_testing
