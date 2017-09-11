@@ -3,20 +3,39 @@ import nose.tools as nt
 
 import numpy as np
 from scipy.stats import t as tdist
+from scipy.stats import laplace, logistic, norm as ndist
 
-from ..convenience import lasso, step, threshold
-from ..query import optimization_sampler
-from ...tests.instance import (gaussian_instance,
+from selection.randomized.convenience import lasso, step, threshold
+from selection.randomized.query import optimization_sampler
+from selection.tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
-from ...tests.flags import SMALL_SAMPLES
-from ...tests.decorators import set_sampling_params_iftrue
+from selection.tests.flags import SMALL_SAMPLES
+from selection.tests.decorators import set_sampling_params_iftrue
+from selection.randomized.randomization import randomization
+
+
+class randomization_ppf(randomization):
+
+    def __init__(self, rand, ppf):
+
+        self._cdf = rand._cdf
+        self._ppf = ppf
+        self.shape = rand.shape
+
+    @staticmethod
+    def laplace(shape, scale):
+        ppf = lambda x: laplace.ppf(x, loc=0, scale=scale)
+        rand = randomization.laplace(shape, scale)
+        return randomization_ppf(rand, ppf)
+
 
 def inverse_truncated_cdf(x, lower, upper, randomization):
     #if (x<0 or x>1):
     #    raise ValueError("argument for cdf inverse should be in (0,1)")
     arg = randomization._cdf(lower) + np.multiply(x, randomization._cdf(upper) - randomization._cdf(lower))
     return randomization._ppf(arg)
+    #return randomization._ppf(arg)
 
 def sampling_truncated_dist(lower, upper, randomization, nsamples=1000):
     uniform_samples = np.random.uniform(0,1, size=(nsamples,randomization.shape[0]))
@@ -95,6 +114,10 @@ def test_optimization_sampler(ndraw=20000, burnin=2000):
 
         W = np.ones(X.shape[1]) * 1
         conv = const(X, Y, W, randomizer=rand)
+
+
+        randomizer = randomization_ppf.laplace((p,), scale=conv.randomizer_scale)
+
         signs = conv.fit()
         print("signs", signs)
 
@@ -106,13 +129,15 @@ def test_optimization_sampler(ndraw=20000, burnin=2000):
 
         S = target_sampler.sample(ndraw,
                                   burnin,
-                                  stepsize=1.e-3)
+                                  stepsize=None)
         print(S.shape)
         print([np.mean(S[:,i]) for i in range(p)])
 
         opt_samples = sample_opt_vars(X,Y, selected_features, signs, W[0], conv.ridge_term,
-                                      conv.randomizer, nsamples =1000)
+                                      randomizer, nsamples =1000)
 
         print([np.mean(opt_samples[:,i]) for i in range(p)])
 
 
+np.random.seed(1)
+test_optimization_sampler()

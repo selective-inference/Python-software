@@ -1076,7 +1076,9 @@ class optimization_sampler(object):
         '''
 
         if stepsize is None:
-            stepsize = 1. / self.crude_lipschitz()
+            print("here")
+            stepsize = 1./len(self.observed_state) #
+            #stepsize = 1. / self.crude_lipschitz()
 
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,
@@ -1251,7 +1253,7 @@ class optimization_sampler(object):
         return np.array(limits)
 
     def coefficient_pvalues(self,
-                            observed,
+                            observed_target,
                             parameter=None,
                             ndraw=10000,
                             burnin=2000,
@@ -1298,22 +1300,19 @@ class optimization_sampler(object):
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
 
         if parameter is None:
-            parameter = np.zeros(self.shape)
+            parameter = np.zeros(observed_target.shape[0])
 
-        nactive = observed.shape[0]
-        intervals_instance = intervals_from_sample(self.reference,
-                                                   sample,
-                                                   observed,
-                                                   self.target_cov)
+        _intervals = optimization_intervals(self,
+                                            sample,
+                                            observed_target)
+        pvals = []
 
-        pval = intervals_instance.pivots_all(parameter)
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternative))
 
-        if alternative == 'greater':
-            return 1 - pval
-        elif alternative == 'less':
-            return pval
-        else:
-            return 2 * np.minimum(pval, 1 - pval)
+        return np.array(pvals)
 
     def crude_lipschitz(self):
         """
@@ -1456,13 +1455,13 @@ class optimization_intervals(object):
         score_cov = []
         for i in range(len(self.opt_sampler.objectives)):
             cur_score_cov = linear_func.dot(self.opt_sampler.score_cov[i])
-            cur_nuisance = self.opt_sampler.observed_raw_score[i] - cur_score_cov * observed_stat / target_cov
+            cur_nuisance = self.opt_sampler.objectives[i].observed_score_state - cur_score_cov * observed_stat / target_cov
             # cur_nuisance is in the view's internal coordinates
             score_linear, score_offset = self.opt_sampler.score_info[i]
             # final_nuisance is on the scale of the original randomization
             final_nuisance = score_linear.dot(cur_nuisance) + score_offset
             nuisance.append(final_nuisance)
-            score_cov.append(score_linear.dot(cur_score_cov))
+            score_cov.append(score_linear.dot(cur_score_cov)/target_cov)
 
         weights = self._weights(sample_stat + candidate,  # normal sample under candidate
                                 nuisance,                 # nuisance sufficient stats for each view
@@ -1498,7 +1497,7 @@ class optimization_intervals(object):
         upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
         lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
 
-        print(_rootU(upper), _rootL(lower), 'pivot')
+        #print(_rootU(upper), _rootL(lower), 'pivot')
         return lower + observed_stat, upper + observed_stat
 
     # Private methods
@@ -1527,7 +1526,7 @@ class optimization_intervals(object):
 
         _lognum = 0
         for i in range(len(log_densities)):
-            density_arg = np.multiply.outer(score_cov[i], sample_stat) + nuisance[i][:,None]
+            density_arg = np.multiply.outer(score_cov[i], sample_stat) + nuisance[i][:, None]
             _lognum += log_densities[i](density_arg.T + self.reconstructed_sample)
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
