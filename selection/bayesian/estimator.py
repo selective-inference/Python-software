@@ -579,10 +579,7 @@ class M_estimator_approx(M_estimator):
 
         self.feasible_point = np.append(self.observed_score_state, np.abs(self.initial_soln[self._overall]))
 
-        lagrange = []
-        for key, value in self.penalty.weights.iteritems():
-            lagrange.append(value)
-        lagrange = np.asarray(lagrange)
+        lagrange = self.penalty._weight_array
 
         self.inactive_lagrange = lagrange[~self._overall]
 
@@ -658,10 +655,7 @@ class M_estimator_approx_carved(M_estimator_split):
 
         self.score_transform = (self._score_linear_term, np.zeros(self._score_linear_term.shape[0]))
 
-        lagrange = []
-        for key, value in self.penalty.weights.iteritems():
-            lagrange.append(value)
-        lagrange = np.asarray(lagrange)
+        lagrange = self.penalty._weight_array
 
         #print("True or false", np.all(lagrange[0]-np.fabs(self.feasible_point[p+self.nactive:]))>0)
         #print("True or false", np.all(self.feasible_point[p:][:self.nactive]) > 0)
@@ -710,10 +704,7 @@ class M_estimator_approx_logistic(M_estimator):
 
         self.feasible_point = np.append(self.observed_score_state, np.abs(self.initial_soln[self._overall]))
 
-        lagrange = []
-        for key, value in self.penalty.weights.iteritems():
-            lagrange.append(value)
-        lagrange = np.asarray(lagrange)
+        lagrange = self.penalty._weight_array
 
         self.inactive_lagrange = lagrange[~self._overall]
 

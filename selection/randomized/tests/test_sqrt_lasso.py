@@ -8,7 +8,8 @@ from ..api import (randomization,
 from ...tests.instance import (gaussian_instance,
                                       logistic_instance)
 from ...algorithms.sqrt_lasso import (sqlasso_objective,
-                                      choose_lambda)
+                                      choose_lambda,
+                                      l2norm_glm)
 from ..query import naive_confidence_intervals, naive_pvalues
 
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
@@ -35,7 +36,6 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
                     scale1 = 0.1,
                     scale2 = 0.2,
                     lam_frac = 1.,
-                    intervals = 'old',
                     bootstrap = False,
                     condition_on_CVR = False,
                     marginalize_subgrad = True,
@@ -53,8 +53,8 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1)
     lam_nonrandom = choose_lambda(X)
     lam_random = choose_lambda_with_randomization(X, randomizer)
-    loss = sqlasso_objective(X, y)
-
+    loss = l2norm_glm(X, y)
+    #sqloss = rr.glm.gaussian(X, y)
     epsilon = 1./n
 
     # non-randomized sqrt-Lasso, just looking how many vars it selects
@@ -80,9 +80,6 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
     if nactive==0:
         return None
 
-    import sys
-    sys.stderr.write(`(nonzero, active_union )` + '\n')
-
     nonzero = np.where(beta)[0]
     if set(nonzero).issubset(np.nonzero(active_union)[0]):
 
@@ -98,38 +95,21 @@ def test_sqrt_lasso(n=500, p=20, s=3, signal=10, K=5, rho=0.,
                                                      mv,
                                                      bootstrap=bootstrap)
 
-        if intervals == 'old':
-            target_sample = target_sampler.sample(ndraw=ndraw,
-                                                  burnin=burnin)
-            LU = target_sampler.confidence_intervals(target_observed,
-                                                     sample=target_sample,
-                                                     level=0.9)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample,
+                                                 level=0.9)
 
-            #pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-            #                                                parameter=target_sampler.reference,
-            #                                                sample=target_sample)
-            pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                              parameter=true_vec,
-                                                              sample=target_sample)
-            pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                         parameter=np.zeros_like(true_vec),
-                                                         sample=target_sample)
-        else:
-            full_sample = target_sampler.sample(ndraw=ndraw,
-                                                burnin=burnin,
-                                                keep_opt=True)
-            LU = target_sampler.confidence_intervals_translate(target_observed,
-                                                               sample=full_sample,
-                                                               level=0.9)
-            #pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
-            #                                                          parameter=target_sampler.reference,
-            #                                                          sample=full_sample)
-            pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                        parameter=true_vec,
-                                                                        sample=full_sample)
-            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                   parameter=np.zeros_like(true_vec),
-                                                                   sample=full_sample)
+        #pivots_mle = target_sampler.coefficient_pvalues(target_observed,
+        #                                                parameter=target_sampler.reference,
+        #                                                sample=target_sample)
+        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
+                                                          parameter=true_vec,
+                                                          sample=target_sample)
+        pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                     parameter=np.zeros_like(true_vec),
+                                                     sample=target_sample)
 
         L, U = LU.T
         sel_covered = np.zeros(nactive, np.bool)

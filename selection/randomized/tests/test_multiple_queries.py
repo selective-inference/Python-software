@@ -88,7 +88,6 @@ def test_multiple_queries(s=3,
                                                          bootstrap=bootstrap,
                                                          reference=reference)
             test_stat = lambda x: np.linalg.norm(x-reference)
-            observed_test_value = test_stat(target_observed)
 
         else:
             reference = beta[active_union]
@@ -98,8 +97,8 @@ def test_multiple_queries(s=3,
                                                          bootstrap=bootstrap,
                                                          reference = reference)
             test_stat = lambda x: np.linalg.norm(x-beta[active_union])
-            observed_test_value = test_stat(target_observed)
 
+        observed_test_value = test_stat(target_observed)
         pivot = target_sampler.hypothesis_test(test_stat,
                                                observed_test_value,
                                                alternative='twosided',
@@ -108,158 +107,12 @@ def test_multiple_queries(s=3,
                                                parameter=reference)
 
         full_sample = target_sampler.sample(ndraw=ndraw,
-                                       burnin=burnin,
-                                       keep_opt=True)
-
-        pivot = target_sampler.hypothesis_test_translate(full_sample,
-                                                         test_stat,
-                                                         target_observed,
-                                                         alternative='twosided')
-
-        return [pivot], [False]
-
-@register_report(['pvalue', 'active'])
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-@set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
-def test_multiple_queries_translate(s=3, n=200, p=20,
-                                    signal=7,
-                                    rho=0.1,
-                                    lam_frac=0.7,
-                                    nview=4,
-                                    ndraw=10000, burnin=2000,
-                                    bootstrap=True):
-
-    randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
-
-    nonzero = np.where(beta)[0]
-    lam_frac = 1.
-
-    loss = rr.glm.logistic(X, y)
-    epsilon = 1.
-
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-    W = np.ones(p)*lam
-    W[0] = 0 # use at least some unpenalized
-    penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
-
-    view = []
-    for i in range(nview):
-        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
-
-    mv = multiple_queries(view)
-    mv.solve()
-
-    active_union = np.zeros(p, np.bool)
-    for i in range(nview):
-        active_union += view[i].selection_variable['variables']
-
-    nactive = np.sum(active_union)
-    print("nactive", nactive)
-
-    if set(nonzero).issubset(np.nonzero(active_union)[0]):
-        if nactive==s:
-            return None
-
-        active_set = np.nonzero(active_union)[0]
-
-        inactive_selected = np.array([active_union[i] and i not in nonzero for i in range(p)])
-        true_active = (beta != 0)
-        reference = np.zeros(inactive_selected.sum())
-        target_sampler, target_observed = glm_target(loss,
-                                                     active_union,
-                                                     mv,
-                                                     subset=inactive_selected,
-                                                     bootstrap=bootstrap,
-                                                     reference=reference)
-
-        test_stat = lambda x: np.linalg.norm(x)
-        observed_test_value = test_stat(target_observed)
-
-        full_sample = target_sampler.sample(ndraw=ndraw,
                                             burnin=burnin,
                                             keep_opt=True)
 
-        pivot = target_sampler.hypothesis_test_translate(full_sample,
-                                                         test_stat,
-                                                         target_observed,
-                                                         alternative='twosided')
-
         return [pivot], [False]
 
-@register_report(['truth', 'active'])
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=100, burnin=100)
-@set_seed_iftrue(SET_SEED)
-@wait_for_return_value()
-def test_multiple_queries_individual_coeff(s=3,
-                                           n=100,
-                                           p=10,
-                                           signal=7,
-                                           rho=0.1,
-                                           lam_frac=0.7,
-                                           nview=4,
-                                           ndraw=10000, burnin=2000,
-                                           bootstrap=True):
 
-    randomizer = randomization.laplace((p,), scale=1)
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
-
-    nonzero = np.where(beta)[0]
-
-    loss = rr.glm.logistic(X, y)
-    epsilon = 1.
-
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
-    W = np.ones(p)*lam
-    #W[0] = 0 # use at least some unpenalized
-    penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
-
-    view = []
-    for i in range(nview):
-        view.append(glm_group_lasso(loss, epsilon, penalty, randomizer))
-
-    mv = multiple_queries(view)
-    mv.solve()
-
-    active_union = np.zeros(p, np.bool)
-    for i in range(nview):
-        active_union += view[i].selection_variable['variables']
-
-    nactive = np.sum(active_union)
-    print("nactive", nactive)
-    active_set = np.nonzero(active_union)[0]
-
-    pvalues = []
-    true_beta = beta[active_union]
-    if set(nonzero).issubset(np.nonzero(active_union)[0]):
-        for j in range(nactive):
-
-            subset = np.zeros(p, np.bool)
-            subset[active_set[j]] = True
-            target_sampler, target_observed = glm_target(loss,
-                                                         active_union,# * ~subset,
-                                                         mv,
-                                                         subset=subset,
-                                                         reference = true_beta[j],
-                                                         #reference=np.zeros((1,)),
-                                                         bootstrap=bootstrap)
-            test_stat = lambda x: np.atleast_1d(x-true_beta[j])
-
-            pval = target_sampler.hypothesis_test(test_stat,
-                                                  np.atleast_1d(target_observed-true_beta[j]),
-                                                  alternative='twosided',
-                                                  ndraw=ndraw,
-                                                  burnin=burnin)
-            pvalues.append(pval)
-
-        active_var = np.zeros_like(pvalues, np.bool)
-        _nonzero = np.array([i in nonzero for i in active_set])
-        active_var[_nonzero] = True
-
-        return pvalues, [active_set[j] in nonzero for j in range(nactive)]
 
 
 @register_report(['pvalue', 'active'])
@@ -329,13 +182,13 @@ def test_parametric_covariance(ndraw=10000, burnin=2000):
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
-def test_multiple_queries_translate(s=3, n=200, p=20,
-                                    signal=7,
-                                    rho=0.1,
-                                    lam_frac=0.7,
-                                    nview=4,
-                                    ndraw=10000, burnin=2000,
-                                    bootstrap=True):
+def test_multiple_queries(s=3, n=200, p=20,
+                          signal=7,
+                          rho=0.1,
+                          lam_frac=0.7,
+                          nview=4,
+                          ndraw=10000, burnin=2000,
+                          bootstrap=True):
 
     randomizer = randomization.laplace((p,), scale=1)
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
@@ -389,12 +242,16 @@ def test_multiple_queries_translate(s=3, n=200, p=20,
                                             burnin=burnin,
                                             keep_opt=True)
 
-        pivot = target_sampler.hypothesis_test_translate(full_sample,
-                                                         test_stat,
-                                                         target_observed,
-                                                         alternative='twosided')
+        pivot = target_sampler.hypothesis_test(test_stat,
+                                               observed_test_value,
+                                               alternative='twosided',
+                                               ndraw=ndraw,
+                                               burnin=burnin,
+                                               parameter=reference)
 
         return [pivot], [False]
+
+
 
 def report(niter=1, **kwargs):
 

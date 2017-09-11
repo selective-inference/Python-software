@@ -1,86 +1,122 @@
 from __future__ import print_function
+import sys
 import numpy as np
-import time
 import regreg.api as rr
 from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.approx_ci.ci_approx_greedy_step import neg_log_cube_probability_fs, approximate_conditional_prob_fs, \
-    approximate_conditional_density
-from selection.approx_ci.estimator_approx import greedy_score_step_approx
+from selection.approx_ci.selection_map import greedy_score_map
+from selection.approx_ci.ci_approx_greedy_step import approximate_conditional_density
 
-def test_approximate_ci(n=100,
-                        p=10,
-                        s=0,
-                        snr=5,
-                        rho=0.1,
-                        lam_frac = 1.,
-                        loss='gaussian',
-                        randomizer='gaussian'):
+
+from selection.randomized.query import naive_confidence_intervals
+
+def approximate_inference(X,
+                          y,
+                          beta,
+                          sigma,
+                          seed_n = 0,
+                          lam_frac = 1.,
+                          loss='gaussian',
+                          randomization_scale = 1.):
 
     from selection.api import randomization
-
+    n, p = X.shape
+    np.random.seed(seed_n)
     if loss == "gaussian":
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr, sigma=1.)
         loss = rr.glm.gaussian(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
     elif loss == "logistic":
-        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)
         loss = rr.glm.logistic(X, y)
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
 
-    if randomizer == 'gaussian':
-        randomization = randomization.isotropic_gaussian((p,), scale=1.)
-    elif randomizer == 'laplace':
-        randomization = randomization.laplace((p,), scale=1.)
+    randomization = randomization.isotropic_gaussian((p,), scale=randomization_scale)
 
     W = np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # active_bool = np.zeros(p, np.bool)
-    # active_bool[range(3)] = 1
-    # inactive_bool = ~active_bool
-
-    GS = greedy_score_step_approx(loss,
-                                  penalty,
-                                  np.zeros(p, dtype=bool),
-                                  np.ones(p, dtype=bool),
-                                  randomization,
-                                  randomizer)
+    GS = greedy_score_map(loss,
+                          penalty,
+                          np.zeros(p, dtype=bool),
+                          np.ones(p, dtype=bool),
+                          randomization,
+                          randomization_scale)
 
     GS.solve_approx()
     active = GS._overall
-    print("nactive", active.sum())
-
-    ci = approximate_conditional_density(GS)
-    ci.solve_approx()
-
-    active_set = np.asarray([i for i in range(p) if active[i]])
-    true_support = np.asarray([i for i in range(p) if i < s])
     nactive = np.sum(active)
-    print("active set, true_support", active_set, true_support)
-    true_vec = beta[active]
-    print("true coefficients", true_vec)
 
-    if (set(active_set).intersection(set(true_support)) == set(true_support)) == True:
+    if nactive == 0:
+        return None
+    else:
+        active_set = np.asarray([i for i in range(p) if active[i]])
+        s = beta.sum()
+        true_support = np.asarray([i for i in range(p) if i < s])
+        true_vec = beta[active]
 
-        ci_active = np.zeros((nactive, 2))
-        covered = np.zeros(nactive, np.bool)
-        ci_length = np.zeros(nactive)
-        pivots = np.zeros(nactive)
+        if (set(active_set).intersection(set(true_support)) == set(true_support)) == True:
+            ci = approximate_conditional_density(GS)
+            ci.solve_approx()
+            sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
 
-        toc = time.time()
+            class target_class(object):
+                def __init__(self, target_cov):
+                    self.target_cov = target_cov
+                    self.shape = target_cov.shape
 
-        for j in range(nactive):
-            ci_active[j, :] = np.array(ci.approximate_ci(j))
-            if (ci_active[j, 0] <= true_vec[j]) and (ci_active[j, 1] >= true_vec[j]):
-                covered[j] = 1
-            ci_length[j] = ci_active[j, 1] - ci_active[j, 0]
-            # print(ci_active[j, :])
-            pivots[j] = ci.approximate_pvalue(j, true_vec[j])
+            target = target_class(GS.target_cov)
+            ci_naive = naive_confidence_intervals(target, GS.target_observed)
+            naive_covered = np.zeros(nactive)
+            naive_risk = np.zeros(nactive)
 
-        print("confidence intervals", ci_active)
-        tic = time.time()
-        print('ci time now', tic - toc)
+            ci_sel = np.zeros((nactive, 2))
+            sel_MLE = np.zeros(nactive)
+            sel_length = np.zeros(nactive)
+
+            for j in range(nactive):
+                ci_sel[j, :] = np.array(ci.approximate_ci(j))
+                sel_MLE[j] = ci.approx_MLE_solver(j, step=1, nstep=150)[0]
+                sel_length[j] = ci_sel[j, 1] - ci_sel[j, 0]
+
+            sel_covered = np.zeros(nactive, np.bool)
+            sel_risk = np.zeros(nactive)
+
+            for j in range(nactive):
+
+                sel_risk[j] = (sel_MLE[j] - true_vec[j]) ** 2.
+                naive_risk[j] = (GS.target_observed[j] - true_vec[j]) ** 2.
+
+                if (ci_sel[j, 0] <= true_vec[j]) and (ci_sel[j, 1] >= true_vec[j]):
+                    sel_covered[j] = 1
+                if (ci_naive[j, 0] <= true_vec[j]) and (ci_naive[j, 1] >= true_vec[j]):
+                    naive_covered[j] = 1
+
+            print("lengths", sel_length.sum() / nactive)
+            print("selective intervals", ci_sel.T)
+            print("risks", sel_risk.sum() / nactive)
+
+            return np.transpose(np.vstack((ci_sel[:, 0],
+                                           ci_sel[:, 1],
+                                           ci_naive[:, 0],
+                                           ci_naive[:, 1],
+                                           sel_MLE,
+                                           GS.target_observed,
+                                           sel_covered,
+                                           naive_covered,
+                                           sel_risk,
+                                           naive_risk)))
 
 
-test_approximate_ci()
+def test_greedy_step(n=50, p=100, s=5, signal=5):
+    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
+    greedy_step = approximate_inference(X,
+                                        y,
+                                        beta,
+                                        sigma,
+                                        seed_n=0,
+                                        lam_frac=1.,
+                                        loss='gaussian')
+
+    if greedy_step is not None:
+        print("output of selection adjusted inference", greedy_step)
+        return(greedy_step)
+

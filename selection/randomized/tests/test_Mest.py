@@ -8,15 +8,15 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.decorators import wait_for_return_value, register_report
+from ...tests.decorators import wait_for_return_value, register_report
 import selection.tests.reports as reports
+from ...tests.instance import logistic_instance
 
-from selection.randomized.api import randomization, multiple_queries, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
-from selection.randomized.glm import bootstrap_cov
-from selection.distributions.discrete_family import discrete_family
-from selection.sampling.langevin import projected_langevin
-
-from selection.randomized.tests import logistic_instance
+from ..api import randomization, multiple_queries, pairs_bootstrap_glm, glm_group_lasso, glm_nonparametric_bootstrap 
+from ..glm import bootstrap_cov
+from ...distributions.discrete_family import discrete_family
+from ...sampling.langevin import projected_langevin
+from ..query import reconstruct_full
 
 @register_report(['pvalue', 'active'])
 @wait_for_return_value()
@@ -92,13 +92,16 @@ def test_overall_null_two_queries():
             target = state[target_slice]
             opt_state1 = state[opt_slice1]
             opt_state2 = state[opt_slice2]
-            target_grad1 = M_est1.randomization_gradient(target, (A1, b1), opt_state1)
-            target_grad2 = M_est2.randomization_gradient(target, (A2, b2), opt_state2)
+            opt_linear1 = M_est1.opt_transform[0]
+            arg1 = reconstruct_full(target, (A1, b1), M_est1, opt_state1); grad1 = M_est1.construct_weights(arg1)
+
+            opt_linear2 = M_est2.opt_transform[0]
+            arg2 = reconstruct_full(target, (A2, b2), M_est2, opt_state2); grad2 = M_est2.construct_weights(arg2)
 
             full_grad = np.zeros_like(state)
-            full_grad[opt_slice1] = -target_grad1[1]
-            full_grad[opt_slice2] = -target_grad2[1]
-            full_grad[target_slice] -= target_grad1[0] + target_grad2[0]
+            full_grad[opt_slice1] = -opt_linear1.T.dot(grad1)
+            full_grad[opt_slice2] = -opt_linear2.T.dot(grad2)
+            full_grad[target_slice] -= A1.T.dot(grad1) + A2.T.dot(grad2)
             full_grad[target_slice] -= target_inv_cov.dot(target)
 
             return full_grad
@@ -201,11 +204,14 @@ def test_one_inactive_coordinate_handcoded():
 
             target = state[target_slice]
             opt_state1 = state[opt_slice1]
-            target_grad1 = M_est1.randomization_gradient(target, (A1, b1), opt_state1)
+
+
+            opt_linear1 = M_est1.opt_transform[0]
+            arg1 = reconstruct_full(target, (A1, b1), M_est1, opt_state1); grad1 = M_est1.construct_weights(arg1)
 
             full_grad = np.zeros_like(state)
-            full_grad[opt_slice1] = -target_grad1[1]
-            full_grad[target_slice] -= target_grad1[0] 
+            full_grad[opt_slice1] = -opt_linear1.T.dot(grad1)
+            full_grad[target_slice] -= A1.T.dot(grad1)
             full_grad[target_slice] -= target_inv_cov.dot(target)
 
             return full_grad
