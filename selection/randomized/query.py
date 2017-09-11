@@ -1004,6 +1004,7 @@ class optimization_sampler(object):
         # We implicitly assume that we are sampling a target
         # independent of the data in each view
 
+        self.observed_score = [] # in the view's coordinates
         self.observed_raw_score = [] # in the data coordinates, not the view's coordinates
                                      # will typically be \nabla \ell(\bar{\beta}_E) - \nabla^2 \ell(\bar{\beta}_E) \bar{\beta}_E
         self.score_info = []
@@ -1011,6 +1012,7 @@ class optimization_sampler(object):
             obj = self.objectives[i]
             score_linear, score_offset = obj.score_transform
             self.observed_raw_score.append(score_linear.dot(obj.observed_score_state) + score_offset)
+            self.observed_score.append(obj.observed_score_state)
             self.score_info.append(obj.score_transform)
 
     def projection(self, state):
@@ -1456,13 +1458,13 @@ class optimization_intervals(object):
         score_cov = []
         for i in range(len(self.opt_sampler.objectives)):
             cur_score_cov = linear_func.dot(self.opt_sampler.score_cov[i])
-            cur_nuisance = self.opt_sampler.observed_raw_score[i] - cur_score_cov * observed_stat / target_cov
+            cur_nuisance = self.opt_sampler.observed_score[i] - cur_score_cov * observed_stat / target_cov
             # cur_nuisance is in the view's internal coordinates
             score_linear, score_offset = self.opt_sampler.score_info[i]
             # final_nuisance is on the scale of the original randomization
             final_nuisance = score_linear.dot(cur_nuisance) + score_offset
             nuisance.append(final_nuisance)
-            score_cov.append(score_linear.dot(cur_score_cov))
+            score_cov.append(score_linear.dot(cur_score_cov) / target_cov)
 
         weights = self._weights(sample_stat + candidate,  # normal sample under candidate
                                 nuisance,                 # nuisance sufficient stats for each view
