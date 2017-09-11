@@ -17,6 +17,7 @@ try:
     from rpy2.robjects.numpy2ri import numpy2ri
     ro.conversion.py2ri = numpy2ri
     ro.numpy2ri.activate()
+    ro.numpy2ri.deactivate()
     R_available = True
 except ImportError:
     R_available = False
@@ -55,6 +56,7 @@ def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
     A, b = np.random.standard_normal((4,6)), np.zeros(4)
     con = AC.constraints(A,b, mean=mu)
 
+    ro.numpy2ri.activate()
     ro.r('fncp=%f' % ncp)
     ro.r('f = function(x) {pchisq(x,3,ncp=fncp)}')
     def F(x):
@@ -90,6 +92,7 @@ def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
     P = np.array(P).reshape(-1)
     P = P[P > 0]
     P = P[P < 1]
+    ro.numpy2ri.deactivate()
 
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10)

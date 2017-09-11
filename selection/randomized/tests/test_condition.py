@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import numpy as np
 
 import regreg.api as rr
@@ -78,11 +78,11 @@ def test_condition(s=0,
             return None
 
         if scalings: # try condition on some scalings
-            for i in range(int(nviews)/2):
+            for i in range(nviews//2):
                 conditioning_groups = np.zeros(p, bool)
-                conditioning_groups[:int(p/2)] = True
+                conditioning_groups[:p//2] = True
                 marginalizing_groups = np.ones(p, bool)
-                marginalizing_groups[:int(p/2)] = False
+                marginalizing_groups[:p//2] = False
                 views[i].decompose_subgradient(conditioning_groups=conditioning_groups,
                                                marginalizing_groups=marginalizing_groups)
                 views[i].condition_on_scalings()

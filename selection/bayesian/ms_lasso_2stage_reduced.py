@@ -1,158 +1,131 @@
-from math import log
-import sys
 import numpy as np
-import regreg.api as rr
+import sys
 from scipy.stats import norm
 
-from .lasso_reduced import nonnegative_softmax_scaled
+import regreg.api as rr
+
 from .credible_intervals import projected_langevin
+from .lasso_reduced import nonnegative_softmax_scaled, neg_log_cube_probability
 
-class neg_log_cube_probability_fs(rr.smooth_atom):
-    def __init__(self,
-                 q, #equals p - E in our case
-                 p,
-                 randomization_scale = 1., #equals the randomization variance in our case
-                 coef=1.,
-                 offset=None,
-                 quadratic=None):
-
-        self.randomization_scale = randomization_scale
-        self.q = q
-        self.p = p
-
-        rr.smooth_atom.__init__(self,
-                                (self.q+1,),
-                                offset=offset,
-                                quadratic=quadratic,
-                                initial=None,
-                                coef=coef)
-
-    def smooth_objective(self, par, mode='both', check_feasibility=False, tol=1.e-6):
-
-        par = self.apply_offset(par)
-
-        mu = par[:self.p-1]
-        arg = par[self.p-1]
-
-        arg_u = ((arg *np.ones(self.q)) + mu) / self.randomization_scale
-        arg_l = (-(arg *np.ones(self.q)) + mu) / self.randomization_scale
-        prod_arg = np.exp(-(2. * mu * (arg *np.ones(self.q))) / (self.randomization_scale ** 2))
-        neg_prod_arg = np.exp((2. * mu * (arg *np.ones(self.q))) / (self.randomization_scale ** 2))
-
-        cube_prob = norm.cdf(arg_u) - norm.cdf(arg_l)
-        log_cube_prob = -np.log(cube_prob).sum()
-
-        threshold = 10 ** -10
-        indicator = np.zeros(self.q, bool)
-        indicator[(cube_prob > threshold)] = 1
-        positive_arg = np.zeros(self.q, bool)
-        positive_arg[(mu > 0)] = 1
-        pos_index = np.logical_and(positive_arg, ~indicator)
-        neg_index = np.logical_and(~positive_arg, ~indicator)
-
-        log_cube_grad_vec_arg = np.zeros(self.q)
-        log_cube_grad_vec_arg[indicator] = -(np.true_divide(norm.pdf(arg_u[indicator]) + norm.pdf(arg_l[indicator]),
-                                                    cube_prob[indicator])) / self.randomization_scale
-
-        log_cube_grad_vec_arg[pos_index] = ((1. + prod_arg[pos_index]) /
-                                    ((prod_arg[pos_index] / arg_u[pos_index]) -
-                                     (1. / arg_l[pos_index]))) / (self.randomization_scale ** 2)
-
-        log_cube_grad_vec_arg[neg_index] = ((arg_u[neg_index] - (arg_l[neg_index] * neg_prod_arg[neg_index]))
-                                    / (self.randomization_scale ** 2)) / (1. + neg_prod_arg[neg_index])
-
-        log_cube_grad_arg = log_cube_grad_vec_arg.sum()
-
-
-        log_cube_grad_vec_mu = np.zeros(self.q)
-        log_cube_grad_vec_mu[indicator] = -(np.true_divide(norm.pdf(arg_u[indicator]) - norm.pdf(arg_l[indicator]),
-                                                            cube_prob[indicator])) / self.randomization_scale
-        log_cube_grad_vec_mu[pos_index] = ((1. - prod_arg[pos_index]) /
-                                            (-(prod_arg[pos_index] / arg_u[pos_index]) +
-                                             (1. / arg_l[pos_index]))) / (self.randomization_scale ** 2)
-        log_cube_grad_vec_mu[neg_index] = ((arg_u[neg_index] - (arg_l[neg_index] * neg_prod_arg[neg_index]))
-                                            / (self.randomization_scale ** 2)) / (1. - neg_prod_arg[neg_index])
-
-        log_cube_grad = np.append(log_cube_grad_vec_mu, log_cube_grad_arg)
-
-
-        if mode == 'func':
-            return self.scale(log_cube_prob)
-        elif mode == 'grad':
-            return self.scale(log_cube_grad)
-        elif mode == 'both':
-            return self.scale(log_cube_prob), self.scale(log_cube_grad)
-        else:
-            raise ValueError("mode incorrectly specified")
-
-
-class selection_probability_objective_fs(rr.smooth_atom):
-
+class selection_probability_objective_ms_lasso(rr.smooth_atom):
     def __init__(self,
                  X,
-                 feasible_point,
-                 active,
-                 active_sign,
-                 mean_parameter,  # in R^n
+                 feasible_point, #in R^{|E|_1 + |E|_2}
+                 active_1, #the active set chosen by randomized marginal screening
+                 active_2, #the active set chosen by randomized lasso
+                 active_signs_1, #the set of signs of active coordinates chosen by ms
+                 active_signs_2, #the set of signs of active coordinates chosen by lasso
+                 lagrange, #in R^p
+                 threshold, #in R^p
+                 mean_parameter, # in R^n
                  noise_variance,
                  randomizer,
+                 epsilon, #ridge penalty for randomized lasso
                  coef=1.,
                  offset=None,
                  quadratic=None,
                  nstep=10):
 
-
-        self.n, p = X.shape
-        E = 1
-        self.q = p-1
+        n, p = X.shape
         self._X = X
-        self.active = active
+
+        E_1 = active_1.sum()
+        E_2 = active_2.sum()
+
+        sigma = np.sqrt(noise_variance)
+
+        self.active_1 = active_1
+        self.active_2 = active_2
         self.noise_variance = noise_variance
         self.randomization = randomizer
-
         self.inactive_conjugate = self.active_conjugate = randomizer.CGF_conjugate
         if self.active_conjugate is None:
             raise ValueError(
                 'randomization must know its CGF_conjugate -- currently only isotropic_gaussian and laplace are implemented and are assumed to be randomization with IID coordinates')
 
-        initial = np.zeros(self.n + E, )
-        initial[self.n:] = feasible_point
+        initial = np.zeros(n + E_1 + E_2, )
+        initial[n:] = feasible_point
+        self.n = n
 
         rr.smooth_atom.__init__(self,
-                                (self.n + E,),
+                                (n + E_1 + E_2,),
                                 offset=offset,
                                 quadratic=quadratic,
                                 initial=initial,
                                 coef=coef)
 
         self.coefs[:] = initial
+        nonnegative = nonnegative_softmax_scaled(E_1 + E_2)
+        opt_vars = np.zeros(n + E_1 + E_2, bool)
+        opt_vars[n:] = 1
 
-        nonnegative = nonnegative_softmax_scaled(E)
-
-        opt_vars = np.zeros(self.n + E, bool)
-        opt_vars[self.n:] = 1
-
-        self._opt_selector = rr.selector(opt_vars, (self.n + E,))
-        self._response_selector = rr.selector(~opt_vars, (self.n + E,))
-
+        self._opt_selector = rr.selector(opt_vars, (n + E_1 + E_2,))
         self.nonnegative_barrier = nonnegative.linear(self._opt_selector)
-
-        sign = np.zeros((1, 1))
-        sign[0:, :] = active_sign
-        self.A_active = np.hstack([-X[:, active].T, sign])
-        self.active_conj_loss = rr.affine_smooth(self.active_conjugate, self.A_active)
-
-        self.A_in_1 = np.hstack([-X[:, ~active].T, np.zeros((p - 1, 1))])
-        self.A_in_2 = np.hstack([np.zeros((self.n, 1)).T, np.ones((1, 1))])
-        self.A_inactive = np.vstack([self.A_in_1, self.A_in_2])
-
-        cube_loss = neg_log_cube_probability_fs(self.q, p)
-        self.cube_loss = rr.affine_smooth(cube_loss, self.A_inactive)
+        self._response_selector = rr.selector(~opt_vars, (n + E_1 + E_2,))
 
         self.set_parameter(mean_parameter, noise_variance)
 
-        self.total_loss = rr.smooth_sum([self.active_conj_loss,
-                                         self.cube_loss,
+        arg_ms = np.zeros(self.n + E_1 + E_2, bool)
+        arg_ms[:self.n + E_1] = 1
+        arg_lasso = np.zeros(self.n + E_1, bool)
+        arg_lasso[:self.n] = 1
+        arg_lasso = np.append(arg_lasso, np.ones(E_2, bool))
+
+        self.A_active_1 = np.hstack([np.true_divide(-X[:, active_1].T, sigma), np.identity(E_1)
+                                     * active_signs_1[None, :]])
+
+        self.A_inactive_1 = np.hstack([np.true_divide(-X[:, ~active_1].T, sigma), np.zeros((p - E_1, E_1))])
+
+        self.offset_active_1 = active_signs_1 * threshold[active_1]
+        self.offset_inactive_1 = np.zeros(p - E_1)
+
+        self._active_ms = rr.selector(arg_ms, (self.n + E_1 + E_2,),
+                                      rr.affine_transform(self.A_active_1, self.offset_active_1))
+
+        self._inactive_ms = rr.selector(arg_ms, (self.n + E_1 + E_2,),
+                                        rr.affine_transform(self.A_inactive_1, self.offset_inactive_1))
+
+        self.active_conj_loss_1 = rr.affine_smooth(self.active_conjugate, self._active_ms)
+
+        self.q_1 = p - E_1
+
+        cube_obj_1 = neg_log_cube_probability(self.q_1, threshold[~active_1], randomization_scale=1.)
+
+        self.cube_loss_1 = rr.affine_smooth(cube_obj_1, self._inactive_ms)
+
+        X_step2 = X[:, active_1]
+        X_E_2 = X_step2[:, active_2]
+        B = X_step2.T.dot(X_E_2)
+
+        B_E = B[active_2]
+        B_mE = B[~active_2]
+
+        self.A_active_2 = np.hstack(
+            [-X_step2[:, active_2].T, (B_E + epsilon * np.identity(E_2)) * active_signs_2[None, :]])
+        self.A_inactive_2 = np.hstack([-X_step2[:, ~active_2].T, (B_mE * active_signs_2[None, :])])
+
+        self.offset_active_2 = active_signs_2 * lagrange[active_2]
+
+        self.offset_inactive_2 = np.zeros(E_1 - E_2)
+
+        self._active_lasso = rr.selector(arg_lasso, (self.n + E_1 + E_2,),
+                                         rr.affine_transform(self.A_active_2, self.offset_active_2))
+
+        self._inactive_lasso = rr.selector(arg_lasso, (self.n + E_1 + E_2,),
+                                           rr.affine_transform(self.A_inactive_2, self.offset_inactive_2))
+
+        self.active_conj_loss_2 = rr.affine_smooth(self.active_conjugate, self._active_lasso)
+
+        self.q_2 = E_1 - E_2
+
+        cube_obj_2 = neg_log_cube_probability(self.q_2, lagrange[~active_2], randomization_scale=1.)
+
+        self.cube_loss_2 = rr.affine_smooth(cube_obj_2, self._inactive_lasso)
+
+        self.total_loss = rr.smooth_sum([self.active_conj_loss_1,
+                                         self.active_conj_loss_2,
+                                         self.cube_loss_1,
+                                         self.cube_loss_2,
                                          self.likelihood_loss,
                                          self.nonnegative_barrier])
 
@@ -165,6 +138,24 @@ class selection_probability_objective_fs(rr.smooth_atom):
         self.likelihood_loss = rr.affine_smooth(likelihood_loss, self._response_selector)
 
     def smooth_objective(self, param, mode='both', check_feasibility=False):
+        """
+        Evaluate the smooth objective, computing its value, gradient or both.
+        Parameters
+        ----------
+        mean_param : ndarray
+            The current parameter values.
+        mode : str
+            One of ['func', 'grad', 'both'].
+        check_feasibility : bool
+            If True, return `np.inf` when
+            point is not feasible, i.e. when `mean_param` is not
+            in the domain.
+        Returns
+        -------
+        If `mode` is 'func' returns just the objective value
+        at `mean_param`, else if `mode` is 'grad' returns the gradient
+        else returns both.
+        """
 
         param = self.apply_offset(param)
 
@@ -235,27 +226,35 @@ class selection_probability_objective_fs(rr.smooth_atom):
         return current, value
 
 
-class sel_prob_gradient_map_fs(rr.smooth_atom):
+class sel_prob_gradient_map_ms_lasso(rr.smooth_atom):
     def __init__(self,
                  X,
-                 primal_feasible,
-                 active,
-                 active_sign,
-                 generative_X,
+                 feasible_point,  # in R^{|E|_1 + |E|_2}
+                 active_1,  # the active set chosen by randomized marginal screening
+                 active_2,  # the active set chosen by randomized lasso
+                 active_signs_1,  # the set of signs of active coordinates chosen by ms
+                 active_signs_2,  # the set of signs of active coordinates chosen by lasso
+                 lagrange,  # in R^p
+                 threshold,  # in R^p
+                 generative_X,  # in R^{p}\times R^{n}
                  noise_variance,
                  randomizer,
+                 epsilon,  # ridge penalty for randomized lasso
                  coef=1.,
                  offset=None,
                  quadratic=None):
 
-        self.E = 1
+        self.E_1 = active_1.sum()
+        self.E_2 = active_2.sum()
         self.n, self.p = X.shape
         self.dim = generative_X.shape[1]
 
         self.noise_variance = noise_variance
 
-        (self.X, self.primal_feasible, self.active, self.active_sign, self.generative_X, self.noise_variance,
-         self.randomizer) = (X, primal_feasible, active, active_sign, generative_X, noise_variance, randomizer)
+        (self.X, self.feasible_point, self.active_1, self.active_2, self.active_signs_1, self.active_signs_2,
+         self.lagrange, self.threshold, self.generative_X, self.noise_variance, self.randomizer, self.epsilon) \
+            = (X, feasible_point, active_1, active_2, active_signs_1, active_signs_2, lagrange,
+               threshold, generative_X, noise_variance, randomizer, epsilon)
 
         rr.smooth_atom.__init__(self,
                                 (self.dim,),
@@ -264,18 +263,22 @@ class sel_prob_gradient_map_fs(rr.smooth_atom):
                                 coef=coef)
 
     def smooth_objective(self, true_param, mode='both', check_feasibility=False, tol=1.e-6):
-
         true_param = self.apply_offset(true_param)
 
         mean_parameter = np.squeeze(self.generative_X.dot(true_param))
 
-        primal_sol = selection_probability_objective_fs(self.X,
-                                                        self.primal_feasible,
-                                                        self.active,
-                                                        self.active_sign,
-                                                        mean_parameter,
-                                                        self.noise_variance,
-                                                        self.randomizer)
+        primal_sol = selection_probability_objective_ms_lasso(self.X,
+                                                              self.feasible_point,
+                                                              self.active_1,
+                                                              self.active_2,
+                                                              self.active_signs_1,
+                                                              self.active_signs_2,
+                                                              self.lagrange,
+                                                              self.threshold,
+                                                              mean_parameter,
+                                                              self.noise_variance,
+                                                              self.randomizer,
+                                                              self.epsilon)
 
         sel_prob_primal = primal_sol.minimize2(nstep=100)[::-1]
         optimal_primal = (sel_prob_primal[1])[:self.n]
@@ -291,7 +294,8 @@ class sel_prob_gradient_map_fs(rr.smooth_atom):
         else:
             raise ValueError('mode incorrectly specified')
 
-class selective_map_credible_fs(rr.smooth_atom):
+
+class selective_map_credible_ms_lasso(rr.smooth_atom):
     def __init__(self,
                  y,
                  grad_map,
@@ -306,11 +310,19 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         y = np.squeeze(y)
 
-        self.E = 1
+        E_1 = grad_map.E_1
+
+        E_2 = grad_map.E_2
+
+        self.E = E_2
 
         self.generative_X = grad_map.generative_X
 
-        initial = np.zeros(1)
+        initial = np.zeros(self.E)
+
+        #initial[:E_1] = np.squeeze(grad_map.feasible_point[:E_1]* grad_map.active_signs_1[None,:])
+
+        initial = np.squeeze(grad_map.feasible_point[E_1:]* grad_map.active_signs_2[None,:])
 
         rr.smooth_atom.__init__(self,
                                 (self.param_shape,),
@@ -395,9 +407,9 @@ class selective_map_credible_fs(rr.smooth_atom):
         value = objective(current)
         return current, value
 
-    def posterior_samples(self, langevin_steps=1000, burnin=100):
+    def posterior_samples(self, ndraw=1000, burnin=100):
         state = self.initial_state
-        print("here", state.shape)
+
         gradient_map = lambda x: -self.smooth_objective(x, 'grad')
         projection_map = lambda x: x
         stepsize = 1. / self.E
@@ -405,11 +417,41 @@ class selective_map_credible_fs(rr.smooth_atom):
 
         samples = []
 
-        for i in range(langevin_steps):
+        for i in range(ndraw + burnin):
             sampler.next()
-            samples.append(sampler.state.copy())
-            #print i, sampler.state.copy()
-            sys.stderr.write("sample number: " + str(i) + "\n")
+            if i >= burnin:
+                samples.append(sampler.state.copy())
 
         samples = np.array(samples)
-        return samples[burnin:, :]
+        return samples
+
+    def posterior_risk(self, estimator_1, estimator_2, ndraw=1000, burnin=0):
+        state = self.initial_state
+        print("here", state.shape)
+        gradient_map = lambda x: -self.smooth_objective(x, 'grad')
+        projection_map = lambda x: x
+        stepsize = 1. / self.E
+        sampler = projected_langevin(state, gradient_map, projection_map, stepsize)
+
+        post_risk_1 = 0.
+        post_risk_2 = 0.
+
+        for i in range(ndraw + burnin):
+            sampler.next()
+            if i >= burnin:
+                sample = sampler.state.copy()
+
+                #print(sample)
+                risk_1 = ((estimator_1-sample)**2).sum()
+                print("adjusted risk", risk_1)
+                post_risk_1 += risk_1
+
+                risk_2 = ((estimator_2-sample) ** 2).sum()
+                print("unadjusted risk", risk_2)
+                post_risk_2 += risk_2
+
+        return post_risk_1/ndraw, post_risk_2/ndraw
+
+
+
+

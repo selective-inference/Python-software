@@ -12,7 +12,9 @@ from ...tests.decorators import set_sampling_params_iftrue
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_lasso_constructors(ndraw=1000, burnin=200):
-
+    """
+    Smoke tests for lasso convenience constructors
+    """
     cls = lasso
     for const_info, rand in product(zip([gaussian_instance,
                                          logistic_instance,
@@ -56,12 +58,15 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
                                                      conv._queries,
                                                      bootstrap=False)
 
-        S = target_sampler.sample_opt(ndraw,
-                                      burnin)
+        S = target_sampler.sample(ndraw,
+                                  burnin)
 
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_step_constructors(ndraw=1000, burnin=200):
+    """
+    Smoke tests for greedy_step convenience constructors
+    """
 
     cls = step
     for const_info, rand in product(zip([gaussian_instance,
@@ -104,6 +109,9 @@ def test_step_constructors(ndraw=1000, burnin=200):
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_threshold_constructors(ndraw=1000, burnin=200):
+    """
+    Smoke tests for marginal threshold convenience constructors
+    """
 
     cls = threshold
     for const_info, rand in product(zip([gaussian_instance,

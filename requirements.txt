@@ -7,4 +7,4 @@ pyinter
 statsmodels
 sklearn
 pyinter
-
+rpy2

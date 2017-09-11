@@ -60,7 +60,7 @@ class CV(object):
             n_test = y_test.shape[0]
 
             if self.objective_randomization is not None:
-                randomized_train_loss = self.objective_randomization.randomize(loss_train, self.epsilon) # randomized train loss
+                randomized_train_loss = self.objective_randomization.randomize(loss_train, self.epsilon)[0] # randomized train loss
                 problem = rr.simple_problem(randomized_train_loss, penalty)
             else:
                 problem = rr.simple_problem(loss_train, penalty)
