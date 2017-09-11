@@ -2,17 +2,17 @@ from itertools import product
 import numpy as np
 import nose.tools as nt
 
-from ..convenience import lasso, step, threshold
-from ..query import optimization_sampler
-from ...tests.instance import (gaussian_instance,
+from selection.randomized.convenience import lasso, step, threshold
+from selection.randomized.query import optimization_sampler
+from selection.tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
-from ...tests.flags import SMALL_SAMPLES
-from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from selection.tests.flags import SMALL_SAMPLES
+from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 from scipy.stats import t as tdist
-from ..glm import target as glm_target, glm_nonparametric_bootstrap, pairs_bootstrap_glm
-from ..M_estimator import restricted_Mest
+from selection.randomized.glm import target as glm_target, glm_nonparametric_bootstrap, pairs_bootstrap_glm
+from selection.randomized.M_estimator import restricted_Mest
 
 @set_seed_iftrue(True, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=1000, burnin=100)
@@ -58,14 +58,17 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
         unpenalized_mle = restricted_Mest(conv.loglike, selected_features)
         form_covariances = glm_nonparametric_bootstrap(n, n)
-        conv._queries.setup_sampler(form_covariances)
+        #conv._queries.setup_sampler(form_covariances)
         boot_target, boot_target_observed = pairs_bootstrap_glm(conv.loglike, selected_features, inactive=None)
         opt_sampler.setup_target(boot_target,
                                  form_covariances)
 
+        selective_pvalues = opt_sampler.coefficient_pvalues(unpenalized_mle, sample=S)
+        print("pvalues ", selective_pvalues)
         selective_CI = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
         print(selective_CI)
 
         return selective_CI
 
 
+test_opt_weighted_intervals()
