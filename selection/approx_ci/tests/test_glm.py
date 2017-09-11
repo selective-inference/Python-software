@@ -10,8 +10,8 @@ from ...tests.instance import logistic_instance, gaussian_instance
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from ...tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
 
-from ..ci_via_approx_density import approximate_conditional_density
-from ..approx_ci.estimator_approx import M_estimator_approx
+from ..ci_approx_density import approximate_conditional_density
+from ..estimator_approx import M_estimator_approx
 
 from ...randomized.query import naive_confidence_intervals
 from ...randomized.query import naive_pvalues

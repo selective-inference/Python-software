@@ -42,12 +42,21 @@ before_install:
 
 install:
   # Install selection
-  - pip install -r requirements.txt
+  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
+      pip install  -r requirements.txt -c constraints.txt; 
+    else
+      pip install  -r requirements.txt; 
+    fi
   - pip install -e .
   - cd R-software
   - git submodule init
   - git submodule update
-  - make install
+  - rm -f selectiveInference/src/RcppExports.cpp
+  - rm -f selectiveInference/R/RcppExports.R
+  - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
+  - sudo Rscript -e "install.packages(c('glmnet', 'intervals'), repos='http://cloud.r-project.org')"
+  - sudo R CMD INSTALL selectiveInference
+  - cd ..
   - travis_install $INSTALL_TYPE
 
 # command to run tests, e.g. python setup.py test
@@ -55,8 +64,11 @@ script:
 
     - pip install nose
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
-    - pip install -r doc-requirements.txt # installs rpy2 among other things
-
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
+        pip install  -r doc-requirements.txt -c constraints.txt; 
+      else
+        pip install  -r doc-requirements.txt; 
+      fi
     # Change into an innocuous directory and find tests from installation
     - mkdir for_testing
     - cd for_testing
@@ -72,10 +84,10 @@ script:
       COVER_ARGS="--with-coverage --cover-package selection";
       fi
     - |
-      if [ "$R_TESTS" ]; then
-        nosetests ../selection/algorithms/tests/test_compareR.py
+      if [ "$RUN_R_TESTS" ]; then
+        nosetests -v ../selection/algorithms/tests/test_compareR.py
       else 
-        env USE_SMALL_SAMPLES=1 SET_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+        env USE_SMALL_SAMPLES=1 USE_TEST_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
       fi
 after_success:
     - if [ "${COVERAGE}" == "1" ]; then coveralls; fi

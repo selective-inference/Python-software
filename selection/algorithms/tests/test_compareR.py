@@ -16,6 +16,9 @@ from selection.algorithms.forward_step import forward_step
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_fixed_lambda():
+    """
+    Check that Gaussian LASSO results agree with R
+    """
     tol = 1.e-5
     for s in [1,1.1]:
         lam = 7.8
@@ -80,6 +83,9 @@ def test_fixed_lambda():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step():
+    """
+    Check that forward step results agree with R
+    """
     tol = 1.e-5
     R_code = """
     library(selectiveInference)
@@ -130,6 +136,9 @@ def test_forward_step():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_forward_step_all():
+    """
+    Check that forward step results agree with R
+    """
     tol = 1.e-5
     R_code = """
     library(selectiveInference)
@@ -177,6 +186,9 @@ def test_forward_step_all():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_coxph():
+    """
+    Check that Cox results agree with R
+    """
     tol = 1.e-5
     R_code = """
     library(selectiveInference)
@@ -234,6 +246,9 @@ def test_coxph():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_logistic():
+    """
+    Check that logistic results agree with R
+    """
     tol = 1.e-4
     R_code = """
     library(selectiveInference)
@@ -290,7 +305,10 @@ def test_logistic():
 
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
-def test_solve_QP(): # check the R coordinate descent LASSO solver
+def test_solve_QP(): 
+    """
+    Check the R coordinate descent LASSO solver
+    """
 
     n, p = 100, 200
     lam = 10
@@ -330,7 +348,6 @@ def test_solve_QP(): # check the R coordinate descent LASSO solver
     rpy.r(R_code)
 
     soln_R = np.asarray(rpy.r('soln_R'))
-
     rpy2.robjects.numpy2ri.deactivate()
 
     yield np.testing.assert_allclose, soln, soln_R, tol, tol, False, 'checking coordinate QP solver'

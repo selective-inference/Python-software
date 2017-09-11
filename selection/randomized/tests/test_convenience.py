@@ -3,6 +3,7 @@ import numpy as np
 import nose.tools as nt
 
 from ..convenience import lasso, step, threshold
+from ..glm import target as glm_target
 from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
@@ -11,7 +12,9 @@ from ...tests.decorators import set_sampling_params_iftrue
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_lasso_constructors(ndraw=1000, burnin=200):
-
+    """
+    Smoke tests for lasso convenience constructors
+    """
     cls = lasso
     for const_info, rand in product(zip([gaussian_instance,
                                          logistic_instance,
@@ -25,7 +28,7 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
         X, Y = inst()[:2]
         n, p = X.shape
 
-        W = np.ones(X.shape[1])
+        W = np.ones(X.shape[1]) * 20
         conv = const(X, Y, W, randomizer=rand)
         signs = conv.fit()
 
@@ -43,8 +46,6 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
                      burnin=burnin,
                      compute_intervals=True)
 
-        print(`const_info` + ' OK')
-
         conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
                                    conditioning_groups=conditioning_groups)
 
@@ -52,8 +53,20 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
                      ndraw=ndraw,
                      burnin=burnin)
 
+        target_sampler, target_observed = glm_target(conv.loglike,
+                                                     selected_features,
+                                                     conv._queries,
+                                                     bootstrap=False)
+
+        S = target_sampler.sample(ndraw,
+                                  burnin)
+
+
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_step_constructors(ndraw=1000, burnin=200):
+    """
+    Smoke tests for greedy_step convenience constructors
+    """
 
     cls = step
     for const_info, rand in product(zip([gaussian_instance,
@@ -96,6 +109,9 @@ def test_step_constructors(ndraw=1000, burnin=200):
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_threshold_constructors(ndraw=1000, burnin=200):
+    """
+    Smoke tests for marginal threshold convenience constructors
+    """
 
     cls = threshold
     for const_info, rand in product(zip([gaussian_instance,

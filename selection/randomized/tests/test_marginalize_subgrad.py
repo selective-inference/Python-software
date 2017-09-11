@@ -45,8 +45,7 @@ def test_marginalize(s=4,
                      nviews=3,
                      scalings=True,
                      subgrad =True,
-                     parametric=False,
-                     intervals='old'):
+                     parametric=False):
     print(n,p,s)
 
     if randomizer == 'laplace':
@@ -121,35 +120,14 @@ def test_marginalize(s=4,
                                                      parametric=parametric)
                                                      #reference= beta[active_union])
 
-        if intervals=='old':
-            target_sample = target_sampler.sample(ndraw=ndraw,
-                                                  burnin=burnin)
-            LU = target_sampler.confidence_intervals(target_observed,
-                                                     sample=target_sample,
-                                                     level=0.9)
-            pivots = target_sampler.coefficient_pvalues(target_observed,
-                                                        parameter=true_vec,
-                                                        sample=target_sample)
-        elif intervals=='new':
-            full_sample = target_sampler.sample(ndraw=ndraw,
-                                                burnin=burnin,
-                                                keep_opt=True)
-            LU = target_sampler.confidence_intervals_translate(target_observed,
-                                                           sample=full_sample,
-                                                           level=0.9)
-            pivots = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                                    parameter=true_vec,
-                                                                    sample=full_sample)
-
-        #test_stat = lambda x: np.linalg.norm(x - beta[active_union])
-        #observed_test_value = test_stat(target_observed)
-        #pivots = target_sampler.hypothesis_test(test_stat,
-        #                                       observed_test_value,
-        #                                       alternative='twosided',
-        #                                       parameter = beta[active_union],
-        #                                       ndraw=ndraw,
-        #                                       burnin=burnin,
-        #                                       stepsize=None)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample,
+                                                 level=0.9)
+        pivots = target_sampler.coefficient_pvalues(target_observed,
+                                                    parameter=true_vec,
+                                                    sample=target_sample)
 
         def coverage(LU):
             L, U = LU[:, 0], LU[:, 1]

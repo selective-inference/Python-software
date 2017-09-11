@@ -132,7 +132,7 @@ class selection_probability_lasso_dual(rr.smooth_atom):
         objective = lambda u: self.total_loss.objective(u)
         grad = lambda u: self.total_loss.smooth_objective(u, 'grad') + self.dual_arg
 
-        for itercount in xrange(nstep):
+        for itercount in range(nstep):
             newton_step = grad(current) * self.noise_variance
 
             # make sure proposal is feasible
@@ -350,7 +350,7 @@ class selective_inf_lasso(rr.smooth_atom):
 
         samples = []
 
-        for i in xrange(ndraw + burnin):
+        for i in range(ndraw + burnin):
             sampler.next()
             if i >= burnin:
                 samples.append(sampler.state.copy())

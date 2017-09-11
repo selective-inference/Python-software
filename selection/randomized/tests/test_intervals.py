@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 import numpy as np
 
 import regreg.api as rr
@@ -30,7 +30,6 @@ def test_intervals(s=0,
                    burnin=2000, 
                    bootstrap=True,
                    loss='gaussian',
-                   intervals='old',
                    randomizer = 'laplace',
                    solve_args={'min_its':50, 'tol':1.e-10}):
 
@@ -55,7 +54,7 @@ def test_intervals(s=0,
 
     W = lam_frac*np.ones(p)*lam
     # W[0] = 0 # use at least some unpenalized
-    groups = np.concatenate([np.arange(10) for i in range(p/10)])
+    groups = np.concatenate([np.arange(10) for i in range(p//10)])
     #print(groups)
     #groups = np.arange(p)
     penalty = rr.group_lasso(groups,
@@ -87,37 +86,20 @@ def test_intervals(s=0,
                                                      mv,
                                                      bootstrap=bootstrap)
 
-        if intervals == 'old':
-            target_sample = target_sampler.sample(ndraw=ndraw,
-                                                  burnin=burnin)
-            LU = target_sampler.confidence_intervals(target_observed,
-                                                     sample=target_sample,
-                                                     level=0.9)
-            pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-                                                            parameter=target_sampler.reference,
-                                                            sample=target_sample)
-            pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                          parameter=true_vec,
-                                                          sample=target_sample)
-            pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                     parameter=np.zeros_like(true_vec),
-                                                     sample=target_sample)
-        else:
-            full_sample = target_sampler.sample(ndraw=ndraw,
-                                                burnin=burnin,
-                                                keep_opt=True)
-            LU = target_sampler.confidence_intervals_translate(target_observed,
-                                                               sample=full_sample,
-                                                               level=0.9)
-            pivots_mle = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                            parameter=target_sampler.reference,
-                                                            sample=full_sample)
-            pivots_truth = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                          parameter=true_vec,
-                                                          sample=full_sample)
-            pvalues = target_sampler.coefficient_pvalues_translate(target_observed,
-                                                     parameter=np.zeros_like(true_vec),
-                                                     sample=full_sample)
+        target_sample = target_sampler.sample(ndraw=ndraw,
+                                              burnin=burnin)
+        LU = target_sampler.confidence_intervals(target_observed,
+                                                 sample=target_sample,
+                                                 level=0.9)
+        pivots_mle = target_sampler.coefficient_pvalues(target_observed,
+                                                        parameter=target_sampler.reference,
+                                                        sample=target_sample)
+        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
+                                                      parameter=true_vec,
+                                                      sample=target_sample)
+        pvalues = target_sampler.coefficient_pvalues(target_observed,
+                                                 parameter=np.zeros_like(true_vec),
+                                                 sample=target_sample)
 
         LU_naive = naive_confidence_intervals(target_sampler, target_observed)
 

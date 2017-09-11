@@ -68,6 +68,7 @@ class CV_view(query):
             self._solved = True
 
     def setup_sampler(self):
+        self._setup = True
         return self.CV1_boot
 
     def one_SD_rule(self, direction="up"):
