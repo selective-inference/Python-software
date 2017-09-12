@@ -5,14 +5,16 @@ import numpy as np
 from scipy.stats import t as tdist
 from scipy.stats import laplace, logistic, norm as ndist
 
-from selection.randomized.convenience import lasso, step, threshold
-from selection.randomized.query import optimization_sampler
-from selection.tests.instance import (gaussian_instance,
+from ..convenience import lasso, step, threshold
+from ..query import optimization_sampler
+from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
-from selection.tests.flags import SMALL_SAMPLES
-from selection.tests.decorators import set_sampling_params_iftrue
-from selection.randomized.randomization import randomization
+from ...tests.flags import SMALL_SAMPLES
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+
+from ...tests.decorators import set_sampling_params_iftrue
+from ..randomization import randomization
 
 
 class randomization_ppf(randomization):
@@ -100,9 +102,9 @@ def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
 
 
 
-
+@set_seed_iftrue(True, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_optimization_sampler(ndraw=20000, burnin=2000):
+def test_sampling(ndraw=20000, burnin=2000):
 
     cls = lasso
     for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace']):
@@ -138,6 +140,4 @@ def test_optimization_sampler(ndraw=20000, burnin=2000):
 
         print([np.mean(opt_samples[:,i]) for i in range(p)])
 
-
-np.random.seed(1)
-test_optimization_sampler()
+        return None
