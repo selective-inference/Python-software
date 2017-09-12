@@ -22,7 +22,8 @@ from distutils.core import setup
 from distutils.extension import Extension
 
 from cythexts import cyproc_exts, get_pyx_sdist
-from setup_helpers import package_check
+from setup_helpers import package_check, read_vars_from
+info = read_vars_from(pjoin('selection', 'info.py'))
 
 # Define extensions
 EXTS = []
@@ -43,10 +44,10 @@ extra_setuptools_args = {}
 
 class installer(install.install):
     def run(self):
-        package_check('numpy', NUMPY_MIN_VERSION)
-        package_check('scipy', SCIPY_MIN_VERSION)
-        package_check('sklearn', SKLEARN_MIN_VERSION)
-        package_check('mpmath', MPMATH_MIN_VERSION)
+        package_check('numpy', info.NUMPY_MIN_VERSION)
+        package_check('scipy', info.SCIPY_MIN_VERSION)
+        package_check('sklearn', info.SKLEARN_MIN_VERSION)
+        package_check('mpmath', info.MPMATH_MIN_VERSION)
         install.install.run(self)
 
 cmdclass = dict(
