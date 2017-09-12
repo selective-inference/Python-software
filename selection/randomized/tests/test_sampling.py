@@ -54,23 +54,26 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     Xdiag = np.diag(X.T.dot(X))
     p = X.shape[1]
     nactive = active.sum()
-    lower = np.zeros(p)
-    upper = np.zeros(p)
+    lower = -np.ones(p) * np.inf
+    upper = -lower
     active_set = np.where(active)[0]
     inactive_set = np.where(~active)[0]
 
     for i in range(nactive):
         var = active_set[i]
-        if signs[var]>0:
-            lower[i] = (-X[:, var].T.dot(y) + lam[var] * signs[var])
-            upper[i] = np.inf
-        else:
-            lower[i] = -np.inf
-            upper[i] = (-X[:,var].T.dot(y) + lam[var] * signs[var]) 
+        if lam[var] != 0:
+            if signs[var]>0:
+                    lower[i] = (-X[:, var].T.dot(y) + lam[var] * signs[var])
+                    upper[i] = np.inf
+            else:
+                lower[i] = -np.inf
+                upper[i] = (-X[:,var].T.dot(y) + lam[var] * signs[var]) 
 
     lower[range(nactive, p)] = -lam[inactive_set] - X[:, inactive_set].T.dot(y)
     upper[range(nactive, p)] = lam[inactive_set] - X[:, inactive_set].T.dot(y)
 
+    print(lower, 'lower')
+    print(upper, 'upper')
     omega_samples = sampling_truncated_dist(lower, 
                                             upper, 
                                             randomization, 
@@ -115,7 +118,7 @@ def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
 
 @set_seed_iftrue(SET_SEED, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None):
+def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None, unpenalized=False):
     """
     Checks the conditional law of opt variables given the data
     """
@@ -135,7 +138,10 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
         n, p = X.shape
 
         W = np.linspace(2, 3, X.shape[1])
-        #W[0] = 0
+        if unpenalized:
+            W[4] = 0
+        else:
+            W[4] = 1.e-5
         randomizer_scale = 1.
         conv = const(X, 
                      Y, 
@@ -157,8 +163,6 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
 
         selected_features = conv._view.selection_variable['variables']
 
-        conv._queries.setup_sampler(form_covariances=None)
-        conv._queries.setup_opt_state()
         opt_sampler = optimization_sampler(conv._queries)
 
         S = opt_sampler.sample(ndraw,
