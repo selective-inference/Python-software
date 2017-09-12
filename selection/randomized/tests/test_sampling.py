@@ -92,7 +92,7 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     return np.concatenate((abs_beta_samples, u_samples), axis=1), reordered_omega
 
 def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
-    scale = np.linspace(1, 1.2, p)
+    scale = np.linspace(2, 3, p)
     X = np.identity(n)[:,:p]
     X *= scale[None, :]
 
@@ -130,12 +130,13 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
         X, Y, beta = orthogonal_design(n=100, 
                                        p=9, 
                                        s=3,
-                                       signal=(2,3), 
+                                       signal=(1,2), 
                                        sigma=1.2)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 1.2
-        randomizer_scale =1.
+        W = np.ones(X.shape[1]) * 3.1
+        W[0] = 0.
+        randomizer_scale = 1.
         conv = const(X, 
                      Y, 
                      W, 
