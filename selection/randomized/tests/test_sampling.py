@@ -56,6 +56,7 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     lower = np.zeros(p)
     upper = np.zeros(p)
     active_set = np.where(active)[0]
+    inactive_set = np.where(~active)[0]
 
     for i in range(nactive):
         var = active_set[i]
@@ -66,8 +67,8 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
             lower[i] = -np.inf
             upper[i] = (-X[:,var].T.dot(y) + lam * signs[var]) 
 
-    lower[range(nactive,p)] = -lam - X[:, ~active].T.dot(y)
-    upper[range(nactive,p)] = lam - X[:, ~active].T.dot(y)
+    lower[range(nactive, p)] = -lam - X[:, inactive_set].T.dot(y)
+    upper[range(nactive, p)] = lam - X[:, inactive_set].T.dot(y)
 
     omega_samples = sampling_truncated_dist(lower, 
                                             upper, 
@@ -75,13 +76,19 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
                                             nsamples=nsamples)
 
     abs_beta_samples = np.true_divide( 
-                          omega_samples[:,:nactive] + 
-                          X[:,active].T.dot(y) - 
-                          lam * signs[active], 
-                          (epsilon + Xdiag[active]) * signs[active])
-    u_samples = omega_samples[:, nactive:] + X[:, ~active].T.dot(y)
+                          omega_samples[:, :nactive] + 
+                          X[:, active_set].T.dot(y) - 
+                          lam * signs[active_set], 
+                          (epsilon + Xdiag[active_set]) * signs[active_set])
+    u_samples = omega_samples[:, nactive:] + X[:, inactive_set].T.dot(y)
 
-    return np.concatenate((abs_beta_samples, u_samples), axis=1)
+    # this ordering should be correct?
+
+    reordered_omega = np.zeros_like(omega_samples)
+    reordered_omega[:, active_set] = omega_samples[:, :nactive]
+    reordered_omega[:, inactive_set] = omega_samples[:, nactive:]
+
+    return np.concatenate((abs_beta_samples, u_samples), axis=1), reordered_omega
 
 def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
     scale = np.linspace(1, 1.2, p)
@@ -107,7 +114,7 @@ def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
 
 @set_seed_iftrue(SET_SEED, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5):
+def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None):
     """
     Checks the conditional law of opt variables given the data
     """
@@ -150,13 +157,17 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5):
 
         conv._queries.setup_sampler(form_covariances=None)
         conv._queries.setup_opt_state()
-        target_sampler = optimization_sampler(conv._queries)
+        opt_sampler = optimization_sampler(conv._queries)
 
-        S = target_sampler.sample(ndraw,
-                                  burnin,
-                                  stepsize=1.e-2)
+        S = opt_sampler.sample(ndraw,
+                               burnin,
+                               stepsize=stepsize)
         print(S.shape)
         print([np.mean(S[:,i]) for i in range(p)])
+
+        # let's also reconstruct the omegas to compare
+
+        S_omega = opt_sampler.reconstruct(S)
 
         opt_samples = sample_opt_vars(X, 
                                       Y, 
@@ -167,46 +178,10 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5):
                                       randomizer, 
                                       nsamples=ndraw)
 
-        print([np.mean(opt_samples[:,i]) for i in range(p)])
+        print([np.mean(opt_samples[0][:,i]) for i in range(p)])
 
-        results.append((rand, S, opt_samples))
+        results.append((rand, S, S_omega,) + opt_samples)
 
     return results
-
-def plot_ecdf(ndraw=50000, burnin=5000, remove_atom=False):
-
-    import matplotlib.pyplot as plt
-    from statsmodels.distributions import ECDF
-
-    for (rand, 
-         mcmc, 
-         truncated) in test_conditional_law(ndraw=ndraw, burnin=burnin):
-
-        fig = plt.figure(num=1, figsize=(8,8))
-        plt.clf()
-        idx = 0
-        for i in range(mcmc.shape[1]):
-            plt.subplot(3,3,idx+1)
-            xval = np.linspace(min(mcmc[:,i].min(), truncated[:,i].min()), 
-                               max(mcmc[:,i].max(), truncated[:,i].max()), 
-                               200)
-
-            if remove_atom:
-                mcmc_ = mcmc[:,i]
-                mcmc_ = mcmc_[mcmc_ < np.max(mcmc_)]
-                mcmc_ = mcmc_[mcmc_ > np.min(mcmc_)]
-            else:
-                mcmc_ = mcmc[:,i]
-            plt.plot(xval, ECDF(mcmc_)(xval), label='MCMC')
-            plt.plot(xval, ECDF(truncated[:,i])(xval), label='truncated')
-            idx += 1
-            if idx == 1:
-                plt.legend(loc='lower right')
-        plt.savefig('fig%s.pdf' % rand)
-    plt.show()
-
-            
-            
-    
 
     
