@@ -87,7 +87,6 @@ class lasso(object):
 
         self.covariance_estimator = covariance_estimator
 
-        self.randomizer_scale = randomizer_scale
         if randomizer == 'laplace':
             self.randomizer = randomization.laplace((p,), scale=randomizer_scale)
         elif randomizer == 'gaussian':

@@ -31,6 +31,12 @@ class randomization_ppf(randomization):
         rand = randomization.laplace(shape, scale)
         return randomization_ppf(rand, ppf)
 
+    @staticmethod
+    def isotropic_gaussian(shape, scale):
+        ppf = lambda x: ndist.pdf(x, loc=0., scale=scale)
+        rand = randomization.isotropic_gaussian(shape, scale)
+        return randomization_ppf(rand, ppf)
+
 
 def inverse_truncated_cdf(x, lower, upper, randomization):
     #if (x<0 or x>1):
@@ -107,7 +113,7 @@ def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
 def test_sampling(ndraw=20000, burnin=2000):
 
     cls = lasso
-    for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace']):
+    for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace', 'gaussian']):
 
         inst, const = const_info
 
@@ -115,10 +121,14 @@ def test_sampling(ndraw=20000, burnin=2000):
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 1
-        conv = const(X, Y, W, randomizer=rand)
+        randomizer_scale =1.
+        conv = const(X, Y, W, randomizer=rand, randomizer_scale = randomizer_scale)
 
-
-        randomizer = randomization_ppf.laplace((p,), scale=conv.randomizer_scale)
+        print(rand)
+        if rand == "laplace":
+            randomizer = randomization_ppf.laplace((p,), scale=randomizer_scale)
+        elif rand=="gaussian":
+            randomizer = randomization_ppf.isotropic_gaussian((p,),scale=randomizer_scale)
 
         signs = conv.fit()
         print("signs", signs)
@@ -135,9 +145,8 @@ def test_sampling(ndraw=20000, burnin=2000):
         print(S.shape)
         print([np.mean(S[:,i]) for i in range(p)])
 
-        opt_samples = sample_opt_vars(X,Y, selected_features, signs, W[0], conv.ridge_term,
-                                      randomizer, nsamples =1000)
+        opt_samples = sample_opt_vars(X,Y, selected_features, signs, W[0], conv.ridge_term, randomizer, nsamples =1000)
 
         print([np.mean(opt_samples[:,i]) for i in range(p)])
 
-        return None
+    return None
