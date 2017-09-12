@@ -46,10 +46,7 @@ def inverse_truncated_cdf(x, lower, upper, randomization):
 
 def sampling_truncated_dist(lower, upper, randomization, nsamples=1000):
     uniform_samples = np.random.uniform(0,1, size=(nsamples,randomization.shape[0]))
-    samples = np.zeros((nsamples, randomization.shape[0]))
-    for i in range(nsamples):
-        samples[i,:] = inverse_truncated_cdf(uniform_samples[i,:], lower, upper, randomization)
-    return samples
+    return inverse_truncated_cdf(uniform_samples, lower, upper, randomization)
 
 def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =10000):
 
@@ -110,7 +107,7 @@ def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
 
 @set_seed_iftrue(SET_SEED, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_conditional_law(ndraw=20000, burnin=2000, epsilon=0.1):
+def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5):
     """
     Checks the conditional law of opt variables given the data
     """
@@ -136,7 +133,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, epsilon=0.1):
                      W, 
                      randomizer=rand, 
                      randomizer_scale=randomizer_scale,
-                     ridge_term=epsilon)
+                     ridge_term=ridge_term)
 
         print(rand)
         if rand == "laplace":
@@ -157,7 +154,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, epsilon=0.1):
 
         S = target_sampler.sample(ndraw,
                                   burnin,
-                                  stepsize=None)
+                                  stepsize=1.e-2)
         print(S.shape)
         print([np.mean(S[:,i]) for i in range(p)])
 
@@ -176,9 +173,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, epsilon=0.1):
 
     return results
 
-def plot_ecdf(ndraw=10000, burnin=1000):
-
-    np.random.seed(20)
+def plot_ecdf(ndraw=50000, burnin=5000, remove_atom=False):
 
     import matplotlib.pyplot as plt
     from statsmodels.distributions import ECDF
@@ -195,7 +190,14 @@ def plot_ecdf(ndraw=10000, burnin=1000):
             xval = np.linspace(min(mcmc[:,i].min(), truncated[:,i].min()), 
                                max(mcmc[:,i].max(), truncated[:,i].max()), 
                                200)
-            plt.plot(xval, ECDF(mcmc[:,i])(xval), label='MCMC')
+
+            if remove_atom:
+                mcmc_ = mcmc[:,i]
+                mcmc_ = mcmc_[mcmc_ < np.max(mcmc_)]
+                mcmc_ = mcmc_[mcmc_ > np.min(mcmc_)]
+            else:
+                mcmc_ = mcmc[:,i]
+            plt.plot(xval, ECDF(mcmc_)(xval), label='MCMC')
             plt.plot(xval, ECDF(truncated[:,i])(xval), label='truncated')
             idx += 1
             if idx == 1:
