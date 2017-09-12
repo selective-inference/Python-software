@@ -2,6 +2,7 @@ import numpy as np
 import regreg.api as rr
 
 from .query import query
+from .target import reconstruct_full_internal
 from .M_estimator import restricted_Mest
 
 class threshold_score(query):
@@ -124,13 +125,15 @@ class threshold_score(query):
         self.nboot = nboot
         self.ndim = self.loss.shape[0]
 
-    def construct_weights(self, full_state):
+    def grad_log_density(self, internal_state, opt_state):
         """
         marginalizing over the sub-gradient
         """
 
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
+
+        full_state = reconstruct_full_internal(self, internal_state, opt_state)
 
         threshold = self.threshold
         weights = np.zeros_like(self.boundary, np.float)

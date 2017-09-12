@@ -2,7 +2,8 @@ import numpy as np
 import regreg.api as rr
 import regreg.affine as ra
 
-from .query import query
+from .query import query 
+from .target import reconstruct_full_internal
 from .randomization import split
 
 class M_estimator(query):
@@ -476,7 +477,7 @@ class M_estimator(query):
         self.num_opt_var = new_linear.shape[1]
 
 
-    def construct_weights(self, full_state):
+    def grad_log_density(self, internal_state, opt_state):
         """
             marginalizing over the sub-gradient
 
@@ -487,6 +488,9 @@ class M_estimator(query):
             raise ValueError('setup_sampler should be called before using this function')
 
         if self._marginalize_subgradient:
+
+            full_state = reconstruct_full_internal(self, internal_state, opt_state)
+
             p = self.penalty.shape[0]
             weights = np.zeros(p)
 
@@ -505,7 +509,7 @@ class M_estimator(query):
 
             return -weights
         else:
-            return query.construct_weights(self, full_state)
+            return query.grad_log_density(self, internal_state, opt_state)
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
     """

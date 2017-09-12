@@ -10,33 +10,42 @@ from ...tests.instance import (gaussian_instance,
 from ...tests.flags import SMALL_SAMPLES
 from ...tests.decorators import set_sampling_params_iftrue 
 
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=2, burnin=2)
 def test_lasso_constructors(ndraw=1000, burnin=200):
     """
     Smoke tests for lasso convenience constructors
     """
     cls = lasso
-    for const_info, rand in product(zip([gaussian_instance,
-                                         logistic_instance,
-                                         poisson_instance],
-                                        [cls.gaussian,
-                                         cls.logistic,
-                                         cls.poisson]),
-                              ['gaussian', 'logistic', 'laplace']):
+    for const_info, rand, marginalize, condition in product(zip([gaussian_instance,
+                                                                 logistic_instance,
+                                                                 poisson_instance],
+                                                                [cls.gaussian,
+                                                                 cls.logistic,
+                                                                 cls.poisson]),
+                                                            ['gaussian', 'logistic', 'laplace'],
+                                                            [False, True],
+                                                            [False, True]):
 
         inst, const = const_info
-        X, Y = inst()[:2]
+        X, Y = inst(n=10, p=20, signal=1, s=3)[:2]
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 20
         conv = const(X, Y, W, randomizer=rand)
         signs = conv.fit()
 
-        marginalizing_groups = np.zeros(p, np.bool)
-        marginalizing_groups[:int(p/2)] = True
+        marginalizing_groups = None
+        if marginalize:
+            marginalizing_groups = np.zeros(p, np.bool)
+            marginalizing_groups[:int(p/2)] = True
         
-        conditioning_groups = ~marginalizing_groups
-        conditioning_groups[-int(p/4):] = False
+        conditioning_groups = None
+        if condition:
+            if marginalize:
+                conditioning_groups = ~marginalizing_groups
+            else:
+                conditioning_groups = np.ones(p, np.bool)
+            conditioning_groups[-int(p/4):] = False
 
         selected_features = np.zeros(p, np.bool)
         selected_features[:3] = True
