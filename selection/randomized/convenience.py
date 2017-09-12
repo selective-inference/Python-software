@@ -100,7 +100,7 @@ class lasso(object):
                                       weights=dict(zip(np.arange(p), self.feature_weights)), lagrange=1.)
 
     def fit(self, solve_args={'tol':1.e-12, 'min_its':50}, 
-            views=[]):
+            views=[], nboot=1000):
         """
         Fit the randomized lasso using `regreg`.
 
@@ -123,7 +123,7 @@ class lasso(object):
 
         p = self.nfeature
         self._view = glm_group_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
-        self._view.solve()
+        self._view.solve(nboot=nboot)
 
         views = copy(views); views.append(self._view)
         self._queries = multiple_queries(views)

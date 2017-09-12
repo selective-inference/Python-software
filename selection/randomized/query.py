@@ -762,8 +762,6 @@ class optimization_intervals(object):
 
         self._logden = opt_sampler.log_density(opt_sampler.observed_score, opt_sample)
 
-        # we now remove the observed_score from full_sample
-        self.reconstructed_sample = opt_sampler.reconstruct_opt(opt_sample) # affine(opt_sample)
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
         # setup_target has been called on opt_sampler
@@ -872,10 +870,10 @@ class optimization_intervals(object):
 
         # In this function, \hat{\theta}_i will change with the Monte Carlo sample
 
-        _lognum = 0
+        internal_sample = []
         for i in range(len(log_densities)):
-            density_arg = np.multiply.outer(sample_stat, score_cov[i]) + nuisance[i][None, :] # these are now internal coordinates
-            _lognum += log_densities[i](density_arg, self.reconstructed_sample)
+            internal_sample.append(np.multiply.outer(sample_stat, score_cov[i]) + nuisance[i][None, :]) # these are now internal coordinates
+        _lognum = self.opt_sampler.log_density(internal_sample, self.opt_sample)
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
 

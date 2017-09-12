@@ -133,7 +133,7 @@ class threshold_score(query):
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-        full_state = reconstruct_full_internal(self, internal_state, opt_state)
+        full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
 
         threshold = self.threshold
         weights = np.zeros_like(self.boundary, np.float)

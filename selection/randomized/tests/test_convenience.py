@@ -32,7 +32,10 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
 
         W = np.ones(X.shape[1]) * 20
         conv = const(X, Y, W, randomizer=rand)
-        signs = conv.fit()
+        nboot = 1000
+        if SMALL_SAMPLES:
+            nboot = 20
+        signs = conv.fit(nboot=nboot)
 
         marginalizing_groups = None
         if marginalize:

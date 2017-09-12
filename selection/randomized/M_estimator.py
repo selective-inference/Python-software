@@ -489,7 +489,7 @@ class M_estimator(query):
 
         if self._marginalize_subgradient:
 
-            full_state = reconstruct_full_internal(self, internal_state, opt_state)
+            full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
 
             p = self.penalty.shape[0]
             weights = np.zeros(p)
