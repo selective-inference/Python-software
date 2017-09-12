@@ -80,17 +80,20 @@ from statsmodels.distributions import ECDF
 
 def main(ndraw=10000, burnin=2000, nsim=10):
 
-    sel_pivots_all = [[],[]]
+    sel_pivots_all = list()
     rand_all = []
     for i in range(nsim):
         for idx, (rand, sel_pivots,) in enumerate(test_opt_weighted_intervals(ndraw=ndraw, burnin=burnin)):
+            print(idx)
+            if i==0:
+                sel_pivots_all.append([])
             sel_pivots_all[idx].append(sel_pivots)
             if i==0:
                rand_all.append(rand)
     xval = np.linspace(0, 1, 200)
     print(rand_all)
 
-    for idx in range(2):
+    for idx in range(len(rand_all)):
         fig = plt.figure(num=idx, figsize=(8,8))
         plt.clf()
         flat_list = [item for sublist in sel_pivots_all[idx] for item in sublist]
