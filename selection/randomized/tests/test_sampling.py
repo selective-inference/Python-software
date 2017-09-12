@@ -15,6 +15,7 @@ from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 from ...tests.decorators import set_sampling_params_iftrue
 from ..randomization import randomization
+from ..reconstruction import reconstruct_full_from_internal
 
 
 class randomization_ppf(randomization):
@@ -167,7 +168,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
 
         # let's also reconstruct the omegas to compare
 
-        S_omega = opt_sampler.reconstruct(S)
+        S_omega = reconstruct_opt(opt_sampler, S)
 
         opt_samples = sample_opt_vars(X, 
                                       Y, 
@@ -185,3 +186,33 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
     return results
 
     
+def reconstruct_opt(opt_sampler, state):
+    '''
+    Reconstruction of randomization at current state.
+    Parameters
+    ----------
+    state : np.float
+       State of sampler made up of `(target, opt_vars)`.
+       Can be array with each row a state.
+
+    Returns
+    -------
+    reconstructed : np.float
+       Has shape of `opt_vars` with same number of rows
+       as `state`.
+
+    '''
+
+    state = np.atleast_2d(state)
+    if state.ndim > 2:
+        raise ValueError('expecting at most 2-dimensional array')
+
+    reconstructed = np.zeros((state.shape[0], opt_sampler.total_randomization_length))
+
+    for i in range(opt_sampler.nqueries):
+        reconstructed[:,opt_sampler.randomization_slice[i]] = reconstruct_full_from_internal(opt_sampler.objectives[i],  
+                                                                                             opt_sampler.observed_score[i],
+                                                                                             state[:,opt_sampler.opt_slice[i]])
+
+
+    return np.squeeze(reconstructed)

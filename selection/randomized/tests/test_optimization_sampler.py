@@ -59,5 +59,5 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
                                burnin,
                                stepsize=1.e-10)
 
-        opt_sampler.reconstruct(S)
+        
         

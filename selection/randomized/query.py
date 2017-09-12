@@ -386,7 +386,6 @@ class optimization_sampler(object):
         # randomization_gradient are gradients of a CONVEX function
 
         for i in range(self.nqueries):
-            reconstructed_opt_state = reconstruct_opt(self.objectives[i], opt_state[self.opt_slice[i]])
             opt_linear, opt_offset = self.objectives[i].opt_transform
             opt_grad[self.opt_slice[i]] = \
                 opt_linear.T.dot(self.objectives[i].grad_log_density(self.observed_score[i], opt_state[self.opt_slice[i]]))
@@ -668,66 +667,6 @@ class optimization_sampler(object):
             lipschitz += power_L(transform[0])**2 * objective.randomization.lipschitz
             lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
         return lipschitz
-
-    def reconstruct(self, state):
-        '''
-        Reconstruction of randomization at current state.
-        Parameters
-        ----------
-        state : np.float
-           State of sampler made up of `(target, opt_vars)`.
-           Can be array with each row a state.
-
-        Returns
-        -------
-        reconstructed : np.float
-           Has shape of `opt_vars` with same number of rows
-           as `state`.
-
-        '''
-
-        state = np.atleast_2d(state)
-        if state.ndim > 2:
-            raise ValueError('expecting at most 2-dimensional array')
-
-        reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
-
-        for i in range(self.nqueries):
-            reconstructed[:,self.randomization_slice[i]] = reconstruct_full_from_internal(self.objectives[i],  
-                                                                                          self.observed_score[i],
-                                                                                          state[:,self.opt_slice[i]])
-
-
-        return np.squeeze(reconstructed)
-
-    def reconstruct_opt(self, state):
-        '''
-        Reconstruction of randomization at current state.
-        Parameters
-        ----------
-        state : np.float
-           State of sampler made up of `(target, opt_vars)`.
-           Can be array with each row a state.
-
-        Returns
-        -------
-        reconstructed : np.float
-           Has shape of `opt_vars` with same number of rows
-           as `state`.
-
-        '''
-
-        state = np.atleast_2d(state)
-        if state.ndim > 2:
-            raise ValueError('expecting at most 2-dimensional array')
-
-        reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
-
-        for i in range(self.nqueries):
-            reconstructed[:,self.randomization_slice[i]] = reconstruct_opt(self.objectives[i],
-                                                                           state[:,self.opt_slice[i]])
-
-        return np.squeeze(reconstructed)
 
     def log_density(self, internal_state, opt_state):
         '''
