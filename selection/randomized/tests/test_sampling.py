@@ -62,14 +62,14 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     for i in range(nactive):
         var = active_set[i]
         if signs[var]>0:
-            lower[i] = (-X[:, var].T.dot(y) + lam * signs[var])
+            lower[i] = (-X[:, var].T.dot(y) + lam[var] * signs[var])
             upper[i] = np.inf
         else:
             lower[i] = -np.inf
-            upper[i] = (-X[:,var].T.dot(y) + lam * signs[var]) 
+            upper[i] = (-X[:,var].T.dot(y) + lam[var] * signs[var]) 
 
-    lower[range(nactive, p)] = -lam - X[:, inactive_set].T.dot(y)
-    upper[range(nactive, p)] = lam - X[:, inactive_set].T.dot(y)
+    lower[range(nactive, p)] = -lam[inactive_set] - X[:, inactive_set].T.dot(y)
+    upper[range(nactive, p)] = lam[inactive_set] - X[:, inactive_set].T.dot(y)
 
     omega_samples = sampling_truncated_dist(lower, 
                                             upper, 
@@ -79,7 +79,7 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     abs_beta_samples = np.true_divide( 
                           omega_samples[:, :nactive] + 
                           X[:, active_set].T.dot(y) - 
-                          lam * signs[active_set], 
+                          lam[active_set] * signs[active_set], 
                           (epsilon + Xdiag[active_set]) * signs[active_set])
     u_samples = omega_samples[:, nactive:] + X[:, inactive_set].T.dot(y)
 
@@ -134,8 +134,8 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
                                        sigma=1.2)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 3.1
-        W[0] = 0.
+        W = np.linspace(2, 3, X.shape[1])
+        #W[0] = 0
         randomizer_scale = 1.
         conv = const(X, 
                      Y, 
@@ -175,7 +175,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
                                       Y, 
                                       selected_features, 
                                       signs, 
-                                      W[0], 
+                                      W, 
                                       conv.ridge_term, 
                                       randomizer, 
                                       nsamples=ndraw)
@@ -212,7 +212,7 @@ def reconstruct_opt(opt_sampler, state):
 
     for i in range(opt_sampler.nqueries):
         reconstructed[:,opt_sampler.randomization_slice[i]] = reconstruct_full_from_internal(opt_sampler.objectives[i],  
-                                                                                             opt_sampler.observed_score[i],
+                                                                                             opt_sampler.observed_internal[i],
                                                                                              state[:,opt_sampler.opt_slice[i]])
 
 

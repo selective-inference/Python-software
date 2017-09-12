@@ -169,10 +169,10 @@ class M_estimator(query):
         _hessian = loss.hessian(beta_full)
         self._beta_full = beta_full
 
-        # observed state for score
+        # observed state for score in internal coordinates
 
-        self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
-                                               -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
+        self.observed_internal_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
+                                                  -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
         # form linear part
         self.num_opt_var = self.observed_opt_state.shape[0]

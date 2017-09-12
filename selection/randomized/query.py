@@ -50,7 +50,7 @@ class query(object):
 
         linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
 
-        offset = self.observed_score_state - linear_part.dot(observed_target_state)
+        offset = self.observed_internal_state - linear_part.dot(observed_target_state)
 
         # now compute the composition of this map with
         # self.score_transform
@@ -102,7 +102,7 @@ class query(object):
         Setup query to prepare for sampling.
         Should set a few key attributes:
 
-            - observed_score_state
+            - observed_internal_state
             - num_opt_var
             - observed_opt_state
             - opt_transform
@@ -347,12 +347,12 @@ class optimization_sampler(object):
         # We implicitly assume that we are sampling a target
         # independent of the data in each view
 
-        self.observed_score = [] # in the view's coordinates
+        self.observed_internal = [] # in the view's coordinates
         self.score_info = []
         for i in range(self.nqueries):
             obj = self.objectives[i]
             score_linear, score_offset = obj.score_transform
-            self.observed_score.append(obj.observed_score_state)
+            self.observed_internal.append(obj.observed_internal_state)
             self.score_info.append(obj.score_transform)
 
     def projection(self, state):
@@ -388,7 +388,7 @@ class optimization_sampler(object):
         for i in range(self.nqueries):
             opt_linear, opt_offset = self.objectives[i].opt_transform
             opt_grad[self.opt_slice[i]] = \
-                opt_linear.T.dot(self.objectives[i].grad_log_density(self.observed_score[i], opt_state[self.opt_slice[i]]))
+                opt_linear.T.dot(self.objectives[i].grad_log_density(self.observed_internal[i], opt_state[self.opt_slice[i]]))
         return -opt_grad
 
     def sample(self, ndraw, burnin, stepsize=None):
@@ -687,6 +687,7 @@ class optimization_sampler(object):
 
         for i in range(self.nqueries):
             log_dens = self.objectives[i].log_density
+            print(internal_state[i].shape, 'internal')
             value += log_dens(internal_state[i], opt_state[:, self.opt_slice[i]]) # may have to broadcast shape here
         return np.squeeze(value)
 
@@ -697,7 +698,7 @@ class optimization_intervals(object):
                  opt_sample,
                  observed):
 
-        self._logden = opt_sampler.log_density(opt_sampler.observed_score, opt_sample)
+        self._logden = opt_sampler.log_density(opt_sampler.observed_internal, opt_sample)
 
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
@@ -735,12 +736,11 @@ class optimization_intervals(object):
         for i in range(len(self.opt_sampler.objectives)):
             cur_score_cov = linear_func.dot(self.opt_sampler.score_cov[i])
 
-            cur_nuisance = self.opt_sampler.observed_score[i] - cur_score_cov * observed_stat / target_cov
-
             # cur_nuisance is in the view's internal coordinates
+            cur_nuisance = self.opt_sampler.observed_internal[i] - cur_score_cov * observed_stat / target_cov
+
             score_linear, score_offset = self.opt_sampler.score_info[i]
-            # final_nuisance is on the scale of the original randomization
-            final_nuisance = score_linear.dot(cur_nuisance) + score_offset
+
             nuisance.append(cur_nuisance)
 
             score_cov.append(cur_score_cov / target_cov)
@@ -748,8 +748,7 @@ class optimization_intervals(object):
 
         weights = self._weights(sample_stat + candidate,  # normal sample under candidate
                                 nuisance,                 # nuisance sufficient stats for each view
-                                score_cov,                # points will be moved like sample * score_cov
-                                self.opt_sampler.log_densities)
+                                score_cov)                # points will be moved like sample * score_cov
         
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
 
@@ -788,15 +787,14 @@ class optimization_intervals(object):
     def _weights(self, 
                  sample_stat,
                  nuisance,
-                 score_cov,
-                 log_densities):
+                 score_cov):
 
         # Here we should loop through the views
         # and move the score of each view 
         # for each projected (through linear_func) normal sample
         # using the linear decomposition
 
-        # We need access to the map that takes observed_score for each view
+        # We need access to the map that takes observed_internal for each view
         # and constructs the full randomization -- this is the reconstruction map
         # for each view
 

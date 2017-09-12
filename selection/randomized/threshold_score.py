@@ -116,7 +116,7 @@ class threshold_score(query):
 
         self.interior = ~self.boundary
 
-        self.observed_score_state = candidate_score
+        self.observed_internal_state = candidate_score
 
         self.selection_variable = {'boundary_set': self.boundary}
 
