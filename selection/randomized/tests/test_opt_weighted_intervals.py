@@ -68,12 +68,14 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         sel_pivots = opt_sampler.coefficient_pvalues(unpenalized_mle, parameter = beta[selected_features], sample=S)
         print("pivots ", sel_pivots)
         results.append((rand, sel_pivots,))
+
         #selective_CI = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
         #print(selective_CI)
 
     return results
 
 from statsmodels.distributions import ECDF
+
 
 
 def main(ndraw=10000, burnin=2000, nsim=10):
@@ -97,5 +99,3 @@ def main(ndraw=10000, burnin=2000, nsim=10):
         plt.plot(xval, xval, 'k-', lw=1)
         plt.legend(loc='lower right')
         plt.savefig(''.join(["fig", rand_all[idx], '.pdf']))
-
-
