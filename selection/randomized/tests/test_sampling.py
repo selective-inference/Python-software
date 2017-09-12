@@ -33,7 +33,7 @@ class randomization_ppf(randomization):
 
     @staticmethod
     def isotropic_gaussian(shape, scale):
-        ppf = lambda x: ndist.pdf(x, loc=0., scale=scale)
+        ppf = lambda x: ndist.ppf(x, loc=0., scale=scale)
         rand = randomization.isotropic_gaussian(shape, scale)
         return randomization_ppf(rand, ppf)
 
