@@ -63,11 +63,11 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     for i in range(nactive):
         var = active_set[i]
         if signs[var]>0:
-            lower[i] = (-X[:, var].T.dot(y) + lam * signs[var]) / Xdiag[var]
+            lower[i] = (-X[:, var].T.dot(y) + lam * signs[var])
             upper[i] = np.inf
         else:
             lower[i] = -np.inf
-            upper[i] = (-X[:,var].T.dot(y) + lam * signs[var]) / Xdiag[var]
+            upper[i] = (-X[:,var].T.dot(y) + lam * signs[var]) 
 
     lower[range(nactive,p)] = -lam - X[:, ~active].T.dot(y)
     upper[range(nactive,p)] = lam - X[:, ~active].T.dot(y)
@@ -78,8 +78,8 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
                                             nsamples=nsamples)
 
     abs_beta_samples = np.true_divide( 
-                          omega_samples[:,:nactive] * Xdiag[active] + 
-                          X[:,active].T.dot(y)- 
+                          omega_samples[:,:nactive] + 
+                          X[:,active].T.dot(y) - 
                           lam * signs[active], 
                           (epsilon + Xdiag[active]) * signs[active])
     u_samples = omega_samples[:, nactive:] + X[:, ~active].T.dot(y)
@@ -110,7 +110,7 @@ def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
 
 @set_seed_iftrue(SET_SEED, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_conditional_law(ndraw=20000, burnin=2000):
+def test_conditional_law(ndraw=20000, burnin=2000, epsilon=0.1):
     """
     Checks the conditional law of opt variables given the data
     """
@@ -123,7 +123,7 @@ def test_conditional_law(ndraw=20000, burnin=2000):
         inst, const = const_info
 
         X, Y, beta = orthogonal_design(n=100, 
-                                       p=10, 
+                                       p=9, 
                                        s=3,
                                        signal=(2,3), 
                                        sigma=1.2)[:3]
@@ -135,7 +135,8 @@ def test_conditional_law(ndraw=20000, burnin=2000):
                      Y, 
                      W, 
                      randomizer=rand, 
-                     randomizer_scale=randomizer_scale)
+                     randomizer_scale=randomizer_scale,
+                     ridge_term=epsilon)
 
         print(rand)
         if rand == "laplace":
@@ -186,11 +187,11 @@ def plot_ecdf(ndraw=10000, burnin=1000):
          mcmc, 
          truncated) in test_conditional_law(ndraw=ndraw, burnin=burnin):
 
-        fig = plt.figure(num=1, figsize=(8,15))
+        fig = plt.figure(num=1, figsize=(8,8))
         plt.clf()
         idx = 0
         for i in range(mcmc.shape[1]):
-            plt.subplot(5,2,idx+1)
+            plt.subplot(3,3,idx+1)
             xval = np.linspace(min(mcmc[:,i].min(), truncated[:,i].min()), 
                                max(mcmc[:,i].max(), truncated[:,i].max()), 
                                200)
