@@ -348,13 +348,10 @@ class optimization_sampler(object):
         # independent of the data in each view
 
         self.observed_score = [] # in the view's coordinates
-        self.observed_raw_score = [] # in the data coordinates, not the view's coordinates
-                                     # will typically be \nabla \ell(\bar{\beta}_E) - \nabla^2 \ell(\bar{\beta}_E) \bar{\beta}_E
         self.score_info = []
         for i in range(self.nqueries):
             obj = self.objectives[i]
             score_linear, score_offset = obj.score_transform
-            self.observed_raw_score.append(score_linear.dot(obj.observed_score_state) + score_offset)
             self.observed_score.append(obj.observed_score_state)
             self.score_info.append(obj.score_transform)
 
@@ -696,9 +693,10 @@ class optimization_sampler(object):
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
 
         for i in range(self.nqueries):
-            reconstructed[:,self.randomization_slice[i]] = (reconstruct_opt(self.objectives[i],  
-                                                                           state[:,self.opt_slice[i]]) + 
-                                                            self.observed_raw_score[i])
+            reconstructed[:,self.randomization_slice[i]] = reconstruct_full_from_internal(self.objectives[i],  
+                                                                                          self.observed_score[i],
+                                                                                          state[:,self.opt_slice[i]])
+
 
         return np.squeeze(reconstructed)
 
