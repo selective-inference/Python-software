@@ -3,6 +3,7 @@ import nose.tools as nt
 
 import numpy as np
 from scipy.stats import t as tdist
+from scipy.stats import laplace, logistic, norm as ndist
 
 from ..convenience import lasso, step, threshold
 from ..query import optimization_sampler
@@ -10,13 +11,39 @@ from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
 from ...tests.flags import SMALL_SAMPLES
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+
 from ...tests.decorators import set_sampling_params_iftrue
+from ..randomization import randomization
+
+
+class randomization_ppf(randomization):
+
+    def __init__(self, rand, ppf):
+
+        self._cdf = rand._cdf
+        self._ppf = ppf
+        self.shape = rand.shape
+
+    @staticmethod
+    def laplace(shape, scale):
+        ppf = lambda x: laplace.ppf(x, loc=0, scale=scale)
+        rand = randomization.laplace(shape, scale)
+        return randomization_ppf(rand, ppf)
+
+    @staticmethod
+    def isotropic_gaussian(shape, scale):
+        ppf = lambda x: ndist.ppf(x, loc=0., scale=scale)
+        rand = randomization.isotropic_gaussian(shape, scale)
+        return randomization_ppf(rand, ppf)
+
 
 def inverse_truncated_cdf(x, lower, upper, randomization):
     #if (x<0 or x>1):
     #    raise ValueError("argument for cdf inverse should be in (0,1)")
     arg = randomization._cdf(lower) + np.multiply(x, randomization._cdf(upper) - randomization._cdf(lower))
     return randomization._ppf(arg)
+    #return randomization._ppf(arg)
 
 def sampling_truncated_dist(lower, upper, randomization, nsamples=1000):
     uniform_samples = np.random.uniform(0,1, size=(nsamples,randomization.shape[0]))
@@ -81,12 +108,12 @@ def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
 
 
 
-
+@set_seed_iftrue(True, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_optimization_sampler(ndraw=20000, burnin=2000):
+def test_sampling(ndraw=20000, burnin=2000):
 
     cls = lasso
-    for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace']):
+    for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace', 'gaussian']):
 
         inst, const = const_info
 
@@ -94,7 +121,15 @@ def test_optimization_sampler(ndraw=20000, burnin=2000):
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 1
-        conv = const(X, Y, W, randomizer=rand)
+        randomizer_scale =1.
+        conv = const(X, Y, W, randomizer=rand, randomizer_scale = randomizer_scale)
+
+        print(rand)
+        if rand == "laplace":
+            randomizer = randomization_ppf.laplace((p,), scale=randomizer_scale)
+        elif rand=="gaussian":
+            randomizer = randomization_ppf.isotropic_gaussian((p,),scale=randomizer_scale)
+
         signs = conv.fit()
         print("signs", signs)
 
@@ -106,13 +141,12 @@ def test_optimization_sampler(ndraw=20000, burnin=2000):
 
         S = target_sampler.sample(ndraw,
                                   burnin,
-                                  stepsize=1.e-3)
+                                  stepsize=None)
         print(S.shape)
         print([np.mean(S[:,i]) for i in range(p)])
 
-        opt_samples = sample_opt_vars(X,Y, selected_features, signs, W[0], conv.ridge_term,
-                                      conv.randomizer, nsamples =1000)
+        opt_samples = sample_opt_vars(X,Y, selected_features, signs, W[0], conv.ridge_term, randomizer, nsamples =1000)
 
         print([np.mean(opt_samples[:,i]) for i in range(p)])
 
-
+    return None
