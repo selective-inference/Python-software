@@ -1078,9 +1078,7 @@ class optimization_sampler(object):
         '''
 
         if stepsize is None:
-            print("here")
-            stepsize = 1./len(self.observed_state) #
-            #stepsize = 1. / self.crude_lipschitz()
+            stepsize = 1./len(self.observed_state) 
 
         target_langevin = projected_langevin(self.observed_state.copy(),
                                              self.gradient,

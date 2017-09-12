@@ -10,7 +10,7 @@ from ..query import optimization_sampler
 from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
-from ...tests.flags import SMALL_SAMPLES
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 from ...tests.decorators import set_sampling_params_iftrue
@@ -39,11 +39,10 @@ class randomization_ppf(randomization):
 
 
 def inverse_truncated_cdf(x, lower, upper, randomization):
-    #if (x<0 or x>1):
-    #    raise ValueError("argument for cdf inverse should be in (0,1)")
-    arg = randomization._cdf(lower) + np.multiply(x, randomization._cdf(upper) - randomization._cdf(lower))
+    arg = (randomization._cdf(lower) + 
+           np.multiply(x, randomization._cdf(upper) - 
+                       randomization._cdf(lower)))
     return randomization._ppf(arg)
-    #return randomization._ppf(arg)
 
 def sampling_truncated_dist(lower, upper, randomization, nsamples=1000):
     uniform_samples = np.random.uniform(0,1, size=(nsamples,randomization.shape[0]))
@@ -53,6 +52,8 @@ def sampling_truncated_dist(lower, upper, randomization, nsamples=1000):
     return samples
 
 def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =10000):
+
+    Xdiag = np.diag(X.T.dot(X))
     p = X.shape[1]
     nactive = active.sum()
     lower = np.zeros(p)
@@ -62,25 +63,33 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     for i in range(nactive):
         var = active_set[i]
         if signs[var]>0:
-            lower[i] = -np.dot(X[:, var].T,y) + lam*signs[var]
+            lower[i] = -(X[:, var].T.dot(y) + lam * signs[var]) / Xdiag[var]
             upper[i] = np.inf
         else:
             lower[i] = -np.inf
-            upper[i] = -np.dot(X[:,var].T,y) + lam*signs[var]
+            upper[i] = -X[:,var].T.dot(y) + lam * signs[var] / Xdiag[var]
 
-    lower[range(nactive,p)] = -lam-np.dot(X[:, ~active].T, y)
-    upper[range(nactive,p)]= lam-np.dot(X[:,~active].T, y)
+    lower[range(nactive,p)] = -lam - X[:, ~active].T.dot(y)
+    upper[range(nactive,p)]= lam - X[:, ~active].T.dot(y)
 
-    omega_samples = sampling_truncated_dist(lower, upper, randomization, nsamples=nsamples)
+    omega_samples = sampling_truncated_dist(lower, 
+                                            upper, 
+                                            randomization, 
+                                            nsamples=nsamples)
 
-    abs_beta_samples = np.true_divide(omega_samples[:,:nactive]+np.dot(X[:,active].T, y)-lam*signs[active], (epsilon+1)*signs[active])
-    u_samples = (omega_samples[:, nactive:]+np.dot(X[:,~active].T, y))
+    abs_beta_samples = np.true_divide( 
+                          omega_samples[:,:nactive] * Xdiag[active] + 
+                          X[:,active].T.dot(y)- 
+                          lam * signs[active], 
+                          (epsilon + Xdiag[active]) * signs[active])
+    u_samples = omega_samples[:, nactive:] + X[:, ~active].T.dot(y)
 
     return np.concatenate((abs_beta_samples, u_samples), axis=1)
 
-
-def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
+def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
+    scale = np.linspace(1, 1.2, p)
     X = np.identity(n)[:,:p]
+    X *= scale[None, :]
 
     beta = np.zeros(p)
     signal = np.atleast_1d(signal)
@@ -95,40 +104,46 @@ def orthogonal_design(n, p, s, signal, sigma, df=np.inf, random_signs=False):
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
 
-    # noise model
-    def _noise(n, df=np.inf):
-        if df == np.inf:
-            return np.random.standard_normal(n)
-        else:
-            sd_t = np.std(tdist.rvs(df, size=50000))
-        return tdist.rvs(df, size=n) / sd_t
-
-    Y = (X.dot(beta) + _noise(n, df)) * sigma
+    Y = (X.dot(beta) + np.random.standard_normal(n)) * sigma
     return X, Y, beta * sigma, np.nonzero(active)[0], sigma
 
 
-
-@set_seed_iftrue(True, 200)
+@set_seed_iftrue(SET_SEED, 200)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
-def test_sampling(ndraw=20000, burnin=2000):
+def test_conditional_law(ndraw=20000, burnin=2000):
+    """
+    Checks the conditional law of opt variables given the data
+    """
 
-    cls = lasso
-    for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace', 'gaussian']):
+    results = []
+    for const_info, rand in product(zip([gaussian_instance], 
+                                        [lasso.gaussian]), 
+                                    ['laplace', 'gaussian']):
 
         inst, const = const_info
 
-        X, Y = orthogonal_design(n=100, p=10, s=0, signal=2, sigma=1)[:2]
+        X, Y, beta = orthogonal_design(n=100, 
+                                       p=10, 
+                                       s=3, 
+                                       signal=(2,3), 
+                                       sigma=1.2)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 1
+        W = np.ones(X.shape[1]) * 1.2
         randomizer_scale =1.
-        conv = const(X, Y, W, randomizer=rand, randomizer_scale = randomizer_scale)
+        conv = const(X, 
+                     Y, 
+                     W, 
+                     randomizer=rand, 
+                     randomizer_scale=randomizer_scale)
 
         print(rand)
         if rand == "laplace":
-            randomizer = randomization_ppf.laplace((p,), scale=randomizer_scale)
+            randomizer = randomization_ppf.laplace((p,), \
+                             scale=randomizer_scale)
         elif rand=="gaussian":
-            randomizer = randomization_ppf.isotropic_gaussian((p,),scale=randomizer_scale)
+            randomizer = randomization_ppf.isotropic_gaussian((p,), \
+                             scale=randomizer_scale)
 
         signs = conv.fit()
         print("signs", signs)
@@ -145,8 +160,50 @@ def test_sampling(ndraw=20000, burnin=2000):
         print(S.shape)
         print([np.mean(S[:,i]) for i in range(p)])
 
-        opt_samples = sample_opt_vars(X,Y, selected_features, signs, W[0], conv.ridge_term, randomizer, nsamples =1000)
+        opt_samples = sample_opt_vars(X, 
+                                      Y, 
+                                      selected_features, 
+                                      signs, 
+                                      W[0], 
+                                      conv.ridge_term, 
+                                      randomizer, 
+                                      nsamples=ndraw)
 
         print([np.mean(opt_samples[:,i]) for i in range(p)])
 
-    return None
+        results.append((rand, S, opt_samples))
+
+    return results
+
+def plot_ecdf(ndraw=10000, burnin=1000):
+
+    np.random.seed(20)
+
+    import matplotlib.pyplot as plt
+    from statsmodels.distributions import ECDF
+
+    for (rand, 
+         mcmc, 
+         truncated) in test_conditional_law(ndraw=ndraw, burnin=burnin):
+
+        fig = plt.figure(num=1, figsize=(8,15))
+        plt.clf()
+        idx = 0
+        for i in range(mcmc.shape[1]):
+            plt.subplot(5,2,idx+1)
+            xval = np.linspace(min(mcmc[:,i].min(), truncated[:,i].min()), 
+                               max(mcmc[:,i].max(), truncated[:,i].max()), 
+                               200)
+            plt.plot(xval, ECDF(mcmc[:,i])(xval), label='MCMC')
+            plt.plot(xval, ECDF(truncated[:,i])(xval), label='truncated')
+            idx += 1
+            if idx == 1:
+                plt.legend(loc='lower right')
+        plt.savefig('fig%s.pdf' % rand)
+    plt.show()
+
+            
+            
+    
+
+    
