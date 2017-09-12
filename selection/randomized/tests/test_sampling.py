@@ -63,14 +63,14 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     for i in range(nactive):
         var = active_set[i]
         if signs[var]>0:
-            lower[i] = -(X[:, var].T.dot(y) + lam * signs[var]) / Xdiag[var]
+            lower[i] = (-X[:, var].T.dot(y) + lam * signs[var]) / Xdiag[var]
             upper[i] = np.inf
         else:
             lower[i] = -np.inf
-            upper[i] = -X[:,var].T.dot(y) + lam * signs[var] / Xdiag[var]
+            upper[i] = (-X[:,var].T.dot(y) + lam * signs[var]) / Xdiag[var]
 
     lower[range(nactive,p)] = -lam - X[:, ~active].T.dot(y)
-    upper[range(nactive,p)]= lam - X[:, ~active].T.dot(y)
+    upper[range(nactive,p)] = lam - X[:, ~active].T.dot(y)
 
     omega_samples = sampling_truncated_dist(lower, 
                                             upper, 
@@ -124,7 +124,7 @@ def test_conditional_law(ndraw=20000, burnin=2000):
 
         X, Y, beta = orthogonal_design(n=100, 
                                        p=10, 
-                                       s=3, 
+                                       s=3,
                                        signal=(2,3), 
                                        sigma=1.2)[:3]
         n, p = X.shape
