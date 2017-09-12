@@ -5,44 +5,7 @@ from regreg.affine import power_L
 
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
-
-def reconstruct_internal(data_state, data_transform):
-
-    data_state = np.atleast_2d(data_state)
-    data_linear, data_offset = data_transform
-    if data_linear is not None:
-        return np.squeeze(data_linear.dot(data_state.T) + data_offset[:,None]).T
-    else:
-        return np.squeeze(data_offset)
-
-def reconstruct_full(query, data_state, data_transform, opt_state):
-
-    if not query._setup:
-        raise ValueError('setup_sampler should be called before using this function')
-
-    internal_state = reconstruct_internal(data_state, data_transform)
-    return np.squeeze(reconstruct_full_internal(query, internal_state, opt_state))
-
-def reconstruct_opt(query, opt_state):
-    """
-    makes sense for queries that have not marginalized or conditioned
-    """
-    if not query._setup:
-        raise ValueError('setup_sampler should be called on query before using this function')
-
-    opt_linear, opt_offset = query.opt_transform
-    if opt_linear is not None:
-        opt_state = np.atleast_2d(opt_state)
-        return np.squeeze(opt_linear.dot(opt_state.T) + opt_offset[:, None]).T
-    else:
-        return opt_offset
-
-def reconstruct_full_internal(query, internal_state, opt_state):
-    score_linear, score_offset = query.score_transform
-    randomization_internal = score_linear.dot(internal_state.T).T + score_offset
-    randomization_opt = reconstruct_opt(query, opt_state)
-    full_state = randomization_internal + randomization_opt
-    return full_state
+from .reconstruction import reconstruct_full_from_data, reconstruct_internal
 
 class targeted_sampler(object):
 
@@ -248,10 +211,10 @@ class targeted_sampler(object):
 
         for i in range(self.nqueries):
 
-            randomization_state = reconstruct_full(self.objectives[i],
-                                                   target_state, 
-                                                   self.target_transform[i], 
-                                                   opt_state[self.opt_slice[i]])
+            randomization_state = reconstruct_full_from_data(self.objectives[i],
+                                                             target_state, 
+                                                             self.target_transform[i], 
+                                                             opt_state[self.opt_slice[i]])
 
             internal_state = reconstruct_internal(target_state, self.target_transform[i])
             grad = self.objectives[i].grad_log_density(internal_state, opt_state[self.opt_slice[i]]) 
@@ -543,10 +506,10 @@ class targeted_sampler(object):
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
 
         for i in range(self.nqueries):
-            reconstructed[:, self.randomization_slice[i]] = reconstruct_full(self.objectives[i],
-                                                                             target_state,
-                                                                             self.target_transform[i],
-                                                                             opt_state[:, self.opt_slice[i]])
+            reconstructed[:, self.randomization_slice[i]] = reconstruct_full_from_data(self.objectives[i],
+                                                                                       target_state,
+                                                                                       self.target_transform[i],
+                                                                                       opt_state[:, self.opt_slice[i]])
 
         return np.squeeze(reconstructed)
 
@@ -627,10 +590,10 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         for i in range(self.nqueries):
 
-            randomization_state = reconstruct_full(self.objectives[i],
-                                                   boot_state, 
-                                                   self.boot_transform[i], 
-                                                   opt_state[self.opt_slice[i]])
+            randomization_state = reconstruct_full_from_data(self.objectives[i],
+                                                             boot_state, 
+                                                             self.boot_transform[i], 
+                                                             opt_state[self.opt_slice[i]])
 
             internal_state = reconstruct_internal(boot_state, self.boot_transform[i])
             grad = self.objectives[i].grad_log_density(internal_state, opt_state[self.opt_slice[i]])

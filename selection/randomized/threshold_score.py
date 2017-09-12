@@ -2,7 +2,7 @@ import numpy as np
 import regreg.api as rr
 
 from .query import query
-from .target import reconstruct_full_internal
+from .reconstruction import reconstruct_full_from_internal
 from .M_estimator import restricted_Mest
 
 class threshold_score(query):

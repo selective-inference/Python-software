@@ -3,7 +3,7 @@ import regreg.api as rr
 import regreg.affine as ra
 
 from .query import query 
-from .target import reconstruct_full_internal
+from .reconstruction import reconstruct_full_from_internal
 from .randomization import split
 
 class M_estimator(query):

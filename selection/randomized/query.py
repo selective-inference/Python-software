@@ -9,9 +9,9 @@ from regreg.affine import power_L
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
 from .target import (targeted_sampler,
-                     bootstrapped_target_sampler,
-                     reconstruct_full,
-                     reconstruct_opt)
+                     bootstrapped_target_sampler)
+from .reconstruction import (reconstruct_opt,
+                             reconstruct_full_from_internal)
 
 
 class query(object):
@@ -66,11 +66,11 @@ class query(object):
     # with no conditioning or marginalizing
 
     def log_density(self, internal_state, opt_state):
-        full_state = reconstruct_full_internal(internal_state, opt_state)
+        full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
         return self.randomization.log_density(full_state)
 
     def grad_log_density(self, internal_state, opt_state):
-        full_state = reconstruct_full_internal(internal_state, opt_state)
+        full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
         return self.randomization.gradient(full_state)
 
      # implemented by subclasses
