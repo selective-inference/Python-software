@@ -29,7 +29,7 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 8
-        conv = const(X, Y, W, randomizer=rand)
+        conv = const(X, Y, W, randomizer=rand, parametric_cov_estimator=True)
         signs = conv.fit()
         print("signs", signs)
 

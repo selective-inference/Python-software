@@ -712,6 +712,7 @@ def parametric_cov(glm_loss,
 
     return covariances
 
+
 def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10}):
     """
     A constructor for parametric covariance

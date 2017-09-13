@@ -450,12 +450,13 @@ class optimization_sampler(object):
         for i in range(self.nqueries):
             view = self.objectives[i]
             self.log_densities.append(view.log_density)
-            score_info = view.setup_sampler(form_covariances)
             if parametric == False:
+                score_info = view.setup_sampler(form_covariances)
                 target_cov, cross_cov = form_covariances(target_info,  
                                                          cross_terms=[score_info],
                                                          nsample=self.nboot[i])
             else:
+                score_info = view.setup_sampler()
                 target_cov, cross_cov = form_covariances(target_info, 
                                                          cross_terms=[score_info])
 

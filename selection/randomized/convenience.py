@@ -9,9 +9,11 @@ import regreg.api as rr
 
 from .glm import (target as glm_target, 
                   glm_group_lasso,
+                  glm_group_lasso_parametric,
                   glm_greedy_step,
                   glm_threshold_score,
                   glm_nonparametric_bootstrap,
+                  glm_parametric_covariance,
                   pairs_bootstrap_glm)
 from .randomization import randomization
 from .query import multiple_queries, optimization_sampler
@@ -40,7 +42,7 @@ class lasso(object):
                  ridge_term,
                  randomizer_scale,
                  randomizer='gaussian',
-                 covariance_estimator=None):
+                 parametric_cov_estimator=False):
         r"""
 
         Create a new post-selection object for the LASSO problem
@@ -88,7 +90,7 @@ class lasso(object):
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
 
-        self.covariance_estimator = covariance_estimator
+        self.parametric_cov_estimator = parametric_cov_estimator
 
         if randomizer == 'laplace':
             self.randomizer = randomization.laplace((p,), scale=randomizer_scale)
@@ -125,7 +127,10 @@ class lasso(object):
         """
 
         p = self.nfeature
-        self._view = glm_group_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
+        if self.parametric_cov_estimator==True:
+            self._view = glm_group_lasso_parametric(self.loglike, self.ridge_term, self.penalty, self.randomizer)
+        else:
+            self._view = glm_group_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
         self._view.solve(nboot=nboot)
 
         views = copy(views); views.append(self._view)
@@ -167,13 +172,14 @@ class lasso(object):
 
         self._queries.setup_opt_state()
 
-    def summary(self, selected_features, 
+    def summary(self,
+                selected_features,
                 null_value=None,
                 level=0.9,
                 ndraw=10000, 
                 burnin=2000,
                 compute_intervals=False,
-                bootstrap=False):
+                bootstrap_sampler=False):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -214,15 +220,18 @@ class lasso(object):
         S = opt_sampler.sample(ndraw,
                                burnin,
                                stepsize=1.e-3)
-        # print(S.shape)
-        # print([np.mean(S[:,i]) for i in range(p)])
 
         unpenalized_mle = restricted_Mest(self.loglike, selected_features)
-        n = self.loglike.data[0].shape[0]
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        # conv._queries.setup_sampler(form_covariances)
-        boot_target, boot_target_observed = pairs_bootstrap_glm(self.loglike, selected_features, inactive=None)
-        opt_sampler.setup_target(boot_target, form_covariances)
+        if self.parametric_cov_estimator == False:
+            n = self.loglike.data[0].shape[0]
+            form_covariances = glm_nonparametric_bootstrap(n, n)
+            boot_target, boot_target_observed = pairs_bootstrap_glm(self.loglike, selected_features, inactive=None)
+            target_info = boot_target
+        else:
+            target_info = (selected_features, np.identity(unpenalized_mle.shape[0]))
+            form_covariances = glm_parametric_covariance(self.loglike)
+
+        opt_sampler.setup_target(target_info, form_covariances, parametric=self.parametric_cov_estimator)
 
         pvalues = opt_sampler.coefficient_pvalues(unpenalized_mle, parameter=null_value, sample=S)
         intervals = None
@@ -235,8 +244,8 @@ class lasso(object):
     def gaussian(X, 
                  Y, 
                  feature_weights, 
-                 sigma=1., 
-                 covariance_estimator=None,
+                 sigma=1.,
+                 parametric_cov_estimator=False,
                  quadratic=None,
                  ridge_term=None,
                  randomizer_scale=None,
@@ -308,8 +317,8 @@ class lasso(object):
         the unpenalized estimator.
 
         """
-        if covariance_estimator is not None:
-            sigma = 1.
+
+        sigma = 1.
         loglike = rr.glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
         n, p = X.shape
 
@@ -322,14 +331,14 @@ class lasso(object):
 
         return lasso(loglike, np.asarray(feature_weights) / sigma**2,
                      ridge_term, randomizer_scale, randomizer=randomizer,
-                     covariance_estimator=covariance_estimator) # XXX: do we use the covariance_estimator?
+                     parametric_cov_estimator=parametric_cov_estimator) # XXX: do we use the covariance_estimator?
 
     @staticmethod
     def logistic(X, 
                  successes, 
                  feature_weights, 
-                 trials=None, 
-                 covariance_estimator=None,
+                 trials=None,
+                 parametric_cov_estimator=False,
                  quadratic=None,
                  ridge_term=None,
                  randomizer='gaussian',
@@ -417,15 +426,15 @@ class lasso(object):
         return lasso(loglike, feature_weights, 
                      ridge_term, 
                      randomizer_scale,
-                     covariance_estimator=covariance_estimator,
+                     parametric_cov_estimator=parametric_cov_estimator,
                      randomizer=randomizer)
 
     @staticmethod
     def coxph(X, 
               times, 
               status, 
-              feature_weights, 
-              covariance_estimator=None,
+              feature_weights,
+              parametric_cov_estimator=False,
               quadratic=None,
               ridge_term=None,
               randomizer='gaussian',
@@ -514,13 +523,13 @@ class lasso(object):
                      ridge_term,
                      randomizer_scale, 
                      randomizer=randomizer,
-                     covariance_estimator=covariance_estimator)
+                     parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def poisson(X, 
                 counts, 
-                feature_weights, 
-                covariance_estimator=None,
+                feature_weights,
+                parametric_cov_estimator=False,
                 quadratic=None,
                 ridge_term=None,
                 randomizer_scale=None,
@@ -605,7 +614,7 @@ class lasso(object):
                      ridge_term,
                      randomizer_scale, 
                      randomizer=randomizer,
-                     covariance_estimator=covariance_estimator)
+                     parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def sqrt_lasso(X, 
@@ -798,6 +807,7 @@ class lasso(object):
             L.lasso_solution = soln
 
         return L
+
 
 class step(lasso):
 
