@@ -750,7 +750,7 @@ class optimization_intervals(object):
                                 nuisance,                 # nuisance sufficient stats for each view
                                 score_cov)                # points will be moved like sample * score_cov
         
-        pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
+        pivot = np.mean((sample_stat + candidate <= observed_stat) * weights) / np.mean(weights)
 
         if alternative == 'twosided':
             return 2 * min(pivot, 1 - pivot)
@@ -806,7 +806,7 @@ class optimization_intervals(object):
         # In this function, \hat{\theta}_i will change with the Monte Carlo sample
 
         internal_sample = []
-        for i in range(len(log_densities)):
+        for i in range(len(self.opt_sampler.log_densities)):
             internal_sample.append(np.multiply.outer(sample_stat, score_cov[i]) + nuisance[i][None, :]) # these are now internal coordinates
         _lognum = self.opt_sampler.log_density(internal_sample, self.opt_sample)
         _logratio = _lognum - self._logden
