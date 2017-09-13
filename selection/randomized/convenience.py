@@ -10,9 +10,12 @@ import regreg.api as rr
 from .glm import (target as glm_target, 
                   glm_group_lasso,
                   glm_greedy_step,
-                  glm_threshold_score)
+                  glm_threshold_score,
+                  glm_nonparametric_bootstrap,
+                  pairs_bootstrap_glm)
 from .randomization import randomization
-from .query import multiple_queries
+from .query import multiple_queries, optimization_sampler
+from .M_estimator import restricted_Mest
 
 class lasso(object):
 
@@ -201,27 +204,32 @@ class lasso(object):
         if not hasattr(self, "_queries"):
             raise ValueError('run `fit` method before producing summary.')
 
-        target_sampler, target_observed = glm_target(self.loglike,
-                                                     selected_features,
-                                                     self._queries,
-                                                     bootstrap=bootstrap)
-
         if null_value is None:
             null_value = np.zeros(self.loglike.shape[0])
 
-        intervals = None
-        full_sample = target_sampler.sample(ndraw=ndraw,
-                                            burnin=burnin,
-                                            keep_opt=False)
-        pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                     parameter=null_value,
-                                                     sample=full_sample)
-        if compute_intervals:
-            intervals = target_sampler.confidence_intervals(target_observed,
-                                                            sample=full_sample,
-                                                            level=level)
+        self._queries.setup_sampler(form_covariances=None)
+        self._queries.setup_opt_state()
+        opt_sampler = optimization_sampler(self._queries)
 
-        return intervals, pvalues
+        S = opt_sampler.sample(ndraw,
+                               burnin,
+                               stepsize=1.e-3)
+        # print(S.shape)
+        # print([np.mean(S[:,i]) for i in range(p)])
+
+        unpenalized_mle = restricted_Mest(self.loglike, selected_features)
+        n = self.loglike.data[0].shape[0]
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        # conv._queries.setup_sampler(form_covariances)
+        boot_target, boot_target_observed = pairs_bootstrap_glm(self.loglike, selected_features, inactive=None)
+        opt_sampler.setup_target(boot_target, form_covariances)
+
+        pvalues = opt_sampler.coefficient_pvalues(unpenalized_mle, parameter=null_value, sample=S)
+        intervals = None
+        if compute_intervals:
+            intervals = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
+
+        return pvalues, intervals
 
     @staticmethod
     def gaussian(X, 
