@@ -28,7 +28,7 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         X, Y, beta = inst(n=100, p=10, s=3, signal=5.)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 1
+        W = np.ones(X.shape[1]) * 8
         conv = const(X, Y, W, randomizer=rand)
         signs = conv.fit()
         print("signs", signs)
@@ -40,6 +40,8 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
         selected_features = conv._view.selection_variable['variables']
 
+        #if not set(np.where(beta)[0]).issubset(set(np.where(selected_features)[0])):
+        #    return None
         #conv.summary(selected_features,
         #             ndraw=ndraw,
         #             burnin=burnin,
@@ -67,38 +69,49 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
         sel_pivots = opt_sampler.coefficient_pvalues(unpenalized_mle, parameter = beta[selected_features], sample=S)
         print("pivots ", sel_pivots)
-        results.append((rand, sel_pivots,))
-
-        #selective_CI = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
-        #print(selective_CI)
+        selective_CI = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
+        print(selective_CI)
+        results.append((rand, sel_pivots,selective_CI, beta[selected_features]))
 
     return results
 
+
 from statsmodels.distributions import ECDF
 
+def compute_coverage(sel_ci, true_vec):
+    nactive = true_vec.shape[0]
+    coverage = np.zeros(nactive)
+    for i in range(nactive):
+        if true_vec[i]>=sel_ci[i,0] and true_vec[i]<=sel_ci[i,1]:
+            coverage[i]=1
+    return coverage
 
 
-def main(ndraw=10000, burnin=2000, nsim=10):
+def main(ndraw=20000, burnin=5000, nsim=10):
 
     sel_pivots_all = list()
+    sel_ci_all = list()
     rand_all = []
     for i in range(nsim):
-        for idx, (rand, sel_pivots,) in enumerate(test_opt_weighted_intervals(ndraw=ndraw, burnin=burnin)):
-            print(idx)
+        for idx, (rand, sel_pivots, sel_ci, true_vec) in enumerate(test_opt_weighted_intervals(ndraw=ndraw, burnin=burnin)):
             if i==0:
                 sel_pivots_all.append([])
+                rand_all.append(rand)
+                sel_ci_all.append([])
             sel_pivots_all[idx].append(sel_pivots)
-            if i==0:
-               rand_all.append(rand)
+            sel_ci_all[idx].append(compute_coverage(sel_ci, true_vec))
+
     xval = np.linspace(0, 1, 200)
-    print(rand_all)
 
     for idx in range(len(rand_all)):
         fig = plt.figure(num=idx, figsize=(8,8))
         plt.clf()
-        flat_list = [item for sublist in sel_pivots_all[idx] for item in sublist]
-        print(len(flat_list))
-        plt.plot(xval, ECDF(flat_list)(xval), label='selective')
+        sel_pivots_all[idx] = [item for sublist in sel_pivots_all[idx] for item in sublist]
+        plt.plot(xval, ECDF(sel_pivots_all[idx])(xval), label='selective')
         plt.plot(xval, xval, 'k-', lw=1)
         plt.legend(loc='lower right')
+
+        sel_ci_all[idx] = [item for sublist in sel_ci_all[idx] for item in sublist]
+        plt.title(''.join(["coverage ", str(np.mean(sel_ci_all[idx]))]))
         plt.savefig(''.join(["fig", rand_all[idx], '.pdf']))
+
