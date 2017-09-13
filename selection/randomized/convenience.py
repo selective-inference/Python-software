@@ -317,8 +317,8 @@ class lasso(object):
         the unpenalized estimator.
 
         """
-
         sigma = 1.
+
         loglike = rr.glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
         n, p = X.shape
 

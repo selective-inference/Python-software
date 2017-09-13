@@ -25,10 +25,10 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
         inst, const = const_info
 
-        X, Y, beta = inst(n=100, p=10, s=3, signal=5.)[:3]
+        X, Y, beta = inst(n=100, p=10, s=0, signal=1., sigma=5.)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 8
+        W = np.ones(X.shape[1]) * 5
         conv = const(X, Y, W, randomizer=rand, parametric_cov_estimator=True)
         signs = conv.fit()
         print("signs", signs)
@@ -64,7 +64,8 @@ def compute_coverage(sel_ci, true_vec):
     return coverage
 
 
-def main(ndraw=20000, burnin=5000, nsim=2):
+def main(ndraw=20000, burnin=5000, nsim=10):
+    np.random.seed(1)
 
     sel_pivots_all = list()
     sel_ci_all = list()
