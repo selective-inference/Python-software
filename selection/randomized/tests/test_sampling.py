@@ -94,6 +94,7 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
 
     return np.concatenate((abs_beta_samples, u_samples), axis=1), reordered_omega
 
+
 def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
     scale = np.linspace(2, 3, p)
     X = np.identity(n)[:,:p]

@@ -19,17 +19,17 @@ from ..M_estimator import restricted_Mest
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=1000, burnin=100)
 def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
-    results=[]
+    results = []
     cls = lasso
     for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace', 'gaussian']):
 
         inst, const = const_info
 
-        X, Y, beta = inst(n=100, p=10, s=3, signal=5.)[:3]
+        X, Y, beta = inst(n=100, p=10, s=0, signal=1., sigma=5.)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 8
-        conv = const(X, Y, W, randomizer=rand)
+        W = np.ones(X.shape[1]) * 5
+        conv = const(X, Y, W, randomizer=rand, parametric_cov_estimator=True)
         signs = conv.fit()
         print("signs", signs)
 
@@ -37,41 +37,18 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         #marginalizing_groups[:int(p/2)] = True
         #conditioning_groups = ~marginalizing_groups
         #conditioning_groups[-int(p/4):] = False
-
-        selected_features = conv._view.selection_variable['variables']
-
-        #if not set(np.where(beta)[0]).issubset(set(np.where(selected_features)[0])):
-        #    return None
-        #conv.summary(selected_features,
-        #             ndraw=ndraw,
-        #             burnin=burnin,
-        #             compute_intervals=True)
-
         #conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
         #                           conditioning_groups=conditioning_groups)
 
-        conv._queries.setup_sampler(form_covariances=None)
-        conv._queries.setup_opt_state()
-        opt_sampler = optimization_sampler(conv._queries)
+        selected_features = conv._view.selection_variable['variables']
 
-        S = opt_sampler.sample(ndraw,
-                               burnin,
-                               stepsize=1.e-3)
-        #print(S.shape)
-        #print([np.mean(S[:,i]) for i in range(p)])
+        sel_pivots, sel_ci = conv.summary(selected_features,
+                                          null_value=beta[selected_features],
+                                          ndraw=ndraw,
+                                          burnin=burnin,
+                                          compute_intervals=True)
 
-        unpenalized_mle = restricted_Mest(conv.loglike, selected_features)
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-        #conv._queries.setup_sampler(form_covariances)
-        boot_target, boot_target_observed = pairs_bootstrap_glm(conv.loglike, selected_features, inactive=None)
-        opt_sampler.setup_target(boot_target,
-                                 form_covariances)
-
-        sel_pivots = opt_sampler.coefficient_pvalues(unpenalized_mle, parameter = beta[selected_features], sample=S)
-        print("pivots ", sel_pivots)
-        selective_CI = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
-        print(selective_CI)
-        results.append((rand, sel_pivots,selective_CI, beta[selected_features]))
+        results.append((rand, sel_pivots, sel_ci, beta[selected_features]))
 
     return results
 
@@ -88,6 +65,7 @@ def compute_coverage(sel_ci, true_vec):
 
 
 def main(ndraw=20000, burnin=5000, nsim=10):
+    np.random.seed(1)
 
     sel_pivots_all = list()
     sel_ci_all = list()
@@ -99,6 +77,7 @@ def main(ndraw=20000, burnin=5000, nsim=10):
                 rand_all.append(rand)
                 sel_ci_all.append([])
             sel_pivots_all[idx].append(sel_pivots)
+            print(sel_ci)
             sel_ci_all[idx].append(compute_coverage(sel_ci, true_vec))
 
     xval = np.linspace(0, 1, 200)
@@ -112,6 +91,7 @@ def main(ndraw=20000, burnin=5000, nsim=10):
         plt.legend(loc='lower right')
 
         sel_ci_all[idx] = [item for sublist in sel_ci_all[idx] for item in sublist]
+        print(sel_ci_all)
         plt.title(''.join(["coverage ", str(np.mean(sel_ci_all[idx]))]))
         plt.savefig(''.join(["fig", rand_all[idx], '.pdf']))
 

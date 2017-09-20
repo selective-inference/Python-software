@@ -681,6 +681,11 @@ def parametric_cov(glm_loss,
     # cross_terms are different active sets
 
     target, linear_func = target_with_linear_func
+
+    target_bool = np.zeros(glm_loss.input_shape, np.bool)
+    target_bool[target] = True
+    target = target_bool
+
     linear_funcT = linear_func.T
 
     X, Y = glm_loss.data
@@ -697,10 +702,17 @@ def parametric_cov(glm_loss,
     XW_T = W_T[:, None] * X_T
     Q_T_inv = np.linalg.inv(X_T.T.dot(XW_T))
 
-    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT)]
+    beta_T = restricted_Mest(glm_loss, target, solve_args=solve_args)
+    sigma_T = np.sqrt(np.sum((Y-glm_loss.saturated_loss.mean_function(X_T.dot(beta_T)))**2)/(n-np.sum(target)))
+
+    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT)* (sigma_T **2)]
 
     for cross in cross_terms:
         # the covariances are for (\bar{\beta}_{C}, N_C) -- C for cross
+
+        cross_bool = np.zeros(X.shape[1], np.bool)
+        cross_bool[cross] = True; cross = cross_bool
+
         X_C = X[:, cross]
         X_IT = X[:, ~cross].T
         Q_C_inv = np.linalg.inv(X_C.T.dot(W_T[:, None] * X_C))
@@ -708,9 +720,13 @@ def parametric_cov(glm_loss,
         null_block = X_IT.dot(XW_T) - X_IT.dot(W_T[:, None] * X_C).dot(Q_C_inv).dot(X[:, cross].T.dot(XW_T))
         null_block = null_block.dot(Q_T_inv)
 
-        covariances.append(np.vstack([beta_block, null_block]).dot(linear_funcT).T)
+        beta_C = restricted_Mest(glm_loss, cross, solve_args=solve_args)
+        sigma_C = np.sqrt(np.sum((Y - glm_loss.saturated_loss.mean_function(X_C.dot(beta_C))) ** 2) / (n - np.sum(cross)))
+
+        covariances.append(np.vstack([beta_block, null_block]).dot(linear_funcT).T * sigma_T * sigma_C)
 
     return covariances
+
 
 def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10}):
     """
