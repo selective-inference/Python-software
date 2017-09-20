@@ -450,13 +450,15 @@ class optimization_sampler(object):
         for i in range(self.nqueries):
             view = self.objectives[i]
             self.log_densities.append(view.log_density)
-            score_info = view.setup_sampler(form_covariances)
             if parametric == False:
+                score_info = view.setup_sampler(form_covariances)
                 target_cov, cross_cov = form_covariances(target_info,  
                                                          cross_terms=[score_info],
                                                          nsample=self.nboot[i])
             else:
-                target_cov, cross_cov = form_covariances(target_info, 
+                score_info = view.setup_sampler()
+                print(score_info)
+                target_cov, cross_cov = form_covariances(target_info,
                                                          cross_terms=[score_info])
 
             target_cov_sum += target_cov
@@ -687,7 +689,7 @@ class optimization_sampler(object):
 
         for i in range(self.nqueries):
             log_dens = self.objectives[i].log_density
-            print(internal_state[i].shape, 'internal')
+            # print(internal_state[i].shape, 'internal')
             value += log_dens(internal_state[i], opt_state[:, self.opt_slice[i]]) # may have to broadcast shape here
         return np.squeeze(value)
 
