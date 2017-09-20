@@ -681,6 +681,11 @@ def parametric_cov(glm_loss,
     # cross_terms are different active sets
 
     target, linear_func = target_with_linear_func
+
+    target_bool = np.zeros(glm_loss.input_shape, np.bool)
+    target_bool[target] = True
+    target = target_bool
+
     linear_funcT = linear_func.T
 
     X, Y = glm_loss.data
@@ -704,6 +709,10 @@ def parametric_cov(glm_loss,
 
     for cross in cross_terms:
         # the covariances are for (\bar{\beta}_{C}, N_C) -- C for cross
+
+        cross_bool = np.zeros(X.shape[1], np.bool)
+        cross_bool[cross] = True; cross = cross_bool
+
         X_C = X[:, cross]
         X_IT = X[:, ~cross].T
         Q_C_inv = np.linalg.inv(X_C.T.dot(W_T[:, None] * X_C))
@@ -716,7 +725,6 @@ def parametric_cov(glm_loss,
 
         covariances.append(np.vstack([beta_block, null_block]).dot(linear_funcT).T * sigma_T * sigma_C)
 
-    print(len(covariances))
     return covariances
 
 

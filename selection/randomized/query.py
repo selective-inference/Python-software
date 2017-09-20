@@ -457,7 +457,6 @@ class optimization_sampler(object):
                                                          nsample=self.nboot[i])
             else:
                 score_info = view.setup_sampler()
-                print(score_info)
                 target_cov, cross_cov = form_covariances(target_info,
                                                          cross_terms=[score_info])
 
@@ -689,7 +688,6 @@ class optimization_sampler(object):
 
         for i in range(self.nqueries):
             log_dens = self.objectives[i].log_density
-            # print(internal_state[i].shape, 'internal')
             value += log_dens(internal_state[i], opt_state[:, self.opt_slice[i]]) # may have to broadcast shape here
         return np.squeeze(value)
 
@@ -781,7 +779,6 @@ class optimization_intervals(object):
         upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
         lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
 
-        #print(_rootU(upper), _rootL(lower), 'pivot')
         return lower + observed_stat, upper + observed_stat
 
     # Private methods
