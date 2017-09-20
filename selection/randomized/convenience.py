@@ -66,20 +66,6 @@ class lasso(object):
         randomizer : str (optional)
             One of ['laplace', 'logistic', 'gaussian']
 
-        covariance_estimator : callable (optional)
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
 
@@ -281,10 +267,6 @@ class lasso(object):
             Noise variance. Set to 1 if `covariance_estimator` is not None.
             This scales the loglikelihood by `sigma**(-2)`.
 
-        covariance_estimator : callable (optional)
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
@@ -304,17 +286,6 @@ class lasso(object):
 
         L : `selection.randomized.convenience.lasso`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
-        and return an estimate of some of the
-        rows and columns of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
 
@@ -330,7 +301,7 @@ class lasso(object):
 
         return lasso(loglike, np.asarray(feature_weights) / sigma**2,
                      ridge_term, randomizer_scale, randomizer=randomizer,
-                     parametric_cov_estimator=parametric_cov_estimator) # XXX: do we use the covariance_estimator?
+                     parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def logistic(X, 
@@ -375,10 +346,6 @@ class lasso(object):
             Number of trials per response, defaults to
             ones the same shape as Y. 
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic 
@@ -398,16 +365,6 @@ class lasso(object):
 
         L : `selection.randomized.convenience.lasso`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         n, p = X.shape
@@ -493,16 +450,6 @@ class lasso(object):
 
         L : `selection.randomized.convenience.lasso`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         loglike = coxph_obj(X, times, status, quadratic=quadratic)
@@ -560,9 +507,6 @@ class lasso(object):
             `feature_weights` to 0. If `feature_weights` is 
             a float, then all parameters are penalized equally.
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
 
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
@@ -583,16 +527,6 @@ class lasso(object):
 
         L : `selection.randomized.convenience.lasso`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, inactive)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the inactive
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         n, p = X.shape
@@ -620,7 +554,7 @@ class lasso(object):
                    Y, 
                    feature_weights, 
                    quadratic=None,
-                   covariance='parametric',
+                   parametric_cov_estimator=False,
                    sigma_estimate='truncated',
                    solve_args={'min_its':200},
                    randomizer_scale=None,
@@ -785,15 +719,8 @@ class lasso(object):
 
         loglike = rr.glm.gaussian(X, Y, quadratic=quadratic)
 
-        if covariance == 'parametric':
-            cov_est = glm_parametric_estimator(loglike, dispersion=_sigma_hat)
-        elif covariance == 'sandwich':
-            cov_est = glm_sandwich_estimator(loglike, B=2000)
-        else:
-            raise ValueError('covariance must be one of ["parametric", "sandwich"]')
-
         L = lasso(loglike, feature_weights * multiplier * sigma_E,
-                  covariance_estimator=cov_est,
+                  parametric_cov_estimator=parametric_cov_estimator,
                   ignore_inactive_constraints=True)
 
         # these arguments are reused for data carving
@@ -834,7 +761,7 @@ class step(lasso):
                  randomizer_scale,
                  active=None,
                  randomizer='gaussian',
-                 covariance_estimator=None):
+                 parametric_cov_estimator=False):
         r"""
 
         Create a new post-selection for the stepwise problem
@@ -863,20 +790,6 @@ class step(lasso):
         randomizer : str (optional)
             One of ['laplace', 'logistic', 'gaussian']
 
-        covariance_estimator : callable (optional)
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
 
@@ -890,7 +803,7 @@ class step(lasso):
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
 
-        self.covariance_estimator = covariance_estimator
+        self.parametric_cov_estimator = parametric_cov_estimator
 
         nrandom = candidate.sum()
         if randomizer == 'laplace':
@@ -971,8 +884,8 @@ class step(lasso):
                  feature_weights, 
                  candidate=None,
                  active=None,
-                 covariance_estimator=None,
                  randomizer_scale=None,
+                 parametric_cov_estimator=False,
                  randomizer='gaussian'):
         r"""
         Take a step with a Gaussian loglikelihood.
@@ -1001,10 +914,6 @@ class step(lasso):
             set of variables we partially minimize over.
             Defaults to `np.zeros(p, np.bool)`.
 
-        covariance_estimator : callable (optional)
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1016,17 +925,6 @@ class step(lasso):
 
         L : `selection.randomized.convenience.step`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of some of the
-        rows and columns of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         loglike = rr.glm.gaussian(X, Y)
@@ -1047,7 +945,7 @@ class step(lasso):
                     randomizer_scale, 
                     active=active,
                     randomizer=randomizer,
-                    covariance_estimator=covariance_estimator)  # XXX: do we use the covariance_estimator?
+                    parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def logistic(X, 
@@ -1056,7 +954,7 @@ class step(lasso):
                  active=None,
                  candidate=None,
                  trials=None, 
-                 covariance_estimator=None,
+                 parametric_cov_estimator=False,
                  randomizer_scale=None,
                  randomizer='gaussian'):
         r"""
@@ -1092,10 +990,6 @@ class step(lasso):
             Number of trials per response, defaults to
             ones the same shape as Y. 
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1106,17 +1000,6 @@ class step(lasso):
         -------
 
         L : `selection.randomized.convenience.step`
-        
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         n, p = X.shape
@@ -1136,7 +1019,7 @@ class step(lasso):
                     candidate,
                     randomizer_scale,
                     active=active,
-                    covariance_estimator=covariance_estimator)
+                    parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def coxph(X, 
@@ -1145,7 +1028,7 @@ class step(lasso):
               feature_weights, 
               candidate=None,
               active=None,
-              covariance_estimator=None,
+              parametric_cov_estimator=False,
               randomizer_scale=None,
               randomizer='gaussian'):
         r"""
@@ -1180,10 +1063,6 @@ class step(lasso):
             set of variables we partially minimize over.
             Defaults to `np.zeros(p, np.bool)`.
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1195,16 +1074,6 @@ class step(lasso):
 
         L : `selection.randomized.convenience.lasso`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         n, p = X.shape
@@ -1224,7 +1093,7 @@ class step(lasso):
                     randomizer_scale,
                     active=active,
                     randomizer=randomizer,
-                    covariance_estimator=covariance_estimator)
+                    parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def poisson(X, 
@@ -1232,7 +1101,7 @@ class step(lasso):
                 feature_weights, 
                 candidate=None,
                 active=None,
-                covariance_estimator=None,
+                parametric_cov_estimator=False,
                 randomizer_scale=None,
                 randomizer='gaussian'):
         r"""
@@ -1262,10 +1131,6 @@ class step(lasso):
             set of variables we partially minimize over.
             Defaults to `np.zeros(p, np.bool)`.
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1277,16 +1142,6 @@ class step(lasso):
 
         L : `selection.randomized.convenience.step`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         n, p = X.shape
@@ -1309,7 +1164,7 @@ class step(lasso):
                     randomizer_scale, 
                     active=active,
                     randomizer=randomizer,
-                    covariance_estimator=covariance_estimator)
+                    parametric_cov_estimator=parametric_cov_estimator)
 
 class threshold(lasso):
 
@@ -1335,7 +1190,7 @@ class threshold(lasso):
                  randomizer_scale,
                  active=None,
                  randomizer='gaussian',
-                 covariance_estimator=None):
+                 parametric_cov_estimator=False):
         r"""
 
         Create a new post-selection for the stepwise problem
@@ -1364,21 +1219,6 @@ class threshold(lasso):
         randomizer : str (optional)
             One of ['laplace', 'logistic', 'gaussian']
 
-        covariance_estimator : callable (optional)
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
-
         """
 
         self.active = active
@@ -1391,7 +1231,7 @@ class threshold(lasso):
             threshold = np.ones(loglike.shape) * threshold_value
         self.threshold_value = np.asarray(threshold_value)[self.candidate]
 
-        self.covariance_estimator = covariance_estimator
+        self.parametric_cov_estimator = parametric_cov_estimator
 
         nrandom = candidate.sum()
         if randomizer == 'laplace':
@@ -1469,7 +1309,7 @@ class threshold(lasso):
                  threshold_value, 
                  candidate=None,
                  active=None,
-                 covariance_estimator=None,
+                 parametric_cov_estimator=False,
                  randomizer_scale=None,
                  randomizer='gaussian'):
         r"""
@@ -1499,10 +1339,6 @@ class threshold(lasso):
             set of variables we partially minimize over.
             Defaults to `np.zeros(p, np.bool)`.
 
-        covariance_estimator : callable (optional)
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1514,18 +1350,6 @@ class threshold(lasso):
 
         L : `selection.randomized.convenience.threshold`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of some of the
-        rows and columns of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
-
         """
 
         loglike = rr.glm.gaussian(X, Y)
@@ -1546,7 +1370,7 @@ class threshold(lasso):
                          randomizer_scale, 
                          active=active,
                          randomizer=randomizer,
-                         covariance_estimator=covariance_estimator)  # XXX: do we use the covariance_estimator?
+                         parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def logistic(X, 
@@ -1555,7 +1379,7 @@ class threshold(lasso):
                  active=None,
                  candidate=None,
                  trials=None, 
-                 covariance_estimator=None,
+                 parametric_cov_estimator=False,
                  randomizer_scale=None,
                  randomizer='gaussian'):
         r"""
@@ -1591,10 +1415,6 @@ class threshold(lasso):
             Number of trials per response, defaults to
             ones the same shape as Y. 
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1606,17 +1426,6 @@ class threshold(lasso):
 
         L : `selection.randomized.convenience.threshold`
         
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
-
         """
         n, p = X.shape
         loglike = rr.glm.logistic(X, successes, trials=trials)
@@ -1635,7 +1444,7 @@ class threshold(lasso):
                          candidate,
                          randomizer_scale,
                          active=active,
-                         covariance_estimator=covariance_estimator)
+                         parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def coxph(X, 
@@ -1644,7 +1453,7 @@ class threshold(lasso):
               threshold_value,
               candidate=None,
               active=None,
-              covariance_estimator=None,
+              parametric_cov_estimator=False,
               randomizer_scale=None,
               randomizer='gaussian'):
         r"""
@@ -1679,10 +1488,6 @@ class threshold(lasso):
             set of variables we partially minimize over.
             Defaults to `np.zeros(p, np.bool)`.
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1693,17 +1498,6 @@ class threshold(lasso):
         -------
 
         L : `selection.randomized.convenience.threshold`
-        
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         n, p = X.shape
@@ -1723,7 +1517,7 @@ class threshold(lasso):
                          randomizer_scale,
                          active=active,
                          randomizer=randomizer,
-                         covariance_estimator=covariance_estimator)
+                         parametric_cov_estimator=parametric_cov_estimator)
 
     @staticmethod
     def poisson(X, 
@@ -1731,7 +1525,7 @@ class threshold(lasso):
                 threshold_value,
                 candidate=None,
                 active=None,
-                covariance_estimator=None,
+                parametric_cov_estimator=False,
                 randomizer_scale=None,
                 randomizer='gaussian'):
         r"""
@@ -1761,10 +1555,6 @@ class threshold(lasso):
             set of variables we partially minimize over.
             Defaults to `np.zeros(p, np.bool)`.
 
-        covariance_estimator : optional
-            If None, use the parameteric
-            covariance estimate of the selected model.
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1775,17 +1565,6 @@ class threshold(lasso):
         -------
 
         L : `selection.randomized.convenience.threshold`
-        
-        Notes
-        -----
-
-        If not None, `covariance_estimator` should 
-        take arguments (beta, active, candidate)
-        and return an estimate of the covariance of
-        $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
-        the unpenalized estimator and the candidate
-        coordinates of the gradient of the likelihood at
-        the unpenalized estimator.
 
         """
         n, p = X.shape
@@ -1808,4 +1587,4 @@ class threshold(lasso):
                          randomizer_scale, 
                          active=active,
                          randomizer=randomizer,
-                         covariance_estimator=covariance_estimator)
+                         parametric_cov_estimator=parametric_cov_estimator)

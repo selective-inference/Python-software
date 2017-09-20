@@ -138,12 +138,17 @@ class threshold_score(query):
         threshold = self.threshold
         weights = np.zeros_like(self.boundary, np.float)
 
-        weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary]) - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
-                                  (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
+        weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary])
+                                   - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
+                                  (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + 
+                                   self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
 
 
-        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
-                                   (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
+        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - 
+                                                                 full_state[~self.boundary]) + 
+                                     self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
+                                   (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - 
+                                    self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
 
         return weights ## tested
 

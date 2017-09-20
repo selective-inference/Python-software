@@ -216,7 +216,6 @@ class M_estimator(query):
         # beta_U piece
 
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
-        print(active_groups, unpenalized, unpenalized_slice, 'unpenalized')
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
             _opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling

@@ -387,8 +387,11 @@ class optimization_sampler(object):
 
         for i in range(self.nqueries):
             opt_linear, opt_offset = self.objectives[i].opt_transform
-            opt_grad[self.opt_slice[i]] = \
-                opt_linear.T.dot(self.objectives[i].grad_log_density(self.observed_internal[i], opt_state[self.opt_slice[i]]))
+            if self.objectives[i].num_opt_var > 0: # thresholding has no opt variables
+                                                   # after marginalizing
+                opt_grad[self.opt_slice[i]] = \
+                    opt_linear.T.dot(self.objectives[i].grad_log_density(self.observed_internal[i], 
+                                                                         opt_state[self.opt_slice[i]]))
         return -opt_grad
 
     def sample(self, ndraw, burnin, stepsize=None):
@@ -447,11 +450,12 @@ class optimization_sampler(object):
         target_cov_sum = 0
 
         # we should pararallelize this over all views at once ?
+
         for i in range(self.nqueries):
             view = self.objectives[i]
             self.log_densities.append(view.log_density)
             if parametric == False:
-                score_info = view.setup_sampler(form_covariances)
+                score_info = view.setup_sampler()
                 target_cov, cross_cov = form_covariances(target_info,  
                                                          cross_terms=[score_info],
                                                          nsample=self.nboot[i])
