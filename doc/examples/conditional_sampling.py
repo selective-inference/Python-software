@@ -9,14 +9,14 @@ from statsmodels.distributions import ECDF
 
 from selection.randomized.tests.test_sampling import test_conditional_law
 
-def main(ndraw=50000, burnin=5000, remove_atom=False, unpenalized=True):
+def main(ndraw=50000, burnin=5000, remove_atom=False, unpenalized=True, stepsize=1.e-2):
 
     fig_idx = 0
     for (rand,
          mcmc_opt, 
          mcmc_omega,
          truncated_opt,
-         truncated_omega) in test_conditional_law(ndraw=ndraw, burnin=burnin, stepsize=1.e-2, unpenalized=unpenalized):
+         truncated_omega) in test_conditional_law(ndraw=ndraw, burnin=burnin, stepsize=stepsize, unpenalized=unpenalized):
 
         fig_idx += 1
         fig = plt.figure(num=fig_idx, figsize=(8,8))

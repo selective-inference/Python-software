@@ -1,4 +1,7 @@
 import numpy as np
+import scipy
+from scipy import matrix
+
 import regreg.api as rr
 import regreg.affine as ra
 
@@ -189,8 +192,8 @@ class M_estimator(query):
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
         Mest_slice = slice(0, overall.sum())
-        _Mest_hessian = _hessian[:,overall]
-        _score_linear_term[:,Mest_slice] = -_Mest_hessian / _sqrt_scaling
+        _Mest_hessian = _hessian[:, overall]
+        _score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
@@ -206,16 +209,17 @@ class M_estimator(query):
             _opt_hessian=0
         else:
             _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
-        _opt_linear_term[:,scaling_slice] = _opt_hessian / _sqrt_scaling
+        _opt_linear_term[:, scaling_slice] = _opt_hessian / _sqrt_scaling
 
         self.observed_opt_state[scaling_slice] *= _sqrt_scaling
 
         # beta_U piece
 
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
+        print(active_groups, unpenalized, unpenalized_slice, 'unpenalized')
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
+            _opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
 
         self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
 
@@ -226,7 +230,7 @@ class M_estimator(query):
         for _i, _s in zip(inactive_idx, subgrad_idx):
             _opt_linear_term[_i,_s] = _sqrt_scaling
 
-        self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
+        self.observed_opt_state[subgrad_idx] /= _sqrt_scaling
 
         # form affine part
 
@@ -280,25 +284,24 @@ class M_estimator(query):
         nactive_groups = len(self.active_directions_list)
         nactive_vars = sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
         V = np.zeros((nactive_vars, nactive_vars-nactive_groups))
-        #U = np.zeros((nvariables, ngroups))
+
         Lambda = np.zeros((nactive_vars,nactive_vars))
         temp_row, temp_col = 0, 0
         for g in range(len(self.active_directions_list)):
             size_curr_group = self.active_directions_list[g].shape[0]
-            #U[temp_row:(temp_row+size_curr_group),g] = self._active_directions[g]
+
             Lambda[temp_row:(temp_row+size_curr_group),temp_row:(temp_row+size_curr_group)] \
                 = self.active_penalty[g]*np.identity(size_curr_group)
-            import scipy
-            from scipy import linalg, matrix
+
             def null(A, eps=1e-12):
-                u, s, vh = scipy.linalg.svd(A)
+                u, s, vh = np.linalg.svd(A)
                 padding = max(0, np.shape(A)[1] - np.shape(s)[0])
                 null_mask = np.concatenate(((s <= eps), np.ones((padding,), dtype=bool)), axis=0)
                 null_space = scipy.compress(null_mask, vh, axis=0)
                 return scipy.transpose(null_space)
 
             V_g = null(matrix(self.active_directions_list[g]))
-            V[temp_row:(temp_row+V_g.shape[0]), temp_col:(temp_col+V_g.shape[1])] = V_g
+            V[temp_row:(temp_row + V_g.shape[0]), temp_col:(temp_col + V_g.shape[1])] = V_g
             temp_row += V_g.shape[0]
             temp_col += V_g.shape[1]
         self.VQLambda = np.dot(np.dot(V.T,self.Qinv), Lambda.dot(V))
