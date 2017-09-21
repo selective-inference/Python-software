@@ -202,11 +202,8 @@ class lasso(object):
         self._queries.setup_sampler(form_covariances=None)
         self._queries.setup_opt_state()
 
-        opt_samplers = [optimization_sampler(q) for q in self._queries.objectives]
-        opt_samples = [opt_sampler.sample(ndraw,
-                                          burnin) for opt_sampler in opt_samplers]
-
         unpenalized_mle = restricted_Mest(self.loglike, selected_features)
+
         if self.parametric_cov_estimator == False:
             n = self.loglike.data[0].shape[0]
             form_covariances = glm_nonparametric_bootstrap(n, n)
@@ -216,13 +213,32 @@ class lasso(object):
             target_info = (selected_features, np.identity(unpenalized_mle.shape[0]))
             form_covariances = glm_parametric_covariance(self.loglike)
 
-        for opt_sampler in opt_samplers:
-            opt_sampler.setup_target(target_info, form_covariances, parametric=self.parametric_cov_estimator)
+        opt_samplers = []
+        for q in self._queries.objectives:
+            cov_info = q.setup_sampler()
+            if self.parametric_cov_estimator == False:
+                target_cov, score_cov = form_covariances(target_info,  
+                                                         cross_terms=[cov_info],
+                                                         nsample=q.nboot)
+            else:
+                target_cov, score_cov = form_covariances(target_info,  
+                                                         cross_terms=[cov_info])
 
-        pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, parameter=null_value, sample=opt_samples[0])
+            opt_samplers.append(optimization_sampler(q.observed_opt_state,
+                                                     q.observed_internal_state,
+                                                     q.score_transform,
+                                                     q.opt_transform,
+                                                     q.projection,
+                                                     q.grad_log_density,
+                                                     q.log_density))
+
+        opt_samples = [opt_sampler.sample(ndraw,
+                                          burnin) for opt_sampler in opt_samplers]
+
+        pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=null_value, sample=opt_samples[0])
         intervals = None
         if compute_intervals:
-            intervals = opt_samplers[0].confidence_intervals(unpenalized_mle, sample=opt_samples[0])
+            intervals = opt_samplers[0].confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_samples[0])
 
         return pvalues, intervals
 

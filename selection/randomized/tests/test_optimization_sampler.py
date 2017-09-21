@@ -9,6 +9,7 @@ from ...tests.instance import (gaussian_instance,
                                poisson_instance)
 from ...tests.flags import SMALL_SAMPLES
 from ...tests.decorators import set_sampling_params_iftrue 
+from ..glm import glm_nonparametric_bootstrap, pairs_bootstrap_glm
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_optimization_sampler(ndraw=1000, burnin=200):
@@ -54,7 +55,25 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
 
         conv.decompose_subgradient(conditioning_groups, marginalizing_groups)
 
-        opt_samplers = [optimization_sampler(q) for q in conv._queries.objectives]
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        boot_target, boot_target_observed = pairs_bootstrap_glm(conv.loglike, selected_features, inactive=None)
+        target_info = boot_target
+
+        opt_samplers = []
+        for q in conv._queries.objectives:
+            cov_info = q.setup_sampler()
+            target_cov, score_cov = form_covariances(target_info,  
+                                                     cross_terms=[cov_info],
+                                                     nsample=q.nboot)
+
+            opt_samplers.append(optimization_sampler(q.observed_opt_state,
+                                                     q.observed_internal_state,
+                                                     q.score_transform,
+                                                     q.opt_transform,
+                                                     q.projection,
+                                                     q.grad_log_density,
+                                                     q.log_density))
+
         for opt_sampler in opt_samplers:
             S = opt_sampler.sample(ndraw,
                                    burnin,

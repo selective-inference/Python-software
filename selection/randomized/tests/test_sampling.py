@@ -171,8 +171,15 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
         print("signs", signs)
 
         selected_features = conv._view.selection_variable['variables']
+        q = conv._view
 
-        opt_sampler = optimization_sampler(conv._view)
+        opt_sampler = optimization_sampler(q.observed_opt_state,
+                                           q.observed_internal_state,
+                                           q.score_transform,
+                                           q.opt_transform,
+                                           q.projection,
+                                           q.grad_log_density,
+                                           q.log_density)
 
         S = opt_sampler.sample(ndraw,
                                burnin,
