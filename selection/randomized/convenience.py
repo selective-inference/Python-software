@@ -201,7 +201,7 @@ class lasso(object):
 
         self._queries.setup_sampler(form_covariances=None)
         self._queries.setup_opt_state()
-        opt_sampler = optimization_sampler(self._queries)
+        opt_sampler = optimization_sampler(self._view) # we should add extra views!
 
         S = opt_sampler.sample(ndraw,
                                burnin,

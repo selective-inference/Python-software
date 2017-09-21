@@ -25,7 +25,7 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
                                                                 [False, True]):
 
         inst, const = const_info
-        X, Y = inst()[:2]
+        X, Y = inst(signal=0.01)[:2]
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 80
@@ -54,10 +54,11 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
 
         conv.decompose_subgradient(conditioning_groups, marginalizing_groups)
 
-        opt_sampler = optimization_sampler(conv._queries)
-        S = opt_sampler.sample(ndraw,
-                               burnin,
-                               stepsize=1.e-10)
+        opt_samplers = [optimization_sampler(q) for q in conv._queries.objectives]
+        for opt_sampler in opt_samplers:
+            S = opt_sampler.sample(ndraw,
+                                   burnin,
+                                   stepsize=1.e-10)
 
         
         

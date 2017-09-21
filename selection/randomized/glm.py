@@ -682,7 +682,7 @@ def parametric_cov(glm_loss,
 
     target, linear_func = target_with_linear_func
 
-    target_bool = np.zeros(glm_loss.input_shape, np.bool)
+    target_bool = np.zeros(glm_loss.shape, np.bool)
     target_bool[target] = True
     target = target_bool
 
