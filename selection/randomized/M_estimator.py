@@ -484,6 +484,7 @@ class M_estimator(query):
             marginalizing over the sub-gradient
 
             full_state is 
+            density should be expressed in terms of opt_state coordinates
         """
 
         if not self._setup:
@@ -509,7 +510,8 @@ class M_estimator(query):
                 weights[self.inactive_marginal_groups] = fraction(full_state_plus, full_state_minus, self.inactive_marginal_groups)
             weights[~self.inactive_marginal_groups] = self.randomization._derivative_log_density(full_state)[~self.inactive_marginal_groups]
 
-            return -weights
+            opt_linear = self.opt_transform[0]
+            return -opt_linear.T.dot(weights)
         else:
             return query.grad_log_density(self, internal_state, opt_state)
 

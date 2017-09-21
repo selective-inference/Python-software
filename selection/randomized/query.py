@@ -70,8 +70,12 @@ class query(object):
         return self.randomization.log_density(full_state)
 
     def grad_log_density(self, internal_state, opt_state):
+        """
+        Gradient in opt_state coordinates
+        """
         full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
-        return self.randomization.gradient(full_state)
+        opt_linear = self.opt_transform[0]
+        return opt_linear.T.dot(self.randomization.gradient(full_state))
 
      # implemented by subclasses
 
@@ -325,24 +329,8 @@ class optimization_sampler(object):
         self.score_linear, self.score_offset = score_transform
         self.opt_linear, self.opt_offset = opt_transform
         self.projection = projection
-        self.grad_log_density = grad_log_density
+        self.gradient = lambda opt: - grad_log_density(self.observed_internal_state, opt)
         self.log_density = log_density
-
-    def gradient(self, opt_state):
-        """
-        Gradient only w.r.t. opt variables
-        """
-
-        opt_grad = np.zeros_like(opt_state)
-
-        # randomization_gradient are gradients of a CONVEX function
-
-        # this presumes grad_log_density is expressed not in internal coordinates
-        # but score coordinates -- hence the chain rule with self.opt_linear
-
-        opt_grad = self.opt_linear.T.dot(self.grad_log_density(self.observed_internal_state, 
-                                                               opt_state))
-        return -opt_grad
 
     def sample(self, ndraw, burnin, stepsize=None):
         '''

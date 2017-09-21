@@ -10,7 +10,7 @@ from ...tests.instance import (gaussian_instance,
 from ...tests.flags import SMALL_SAMPLES
 from ...tests.decorators import set_sampling_params_iftrue 
 
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=2, burnin=2)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=50, burnin=20)
 def test_lasso_constructors(ndraw=1000, burnin=200):
     """
     Smoke tests for lasso convenience constructors
@@ -64,15 +64,6 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
         conv.summary(selected_features,
                      ndraw=ndraw,
                      burnin=burnin)
-
-        target_sampler, target_observed = glm_target(conv.loglike,
-                                                     selected_features,
-                                                     conv._queries,
-                                                     bootstrap=False)
-
-        S = target_sampler.sample(ndraw,
-                                  burnin)
-
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_step_constructors(ndraw=1000, burnin=200):
