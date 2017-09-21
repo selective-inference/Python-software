@@ -314,7 +314,7 @@ class optimization_sampler(object):
 
         # make sure we setup the queries
 
-        self.score_info = query.setup_sampler()
+        self.cov_info = query.setup_sampler()
         self.nboot = query.nboot
         self.observed_opt_state = query.observed_opt_state.copy()
         self.observed_internal_state = query.observed_internal_state.copy()
@@ -406,18 +406,15 @@ class optimization_sampler(object):
         that will be used in computing weights for the sampler.
         """
 
-        self.score_cov = []
-        self.log_densities = []
-
         # we should pararallelize this over all views at once ?
 
         if parametric == False:
             self.target_cov, self.score_cov = form_covariances(target_info,  
-                                                               cross_terms=[self.score_info],
+                                                               cross_terms=[self.cov_info],
                                                                nsample=self.nboot)
         else:
             self.target_cov, self.score_cov = form_covariances(target_info,
-                                                               cross_terms=[self.score_info])
+                                                               cross_terms=[self.cov_info])
             
 
     def hypothesis_test(self,
