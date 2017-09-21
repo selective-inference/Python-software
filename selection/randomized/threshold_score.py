@@ -2,6 +2,7 @@ import numpy as np
 import regreg.api as rr
 
 from .query import query
+from .reconstruction import reconstruct_full_from_internal
 from .M_estimator import restricted_Mest
 
 class threshold_score(query):
@@ -115,7 +116,7 @@ class threshold_score(query):
 
         self.interior = ~self.boundary
 
-        self.observed_score_state = candidate_score
+        self.observed_internal_state = candidate_score
 
         self.selection_variable = {'boundary_set': self.boundary}
 
@@ -124,7 +125,7 @@ class threshold_score(query):
         self.nboot = nboot
         self.ndim = self.loss.shape[0]
 
-    def construct_weights(self, full_state):
+    def grad_log_density(self, internal_state, opt_state):
         """
         marginalizing over the sub-gradient
         """
@@ -132,15 +133,22 @@ class threshold_score(query):
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
+        full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
+
         threshold = self.threshold
         weights = np.zeros_like(self.boundary, np.float)
 
-        weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary]) - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
-                                  (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
+        weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary])
+                                   - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
+                                  (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + 
+                                   self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
 
 
-        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
-                                   (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
+        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - 
+                                                                 full_state[~self.boundary]) + 
+                                     self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
+                                   (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - 
+                                    self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
 
         return weights ## tested
 

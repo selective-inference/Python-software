@@ -23,6 +23,32 @@ matrix:
     - python: 2.7
       env:
         - RUN_R_TESTS=1
+    # Testing without matplotlib
+    - python: 2.7
+      env:
+        - DEPENDS="cython numpy scipy"
+    # Documentation doctests
+    - python: 2.7
+      env:
+        - DOC_DOC_TEST=1
+    # Setup.py install
+    - python: 2.7
+      env:
+        - INSTALL_TYPE=setup
+    - python: 2.7
+      env:
+        # Sdist install should collect all dependencies
+        - INSTALL_TYPE=sdist
+        - DEPENDS=
+    - python: 2.7
+      env:
+        # Wheel install should collect all dependencies
+        - INSTALL_TYPE=wheel
+        - DEPENDS=
+    - python: 2.7
+      env:
+        - INSTALL_TYPE=requirements
+        - DEPENDS=
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install

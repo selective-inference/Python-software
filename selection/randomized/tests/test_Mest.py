@@ -16,7 +16,7 @@ from ..api import randomization, multiple_queries, pairs_bootstrap_glm, glm_grou
 from ..glm import bootstrap_cov
 from ...distributions.discrete_family import discrete_family
 from ...sampling.langevin import projected_langevin
-from ..query import reconstruct_full
+from ..target import reconstruct_internal
 
 @register_report(['pvalue', 'active'])
 @wait_for_return_value()
@@ -93,10 +93,10 @@ def test_overall_null_two_queries():
             opt_state1 = state[opt_slice1]
             opt_state2 = state[opt_slice2]
             opt_linear1 = M_est1.opt_transform[0]
-            arg1 = reconstruct_full(target, (A1, b1), M_est1, opt_state1); grad1 = M_est1.construct_weights(arg1)
+            arg1 = reconstruct_internal(target, (A1, b1)); grad1 = M_est1.grad_log_density(arg1, opt_state1)
 
             opt_linear2 = M_est2.opt_transform[0]
-            arg2 = reconstruct_full(target, (A2, b2), M_est2, opt_state2); grad2 = M_est2.construct_weights(arg2)
+            arg2 = reconstruct_internal(target, (A2, b2)); grad2 = M_est2.grad_log_density(arg2, opt_state2)
 
             full_grad = np.zeros_like(state)
             full_grad[opt_slice1] = -opt_linear1.T.dot(grad1)
@@ -207,7 +207,7 @@ def test_one_inactive_coordinate_handcoded():
 
 
             opt_linear1 = M_est1.opt_transform[0]
-            arg1 = reconstruct_full(target, (A1, b1), M_est1, opt_state1); grad1 = M_est1.construct_weights(arg1)
+            arg1 = reconstruct_internal(target, (A1, b1)); grad1 = M_est1.grad_log_density(arg1, opt_state1)
 
             full_grad = np.zeros_like(state)
             full_grad[opt_slice1] = -opt_linear1.T.dot(grad1)

@@ -74,20 +74,22 @@ class greedy_score_step(query):
             
         # score at unpenalized M-estimator
 
-        self.observed_score_state = - self.loss.smooth_objective(beta_full, 'grad')[candidate]
+        self.observed_internal_state = - self.loss.smooth_objective(beta_full, 'grad')[candidate]
         self._randomZ = self.randomization.sample()
 
         self.num_opt_var = self._randomZ.shape[0]
 
         # find the randomized maximizer
 
-        randomized_score = self.observed_score_state - self._randomZ
+        # score transform is identity here so internal is the same as score coords
+
+        randomized_score = self.observed_internal_state - self._randomZ
         terms = self.group_lasso_dual.terms(randomized_score)
 
         # assuming a.s. unique maximizing group here
 
         maximizing_group = np.unique(self.group_lasso_dual.groups)[np.argmax(terms)]
-        maximizing_subgrad = self.observed_score_state[self.group_lasso_dual.groups == maximizing_group]
+        maximizing_subgrad = self.observed_internal_state[self.group_lasso_dual.groups == maximizing_group]
         maximizing_subgrad /= np.linalg.norm(maximizing_subgrad) # this is now a unit vector
         maximizing_subgrad *= self.group_lasso_dual.weights[maximizing_group] # now a vector of length given by weight of maximizing group
         self.maximizing_subgrad = np.zeros(candidate.sum())

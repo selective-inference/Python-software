@@ -42,7 +42,7 @@ def test_nonrandomized(s=0,
     if nactive == 0:
         return None
 
-    #score_mean = M_est.observed_score_state.copy()
+    #score_mean = M_est.observed_internal_state.copy()
     #score_mean[nactive:] = 0
     M_est.setup_sampler(score_mean = np.zeros(p))
     #M_est.setup_sampler(score_mean=score_mean)
@@ -51,10 +51,10 @@ def test_nonrandomized(s=0,
     if set(nonzero).issubset(np.nonzero(active)[0]):
         check_screen=True
         #test_stat = lambda x: np.linalg.norm(x)
-        #return M_est.hypothesis_test(test_stat, test_stat(M_est.observed_score_state), stepsize=1./p)
+        #return M_est.hypothesis_test(test_stat, test_stat(M_est.observed_internal_state), stepsize=1./p)
 
-        ci = M_est.confidence_intervals(M_est.observed_score_state)
-        pivots = M_est.coefficient_pvalues(M_est.observed_score_state)
+        ci = M_est.confidence_intervals(M_est.observed_internal_state)
+        pivots = M_est.coefficient_pvalues(M_est.observed_internal_state)
         def coverage(LU):
             L, U = LU[:, 0], LU[:, 1]
             covered = np.zeros(nactive)
