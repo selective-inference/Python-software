@@ -331,7 +331,7 @@ class optimization_sampler(object):
         '''
 
         if stepsize is None:
-            stepsize = 1./len(self.observed_opt_state) 
+            stepsize = 1./max(len(self.observed_opt_state), 1)
 
         target_langevin = projected_langevin(self.observed_opt_state.copy(),
                                              self.gradient,
