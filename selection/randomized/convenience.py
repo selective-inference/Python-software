@@ -16,7 +16,7 @@ from .glm import (target as glm_target,
                   glm_parametric_covariance,
                   pairs_bootstrap_glm)
 from .randomization import randomization
-from .query import multiple_queries, optimization_sampler
+from .query import multiple_queries
 from .M_estimator import restricted_Mest
 
 class lasso(object):
@@ -152,11 +152,8 @@ class lasso(object):
 
         if not hasattr(self, "_view"):
             raise ValueError("fit method should be run first")
-
-        self._view.decompose_subgradient(conditioning_groups=conditioning_groups,
+        self._view.decompose_subgradient(conditioning_groups=conditioning_groups, 
                                          marginalizing_groups=marginalizing_groups)
-
-        self._queries.setup_opt_state()
 
     def summary(self,
                 selected_features,
@@ -199,8 +196,8 @@ class lasso(object):
         if null_value is None:
             null_value = np.zeros(self.loglike.shape[0])
 
-        self._queries.setup_sampler(form_covariances=None)
-        self._queries.setup_opt_state()
+        #self._queries.setup_sampler(form_covariances=None)
+        #self._queries.setup_opt_state()
 
         unpenalized_mle = restricted_Mest(self.loglike, selected_features)
 
@@ -224,13 +221,7 @@ class lasso(object):
                 target_cov, score_cov = form_covariances(target_info,  
                                                          cross_terms=[cov_info])
 
-            opt_samplers.append(optimization_sampler(q.observed_opt_state,
-                                                     q.observed_internal_state,
-                                                     q.score_transform,
-                                                     q.opt_transform,
-                                                     q.projection,
-                                                     q.grad_log_density,
-                                                     q.log_density))
+            opt_samplers.append(q.sampler)
 
         opt_samples = [opt_sampler.sample(ndraw,
                                           burnin) for opt_sampler in opt_samplers]

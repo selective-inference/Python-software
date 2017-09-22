@@ -10,8 +10,7 @@ from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
 from .target import (targeted_sampler,
                      bootstrapped_target_sampler)
-from .reconstruction import (reconstruct_opt,
-                             reconstruct_full_from_internal)
+from .reconstruction import reconstruct_full_from_internal
 
 
 class query(object):
@@ -62,40 +61,49 @@ class query(object):
 
         return (composition_linear_part, composition_offset)
 
+    def get_sampler(self):
+        if hasattr(self, "_sampler"):
+            return self._sampler
+
+    def set_sampler(self, sampler):
+        self._sampler = sampler
+
+    sampler = property(get_sampler, set_sampler)
+
+    # implemented by subclasses
+
     # the default log conditional density of state given data 
     # with no conditioning or marginalizing
 
-    def log_density(self, internal_state, opt_state):
-        full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
-        return self.randomization.log_density(full_state)
+#     def log_density(self, internal_state, opt_state):
+#         full_state = reconstruct_full_from_internal(self.opt_transform, self.score_transform, internal_state, opt_state)
+#         return self.randomization.log_density(full_state)
 
-    def grad_log_density(self, internal_state, opt_state):
-        """
-        Gradient in opt_state coordinates
-        """
-        full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
-        opt_linear = self.opt_transform[0]
-        return opt_linear.T.dot(self.randomization.gradient(full_state))
+#     def grad_log_density(self, internal_state, opt_state):
+#         """
+#         Gradient in opt_state coordinates
+#         """
+#         full_state = reconstruct_full_from_internal(self.opt_transform, self.score_transform, internal_state, opt_state)
+#         opt_linear = self.opt_transform[0]
+#         return opt_linear.T.dot(self.randomization.gradient(full_state))
 
-     # implemented by subclasses
+#     def grad_log_jacobian(self, opt_state):
+#         """
+#         log_jacobian depends only on data through
+#         Hessian at \bar{\beta}_E which we
+#         assume is close to Hessian at \bar{\beta}_E^*
+#         """
+#         # needs to be implemented for group lasso
+#         return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
 
-    def grad_log_jacobian(self, opt_state):
-        """
-        log_jacobian depends only on data through
-        Hessian at \bar{\beta}_E which we
-        assume is close to Hessian at \bar{\beta}_E^*
-        """
-        # needs to be implemented for group lasso
-        return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
-
-    def jacobian(self, opt_state):
-        """
-        log_jacobian depends only on data through
-        Hessian at \bar{\beta}_E which we
-        assume is close to Hessian at \bar{\beta}_E^*
-        """
-        # needs to be implemented for group lasso
-        return 1.
+#     def jacobian(self, opt_state):
+#         """
+#         log_jacobian depends only on data through
+#         Hessian at \bar{\beta}_E which we
+#         assume is close to Hessian at \bar{\beta}_E^*
+#         """
+#         # needs to be implemented for group lasso
+#         return 1.
 
     def solve(self):
 
@@ -298,7 +306,8 @@ class optimization_sampler(object):
                  opt_transform,
                  projection,
                  grad_log_density,
-                 log_density):
+                 log_density,
+                 selection_info=None):
 
         '''
         Parameters
@@ -331,6 +340,7 @@ class optimization_sampler(object):
         self.projection = projection
         self.gradient = lambda opt: - grad_log_density(self.observed_internal_state, opt)
         self.log_density = log_density
+        self.selection_info = selection_info # a way to record what view and what was conditioned on -- not used in calculations
 
     def sample(self, ndraw, burnin, stepsize=None):
         '''

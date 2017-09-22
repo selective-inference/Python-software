@@ -66,13 +66,7 @@ def test_optimization_sampler(ndraw=1000, burnin=200):
                                                      cross_terms=[cov_info],
                                                      nsample=q.nboot)
 
-            opt_samplers.append(optimization_sampler(q.observed_opt_state,
-                                                     q.observed_internal_state,
-                                                     q.score_transform,
-                                                     q.opt_transform,
-                                                     q.projection,
-                                                     q.grad_log_density,
-                                                     q.log_density))
+            opt_samplers.append(q.sampler)
 
         for opt_sampler in opt_samplers:
             S = opt_sampler.sample(ndraw,

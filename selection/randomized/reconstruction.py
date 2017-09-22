@@ -28,48 +28,42 @@ def reconstruct_internal(data_state, data_transform):
     else:
         return np.squeeze(data_offset)
 
-def reconstruct_full_from_data(query, data_state, data_transform, opt_state):
+def reconstruct_full_from_data(opt_transform, score_transform, data_state, data_transform, opt_state):
     """
     Reconstruct original randomization state from state data
     and optimization state.
     """
 
-    if not query._setup:
-        raise ValueError('setup_sampler should be called before using this function')
-
     internal_state = reconstruct_internal(data_state, data_transform)
-    return np.squeeze(reconstruct_full_from_internal(query, internal_state, opt_state))
+    return np.squeeze(reconstruct_full_from_internal(opt_transform, score_transform, internal_state, opt_state))
 
-def reconstruct_opt(query, opt_state):
+def reconstruct_opt(opt_transform, opt_state):
     """
     Reconstruct part of the original randomization state 
     in terms of optimization state.
     """
-    if not query._setup:
-        raise ValueError('setup_sampler should be called on query before using this function')
-
-    opt_linear, opt_offset = query.opt_transform
+    opt_linear, opt_offset = opt_transform
     if opt_linear is not None:
         opt_state = np.atleast_2d(opt_state)
         return np.squeeze(opt_linear.dot(opt_state.T) + opt_offset[:, None]).T
     else:
         return opt_offset
 
-def reconstruct_score(query, internal_state):
+def reconstruct_score(score_transform, internal_state):
     """
     Reconstruct part of the original randomization state 
     determined by the score of the loss from 
     a query's internal coordinates.
     """
-    score_linear, score_offset = query.score_transform
+    score_linear, score_offset = score_transform
     return score_linear.dot(internal_state.T).T + score_offset
 
-def reconstruct_full_from_internal(query, internal_state, opt_state):
+def reconstruct_full_from_internal(opt_transform, score_transform, internal_state, opt_state):
     """
     Reconstruct original randomization state from internal state data
     and optimization state.
     """
-    randomization_internal = reconstruct_score(query, internal_state)
-    randomization_opt = reconstruct_opt(query, opt_state)
+    randomization_internal = reconstruct_score(score_transform, internal_state)
+    randomization_opt = reconstruct_opt(opt_transform, opt_state)
     return randomization_internal + randomization_opt
 

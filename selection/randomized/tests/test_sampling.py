@@ -173,13 +173,13 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
         selected_features = conv._view.selection_variable['variables']
         q = conv._view
 
-        opt_sampler = optimization_sampler(q.observed_opt_state,
-                                           q.observed_internal_state,
-                                           q.score_transform,
-                                           q.opt_transform,
-                                           q.projection,
-                                           q.grad_log_density,
-                                           q.log_density)
+        opt_sampler = q.sampler # optimization_sampler(q.observed_opt_state,
+#                                            q.observed_internal_state,
+#                                            q.score_transform,
+#                                            q.opt_transform,
+#                                            q.projection,
+#                                            q.grad_log_density,
+#                                            q.log_density)
 
         S = opt_sampler.sample(ndraw,
                                burnin,
@@ -229,7 +229,8 @@ def reconstruct_opt(query, state):
     if state.ndim > 2:
         raise ValueError('expecting at most 2-dimensional array')
 
-    reconstructed = reconstruct_full_from_internal(query,
+    reconstructed = reconstruct_full_from_internal(query.opt_transform,
+                                                   query.score_transform,
                                                    query.observed_internal_state,
                                                    state)
 
