@@ -72,39 +72,6 @@ class query(object):
 
     # implemented by subclasses
 
-    # the default log conditional density of state given data 
-    # with no conditioning or marginalizing
-
-#     def log_density(self, internal_state, opt_state):
-#         full_state = reconstruct_full_from_internal(self.opt_transform, self.score_transform, internal_state, opt_state)
-#         return self.randomization.log_density(full_state)
-
-#     def grad_log_density(self, internal_state, opt_state):
-#         """
-#         Gradient in opt_state coordinates
-#         """
-#         full_state = reconstruct_full_from_internal(self.opt_transform, self.score_transform, internal_state, opt_state)
-#         opt_linear = self.opt_transform[0]
-#         return opt_linear.T.dot(self.randomization.gradient(full_state))
-
-#     def grad_log_jacobian(self, opt_state):
-#         """
-#         log_jacobian depends only on data through
-#         Hessian at \bar{\beta}_E which we
-#         assume is close to Hessian at \bar{\beta}_E^*
-#         """
-#         # needs to be implemented for group lasso
-#         return self.derivative_logdet_jacobian(opt_state[self.scaling_slice])
-
-#     def jacobian(self, opt_state):
-#         """
-#         log_jacobian depends only on data through
-#         Hessian at \bar{\beta}_E which we
-#         assume is close to Hessian at \bar{\beta}_E^*
-#         """
-#         # needs to be implemented for group lasso
-#         return 1.
-
     def solve(self):
 
         raise NotImplementedError('abstract method')
@@ -122,10 +89,6 @@ class query(object):
 
         """
         raise NotImplementedError('abstract method -- only keyword arguments')
-
-    def projection(self, opt_state):
-
-        raise NotImplementedError('abstract method -- projection of optimization variables')
 
 class multiple_queries(object):
 
