@@ -167,7 +167,8 @@ class M_estimator(query):
         # we are implicitly assuming that
         # loss is a pairs model
 
-        _sqrt_scaling = np.sqrt(scaling)
+        self.scaling = scaling
+        _sqrt_scaling = np.sqrt(self.scaling)
 
         _beta_unpenalized = restricted_Mest(loss, overall, solve_args=solve_args)
 
@@ -474,9 +475,6 @@ class M_estimator(query):
                 inactive_marginal_groups[i] = True
                 limits_marginal_groups[i] = self.penalty.weights[g]
 
-        inactive_marginal_groups = inactive_marginal_groups
-        limits_marginal_groups = limits_marginal_groups
-
         opt_linear, opt_offset = self.opt_transform
 
         new_linear = np.zeros((opt_linear.shape[0], (self._active_groups.sum() +
@@ -579,8 +577,23 @@ class M_estimator(query):
                                             self.opt_transform[0],
                                             self.randomization._log_density)
 
-        new_projection = lambda opt: opt # this is wrong, but I am running a smoke test first
+        new_groups = self.penalty.groups[moving_inactive_groups]
+        _sqrt_scaling = np.sqrt(self.scaling)
+        new_weights = dict([(g, self.penalty.weights[g] / _sqrt_scaling) for g in self.penalty.weights.keys() if g in np.unique(new_groups)])
+        new_group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
 
+        def new_projection(group_lasso_dual,
+                           noverall,
+                           opt_state):
+            new_state = opt_state.copy()
+            new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
+            new_state[noverall:] = group_lasso_dual.bound_prox(opt_state[noverall:])
+            return new_state
+
+        new_projection = functools.partial(new_projection,
+                                           new_group_lasso_dual,
+                                           self._overall.sum())
+                                           
         new_selection_variable = copy(self.selection_variable)
         new_selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
 

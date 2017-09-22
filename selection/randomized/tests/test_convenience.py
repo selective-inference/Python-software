@@ -27,7 +27,7 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
                                                             [False, True]):
 
         inst, const = const_info
-        X, Y = inst(n=100, p=120, signal=0.1, s=3)[:2]
+        X, Y = inst(n=100, p=120, signal=1, s=10)[:2]
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 20
