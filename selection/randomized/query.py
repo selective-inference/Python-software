@@ -283,19 +283,6 @@ class optimization_sampler(object):
            to reflect only what is needed.)
         '''
 
-        # sampler will draw samples for bootstrap
-        # these are arguments to target_info and score_bootstrap
-        # nonparamteric bootstrap is np.random.choice(n, size=(n,), replace=True)
-        # residual bootstrap might be X_E.dot(\bar{\beta}_E)
-        # + np.random.choice(resid, size=(n,), replace=True)
-
-        # if target_set is not None, we assume that
-        # these coordinates (specified by a list of coordinates) of target
-        # is assumed to be independent of the rest
-        # the corresponding block of `target_cov` is zeroed out
-
-        # make sure we setup the queries
-
         self.observed_opt_state = observed_opt_state.copy()
         self.observed_internal_state = observed_internal_state.copy()
         self.score_linear, self.score_offset = score_transform
@@ -329,6 +316,9 @@ class optimization_sampler(object):
         -------
         gradient : np.float
         '''
+
+        if self.observed_opt_state.shape in ((), (0,)): # no opt variables to sample:
+            return None
 
         if stepsize is None:
             stepsize = 1./max(len(self.observed_opt_state), 1)
@@ -462,9 +452,11 @@ class optimization_sampler(object):
 
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
+        else:
+            ndraw = sample.shape[0]
 
         _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target)
+                                            observed_target, ndraw)
 
         limits = []
 
@@ -523,12 +515,14 @@ class optimization_sampler(object):
 
         if sample is None:
             sample = self.sample(ndraw, burnin, stepsize=stepsize)
+        else:
+            ndraw = sample.shape[0]
 
         if parameter is None:
             parameter = np.zeros(observed_target.shape[0])
 
         _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target)
+                                            observed_target, ndraw)
         pvals = []
 
         for i in range(observed_target.shape[0]):
@@ -556,11 +550,30 @@ class optimization_sampler(object):
 class optimization_intervals(object):
 
     def __init__(self,
-                 opt_sampling_info, # a sequence of (opt_sampler, opt_sample) objects
+                 opt_sampling_info, # a sequence of (opt_sampler, opt_sample, target_cov, score_cov) objects
+                                    # in theory all target_cov should be about the same...
                  observed,
+                 nsample, # how large a normal sample
                  target_cov=None):
 
-        self.opt_sampling_info = opt_sampling_info
+        # not all opt_samples will be of the same size as nsample 
+        # let's repeat them as necessary
+        
+        tiled_sampling_info = []
+        for opt_sampler, opt_sample, t_cov, score_cov in opt_sampling_info: 
+            if opt_sample is not None:
+                if opt_sample.shape[0] < nsample:
+                    if opt_sample.ndim == 1:
+                        tiled_opt_sample = np.tile(opt_sample, np.ceil(nsample / opt_sample.shape[0]))[:nsample]
+                    else:
+                        tiled_opt_sample = np.tile(opt_sample, (np.ceil(nsample / opt_sample.shape[0]), 1))[:nsample]
+                else:
+                    tiled_opt_sample = opt_sample[:nsample]
+            else:
+                tiled_sample = None
+            tiled_sampling_info.append((opt_sampler, opt_sample, t_cov, score_cov))
+
+        self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
         for opt_sampler, opt_sample, _, _ in opt_sampling_info:
             self._logden += opt_sampler.log_density(opt_sampler.observed_internal_state, opt_sample)
@@ -569,12 +582,13 @@ class optimization_intervals(object):
 
         if target_cov is None:
             self.target_cov = 0
-            for opt_sampler, opt_sample, target_cov, _ in opt_sampling_info:
+            for _, _, target_cov, _ in opt_sampling_info:
                 self.target_cov += target_cov
             self.target_cov /= len(opt_sampling_info)
+
         self._normal_sample = np.random.multivariate_normal(mean=np.zeros(self.target_cov.shape[0]), 
                                                             cov=self.target_cov, 
-                                                            size=(opt_sample.shape[0],))
+                                                            size=(nsample,))
 
     def pivot(self,
               linear_func,

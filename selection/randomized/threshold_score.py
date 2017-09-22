@@ -4,7 +4,7 @@ import numpy as np
 import regreg.api as rr
 
 from .query import query, optimization_sampler
-from .reconstruction import reconstruct_full_from_internal
+from .reconstruction import reconstruct_full_from_internal, reconstruct_score
 from .M_estimator import restricted_Mest
 
 class threshold_score(query):
@@ -142,47 +142,7 @@ class threshold_score(query):
 
         if not hasattr(self, "_sampler"):
 
-            def grad_log_density(boundary, 
-                                 opt_transform,
-                                 score_transform,
-                                 threshold,
-                                 _density,
-                                 _cdf,
-                                 internal_state, 
-                                 opt_state):
-                """
-                marginalizing over the sub-gradient
-                """
-
-                full_state = reconstruct_full_from_internal(opt_transform, score_transform, internal_state, opt_state)
-
-                weights = np.zeros_like(boundary, np.float)
-
-                weights[boundary] = ((_density(threshold[boundary] - full_state[boundary])
-                                           - _density(-threshold[boundary] - full_state[boundary])) /
-                                          (1 - _cdf(threshold[boundary] - full_state[boundary]) + 
-                                           _cdf(-threshold[boundary] - full_state[boundary])))
-
-
-                weights[~boundary] = ((-_density(threshold[~boundary] - 
-                                                 full_state[~boundary]) + 
-                                             _density(-threshold[~boundary] - full_state[~boundary])) /
-                                           (_cdf(threshold[~boundary] - full_state[~boundary]) - 
-                                            _cdf(-threshold[~boundary] - full_state[~boundary])))
-
-                opt_linear = opt_transform[0]
-                return opt_linear.T.dot(weights) ## tested
-
-            grad_log_density = functools.partial(grad_log_density,
-                                                 self.boundary,
-                                                 self.opt_transform,
-                                                 self.score_transform,
-                                                 self.threshold,
-                                                 self.randomization._density,
-                                                 self.randomization._cdf)
-
             def log_density(boundary, 
-                            opt_transform,
                             score_transform,
                             threshold,
                             _density,
@@ -193,25 +153,30 @@ class threshold_score(query):
                 marginalizing over the sub-gradient
                 """
 
-                full_state = reconstruct_full_from_internal(opt_transform, score_transform, internal_state, opt_state)
+                score_state = np.atleast_2d(reconstruct_score(score_transform, internal_state))
                 logdens = 0
                 weights = np.zeros_like(boundary, np.float)
 
-                logdens += np.log(1 - _cdf(threshold[boundary] - full_state[boundary]) + 
-                                  _cdf(-threshold[boundary] - full_state[boundary]))
-                logdens += np.log(_cdf(threshold[~boundary] - full_state[~boundary]) - 
-                                   _cdf(-threshold[~boundary] - full_state[~boundary]))
+                logdens += np.log(1 - _cdf(threshold[boundary] - score_state[:, boundary]) + 
+                                  _cdf(-threshold[boundary] - score_state[:, boundary])).sum()
+                logdens += np.log(_cdf(threshold[~boundary] - score_state[:, ~boundary]) - 
+                                   _cdf(-threshold[~boundary] - score_state[:, ~boundary])).sum()
                 return logdens
             
 
             log_density = functools.partial(log_density,
                                             self.boundary,
-                                            self.opt_transform,
                                             self.score_transform,
                                             self.threshold,
                                             self.randomization._density,
                                             self.randomization._cdf)
-            projection = lambda opt: opt
+
+            # the gradient and projection are used for 
+            # Langevin sampling of opt variables
+            # but this view has no opt variables
+
+            grad_log_density = None
+            projection = None
 
             self._sampler = optimization_sampler(self.observed_opt_state,
                                                  self.observed_internal_state.copy(),

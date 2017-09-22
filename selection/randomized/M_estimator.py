@@ -560,15 +560,15 @@ class M_estimator(query):
             full_state = reconstruct_full_from_internal(new_opt_transform, query.score_transform, internal_state, opt_state)
             full_state = np.atleast_2d(full_state)
             p = query.penalty.shape[0]
-            dens = 0
+            logdens = 0
 
             if inactive_marginal_groups.sum()>0:
                 full_state_plus = full_state + np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
                 full_state_minus = full_state - np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
-                dens += np.log(_cdf(full_state_plus) - _cdf(full_state_minus)).sum()
+                logdens += np.log(_cdf(full_state_plus) - _cdf(full_state_minus)).sum()
 
-            dens += log_dens(full_state[:,~inactive_marginal_groups])
-            return np.squeeze(dens) # should this be negative to match the gradient log density?
+            logdens += log_dens(full_state[:,~inactive_marginal_groups])
+            return np.squeeze(logdens) # should this be negative to match the gradient log density?
 
         new_log_density = functools.partial(new_log_density,
                                             self,
