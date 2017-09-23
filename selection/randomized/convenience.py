@@ -195,9 +195,6 @@ class lasso(object):
         if null_value is None:
             null_value = np.zeros(self.loglike.shape[0])
 
-        #self._queries.setup_sampler(form_covariances=None)
-        #self._queries.setup_opt_state()
-
         unpenalized_mle = restricted_Mest(self.loglike, selected_features)
 
         if self.parametric_cov_estimator == False:

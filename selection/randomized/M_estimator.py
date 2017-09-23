@@ -399,38 +399,6 @@ class M_estimator(query):
         der[self.scaling_slice] = np.array([np.matrix.trace(jacobian_inv_blocks[i]) for i in range(scalings.shape[0])])
         return der
 
-    def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
-        pass
-
-#     def projection(self, opt_state):
-#         """
-#         Full projection for Langevin.
-
-#         The state here will be only the state of the optimization variables.
-#         """
-
-#         if not self._setup:
-#             raise ValueError('setup_sampler should be called before using this function')
-
-#         if ('subgradient' not in self.selection_variable and 
-#             'scaling' not in self.selection_variable): # have not conditioned on any thing else
-#             new_state = opt_state.copy() # not really necessary to copy
-#             new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
-#             new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
-#         elif ('subgradient' not in self.selection_variable and
-#               'scaling' in self.selection_variable): # conditioned on the initial scalings
-#                                                      # only the subgradient in opt_state
-#             new_state = self.group_lasso_dual.bound_prox(opt_state)
-#         elif ('subgradient' in self.selection_variable and
-#               'scaling' not in self.selection_variable): # conditioned on the subgradient
-#                                                          # only the scaling in opt_state
-#             new_state = np.maximum(opt_state, 0)
-#         else:
-#             new_state = opt_state
-#         return new_state
-
-#     # optional things to condition on
-
     def decompose_subgradient(self, conditioning_groups=None, marginalizing_groups=None):
         """
         ADD DOCSTRING

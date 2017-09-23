@@ -127,47 +127,6 @@ class multiple_queries(object):
             if not objective._solved:
                 objective.solve()
 
-    def setup_sampler(self, form_covariances):
-        '''
-        Parameters
-        ----------
-        form_covariances : callable
-           A callable used to decompose
-           target of inference and the score
-           of each objective.
-        Notes
-        -----
-        This function sets the initial
-        `opt_state` of all optimization
-        variables in each view.
-        We also store a reference to `form_covariances`
-        which is called in the
-        construction of `targeted_sampler`.
-        Returns
-        -------
-        None
-        '''
-
-        self.form_covariances = form_covariances
-
-        nqueries = self.nqueries = len(self.objectives)
-
-        self.score_info = []
-        self.nboot = []
-        for objective in self.objectives:
-            score_ = objective.setup_sampler()
-            self.score_info.append(score_)
-            self.nboot.append(objective.nboot)
-
-        curr_randomization_length = 0
-        self.randomization_slice = []
-        for objective in self.objectives:
-            randomization_length = objective.randomization.shape[0]
-            self.randomization_slice.append(slice(curr_randomization_length,
-                                                  curr_randomization_length + randomization_length))
-            curr_randomization_length = curr_randomization_length + randomization_length
-        self.total_randomization_length = curr_randomization_length
-
 class optimization_sampler(object):
 
     '''

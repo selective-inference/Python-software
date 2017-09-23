@@ -396,7 +396,6 @@ def _parametric_cov_glm(glm_loss,
 class glm_group_lasso(M_estimator):
 
     def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
-        M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss,
                                               self.selection_variable['variables'],
@@ -423,7 +422,7 @@ class glm_group_lasso_parametric(M_estimator):
     # this setup_sampler returns only the active set
 
     def setup_sampler(self):
-        M_estimator.setup_sampler(self)
+
         return self.selection_variable['variables']
 
 
@@ -462,7 +461,6 @@ class fixedX_group_lasso(M_estimator):
                              randomization, solve_args=solve_args)
 
     def setup_sampler(self):
-        M_estimator.setup_sampler(self)
 
         X, Y = self.loss.data
 
