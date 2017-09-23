@@ -3,7 +3,6 @@ import numpy as np
 import nose.tools as nt
 
 from ..convenience import lasso, step, threshold
-from ..glm import target as glm_target
 from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)

@@ -7,8 +7,7 @@ from copy import copy
 import numpy as np
 import regreg.api as rr
 
-from .glm import (target as glm_target, 
-                  glm_group_lasso,
+from .glm import (glm_group_lasso,
                   glm_group_lasso_parametric,
                   glm_greedy_step,
                   glm_threshold_score,

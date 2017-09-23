@@ -8,10 +8,7 @@ from regreg.affine import power_L
 
 from ..distributions.api import discrete_family, intervals_from_sample
 from ..sampling.langevin import projected_langevin
-from .target import (targeted_sampler,
-                     bootstrapped_target_sampler)
 from .reconstruction import reconstruct_full_from_internal
-
 
 class query(object):
 
@@ -170,90 +167,6 @@ class multiple_queries(object):
                                                   curr_randomization_length + randomization_length))
             curr_randomization_length = curr_randomization_length + randomization_length
         self.total_randomization_length = curr_randomization_length
-
-    def setup_opt_state(self):
-        self.num_opt_var = 0
-        self.opt_slice = []
-
-        for objective in self.objectives:
-            self.opt_slice.append(slice(self.num_opt_var, self.num_opt_var + objective.num_opt_var))
-            self.num_opt_var += objective.num_opt_var
-        self.observed_opt_state = np.zeros(self.num_opt_var)
-        for i in range(len(self.objectives)):
-            if self.objectives[i].num_opt_var > 0:
-                self.observed_opt_state[self.opt_slice[i]] = self.objectives[i].observed_opt_state
-
-    def setup_target(self,
-                     target_info,
-                     observed_target_state,
-                     reference=None,
-                     target_set=None,
-                     parametric=False):
-        '''
-        Parameters
-        ----------
-        target_info : object
-           Passed as first argument to `self.form_covariances`.
-
-        observed_target_state : np.float
-           Observed value of the target estimator.
-
-        reference : np.float (optional)
-           Reference parameter for Gaussian approximation
-           of target.
-
-        target_set : sequence (optional)
-           Which coordinates of target are really
-           of interest. If not None, then coordinates
-           not in target_set are assumed to have 0
-           mean in the sampler.
-
-        Notes
-        -----
-
-        The variable `target_set` can be used for
-        a selected model test when some functionals
-        are assumed to have 0 mean in the limiting
-        Gaussian approximation. This can
-        sometimes mean an increase in power.
-
-        Returns
-        -------
-
-        target : targeted_sampler
-            An instance of `targeted_sampler` that
-            can be used to sample, test hypotheses,
-            form intervals.
-        '''
-
-        self.setup_opt_state()
-
-        return targeted_sampler(self,
-                                target_info,
-                                observed_target_state,
-                                self.form_covariances,
-                                target_set=target_set,
-                                reference=reference,
-                                parametric=parametric)
-
-    def setup_bootstrapped_target(self,
-                                  target_bootstrap,
-                                  observed_target_state,
-                                  target_alpha,
-                                  target_set=None,
-                                  reference=None,
-                                  boot_size=None):
-
-        self.setup_opt_state()
-
-        return bootstrapped_target_sampler(self,
-                                           target_bootstrap,
-                                           observed_target_state,
-                                           target_alpha,
-                                           target_set=target_set,
-                                           reference=reference,
-                                           boot_size=boot_size)
-
 
 class optimization_sampler(object):
 

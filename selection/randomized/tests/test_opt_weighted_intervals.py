@@ -12,7 +12,7 @@ from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 import matplotlib.pyplot as plt
 
 from scipy.stats import t as tdist
-from ..glm import target as glm_target, glm_nonparametric_bootstrap, pairs_bootstrap_glm
+from ..glm import glm_nonparametric_bootstrap, pairs_bootstrap_glm
 from ..M_estimator import restricted_Mest
 
 @set_seed_iftrue(False, 200)
