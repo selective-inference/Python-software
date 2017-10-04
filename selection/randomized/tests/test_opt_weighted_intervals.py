@@ -25,13 +25,13 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
         inst, const = const_info
 
-        X, Y, beta = inst(n=100, p=10, s=0, signal=1., sigma=5.)[:3]
+        X, Y, beta = inst(n=100, p=20, s=2, signal=5., sigma=5.)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 5
+        W = np.ones(X.shape[1]) * 7
         conv = const(X, Y, W, randomizer=rand, parametric_cov_estimator=True)
         signs = conv.fit()
-        print("signs", signs)
+        #print("signs", signs)
 
         #marginalizing_groups = np.zeros(p, np.bool)
         #marginalizing_groups[:int(p/2)] = True
@@ -41,7 +41,7 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         #                           conditioning_groups=conditioning_groups)
 
         selected_features = conv._view.selection_variable['variables']
-
+        print("nactive", selected_features.sum())
         sel_pivots, sel_ci = conv.summary(selected_features,
                                           null_value=beta[selected_features],
                                           ndraw=ndraw,
@@ -64,7 +64,7 @@ def compute_coverage(sel_ci, true_vec):
     return coverage
 
 
-def main(ndraw=20000, burnin=5000, nsim=10):
+def main(ndraw=20000, burnin=5000, nsim=50):
     np.random.seed(1)
 
     sel_pivots_all = list()

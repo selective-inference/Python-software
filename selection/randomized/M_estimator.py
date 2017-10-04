@@ -174,7 +174,7 @@ class M_estimator(query):
 
         beta_full = np.zeros(overall.shape)
         beta_full[overall] = _beta_unpenalized
-        _hessian = loss.hessian(beta_full)
+        #_hessian = loss.hessian(beta_full)
         self._beta_full = beta_full
 
         # observed state for score in internal coordinates
@@ -197,7 +197,10 @@ class M_estimator(query):
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
         Mest_slice = slice(0, overall.sum())
-        _Mest_hessian = _hessian[:, overall]
+        # _Mest_hessian = _hessian[:,overall]
+        X, y = loss.data
+        W = self.loss.saturated_loss.hessian(beta_full)
+        _Mest_hessian = np.dot(X.T, X[:, overall] * W[overall])
         _score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
@@ -213,7 +216,8 @@ class M_estimator(query):
         if len(active_directions)==0:
             _opt_hessian=0
         else:
-            _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
+            #_opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
+            _opt_hessian = np.dot(_Mest_hessian, active_directions[overall]) + epsilon * active_directions
         _opt_linear_term[:, scaling_slice] = _opt_hessian / _sqrt_scaling
 
         self.observed_opt_state[scaling_slice] *= _sqrt_scaling
@@ -223,8 +227,9 @@ class M_estimator(query):
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            _opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
-
+            #_opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
+            _opt_linear_term[:, unpenalized_slice] = (np.dot(_Mest_hessian, unpenalized_directions[overall])
+                                                      + epsilon * unpenalized_directions) / _sqrt_scaling
         self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
 
         # subgrad piece
@@ -279,9 +284,9 @@ class M_estimator(query):
         self.unpenalized_slice = unpenalized_slice
         self.ndim = loss.shape[0]
 
-        self.Q = ((_hessian + epsilon * np.identity(p))[:,active])[active,:]
-        self.Qinv = np.linalg.inv(self.Q)
-        self.form_VQLambda()
+        #self.Q = ((_hessian + epsilon * np.identity(p))[:,active])[active,:]
+        #self.Qinv = np.linalg.inv(self.Q)
+        #self.form_VQLambda()
         self.nboot = nboot
 
 
