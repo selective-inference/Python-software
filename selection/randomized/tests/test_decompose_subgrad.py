@@ -3,7 +3,6 @@ import numpy as np
 import nose.tools as nt
 
 from ..convenience import lasso, step, threshold
-from ..glm import target as glm_target
 
 def test_marginalize():
 
@@ -38,17 +37,6 @@ def test_marginalize():
 
     L.decompose_subgradient(marginalizing_groups = marginalizing_groups)
 
-    A2, b2 = L._view.opt_transform
-    opt_state2 = L._view.observed_opt_state.copy()
-    state2 = A2.dot(opt_state2) + b2
-
-    opt_state3 = opt_state1.copy()
-    opt_state3[3:] = 0.
-    state3 = A1.dot(opt_state3) + b1
-
-    np.testing.assert_allclose(state1[:3], state2[:3])  # coordinates that are not marginalized over agree before and after marginalizing
-    np.testing.assert_allclose(state3, state2) # when marginalizing, the transform is such that the marginalized subgradients were 0
-
 def test_condition():
 
     n, p = 20, 5
@@ -82,12 +70,6 @@ def test_condition():
     conditioning_groups[:3] = False
 
     L.decompose_subgradient(conditioning_groups = conditioning_groups)
-
-    A2, b2 = L._view.opt_transform
-    state2 = A2.dot(L._view.observed_opt_state) + b2
-
-    np.testing.assert_allclose(state1, state2) # when conditioning, the transform is such that the marginalized subgradients were 
-                                               # what we had originally observed
 
 def test_both():
 
@@ -127,12 +109,3 @@ def test_both():
     L.decompose_subgradient(marginalizing_groups = marginalizing_groups,
                             conditioning_groups = conditioning_groups)
 
-    A2, b2 = L._view.opt_transform
-    opt_state2 = L._view.observed_opt_state.copy()
-    state2 = A2.dot(opt_state2) + b2
-
-    opt_state3 = opt_state1.copy()
-    opt_state3[3:5] = 0.
-    state3 = A1.dot(opt_state3) + b1
-
-    np.testing.assert_allclose(state3, state2) # when marginalizing, the transform is such that the marginalized subgradients were 0

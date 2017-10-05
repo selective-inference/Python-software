@@ -171,8 +171,15 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
         print("signs", signs)
 
         selected_features = conv._view.selection_variable['variables']
+        q = conv._view
 
-        opt_sampler = optimization_sampler(conv._queries)
+        opt_sampler = q.sampler # optimization_sampler(q.observed_opt_state,
+#                                            q.observed_internal_state,
+#                                            q.score_transform,
+#                                            q.opt_transform,
+#                                            q.projection,
+#                                            q.grad_log_density,
+#                                            q.log_density)
 
         S = opt_sampler.sample(ndraw,
                                burnin,
@@ -183,7 +190,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
 
         # let's also reconstruct the omegas to compare
 
-        S_omega = reconstruct_opt(opt_sampler, S)
+        S_omega = reconstruct_opt(conv._view, S)
 
         opt_samples = sample_opt_vars(X, 
                                       Y, 
@@ -201,7 +208,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
     return results
 
     
-def reconstruct_opt(opt_sampler, state):
+def reconstruct_opt(query, state):
     '''
     Reconstruction of randomization at current state.
     Parameters
@@ -222,12 +229,9 @@ def reconstruct_opt(opt_sampler, state):
     if state.ndim > 2:
         raise ValueError('expecting at most 2-dimensional array')
 
-    reconstructed = np.zeros((state.shape[0], opt_sampler.total_randomization_length))
-
-    for i in range(opt_sampler.nqueries):
-        reconstructed[:,opt_sampler.randomization_slice[i]] = reconstruct_full_from_internal(opt_sampler.objectives[i],  
-                                                                                             opt_sampler.observed_internal[i],
-                                                                                             state[:,opt_sampler.opt_slice[i]])
-
+    reconstructed = reconstruct_full_from_internal(query.opt_transform,
+                                                   query.score_transform,
+                                                   query.observed_internal_state,
+                                                   state)
 
     return np.squeeze(reconstructed)

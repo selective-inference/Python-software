@@ -7,8 +7,7 @@ from copy import copy
 import numpy as np
 import regreg.api as rr
 
-from .glm import (target as glm_target, 
-                  glm_group_lasso,
+from .glm import (glm_group_lasso,
                   glm_group_lasso_parametric,
                   glm_greedy_step,
                   glm_threshold_score,
@@ -16,7 +15,7 @@ from .glm import (target as glm_target,
                   glm_parametric_covariance,
                   pairs_bootstrap_glm)
 from .randomization import randomization
-from .query import multiple_queries, optimization_sampler
+from .query import multiple_queries
 from .M_estimator import restricted_Mest
 
 class lasso(object):
@@ -152,11 +151,8 @@ class lasso(object):
 
         if not hasattr(self, "_view"):
             raise ValueError("fit method should be run first")
-
-        self._view.decompose_subgradient(conditioning_groups=conditioning_groups,
+        self._view.decompose_subgradient(conditioning_groups=conditioning_groups, 
                                          marginalizing_groups=marginalizing_groups)
-
-        self._queries.setup_opt_state()
 
     def summary(self,
                 selected_features,
@@ -199,15 +195,8 @@ class lasso(object):
         if null_value is None:
             null_value = np.zeros(self.loglike.shape[0])
 
-        self._queries.setup_sampler(form_covariances=None)
-        self._queries.setup_opt_state()
-        opt_sampler = optimization_sampler(self._queries)
-
-        S = opt_sampler.sample(ndraw,
-                               burnin,
-                               stepsize=1.e-3)
-
         unpenalized_mle = restricted_Mest(self.loglike, selected_features)
+
         if self.parametric_cov_estimator == False:
             n = self.loglike.data[0].shape[0]
             form_covariances = glm_nonparametric_bootstrap(n, n)
@@ -217,12 +206,28 @@ class lasso(object):
             target_info = (selected_features, np.identity(unpenalized_mle.shape[0]))
             form_covariances = glm_parametric_covariance(self.loglike)
 
-        opt_sampler.setup_target(target_info, form_covariances, parametric=self.parametric_cov_estimator)
+        opt_samplers = []
+        for q in self._queries.objectives:
+            cov_info = q.setup_sampler()
+            if self.parametric_cov_estimator == False:
+                target_cov, score_cov = form_covariances(target_info,  
+                                                         cross_terms=[cov_info],
+                                                         nsample=q.nboot)
+            else:
+                target_cov, score_cov = form_covariances(target_info,  
+                                                         cross_terms=[cov_info])
 
-        pvalues = opt_sampler.coefficient_pvalues(unpenalized_mle, parameter=null_value, sample=S)
+            opt_samplers.append(q.sampler)
+
+        opt_samples = [opt_sampler.sample(ndraw,
+                                          burnin) for opt_sampler in opt_samplers]
+
+        ### TODO -- this only uses one view -- what about other queries?
+
+        pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=null_value, sample=opt_samples[0])
         intervals = None
         if compute_intervals:
-            intervals = opt_sampler.confidence_intervals(unpenalized_mle, sample=S)
+            intervals = opt_samplers[0].confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_samples[0])
 
         return pvalues, intervals
 

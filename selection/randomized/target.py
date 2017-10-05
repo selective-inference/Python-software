@@ -211,7 +211,8 @@ class targeted_sampler(object):
 
         for i in range(self.nqueries):
 
-            randomization_state = reconstruct_full_from_data(self.objectives[i],
+            randomization_state = reconstruct_full_from_data(self.objectives[i].opt_transform,
+                                                             self.objectives[i].score_transform,
                                                              target_state, 
                                                              self.target_transform[i], 
                                                              opt_state[self.opt_slice[i]])
@@ -506,7 +507,8 @@ class targeted_sampler(object):
         reconstructed = np.zeros((state.shape[0], self.total_randomization_length))
 
         for i in range(self.nqueries):
-            reconstructed[:, self.randomization_slice[i]] = reconstruct_full_from_data(self.objectives[i],
+            reconstructed[:, self.randomization_slice[i]] = reconstruct_full_from_data(self.objectives[i].opt_transform,
+                                                                                       self.objectives[i].score_transform,
                                                                                        target_state,
                                                                                        self.target_transform[i],
                                                                                        opt_state[:, self.opt_slice[i]])
@@ -590,7 +592,8 @@ class bootstrapped_target_sampler(targeted_sampler):
 
         for i in range(self.nqueries):
 
-            randomization_state = reconstruct_full_from_data(self.objectives[i],
+            randomization_state = reconstruct_full_from_data(self.objectives[i].opt_transform,
+                                                             self.objectives[i].score_transform,
                                                              boot_state, 
                                                              self.boot_transform[i], 
                                                              opt_state[self.opt_slice[i]])
@@ -642,3 +645,5 @@ class bootstrapped_target_sampler(targeted_sampler):
         else:
             target_samples = samples.dot(self.target_alpha.T) + self.reference[None, :]
             return target_samples
+
+# test rebase
