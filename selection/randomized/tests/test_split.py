@@ -73,16 +73,16 @@ def test_split(s=3,
         opt_sample = M_est.sampler.sample(ndraw,
                                            burnin)
 
-        ### TODO -- this only uses one view -- what about other queries?
+        pvalues = M_est.sampler.coefficient_pvalues(unpenalized_mle, 
+                                                    target_cov, 
+                                                    score_cov, 
+                                                    parameter=np.zeros(selected_features.sum()), 
+                                                    sample=opt_sample)
+        intervals = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
 
-        pvalues = M_est.sampler.coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=null_value, sample=opt_sample)
-        intervals = None
-        if compute_intervals:
-            intervals = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
+        true_vec = beta[M_est.selection_variable['variables']] 
 
-        reference = beta[M_est.selection_variable['variables']] 
-
-        L, U = intervals
+        L, U = intervals.T
 
         covered = np.zeros(nactive, np.bool)
         active_var = np.zeros(nactive, np.bool)
@@ -90,8 +90,6 @@ def test_split(s=3,
         for j in range(nactive):
             if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
                 covered[j] = 1
-            if (LU_naive[j,0] <= true_vec[j]) and (LU_naive[j,1] >= true_vec[j]):
-                naive_covered[j] = 1
             active_var[j] = active_set[j] in nonzero
 
         return pvalues, covered, active_var

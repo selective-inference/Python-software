@@ -672,9 +672,11 @@ def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 class M_estimator_split(M_estimator):
 
     def __init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10}):
+
         total_size = loss.saturated_loss.shape[0]
         self.randomization = split(loss.shape, subsample_size, total_size)
-        M_estimator.__init__(self,loss, epsilon, penalty, self.randomization, solve_args=solve_args)
+
+        M_estimator.__init__(self, loss, epsilon, penalty, self.randomization, solve_args=solve_args)
 
         total_size = loss.saturated_loss.shape[0]
         if subsample_size > total_size:
@@ -682,60 +684,3 @@ class M_estimator_split(M_estimator):
 
         self.total_size, self.subsample_size = total_size, subsample_size
 
-
-    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}, B=2000):
-
-        M_estimator.setup_sampler(self, 
-                                  scaling=scaling,
-                                  solve_args=solve_args)
-        
-        # now we need to estimate covariance of
-        # loss.grad(\beta_E^*) - 1/pi * randomized_loss.grad(\beta_E^*)
-
-        m, n, p = self.subsample_size, self.total_size, self.loss.shape[0] # shorthand
-        
-        from .glm import pairs_bootstrap_score # need to correct these imports!!!
-
-        bootstrap_score = pairs_bootstrap_score(self.loss,
-                                                self._overall,
-                                                beta_active=self._beta_full[self._overall],
-                                                solve_args=solve_args)
-
-        # find unpenalized MLE on subsample
-
-        newq, oldq = rr.identity_quadratic(0, 0, 0, 0), self.randomized_loss.quadratic
-        self.randomized_loss.quadratic = newq
-        beta_active_subsample = restricted_Mest(self.randomized_loss,
-                                                self._overall)
-
-        bootstrap_score_split = pairs_bootstrap_score(self.loss,
-                                                      self._overall,
-                                                      beta_active=beta_active_subsample,
-                                                      solve_args=solve_args)
-        self.randomized_loss.quadratic = oldq
-
-        inv_frac = n / m
-        
-        def subsample_diff(m, n, indices):
-            subsample = np.random.choice(indices, size=m, replace=False)
-            full_score = bootstrap_score(indices) # a sum of n terms
-            randomized_score = bootstrap_score_split(subsample) # a sum of m terms
-            return full_score - randomized_score * inv_frac
-
-        first_moment = np.zeros(p)
-        second_moment = np.zeros((p, p))
-        
-        _n = np.arange(n)
-        for _ in range(B):
-            indices = np.random.choice(_n, size=n, replace=True)
-            randomized_score = subsample_diff(m, n, indices)
-            first_moment += randomized_score
-            second_moment += np.multiply.outer(randomized_score, randomized_score)
-
-        first_moment /= B
-        second_moment /= B
-
-        cov = second_moment - np.multiply.outer(first_moment,
-                                                first_moment)
-
-        self.randomization.set_covariance(cov)
