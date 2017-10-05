@@ -53,24 +53,27 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
 
     Xdiag = np.diag(X.T.dot(X))
     p = X.shape[1]
-    nactive = active.sum()
+
+    unpenalized = (lam == 0) * active
+    nunpenalized = unpenalized.sum()
     lower = -np.ones(p) * np.inf
     upper = -lower
-    active_set = np.where(active)[0]
+    active_set = np.where(active * (lam > 0))[0]
+    unpen_set = np.where(active * (lam == 0))[0]
     inactive_set = np.where(~active)[0]
 
+    nactive = active.sum() - unpenalized.sum()
+    nunpen = unpenalized.sum()
     for i in range(nactive):
         var = active_set[i]
         if lam[var] != 0:
             if signs[var]>0:
                     lower[i] = (-X[:, var].T.dot(y) + lam[var] * signs[var])
-                    upper[i] = np.inf
             else:
-                lower[i] = -np.inf
                 upper[i] = (-X[:,var].T.dot(y) + lam[var] * signs[var]) 
 
-    lower[range(nactive, p)] = -lam[inactive_set] - X[:, inactive_set].T.dot(y)
-    upper[range(nactive, p)] = lam[inactive_set] - X[:, inactive_set].T.dot(y)
+    lower[range(nactive + nunpen, p)] = -lam[inactive_set] - X[:, inactive_set].T.dot(y)
+    upper[range(nactive + nunpen, p)] = lam[inactive_set] - X[:, inactive_set].T.dot(y)
 
     print(lower, 'lower')
     print(upper, 'upper')
@@ -84,15 +87,21 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
                           X[:, active_set].T.dot(y) - 
                           lam[active_set] * signs[active_set], 
                           (epsilon + Xdiag[active_set]) * signs[active_set])
-    u_samples = omega_samples[:, nactive:] + X[:, inactive_set].T.dot(y)
+    unpen_beta_samples = np.true_divide( 
+                          omega_samples[:, nactive:(nactive + nunpen)] + 
+                          X[:, unpen_set].T.dot(y), 
+                          (epsilon + Xdiag[unpen_set]))
+    u_samples = omega_samples[:, (nactive + nunpen):] + X[:, inactive_set].T.dot(y)
 
     # this ordering should be correct?
 
     reordered_omega = np.zeros_like(omega_samples)
     reordered_omega[:, active_set] = omega_samples[:, :nactive]
-    reordered_omega[:, inactive_set] = omega_samples[:, nactive:]
+    reordered_omega[:, unpen_set] = omega_samples[:, nactive:(nactive + nunpen)]
+    reordered_omega[:, inactive_set] = omega_samples[:, (nactive + nunpen):]
 
-    return np.concatenate((abs_beta_samples, u_samples), axis=1), reordered_omega
+    return np.concatenate((abs_beta_samples, unpen_beta_samples, u_samples), axis=1), reordered_omega
+
 
 def orthogonal_design(n, p, s, signal, sigma, random_signs=True):
     scale = np.linspace(2, 3, p)
@@ -162,18 +171,26 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
         print("signs", signs)
 
         selected_features = conv._view.selection_variable['variables']
+        q = conv._view
 
-        opt_sampler = optimization_sampler(conv._queries)
+        opt_sampler = q.sampler # optimization_sampler(q.observed_opt_state,
+#                                            q.observed_internal_state,
+#                                            q.score_transform,
+#                                            q.opt_transform,
+#                                            q.projection,
+#                                            q.grad_log_density,
+#                                            q.log_density)
 
         S = opt_sampler.sample(ndraw,
                                burnin,
                                stepsize=stepsize)
         print(S.shape)
         print([np.mean(S[:,i]) for i in range(p)])
+        print(selected_features, 'selected')
 
         # let's also reconstruct the omegas to compare
 
-        S_omega = reconstruct_opt(opt_sampler, S)
+        S_omega = reconstruct_opt(conv._view, S)
 
         opt_samples = sample_opt_vars(X, 
                                       Y, 
@@ -191,7 +208,7 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
     return results
 
     
-def reconstruct_opt(opt_sampler, state):
+def reconstruct_opt(query, state):
     '''
     Reconstruction of randomization at current state.
     Parameters
@@ -212,12 +229,9 @@ def reconstruct_opt(opt_sampler, state):
     if state.ndim > 2:
         raise ValueError('expecting at most 2-dimensional array')
 
-    reconstructed = np.zeros((state.shape[0], opt_sampler.total_randomization_length))
-
-    for i in range(opt_sampler.nqueries):
-        reconstructed[:,opt_sampler.randomization_slice[i]] = reconstruct_full_from_internal(opt_sampler.objectives[i],  
-                                                                                             opt_sampler.observed_internal[i],
-                                                                                             state[:,opt_sampler.opt_slice[i]])
-
+    reconstructed = reconstruct_full_from_internal(query.opt_transform,
+                                                   query.score_transform,
+                                                   query.observed_internal_state,
+                                                   state)
 
     return np.squeeze(reconstructed)

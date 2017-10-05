@@ -3,14 +3,13 @@ import numpy as np
 import nose.tools as nt
 
 from ..convenience import lasso, step, threshold
-from ..glm import target as glm_target
 from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
 from ...tests.flags import SMALL_SAMPLES
 from ...tests.decorators import set_sampling_params_iftrue 
 
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=2, burnin=2)
+@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=50, burnin=20)
 def test_lasso_constructors(ndraw=1000, burnin=200):
     """
     Smoke tests for lasso convenience constructors
@@ -27,7 +26,7 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
                                                             [False, True]):
 
         inst, const = const_info
-        X, Y = inst(n=10, p=20, signal=1, s=3)[:2]
+        X, Y = inst(n=100, p=120, signal=1, s=10)[:2]
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 20
@@ -64,15 +63,6 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
         conv.summary(selected_features,
                      ndraw=ndraw,
                      burnin=burnin)
-
-        target_sampler, target_observed = glm_target(conv.loglike,
-                                                     selected_features,
-                                                     conv._queries,
-                                                     bootstrap=False)
-
-        S = target_sampler.sample(ndraw,
-                                  burnin)
-
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_step_constructors(ndraw=1000, burnin=200):

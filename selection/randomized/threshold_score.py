@@ -1,8 +1,10 @@
+import functools
+
 import numpy as np
 import regreg.api as rr
 
-from .query import query
-from .reconstruction import reconstruct_full_from_internal
+from .query import query, optimization_sampler
+from .reconstruction import reconstruct_full_from_internal, reconstruct_score
 from .M_estimator import restricted_Mest
 
 class threshold_score(query):
@@ -125,30 +127,6 @@ class threshold_score(query):
         self.nboot = nboot
         self.ndim = self.loss.shape[0]
 
-    def grad_log_density(self, internal_state, opt_state):
-        """
-        marginalizing over the sub-gradient
-        """
-
-        if not self._setup:
-            raise ValueError('setup_sampler should be called before using this function')
-
-        full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
-
-        threshold = self.threshold
-        weights = np.zeros_like(self.boundary, np.float)
-
-        weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary]) - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
-                                  (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
-
-
-        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
-                                   (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
-
-        return weights ## tested
-
-    def setup_sampler(self):
-
         # must set observed_opt_state, opt_transform and score_transform
 
         p = self.boundary.shape[0]  # shorthand
@@ -160,11 +138,58 @@ class threshold_score(query):
 
         self._setup = True
 
-    def projection(self, opt_state):
-        """
-        Full projection for Langevin.
-        The state here will be only the state of the optimization variables.
-        for now, groups are singletons
-        """
-        return opt_state
+    def get_sampler(self):
+
+        if not hasattr(self, "_sampler"):
+
+            def log_density(boundary, 
+                            score_transform,
+                            threshold,
+                            _density,
+                            _cdf,
+                            internal_state, 
+                            opt_state):
+                """
+                marginalizing over the sub-gradient
+                """
+
+                score_state = np.atleast_2d(reconstruct_score(score_transform, internal_state))
+                logdens = 0
+                weights = np.zeros_like(boundary, np.float)
+
+                logdens += np.log(1 - _cdf(threshold[boundary] - score_state[:, boundary]) + 
+                                  _cdf(-threshold[boundary] - score_state[:, boundary])).sum()
+                logdens += np.log(_cdf(threshold[~boundary] - score_state[:, ~boundary]) - 
+                                   _cdf(-threshold[~boundary] - score_state[:, ~boundary])).sum()
+                return logdens
+            
+
+            log_density = functools.partial(log_density,
+                                            self.boundary,
+                                            self.score_transform,
+                                            self.threshold,
+                                            self.randomization._density,
+                                            self.randomization._cdf)
+
+            # the gradient and projection are used for 
+            # Langevin sampling of opt variables
+            # but this view has no opt variables
+
+            grad_log_density = None
+            projection = None
+
+            self._sampler = optimization_sampler(self.observed_opt_state,
+                                                 self.observed_internal_state.copy(),
+                                                 self.score_transform,
+                                                 self.opt_transform,
+                                                 projection,
+                                                 grad_log_density,
+                                                 log_density)
+        return self._sampler
+
+    sampler = property(get_sampler, query.set_sampler)
+
+    def setup_sampler(self):
+        pass
+
 
