@@ -9,10 +9,15 @@ import selection.tests.reports as reports
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import (randomization,
                            split_glm_group_lasso,
-                           multiple_queries,
-                           glm_target)
+                           multiple_queries)
 from ...tests.instance import logistic_instance
 from ...tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
+
+from ..glm import (standard_split_ci,
+                   glm_nonparametric_bootstrap,
+                   pairs_bootstrap_glm)
+
+from ..M_estimator import restricted_Mest
 from ..query import naive_confidence_intervals
 
 @register_report(['pivots_clt', 'pivots_boot',
@@ -68,66 +73,63 @@ def test_multiple_splits(s=3,
     if check_screen and not screen:
         return None
 
-    if True:
-        active_set = np.nonzero(active_union)[0]
-        true_vec = beta[active_union]
+    true_vec = beta[active_union]
+    selected_features = np.zeros(p, np.bool)
+    selected_features[active_union] = True
 
-        ## bootstrap
-        target_sampler_boot, target_observed = glm_target(loss,
-                                                          active_union,
-                                                          mv,
-                                                          bootstrap=True)
+    unpenalized_mle = restricted_Mest(loss, selected_features)
 
-        target_sample_boot = target_sampler_boot.sample(ndraw=ndraw,
-                                                        burnin=burnin)
-        LU_boot = target_sampler_boot.confidence_intervals(target_observed,
-                                                           sample=target_sample_boot,
-                                                           level=0.9)
-        pivots_boot = target_sampler_boot.coefficient_pvalues(target_observed,
-                                                              parameter=true_vec,
-                                                              sample=target_sample_boot)
-        ## CLT plugin
-        target_sampler, _ = glm_target(loss,
-                                       active_union,
-                                       mv,
-                                       bootstrap=False)
+    form_covariances = glm_nonparametric_bootstrap(n, n)
+    target_info, target_observed = pairs_bootstrap_glm(loss, selected_features, inactive=None)
 
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample,
-                                                 level=0.9)
-        pivots = target_sampler.coefficient_pvalues(target_observed,
-                                                    parameter=true_vec,
-                                                    sample=target_sample)
+    cov_info = view[0].setup_sampler()
+    target_cov, score_cov = form_covariances(target_info,  
+                                             cross_terms=[cov_info],
+                                             nsample=view[0].nboot)
 
-        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
+    for v in view:
+        v.setup_sampler()
+    opt_samples = [v.sampler.sample(ndraw,
+                                    burnin) for v in view]
 
+    #### XXX TODO these only use one view!
+    pivots = view[0].sampler.coefficient_pvalues(unpenalized_mle, 
+                                                 target_cov, 
+                                                 score_cov, 
+                                                 parameter=true_vec,
+                                                 sample=opt_samples[0])
+    LU = view[0].sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_samples[0])
 
-        def coverage(LU):
-            L, U = LU[:,0], LU[:,1]
-            covered = np.zeros(nactive)
-            ci_length = np.zeros(nactive)
+    LU_naive = naive_confidence_intervals(np.diag(target_cov), target_observed)
 
-            for j in range(nactive):
-                if check_screen:
-                  if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
-                    covered[j] = 1
-                else:
-                    covered[j] = None
-                ci_length[j] = U[j]-L[j]
-            return covered, ci_length
+    def coverage(LU):
+        L, U = LU[:,0], LU[:,1]
+        covered = np.zeros(nactive)
+        ci_length = np.zeros(nactive)
 
-        covered, ci_length = coverage(LU)
-        covered_boot, ci_length_boot = coverage(LU_boot)
-        covered_naive, ci_length_naive = coverage(LU_naive)
-
-        active_var = np.zeros(nactive, np.bool)
         for j in range(nactive):
-            active_var[j] = active_set[j] in nonzero
+            if check_screen:
+              if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
+                covered[j] = 1
+            else:
+                covered[j] = None
+            ci_length[j] = U[j]-L[j]
+        return covered, ci_length
 
-        return pivots, pivots_boot, covered, ci_length, covered_boot, ci_length_boot, \
-                active_var, covered_naive, ci_length_naive
+    covered, ci_length = coverage(LU)
+    covered_naive, ci_length_naive = coverage(LU_naive)
+
+    active_set = np.where(active_union)[0]
+    active_var = np.zeros(nactive, np.bool)
+    for j in range(nactive):
+        active_var[j] = active_set[j] in nonzero
+
+    return (pivots, 
+            covered, 
+            ci_length, 
+            active_var, 
+            covered_naive, 
+            ci_length_naive)
 
 
 def report(niter=3, **kwargs):

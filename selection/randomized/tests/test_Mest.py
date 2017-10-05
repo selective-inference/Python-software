@@ -1,6 +1,5 @@
 """
-These tests exposes lower level functions than needed -- see tests_multiple_queries for simpler constructions
-using glm_target
+These tests exposes lower level functions than needed -- see test_convenience for simpler constructions
 """
 from __future__ import print_function
 import numpy as np, pandas as pd

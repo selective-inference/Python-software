@@ -3,19 +3,21 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.instance import (gaussian_instance, logistic_instance)
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 import selection.tests.reports as reports
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.instance import (gaussian_instance, logistic_instance)
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 
-from selection.api import (randomization, 
-                           glm_group_lasso, 
-                           multiple_queries, 
-                           glm_target)
-from selection.randomized.M_estimator import restricted_Mest
-from selection.randomized.query import (naive_pvalues, naive_confidence_intervals)
+from ..randomization import randomization
 
-@register_report(['mle', 'truth', 'pvalue', 'cover', 'ci_length_clt',
+from ..M_estimator import restricted_Mest
+from ..query import (naive_pvalues, naive_confidence_intervals)
+from ..glm import (glm_group_lasso,
+                   glm_nonparametric_bootstrap,
+                   glm_parametric_covariance,
+                   pairs_bootstrap_glm)
+
+@register_report(['pvalue', 'cover', 'ci_length_clt',
                   'naive_pvalues', 'naive_cover', 'ci_length_naive', 'active'])
 @set_seed_iftrue(SET_SEED, seed=20)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
@@ -53,23 +55,18 @@ def test_intervals(s=0,
     epsilon = 1./np.sqrt(n)
 
     W = lam_frac*np.ones(p)*lam
-    # W[0] = 0 # use at least some unpenalized
+    W[0] = 0 # use at least some unpenalized
     groups = np.concatenate([np.arange(10) for i in range(p//10)])
-    #print(groups)
-    #groups = np.arange(p)
+
     penalty = rr.group_lasso(groups,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    # first randomization
-    M_est1 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    mv = multiple_queries([M_est1])
-    # second randomization
-    #M_est2 = glm_group_lasso(loss, epsilon, penalty, randomizer)
-    #mv = multiple_queries([M_est1, M_est2])
 
-    mv.solve()
+    M_est = glm_group_lasso(loss, epsilon, penalty, randomizer)
+    M_est.solve()
 
-    active_union = M_est1.selection_variable['variables']
+
+    active_union = M_est.selection_variable['variables']
     print("active set", np.nonzero(active_union)[0])
     nactive = np.sum(active_union)
 
@@ -81,29 +78,33 @@ def test_intervals(s=0,
         active_set = np.nonzero(active_union)[0]
         true_vec = beta[active_union]
 
-        target_sampler, target_observed = glm_target(loss,
-                                                     active_union,
-                                                     mv,
-                                                     bootstrap=bootstrap)
+        selected_features = np.zeros(p, np.bool)
+        selected_features[active_set] = True
 
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample,
-                                                 level=0.9)
-        pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-                                                        parameter=target_sampler.reference,
-                                                        sample=target_sample)
-        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                      parameter=true_vec,
-                                                      sample=target_sample)
-        pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                 parameter=np.zeros_like(true_vec),
-                                                 sample=target_sample)
+        unpenalized_mle = restricted_Mest(M_est.loss, selected_features)
 
-        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        target_info, target_observed = pairs_bootstrap_glm(M_est.loss, selected_features, inactive=None)
 
-        L, U = LU.T
+        cov_info = M_est.setup_sampler()
+        target_cov, score_cov = form_covariances(target_info,  
+                                                 cross_terms=[cov_info],
+                                                 nsample=M_est.nboot)
+
+        opt_sample = M_est.sampler.sample(ndraw,
+                                          burnin)
+
+        pvalues = M_est.sampler.coefficient_pvalues(unpenalized_mle, 
+                                                    target_cov, 
+                                                    score_cov, 
+                                                    parameter=np.zeros(selected_features.sum()), 
+                                                    sample=opt_sample)
+        intervals = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
+
+        L, U = intervals.T
+
+        LU_naive = naive_confidence_intervals(np.diag(target_cov), target_observed)
+
         ci_length_sel = np.zeros(nactive)
         covered = np.zeros(nactive, np.bool)
         naive_covered = np.zeros(nactive, np.bool)
@@ -119,35 +120,15 @@ def test_intervals(s=0,
             ci_length_naive[j]= LU_naive[j,1]-LU_naive[j,0]
             active_var[j] = active_set[j] in nonzero
 
-        naive_pvals = naive_pvalues(target_sampler, target_observed, true_vec)
+        naive_pvals = naive_pvalues(np.diag(target_cov), target_observed, true_vec)
 
-        return pivots_mle, pivots_truth, pvalues, covered, ci_length_sel,\
-               naive_pvals, naive_covered, ci_length_naive, active_var
-
-
-def report_both(niter=10, **kwargs):
-
-    kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 7, 'bootstrap': False, 'randomizer': 'gaussian'}
-    intervals_report = reports.reports['test_intervals']
-    CLT_runs = reports.collect_multiple_runs(intervals_report['test'],
-                                             intervals_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-
-    #fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
-    fig = reports.pivot_plot_2in1(CLT_runs, color='b', label='CLT')
-
-    kwargs['bootstrap'] = True
-    bootstrap_runs = reports.collect_multiple_runs(intervals_report['test'],
-                                                   intervals_report['columns'],
-                                                   niter,
-                                                   reports.summarize_all,
-                                                   **kwargs)
-
-    #fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-    fig = reports.pivot_plot_2in1(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-    fig.savefig('intervals_pivots.pdf') # will have both bootstrap and CLT on plot
+        return (pvalues, 
+                covered, 
+                ci_length_sel,
+                naive_pvals, 
+                naive_covered, 
+                ci_length_naive, 
+                active_var)
 
 def report(niter=50, **kwargs):
     kwargs = {'s': 0, 'n': 600, 'p': 100, 'signal': 7, 'bootstrap': False, 'randomizer':'gaussian',

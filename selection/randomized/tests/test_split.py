@@ -71,7 +71,7 @@ def test_split(s=3,
                                                  nsample=M_est.nboot)
 
         opt_sample = M_est.sampler.sample(ndraw,
-                                           burnin)
+                                          burnin)
 
         pvalues = M_est.sampler.coefficient_pvalues(unpenalized_mle, 
                                                     target_cov, 

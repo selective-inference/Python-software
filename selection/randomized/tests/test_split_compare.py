@@ -79,7 +79,7 @@ def test_split_compare(s=3,
         selected_features = np.zeros(p, np.bool)
         selected_features[active_set] = True
 
-        unpenalized_mle = restricted_Mest(M_est.loss, selected_features)
+        unpenalized_mle = restricted_Mest(loss, selected_features)
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
         target_info, target_observed = pairs_bootstrap_glm(M_est.loss, selected_features, inactive=None)

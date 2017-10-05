@@ -567,7 +567,7 @@ def glm_nonparametric_bootstrap(m, n):
     return functools.partial(bootstrap_cov, lambda: np.random.choice(n, size=(m,), replace=True))
 
 def resid_bootstrap(gaussian_loss,
-                    active,
+                    active, # boolean
                     inactive=None,
                     scaling=1.):
 

@@ -222,6 +222,8 @@ class lasso(object):
         opt_samples = [opt_sampler.sample(ndraw,
                                           burnin) for opt_sampler in opt_samplers]
 
+        ### TODO -- this only uses one view -- what about other queries?
+
         pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=null_value, sample=opt_samples[0])
         intervals = None
         if compute_intervals:
