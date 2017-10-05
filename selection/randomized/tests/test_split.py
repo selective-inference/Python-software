@@ -3,17 +3,18 @@ import numpy as np
 
 import regreg.api as rr
 
-from selection.tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
+from ...tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
 import selection.tests.reports as reports
-from selection.tests.flags import SMALL_SAMPLES
+from ...tests.flags import SMALL_SAMPLES
+from ...tests.instance import logistic_instance
 
-from selection.api import multiple_queries, glm_target
-from selection.randomized.glm import split_glm_group_lasso
-from selection.tests.instance import logistic_instance
+from ..glm import (split_glm_group_lasso,
+                   glm_nonparametric_bootstrap,
+                   glm_parametric_covariance,
+                   pairs_bootstrap_glm)
+from ..M_estimator import restricted_Mest
 
-from selection.randomized.query import naive_confidence_intervals
-
-@register_report(['mle', 'truth', 'pvalue', 'cover', 'naive_cover', 'active'])
+@register_report(['pvalue', 'cover', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
 def test_split(s=3,
@@ -25,7 +26,6 @@ def test_split(s=3,
                lam_frac=0.7,
                ndraw=10000, 
                burnin=2000, 
-               bootstrap=True,
                solve_args={'min_its':50, 'tol':1.e-10},
                reference_known=False): 
 
@@ -44,10 +44,9 @@ def test_split(s=3,
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     M_est = split_glm_group_lasso(loss, epsilon, m, penalty)
-    mv = multiple_queries([M_est])
-    mv.solve()
+    M_est.solve()
 
-    M_est.selection_variable['variables'] = M_est.selection_variable['variables']
+    M_est.selection_variable['variables'] 
     nactive = np.sum(M_est.selection_variable['variables'])
 
     if nactive==0:
@@ -57,52 +56,35 @@ def test_split(s=3,
 
         active_set = np.nonzero(M_est.selection_variable['variables'])[0]
 
-        if bootstrap:
-            target_sampler, target_observed = glm_target(loss, 
-                                                         M_est.selection_variable['variables'],
-                                                         mv)
+        selected_features = np.zeros(p, np.bool)
+        selected_features[active_set] = True
 
-        else:
-            target_sampler, target_observed = glm_target(loss, 
-                                                         M_est.selection_variable['variables'],
-                                                         mv,
-                                                         bootstrap=True)
+        unpenalized_mle = restricted_Mest(M_est.loss, selected_features)
 
-        reference_known = True
-        if reference_known:
-            reference = beta[M_est.selection_variable['variables']] 
-        else:
-            reference = target_observed
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        boot_target, boot_target_observed = pairs_bootstrap_glm(M_est.loss, selected_features, inactive=None)
+        target_info = boot_target
 
-        target_sampler.reference = reference
+        cov_info = M_est.setup_sampler()
+        target_cov, score_cov = form_covariances(target_info,  
+                                                 cross_terms=[cov_info],
+                                                 nsample=M_est.nboot)
 
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
+        opt_sample = M_est.sampler.sample(ndraw,
+                                           burnin)
 
+        ### TODO -- this only uses one view -- what about other queries?
 
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample).T
+        pvalues = M_est.sampler.coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=null_value, sample=opt_sample)
+        intervals = None
+        if compute_intervals:
+            intervals = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
 
-        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
+        reference = beta[M_est.selection_variable['variables']] 
 
-        pivots_mle = target_sampler.coefficient_pvalues(target_observed,
-                                                        parameter=target_sampler.reference,
-                                                        sample=target_sample)
-        
-        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                          parameter=beta[M_est.selection_variable['variables']],
-                                                          sample=target_sample)
-        
-        true_vec = beta[M_est.selection_variable['variables']]
-
-        pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                     parameter=np.zeros_like(true_vec),
-                                                     sample=target_sample)
-
-        L, U = LU
+        L, U = intervals
 
         covered = np.zeros(nactive, np.bool)
-        naive_covered = np.zeros(nactive, np.bool)
         active_var = np.zeros(nactive, np.bool)
 
         for j in range(nactive):
@@ -112,7 +94,7 @@ def test_split(s=3,
                 naive_covered[j] = 1
             active_var[j] = active_set[j] in nonzero
 
-        return pivots_mle, pivots_truth, pvalues, covered, naive_covered, active_var
+        return pvalues, covered, active_var
 
 def report(niter=50, **kwargs):
 
