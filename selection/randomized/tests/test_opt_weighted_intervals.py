@@ -33,12 +33,12 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         signs = conv.fit()
         #print("signs", signs)
 
-        #marginalizing_groups = np.zeros(p, np.bool)
-        #marginalizing_groups[:int(p/2)] = True
-        #conditioning_groups = ~marginalizing_groups
-        #conditioning_groups[-int(p/4):] = False
-        #conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
-        #                           conditioning_groups=conditioning_groups)
+        marginalizing_groups = np.zeros(p, np.bool)
+        marginalizing_groups[:int(p/2)] = True
+        conditioning_groups = ~marginalizing_groups
+        conditioning_groups[-int(p/4):] = False
+        conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
+                                   conditioning_groups=conditioning_groups)
 
         selected_features = conv._view.selection_variable['variables']
         print("nactive", selected_features.sum())
