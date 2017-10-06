@@ -117,6 +117,8 @@ class greedy_score_map(greedy_score_step):
         self.B_active = self._opt_linear_term[:nactive, :nactive]
         self.B_inactive = self._opt_linear_term[nactive:, :nactive]
 
+        self.observed_score_state = self.observed_internal_state
+
     def setup_map(self, j):
         self.A = np.dot(self._score_linear_term, self.score_target_cov[:, j]) / self.target_cov[j, j]
         self.null_statistic = self._score_linear_term.dot(self.observed_score_state) - self.A * self.target_observed[j]
