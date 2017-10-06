@@ -42,7 +42,7 @@ def test_fixed_lambda():
         # extract coef for a given lambda; note the 1/n factor!
         # (and we don't save the intercept term)
         lam = %f
-        beta_hat = coef(gfit, s=lam/n, exact=TRUE)
+        beta_hat = coef(gfit, s=lam/n, exact=TRUE, x=x, y=y)
         beta_hat = beta_hat[-1]
 
         # compute fixed lambda p-values and selection intervals
@@ -211,7 +211,7 @@ def test_coxph():
     # extract coef for a given lambda; note the 1/n factor!
 
     lambda = 1.5
-    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE))
+    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE, x=x, y=Surv(tim, status)))
     # compute fixed lambda p-values and selection intervals
     out = fixedLassoInf(x,tim,beta_hat,lambda,status=status,family="cox")
     pval = out$pv
@@ -269,7 +269,7 @@ def test_logistic():
     # extract coef for a given lambda; note the 1/n factor!
     # (and here  we DO  include the intercept term)
     lambda = .8
-    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE))
+    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE, x=x, y=y))
 
     # compute fixed lambda p-values and selection intervals
     out = fixedLassoInf(x,y,beta_hat,lambda,family="binomial")
