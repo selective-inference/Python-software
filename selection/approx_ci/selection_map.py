@@ -42,7 +42,8 @@ class M_estimator_map(M_estimator):
 
         self.score_target_cov = score_cov[:, :nactive]
         self.target_cov = score_cov[:nactive, :nactive]
-        self.target_observed = self.observed_score_state[:nactive]
+        self.target_observed = self.observed_internal_state[:nactive]
+        self.observed_score_state = self.observed_internal_state
         self.nactive = nactive
 
         self.B_active = self._opt_linear_term[:nactive, :nactive]

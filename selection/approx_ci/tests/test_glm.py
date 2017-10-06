@@ -1,40 +1,28 @@
 from __future__ import print_function
-
 import numpy as np
 import sys
 import regreg.api as rr
+from selection.tests.instance import logistic_instance, gaussian_instance
+from selection.approx_ci.selection_map import M_estimator_map
+from selection.approx_ci.ci_approx_density import approximate_conditional_density
+from selection.randomized.query import naive_confidence_intervals
 
-import selection.tests.reports as reports
-from ...randomized.api import randomization
-from ...tests.instance import logistic_instance, gaussian_instance
-from ...tests.flags import SMALL_SAMPLES, SET_SEED
-from ...tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
+def test_approximate_inference(X,
+                               y,
+                               true_mean,
+                               sigma,
+                               seed_n = 0,
+                               lam_frac = 1.,
+                               loss='gaussian',
+                               randomization_scale = 1.):
 
-from ..ci_approx_density import approximate_conditional_density
-from ..estimator_approx import M_estimator_approx
-
-from ...randomized.query import naive_confidence_intervals
-from ...randomized.query import naive_pvalues
-
-
-@register_report(['cover', 'ci_length', 'truth', 'naive_cover', 'naive_pvalues'])
-@wait_for_return_value()
-def test_approximate_ci(n=100,
-                        p=10,
-                        s=3,
-                        snr=5,
-                        rho=0.1,
-                        lam_frac = 1.,
-                        loss='gaussian',
-                        randomizer='gaussian'):
-
-
+    from selection.api import randomization
+    n, p = X.shape
+    np.random.seed(seed_n)
     if loss == "gaussian":
-        X, y, beta = gaussian_instance(n=n, p=p, s=s, rho=rho, snr=snr)[:3]
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
         loss = rr.glm.gaussian(X, y)
     elif loss == "logistic":
-        X, y, beta = logistic_instance(n=n, p=p, s=s, rho=rho, snr=snr)[:]
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
         loss = rr.glm.logistic(X, y)
 
@@ -63,14 +51,7 @@ def test_approximate_ci(n=100,
 
         sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
 
-        class target_class(object):
-            def __init__(self, target_cov):
-                self.target_cov = target_cov
-                self.shape = target_cov.shape
-
-        target = target_class(M_est.target_cov)
-
-        ci_naive = naive_confidence_intervals(target, M_est.target_observed)
+        ci_naive = naive_confidence_intervals(np.diag(M_est.target_cov), M_est.target_observed)
         naive_covered = np.zeros(nactive)
         naive_risk = np.zeros(nactive)
 
@@ -90,6 +71,7 @@ def test_approximate_ci(n=100,
         sel_risk = np.zeros(nactive)
 
         for j in range(nactive):
+
             sel_risk[j] = (sel_MLE[j] - true_vec[j]) ** 2.
             naive_risk[j] = (M_est.target_observed[j]- true_vec[j]) ** 2.
 
@@ -128,5 +110,6 @@ def test_lasso(n, p, s, signal):
     if lasso is not None:
         print("output of selection adjusted inference", lasso)
         return(lasso)
+
 
 
