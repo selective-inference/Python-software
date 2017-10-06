@@ -142,9 +142,11 @@ class threshold_score_map(threshold_score):
     def solve_approx(self):
         self.solve()
         self.setup_sampler()
-        print("boundary", self.observed_opt_state, self.boundary)
-        self.feasible_point = self.observed_opt_state[self.boundary]
+        #print("boundary", self.observed_opt_state, self.boundary)
+        #self.feasible_point = self.observed_opt_state[self.boundary]
+        self.feasible_point = np.ones(self.boundary.sum())
         (_opt_linear_term, _opt_offset) = self.opt_transform
+        print("shapes", _opt_linear_term[self.boundary, :].shape, _opt_linear_term[self.interior, :].shape)
         self._opt_linear_term = np.concatenate((_opt_linear_term[self.boundary, :], _opt_linear_term[self.interior, :]),
                                                0)
         self._opt_affine_term = np.concatenate((_opt_offset[self.boundary], _opt_offset[self.interior]), 0)
