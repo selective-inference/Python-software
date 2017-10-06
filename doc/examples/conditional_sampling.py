@@ -20,6 +20,7 @@ def main(ndraw=50000, burnin=5000, remove_atom=False, unpenalized=True, stepsize
 
         fig_idx += 1
         fig = plt.figure(num=fig_idx, figsize=(8,8))
+
         plt.clf()
         idx = 0
         for i in range(mcmc_opt.shape[1]):
@@ -41,10 +42,11 @@ def main(ndraw=50000, burnin=5000, remove_atom=False, unpenalized=True, stepsize
             idx += 1
             if idx == 1:
                 plt.legend(loc='lower right')
-        
+
+        fig.suptitle(' '.join([rand, "opt"]))
+
         fig_idx += 1
         fig = plt.figure(num=fig_idx, figsize=(8,8))
-
         plt.clf()
         idx = 0
         for i in range(mcmc_opt.shape[1]):
@@ -65,7 +67,8 @@ def main(ndraw=50000, burnin=5000, remove_atom=False, unpenalized=True, stepsize
             idx += 1
             if idx == 1:
                 plt.legend(loc='lower right')
-        
+
+        fig.suptitle(' '.join([rand, "omega"]))
     plt.show()
 
             

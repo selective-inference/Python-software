@@ -28,7 +28,7 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         X, Y, beta = inst(n=100, p=20, s=0, signal=5., sigma=5.)[:3]
         n, p = X.shape
 
-        W = np.ones(X.shape[1]) * 7
+        W = np.ones(X.shape[1]) * 8
         conv = const(X, Y, W, randomizer=rand, parametric_cov_estimator=True)
         signs = conv.fit()
         print("signs", signs)
@@ -37,18 +37,22 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         #marginalizing_groups[:int(p/2)] = True
         conditioning_groups = ~marginalizing_groups
         #conditioning_groups[-int(p/4):] = False
-        conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
-                                   conditioning_groups=conditioning_groups)
+        #conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
+        #                           conditioning_groups=conditioning_groups)
 
         selected_features = conv._view.selection_variable['variables']
-        print("nactive", selected_features.sum())
-        sel_pivots, sel_ci = conv.summary(selected_features,
+        nactive=selected_features.sum()
+        print("nactive", nactive)
+        if nactive==0:
+            results.append(None)
+        else:
+            sel_pivots, sel_ci = conv.summary(selected_features,
                                           null_value=beta[selected_features],
                                           ndraw=ndraw,
                                           burnin=burnin,
                                           compute_intervals=True)
-        print(sel_pivots)
-        results.append((rand, sel_pivots, sel_ci, beta[selected_features]))
+            print(sel_pivots)
+            results.append((rand, sel_pivots, sel_ci, beta[selected_features]))
 
     return results
 

@@ -21,14 +21,16 @@ def main(ndraw=20000, burnin=5000, nsim=50):
     sel_ci_all = list()
     rand_all = []
     for i in range(nsim):
-        for idx, (rand, sel_pivots, sel_ci, true_vec) in enumerate(test_opt_weighted_intervals(ndraw=ndraw, burnin=burnin)):
-            if i==0:
-                sel_pivots_all.append([])
-                rand_all.append(rand)
-                sel_ci_all.append([])
-            sel_pivots_all[idx].append(sel_pivots)
-            print(sel_ci)
-            sel_ci_all[idx].append(compute_coverage(sel_ci, true_vec))
+        for idx, results in enumerate(test_opt_weighted_intervals(ndraw=ndraw, burnin=burnin)):
+            if results is not None:
+                (rand, sel_pivots, sel_ci, true_vec) = results
+                if i==0:
+                    sel_pivots_all.append([])
+                    rand_all.append(rand)
+                    sel_ci_all.append([])
+                sel_pivots_all[idx].append(sel_pivots)
+                print(sel_ci)
+                sel_ci_all[idx].append(compute_coverage(sel_ci, true_vec))
 
     xval = np.linspace(0, 1, 200)
 
