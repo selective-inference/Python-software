@@ -25,13 +25,13 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
         inst, const = const_info
 
-        X, Y, beta = inst(n=100, p=20, s=2, signal=5., sigma=5.)[:3]
+        X, Y, beta = inst(n=100, p=20, s=0, signal=5., sigma=5.)[:3]
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 7
         conv = const(X, Y, W, randomizer=rand, parametric_cov_estimator=True)
         signs = conv.fit()
-        #print("signs", signs)
+        print("signs", signs)
 
         marginalizing_groups = np.ones(p, np.bool)
         #marginalizing_groups[:int(p/2)] = True
@@ -47,7 +47,7 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
                                           ndraw=ndraw,
                                           burnin=burnin,
                                           compute_intervals=True)
-
+        print(sel_pivots)
         results.append((rand, sel_pivots, sel_ci, beta[selected_features]))
 
     return results

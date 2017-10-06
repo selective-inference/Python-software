@@ -432,7 +432,7 @@ class M_estimator(query):
         _inactive_groups = ~(self._active_groups+self._unpenalized)
 
         inactive_marginal_groups = np.zeros_like(self._inactive, dtype=bool)
-        limits_marginal_groups = np.zeros_like(self._inactive)
+        limits_marginal_groups = np.zeros_like(self._inactive, np.float)
 
         for i, g in enumerate(groups):
             if (_inactive_groups[i]) and conditioning_groups[i]:
@@ -482,6 +482,9 @@ class M_estimator(query):
         new_offset = condition_linear[:,subgrad_condition_idx].dot(self.initial_subgrad[condition_inactive_variables]) + opt_offset
 
         new_opt_transform = (new_linear, new_offset)
+
+        print("limits marginal groups", limits_marginal_groups)
+        print("inactive marginal groups", inactive_marginal_groups)
 
         def _fraction(_cdf, _pdf, full_state_plus, full_state_minus, inactive_marginal_groups):
             return (np.divide(_pdf(full_state_plus) - _pdf(full_state_minus),
@@ -534,14 +537,15 @@ class M_estimator(query):
                                                         opt_state)
             full_state = np.atleast_2d(full_state)
             p = query.penalty.shape[0]
-            logdens = 0
+            logdens = np.zeros(full_state.shape[0])
 
             if inactive_marginal_groups.sum()>0:
                 full_state_plus = full_state + np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
                 full_state_minus = full_state - np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
-                logdens += np.log(_cdf(full_state_plus) - _cdf(full_state_minus))[:,inactive_marginal_groups].sum()
+                logdens += np.sum(np.log(_cdf(full_state_plus) - _cdf(full_state_minus))[:,inactive_marginal_groups], axis=1)
 
             logdens += log_dens(full_state[:,~inactive_marginal_groups])
+
             return np.squeeze(logdens) # should this be negative to match the gradient log density?
 
         new_log_density = functools.partial(new_log_density,
