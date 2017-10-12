@@ -6,7 +6,7 @@ from scipy.optimize import bisect
 
 from regreg.affine import power_L
 
-from ..distributions.api import discrete_family, intervals_from_sample
+from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
 from .reconstruction import reconstruct_full_from_internal
 
@@ -563,35 +563,42 @@ class optimization_intervals(object):
 
         return np.exp(_logratio)
 
-def naive_confidence_intervals(target, observed, alpha=0.1):
+def naive_confidence_intervals(diag_cov, observed, alpha=0.1):
     """
     Compute naive Gaussian based confidence
     intervals for target.
     Parameters
     ----------
 
-    target : `targeted_sampler`
+    diag_cov : diagonal of a covariance matrix
+
     observed : np.float
         A vector of observed data of shape `target.shape`
+
     alpha : float (optional)
         1 - confidence level.
+
     Returns
     -------
     intervals : np.float
         Gaussian based confidence intervals.
     """
-    quantile = - ndist.ppf(alpha/float(2))
-    LU = np.zeros((2, target.shape[0]))
-    for j in range(target.shape[0]):
-        sigma = np.sqrt(target.target_cov[j, j])
+    diag_cov = np.asarray(diag_cov)
+    p = diag_cov.shape[0]
+    quantile = - ndist.ppf(alpha/2)
+    LU = np.zeros((2, p))
+    for j in range(p):
+        sigma = np.sqrt(diag_cov[j])
         LU[0,j] = observed[j] - sigma * quantile
         LU[1,j] = observed[j] + sigma * quantile
     return LU.T
 
-def naive_pvalues(target, observed, parameter):
-    pvalues = np.zeros(target.shape[0])
-    for j in range(target.shape[0]):
-        sigma = np.sqrt(target.target_cov[j, j])
-        pval = ndist.cdf((observed[j]-parameter[j])/sigma)
-        pvalues[j] = 2*min(pval, 1-pval)
+def naive_pvalues(diag_cov, observed, parameter):
+    diag_cov = np.asarray(diag_cov)
+    p = diag_cov.shape[0]
+    pvalues = np.zeros(p)
+    for j in range(p):
+        sigma = np.sqrt(diag_cov[j])
+        pval = ndist.cdf((observed[j] - parameter[j])/sigma)
+        pvalues[j] = 2 * min(pval, 1-pval)
     return pvalues

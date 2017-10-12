@@ -3,7 +3,7 @@ import functools # for bootstrap partial mapping
 import numpy as np
 from scipy.stats import norm as ndist
 
-from regreg.api import glm
+from regreg.api import glm, identity_quadratic
 
 from .M_estimator import restricted_Mest, M_estimator, M_estimator_split
 from .greedy_step import greedy_score_step
@@ -406,8 +406,58 @@ class glm_group_lasso(M_estimator):
 
 class split_glm_group_lasso(M_estimator_split):
 
-    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
-        M_estimator_split.setup_sampler(self, scaling=scaling, solve_args=solve_args)
+    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}, B=1000):
+
+        # now we need to estimate covariance of
+        # loss.grad(\beta_E^*) - 1/pi * randomized_loss.grad(\beta_E^*)
+
+        m, n, p = self.subsample_size, self.total_size, self.loss.shape[0] # shorthand
+        
+        from .glm import pairs_bootstrap_score # need to correct these imports!!!
+
+        bootstrap_score = pairs_bootstrap_score(self.loss,
+                                                self._overall,
+                                                beta_active=self._beta_full[self._overall],
+                                                solve_args=solve_args)
+
+        # find unpenalized MLE on subsample
+
+        newq, oldq = identity_quadratic(0, 0, 0, 0), self.randomized_loss.quadratic
+        self.randomized_loss.quadratic = newq
+        beta_active_subsample = restricted_Mest(self.randomized_loss,
+                                                self._overall)
+
+        bootstrap_score_split = pairs_bootstrap_score(self.loss,
+                                                      self._overall,
+                                                      beta_active=beta_active_subsample,
+                                                      solve_args=solve_args)
+        self.randomized_loss.quadratic = oldq
+
+        inv_frac = n / m
+        
+        def subsample_diff(m, n, indices):
+            subsample = np.random.choice(indices, size=m, replace=False)
+            full_score = bootstrap_score(indices) # a sum of n terms
+            randomized_score = bootstrap_score_split(subsample) # a sum of m terms
+            return full_score - randomized_score * inv_frac
+
+        first_moment = np.zeros(p)
+        second_moment = np.zeros((p, p))
+        
+        _n = np.arange(n)
+        for _ in range(B):
+            indices = np.random.choice(_n, size=n, replace=True)
+            randomized_score = subsample_diff(m, n, indices)
+            first_moment += randomized_score
+            second_moment += np.multiply.outer(randomized_score, randomized_score)
+
+        first_moment /= B
+        second_moment /= B
+
+        cov = second_moment - np.multiply.outer(first_moment,
+                                                first_moment)
+
+        self.randomization.set_covariance(cov)
 
         bootstrap_score = pairs_bootstrap_glm(self.loss,
                                               self.selection_variable['variables'],
@@ -432,7 +482,7 @@ class glm_greedy_step(greedy_score_step, glm):
     # greedy_score_step maximized over ~active
 
     def setup_sampler(self):
-        greedy_score_step.setup_sampler(self)
+
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
                                                    self.beta_active,
@@ -442,7 +492,7 @@ class glm_greedy_step(greedy_score_step, glm):
 class glm_threshold_score(threshold_score):
 
     def setup_sampler(self):
-        threshold_score.setup_sampler(self)
+
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
                                                    self.beta_active,
@@ -517,7 +567,7 @@ def glm_nonparametric_bootstrap(m, n):
     return functools.partial(bootstrap_cov, lambda: np.random.choice(n, size=(m,), replace=True))
 
 def resid_bootstrap(gaussian_loss,
-                    active,
+                    active, # boolean
                     inactive=None,
                     scaling=1.):
 
