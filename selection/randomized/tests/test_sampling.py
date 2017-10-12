@@ -75,8 +75,8 @@ def sample_opt_vars(X, y, active, signs, lam, epsilon, randomization, nsamples =
     lower[range(nactive + nunpen, p)] = -lam[inactive_set] - X[:, inactive_set].T.dot(y)
     upper[range(nactive + nunpen, p)] = lam[inactive_set] - X[:, inactive_set].T.dot(y)
 
-    print(lower, 'lower')
-    print(upper, 'upper')
+    #print(lower, 'lower')
+    #print(upper, 'upper')
     omega_samples = sampling_truncated_dist(lower, 
                                             upper, 
                                             randomization, 
@@ -157,7 +157,8 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
                      W, 
                      randomizer=rand, 
                      randomizer_scale=randomizer_scale,
-                     ridge_term=ridge_term)
+                     ridge_term=ridge_term,
+                     parametric_cov_estimator=True)
 
         print(rand)
         if rand == "laplace":
@@ -169,6 +170,8 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
 
         signs = conv.fit()
         print("signs", signs)
+        conv.decompose_subgradient(marginalizing_groups=np.ones(p,np.bool),
+                                   conditioning_groups=np.zeros(p,np.bool))
 
         selected_features = conv._view.selection_variable['variables']
         q = conv._view
@@ -185,11 +188,12 @@ def test_conditional_law(ndraw=20000, burnin=2000, ridge_term=0.5, stepsize=None
                                burnin,
                                stepsize=stepsize)
         print(S.shape)
-        print([np.mean(S[:,i]) for i in range(p)])
+        print([np.mean(S[:,i]) for i in range(S.shape[1])])
         print(selected_features, 'selected')
 
         # let's also reconstruct the omegas to compare
-
+        if (S.shape[1]<p):
+            S = np.concatenate((S, np.zeros((S.shape[0],p-S.shape[1]))), axis=1)
         S_omega = reconstruct_opt(conv._view, S)
 
         opt_samples = sample_opt_vars(X, 
@@ -235,3 +239,5 @@ def reconstruct_opt(query, state):
                                                    state)
 
     return np.squeeze(reconstructed)
+
+
