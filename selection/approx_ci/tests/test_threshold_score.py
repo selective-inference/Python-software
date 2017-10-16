@@ -12,7 +12,7 @@ def test_approximate_inference(X,
                                y,
                                true_mean,
                                sigma,
-                               threshold = 3.,
+                               threshold = 2.,
                                seed_n = 0,
                                lam_frac = 1.,
                                loss='gaussian',
@@ -122,4 +122,4 @@ def test_threshold(n, p, s, signal):
         print("output of selection adjusted inference", threshold)
         return(threshold)
 
-test_threshold(n=100, p=50, s=0, signal=5.)
+test_threshold(n=50, p=100, s=0, signal=5.)
