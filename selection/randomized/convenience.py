@@ -123,6 +123,7 @@ class lasso(object):
         self._queries.solve()
    
         self.signs = np.sign(self._view.initial_soln)
+        self.selection_variable = self._view.selection_variable
         return self.signs
 
     def decompose_subgradient(self,
@@ -156,7 +157,7 @@ class lasso(object):
 
     def summary(self,
                 selected_features,
-                null_value=None,
+                parameter=None,
                 level=0.9,
                 ndraw=10000, 
                 burnin=2000,
@@ -173,8 +174,8 @@ class lasso(object):
             Binary encoding of which features to use in final
             model and targets.
 
-        null_value : np.array
-            Hypothesized value for null -- defaults to 0.
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
 
         level : float
             Confidence level.
@@ -192,8 +193,8 @@ class lasso(object):
         if not hasattr(self, "_queries"):
             raise ValueError('run `fit` method before producing summary.')
 
-        if null_value is None:
-            null_value = np.zeros(self.loglike.shape[0])
+        if parameter is None:
+            parameter = np.zeros(self.loglike.shape[0])
 
         unpenalized_mle = restricted_Mest(self.loglike, selected_features)
 
@@ -224,12 +225,17 @@ class lasso(object):
 
         ### TODO -- this only uses one view -- what about other queries?
 
-        pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=null_value, sample=opt_samples[0])
+        pivots = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=parameter, sample=opt_samples[0])
+        if not np.all(parameter == 0):
+            pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=np.zeros_like(parameter), sample=opt_samples[0])
+        else:
+            pvalues = pivots
+
         intervals = None
         if compute_intervals:
             intervals = opt_samplers[0].confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_samples[0])
 
-        return pvalues, intervals
+        return pivots, pvalues, intervals
 
     @staticmethod
     def gaussian(X, 
