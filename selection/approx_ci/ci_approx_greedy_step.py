@@ -1,6 +1,5 @@
-from math import log
 import numpy as np
-import sys
+
 import regreg.api as rr
 from scipy.stats import norm
 
@@ -356,7 +355,6 @@ class approximate_conditional_density(rr.smooth_atom):
             else:
                 self.ind_obs[j] = np.argmin(np.abs(self.grid[j, :] - obs))
 
-            sys.stderr.write("number of variable being computed: " + str(j) + "\n")
             self.h_approx[j, :] = self.approx_conditional_prob(j)
 
     def approx_conditional_prob(self, j):
@@ -374,9 +372,6 @@ class approximate_conditional_density(rr.smooth_atom):
                 h_hat.append(-500.)
             elif val == -float('Inf') and i > 0:
                 h_hat.append(h_hat[i - 1])
-
-            sys.stderr.write("point on grid: " + str(i) + "\n")
-            sys.stderr.write("value on grid: " + str(h_hat[i]) + "\n")
 
         return np.array(h_hat)
 
@@ -402,7 +397,7 @@ class approximate_conditional_density(rr.smooth_atom):
         approx_normalizer = self.area_normalized_density(j, param)
 
         f = (param ** 2) / (2 * self.norm[j]) - (self.target_observed[j] * param) / self.norm[j] + \
-            log(approx_normalizer[1])
+            np.log(approx_normalizer[1])
 
         g = param / self.norm[j] - self.target_observed[j] / self.norm[j] + \
             approx_normalizer[2] / approx_normalizer[1]

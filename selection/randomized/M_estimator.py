@@ -199,8 +199,8 @@ class M_estimator(query):
         Mest_slice = slice(0, overall.sum())
         # _Mest_hessian = _hessian[:,overall]
         X, y = loss.data
-        W = self.loss.saturated_loss.hessian(beta_full)
-        _Mest_hessian = np.dot(X.T, X[:, overall] * W[overall])
+        W = self.loss.saturated_loss.hessian(X.dot(beta_full))
+        _Mest_hessian = np.dot(X.T, X[:, overall] * W[:, None])
         self._Mest_hessian = _Mest_hessian
         _score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
 

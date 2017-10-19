@@ -47,7 +47,7 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
             results.append(None)
         else:
             sel_pivots, sel_ci = conv.summary(selected_features,
-                                          null_value=beta[selected_features],
+                                          parameter=beta[selected_features],
                                           ndraw=ndraw,
                                           burnin=burnin,
                                           compute_intervals=True)

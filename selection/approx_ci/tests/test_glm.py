@@ -1,22 +1,22 @@
 from __future__ import print_function
 import numpy as np
-import sys
+
 import regreg.api as rr
-from selection.tests.instance import logistic_instance, gaussian_instance
-from selection.approx_ci.selection_map import M_estimator_map
-from selection.approx_ci.ci_approx_density import approximate_conditional_density
-from selection.randomized.query import naive_confidence_intervals
+from ...tests.instance import logistic_instance, gaussian_instance
+from ..selection_map import M_estimator_map
+from ..ci_approx_density import approximate_conditional_density
+from ...randomized.query import naive_confidence_intervals
+from ...randomized.api import randomization
 
-def test_approximate_inference(X,
-                               y,
-                               true_mean,
-                               sigma,
-                               seed_n = 0,
-                               lam_frac = 1.,
-                               loss='gaussian',
-                               randomization_scale = 1.):
+def approximate_inference(X,
+                          y,
+                          true_mean,
+                          sigma,
+                          seed_n = 0,
+                          lam_frac = 1.,
+                          loss='gaussian',
+                          randomization_scale = 1.):
 
-    from selection.api import randomization
     n, p = X.shape
     np.random.seed(seed_n)
     if loss == "gaussian":
@@ -32,16 +32,16 @@ def test_approximate_inference(X,
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    randomization = randomization.isotropic_gaussian((p,), scale=randomization_scale)
-    M_est = M_estimator_map(loss, epsilon, penalty, randomization, randomization_scale = randomization_scale)
+    randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+    M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale = randomization_scale)
 
     M_est.solve_approx()
     active = M_est._overall
     active_set = np.asarray([i for i in range(p) if active[i]])
     nactive = np.sum(active)
-    sys.stderr.write("number of active selected by lasso" + str(nactive) + "\n")
-    sys.stderr.write("Active set selected by lasso" + str(active_set) + "\n")
-    sys.stderr.write("Observed target" + str(M_est.target_observed) + "\n")
+    print("number of active selected by lasso" + str(nactive) + "\n")
+    print("Active set selected by lasso" + str(active_set) + "\n")
+    print("Observed target" + str(M_est.target_observed) + "\n")
 
     if nactive == 0:
         return None
@@ -49,7 +49,7 @@ def test_approximate_inference(X,
     else:
         true_vec = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
 
-        sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
+        print("True target to be covered" + str(true_vec) + "\n")
 
         ci_naive = naive_confidence_intervals(np.diag(M_est.target_cov), M_est.target_observed)
         naive_covered = np.zeros(nactive)
@@ -96,16 +96,16 @@ def test_approximate_inference(X,
                                        naive_risk)))
 
 
-def test_lasso(n, p, s, signal):
+def test_lasso(n=200, p=5, s=1, signal=5):
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     true_mean = X.dot(beta)
-    lasso = test_approximate_inference(X,
-                                       y,
-                                       true_mean,
-                                       sigma,
-                                       seed_n=0,
-                                       lam_frac=1.,
-                                       loss='gaussian')
+    lasso = approximate_inference(X,
+                                  y,
+                                  true_mean,
+                                  sigma,
+                                  seed_n=0,
+                                  lam_frac=1.,
+                                  loss='gaussian')
 
     if lasso is not None:
         print("output of selection adjusted inference", lasso)
