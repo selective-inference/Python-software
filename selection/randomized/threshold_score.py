@@ -120,7 +120,9 @@ class threshold_score(query):
 
         self.observed_internal_state = candidate_score
 
-        self.selection_variable = {'boundary_set': self.boundary}
+        active_signs = np.sign(randomized_score[self.boundary])
+        self.selection_variable = {'boundary_set': self.boundary,
+                                   'active_signs': active_signs}
 
         self._solved = True
 
@@ -131,8 +133,13 @@ class threshold_score(query):
 
         p = self.boundary.shape[0]  # shorthand
         self.num_opt_var = 0
-        self.opt_transform = (np.array([], np.float), np.zeros(p, np.float))
-        self.observed_opt_state = np.array([])
+        opt_transform = np.identity(p)
+        opt_transform = np.vstack([opt_transform[self.boundary], opt_transform[self.interior]])
+        opt_offset = np.hstack([active_signs * threshold[self.boundary], 
+                                np.zeros(self.interior.sum())])
+        self.opt_transform = (opt_transform, opt_offset)
+        self.observed_opt_state = np.hstack([active_signs * threshold[self.boundary], 
+                                             randomized_score[self.interior]])
         _score_linear_term = -np.identity(p)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 

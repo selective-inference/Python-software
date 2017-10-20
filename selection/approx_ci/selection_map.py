@@ -144,6 +144,8 @@ class threshold_score_map(threshold_score):
         self.setup_sampler()
         #print("boundary", self.observed_opt_state, self.boundary)
         #self.feasible_point = self.observed_opt_state[self.boundary]
+        self.observed_score_state = self.observed_internal_state
+
         self.feasible_point = np.ones(self.boundary.sum())
         (_opt_linear_term, _opt_offset) = self.opt_transform
         print("shapes", _opt_linear_term[self.boundary, :].shape, _opt_linear_term[self.interior, :].shape)
