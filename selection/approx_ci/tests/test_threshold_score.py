@@ -55,14 +55,7 @@ def test_approximate_inference(X,
 
         sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
 
-        class target_class(object):
-            def __init__(self, target_cov):
-                self.target_cov = target_cov
-                self.shape = target_cov.shape
-
-        target = target_class(TS.target_cov)
-
-        ci_naive = naive_confidence_intervals(target, TS.target_observed)
+        ci_naive = naive_confidence_intervals(np.diag(TS.target_cov), TS.target_observed)
         naive_covered = np.zeros(nactive)
         naive_risk = np.zeros(nactive)
 
@@ -122,4 +115,4 @@ def test_threshold(n, p, s, signal):
         print("output of selection adjusted inference", threshold)
         return(threshold)
 
-test_threshold(n=50, p=100, s=0, signal=5.)
+test_threshold(n=50, p=50, s=0, signal=5.)
