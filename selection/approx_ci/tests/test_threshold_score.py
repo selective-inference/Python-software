@@ -8,16 +8,16 @@ from selection.approx_ci.ci_approx_density import approximate_conditional_densit
 
 from selection.randomized.query import naive_confidence_intervals
 
-def test_approximate_inference(X,
-                               y,
-                               true_mean,
-                               sigma,
-                               threshold = 2.,
-                               seed_n = 0,
-                               lam_frac = 1.,
-                               loss='gaussian',
-                               randomization_scale = 1.):
-
+def approximate_inference(X,
+                          y,
+                          true_mean,
+                          sigma,
+                          threshold = 2.,
+                          seed_n = 0,
+                          lam_frac = 1.,
+                          loss='gaussian',
+                          randomization_scale = 1.):
+    
     from selection.api import randomization
     n, p = X.shape
     np.random.seed(seed_n)
@@ -55,14 +55,7 @@ def test_approximate_inference(X,
 
         sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
 
-        class target_class(object):
-            def __init__(self, target_cov):
-                self.target_cov = target_cov
-                self.shape = target_cov.shape
-
-        target = target_class(TS.target_cov)
-
-        ci_naive = naive_confidence_intervals(target, TS.target_observed)
+        ci_naive = naive_confidence_intervals(np.diag(TS.target_cov), TS.target_observed)
         naive_covered = np.zeros(nactive)
         naive_risk = np.zeros(nactive)
 
@@ -107,19 +100,19 @@ def test_approximate_inference(X,
                                        naive_risk)))
 
 
-def test_threshold(n, p, s, signal):
+def test_threshold(n=30, p=10, s=0, signal=5.):
+
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     true_mean = X.dot(beta)
-    threshold = test_approximate_inference(X,
-                                           y,
-                                           true_mean,
-                                           sigma,
-                                           seed_n=0,
-                                           lam_frac=1.,
-                                           loss='gaussian')
+    threshold = approximate_inference(X,
+                                      y,
+                                      true_mean,
+                                      sigma,
+                                      seed_n=0,
+                                      lam_frac=1.,
+                                      loss='gaussian')
 
     if threshold is not None:
         print("output of selection adjusted inference", threshold)
         return(threshold)
 
-test_threshold(n=50, p=100, s=0, signal=5.)
