@@ -60,10 +60,10 @@ class constraints(object):
     >>> eta = np.array([1,1])
     >>> positive.interval(eta, Y)
     array([  4.6212814 ,  10.17180724])
-    >>> positive.pivot(eta, Y)
-    5.187823627350596e-07
-    >>> positive.bounds(eta, Y)
-    (1.3999999999999988, 7.4000000000000004, inf, 1.4142135623730951)
+    >>> positive.pivot(eta, Y) # doctest: +ELLIPSIS
+    5.187...-07
+    >>> positive.bounds(eta, Y) # doctest: +ELLIPSIS
+    (1.399..., 7.400..., inf, 1.414)
     >>> 
 
     """
