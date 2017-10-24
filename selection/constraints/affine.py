@@ -62,8 +62,8 @@ class constraints(object):
     array([  4.6212814 ,  10.17180724])
     >>> positive.pivot(eta, Y) # doctest: +ELLIPSIS
     5.187...-07
-    >>> positive.bounds(eta, Y) # doctest: +ELLIPSIS
-    (1.399..., 7.400..., inf, 1.414)
+    >>> np.array(positive.bounds(eta, Y)) # doctest: +ELLIPSIS
+    array([ 1.4       ,  7.4       ,         inf,  1.41421356])
     >>> 
 
     """
