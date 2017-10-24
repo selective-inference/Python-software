@@ -24,7 +24,7 @@ class M_estimator_map(M_estimator):
         self.score_transform = (self._score_linear_term, np.zeros(self._score_linear_term.shape[0]))
         self.feasible_point = np.abs(self.initial_soln[self._overall])
         lagrange = []
-        for key, value in self.penalty.weights.iteritems():
+        for key, value in self.penalty.weights.items():
             lagrange.append(value)
         lagrange = np.asarray(lagrange)
         self.inactive_lagrange = lagrange[~self._overall]
