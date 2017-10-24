@@ -3,27 +3,42 @@
 
 import os
 import sys
-from os.path import join as pjoin, dirname
-from setup_helpers import package_check
+from os.path import join as pjoin, dirname, exists
 
 # BEFORE importing distutils, remove MANIFEST. distutils doesn't properly
 # update it when the contents of directories change.
-if os.path.exists('MANIFEST'): os.remove('MANIFEST')
+if exists('MANIFEST'): os.remove('MANIFEST')
 
-import numpy as np
+# Unconditionally require setuptools
+import setuptools
 
-# Get version and release info, which is all stored in regreg/info.py
-ver_file = os.path.join('selection', 'info.py')
-# Use exec for compabibility with Python 3
-exec(open(ver_file).read())
+# Package for getting versions from git tags
+import versioneer
 
-from distutils.command import install
+# Import distutils _after_ setuptools import, and after removing
+# MANIFEST
 from distutils.core import setup
 from distutils.extension import Extension
 
 from cythexts import cyproc_exts, get_pyx_sdist
-from setup_helpers import package_check, read_vars_from
+from setup_helpers import (SetupDependency, read_vars_from,
+                           make_np_ext_builder)
+
+# Get various parameters for this version, stored in selection/info.py
 info = read_vars_from(pjoin('selection', 'info.py'))
+
+# Try to preempt setuptools monkeypatching of Extension handling when Pyrex
+# is missing.  Otherwise the monkeypatched Extension will change .pyx
+# filenames to .c filenames, and we probably don't have the .c files.
+sys.path.insert(0, pjoin(dirname(__file__), 'fake_pyrex'))
+# Set setuptools extra arguments
+extra_setuptools_args = dict(
+    tests_require=['nose'],
+    test_suite='nose.collector',
+    zip_safe=False,
+    extras_require = dict(
+        doc=['Sphinx>=1.0'],
+        test=['nose>=0.10.1']))
 
 # Define extensions
 EXTS = []
@@ -34,70 +49,5 @@ for modulename, other_sources in (
     ):
     pyx_src = pjoin(*modulename.split('.')) + '.pyx'
     EXTS.append(Extension(modulename,[pyx_src] + other_sources,
-                          include_dirs = [np.get_include(),
-                                         "src"],
                           libraries=['m']),
                 )
-extbuilder = cyproc_exts(EXTS, CYTHON_MIN_VERSION, 'pyx-stamps')
-
-extra_setuptools_args = {}
-
-class installer(install.install):
-    def run(self):
-        package_check('numpy', info.NUMPY_MIN_VERSION)
-        package_check('scipy', info.SCIPY_MIN_VERSION)
-        package_check('sklearn', info.SKLEARN_MIN_VERSION)
-        package_check('mpmath', info.MPMATH_MIN_VERSION)
-        install.install.run(self)
-
-cmdclass = dict(
-    build_ext=extbuilder,
-    install=installer,
-    sdist=get_pyx_sdist()
-)
-
-
-def main(**extra_args):
-    setup(name=NAME,
-          maintainer=MAINTAINER,
-          maintainer_email=MAINTAINER_EMAIL,
-          description=DESCRIPTION,
-          long_description=LONG_DESCRIPTION,
-          url=URL,
-          download_url=DOWNLOAD_URL,
-          license=LICENSE,
-          classifiers=CLASSIFIERS,
-          author=AUTHOR,
-          author_email=AUTHOR_EMAIL,
-          platforms=PLATFORMS,
-          version=VERSION,
-          requires=REQUIRES,
-          provides=PROVIDES,
-          packages     = ['selection',
-                          'selection.utils',
-                          'selection.truncated',
-                          'selection.truncated.tests',
-                          'selection.constraints',
-                          'selection.constraints.tests',
-                          'selection.distributions',
-                          'selection.distributions.tests',
-                          'selection.algorithms',
-                          'selection.algorithms.tests',
-                          'selection.sampling',
-                          'selection.sampling.tests',
-                          'selection.randomized',
-                          'selection.randomized.tests',
-                          'selection.tests'
-                          ],
-          ext_modules = EXTS,
-          package_data = {},
-          data_files=[],
-          scripts= [],
-          cmdclass = cmdclass,
-          **extra_args
-         )
-
-#simple way to test what setup will do
-#python setup.py install --prefix=/tmp
-if __name__ == "__main__":
-    main(**extra_setuptools_args)
