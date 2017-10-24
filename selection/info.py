@@ -46,6 +46,7 @@ SCIPY_MIN_VERSION = '0.7'
 CYTHON_MIN_VERSION = '0.21'
 MPMATH_MIN_VERSION = "0.18"
 PYINTER_MIN_VERSION = "0.1.6"
+SKLEARN_MIN_VERSION = '0.19'
 
 NAME                = 'selection'
 MAINTAINER          = "Jonathan Taylor"
