@@ -51,3 +51,76 @@ for modulename, other_sources in (
     EXTS.append(Extension(modulename,[pyx_src] + other_sources,
                           libraries=['m']),
                 )
+
+# Cython is a dependency for building extensions, iff we don't have stamped
+# up pyx and c files.
+build_ext, need_cython = cyproc_exts(EXTS,
+                                     info.CYTHON_MIN_VERSION,
+                                     'pyx-stamps')
+
+# Add numpy includes when building extension.
+build_ext = make_np_ext_builder(build_ext)
+
+# Check dependencies, maybe add to setuptools lists
+if need_cython:
+    SetupDependency('Cython', info.CYTHON_MIN_VERSION,
+                    req_type='install_requires',
+                    heavy=False).check_fill(extra_setuptools_args)
+SetupDependency('numpy', info.NUMPY_MIN_VERSION,
+                req_type='install_requires',
+                heavy=True).check_fill(extra_setuptools_args)
+SetupDependency('scipy', info.SCIPY_MIN_VERSION,
+                req_type='install_requires',
+                heavy=True).check_fill(extra_setuptools_args)
+
+
+cmdclass=versioneer.get_cmdclass()
+cmdclass.update(dict(
+    build_ext=build_ext,
+    sdist=get_pyx_sdist()))
+
+
+def main(**extra_args):
+    setup(name=info.NAME,
+          maintainer=info.MAINTAINER,
+          maintainer_email=info.MAINTAINER_EMAIL,
+          description=info.DESCRIPTION,
+          url=info.URL,
+          download_url=info.DOWNLOAD_URL,
+          license=info.LICENSE,
+          classifiers=info.CLASSIFIERS,
+          author=info.AUTHOR,
+          author_email=info.AUTHOR_EMAIL,
+          platforms=info.PLATFORMS,
+          version=versioneer.get_version(),
+          requires=info.REQUIRES,
+          provides=info.PROVIDES,
+          packages     = ['selection',
+                          'selection.utils',
+                          'selection.truncated',
+                          'selection.truncated.tests',
+                          'selection.constraints',
+                          'selection.constraints.tests',
+                          'selection.distributions',
+                          'selection.distributions.tests',
+                          'selection.algorithms',
+                          'selection.algorithms.tests',
+                          'selection.sampling',
+                          'selection.sampling.tests',
+                          'selection.randomized',
+                          'selection.randomized.tests',
+                          'selection.tests'
+                          ],
+          ext_modules = EXTS,
+          package_data = {},
+          data_files=[],
+          scripts= [],
+          long_description = open('README.rst', 'rt').read(),
+          cmdclass = cmdclass,
+          **extra_args
+         )
+
+#simple way to test what setup will do
+#python setup.py install --prefix=/tmp
+if __name__ == "__main__":
+    main(**extra_setuptools_args)

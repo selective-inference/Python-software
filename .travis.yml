@@ -56,9 +56,8 @@ before_install:
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
   - pip install -r requirements.txt
-  - python setup.py install
+  - pip install -e .
   - cd ..
-  - rm -fr regreg
   - sudo apt-get install software-properties-common
   - sudo add-apt-repository -y ppa:marutter/c2d4u
   - sudo add-apt-repository -y ppa:marutter/rrutter
