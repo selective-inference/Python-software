@@ -339,8 +339,23 @@ def test_solve_QP():
     nactive = as.integer(1)
     kkt_tol = 1.e-12
     objective_tol = 1.e-16
+    parameter_tol = 1.e-10
     maxiter = 500
-    soln_R = selectiveInference:::solve_QP(t(X) %*% X / n, lam, maxiter, soln_R, -t(X) %*% Y / n, grad, ever_active, nactive, kkt_tol, objective_tol, p)$soln
+    soln_R = selectiveInference:::solve_QP(t(X) %*% X / n, 
+                                           lam, 
+                                           maxiter, 
+                                           soln_R, 
+                                           -t(X) %*% Y / n, 
+                                           grad, 
+                                           ever_active, 
+                                           nactive, 
+                                           kkt_tol, 
+                                           objective_tol, 
+                                           parameter_tol,
+                                           p,
+                                           TRUE,
+                                           TRUE,
+                                           TRUE)$soln
 
     # test wide solver
     Xtheta = rep(0, n)
@@ -348,7 +363,23 @@ def test_solve_QP():
     ever_active = as.integer(c(1, rep(0, p-1)))
     soln_R_wide = rep(0, p)
     grad = - t(X) %*% Y / n
-    soln_R_wide = selectiveInference:::solve_QP_wide(X, lam, maxiter, soln_R_wide, -t(X) %*% Y / n, grad, Xtheta, ever_active, nactive, kkt_tol, objective_tol, p)$soln
+    soln_R_wide = selectiveInference:::solve_QP_wide(X, 
+                                                     rep(lam, p), 
+                                                     0,
+                                                     maxiter, 
+                                                     soln_R_wide, 
+                                                     -t(X) %*% Y / n, 
+                                                     grad, 
+                                                     Xtheta,
+                                                     ever_active, 
+                                                     nactive, 
+                                                     kkt_tol, 
+                                                     objective_tol, 
+                                                     parameter_tol,
+                                                     p,
+                                                     TRUE,
+                                                     TRUE,
+                                                     TRUE)$soln
 
     """
 
@@ -359,6 +390,9 @@ def test_solve_QP():
     rpy2.robjects.numpy2ri.deactivate()
 
     tol = 1.e-5
+    print(soln - soln_R)
+    print(soln_R - soln_R_wide)
+
     yield np.testing.assert_allclose, soln, soln_R, tol, tol, False, 'checking coordinate QP solver'
     yield np.testing.assert_allclose, soln, soln_R_wide, tol, tol, False, 'checking wide coordinate QP solver'
 
