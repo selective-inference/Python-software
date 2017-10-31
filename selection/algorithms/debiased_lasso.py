@@ -55,6 +55,11 @@ def _find_row_approx_inverse_X(X, j, delta,
                                parameter_stop=True,
                                max_active=None,
                                ):
+
+    # need a copy as column major ordering for C code
+
+    X_F = np.asfortranarray(X)
+
     n, p = X.shape
     theta = np.zeros(p)
     theta_old = np.zeros(p)
@@ -62,18 +67,20 @@ def _find_row_approx_inverse_X(X, j, delta,
     linear_func = np.zeros(p)
     linear_func[j] = -1
     gradient = linear_func.copy()
-    ever_active = -np.ones(p, np.int)
-    nactive = np.array([0], np.int)
+    ever_active = np.zeros(p, np.int)
+    ever_active[0] = j+1 # C code has ever_active as 1-based
+    nactive = np.array([1], np.int)
     bound = np.ones(p) * delta
+
     ridge_term = 0
 
-    nndef_diag = (X**2).sum(0) / X.shape[0]
+    nndef_diag = (X**2).sum(0) / n
     need_update = np.zeros(p, np.int)
 
     if max_active is None:
         max_active = max(50, 0.3 * n)
 
-    solve_wide_(X,
+    solve_wide_(X_F,
                 X_theta,
                 linear_func,
                 nndef_diag,

@@ -27,17 +27,20 @@ def test_gaussian(n=100, p=20):
     print(debiased_lasso_inference(L, L.active, np.sqrt(2 * np.log(p) / n)))
     print(beta)
 
-def test_approx_inverse():
+def test_approx_inverse(n=50, p=100):
 
     n, p = 50, 100
     X = np.random.standard_normal((n, p))
-    S = X.T.dot(X) / n
     j = 5
-    delta = 0.60
+    delta = 0.30
     
-    soln = _find_row_approx_inverse(S, j, delta)
+    X[:,3] = X[:,3] + X[:,j]
+    X[:,10] = X[:,10] + X[:,j]
+    S = X.T.dot(X) / n
+    
+    soln = _find_row_approx_inverse(S, j, delta, solve_args={'min_its':500, 'tol':1.e-14, 'max_its':1000} )
 
-    soln2_ = _find_row_approx_inverse_X(X, j, delta)
+    soln_C = _find_row_approx_inverse_X(X, j, delta, kkt_tol=1.e-14, parameter_tol=1.e-14, maxiter=1000, objective_tol=1.e-14)
 
     basis_vector = np.zeros(p)
     basis_vector[j] = 1.
@@ -45,8 +48,8 @@ def test_approx_inverse():
     nt.assert_true(np.fabs(S.dot(soln) - basis_vector).max() < delta * 1.001)
 
     U = - S.dot(-soln) - basis_vector
-    nt.assert_true(np.fabs(U).max() < delta * 1.001)
-    nt.assert_equal(np.argmax(np.fabs(U)), j)
-    nt.assert_equal(np.sign(U[j]), -np.sign(soln[j]))
-    nt.assert_raises(ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta)
-    np.testing.assert_allclose(soln, soln2_)
+
+    yield nt.assert_true, np.fabs(U).max() < delta * 1.001
+    yield nt.assert_equal, np.sign(U[j]), -np.sign(soln[j])
+    yield nt.assert_raises, ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta
+    yield np.testing.assert_allclose, soln, soln_C, 1.e-3
