@@ -75,8 +75,7 @@ install:
   - cd R-software
   - git submodule init
   - git submodule update
-  - rm -f selectiveInference/src/RcppExports.cpp
-  - rm -f selectiveInference/R/RcppExports.R
+  - git log
   - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
   - sudo Rscript -e "install.packages(c('glmnet', 'intervals'), repos='http://cloud.r-project.org')"
   - sudo R CMD INSTALL selectiveInference
