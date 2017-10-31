@@ -79,6 +79,7 @@ install:
   - sudo Rscript -e "install.packages(c('glmnet', 'intervals'), repos='http://cloud.r-project.org')"
   - sudo R CMD INSTALL selectiveInference
   - cd ..
+  - python -c "import numpy as np"
   - python -c "from statsmodels.api import PHReg"
   - travis_install $INSTALL_TYPE
 
