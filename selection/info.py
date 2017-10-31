@@ -41,7 +41,7 @@ a fixed lambda test for the LASSO.
 """
 
 # versions
-NUMPY_MIN_VERSION='1.7.1'
+NUMPY_MIN_VERSION='1.13.3'
 SCIPY_MIN_VERSION = '0.9'
 CYTHON_MIN_VERSION = '0.21'
 MPMATH_MIN_VERSION = "0.18"
