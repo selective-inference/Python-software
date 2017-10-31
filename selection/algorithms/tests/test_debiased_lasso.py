@@ -7,7 +7,8 @@ import selection.tests.reports as reports
 
 from selection.algorithms.lasso import lasso 
 from selection.algorithms.debiased_lasso import (debiased_lasso_inference,
-                                                 _find_row_approx_inverse)
+                                                 _find_row_approx_inverse,
+                                                 _find_row_approx_inverse_X)
 import regreg.api as rr
 
 def test_gaussian(n=100, p=20):
@@ -36,6 +37,8 @@ def test_approx_inverse():
     
     soln = _find_row_approx_inverse(S, j, delta)
 
+    soln2_ = _find_row_approx_inverse_X(X, j, delta)
+
     basis_vector = np.zeros(p)
     basis_vector[j] = 1.
 
@@ -46,3 +49,4 @@ def test_approx_inverse():
     nt.assert_equal(np.argmax(np.fabs(U)), j)
     nt.assert_equal(np.sign(U[j]), -np.sign(soln[j]))
     nt.assert_raises(ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta)
+    np.testing.assert_allclose(soln, soln2_)

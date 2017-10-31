@@ -52,8 +52,8 @@ for modulename, other_sources in (
                           libraries=['m']),
                 )
 
-EXTS.append(Extension('selection.quadratic_program',
-                      ['selection/quadratic_program.pyx', 
+EXTS.append(Extension('selection.algorithms.debiased_lasso_utils',
+                      ['selection/algorithms/debiased_lasso_utils.pyx',
                        'C-software/src/quadratic_program_wide.c'],
                       libraries=['m'],
                       include_dirs=['C-software/src']))

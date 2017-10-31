@@ -4,6 +4,7 @@ from regreg.api import (quadratic_loss,
                         l1norm,
                         simple_problem)
 
+from .debiased_lasso_utils import solve_wide_
 from ..constraints.affine import constraints
 
 def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1.e-6, 'max_its':500}):
@@ -44,6 +45,56 @@ def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1
 
     return soln
 
+def _find_row_approx_inverse_X(X, j, delta, 
+                               maxiter=50,
+                               kkt_tol=1.e-4,
+                               objective_tol=1.e-4,
+                               parameter_tol=1.e-4,
+                               kkt_stop=True,
+                               objective_stop=True,
+                               parameter_stop=True,
+                               max_active=None,
+                               ):
+    n, p = X.shape
+    theta = np.zeros(p)
+    theta_old = np.zeros(p)
+    X_theta = np.zeros(n)
+    linear_func = np.zeros(p)
+    linear_func[j] = -1
+    gradient = linear_func.copy()
+    ever_active = -np.ones(p, np.int)
+    nactive = np.array([0], np.int)
+    bound = np.ones(p) * delta
+    ridge_term = 0
+
+    nndef_diag = (X**2).sum(0) / X.shape[0]
+    need_update = np.zeros(p, np.int)
+
+    if max_active is None:
+        max_active = max(50, 0.3 * n)
+
+    solve_wide_(X,
+                X_theta,
+                linear_func,
+                nndef_diag,
+                gradient,
+                need_update,
+                ever_active, 
+                nactive,
+                bound,
+                ridge_term,
+                theta,
+                theta_old,
+                maxiter,
+                kkt_tol,
+                objective_tol,
+                parameter_tol,
+                max_active,
+                kkt_stop,
+                objective_stop,
+                parameter_stop)
+
+    return theta
 
 def debiased_lasso_inference(lasso_obj, variables, delta):
 
