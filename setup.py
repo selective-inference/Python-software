@@ -52,6 +52,12 @@ for modulename, other_sources in (
                           libraries=['m']),
                 )
 
+EXTS.append(Extension('selection.quadratic_program',
+                      ['selection/quadratic_program.pyx', 
+                       'C-software/src/quadratic_program_wide.c'],
+                      libraries=['m'],
+                      include_dirs=['C-software/src']))
+
 # Cython is a dependency for building extensions, iff we don't have stamped
 # up pyx and c files.
 build_ext, need_cython = cyproc_exts(EXTS,
