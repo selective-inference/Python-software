@@ -19,7 +19,7 @@ from ..glm import (standard_split_ci,
                    pairs_bootstrap_glm)
 
 from ..M_estimator import restricted_Mest
-from ..query import naive_confidence_intervals
+from ..query import naive_confidence_intervals, multiple_queries
 
 @register_report(['pivots_clt', 
                   'covered_clt', 
@@ -32,8 +32,8 @@ from ..query import naive_confidence_intervals
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
 def test_split_compare(s=3,
-                       n=200,
-                       p=20,
+                       n=100,
+                       p=50,
                        signal=7,
                        rho=0.1,
                        split_frac=0.8,
@@ -51,13 +51,13 @@ def test_split_compare(s=3,
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
     W[0] = 0 # use at least some unpenalized
-    penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
+    penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     m = int(split_frac * n)
 
     M_est = split_glm_group_lasso(loss, epsilon, m, penalty)
     M_est.solve()
+
 
     active_union = M_est.selection_variable['variables']
     nactive = np.sum(active_union)
@@ -92,7 +92,7 @@ def test_split_compare(s=3,
         opt_sample = M_est.sampler.sample(ndraw,
                                           burnin)
 
-        pivots = M_est.sampler.coefficient_pvalues(unpenalized_mle, 
+        pivots = M_est.sampler.coefficient_pvalues(unpenalized_mle,
                                                    target_cov, 
                                                    score_cov, 
                                                    parameter=true_vec,
