@@ -21,11 +21,11 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
 
     results = []
     cls = lasso
-    for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['laplace', 'gaussian']):
+    for const_info, rand in product(zip([gaussian_instance], [cls.gaussian]), ['gaussian']):
 
         inst, const = const_info
 
-        X, Y, beta = inst(n=100, p=50, s=0, signal=5., sigma=1., rho=0.3)[:3]
+        X, Y, beta = inst(n=200, p=50, s=0, signal=5., sigma=1., rho=0.)[:3]
         n, p = X.shape
 
         W = np.ones(X.shape[1]) * 1.3

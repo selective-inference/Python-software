@@ -38,26 +38,24 @@ def test_split_compare(s=3,
                        rho=0.1,
                        split_frac=0.8,
                        lam_frac=0.7,
-                       ndraw=10000, burnin=2000,
-                       solve_args={'min_its':50, 'tol':1.e-10}, check_screen =True):
+                       ndraw=10000,
+                       burnin=2000,
+                       solve_args={'min_its':50, 'tol':1.e-10},
+                       check_screen =False):
 
     X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
-
     nonzero = np.where(beta)[0]
-
     loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
     lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
-    W[0] = 0 # use at least some unpenalized
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     m = int(split_frac * n)
 
     M_est = split_glm_group_lasso(loss, epsilon, m, penalty)
     M_est.solve()
-
 
     active_union = M_est.selection_variable['variables']
     nactive = np.sum(active_union)
@@ -140,7 +138,6 @@ def test_split_compare(s=3,
 
 def report(niter=3, **kwargs):
 
-    kwargs = {'s': 0, 'n': 300, 'p': 20, 'signal': 7, 'split_frac': 0.8}
     split_report = reports.reports['test_split_compare']
     screened_results = reports.collect_multiple_runs(split_report['test'],
                                                      split_report['columns'],
@@ -148,9 +145,10 @@ def report(niter=3, **kwargs):
                                                      reports.summarize_all,
                                                      **kwargs)
 
-    fig = reports.boot_clt_plot(screened_results, inactive=True, active=False)
-    fig.savefig('split_compare_pivots.pdf') # will have both bootstrap and CLT on plot
+    #fig = reports.boot_clt_plot(screened_results, inactive=True, active=False)
+    #fig.savefig('split_compare_pivots.pdf') # will have both bootstrap and CLT on plot
+    return (screened_results)
 
-
-if __name__=='__main__':
-    report()
+def main():
+    kwargs = {'s': 3, 'n': 200, 'p': 50, 'signal': 7, 'split_frac': 0.8}
+    report(**kwargs)

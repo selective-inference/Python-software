@@ -14,7 +14,7 @@ def compute_coverage(sel_ci, true_vec):
     return coverage
 
 
-def main(ndraw=10000, burnin=1000, nsim=10):
+def main(ndraw=5000, burnin=1000, nsim=20):
     np.random.seed(1)
 
     sel_pivots_all = list()
