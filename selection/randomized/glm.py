@@ -671,21 +671,25 @@ def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10})
     return functools.partial(parametric_cov, glm_loss, solve_args=solve_args)
 
 
-def standard_split_ci(glm_loss, X, y, active, leftout_indices, alpha=0.1):
+def standard_split_ci(glm_loss, X, y, active, leftout_indices, parametric=False, alpha=0.1):
     """
     Data plitting confidence intervals via bootstrap.
     """
     loss = glm_loss(X[leftout_indices,], y[leftout_indices])
-    boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+    observed = restricted_Mest(loss, active)
     nactive = np.sum(active)
-    size= np.sum(leftout_indices)
-    observed = target_observed[:nactive]
-    boot_target_restricted = lambda indices: boot_target(indices)[:nactive]
-    sampler = lambda: np.random.choice(size, size=(size,), replace=True)
-    target_cov = bootstrap_cov(sampler, boot_target_restricted)
+    if parametric==False:
+        boot_target, target_observed = pairs_bootstrap_glm(loss, active)
+        size= np.sum(leftout_indices)
+        print("size", size)
+        boot_target_restricted = lambda indices: boot_target(indices)[:nactive]
+        sampler = lambda: np.random.choice(size, size=(size,), replace=True)
+        target_cov = bootstrap_cov(sampler, boot_target_restricted)
+    else:
+        target_cov=_parametric_cov_glm(loss, active)[:nactive,:nactive]
 
     quantile = - ndist.ppf(alpha / float(2))
-    LU = np.zeros((2, target_observed.shape[0]))
+    LU = np.zeros((2, observed.shape[0]))
     for j in range(observed.shape[0]):
         sigma = np.sqrt(target_cov[j, j])
         LU[0, j] = observed[j] - sigma * quantile

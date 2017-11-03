@@ -9,7 +9,7 @@ from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import (randomization, 
                            split_glm_group_lasso)
 
-from ...tests.instance import logistic_instance
+from ...tests.instance import logistic_instance, gaussian_instance
 from ...tests.decorators import (wait_for_return_value, 
                                  register_report, 
                                  set_sampling_params_iftrue)
@@ -35,24 +35,35 @@ def test_split_compare(s=3,
                        n=100,
                        p=50,
                        signal=7,
-                       rho=0.1,
+                       rho=0.,
                        split_frac=0.8,
                        lam_frac=0.7,
                        ndraw=10000,
                        burnin=2000,
                        solve_args={'min_its':50, 'tol':1.e-10},
-                       check_screen =False):
+                       check_screen =False,
+                       instance = "gaussian"):
 
-    X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal)
+    m = int(split_frac * n)
+    if instance=="logistic":
+        X, y, beta, _ = logistic_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1.)
+        loss = rr.glm.logistic(X, y)
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
+        loss_rr = rr.glm.logistic
+    elif instance=="gaussian":
+        X, y, beta, _,_ = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1.)
+        loss = rr.glm.gaussian(X,y)
+        lam =lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.normal(0, 1. / 2, (n, 10000)))).max(0))
+        loss_rr = rr.glm.gaussian
+    else:
+        raise ValueError("invalid instance")
+
     nonzero = np.where(beta)[0]
-    loss = rr.glm.logistic(X, y)
     epsilon = 1.
 
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.binomial(1, 1. / 2, (n, 10000)))).max(0))
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    m = int(split_frac * n)
 
     M_est = split_glm_group_lasso(loss, epsilon, m, penalty)
     M_est.solve()
@@ -66,7 +77,6 @@ def test_split_compare(s=3,
     leftout_indices = M_est.randomized_loss.saturated_loss.case_weights == 0
 
     screen = set(nonzero).issubset(np.nonzero(active_union)[0])
-
     if check_screen and not screen:
         return None
 
@@ -95,12 +105,12 @@ def test_split_compare(s=3,
                                                    score_cov, 
                                                    parameter=true_vec,
                                                    sample=opt_sample)
-        LU = intervals = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
+        LU = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
 
         LU_naive = naive_confidence_intervals(np.diag(target_cov), target_observed)
 
         if X.shape[0] - leftout_indices.sum() > nactive:
-            LU_split = standard_split_ci(rr.glm.logistic, X, y, active_union, leftout_indices)
+            LU_split = standard_split_ci(loss_rr, X, y, active_union, leftout_indices, parametric=False)
         else:
             LU_split = np.ones((nactive, 2)) * np.nan
 
@@ -136,7 +146,7 @@ def test_split_compare(s=3,
                 ci_length_naive)
 
 
-def report(niter=3, **kwargs):
+def report(niter=10, **kwargs):
 
     split_report = reports.reports['test_split_compare']
     screened_results = reports.collect_multiple_runs(split_report['test'],
@@ -150,5 +160,6 @@ def report(niter=3, **kwargs):
     return (screened_results)
 
 def main():
-    kwargs = {'s': 3, 'n': 200, 'p': 50, 'signal': 7, 'split_frac': 0.8}
+    kwargs = {'s': 3, 'n': 200, 'p': 50, 'signal': 7, 'lam_frac':2.5, 'split_frac': 0.8,
+              'check_screen':True, 'instance':"gaussian"}
     report(**kwargs)
