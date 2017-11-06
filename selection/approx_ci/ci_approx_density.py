@@ -1,6 +1,5 @@
 from __future__ import print_function
 from math import log
-import sys
 from scipy.stats import norm as normal
 
 import numpy as np
@@ -355,7 +354,6 @@ class approximate_conditional_density(rr.smooth_atom):
         #defining the grid on which marginal conditional densities will be evaluated
         self.grid_length = 241
 
-        #print("observed values", self.target_observed)
         self.ind_obs = np.zeros(self.nactive, int)
         self.norm = np.zeros(self.nactive)
         self.h_approx = np.zeros((self.nactive, self.grid_length))
@@ -374,7 +372,6 @@ class approximate_conditional_density(rr.smooth_atom):
             else:
                 self.ind_obs[j] = np.argmin(np.abs(self.grid[j,:]-obs))
 
-            sys.stderr.write("number of variable being computed: " + str(j) + "\n")
             self.h_approx[j, :] = self.approx_conditional_prob(j)
 
     def approx_conditional_prob(self, j):
@@ -392,9 +389,6 @@ class approximate_conditional_density(rr.smooth_atom):
                 h_hat.append(-500.)
             elif val == -float('Inf') and i > 0:
                 h_hat.append(h_hat[i - 1])
-
-            #sys.stderr.write("point on grid: " + str(i) + "\n")
-            #sys.stderr.write("value on grid: " + str(h_hat[i]) + "\n")
 
         return np.array(h_hat)
 

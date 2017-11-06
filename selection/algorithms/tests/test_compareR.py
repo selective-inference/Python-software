@@ -42,7 +42,7 @@ def test_fixed_lambda():
         # extract coef for a given lambda; note the 1/n factor!
         # (and we don't save the intercept term)
         lam = %f
-        beta_hat = coef(gfit, s=lam/n, exact=TRUE)
+        beta_hat = coef(gfit, s=lam/n, exact=TRUE, x=x, y=y)
         beta_hat = beta_hat[-1]
 
         # compute fixed lambda p-values and selection intervals
@@ -56,7 +56,7 @@ def test_fixed_lambda():
         coef0=out$coef0
         vars=out$vars
         print(coef(lm(y ~ x[,out$vars])))
-        out 
+        out
         """ % (s, lam)
 
         rpy.r(R_code)
@@ -125,7 +125,7 @@ def test_forward_step():
     steps = []
     for i in range(x.shape[1]):
         FS.step()
-        steps.extend(FS.model_pivots(i+1, 
+        steps.extend(FS.model_pivots(i+1,
                                      which_var=FS.variables[-1:],
                                      alternative='onesided'))
 
@@ -176,7 +176,7 @@ def test_forward_step_all():
     steps = []
     for i in range(5):
         FS.step()
-    steps = FS.model_pivots(5, 
+    steps = FS.model_pivots(5,
                             alternative='onesided')
 
     np.testing.assert_array_equal(selected_vars, [i + 1 for i, p in steps])
@@ -211,7 +211,7 @@ def test_coxph():
     # extract coef for a given lambda; note the 1/n factor!
 
     lambda = 1.5
-    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE))
+    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE, x=x, y=Surv(tim, status)))
     # compute fixed lambda p-values and selection intervals
     out = fixedLassoInf(x,tim,beta_hat,lambda,status=status,family="cox")
     pval = out$pv
@@ -269,7 +269,7 @@ def test_logistic():
     # extract coef for a given lambda; note the 1/n factor!
     # (and here  we DO  include the intercept term)
     lambda = .8
-    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE))
+    beta_hat = as.numeric(coef(gfit, s=lambda/n, exact=TRUE, x=x, y=y))
 
     # compute fixed lambda p-values and selection intervals
     out = fixedLassoInf(x,y,beta_hat,lambda,family="binomial")
@@ -303,21 +303,19 @@ def test_logistic():
     yield np.testing.assert_allclose, L.summary('onesided')['pval'][1:], R_pvals, tol, tol, False, 'logistic pvalues'
 
 
-
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
-def test_solve_QP(): 
+def test_solve_QP_lasso():
     """
     Check the R coordinate descent LASSO solver
     """
 
     n, p = 100, 200
-    lam = 10
-    np.random.seed(0)
+    lam = 0.1
 
     X = np.random.standard_normal((n, p))
     Y = np.random.standard_normal(n)
 
-    loss = rr.squared_error(X, Y)
+    loss = rr.squared_error(X, Y, coef=1./n)
     pen = rr.l1norm(p, lagrange=lam)
     problem = rr.simple_problem(loss, pen)
     soln = problem.solve(min_its=500, tol=1.e-12)
@@ -325,31 +323,175 @@ def test_solve_QP():
     import rpy2.robjects.numpy2ri
     rpy2.robjects.numpy2ri.activate()
 
-    tol = 1.e-5
     rpy.r.assign('X', X)
     rpy.r.assign('Y', Y)
     rpy.r.assign('lam', lam)
-    
+
     R_code = """
 
     library(selectiveInference)
     p = ncol(X)
+    n = nrow(X)
     soln_R = rep(0, p)
-    grad = -t(X) %*% Y
-    ever_active = c(1, rep(0, p-1))
+    grad = -t(X) %*% Y / n
+    ever_active = as.integer(c(1, rep(0, p-1)))
     nactive = as.integer(1)
     kkt_tol = 1.e-12
-    objective_tol = 1.e-12
+    objective_tol = 1.e-16
+    parameter_tol = 1.e-10
     maxiter = 500
-    soln_R = selectiveInference:::solve_QP(t(X) %*% X, lam, maxiter, soln_R, -t(X) %*% Y, grad, ever_active, nactive, kkt_tol, objective_tol, p)$soln
+    soln_R = selectiveInference:::solve_QP(t(X) %*% X / n, 
+                                           lam, 
+                                           maxiter, 
+                                           soln_R, 
+                                           1. * grad,
+                                           grad, 
+                                           ever_active, 
+                                           nactive, 
+                                           kkt_tol, 
+                                           objective_tol, 
+                                           parameter_tol,
+                                           p,
+                                           TRUE,
+                                           TRUE,
+                                           TRUE)$soln
 
-    """ 
+    # test wide solver
+    Xtheta = rep(0, n)
+    nactive = as.integer(1)
+    ever_active = as.integer(c(1, rep(0, p-1)))
+    soln_R_wide = rep(0, p)
+    grad = - t(X) %*% Y / n
+    soln_R_wide = selectiveInference:::solve_QP_wide(X, 
+                                                     rep(lam, p), 
+                                                     0,
+                                                     maxiter, 
+                                                     soln_R_wide, 
+                                                     1. * grad,
+                                                     grad, 
+                                                     Xtheta,
+                                                     ever_active, 
+                                                     nactive, 
+                                                     kkt_tol, 
+                                                     objective_tol, 
+                                                     parameter_tol,
+                                                     p,
+                                                     TRUE,
+                                                     TRUE,
+                                                     TRUE)$soln
+
+    """
 
     rpy.r(R_code)
 
     soln_R = np.asarray(rpy.r('soln_R'))
+    soln_R_wide = np.asarray(rpy.r('soln_R_wide'))
     rpy2.robjects.numpy2ri.deactivate()
 
-    yield np.testing.assert_allclose, soln, soln_R, tol, tol, False, 'checking coordinate QP solver'
+    tol = 1.e-5
+    print(soln - soln_R)
+    print(soln_R - soln_R_wide)
 
+    yield np.testing.assert_allclose, soln, soln_R, tol, tol, False, 'checking coordinate QP solver for LASSO problem'
+    yield np.testing.assert_allclose, soln, soln_R_wide, tol, tol, False, 'checking wide coordinate QP solver for LASSO problem'
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+def test_solve_QP():
+    """
+    Check the R coordinate descent LASSO solver
+    """
+
+    n, p = 100, 50
+    lam = 0.08
+
+    X = np.random.standard_normal((n, p))
+
+    loss = rr.squared_error(X, np.zeros(n), coef=1./n)
+    pen = rr.l1norm(p, lagrange=lam)
+    E = np.zeros(p)
+    E[2] = 1
+    Q = rr.identity_quadratic(0, 0, E, 0)
+    problem = rr.simple_problem(loss, pen)
+    soln = problem.solve(Q, min_its=500, tol=1.e-12)
+
+    import rpy2.robjects.numpy2ri
+    rpy2.robjects.numpy2ri.activate()
+
+    rpy.r.assign('X', X)
+    rpy.r.assign('E', E)
+    rpy.r.assign('lam', lam)
+
+    R_code = """
+
+    library(selectiveInference)
+    p = ncol(X)
+    n = nrow(X)
+    soln_R = rep(0, p)
+    grad = 1. * E
+    ever_active = as.integer(c(1, rep(0, p-1)))
+    nactive = as.integer(1)
+    kkt_tol = 1.e-12
+    objective_tol = 1.e-16
+    parameter_tol = 1.e-10
+    maxiter = 500
+    soln_R = selectiveInference:::solve_QP(t(X) %*% X / n, 
+                                           lam, 
+                                           maxiter, 
+                                           soln_R, 
+                                           E,
+                                           grad, 
+                                           ever_active, 
+                                           nactive, 
+                                           kkt_tol, 
+                                           objective_tol, 
+                                           parameter_tol,
+                                           p,
+                                           TRUE,
+                                           TRUE,
+                                           TRUE)$soln
+
+    # test wide solver
+    Xtheta = rep(0, n)
+    nactive = as.integer(1)
+    ever_active = as.integer(c(1, rep(0, p-1)))
+    soln_R_wide = rep(0, p)
+    grad = 1. * E
+    soln_R_wide = selectiveInference:::solve_QP_wide(X, 
+                                                     rep(lam, p), 
+                                                     0,
+                                                     maxiter, 
+                                                     soln_R_wide, 
+                                                     E,
+                                                     grad, 
+                                                     Xtheta,
+                                                     ever_active, 
+                                                     nactive, 
+                                                     kkt_tol, 
+                                                     objective_tol, 
+                                                     parameter_tol,
+                                                     p,
+                                                     TRUE,
+                                                     TRUE,
+                                                     TRUE)$soln
+
+    """
+
+    rpy.r(R_code)
+
+    soln_R = np.asarray(rpy.r('soln_R'))
+    soln_R_wide = np.asarray(rpy.r('soln_R_wide'))
+    rpy2.robjects.numpy2ri.deactivate()
+
+    tol = 1.e-5
+    print(soln - soln_R)
+    print(soln_R - soln_R_wide)
+
+    G = X.T.dot(X).dot(soln) / n + E
+    
+    yield np.testing.assert_allclose, soln, soln_R, tol, tol, False, 'checking coordinate QP solver'
+    yield np.testing.assert_allclose, soln, soln_R_wide, tol, tol, False, 'checking wide coordinate QP solver'
+    yield np.testing.assert_allclose, G[soln != 0], -np.sign(soln[soln != 0]) * lam, tol, tol, False, 'checking active coordinate KKT for QP solver'
+    yield nt.assert_true, np.fabs(G).max() < lam * (1. + 1.e-6), 'testing linfinity norm'
+
+    
 

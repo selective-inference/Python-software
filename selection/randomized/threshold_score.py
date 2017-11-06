@@ -1,7 +1,10 @@
+import functools
+
 import numpy as np
 import regreg.api as rr
 
-from .query import query
+from .query import query, optimization_sampler
+from .reconstruction import reconstruct_full_from_internal, reconstruct_score
 from .M_estimator import restricted_Mest
 
 class threshold_score(query):
@@ -115,53 +118,85 @@ class threshold_score(query):
 
         self.interior = ~self.boundary
 
-        self.observed_score_state = candidate_score
+        self.observed_internal_state = candidate_score
 
-        self.selection_variable = {'boundary_set': self.boundary}
+        active_signs = np.sign(randomized_score[self.boundary])
+        self.selection_variable = {'boundary_set': self.boundary,
+                                   'active_signs': active_signs}
 
         self._solved = True
 
         self.nboot = nboot
         self.ndim = self.loss.shape[0]
 
-    def construct_weights(self, full_state):
-        """
-        marginalizing over the sub-gradient
-        """
-
-        if not self._setup:
-            raise ValueError('setup_sampler should be called before using this function')
-
-        threshold = self.threshold
-        weights = np.zeros_like(self.boundary, np.float)
-
-        weights[self.boundary] = ((self.randomization._density(threshold[self.boundary] - full_state[self.boundary]) - self.randomization._density(-threshold[self.boundary] - full_state[self.boundary])) /
-                                  (1 - self.randomization._cdf(threshold[self.boundary] - full_state[self.boundary]) + self.randomization._cdf(-threshold[self.boundary] - full_state[self.boundary])))
-
-
-        weights[~self.boundary] = ((-self.randomization._density(threshold[~self.boundary] - full_state[~self.boundary]) + self.randomization._density(-threshold[~self.boundary] - full_state[~self.boundary])) /
-                                   (self.randomization._cdf(threshold[~self.boundary] - full_state[~self.boundary]) - self.randomization._cdf(-threshold[~self.boundary] - full_state[~self.boundary])))
-
-        return weights ## tested
-
-    def setup_sampler(self):
-
         # must set observed_opt_state, opt_transform and score_transform
 
         p = self.boundary.shape[0]  # shorthand
         self.num_opt_var = 0
-        self.opt_transform = (np.array([], np.float), np.zeros(p, np.float))
-        self.observed_opt_state = np.array([])
+        opt_transform = np.identity(p)
+        opt_transform = np.vstack([opt_transform[self.boundary], opt_transform[self.interior]])
+        opt_offset = np.hstack([active_signs * threshold[self.boundary], 
+                                np.zeros(self.interior.sum())])
+        self.opt_transform = (opt_transform, opt_offset)
+        self.observed_opt_state = np.hstack([active_signs * threshold[self.boundary], 
+                                             randomized_score[self.interior]])
         _score_linear_term = -np.identity(p)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         self._setup = True
 
-    def projection(self, opt_state):
-        """
-        Full projection for Langevin.
-        The state here will be only the state of the optimization variables.
-        for now, groups are singletons
-        """
-        return opt_state
+    def get_sampler(self):
+
+        if not hasattr(self, "_sampler"):
+
+            def log_density(boundary, 
+                            score_transform,
+                            threshold,
+                            _density,
+                            _cdf,
+                            internal_state, 
+                            opt_state):
+                """
+                marginalizing over the sub-gradient
+                """
+
+                score_state = np.atleast_2d(reconstruct_score(score_transform, internal_state))
+                logdens = 0
+                weights = np.zeros_like(boundary, np.float)
+
+                logdens += np.log(1 - _cdf(threshold[boundary] - score_state[:, boundary]) + 
+                                  _cdf(-threshold[boundary] - score_state[:, boundary])).sum()
+                logdens += np.log(_cdf(threshold[~boundary] - score_state[:, ~boundary]) - 
+                                   _cdf(-threshold[~boundary] - score_state[:, ~boundary])).sum()
+                return logdens
+            
+
+            log_density = functools.partial(log_density,
+                                            self.boundary,
+                                            self.score_transform,
+                                            self.threshold,
+                                            self.randomization._density,
+                                            self.randomization._cdf)
+
+            # the gradient and projection are used for 
+            # Langevin sampling of opt variables
+            # but this view has no opt variables
+
+            grad_log_density = None
+            projection = None
+
+            self._sampler = optimization_sampler(np.zeros(()), # nothing to sample
+                                                 self.observed_internal_state.copy(),
+                                                 self.score_transform,
+                                                 self.opt_transform,
+                                                 projection,
+                                                 grad_log_density,
+                                                 log_density)
+        return self._sampler
+
+    sampler = property(get_sampler, query.set_sampler)
+
+    def setup_sampler(self):
+        pass
+
 

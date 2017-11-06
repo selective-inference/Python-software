@@ -58,13 +58,7 @@ def approximate_inference(X,
             ci.solve_approx()
             sys.stderr.write("True target to be covered" + str(true_vec) + "\n")
 
-            class target_class(object):
-                def __init__(self, target_cov):
-                    self.target_cov = target_cov
-                    self.shape = target_cov.shape
-
-            target = target_class(GS.target_cov)
-            ci_naive = naive_confidence_intervals(target, GS.target_observed)
+            ci_naive = naive_confidence_intervals(GS.target_cov, GS.target_observed)
             naive_covered = np.zeros(nactive)
             naive_risk = np.zeros(nactive)
 
@@ -119,4 +113,3 @@ def test_greedy_step(n=50, p=100, s=5, signal=5):
     if greedy_step is not None:
         print("output of selection adjusted inference", greedy_step)
         return(greedy_step)
-

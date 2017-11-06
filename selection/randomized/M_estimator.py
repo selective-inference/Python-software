@@ -1,8 +1,16 @@
+from __future__ import print_function
+import functools
+from copy import copy
+
 import numpy as np
+import scipy
+from scipy import matrix
+
 import regreg.api as rr
 import regreg.affine as ra
 
-from .query import query
+from .query import query, optimization_sampler
+from .reconstruction import reconstruct_full_from_internal
 from .randomization import split
 
 class M_estimator(query):
@@ -53,7 +61,7 @@ class M_estimator(query):
 
     def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}, nboot=2000):
 
-        self.randomize()
+        #self.randomize()
 
         (loss,
          randomized_loss,
@@ -159,19 +167,20 @@ class M_estimator(query):
         # we are implicitly assuming that
         # loss is a pairs model
 
-        _sqrt_scaling = np.sqrt(scaling)
+        self.scaling = scaling
+        _sqrt_scaling = np.sqrt(self.scaling)
 
         _beta_unpenalized = restricted_Mest(loss, overall, solve_args=solve_args)
 
         beta_full = np.zeros(overall.shape)
         beta_full[overall] = _beta_unpenalized
-        _hessian = loss.hessian(beta_full)
+        #_hessian = loss.hessian(beta_full)
         self._beta_full = beta_full
 
-        # observed state for score
+        # observed state for score in internal coordinates
 
-        self.observed_score_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
-                                               -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
+        self.observed_internal_state = np.hstack([_beta_unpenalized * _sqrt_scaling,
+                                                  -loss.smooth_objective(beta_full, 'grad')[inactive] / _sqrt_scaling])
 
         # form linear part
         self.num_opt_var = self.observed_opt_state.shape[0]
@@ -188,8 +197,12 @@ class M_estimator(query):
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
         Mest_slice = slice(0, overall.sum())
-        _Mest_hessian = _hessian[:,overall]
-        _score_linear_term[:,Mest_slice] = -_Mest_hessian / _sqrt_scaling
+        # _Mest_hessian = _hessian[:,overall]
+        X, y = loss.data
+        W = self.loss.saturated_loss.hessian(X.dot(beta_full))
+        _Mest_hessian = np.dot(X.T, X[:, overall] * W[:, None])
+        self._Mest_hessian = _Mest_hessian
+        _score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
@@ -204,8 +217,9 @@ class M_estimator(query):
         if len(active_directions)==0:
             _opt_hessian=0
         else:
-            _opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
-        _opt_linear_term[:,scaling_slice] = _opt_hessian / _sqrt_scaling
+            #_opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
+            _opt_hessian = np.dot(_Mest_hessian, active_directions[overall]) + epsilon * active_directions
+        _opt_linear_term[:, scaling_slice] = _opt_hessian / _sqrt_scaling
 
         self.observed_opt_state[scaling_slice] *= _sqrt_scaling
 
@@ -214,8 +228,9 @@ class M_estimator(query):
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            _opt_linear_term[:,unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
-
+            #_opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
+            _opt_linear_term[:, unpenalized_slice] = (np.dot(_Mest_hessian, unpenalized_directions[overall])
+                                                      + epsilon * unpenalized_directions) / _sqrt_scaling
         self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
 
         # subgrad piece
@@ -225,7 +240,7 @@ class M_estimator(query):
         for _i, _s in zip(inactive_idx, subgrad_idx):
             _opt_linear_term[_i,_s] = _sqrt_scaling
 
-        self.observed_opt_state[subgrad_slice] /= _sqrt_scaling
+        self.observed_opt_state[subgrad_idx] /= _sqrt_scaling
 
         # form affine part
 
@@ -270,90 +285,77 @@ class M_estimator(query):
         self.unpenalized_slice = unpenalized_slice
         self.ndim = loss.shape[0]
 
-        self.Q = ((_hessian + epsilon * np.identity(p))[:,active])[active,:]
-        self.Qinv = np.linalg.inv(self.Q)
-        self.form_VQLambda()
         self.nboot = nboot
 
-    def form_VQLambda(self):
-        nactive_groups = len(self.active_directions_list)
-        nactive_vars = sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
-        V = np.zeros((nactive_vars, nactive_vars-nactive_groups))
-        #U = np.zeros((nvariables, ngroups))
-        Lambda = np.zeros((nactive_vars,nactive_vars))
-        temp_row, temp_col = 0, 0
-        for g in range(len(self.active_directions_list)):
-            size_curr_group = self.active_directions_list[g].shape[0]
-            #U[temp_row:(temp_row+size_curr_group),g] = self._active_directions[g]
-            Lambda[temp_row:(temp_row+size_curr_group),temp_row:(temp_row+size_curr_group)] \
-                = self.active_penalty[g]*np.identity(size_curr_group)
-            import scipy
-            from scipy import linalg, matrix
-            def null(A, eps=1e-12):
-                u, s, vh = scipy.linalg.svd(A)
-                padding = max(0, np.shape(A)[1] - np.shape(s)[0])
-                null_mask = np.concatenate(((s <= eps), np.ones((padding,), dtype=bool)), axis=0)
-                null_space = scipy.compress(null_mask, vh, axis=0)
-                return scipy.transpose(null_space)
 
-            V_g = null(matrix(self.active_directions_list[g]))
-            V[temp_row:(temp_row+V_g.shape[0]), temp_col:(temp_col+V_g.shape[1])] = V_g
-            temp_row += V_g.shape[0]
-            temp_col += V_g.shape[1]
-        self.VQLambda = np.dot(np.dot(V.T,self.Qinv), Lambda.dot(V))
+#         if not self._setup:
+#             raise ValueError('setup_sampler should be called before using this function')
 
-        return self.VQLambda
+#         if ('subgradient' not in self.selection_variable and 
+#             'scaling' not in self.selection_variable): # have not conditioned on any thing else
+
+#         elif ('subgradient' not in self.selection_variable and
+#               'scaling' in self.selection_variable): # conditioned on the initial scalings
+#                                                      # only the subgradient in opt_state
+#             new_state = self.group_lasso_dual.bound_prox(opt_state)
+#         elif ('subgradient' in self.selection_variable and
+#               'scaling' not in self.selection_variable): # conditioned on the subgradient
+#                                                          # only the scaling in opt_state
+#             new_state = np.maximum(opt_state, 0)
+#         else:
+#             new_state = opt_state
+#         return new_state
 
 
-    def derivative_logdet_jacobian(self, scalings):
-        nactive_groups = len(self.active_directions_list)
-        nactive_vars = np.sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
-        from scipy.linalg import block_diag
-        matrix_list = [scalings[i]*np.identity(self.active_directions_list[i].shape[0]-1) for i in range(scalings.shape[0])]
-        Gamma_minus = block_diag(*matrix_list)
-        jacobian_inv = np.linalg.inv(Gamma_minus+self.VQLambda)
+    def get_sampler(self):
+        # setup the default optimization sampler
 
-        group_sizes = [self._active_directions[i].shape[0] for i in range(nactive_groups)]
-        group_sizes_cumsum = np.concatenate(([0], np.array(group_sizes).cumsum()))
+        if not hasattr(self, "_sampler"):
+            def projection(group_lasso_dual, subgrad_slice, scaling_slice, opt_state):
+                """
+                Full projection for Langevin.
 
-        jacobian_inv_blocks = [jacobian_inv[group_sizes_cumsum[i]:group_sizes_cumsum[i+1],group_sizes_cumsum[i]:group_sizes_cumsum[i+1]]
-                                for i in range(nactive_groups)]
+                The state here will be only the state of the optimization variables.
+                """
 
-        der = np.zeros(self.observed_opt_state.shape[0])
-        der[self.scaling_slice] = np.array([np.matrix.trace(jacobian_inv_blocks[i]) for i in range(scalings.shape[0])])
-        return der
+                new_state = opt_state.copy() # not really necessary to copy
+                new_state[scaling_slice] = np.maximum(opt_state[scaling_slice], 0)
+                new_state[subgrad_slice] = group_lasso_dual.bound_prox(opt_state[subgrad_slice])
+                return new_state
 
-    def setup_sampler(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}):
-        pass
+            projection = functools.partial(projection, self.group_lasso_dual, self.subgrad_slice, self.scaling_slice)
 
-    def projection(self, opt_state):
-        """
-        Full projection for Langevin.
+            def grad_log_density(query,
+                                 opt_linear,
+                                 rand_gradient,
+                                 internal_state,
+                                 opt_state):
+                full_state = reconstruct_full_from_internal(query.opt_transform, query.score_transform, internal_state, opt_state)
+                return opt_linear.T.dot(rand_gradient(full_state).T)
 
-        The state here will be only the state of the optimization variables.
-        """
+            grad_log_density = functools.partial(grad_log_density, self, self.opt_transform[0], self.randomization.gradient)
 
-        if not self._setup:
-            raise ValueError('setup_sampler should be called before using this function')
+            def log_density(query,
+                            opt_linear,
+                            rand_log_density,
+                            internal_state,
+                            opt_state):
+                full_state = reconstruct_full_from_internal(query.opt_transform, query.score_transform, internal_state, opt_state)
+                return rand_log_density(full_state)
 
-        if ('subgradient' not in self.selection_variable and 
-            'scaling' not in self.selection_variable): # have not conditioned on any thing else
-            new_state = opt_state.copy() # not really necessary to copy
-            new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
-            new_state[self.subgrad_slice] = self.group_lasso_dual.bound_prox(opt_state[self.subgrad_slice])
-        elif ('subgradient' not in self.selection_variable and
-              'scaling' in self.selection_variable): # conditioned on the initial scalings
-                                                     # only the subgradient in opt_state
-            new_state = self.group_lasso_dual.bound_prox(opt_state)
-        elif ('subgradient' in self.selection_variable and
-              'scaling' not in self.selection_variable): # conditioned on the subgradient
-                                                         # only the scaling in opt_state
-            new_state = np.maximum(opt_state, 0)
-        else:
-            new_state = opt_state
-        return new_state
+            log_density = functools.partial(log_density, self, self.opt_transform[0], self.randomization.log_density)
 
-    # optional things to condition on
+            self._sampler = optimization_sampler(self.observed_opt_state,
+                                                 self.observed_internal_state.copy(),
+                                                 self.score_transform,
+                                                 self.opt_transform,
+                                                 projection,
+                                                 grad_log_density,
+                                                 log_density)
+        return self._sampler
+
+    sampler = property(get_sampler, query.set_sampler)
+
 
     def decompose_subgradient(self, conditioning_groups=None, marginalizing_groups=None):
         """
@@ -377,35 +379,27 @@ class M_estimator(query):
         if not self._setup:
             raise ValueError('setup_sampler should be called before using this function')
 
-
         condition_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
         moving_inactive_groups = np.zeros_like(groups, dtype=bool)
         moving_inactive_variables = np.zeros_like(self._inactive, dtype=bool)
-        self._inactive_groups = ~(self._active_groups+self._unpenalized)
+        _inactive_groups = ~(self._active_groups+self._unpenalized)
 
         inactive_marginal_groups = np.zeros_like(self._inactive, dtype=bool)
-        limits_marginal_groups = np.zeros_like(self._inactive)
+        limits_marginal_groups = np.zeros_like(self._inactive, np.float)
 
         for i, g in enumerate(groups):
-            if (self._inactive_groups[i]) and conditioning_groups[i]:
+            if (_inactive_groups[i]) and conditioning_groups[i]:
                 group = self.penalty.groups == g
                 condition_inactive_groups[i] = True
                 condition_inactive_variables[group] = True
-            elif (self._inactive_groups[i]) and (~conditioning_groups[i]) and (~marginalizing_groups[i]):
+            elif (_inactive_groups[i]) and (~conditioning_groups[i]) and (~marginalizing_groups[i]):
                 group = self.penalty.groups == g
                 moving_inactive_groups[i] = True
                 moving_inactive_variables[group] = True
-            if (self._inactive_groups[i]) and marginalizing_groups[i]:
+            if (_inactive_groups[i]) and marginalizing_groups[i]:
                 group = self.penalty.groups == g
                 inactive_marginal_groups[i] = True
                 limits_marginal_groups[i] = self.penalty.weights[g]
-
-        if inactive_marginal_groups is not None:
-            if inactive_marginal_groups.sum()>0:
-                self._marginalize_subgradient = True
-
-        self.inactive_marginal_groups = inactive_marginal_groups
-        self.limits_marginal_groups = limits_marginal_groups
 
         opt_linear, opt_offset = self.opt_transform
 
@@ -428,8 +422,6 @@ class M_estimator(query):
                                                        moving_inactive_variables.sum())]
         observed_opt_state[subgrad_idx] = self.initial_subgrad[moving_inactive_variables]
 
-        self.observed_opt_state = observed_opt_state
-
         condition_linear = np.zeros((opt_linear.shape[0], (self._active_groups.sum() +
                                                            self._unpenalized_groups.sum() +
                                                            condition_inactive_variables.sum())))
@@ -442,14 +434,110 @@ class M_estimator(query):
 
         new_offset = condition_linear[:,subgrad_condition_idx].dot(self.initial_subgrad[condition_inactive_variables]) + opt_offset
 
-        self.opt_transform = (new_linear, new_offset)
+        new_opt_transform = (new_linear, new_offset)
 
-        # for group LASSO this should not induce a bigger jacobian as
-        # the subgradients are in the interior of a ball
+        print("limits marginal groups", limits_marginal_groups)
+        print("inactive marginal groups", inactive_marginal_groups)
 
-        self.selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
+        def _fraction(_cdf, _pdf, full_state_plus, full_state_minus, inactive_marginal_groups):
+            return (np.divide(_pdf(full_state_plus) - _pdf(full_state_minus),
+                              _cdf(full_state_plus) - _cdf(full_state_minus)))[inactive_marginal_groups]
 
-        self.num_opt_var = new_linear.shape[1]
+        def new_grad_log_density(query, 
+                                 limits_marginal_groups,
+                                 inactive_marginal_groups,
+                                 _cdf,
+                                 _pdf,
+                                 opt_linear,
+                                 deriv_log_dens,
+                                 internal_state, 
+                                 opt_state):
+
+            full_state = reconstruct_full_from_internal(new_opt_transform, query.score_transform, internal_state, opt_state)
+
+            p = query.penalty.shape[0]
+            weights = np.zeros(p)
+
+            if inactive_marginal_groups.sum()>0:
+                full_state_plus = full_state + np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
+                full_state_minus = full_state - np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
+                weights[inactive_marginal_groups] = _fraction(_cdf, _pdf, full_state_plus, full_state_minus, inactive_marginal_groups)
+            weights[~inactive_marginal_groups] = deriv_log_dens(full_state)[~inactive_marginal_groups]
+            return -opt_linear.T.dot(weights)
+
+        new_grad_log_density = functools.partial(new_grad_log_density,
+                                                 self,
+                                                 limits_marginal_groups,
+                                                 inactive_marginal_groups,
+                                                 self.randomization._cdf,
+                                                 self.randomization._pdf,
+                                                 new_opt_transform[0],
+                                                 self.randomization._derivative_log_density)
+
+        def new_log_density(query, 
+                            limits_marginal_groups,
+                            inactive_marginal_groups,
+                            _cdf,
+                            _pdf,
+                            opt_linear,
+                            log_dens,
+                            internal_state, 
+                            opt_state):
+
+            full_state = reconstruct_full_from_internal(new_opt_transform,
+                                                        query.score_transform,
+                                                        internal_state,
+                                                        opt_state)
+            full_state = np.atleast_2d(full_state)
+            p = query.penalty.shape[0]
+            logdens = np.zeros(full_state.shape[0])
+
+            if inactive_marginal_groups.sum()>0:
+                full_state_plus = full_state + np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
+                full_state_minus = full_state - np.multiply(limits_marginal_groups, np.array(inactive_marginal_groups, np.float))
+                logdens += np.sum(np.log(_cdf(full_state_plus) - _cdf(full_state_minus))[:,inactive_marginal_groups], axis=1)
+
+            logdens += log_dens(full_state[:,~inactive_marginal_groups])
+
+            return np.squeeze(logdens) # should this be negative to match the gradient log density?
+
+        new_log_density = functools.partial(new_log_density,
+                                            self,
+                                            limits_marginal_groups,
+                                            inactive_marginal_groups,
+                                            self.randomization._cdf,
+                                            self.randomization._pdf,
+                                            self.opt_transform[0],
+                                            self.randomization._log_density)
+
+        new_groups = self.penalty.groups[moving_inactive_groups]
+        _sqrt_scaling = np.sqrt(self.scaling)
+        new_weights = dict([(g, self.penalty.weights[g] / _sqrt_scaling) for g in self.penalty.weights.keys() if g in np.unique(new_groups)])
+        new_group_lasso_dual = rr.group_lasso_dual(new_groups, weights=new_weights, bound=1.)
+
+        def new_projection(group_lasso_dual,
+                           noverall,
+                           opt_state):
+            new_state = opt_state.copy()
+            new_state[self.scaling_slice] = np.maximum(opt_state[self.scaling_slice], 0)
+            new_state[noverall:] = group_lasso_dual.bound_prox(opt_state[noverall:])
+            return new_state
+
+        new_projection = functools.partial(new_projection,
+                                           new_group_lasso_dual,
+                                           self._overall.sum())
+                                           
+        new_selection_variable = copy(self.selection_variable)
+        new_selection_variable['subgradient'] = self.observed_opt_state[self.subgrad_slice]
+
+        self.sampler = optimization_sampler(observed_opt_state,
+                                            self.observed_internal_state.copy(),
+                                            self.score_transform,
+                                            new_opt_transform,
+                                            new_projection,
+                                            new_grad_log_density,
+                                            new_log_density,
+                                            selection_info=(self, new_selection_variable))
 
     def condition_on_scalings(self):
         """
@@ -475,37 +563,41 @@ class M_estimator(query):
         self.scaling_slice = np.zeros(new_linear.shape[1], np.bool)
         self.num_opt_var = new_linear.shape[1]
 
+#     def grad_log_density(self, internal_state, opt_state):
+#         """
+#             marginalizing over the sub-gradient
 
-    def construct_weights(self, full_state):
-        """
-            marginalizing over the sub-gradient
+#             full_state is 
+#             density should be expressed in terms of opt_state coordinates
+#         """
 
-            full_state is 
-        """
+#         if not self._setup:
+#             raise ValueError('setup_sampler should be called before using this function')
 
-        if not self._setup:
-            raise ValueError('setup_sampler should be called before using this function')
+#         if self._marginalize_subgradient:
 
-        if self._marginalize_subgradient:
-            p = self.penalty.shape[0]
-            weights = np.zeros(p)
+#             full_state = reconstruct_full_from_internal(self, internal_state, opt_state)
 
-            if self.inactive_marginal_groups.sum()>0:
-                full_state_plus = full_state + np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
-                full_state_minus = full_state - np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
+#             p = self.penalty.shape[0]
+#             weights = np.zeros(p)
+
+#             if self.inactive_marginal_groups.sum()>0:
+#                 full_state_plus = full_state + np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
+#                 full_state_minus = full_state - np.multiply(self.limits_marginal_groups, np.array(self.inactive_marginal_groups, np.float))
 
 
-            def fraction(full_state_plus, full_state_minus, inactive_marginal_groups):
-                return (np.divide(self.randomization._pdf(full_state_plus) - self.randomization._pdf(full_state_minus),
-                       self.randomization._cdf(full_state_plus) - self.randomization._cdf(full_state_minus)))[inactive_marginal_groups]
+#             def fraction(full_state_plus, full_state_minus, inactive_marginal_groups):
+#                 return (np.divide(self.randomization._pdf(full_state_plus) - self.randomization._pdf(full_state_minus),
+#                        self.randomization._cdf(full_state_plus) - self.randomization._cdf(full_state_minus)))[inactive_marginal_groups]
 
-            if self.inactive_marginal_groups.sum() > 0:
-                weights[self.inactive_marginal_groups] = fraction(full_state_plus, full_state_minus, self.inactive_marginal_groups)
-            weights[~self.inactive_marginal_groups] = self.randomization._derivative_log_density(full_state)[~self.inactive_marginal_groups]
+#             if self.inactive_marginal_groups.sum() > 0:
+#                 weights[self.inactive_marginal_groups] = fraction(full_state_plus, full_state_minus, self.inactive_marginal_groups)
+#             weights[~self.inactive_marginal_groups] = self.randomization._derivative_log_density(full_state)[~self.inactive_marginal_groups]
 
-            return -weights
-        else:
-            return query.construct_weights(self, full_state)
+#             opt_linear = self.opt_transform[0]
+#             return -opt_linear.T.dot(weights)
+#         else:
+#             return query.grad_log_density(self, internal_state, opt_state)
 
 def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
     """
@@ -545,70 +637,75 @@ def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
 class M_estimator_split(M_estimator):
 
     def __init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10}):
+
         total_size = loss.saturated_loss.shape[0]
         self.randomization = split(loss.shape, subsample_size, total_size)
-        M_estimator.__init__(self,loss, epsilon, penalty, self.randomization, solve_args=solve_args)
+
+        M_estimator.__init__(self, loss, epsilon, penalty, self.randomization, solve_args=solve_args)
 
         total_size = loss.saturated_loss.shape[0]
         if subsample_size > total_size:
             raise ValueError('subsample size must be smaller than total sample size')
 
         self.total_size, self.subsample_size = total_size, subsample_size
-
-
-    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}, B=2000):
-
-        M_estimator.setup_sampler(self, 
-                                  scaling=scaling,
-                                  solve_args=solve_args)
         
-        # now we need to estimate covariance of
-        # loss.grad(\beta_E^*) - 1/pi * randomized_loss.grad(\beta_E^*)
 
-        m, n, p = self.subsample_size, self.total_size, self.loss.shape[0] # shorthand
-        
-        from .glm import pairs_bootstrap_score # need to correct these imports!!!
+class M_estimator_group_lasso(M_estimator):
 
-        bootstrap_score = pairs_bootstrap_score(self.loss,
-                                                self._overall,
-                                                beta_active=self._beta_full[self._overall],
-                                                solve_args=solve_args)
+    def __init__(self, loss, epsilon, penalty, randomization, solve_args={'min_its': 50, 'tol': 1.e-10}):
 
-        # find unpenalized MLE on subsample
+        M_estimator.__init__(self, loss, epsilon, penalty, randomization, solve_args=solve_args)
 
-        newq, oldq = rr.identity_quadratic(0, 0, 0, 0), self.randomized_loss.quadratic
-        self.randomized_loss.quadratic = newq
-        beta_active_subsample = restricted_Mest(self.randomized_loss,
-                                                self._overall)
+        self.Q = self._Mest_hessian[self._overall,:] + epsilon * np.identity(self._overall.sum())
+        self.Qinv = np.linalg.inv(self.Q)
+        self.form_VQLambda()
 
-        bootstrap_score_split = pairs_bootstrap_score(self.loss,
-                                                      self._overall,
-                                                      beta_active=beta_active_subsample,
-                                                      solve_args=solve_args)
-        self.randomized_loss.quadratic = oldq
+    def form_VQLambda(self):
+        nactive_groups = len(self.active_directions_list)
+        nactive_vars = sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
+        V = np.zeros((nactive_vars, nactive_vars - nactive_groups))
 
-        inv_frac = n / m
-        
-        def subsample_diff(m, n, indices):
-            subsample = np.random.choice(indices, size=m, replace=False)
-            full_score = bootstrap_score(indices) # a sum of n terms
-            randomized_score = bootstrap_score_split(subsample) # a sum of m terms
-            return full_score - randomized_score * inv_frac
+        Lambda = np.zeros((nactive_vars, nactive_vars))
+        temp_row, temp_col = 0, 0
+        for g in range(len(self.active_directions_list)):
+            size_curr_group = self.active_directions_list[g].shape[0]
 
-        first_moment = np.zeros(p)
-        second_moment = np.zeros((p, p))
-        
-        _n = np.arange(n)
-        for _ in range(B):
-            indices = np.random.choice(_n, size=n, replace=True)
-            randomized_score = subsample_diff(m, n, indices)
-            first_moment += randomized_score
-            second_moment += np.multiply.outer(randomized_score, randomized_score)
+            Lambda[temp_row:(temp_row + size_curr_group), temp_row:(temp_row + size_curr_group)] \
+                = self.active_penalty[g] * np.identity(size_curr_group)
 
-        first_moment /= B
-        second_moment /= B
+            def null(A, eps=1e-12):
+                u, s, vh = np.linalg.svd(A)
+                padding = max(0, np.shape(A)[1] - np.shape(s)[0])
+                null_mask = np.concatenate(((s <= eps), np.ones((padding,), dtype=bool)), axis=0)
+                null_space = scipy.compress(null_mask, vh, axis=0)
+                return scipy.transpose(null_space)
 
-        cov = second_moment - np.multiply.outer(first_moment,
-                                                first_moment)
+            V_g = null(matrix(self.active_directions_list[g]))
+            V[temp_row:(temp_row + V_g.shape[0]), temp_col:(temp_col + V_g.shape[1])] = V_g
+            temp_row += V_g.shape[0]
+            temp_col += V_g.shape[1]
+        self.VQLambda = np.dot(np.dot(V.T, self.Qinv), Lambda.dot(V))
 
-        self.randomization.set_covariance(cov)
+        return self.VQLambda
+
+    def derivative_logdet_jacobian(self, scalings):
+        nactive_groups = len(self.active_directions_list)
+        nactive_vars = np.sum([self.active_directions_list[i].shape[0] for i in range(nactive_groups)])
+        from scipy.linalg import block_diag
+        matrix_list = [scalings[i] * np.identity(self.active_directions_list[i].shape[0] - 1) for i in
+                       range(scalings.shape[0])]
+        Gamma_minus = block_diag(*matrix_list)
+        jacobian_inv = np.linalg.inv(Gamma_minus + self.VQLambda)
+
+        group_sizes = [self._active_directions[i].shape[0] for i in range(nactive_groups)]
+        group_sizes_cumsum = np.concatenate(([0], np.array(group_sizes).cumsum()))
+
+        jacobian_inv_blocks = [
+            jacobian_inv[group_sizes_cumsum[i]:group_sizes_cumsum[i + 1],
+            group_sizes_cumsum[i]:group_sizes_cumsum[i + 1]]
+            for i in range(nactive_groups)]
+
+        der = np.zeros(self.observed_opt_state.shape[0])
+        der[self.scaling_slice] = np.array([np.matrix.trace(jacobian_inv_blocks[i]) for i in range(scalings.shape[0])])
+        return der
+

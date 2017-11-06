@@ -41,11 +41,12 @@ a fixed lambda test for the LASSO.
 """
 
 # versions
-NUMPY_MIN_VERSION='1.3'
-SCIPY_MIN_VERSION = '0.7'
-CYTHON_MIN_VERSION = '0.11.1'
+NUMPY_MIN_VERSION='1.13.3'
+SCIPY_MIN_VERSION = '0.9'
+CYTHON_MIN_VERSION = '0.21'
 MPMATH_MIN_VERSION = "0.18"
 PYINTER_MIN_VERSION = "0.1.6"
+SKLEARN_MIN_VERSION = '0.19'
 
 NAME                = 'selection'
 MAINTAINER          = "Jonathan Taylor"

@@ -3,16 +3,18 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-from selection.tests.instance import gaussian_instance
-from selection.tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.instance import gaussian_instance
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
 import selection.tests.reports as reports
 
-from selection.randomized.api import randomization, multiple_queries, glm_target, glm_nonparametric_bootstrap
-from selection.randomized.glm import resid_bootstrap, fixedX_group_lasso
+from ..api import randomization 
+from ..glm import (resid_bootstrap, 
+                   glm_nonparametric_bootstrap,
+                   fixedX_group_lasso)
 
 
-@register_report(['pvalue', 'active'])
+@register_report(['pvalue', 'cover', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
@@ -31,99 +33,51 @@ def test_fixedX(ndraw=10000, burnin=2000): # nsim needed for decorator
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     M_est = fixedX_group_lasso(X, Y, epsilon, penalty, randomizer)
+    M_est.solve()
 
-    mv = multiple_queries([M_est])
-    mv.solve()
+    active_set = M_est.selection_variable['variables']
+    nactive = active_set.sum()
 
-    active = M_est.selection_variable['variables']
-    nactive = active.sum()
+    if set(nonzero).issubset(np.nonzero(active_set)[0]) and active_set.sum() > len(nonzero):
 
-    if set(nonzero).issubset(np.nonzero(active)[0]) and active.sum() > len(nonzero):
+        selected_features = np.zeros(p, np.bool)
+        selected_features[active_set] = True
 
-        pvalues = []
-        active_set = np.nonzero(active)[0]
-        inactive_selected = I = [i for i in np.arange(active_set.shape[0]) if active_set[i] not in nonzero]
-        active_selected = A = [i for i in np.arange(active_set.shape[0]) if active_set[i] in nonzero]
+        Xactive = X[:,active_set]
+        unpenalized_mle = np.linalg.pinv(Xactive).dot(Y)
 
-        if not I:
-            return None
-     
-        idx = I[0]
-        boot_target, target_observed = resid_bootstrap(M_est.loss, active)
-
-        X_active = X[:,active]
-        beta_hat = np.linalg.pinv(X_active).dot(Y)
-        resid_hat = Y - X_active.dot(beta_hat)
         form_covariances = glm_nonparametric_bootstrap(n, n)
-        mv.setup_sampler(form_covariances)
+        target_info, target_observed = resid_bootstrap(M_est.loss, active_set)
 
-        # null saturated
+        cov_info = M_est.setup_sampler()
+        target_cov, score_cov = form_covariances(target_info,  
+                                                 cross_terms=[cov_info],
+                                                 nsample=M_est.nboot)
 
-        def null_target(Y_star):
-            result = boot_target(Y_star)
-            return result[idx]
+        opt_sample = M_est.sampler.sample(ndraw,
+                                          burnin)
 
-        null_observed = np.zeros(1)
-        null_observed[0] = target_observed[idx]
+        pvalues = M_est.sampler.coefficient_pvalues(unpenalized_mle, 
+                                                    target_cov, 
+                                                    score_cov, 
+                                                    parameter=np.zeros(selected_features.sum()), 
+                                                    sample=opt_sample)
+        intervals = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
 
-        target_sampler = mv.setup_target(null_target, null_observed)
+        true_vec = beta[M_est.selection_variable['variables']] 
 
-        test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw) # twosided by default
-        pvalues.append(pval)
+        L, U = intervals.T
 
-        # null selected
+        covered = np.zeros(nactive, np.bool)
+        active_var = np.zeros(nactive, np.bool)
+        active_set = np.nonzero(active_set)[0]
 
-        def null_target(Y_star):
-            result = boot_target(Y_star)
-            return np.hstack([result[idx], result[nactive:]])
+        for j in range(nactive):
+            if (L[j] <= true_vec[j]) and (U[j] >= true_vec[j]):
+                covered[j] = 1
+            active_var[j] = active_set[j] in nonzero
 
-        null_observed = np.zeros_like(null_target(np.random.standard_normal(n)))
-        null_observed[0] = target_observed[idx]
-        null_observed[1:] = target_observed[nactive:]
-
-        target_sampler = mv.setup_target(null_target, null_observed, target_set=[0])
-
-        test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, null_observed, burnin=burnin, ndraw=ndraw) # twosided by default
-        pvalues.append(pval)
-
-        # true saturated
-
-        idx = A[0]
-
-        def active_target(Y_star):
-            result = boot_target(Y_star)
-            return result[idx]
-
-        active_observed = np.zeros(1)
-        active_observed[0] = target_observed[idx]
-
-        sampler = lambda : np.random.choice(n, size=(n,), replace=True)
-
-        target_sampler = mv.setup_target(active_target, active_observed)
-
-        test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw) # twosided by default
-        pvalues.append(pval)
-
-        # true selected
-
-        def active_target(Y_star):
-            result = boot_target(Y_star)
-            return np.hstack([result[idx], result[nactive:]])
-
-        active_observed = np.zeros_like(active_target(np.random.standard_normal(n)))
-        active_observed[0] = target_observed[idx]
-        active_observed[1:] = target_observed[nactive:]
-
-        target_sampler = mv.setup_target(active_target, active_observed, target_set=[0])
-
-        test_stat = lambda x: x[0]
-        pval = target_sampler.hypothesis_test(test_stat, active_observed, burnin=burnin, ndraw=ndraw) # twosided by default
-        pvalues.append(pval)
-
-        return pvalues, [False, False, True, True]
+        return pvalues, covered, active_var
 
 def report(niter=50, **kwargs):
 
@@ -136,4 +90,3 @@ def report(niter=50, **kwargs):
 
     fig = reports.pvalue_plot(runs)
     fig.savefig('fixedX_pivots.pdf') # will have both bootstrap and CLT on plot
-

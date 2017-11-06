@@ -24,7 +24,7 @@ class M_estimator_map(M_estimator):
         self.score_transform = (self._score_linear_term, np.zeros(self._score_linear_term.shape[0]))
         self.feasible_point = np.abs(self.initial_soln[self._overall])
         lagrange = []
-        for key, value in self.penalty.weights.iteritems():
+        for key, value in self.penalty.weights.items():
             lagrange.append(value)
         lagrange = np.asarray(lagrange)
         self.inactive_lagrange = lagrange[~self._overall]
@@ -42,7 +42,8 @@ class M_estimator_map(M_estimator):
 
         self.score_target_cov = score_cov[:, :nactive]
         self.target_cov = score_cov[:nactive, :nactive]
-        self.target_observed = self.observed_score_state[:nactive]
+        self.target_observed = self.observed_internal_state[:nactive]
+        self.observed_score_state = self.observed_internal_state
         self.nactive = nactive
 
         self.B_active = self._opt_linear_term[:nactive, :nactive]
@@ -116,6 +117,8 @@ class greedy_score_map(greedy_score_step):
         self.B_active = self._opt_linear_term[:nactive, :nactive]
         self.B_inactive = self._opt_linear_term[nactive:, :nactive]
 
+        self.observed_score_state = self.observed_internal_state
+
     def setup_map(self, j):
         self.A = np.dot(self._score_linear_term, self.score_target_cov[:, j]) / self.target_cov[j, j]
         self.null_statistic = self._score_linear_term.dot(self.observed_score_state) - self.A * self.target_observed[j]
@@ -139,9 +142,13 @@ class threshold_score_map(threshold_score):
     def solve_approx(self):
         self.solve()
         self.setup_sampler()
-        print("boundary", self.observed_opt_state, self.boundary)
-        self.feasible_point = self.observed_opt_state[self.boundary]
+        #print("boundary", self.observed_opt_state, self.boundary)
+        #self.feasible_point = self.observed_opt_state[self.boundary]
+        self.observed_score_state = self.observed_internal_state
+
+        self.feasible_point = np.ones(self.boundary.sum())
         (_opt_linear_term, _opt_offset) = self.opt_transform
+        print("shapes", _opt_linear_term[self.boundary, :].shape, _opt_linear_term[self.interior, :].shape)
         self._opt_linear_term = np.concatenate((_opt_linear_term[self.boundary, :], _opt_linear_term[self.interior, :]),
                                                0)
         self._opt_affine_term = np.concatenate((_opt_offset[self.boundary], _opt_offset[self.interior]), 0)

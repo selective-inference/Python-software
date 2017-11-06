@@ -6,12 +6,9 @@ import regreg.api as rr
 
 from ...api import (randomization,
                     glm_group_lasso,
-                    multiple_queries,
-                    glm_target)
+                    multiple_queries)
 from ...tests.instance import (gaussian_instance,
                                logistic_instance)
-
-from ..query import naive_confidence_intervals, naive_pvalues
 
 import selection.tests.reports as reports
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
@@ -19,14 +16,19 @@ from ...tests.decorators import (wait_for_return_value,
                                  set_seed_iftrue, 
                                  set_sampling_params_iftrue, 
                                  register_report)
+
+from ..query import naive_confidence_intervals, naive_pvalues
+from ..M_estimator import restricted_Mest
 from ..cv_view import CV_view
+from ..glm import (glm_nonparametric_bootstrap,
+                   pairs_bootstrap_glm)
 
 if SMALL_SAMPLES:
     nboot = 10
 else: 
     nboot = -1
 
-@register_report(['truth', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
+@register_report(['pvalue', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
                   'active', 'BH_decisions', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
@@ -106,15 +108,15 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
     W = lam_frac * np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
-    M_est1 = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
+    M_est = glm_group_lasso(glm_loss, epsilon, penalty, randomizer)
 
     if nboot > 0:
-        cv.nboot = M_est1.nboot = nboot
+        cv.nboot = M_est.nboot = nboot
 
-    mv = multiple_queries([cv, M_est1])
+    mv = multiple_queries([cv, M_est])
     mv.solve()
 
-    active_union = M_est1._overall
+    active_union = M_est._overall
     nactive = np.sum(active_union)
     print("nactive", nactive)
     if nactive==0:
@@ -128,35 +130,40 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
         true_vec = beta[active_union]
 
         if marginalize_subgrad == True:
-            M_est1.decompose_subgradient(conditioning_groups=np.zeros(p, bool),
+            M_est.decompose_subgradient(conditioning_groups=np.zeros(p, bool),
                                          marginalizing_groups=np.ones(p, bool))
 
-        target_sampler, target_observed = glm_target(glm_loss,
-                                                     active_union,
-                                                     mv,
-                                                     bootstrap=bootstrap)
+        selected_features = np.zeros(p, np.bool)
+        selected_features[active_set] = True
 
-        target_sample = target_sampler.sample(ndraw=ndraw,
-                                              burnin=burnin)
-        LU = target_sampler.confidence_intervals(target_observed,
-                                                 sample=target_sample,
-                                                 level=0.9)
+        unpenalized_mle = restricted_Mest(M_est.loss, selected_features)
 
-        pivots_truth = target_sampler.coefficient_pvalues(target_observed,
-                                                          parameter=true_vec,
-                                                          sample=target_sample)
-        pvalues = target_sampler.coefficient_pvalues(target_observed,
-                                                     parameter=np.zeros_like(true_vec),
-                                                     sample=target_sample)
+        form_covariances = glm_nonparametric_bootstrap(n, n)
+        target_info, target_observed = pairs_bootstrap_glm(M_est.loss, selected_features, inactive=None)
 
-        L, U = LU.T
+        cov_info = M_est.setup_sampler()
+        target_cov, score_cov = form_covariances(target_info,  
+                                                 cross_terms=[cov_info],
+                                                 nsample=M_est.nboot)
+
+        opt_sample = M_est.sampler.sample(ndraw,
+                                          burnin)
+
+        pvalues = M_est.sampler.coefficient_pvalues(unpenalized_mle, 
+                                                    target_cov, 
+                                                    score_cov, 
+                                                    parameter=np.zeros(selected_features.sum()), 
+                                                    sample=opt_sample)
+        intervals = M_est.sampler.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_sample)
+
+        L, U = intervals.T
         sel_covered = np.zeros(nactive, np.bool)
         sel_length = np.zeros(nactive)
 
-        LU_naive = naive_confidence_intervals(target_sampler, target_observed)
+        LU_naive = naive_confidence_intervals(np.diag(target_cov), target_observed)
         naive_covered = np.zeros(nactive, np.bool)
         naive_length = np.zeros(nactive)
-        naive_pvals = naive_pvalues(target_sampler, target_observed, true_vec)
+        naive_pvals = naive_pvalues(np.diag(target_cov), target_observed, true_vec)
 
         active_var = np.zeros(nactive, np.bool)
 
@@ -171,7 +178,7 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
 
         q = 0.2
         BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
-        return pivots_truth, sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
+        return sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
 
 def report(niter=50, **kwargs):

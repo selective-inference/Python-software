@@ -22,9 +22,8 @@ try:
 except ImportError:
     R_available = False
 
-@set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=20000)
 @set_seed_iftrue(SET_SEED)
-def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
+def test_chisq_central(nsim=None, burnin=5000, ndraw=20000):
 
     n, p = 4, 10
     A, b = np.random.standard_normal((n, p)), np.zeros(n)
@@ -48,7 +47,7 @@ def test_chisq_central(nsim=None, burnin=8000, ndraw=2000):
 @dec.skipif(not R_available, "needs rpy2")
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, burnin=10, ndraw=10)
 @set_seed_iftrue(SET_SEED)
-def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=8000):
+def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=5000):
 
     mu = np.arange(6)
     ncp = np.linalg.norm(mu[:3])**2
