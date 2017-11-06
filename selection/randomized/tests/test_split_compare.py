@@ -53,7 +53,10 @@ def test_split_compare(s=3,
     elif instance=="gaussian":
         X, y, beta, _,_ = gaussian_instance(n=n, p=p, s=s, rho=rho, signal=signal, sigma=1.)
         loss = rr.glm.gaussian(X,y)
-        lam =lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.normal(0, 1. / 2, (n, 10000)))).max(0))
+        #lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.normal(0, 1. / 2, (n, 10000)))).max(0))
+        #print("lam", lam)
+        lam = lam_frac * np.sqrt(np.log(p)*m/n)
+        print("lam", lam)
         loss_rr = rr.glm.gaussian
     else:
         raise ValueError("invalid instance")
@@ -64,8 +67,14 @@ def test_split_compare(s=3,
     W = np.ones(p)*lam
     penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-
     M_est = split_glm_group_lasso(loss, epsilon, m, penalty)
+    M_est.randomize()
+    leftout_indices = M_est.randomized_loss.saturated_loss.case_weights == 0
+    X_used = X[~leftout_indices,:]
+    lam = lam_frac * np.mean(np.fabs(np.dot(X_used.T, np.random.normal(0, 1., (m, 10000)))).max(0))
+    print("lam", lam)
+    M_est.penalty =rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), np.ones(p)*lam)), lagrange=1.)
+
     M_est.solve()
 
     active_union = M_est.selection_variable['variables']
@@ -73,8 +82,6 @@ def test_split_compare(s=3,
     print("nactive", nactive)
     if nactive==0:
         return None
-
-    leftout_indices = M_est.randomized_loss.saturated_loss.case_weights == 0
 
     screen = set(nonzero).issubset(np.nonzero(active_union)[0])
     if check_screen and not screen:
@@ -84,13 +91,10 @@ def test_split_compare(s=3,
         active_set = np.nonzero(active_union)[0]
         true_vec = beta[active_union]
 
-        selected_features = np.zeros(p, np.bool)
-        selected_features[active_set] = True
-
-        unpenalized_mle = restricted_Mest(loss, selected_features)
+        unpenalized_mle = restricted_Mest(loss, active_union)
 
         form_covariances = glm_nonparametric_bootstrap(n, n)
-        target_info, target_observed = pairs_bootstrap_glm(M_est.loss, selected_features, inactive=None)
+        target_info, target_observed = pairs_bootstrap_glm(M_est.loss, active_union, inactive=None)
 
         cov_info = M_est.setup_sampler()
         target_cov, score_cov = form_covariances(target_info,  
@@ -146,7 +150,8 @@ def test_split_compare(s=3,
                 ci_length_naive)
 
 
-def report(niter=10, **kwargs):
+
+def report(niter=2, **kwargs):
 
     split_report = reports.reports['test_split_compare']
     screened_results = reports.collect_multiple_runs(split_report['test'],
@@ -155,11 +160,11 @@ def report(niter=10, **kwargs):
                                                      reports.summarize_all,
                                                      **kwargs)
 
-    #fig = reports.boot_clt_plot(screened_results, inactive=True, active=False)
-    #fig.savefig('split_compare_pivots.pdf') # will have both bootstrap and CLT on plot
+    #fig = reports.custom_plot(screened_results, labels=['pivots_clt'], colors=['r'])
+    #fig.savefig('split_compare_pivots.pdf')
     return (screened_results)
 
 def main():
-    kwargs = {'s': 3, 'n': 200, 'p': 50, 'signal': 7, 'lam_frac':2.5, 'split_frac': 0.8,
+    kwargs = {'s': 0, 'n': 200, 'p': 50, 'signal': 7, 'lam_frac':2.5, 'split_frac': 0.8,
               'check_screen':True, 'instance':"gaussian"}
     report(**kwargs)

@@ -50,6 +50,27 @@ def collect_multiple_runs(test_fn, columns, nrun, summary_fn, *args, **kwargs):
             summary_fn(pd.concat(dfs))
     return pd.concat(dfs)
 
+
+def custom_plot(multiple_results, labels, colors, screening=False, fig=None):
+
+    if fig is None:
+        fig = plt.figure()
+    ax = fig.gca()
+
+    fig.suptitle('Pivots', fontsize=20)
+
+    grid = np.linspace(0, 1, 51)
+
+    for i in range(len(labels)):
+        ecdf = sm.distributions.ECDF(multiple_results[labels[i]])
+        F = ecdf(grid)
+        ax.plot(grid, F, '--o', c=colors[i], lw=2, label=labels[i])
+
+    ax.plot([0, 1], [0, 1], 'k-', lw=2)
+    ax.legend(loc='lower right')
+    return fig
+
+
 def pvalue_plot(multiple_results, screening=False, fig=None, label = '$H_0$', colors=['b','r']):
     """
     Extract pvalues and group by 

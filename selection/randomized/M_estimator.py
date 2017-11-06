@@ -61,7 +61,7 @@ class M_estimator(query):
 
     def solve(self, scaling=1, solve_args={'min_its':20, 'tol':1.e-10}, nboot=2000):
 
-        self.randomize()
+        #self.randomize()
 
         (loss,
          randomized_loss,
