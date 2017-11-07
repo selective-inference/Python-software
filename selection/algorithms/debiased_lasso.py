@@ -56,10 +56,6 @@ def _find_row_approx_inverse_X(X, j, delta,
                                max_active=None,
                                ):
 
-    # need a copy as column major ordering for C code
-
-    X_F = np.asfortranarray(X)
-
     n, p = X.shape
     theta = np.zeros(p)
     theta_old = np.zeros(p)
@@ -80,7 +76,7 @@ def _find_row_approx_inverse_X(X, j, delta,
     if max_active is None:
         max_active = max(50, 0.3 * n)
 
-    solve_wide_(X_F,
+    solve_wide_(X,
                 X_theta,
                 linear_func,
                 nndef_diag,
