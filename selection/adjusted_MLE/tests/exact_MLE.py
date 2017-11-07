@@ -8,11 +8,10 @@ def grad_CGF(mu, randomization_scale = 0.5, threshold = 2):
     return grad
 
 def fisher_info(mu, randomization_scale = 0.5, threshold = 2):
-    hessian = 1.- (1./(1.+ randomization_scale**2.))*(((mu-threshold)/(np.sqrt(1.+randomization_scale**2.)))
-                                                    *ndist.pdf((threshold-mu)/(np.sqrt(1.+randomization_scale**2.)))
-                                                    / (1.-ndist.cdf((threshold-mu)/(np.sqrt(1.+randomization_scale**2.)))))
-    - (1./(1.+randomization_scale**2.))*((ndist.pdf((threshold-mu)/(np.sqrt(1.+randomization_scale**2.)))
-                                                     / (1.-ndist.cdf((threshold-mu)/(np.sqrt(1.+randomization_scale**2.)))))**2)
+    variance = 1.+randomization_scale**2.
+    hessian = 1.- (1./variance)*((((mu-threshold)/(np.sqrt(variance)))*ndist.pdf((threshold-mu)/(np.sqrt(variance))))/(1.-ndist.cdf((threshold-mu)/(np.sqrt(variance)))))\
+              - (1./(variance))*((ndist.pdf((threshold-mu)/(np.sqrt(variance)))
+                                                     / (1.-ndist.cdf((threshold-mu)/(np.sqrt(variance)))))**2)
 
     return hessian
 
@@ -43,4 +42,6 @@ def test_pivot(mu, randomization_scale = 0.5, threshold = 2):
 
     return np.asarray(pivot), np.asarray(exact_MLE)
 
-print(test_pivot(1))
+#print("grad cgf check", grad_CGF(2))
+#print("hessian cgf check", fisher_info(0))
+#print(test_pivot(1))
