@@ -49,7 +49,7 @@ def test_approximate_MLE(X,
 
     return sel_MLE
 
-X, y, beta, nonzero, sigma = gaussian_instance(n=100, p=200, s=5, rho=0., signal=3., sigma=1.)
+X, y, beta, nonzero, sigma = gaussian_instance(n=100, p=100, s=2, rho=0., signal=3., sigma=1.)
 true_mean = X.dot(beta)
 test = test_approximate_MLE(X,
                             y,
