@@ -25,6 +25,7 @@ class M_estimator_map(M_estimator):
         nactive = self._overall.sum()
         self.inactive_subgrad = self.observed_opt_state[nactive:]
 
+
         lagrange = []
         for key, value in self.penalty.weights.iteritems():
             lagrange.append(value)
@@ -61,18 +62,17 @@ class M_estimator_map(M_estimator):
         self.offset_active = self._opt_affine_term[:self.nactive] + self.null_statistic[:self.nactive]
         self.offset_inactive = self.null_statistic[self.nactive:]
 
-class selective_MLE(rr.smooth_atom):
+class selective_MLE():
     def __init__(self,
-                 map,
-                 coef=1.,
-                 offset=None,
-                 quadratic=None):
+                 map):
 
         self.map = map
         self.randomizer_precision = map.randomizer.precision
         self.target_observed = self.map.target_observed
         self.nactive = self.target_observed.shape[0]
         self.target_cov = self.map.target_cov
+
+        initial = self.map.feasible_point
 
     def solve_Gaussian_density(self, j):
 
@@ -87,11 +87,67 @@ class selective_MLE(rr.smooth_atom):
         self.L = cov[0,0:].dot(np.linalg.inv(cov[0:,0:]))
         self.M_1 = (1./inverse_cov[0,0])*(1./self.target_cov[j,j])
         self.M_2 = (1./inverse_cov[0,0]).dot(self.map.A.T).dot(self.randomizer_precision)
+        self.inactive_subgrad = np.zeros(self.map.p)
+        self.inactive_subgrad[self.nactive:] = self.map.inactive_subgrad
+        self.conditioned_value = self.map.null_statistic + self.map.inactive_subgrad
 
         self.conditional_par = inverse_cov[0:,0:].dot(cov[0:,0]).dot((1./cov[0,0])* self.target_observed[j]) + \
-                               self.B.T(self.randomizer_precision).dot(self.map.null_statistic + self.map.inactive_subgrad)
+                               self.B.T(self.randomizer_precision).dot(self.conditioned_value)
+        self.conditional_var = inverse_cov[0:,0:]
 
-    def solve_UMVU(self, j):
+    def solve_UMVU(self, j, step=1, nstep=30, tol=1.e-8):
+
+        objective = lambda u: u.T.dot(self.conditional_par) - u.T.dot(self.conditional_var).dot(u)/2. - np.log(1.+ 1./u)
+        grad = lambda u: self.conditional_par - self.conditional_var.dot(u) - 1./(1.+ u) + 1./u
+
+        for itercount in range(nstep):
+            newton_step = grad(current)
+
+            # make sure proposal is feasible
+
+            count = 0
+            while True:
+                count += 1
+                proposal = current - step * newton_step
+                if np.all(proposal > 0):
+                    break
+                step *= 0.5
+                if count >= 40:
+                    raise ValueError('not finding a feasible point')
+
+            # make sure proposal is a descent
+
+            count = 0
+            while True:
+                proposal = current - step * newton_step
+                proposed_value = objective(proposal)
+                # print(current_value, proposed_value, 'minimize')
+                if proposed_value <= current_value:
+                    break
+                step *= 0.5
+
+            # stop if relative decrease is small
+
+            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+                current = proposal
+                current_value = proposed_value
+                break
+
+            current = proposal
+            current_value = proposed_value
+
+            if itercount % 4 == 0:
+                step *= 2
+
+                # print('iter', itercount)
+        value = objective(current)
+        return -(1./self.M_1)*self.L.dot(current)+ (1./self.M_1)*(self.target_observed[j]- self.M_2.dot(self.conditioned_value)), \
+               value
+
+
+
+
+
 
 
 
