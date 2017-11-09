@@ -67,7 +67,7 @@ class selective_MLE():
                  map):
 
         self.map = map
-        self.randomizer_precision = map.randomizer.precision
+        self.randomizer_precision = (1./map.randomization_scale)* np.identity(self.map.p)
         self.target_observed = self.map.target_observed
         self.nactive = self.target_observed.shape[0]
         self.target_cov = self.map.target_cov
@@ -79,21 +79,21 @@ class selective_MLE():
         self.map.setup_map(j)
         inverse_cov = np.zeros((1+self.nactive, 1+self.nactive))
         inverse_cov[0,0] = self.map.A.T.dot(self.randomizer_precision).dot(self.map.A) + 1./self.target_cov[j,j]
-        inverse_cov[0,0:] = self.map.A.T.dot(self.randomizer_precision).dot(self.map.B)
-        inverse_cov[0:,0] = self.map.B.T.dot(self.randomizer_precision).self.map.A
-        inverse_cov[0:,0:] = self.map.B.T.dot(self.randomizer_precision).self.map.B
+        inverse_cov[0,1:] = self.map.A.T.dot(self.randomizer_precision).dot(self.map.B)
+        inverse_cov[1:,0] = self.map.B.T.dot(self.randomizer_precision).dot(self.map.A)
+        inverse_cov[1:,1:] = self.map.B.T.dot(self.randomizer_precision).dot(self.map.B)
         cov = np.linalg.inv(inverse_cov)
 
-        self.L = cov[0,0:].dot(np.linalg.inv(cov[0:,0:]))
+        self.L = cov[0,1:].dot(np.linalg.inv(cov[1:,1:]))
         self.M_1 = (1./inverse_cov[0,0])*(1./self.target_cov[j,j])
-        self.M_2 = (1./inverse_cov[0,0]).dot(self.map.A.T).dot(self.randomizer_precision)
+        self.M_2 = (1./inverse_cov[0,0])*(self.map.A.T).dot(self.randomizer_precision)
         self.inactive_subgrad = np.zeros(self.map.p)
         self.inactive_subgrad[self.nactive:] = self.map.inactive_subgrad
-        self.conditioned_value = self.map.null_statistic + self.map.inactive_subgrad
 
-        self.conditional_par = inverse_cov[0:,0:].dot(cov[0:,0]).dot((1./cov[0,0])* self.target_observed[j]) + \
-                               self.B.T(self.randomizer_precision).dot(self.conditioned_value)
-        self.conditional_var = inverse_cov[0:,0:]
+        self.conditioned_value = self.map.null_statistic + self.inactive_subgrad
+        self.conditional_par = inverse_cov[1:,1:].dot(cov[1:,0]).dot((1./cov[0,0])* self.target_observed[j]) + \
+                               self.map.B.T.dot(self.randomizer_precision).dot(self.conditioned_value)
+        self.conditional_var = inverse_cov[1:,1:]
 
         objective = lambda u: u.T.dot(self.conditional_par) - u.T.dot(self.conditional_var).dot(u)/2. - np.log(1.+ 1./u)
         grad = lambda u: self.conditional_par - self.conditional_var.dot(u) - 1./(1.+ u) + 1./u

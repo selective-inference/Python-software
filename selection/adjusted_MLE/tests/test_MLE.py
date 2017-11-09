@@ -1,10 +1,10 @@
 from __future__ import print_function
-import numpy as np
+import numpy as np, sys
 
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.randomized.api import randomization
-from selection.adjusted_MLE.selective_MLE import M_estimator_map
+from selection.adjusted_MLE.selective_MLE import M_estimator_map, selective_MLE
 
 def test(n=100, p=50, s=2, signal=3., seed_n = 0, lam_frac=1., randomization_scale=1.):
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
@@ -21,11 +21,16 @@ def test(n=100, p=50, s=2, signal=3., seed_n = 0, lam_frac=1., randomization_sca
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
     randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+    #randomizer = randomization.gaussian(np.identity(p))
     M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale)
 
     M_est.solve_approx()
     active = M_est._overall
     active_set = np.asarray([i for i in range(p) if active[i]])
     nactive = np.sum(active)
+    sys.stderr.write("number of active selected by lasso" + str(nactive) + "\n")
+
+    solve_mle = selective_MLE(M_est)
+    mle = solve_mle.solve_UMVU(0)
 
 test()
