@@ -69,7 +69,7 @@ class selective_MLE(rr.smooth_atom):
                  quadratic=None):
 
         self.map = map
-        self.randomizer_cov = map.randomizer.precision
+        self.randomizer_precision = map.randomizer.precision
         self.target_observed = self.map.target_observed
         self.nactive = self.target_observed.shape[0]
         self.target_cov = self.map.target_cov
@@ -78,7 +78,25 @@ class selective_MLE(rr.smooth_atom):
 
         self.map.setup_map(j)
         inverse_cov = np.zeros((1+self.nactive, 1+self.nactive))
-        inverse_cov[0,0] = self.map.A.T.dot(self.map.A)/ self.target_cov[j,j]
+        inverse_cov[0,0] = self.map.A.T.dot(self.randomizer_precision).dot(self.map.A) + 1./self.target_cov[j,j]
+        inverse_cov[0,0:] = self.map.A.T.dot(self.randomizer_precision).dot(self.map.B)
+        inverse_cov[0:,0] = self.map.B.T.dot(self.randomizer_precision).self.map.A
+        inverse_cov[0:,0:] = self.map.B.T.dot(self.randomizer_precision).self.map.B
+        cov = np.linalg.inv(inverse_cov)
+
+        self.L = cov[0,0:].dot(np.linalg.inv(cov[0:,0:]))
+        self.M_1 = (1./inverse_cov[0,0])*(1./self.target_cov[j,j])
+        self.M_2 = (1./inverse_cov[0,0]).dot(self.map.A.T).dot(self.randomizer_precision)
+
+        self.conditional_par = inverse_cov[0:,0:].dot(cov[0:,0]).dot((1./cov[0,0])* self.target_observed[j]) + \
+                               self.B.T(self.randomizer_precision).dot(self.map.null_statistic + self.map.inactive_subgrad)
+
+    def solve_UMVU(self, j):
+
+
+
+
+
 
 
 
