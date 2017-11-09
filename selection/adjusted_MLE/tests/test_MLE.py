@@ -6,7 +6,7 @@ from selection.tests.instance import gaussian_instance
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, selective_MLE
 
-def test(n=100, p=50, s=2, signal=3., seed_n = 0, lam_frac=1., randomization_scale=1.):
+def test(n=200, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     n, p = X.shape
     np.random.seed(seed_n)
@@ -31,6 +31,6 @@ def test(n=100, p=50, s=2, signal=3., seed_n = 0, lam_frac=1., randomization_sca
 
     solve_mle = selective_MLE(M_est)
     mle = solve_mle.solve_UMVU(0)
-    print("mle", mle, M_est.target_observed[0])
+    print("mle", mle[0], M_est.target_observed[0])
 
 test()
