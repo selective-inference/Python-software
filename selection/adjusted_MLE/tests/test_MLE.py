@@ -6,7 +6,7 @@ from selection.tests.instance import gaussian_instance
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, selective_MLE
 
-def test(n=200, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
+def test(n=100, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     n, p = X.shape
     np.random.seed(seed_n)
@@ -30,7 +30,10 @@ def test(n=200, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_sca
     sys.stderr.write("number of active selected by lasso" + str(nactive) + "\n")
 
     solve_mle = selective_MLE(M_est)
-    mle = solve_mle.solve_UMVU(0)
-    print("mle", mle[0], M_est.target_observed[0])
+    mle = np.zeros(nactive)
+    for j in range(nactive):
+        mle[j] = solve_mle.solve_UMVU(j)[0]
 
-test()
+    return np.transpose(np.vstack([mle, M_est.target_observed]))
+
+print(test())
