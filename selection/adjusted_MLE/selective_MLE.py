@@ -141,7 +141,7 @@ class selective_MLE():
 
                 # print('iter', itercount)
         value = objective(current)
-        return -(1./self.M_1)*self.L.dot(current)+ (1./self.M_1)*(self.target_observed[j]- self.M_2.dot(self.conditioned_value)), \
+        return -(1./self.M_1)*self.L.dot(current)+ (1./self.M_1)*(self.target_observed[j]- -(1./self.M_1)*self.M_2.dot(self.conditioned_value)), \
                value
 
 
