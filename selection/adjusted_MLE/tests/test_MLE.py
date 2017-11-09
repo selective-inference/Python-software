@@ -32,5 +32,6 @@ def test(n=100, p=50, s=2, signal=3., seed_n = 0, lam_frac=1., randomization_sca
 
     solve_mle = selective_MLE(M_est)
     mle = solve_mle.solve_UMVU(0)
+    print("mle", mle)
 
 test()

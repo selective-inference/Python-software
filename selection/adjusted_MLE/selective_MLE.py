@@ -72,8 +72,6 @@ class selective_MLE():
         self.nactive = self.target_observed.shape[0]
         self.target_cov = self.map.target_cov
 
-        initial = self.map.feasible_point
-
     def solve_UMVU(self, j, step=1, nstep=30, tol=1.e-8):
 
         self.map.setup_map(j)
@@ -95,8 +93,11 @@ class selective_MLE():
                                self.map.B.T.dot(self.randomizer_precision).dot(self.conditioned_value)
         self.conditional_var = inverse_cov[1:,1:]
 
-        objective = lambda u: u.T.dot(self.conditional_par) - u.T.dot(self.conditional_var).dot(u)/2. - np.log(1.+ 1./u)
+        objective = lambda u: u.T.dot(self.conditional_par) - u.T.dot(self.conditional_var).dot(u)/2. - np.log(1.+ 1./u).sum()
         grad = lambda u: self.conditional_par - self.conditional_var.dot(u) - 1./(1.+ u) + 1./u
+
+        current = self.map.feasible_point
+        current_value = np.inf
 
         for itercount in range(nstep):
             newton_step = grad(current)
@@ -119,6 +120,7 @@ class selective_MLE():
             while True:
                 proposal = current - step * newton_step
                 proposed_value = objective(proposal)
+                #print("proposed value", proposed_value, proposal)
                 # print(current_value, proposed_value, 'minimize')
                 if proposed_value <= current_value:
                     break
