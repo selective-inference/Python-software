@@ -74,7 +74,7 @@ class selective_MLE():
 
         initial = self.map.feasible_point
 
-    def solve_Gaussian_density(self, j):
+    def solve_UMVU(self, j, step=1, nstep=30, tol=1.e-8):
 
         self.map.setup_map(j)
         inverse_cov = np.zeros((1+self.nactive, 1+self.nactive))
@@ -94,8 +94,6 @@ class selective_MLE():
         self.conditional_par = inverse_cov[0:,0:].dot(cov[0:,0]).dot((1./cov[0,0])* self.target_observed[j]) + \
                                self.B.T(self.randomizer_precision).dot(self.conditioned_value)
         self.conditional_var = inverse_cov[0:,0:]
-
-    def solve_UMVU(self, j, step=1, nstep=30, tol=1.e-8):
 
         objective = lambda u: u.T.dot(self.conditional_par) - u.T.dot(self.conditional_var).dot(u)/2. - np.log(1.+ 1./u)
         grad = lambda u: self.conditional_par - self.conditional_var.dot(u) - 1./(1.+ u) + 1./u
