@@ -88,7 +88,7 @@ class selective_MLE():
         self.inactive_subgrad = np.zeros(self.map.p)
         self.inactive_subgrad[self.nactive:] = self.map.inactive_subgrad
 
-        self.conditioned_value = self.map.null_statistic + self.inactive_subgrad
+        self.conditioned_value = self.map.null_statistic + self.inactive_subgrad + self.map._opt_affine_term
         self.conditional_par = inverse_cov[1:,1:].dot(cov[1:,0]).dot((1./cov[0,0])* self.target_observed[j]) + \
                                self.map.B.T.dot(self.randomizer_precision).dot(self.conditioned_value)
         self.conditional_var = inverse_cov[1:,1:]
