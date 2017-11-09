@@ -26,12 +26,11 @@ def test(n=100, p=50, s=2, signal=3., seed_n = 0, lam_frac=1., randomization_sca
 
     M_est.solve_approx()
     active = M_est._overall
-    active_set = np.asarray([i for i in range(p) if active[i]])
     nactive = np.sum(active)
     sys.stderr.write("number of active selected by lasso" + str(nactive) + "\n")
 
     solve_mle = selective_MLE(M_est)
     mle = solve_mle.solve_UMVU(0)
-    print("mle", mle)
+    print("mle", mle, M_est.target_observed[0])
 
 test()
