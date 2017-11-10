@@ -73,7 +73,7 @@ def solve_UMVU(target_transform,
 
     # XXX should be able to do vector version as well
     # but for now code assumes 1dim
-    assert ntarget == 1
+    #assert ntarget == 1
 
     # setup joint implied covariance matrix
 
