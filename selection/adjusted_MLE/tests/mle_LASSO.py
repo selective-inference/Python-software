@@ -32,7 +32,7 @@ def test_approximate_MLE(X,
     randomization = randomization.isotropic_gaussian((p,), scale=randomization_scale)
     M_est = M_estimator_map(loss, epsilon, penalty, randomization, randomization_scale=randomization_scale)
 
-    M_est.solve_approx()
+    M_est.map_solve()
     active = M_est._overall
     active_set = np.asarray([i for i in range(p) if active[i]])
     nactive = np.sum(active)
