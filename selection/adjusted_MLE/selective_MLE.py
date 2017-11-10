@@ -118,7 +118,7 @@ def solve_barrier_nonneg(mean_vec,
         feasible_point = 1. / scaling
 
     objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. + np.log(1.+ 1./(u / scaling)).sum()
-    grad = lambda u: -conjugate_arg + precision.dot(u) + (1./(1.+ u) + 1./u) / scaling
+    grad = lambda u: -conjugate_arg + precision.dot(u) + (1./(scaling + u) - 1./u)
 
     current = feasible_point
     current_value = np.inf

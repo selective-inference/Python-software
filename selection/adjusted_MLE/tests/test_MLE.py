@@ -48,7 +48,7 @@ def test_selective_MLE(target_observed=2):
     """
 
     target_transform = (np.identity(1), np.zeros(1))
-    opt_transform = (np.identity(1), np.ones(1) * 2.)
+    opt_transform = (np.identity(1), -np.ones(1) * 2.)
     feasible_point = 1.
     randomizer_precision = np.identity(1)
     target_cov = np.identity(1)
@@ -67,7 +67,7 @@ if __name__ == "__main__":
     Zval = np.linspace(-1,3,51)
 
     mu_seq = np.linspace(-7., 6, num=2600)
-    grad_partition = np.array([grad_CGF(mu) for mu in mu_seq])
+    grad_partition = np.array([grad_CGF(mu, randomization_scale = 1., threshold = 2) for mu in mu_seq])
 
     exact_MLE = []
     for k in range(Zval.shape[0]):
