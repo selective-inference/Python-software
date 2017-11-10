@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
     import matplotlib.pyplot as plt
 
-    Zval = np.linspace(-1,3,51)
+    Zval = np.linspace(-1,5,51)
 
     mu_seq = np.linspace(-7., 6, num=2600)
     grad_partition = np.array([grad_CGF(mu, randomization_scale = 1., threshold = 2) for mu in mu_seq])
