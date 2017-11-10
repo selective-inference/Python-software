@@ -62,87 +62,95 @@ class M_estimator_map(M_estimator):
         self.offset_active = self._opt_affine_term[:self.nactive] + self.null_statistic[:self.nactive]
         self.offset_inactive = self.null_statistic[self.nactive:]
 
-class selective_MLE():
-    def __init__(self,
-                 map):
+def solve_UMVU(target_transform,
+               opt_transform,
+               target_observed,
+               feasible_point,
+               target_cov,
+               randomizer_precision,
+               step=1,
+               nstep=30,
+               tol=1.e-8):
 
-        self.map = map
-        self.randomizer_precision = (1./map.randomization_scale)* np.identity(self.map.p)
-        self.target_observed = self.map.target_observed
-        self.nactive = self.target_observed.shape[0]
-        self.target_cov = self.map.target_cov
+    A, data_offset = target_transform # data_offset = N
+    B, opt_offset = opt_transform     # opt_offset = u
 
-    def solve_UMVU(self, j, step=1, nstep=30, tol=1.e-8):
+    nfeature, nopt = B.shape[1]
+    ntarget = A.shape[1]
 
-        self.map.setup_map(j)
-        inverse_cov = np.zeros((1+self.nactive, 1+self.nactive))
-        inverse_cov[0,0] = self.map.A.T.dot(self.randomizer_precision).dot(self.map.A) + 1./self.target_cov[j,j]
-        inverse_cov[0,1:] = self.map.A.T.dot(self.randomizer_precision).dot(self.map.B)
-        inverse_cov[1:,0] = self.map.B.T.dot(self.randomizer_precision).dot(self.map.A)
-        inverse_cov[1:,1:] = self.map.B.T.dot(self.randomizer_precision).dot(self.map.B)
-        cov = np.linalg.inv(inverse_cov)
+    # XXX should be able to do vector version as well
+    # but for now code assumes 1dim
+    assert ntarget == 1
 
-        self.L = cov[0,1:].dot(np.linalg.inv(cov[1:,1:]))
-        self.M_1 = (1./inverse_cov[0,0])*(1./self.target_cov[j,j])
-        self.M_2 = (1./inverse_cov[0,0])*(self.map.A.T).dot(self.randomizer_precision)
-        self.inactive_subgrad = np.zeros(self.map.p)
-        self.inactive_subgrad[self.nactive:] = self.map.inactive_subgrad
+    # setup joint implied covariance matrix
 
-        self.conditioned_value = self.map.null_statistic + self.inactive_subgrad + self.map._opt_affine_term
-        self.conditional_par = inverse_cov[1:,1:].dot(cov[1:,0]).dot((1./cov[0,0])* self.target_observed[j]) + \
-                               self.map.B.T.dot(self.randomizer_precision).dot(self.conditioned_value)
-        self.conditional_var = inverse_cov[1:,1:]
+    inverse_target_cov = np.linalg.inv(target_cov)
+    inverse_cov = np.zeros((ntarget + nopt, ntarget + nopt))
+    inverse_cov[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + inverse_target_cov
+    inverse_cov[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
+    inverse_cov[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
+    inverse_cov[nopt:,nopt:] = B.T.dot(randomizer_precision).dot(B)
+    cov = np.linalg.inv(inverse_cov)
 
-        objective = lambda u: u.T.dot(self.conditional_par) - u.T.dot(self.conditional_var).dot(u)/2. - np.log(1.+ 1./u).sum()
-        grad = lambda u: self.conditional_par - self.conditional_var.dot(u) - 1./(1.+ u) + 1./u
+    cov_opt = cov[ntarget:,ntarget:]
+    implied_cov_target = cov[:ntarget,:ntarget]
+    cross_cov = cov[:ntarget,ntarget:]
 
-        current = self.map.feasible_point
-        current_value = np.inf
+    L = cross_cov.dot(np.linalg.inv(cov_opt))
+    M_1 = np.linalg.inv(inverse_cov[:ntarget,:ntarget]).dot(inverse_target_cov)
+    M_2 = np.linalg.inv(inverse_cov[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
-        for itercount in range(nstep):
-            newton_step = grad(current)
+    conditioned_value = data_offset + opt_offset
+    conditional_par = (inverse_cov[ntarget:,ntarget:].dot(cross_cov.T.dot(np.linalg.inv(implied_cov_target).dot(target_observed))) + \
+                           B.T.dot(randomizer_precision).dot(conditioned_value))
+    conditional_var_inv = inverse_cov[ntarget:,ntarget:]
 
-            # make sure proposal is feasible
+    objective = lambda u: u.T.dot(conditional_par) - u.T.dot(conditional_var_inv).dot(u)/2. - np.log(1.+ 1./u).sum()
+    grad = lambda u: conditional_par - conditional_var_inv.dot(u) - 1./(1.+ u) + 1./u
 
-            count = 0
-            while True:
-                count += 1
-                proposal = current - step * newton_step
-                if np.all(proposal > 0):
-                    break
-                step *= 0.5
-                if count >= 40:
-                    raise ValueError('not finding a feasible point')
+    current = feasible_point
+    current_value = np.inf
 
-            # make sure proposal is a descent
+    for itercount in range(nstep):
+        newton_step = grad(current)
 
-            count = 0
-            while True:
-                proposal = current - step * newton_step
-                proposed_value = objective(proposal)
-                #print("proposed value", proposed_value, proposal)
-                # print(current_value, proposed_value, 'minimize')
-                if proposed_value <= current_value:
-                    break
-                step *= 0.5
+        # make sure proposal is feasible
 
-            # stop if relative decrease is small
-
-            if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
-                current = proposal
-                current_value = proposed_value
+        count = 0
+        while True:
+            count += 1
+            proposal = current - step * newton_step
+            if np.all(proposal > 0):
                 break
+            step *= 0.5
+            if count >= 40:
+                raise ValueError('not finding a feasible point')
 
+        # make sure proposal is a descent
+
+        count = 0
+        while True:
+            proposal = current - step * newton_step
+            proposed_value = objective(proposal)
+            if proposed_value <= current_value:
+                break
+            step *= 0.5
+
+        # stop if relative decrease is small
+
+        if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
             current = proposal
             current_value = proposed_value
+            break
 
-            if itercount % 4 == 0:
-                step *= 2
+        current = proposal
+        current_value = proposed_value
 
-                # print('iter', itercount)
-        value = objective(current)
-        return -(1./self.M_1)*self.L.dot(current)+ (1./self.M_1)*(self.target_observed[j]- (1./self.M_1)*self.M_2.dot(self.conditioned_value)), \
-               value
+        if itercount % 4 == 0:
+            step *= 2
+
+    value = objective(current)
+    return -np.linalg.inv(M_1).dot(L.dot(current))+ np.linalg.inv(M_1).dot(target_observed- M_2.dot(conditioned_value)), value
 
 
 
