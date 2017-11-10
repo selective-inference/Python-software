@@ -39,12 +39,12 @@ matrix:
       env:
         # Sdist install should collect all dependencies
         - INSTALL_TYPE=sdist
-        - DEPENDS=
+        - DEPENDS="cython numpy scipy"
     - python: 2.7
       env:
         # Wheel install should collect all dependencies
         - INSTALL_TYPE=wheel
-        - DEPENDS=
+        - DEPENDS="cython numpy scipy"
     - python: 2.7
       env:
         - INSTALL_TYPE=requirements
