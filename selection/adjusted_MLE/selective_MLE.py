@@ -1,4 +1,4 @@
-import numpy as np
+
 from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
@@ -77,41 +77,41 @@ def solve_UMVU(target_transform,
 
     # setup joint implied covariance matrix
 
-    inverse_target_cov = np.linalg.inv(target_cov)
-    inverse_cov = np.zeros((ntarget + nopt, ntarget + nopt))
-    inverse_cov[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + inverse_target_cov
-    inverse_cov[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
-    inverse_cov[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
-    inverse_cov[nopt:,nopt:] = B.T.dot(randomizer_precision).dot(B)
-    cov = np.linalg.inv(inverse_cov)
+    target_precision = np.linalg.inv(target_cov)
+    implied_precision = np.zeros((ntarget + nopt, ntarget + nopt))
+    implied_precision[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + target_precision
+    implied_precision[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
+    implied_precision[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
+    implied_precision[nopt:,nopt:] = B.T.dot(randomizer_precision).dot(B)
+    implied_cov = np.linalg.inv(implied_precision)
 
-    cov_opt = cov[ntarget:,ntarget:]
-    implied_cov_target = cov[:ntarget,:ntarget]
-    cross_cov = cov[:ntarget,ntarget:]
+    implied_opt = implied_cov[ntarget:,ntarget:]
+    implied_target = implied_cov[:ntarget,:ntarget]
+    implied_cross = implied_cov[:ntarget,ntarget:]
 
-    L = cross_cov.dot(np.linalg.inv(cov_opt))
-    M_1 = np.linalg.inv(inverse_cov[:ntarget,:ntarget]).dot(inverse_target_cov)
-    M_2 = np.linalg.inv(inverse_cov[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
+    L = implied_cross.dot(np.linalg.inv(implied_opt))
+    M_1 = np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(target_precision)
+    M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
     conditioned_value = data_offset + opt_offset
-    conditional_mean = (cross_cov.T.dot(np.linalg.inv(implied_cov_target).dot(target_observed)) +
-                        B.T.dot(randomizer_precision).dot(conditioned_value))
-    conditional_precision = inverse_cov[ntarget:,ntarget:]
+    conditional_natural_parameter = (implied_cross.T.dot(np.linalg.inv(implied_target).dot(target_observed)) -
+                                     B.T.dot(randomizer_precision).dot(conditioned_value))
+    conditional_precision = implied_precision[ntarget:,ntarget:]
 
-    soln, value = solve_barrier_nonneg(conditional_mean,
+    soln, value = solve_barrier_nonneg(conditional_natural_parameter,
                                        conditional_precision,
                                        feasible_point=feasible_point)
-    sel_MLE = -np.linalg.inv(M_1).dot(L.dot(soln))+ np.linalg.inv(M_1).dot(target_observed- M_2.dot(conditioned_value))
+    sel_MLE = -np.linalg.inv(M_1).dot(L.dot(soln))+ np.linalg.inv(M_1).dot(target_observed - M_2.dot(conditioned_value))
     return np.squeeze(sel_MLE), value
 
-def solve_barrier_nonneg(mean_vec,
+def solve_barrier_nonneg(conjugate_arg,
                          precision,
                          feasible_point=None,
                          step=1,
                          nstep=30,
                          tol=1.e-8):
 
-    conjugate_arg = precision.dot(mean_vec)
+    #conjugate_arg = precision.dot(mean_vec)
     scaling = np.sqrt(np.diag(precision))
 
     if feasible_point is None:

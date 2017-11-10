@@ -41,17 +41,16 @@ def test(n=100, p=1, s=1, signal=5., seed_n = 0, lam_frac=1., randomization_scal
     else:
         return None
 
-def test_selective_MLE(target_observed=2):
-
+def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
     """
-    Simple problem thresholded at 2
+    Simple problem: randomizaiton of sd 1 and thresholded at 2 (default args)
     """
-
-    target_transform = (np.identity(1), np.zeros(1))
-    opt_transform = (np.identity(1), -np.ones(1) * 2.)
-    feasible_point = 1.
-    randomizer_precision = np.identity(1)
-    target_cov = np.identity(1)
+    target_observed = np.atleast_1d(target_observed)
+    target_transform = (-np.identity(n), np.zeros(n))
+    opt_transform = (np.identity(n), np.ones(n) * threshold)
+    feasible_point = np.ones(n)
+    randomizer_precision = np.identity(n) / randomization_scale ** 2
+    target_cov = np.identity(n)
 
     return solve_UMVU(target_transform,
                       opt_transform,
@@ -60,23 +59,27 @@ def test_selective_MLE(target_observed=2):
                       target_cov,
                       randomizer_precision)
 
-if __name__ == "__main__":
+if __name__ == "main":
 
-    import matplotlib.pyplot as plt
+    n = 100
+    Zval= np.random.normal(0, 1, n)
+    sys.stderr.write("observed Z" + str(Zval) + "\n")
+    MLE = simple_problem(Zval, n=n, threshold=2, randomization_scale=1.)[0]
+    print(MLE)
 
-    Zval = np.linspace(-1,5,51)
 
-    mu_seq = np.linspace(-7., 6, num=2600)
-    grad_partition = np.array([grad_CGF(mu, randomization_scale = 1., threshold = 2) for mu in mu_seq])
 
-    exact_MLE = []
-    for k in range(Zval.shape[0]):
-        true = mu_seq[np.argmin(np.abs(grad_partition - Zval[k]))]
-        exact_MLE.append(true)
-
-    MLE = np.array([test_selective_MLE(z)[0] for z in Zval])
-    MLE = MLE * (np.fabs(MLE) < 200)
-
-    plt.plot(Zval, MLE)
-    plt.plot(Zval, np.asarray(exact_MLE), 'r--')
-    plt.show()
+# if __name__ == "__main__":
+#     import matplotlib.pyplot as plt
+#
+#     plt.clf()
+#     Zval = np.linspace(-5, 5, 51)
+#     MLE = np.array([simple_problem(z)[0] for z in Zval])
+#
+#     mu_seq = np.linspace(-6, 6, 200)
+#     grad_partition = np.array([grad_CGF(mu, randomization_scale=1., threshold=2) for mu in mu_seq])
+#
+#     plt.plot(Zval, MLE, label='+2')
+#     plt.plot(grad_partition, mu_seq, 'r--', label='MLE')
+#     plt.legend()
+#     plt.show()
