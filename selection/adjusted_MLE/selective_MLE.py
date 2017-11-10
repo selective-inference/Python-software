@@ -53,6 +53,8 @@ class M_estimator_map(M_estimator):
     #     self.offset_active = self._opt_affine_term[:self.nactive] + self.null_statistic[:self.nactive]
     #     self.offset_inactive = self.null_statistic[self.nactive:]
 
+import numpy as np
+
 def solve_UMVU(target_transform,
                opt_transform,
                target_observed,
@@ -92,12 +94,31 @@ def solve_UMVU(target_transform,
     M_2 = np.linalg.inv(inverse_cov[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
     conditioned_value = data_offset + opt_offset
-    conditional_par = (inverse_cov[ntarget:,ntarget:].dot(cross_cov.T.dot(np.linalg.inv(implied_cov_target).dot(target_observed))) + \
-                           B.T.dot(randomizer_precision).dot(conditioned_value))
-    conditional_var_inv = inverse_cov[ntarget:,ntarget:]
+    conditional_mean = (cross_cov.T.dot(np.linalg.inv(implied_cov_target).dot(target_observed)) +
+                        B.T.dot(randomizer_precision).dot(conditioned_value))
+    conditional_precision = inverse_cov[ntarget:,ntarget:]
 
-    objective = lambda u: u.T.dot(conditional_par) - u.T.dot(conditional_var_inv).dot(u)/2. - np.log(1.+ 1./u).sum()
-    grad = lambda u: conditional_par - conditional_var_inv.dot(u) - 1./(1.+ u) + 1./u
+    soln, value = solve_barrier_nonneg(conditional_mean,
+                                       conditional_precision,
+                                       feasible_point=feasible_point)
+    sel_MLE = -np.linalg.inv(M_1).dot(L.dot(soln))+ np.linalg.inv(M_1).dot(target_observed- M_2.dot(conditioned_value))
+    return np.squeeze(sel_MLE), value
+
+def solve_barrier_nonneg(mean_vec,
+                         precision,
+                         feasible_point=None,
+                         step=1,
+                         nstep=30,
+                         tol=1.e-8):
+
+    conjugate_arg = precision.dot(mean_vec)
+    scaling = np.sqrt(np.diag(precision))
+
+    if feasible_point is None:
+        feasible_point = 1. / scaling
+
+    objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. + np.log(1.+ 1./(u / scaling)).sum()
+    grad = lambda u: -conjugate_arg + precision.dot(u) + (1./(1.+ u) + 1./u) / scaling
 
     current = feasible_point
     current_value = np.inf
@@ -140,8 +161,7 @@ def solve_UMVU(target_transform,
         if itercount % 4 == 0:
             step *= 2
 
-    value = objective(current)
-    return -np.linalg.inv(M_1).dot(L.dot(current))+ np.linalg.inv(M_1).dot(target_observed- M_2.dot(conditioned_value)), value
+    return current, current_value
 
 
 

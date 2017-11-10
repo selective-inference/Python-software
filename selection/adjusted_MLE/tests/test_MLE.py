@@ -5,7 +5,7 @@ import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
-import matplotlib.pyplot as plt
+from selection.adjusted_MLE.tests.exact_MLE import grad_CGF
 
 def test(n=100, p=1, s=1, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
@@ -41,4 +41,42 @@ def test(n=100, p=1, s=1, signal=5., seed_n = 0, lam_frac=1., randomization_scal
     else:
         return None
 
-#print(test())
+def test_selective_MLE(target_observed=2):
+
+    """
+    Simple problem thresholded at 2
+    """
+
+    target_transform = (np.identity(1), np.zeros(1))
+    opt_transform = (np.identity(1), np.ones(1) * 2.)
+    feasible_point = 1.
+    randomizer_precision = np.identity(1)
+    target_cov = np.identity(1)
+
+    return solve_UMVU(target_transform,
+                      opt_transform,
+                      target_observed,
+                      feasible_point,
+                      target_cov,
+                      randomizer_precision)
+
+if __name__ == "__main__":
+
+    import matplotlib.pyplot as plt
+
+    Zval = np.linspace(-1,3,51)
+
+    mu_seq = np.linspace(-7., 6, num=2600)
+    grad_partition = np.array([grad_CGF(mu) for mu in mu_seq])
+
+    exact_MLE = []
+    for k in range(Zval.shape[0]):
+        true = mu_seq[np.argmin(np.abs(grad_partition - Zval[k]))]
+        exact_MLE.append(true)
+
+    MLE = np.array([test_selective_MLE(z)[0] for z in Zval])
+    MLE = MLE * (np.fabs(MLE) < 200)
+
+    plt.plot(Zval, MLE)
+    plt.plot(Zval, np.asarray(exact_MLE), 'r--')
+    plt.show()
