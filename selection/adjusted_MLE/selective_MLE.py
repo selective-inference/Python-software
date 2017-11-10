@@ -28,6 +28,7 @@ class M_estimator_map(M_estimator):
         X, _ = self.loss.data
         n, p = X.shape
         self.p = p
+        self.randomizer_precision = (1./self.randomization_scale)* np.identity(p)
 
         score_cov = np.zeros((p, p))
         X_active_inv = np.linalg.inv(X[:,self._overall].T.dot(X[:,self._overall]))
@@ -38,7 +39,7 @@ class M_estimator_map(M_estimator):
         self.score_target_cov = score_cov[:, :nactive]
         self.target_cov = score_cov[:nactive, :nactive]
         self.target_observed = self.observed_internal_state[:nactive]
-        self.nactive = nactive
+        self.observed_score_state = self.observed_internal_state
 
         self.A = np.dot(self._score_linear_term, self.score_target_cov[:,:nactive]).dot(np.linalg.inv(self.target_cov))
         self.data_offset = self._score_linear_term.dot(self.observed_score_state)- self.A.dot(self.target_observed)
@@ -65,7 +66,7 @@ def solve_UMVU(target_transform,
     A, data_offset = target_transform # data_offset = N
     B, opt_offset = opt_transform     # opt_offset = u
 
-    nfeature, nopt = B.shape[1]
+    nopt = B.shape[1]
     ntarget = A.shape[1]
 
     # XXX should be able to do vector version as well

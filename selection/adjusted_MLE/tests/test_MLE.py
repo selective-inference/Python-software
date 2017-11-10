@@ -4,7 +4,7 @@ import numpy as np, sys
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.randomized.api import randomization
-from selection.adjusted_MLE.selective_MLE import M_estimator_map, selective_MLE
+from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 import matplotlib.pyplot as plt
 
 def test(n=100, p=1, s=1, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
@@ -25,32 +25,20 @@ def test(n=100, p=1, s=1, signal=5., seed_n = 0, lam_frac=1., randomization_scal
     #randomizer = randomization.gaussian(np.identity(p))
     M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale)
 
-    M_est.solve_approx()
+    M_est.solve_map()
     active = M_est._overall
     nactive = np.sum(active)
     sys.stderr.write("number of active selected by lasso" + str(nactive) + "\n")
-    if nactive>0:
-        solve_mle = selective_MLE(M_est)
-        mle = np.zeros(nactive)
-        for j in range(nactive):
-            mle[j] = solve_mle.solve_UMVU(j)[0]
+    if nactive > 0:
+        mle = solve_UMVU(M_est.target_transform,
+                         M_est.opt_transform,
+                         M_est.target_observed,
+                         M_est.feasible_point,
+                         M_est.target_cov,
+                         M_est.randomizer_precision)
 
-        return mle, M_est.target_observed
+        return mle[0], M_est.target_observed, nactive
     else:
         return None
 
-print(test())
-def simulate(ndraw = 100):
-    seed_seq = np.arange(ndraw)
-    sel_MLE = []
-    naive_MLE = []
-    for i in range(seed_seq.shape[0]):
-        draw = test(n=100, p=1, s=1, signal=0., seed_n = seed_seq[i])
-        if draw[0] is not None:
-            sel_MLE.append(draw[0])
-            naive_MLE.append(draw[1])
-
-    plt.plot(np.asarray(naive_MLE), np.asarray(sel_MLE), 'r--')
-    plt.show()
-
-#simulate()
+#print(test())
