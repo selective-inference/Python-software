@@ -3,6 +3,7 @@ import numpy as np, sys
 
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
+from scipy.stats import norm as ndist
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from selection.adjusted_MLE.tests.exact_MLE import grad_CGF
@@ -60,7 +61,7 @@ def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
                       target_cov,
                       randomizer_precision)
 
-def bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.):
+def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
 
     while True:
         Zval = np.random.normal(true_mean, 1, n)
@@ -77,8 +78,7 @@ def bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.):
         Zval_boot = np.sum(Zval[np.random.choice(n, n, replace=True)]) / np.sqrt(n)
         boot_sample.append(mle_map(Zval_boot)[0])
 
-    return boot_sample, np.mean(boot_sample), np.std(boot_sample), \
-           np.sqrt(n) * np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample))
+    return boot_sample, np.mean(boot_sample), np.std(boot_sample), np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample))
 
 # if __name__ == "__main__":
 #     n = 1000
@@ -118,9 +118,9 @@ if __name__ == "__main__":
     plt.clf()
     boot_result = bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.)
     boot_pivot = boot_result[3]
-    #print("boot pivot", boot_pivot)
     print("boot sample", boot_pivot.shape)
-    ecdf = ECDF(boot_pivot)
-    print("ecdf", ecdf(boot_pivot))
-    plt.plot(np.arange(1000), ecdf(np.sort(boot_pivot)), 'r--')
+    ecdf = ECDF(ndist.cdf(boot_pivot))
+    grid = np.linspace(0, 1, 101)
+    print("ecdf", ecdf(grid))
+    plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.show()
