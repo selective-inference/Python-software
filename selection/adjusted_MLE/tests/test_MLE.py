@@ -6,6 +6,7 @@ from selection.tests.instance import gaussian_instance
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from selection.adjusted_MLE.tests.exact_MLE import grad_CGF
+from statsmodels.distributions.empirical_distribution import ECDF
 
 def test(n=100, p=1, s=1, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
@@ -60,40 +61,41 @@ def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
                       randomizer_precision)
 
 def bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.):
-    Zval = np.random.normal(true_mean, 1, n)
-    omega = np.random.normal(0, 1)
 
-    target_Z =  (np.sum(Zval)/np.sqrt(n))
+    while True:
+        Zval = np.random.normal(true_mean, 1, n)
+        omega = np.random.normal(0, 1)
+        target_Z = (np.sum(Zval) / np.sqrt(n))
+        check = target_Z + omega - threshold
+        if check>0.:
+            break
 
-    check = target_Z + omega - threshold
-    if check>0.:
-        approx_MLE, value, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
+    approx_MLE, value, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
 
-        boot_sample = []
-        for b in range(B):
-            Zval_boot = np.sum(Zval[np.random.sample(n, n, replace=True)]) / np.sqrt(n)
-            boot_sample.append(mle_map(Zval_boot)[0])
+    boot_sample = []
+    for b in range(B):
+        Zval_boot = np.sum(Zval[np.random.choice(n, n, replace=True)]) / np.sqrt(n)
+        boot_sample.append(mle_map(Zval_boot)[0])
 
-        return boot_sample, np.mean(boot_sample), np.std(boot_sample), \
-               np.sqrt(n)*(boot_sample-np.mean(boot_sample))/np.std(boot_sample)
+    return boot_sample, np.mean(boot_sample), np.std(boot_sample), \
+           np.sqrt(n) * np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample))
 
-
-if __name__ == "__main__":
-    n = 1000
-    Zval = np.random.normal(0, 1, n)
-    sys.stderr.write("observed Z" + str(Zval) + "\n")
-    MLE = simple_problem(Zval, n=n, threshold=2, randomization_scale=1.)[0]
-    #print(MLE)
-
-    mu_seq = np.linspace(-6, 6, 200)
-    grad_partition = np.array([grad_CGF(mu, randomization_scale=1., threshold=2) for mu in mu_seq])
-
-    exact_MLE = []
-    for k in range(Zval.shape[0]):
-        mle = mu_seq[np.argmin(np.abs(grad_partition - Zval[k]))]
-        exact_MLE.append(mle)
-
-    np.testing.assert_allclose(MLE, exact_MLE, rtol=2.0)
+# if __name__ == "__main__":
+#     n = 1000
+#     Zval = np.random.normal(0, 1, n)
+#     sys.stderr.write("observed Z" + str(Zval) + "\n")
+#     MLE = simple_problem(Zval, n=n, threshold=2, randomization_scale=1.)[0]
+#     #print(MLE)
+#
+#     mu_seq = np.linspace(-6, 6, 200)
+#     grad_partition = np.array([grad_CGF(mu, randomization_scale=1., threshold=2) for mu in mu_seq])
+#
+#     exact_MLE = []
+#     for k in range(Zval.shape[0]):
+#         mle = mu_seq[np.argmin(np.abs(grad_partition - Zval[k]))]
+#         exact_MLE.append(mle)
+#
+#     np.testing.assert_allclose(MLE, exact_MLE, rtol=2.0)
 
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
@@ -109,3 +111,16 @@ if __name__ == "__main__":
 #     plt.plot(grad_partition, mu_seq, 'r--', label='MLE')
 #     plt.legend()
 #     plt.show()
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    plt.clf()
+    boot_result = bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.)
+    boot_pivot = boot_result[3]
+    #print("boot pivot", boot_pivot)
+    print("boot sample", boot_pivot.shape)
+    ecdf = ECDF(boot_pivot)
+    print("ecdf", ecdf(boot_pivot))
+    plt.plot(np.arange(1000), ecdf(np.sort(boot_pivot)), 'r--')
+    plt.show()

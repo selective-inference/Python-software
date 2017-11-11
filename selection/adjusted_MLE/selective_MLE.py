@@ -54,6 +54,7 @@ class M_estimator_map(M_estimator):
     #     self.offset_inactive = self.null_statistic[self.nactive:]
 
 import numpy as np
+import functools
 
 def solve_UMVU(target_transform,
                opt_transform,
@@ -79,10 +80,11 @@ def solve_UMVU(target_transform,
 
     target_precision = np.linalg.inv(target_cov)
     implied_precision = np.zeros((ntarget + nopt, ntarget + nopt))
+
     implied_precision[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + target_precision
     implied_precision[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
     implied_precision[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
-    implied_precision[nopt:,nopt:] = B.T.dot(randomizer_precision).dot(B)
+    implied_precision[ntarget:,ntarget:] = B.T.dot(randomizer_precision).dot(B)
     implied_cov = np.linalg.inv(implied_precision)
 
     implied_opt = implied_cov[ntarget:,ntarget:]
@@ -94,15 +96,34 @@ def solve_UMVU(target_transform,
     M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
     conditioned_value = data_offset + opt_offset
-    conditional_natural_parameter = (implied_cross.T.dot(np.linalg.inv(implied_target).dot(target_observed)) -
-                                     B.T.dot(randomizer_precision).dot(conditioned_value))
+
+    linear_term = implied_cross.T.dot(np.linalg.inv(implied_target))
+    offset_term = -B.T.dot(randomizer_precision).dot(conditioned_value)
+    natparam_transform = (linear_term, offset_term)
+    conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
+
     conditional_precision = implied_precision[ntarget:,ntarget:]
 
     soln, value = solve_barrier_nonneg(conditional_natural_parameter,
                                        conditional_precision,
                                        feasible_point=feasible_point)
-    sel_MLE = -np.linalg.inv(M_1).dot(L.dot(soln))+ np.linalg.inv(M_1).dot(target_observed - M_2.dot(conditioned_value))
-    return np.squeeze(sel_MLE), value
+    M_1_inv = np.linalg.inv(M_1)
+    offset_term = - M_1_inv.dot(M_2.dot(conditioned_value))
+    linear_term = np.vstack([M_1_inv, -M_1_inv.dot(L)])
+    mle_transform = (M_1_inv, -M_1_inv.dot(L), offset_term)
+
+    def mle_map(natparam_transform, mle_transform, feasible_point, conditional_precision, target_observed):
+        param_lin, param_offset = natparam_transform
+        mle_target_lin, mle_soln_lin, mle_offset = mle_transform
+        soln, value = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
+                                           conditional_precision,
+                                           feasible_point=feasible_point)
+        return mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset, value
+
+    mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, feasible_point, conditional_precision)
+    sel_MLE, value = mle_partial(target_observed)
+    return np.squeeze(sel_MLE), value, mle_partial
+
 
 def solve_barrier_nonneg(conjugate_arg,
                          precision,
