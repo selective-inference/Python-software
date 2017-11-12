@@ -24,6 +24,43 @@ def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
                       target_cov,
                       randomizer_precision)
 
+
+def sim_simple_problem(true_mean, threshold=2, randomization_scale=1.):
+    while True:
+        Z, W = np.random.standard_normal(2)
+        Z += true_mean
+        W *= randomization_scale
+        if Z + W > threshold:
+            return Z
+
+
+def check_unbiased(true_mean, threshold=2, randomization_scale=1., nsim=5000):
+    bias = 0
+    for _ in range(nsim):
+        Z = sim_simple_problem(true_mean, threshold, randomization_scale)
+        est = simple_problem(Z, threshold=threshold, randomization_scale=randomization_scale)[0]
+        bias += est - true_mean
+
+    return bias / nsim
+
+
+def test_orthogonal_lasso(n=5):
+    Zval = np.random.normal(0, 1, n)
+    print("observed Z" + str(Zval) + "\n")
+    approx_MLE = simple_problem(Zval, threshold=2, randomization_scale=1.)[0]
+
+    approx_MLE2 = [simple_problem(z, threshold=2, randomization_scale=1.)[0] for z in Zval]
+    mu_seq = np.linspace(-6, 6, 2500)
+    grad_partition = np.array([grad_CGF(mu, randomization_scale=1., threshold=2) for mu in mu_seq])
+
+    exact_MLE = []
+    for k in range(Zval.shape[0]):
+        mle = mu_seq[np.argmin(np.abs(grad_partition - Zval[k]))]
+        exact_MLE.append(mle)
+
+    return approx_MLE, np.asarray(exact_MLE), np.asarray(approx_MLE2)
+
+
 def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
 
     while True:

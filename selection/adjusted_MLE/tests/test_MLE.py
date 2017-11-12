@@ -54,8 +54,8 @@ def test_bias_lasso(nsim = 500):
 #test_bias_lasso()
 
 def bootstrap_lasso(B=500):
-    p = 100
-    run_lasso = test_lasso(n=100, p=p, s=0, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.)
+    p = 200
+    run_lasso = test_lasso(n=100, p=p, s=10, signal=7., seed_n = 0, lam_frac=1., randomization_scale=1.)
 
     boot_sample = np.zeros((B,run_lasso[3].sum()))
     for b in range(B):
@@ -68,17 +68,19 @@ def bootstrap_lasso(B=500):
     centered_boot_sample = boot_sample - boot_sample.mean(0)[None, :]
     std_boot_sample = centered_boot_sample/(boot_sample.std(0)[None,:])
 
-    return std_boot_sample.reshape((B * run_lasso[3].sum(),))
-
+    return std_boot_sample.reshape((B * run_lasso[3].sum(),)), \
+           np.mean(centered_boot_sample.reshape((B * run_lasso[3].sum(),)))
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     plt.clf()
-    boot_pivot = bootstrap_lasso(B=10000)
+    bootstrap = bootstrap_lasso(B=10000)
+    boot_pivot = bootstrap[0]
     ecdf = ECDF(ndist.cdf(boot_pivot))
     grid = np.linspace(0, 1, 101)
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='blue', marker='^')
     plt.plot(grid, grid, c='red', marker='^')
-    plt.savefig("/Users/snigdhapanigrahi/selective_mle/Plots/boot_selective_MLE_lasso_no_signal.png")
+    #plt.show()
+    plt.savefig("/Users/snigdhapanigrahi/selective_mle/Plots/boot_selective_MLE_lasso_p200.png")

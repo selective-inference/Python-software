@@ -1,4 +1,5 @@
-
+import numpy as np
+import functools
 from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
@@ -47,16 +48,6 @@ class M_estimator_map(M_estimator):
         self.data_offset = self._score_linear_term.dot(self.observed_score_state)- self.A.dot(self.target_observed)
         self.target_transform = (self.A, self.data_offset )
 
-    # def setup_map(self, j):
-    #
-    #     self.A = np.dot(self._score_linear_term, self.score_target_cov[:, j]) / self.target_cov[j, j]
-    #     self.null_statistic = self._score_linear_term.dot(self.observed_score_state) - self.A * self.target_observed[j]
-    #
-    #     self.offset_active = self._opt_affine_term[:self.nactive] + self.null_statistic[:self.nactive]
-    #     self.offset_inactive = self.null_statistic[self.nactive:]
-
-import numpy as np
-import functools
 
 def solve_UMVU(target_transform,
                opt_transform,
