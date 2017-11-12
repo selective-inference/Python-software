@@ -39,7 +39,8 @@ def test_lasso(n=100, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomizati
                                                 M_est.target_cov,
                                                 M_est.randomizer_precision)
 
-        return np.mean(approx_MLE- true_target), approx_MLE, M_est.target_observed, nactive
+        return np.mean(approx_MLE- true_target), approx_MLE, M_est.target_observed, active, X.T.dot(y), \
+               np.linalg.inv(X[:, active].T.dot(X[:, active])), mle_map
     else:
         return None
 
@@ -51,7 +52,25 @@ def test_bias_lasso(nsim = 500):
 
     print(bias/nsim)
 
-test_bias_lasso()
+#test_bias_lasso()
+
+def bootstrap_lasso(B=500):
+    p = 50
+    run_lasso = test_lasso(n=100, p=p, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.)
+
+    boot_sample = np.zeros((B,run_lasso[3].sum()))
+    for b in range(B):
+        boot_vector = (run_lasso[4])[np.random.choice(p, p, replace=True)]
+        #print("shape", boot_vector.shape)
+        active = run_lasso[3]
+        target_boot = (run_lasso[5]).dot(boot_vector[active])
+        boot_sample[b, :] = (run_lasso[6](target_boot))[0]
+
+    centered_boot_sample = boot_sample - boot_sample.mean(0)[None, :]
+    std_boot_sample = centered_boot_sample/(boot_sample.std(0)[None,:])
+
+    return std_boot_sample.reshape((B * run_lasso[3].sum(),))
+
 
 def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
     """
@@ -90,47 +109,15 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
 
     return boot_sample, np.mean(boot_sample), np.std(boot_sample), np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample))
 
-# if __name__ == "__main__":
-#     n = 1000
-#     Zval = np.random.normal(0, 1, n)
-#     sys.stderr.write("observed Z" + str(Zval) + "\n")
-#     MLE = simple_problem(Zval, n=n, threshold=2, randomization_scale=1.)[0]
-#     #print(MLE)
-#
-#     mu_seq = np.linspace(-6, 6, 200)
-#     grad_partition = np.array([grad_CGF(mu, randomization_scale=1., threshold=2) for mu in mu_seq])
-#
-#     exact_MLE = []
-#     for k in range(Zval.shape[0]):
-#         mle = mu_seq[np.argmin(np.abs(grad_partition - Zval[k]))]
-#         exact_MLE.append(mle)
-#
-#     np.testing.assert_allclose(MLE, exact_MLE, rtol=2.0)
 
-# if __name__ == "__main__":
-#     import matplotlib.pyplot as plt
-#
-#     plt.clf()
-#     Zval = np.linspace(-5, 5, 51)
-#     MLE = np.array([simple_problem(z)[0] for z in Zval])
-#
-#     mu_seq = np.linspace(-6, 6, 200)
-#     grad_partition = np.array([grad_CGF(mu, randomization_scale=1., threshold=2) for mu in mu_seq])
-#
-#     plt.plot(Zval, MLE, label='+2')
-#     plt.plot(grad_partition, mu_seq, 'r--', label='MLE')
-#     plt.legend()
-#     plt.show()
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
 
-# if __name__ == "__main__":
-#     import matplotlib.pyplot as plt
-#
-#     plt.clf()
-#     boot_result = bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.)
-#     boot_pivot = boot_result[3]
-#     print("boot sample", boot_pivot.shape)
-#     ecdf = ECDF(ndist.cdf(boot_pivot))
-#     grid = np.linspace(0, 1, 101)
-#     print("ecdf", ecdf(grid))
-#     plt.plot(grid, ecdf(grid), c='red', marker='^')
-#     plt.show()
+    plt.clf()
+    boot_pivot = bootstrap_lasso(B=10000)
+    ecdf = ECDF(ndist.cdf(boot_pivot))
+    grid = np.linspace(0, 1, 101)
+    print("ecdf", ecdf(grid))
+    plt.plot(grid, ecdf(grid), c='blue', marker='^')
+    plt.plot(grid, grid, c='red', marker='^')
+    plt.savefig("/Users/snigdhapanigrahi/selective_mle/Plots/boot_selective_MLE_lasso.png")
