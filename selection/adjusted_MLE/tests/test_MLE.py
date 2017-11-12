@@ -6,7 +6,6 @@ from selection.tests.instance import gaussian_instance
 from scipy.stats import norm as ndist
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
-from selection.adjusted_MLE.tests.exact_MLE import grad_CGF
 from statsmodels.distributions.empirical_distribution import ECDF
 
 def test_lasso(n=100, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
