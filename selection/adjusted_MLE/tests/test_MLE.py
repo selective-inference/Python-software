@@ -54,8 +54,8 @@ def test_bias_lasso(nsim = 500):
 #test_bias_lasso()
 
 def bootstrap_lasso(B=500):
-    p = 50
-    run_lasso = test_lasso(n=100, p=p, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.)
+    p = 100
+    run_lasso = test_lasso(n=100, p=p, s=0, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.)
 
     boot_sample = np.zeros((B,run_lasso[3].sum()))
     for b in range(B):
@@ -71,44 +71,6 @@ def bootstrap_lasso(B=500):
     return std_boot_sample.reshape((B * run_lasso[3].sum(),))
 
 
-def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
-    """
-    Simple problem: randomizaiton of sd 1 and thresholded at 2 (default args)
-    """
-    target_observed = np.atleast_1d(target_observed)
-    target_transform = (-np.identity(n), np.zeros(n))
-    opt_transform = (np.identity(n), np.ones(n) * threshold)
-    feasible_point = np.ones(n)
-    randomizer_precision = np.identity(n) / randomization_scale ** 2
-    target_cov = np.identity(n)
-
-    return solve_UMVU(target_transform,
-                      opt_transform,
-                      target_observed,
-                      feasible_point,
-                      target_cov,
-                      randomizer_precision)
-
-def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
-
-    while True:
-        Zval = np.random.normal(true_mean, 1, n)
-        omega = np.random.normal(0, 1)
-        target_Z = (np.sum(Zval) / np.sqrt(n))
-        check = target_Z + omega - threshold
-        if check>0.:
-            break
-
-    approx_MLE, value, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
-
-    boot_sample = []
-    for b in range(B):
-        Zval_boot = np.sum(Zval[np.random.choice(n, n, replace=True)]) / np.sqrt(n)
-        boot_sample.append(mle_map(Zval_boot)[0])
-
-    return boot_sample, np.mean(boot_sample), np.std(boot_sample), np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample))
-
-
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
@@ -119,4 +81,4 @@ if __name__ == "__main__":
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='blue', marker='^')
     plt.plot(grid, grid, c='red', marker='^')
-    plt.savefig("/Users/snigdhapanigrahi/selective_mle/Plots/boot_selective_MLE_lasso.png")
+    plt.savefig("/Users/snigdhapanigrahi/selective_mle/Plots/boot_selective_MLE_lasso_no_signal.png")

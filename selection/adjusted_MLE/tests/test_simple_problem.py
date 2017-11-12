@@ -80,7 +80,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     plt.clf()
-    boot_result = bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.)
+    boot_result = bootstrap_simple(n= 100, B=1000, true_mean=1., threshold=2.)
     boot_pivot = boot_result[3]
     print("boot sample", boot_pivot.shape)
     ecdf = ECDF(ndist.cdf(boot_pivot))
