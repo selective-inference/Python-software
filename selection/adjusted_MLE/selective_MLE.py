@@ -16,6 +16,8 @@ class M_estimator_map(M_estimator):
             (_opt_linear_term[self._overall, :], _opt_linear_term[~self._overall, :]), 0)
         self._opt_affine_term = np.concatenate((_opt_affine_term[self._overall],
                                                 _opt_affine_term[~self._overall]+self.observed_opt_state[nactive:]), 0)
+        self._opt_linear_term = self._opt_linear_term[:,:self._overall.sum()]
+        #print("shape", self._opt_linear_term[:,:self._overall.sum()] .shape)
         self.opt_transform = (self._opt_linear_term, self._opt_affine_term)
 
         (_score_linear_term, _) = self.score_transform
@@ -183,7 +185,6 @@ def solve_barrier_nonneg(conjugate_arg,
             step *= 2
 
     return current, current_value
-
 
 
 
