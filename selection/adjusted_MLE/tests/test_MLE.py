@@ -51,12 +51,11 @@ def test_bias_lasso(nsim = 500):
 
     print(bias/nsim)
 
-#test_bias_lasso()
 
-def bootstrap_lasso(B=500):
-    p = 200
+def bootstrap_lasso(B=500, seed_n=0):
+    p = 50
     n= 100
-    run_lasso = test_lasso(n=n, p=p, s=20, signal=7., seed_n = 0, lam_frac=1., randomization_scale=1.)
+    run_lasso = test_lasso(n=n, p=p, s=10, signal=7., seed_n = seed_n, lam_frac=1., randomization_scale=1.)
 
     boot_sample = np.zeros((B,run_lasso[3].sum()))
     for b in range(B):
@@ -65,21 +64,25 @@ def bootstrap_lasso(B=500):
         active = run_lasso[3]
         target_boot = (run_lasso[6]).dot(boot_vector[active])
         boot_sample[b, :] = (run_lasso[7](target_boot))[0]
-    true_target = run_lasso[8]
-    #centered_boot_sample = boot_sample - boot_sample.mean(0)[None, :]
-    centered_boot_sample = boot_sample - true_target[None, :]
-    std_boot_sample = centered_boot_sample/(boot_sample.std(0)[None,:])
 
-    return std_boot_sample.reshape((B * run_lasso[3].sum(),)), \
-           np.mean(centered_boot_sample.reshape((B * run_lasso[3].sum(),)))
+    true_target = run_lasso[8]
+    std_boot_sample = np.true_divide((run_lasso[1]- true_target),boot_sample.std(0))
+
+    return std_boot_sample
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
+    ndraw = 50
+    boot_pivot= []
+    for i in range(ndraw):
+        pivot = bootstrap_lasso(B=5000, seed_n=i)
+        for j in range(pivot.shape[0]):
+            boot_pivot.append(pivot[j])
+        sys.stderr.write("iteration completed" + str(i) + "\n")
+    print("boot pivot", boot_pivot)
     plt.clf()
-    bootstrap = bootstrap_lasso(B=10000)
-    boot_pivot = bootstrap[0]
-    ecdf = ECDF(ndist.cdf(boot_pivot))
+    ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
     grid = np.linspace(0, 1, 101)
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='blue', marker='^')
