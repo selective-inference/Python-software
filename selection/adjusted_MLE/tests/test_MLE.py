@@ -9,7 +9,7 @@ from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from statsmodels.distributions.empirical_distribution import ECDF
 
 def test_lasso(n=100, p=50, s=5, signal=5., B= 500, seed_n = 0, lam_frac=1., randomization_scale=1.):
-
+    np.random.seed(seed_n)
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     n, p = X.shape
 
@@ -65,9 +65,11 @@ if __name__ == "__main__":
     ndraw = 50
     boot_pivot= []
     for i in range(ndraw):
-        pivot = test_lasso(n=100, p=50, s=5, signal=5., B= 5000, seed_n = 0)
-        for j in range(pivot.shape[0]):
-            boot_pivot.append(pivot[j])
+        pivot = test_lasso(n=100, p=50, s=0, signal=5., B= 5000, seed_n = i)
+        if pivot is not None:
+            for j in range(pivot.shape[0]):
+                boot_pivot.append(pivot[j])
+
         sys.stderr.write("iteration completed" + str(i) + "\n")
     plt.clf()
     ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
