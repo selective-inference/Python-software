@@ -71,7 +71,6 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
         if check>0.:
             break
 
-    print("target Z", Zval, target_Z)
     approx_MLE, value, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
 
     boot_sample = []
@@ -82,7 +81,7 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
     print("approx_MLE", approx_MLE, np.std(boot_sample), true_mean)
     return boot_sample, np.mean(boot_sample), np.std(boot_sample), \
            np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample)), \
-           np.true_divide(approx_MLE - true_mean, np.std(boot_sample))
+           np.true_divide(approx_MLE - np.sqrt(n)*true_mean, np.std(boot_sample))
 
 # if __name__ == "__main__":
 #     n = 1000
@@ -122,7 +121,7 @@ if __name__ == "__main__":
     ndraw = 100
     boot_pivot=[]
     for i in range(ndraw):
-        boot_result = bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.)
+        boot_result = bootstrap_simple(n= 100, B=1000, true_mean=1., threshold=2.)
         boot_pivot.append(boot_result[4])
 
     print("boot sample", np.asarray(boot_pivot).shape, boot_pivot)
