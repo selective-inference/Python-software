@@ -9,44 +9,51 @@ class M_estimator_map(M_estimator):
         self.randomizer = randomization
         self.randomization_scale = randomization_scale
 
-    def solve_map(self):
         self.solve()
-        nactive = self._overall.sum()
+        self.nactive = self._overall.sum()
         (_opt_linear_term, _opt_affine_term) = self.opt_transform
         self._opt_linear_term = np.concatenate(
             (_opt_linear_term[self._overall, :], _opt_linear_term[~self._overall, :]), 0)
         self._opt_affine_term = np.concatenate((_opt_affine_term[self._overall],
-                                                _opt_affine_term[~self._overall]+self.observed_opt_state[nactive:]), 0)
-        self._opt_linear_term = self._opt_linear_term[:,:self._overall.sum()]
-        #print("shape", self._opt_linear_term[:,:self._overall.sum()] .shape)
+                                                _opt_affine_term[~self._overall] + self.observed_opt_state[self.nactive:]),
+                                               0)
+        self._opt_linear_term = self._opt_linear_term[:, :self._overall.sum()]
         self.opt_transform = (self._opt_linear_term, self._opt_affine_term)
-
         (_score_linear_term, _) = self.score_transform
         self._score_linear_term = np.concatenate(
             (_score_linear_term[self._overall, :], _score_linear_term[~self._overall, :]), 0)
         self.score_transform = (self._score_linear_term, np.zeros(self._score_linear_term.shape[0]))
 
-        self.feasible_point = np.abs(self.initial_soln[self._overall])
-
         X, _ = self.loss.data
         n, p = X.shape
         self.p = p
-        self.randomizer_precision = (1./self.randomization_scale)* np.identity(p)
+        self.randomizer_precision = (1. / self.randomization_scale) * np.identity(p)
 
         score_cov = np.zeros((p, p))
-        X_active_inv = np.linalg.inv(X[:,self._overall].T.dot(X[:,self._overall]))
-        projection_perp = np.identity(n) - X[:,self._overall].dot(X_active_inv).dot( X[:,self._overall].T)
-        score_cov[:nactive, :nactive] = X_active_inv
-        score_cov[nactive:, nactive:] = X[:,~self._overall].T.dot(projection_perp).dot(X[:,~self._overall])
-
-        self.score_target_cov = score_cov[:, :nactive]
-        self.target_cov = score_cov[:nactive, :nactive]
-        self.target_observed = self.observed_internal_state[:nactive]
+        X_active_inv = np.linalg.inv(X[:, self._overall].T.dot(X[:, self._overall]))
+        projection_perp = np.identity(n) - X[:, self._overall].dot(X_active_inv).dot(X[:, self._overall].T)
+        score_cov[:self.nactive, :self.nactive] = X_active_inv
+        score_cov[self.nactive:, self.nactive:] = X[:, ~self._overall].T.dot(projection_perp).dot(X[:, ~self._overall])
+        self.score_cov = score_cov
         self.observed_score_state = self.observed_internal_state
+        self.target_observed = self.observed_internal_state[:self.nactive]
+        self.score_target_cov = self.score_cov[:, :self.nactive]
+        self.target_cov = self.score_cov[:self.nactive, :self.nactive]
 
-        self.A = np.dot(self._score_linear_term, self.score_target_cov[:,:nactive]).dot(np.linalg.inv(self.target_cov))
+    def solve_map(self):
+        self.feasible_point = np.abs(self.initial_soln[self._overall])
+
+        self.A = np.dot(self._score_linear_term, self.score_target_cov).dot(np.linalg.inv(self.target_cov))
         self.data_offset = self._score_linear_term.dot(self.observed_score_state)- self.A.dot(self.target_observed)
-        self.target_transform = (self.A, self.data_offset )
+        self.target_transform = (self.A, self.data_offset)
+
+    def solve_map_univariate_target(self, j):
+        self.feasible_point = np.abs(self.initial_soln[self._overall])[j]
+
+        self.A = np.dot(self._score_linear_term, self.score_target_cov[:, j]) / self.target_cov[j, j]
+        self.data_offset = self._score_linear_term.dot(self.observed_score_state) - self.A * self.target_observed[j]
+        self.target_transform = (self.A.reshape((self.A.shape[0],1)),
+                                 self.data_offset.reshape((self.data_offset.shape[0],1)))
 
 
 def solve_UMVU(target_transform,
@@ -65,15 +72,18 @@ def solve_UMVU(target_transform,
     nopt = B.shape[1]
     ntarget = A.shape[1]
 
-    # XXX should be able to do vector version as well
-    # but for now code assumes 1dim
     #assert ntarget == 1
 
     # setup joint implied covariance matrix
+    if ntarget>1:
+        target_precision = np.linalg.inv(target_cov)
+    else:
+        target_precision = 1./target_cov
+        opt_offset = opt_offset.reshape((opt_offset.shape[0],1))
 
-    target_precision = np.linalg.inv(target_cov)
     implied_precision = np.zeros((ntarget + nopt, ntarget + nopt))
 
+    #print("shapes", A.shape, (A.T.dot(randomizer_precision).dot(A)).shape, target_precision.shape)
     implied_precision[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + target_precision
     implied_precision[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
     implied_precision[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
@@ -89,14 +99,17 @@ def solve_UMVU(target_transform,
     M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
     conditioned_value = data_offset + opt_offset
+    #print("shapes", data_offset.shape, opt_offset.shape, conditioned_value.shape)
 
     linear_term = implied_cross.T.dot(np.linalg.inv(implied_target))
     offset_term = -B.T.dot(randomizer_precision).dot(conditioned_value)
+    #print("check shapes", linear_term.dot(target_observed).shape, offset_term.shape)
     natparam_transform = (linear_term, offset_term)
     conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
 
     conditional_precision = implied_precision[ntarget:,ntarget:]
 
+    #print("check shapes", conditional_natural_parameter.shape, conditional_precision.shape)
     soln, value = solve_barrier_nonneg(conditional_natural_parameter,
                                        conditional_precision,
                                        feasible_point=feasible_point)
