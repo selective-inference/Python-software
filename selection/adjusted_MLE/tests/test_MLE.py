@@ -54,12 +54,13 @@ def test_bias_lasso(nsim = 500):
 #test_bias_lasso()
 
 def bootstrap_lasso(B=500):
-    p = 50
-    run_lasso = test_lasso(n=100, p=p, s=10, signal=7., seed_n = 0, lam_frac=1., randomization_scale=1.)
+    p = 200
+    n= 100
+    run_lasso = test_lasso(n=n, p=p, s=10, signal=7., seed_n = 0, lam_frac=1., randomization_scale=1.)
 
     boot_sample = np.zeros((B,run_lasso[3].sum()))
     for b in range(B):
-        boot_indices = np.random.choice(p, p, replace=True)
+        boot_indices = np.random.choice(n, n, replace=True)
         boot_vector = ((run_lasso[4])[boot_indices,:]).T.dot((run_lasso[5])[boot_indices])
         active = run_lasso[3]
         target_boot = (run_lasso[6]).dot(boot_vector[active])
