@@ -38,7 +38,7 @@ def test_lasso(n=100, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomizati
                                                 M_est.target_cov,
                                                 M_est.randomizer_precision)
 
-        return np.mean(approx_MLE- true_target), approx_MLE, M_est.target_observed, active, X.T.dot(y), \
+        return np.mean(approx_MLE- true_target), approx_MLE, M_est.target_observed, active, X, y,\
                np.linalg.inv(X[:, active].T.dot(X[:, active])), mle_map
     else:
         return None
@@ -54,16 +54,16 @@ def test_bias_lasso(nsim = 500):
 #test_bias_lasso()
 
 def bootstrap_lasso(B=500):
-    p = 200
+    p = 50
     run_lasso = test_lasso(n=100, p=p, s=10, signal=7., seed_n = 0, lam_frac=1., randomization_scale=1.)
 
     boot_sample = np.zeros((B,run_lasso[3].sum()))
     for b in range(B):
-        boot_vector = (run_lasso[4])[np.random.choice(p, p, replace=True)]
-        #print("shape", boot_vector.shape)
+        boot_indices = np.random.choice(p, p, replace=True)
+        boot_vector = ((run_lasso[4])[boot_indices,:]).T.dot((run_lasso[5])[boot_indices])
         active = run_lasso[3]
-        target_boot = (run_lasso[5]).dot(boot_vector[active])
-        boot_sample[b, :] = (run_lasso[6](target_boot))[0]
+        target_boot = (run_lasso[6]).dot(boot_vector[active])
+        boot_sample[b, :] = (run_lasso[7](target_boot))[0]
 
     centered_boot_sample = boot_sample - boot_sample.mean(0)[None, :]
     std_boot_sample = centered_boot_sample/(boot_sample.std(0)[None,:])
@@ -82,5 +82,5 @@ if __name__ == "__main__":
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='blue', marker='^')
     plt.plot(grid, grid, c='red', marker='^')
-    #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/selective_mle/Plots/boot_selective_MLE_lasso_p200.png")
+    plt.show()
+    #plt.savefig("/Users/snigdhapanigrahi/selective_mle/Plots/boot_selective_MLE_lasso_p200.png")
