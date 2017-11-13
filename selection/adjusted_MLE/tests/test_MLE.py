@@ -8,7 +8,7 @@ from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from statsmodels.distributions.empirical_distribution import ECDF
 
-def test_lasso(n=100, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomization_scale=1.):
+def test_lasso(n=100, p=50, s=5, signal=5., B= 500, seed_n = 0, lam_frac=1., randomization_scale=1.):
 
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     n, p = X.shape
@@ -38,8 +38,15 @@ def test_lasso(n=100, p=50, s=5, signal=5., seed_n = 0, lam_frac=1., randomizati
                                                 M_est.target_cov,
                                                 M_est.randomizer_precision)
 
-        return np.mean(approx_MLE- true_target), approx_MLE, M_est.target_observed, active, X, y,\
-               np.linalg.inv(X[:, active].T.dot(X[:, active])), mle_map, true_target
+        boot_sample = np.zeros((B, nactive))
+        for b in range(B):
+            boot_indices = np.random.choice(n, n, replace=True)
+            boot_vector = (X[boot_indices, :]).T.dot(y[boot_indices])
+            target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector[active])
+            boot_sample[b, :] = mle_map(target_boot)[0]
+
+        print("estimated sd", boot_sample.std(0))
+        return np.true_divide((approx_MLE- true_target), boot_sample.std(0))
     else:
         return None
 
@@ -52,35 +59,16 @@ def test_bias_lasso(nsim = 500):
     print(bias/nsim)
 
 
-def bootstrap_lasso(B=500, seed_n=0):
-    p = 50
-    n= 100
-    run_lasso = test_lasso(n=n, p=p, s=10, signal=7., seed_n = seed_n, lam_frac=1., randomization_scale=1.)
-
-    boot_sample = np.zeros((B,run_lasso[3].sum()))
-    for b in range(B):
-        boot_indices = np.random.choice(n, n, replace=True)
-        boot_vector = ((run_lasso[4])[boot_indices,:]).T.dot((run_lasso[5])[boot_indices])
-        active = run_lasso[3]
-        target_boot = (run_lasso[6]).dot(boot_vector[active])
-        boot_sample[b, :] = (run_lasso[7](target_boot))[0]
-
-    true_target = run_lasso[8]
-    std_boot_sample = np.true_divide((run_lasso[1]- true_target),boot_sample.std(0))
-
-    return std_boot_sample
-
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     ndraw = 50
     boot_pivot= []
     for i in range(ndraw):
-        pivot = bootstrap_lasso(B=5000, seed_n=i)
+        pivot = test_lasso(n=100, p=50, s=5, signal=5., B= 5000, seed_n = 0)
         for j in range(pivot.shape[0]):
             boot_pivot.append(pivot[j])
         sys.stderr.write("iteration completed" + str(i) + "\n")
-    print("boot pivot", boot_pivot)
     plt.clf()
     ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
     grid = np.linspace(0, 1, 101)
@@ -88,4 +76,4 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf(grid), c='blue', marker='^')
     plt.plot(grid, grid, c='red', marker='^')
     plt.show()
-    #plt.savefig("/Users/snigdhapanigrahi/Desktop/true_target_boot_selective_MLE_lasso_p200.png")
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/boot_selective_MLE_lasso_p50.png")

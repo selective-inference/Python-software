@@ -66,11 +66,12 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
     while True:
         Zval = np.random.normal(true_mean, 1, n)
         omega = np.random.normal(0, 1)
-        target_Z = (np.sum(Zval) / np.sqrt(n))
+        target_Z = ((Zval).sum())/np.sqrt(n)
         check = target_Z + omega - threshold
         if check>0.:
             break
 
+    print("target Z", Zval, target_Z)
     approx_MLE, value, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
 
     boot_sample = []
@@ -78,8 +79,10 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
         Zval_boot = np.sum(Zval[np.random.choice(n, n, replace=True)]) / np.sqrt(n)
         boot_sample.append(mle_map(Zval_boot)[0])
 
+    print("approx_MLE", approx_MLE, np.std(boot_sample), true_mean)
     return boot_sample, np.mean(boot_sample), np.std(boot_sample), \
-           np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample))
+           np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample)), \
+           np.true_divide(approx_MLE - true_mean, np.std(boot_sample))
 
 # if __name__ == "__main__":
 #     n = 1000
@@ -116,12 +119,17 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    plt.clf()
-    boot_result = bootstrap_simple(n= 100, B=1000, true_mean=1., threshold=2.)
-    boot_pivot = boot_result[3]
-    print("boot sample", boot_pivot.shape)
-    ecdf = ECDF(ndist.cdf(boot_pivot))
+    ndraw = 100
+    boot_pivot=[]
+    for i in range(ndraw):
+        boot_result = bootstrap_simple(n= 100, B=1000, true_mean=0., threshold=2.)
+        boot_pivot.append(boot_result[4])
+
+    print("boot sample", np.asarray(boot_pivot).shape, boot_pivot)
+    ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
     grid = np.linspace(0, 1, 101)
+
+    plt.clf()
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.show()

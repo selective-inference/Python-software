@@ -75,11 +75,8 @@ def solve_UMVU(target_transform,
     #assert ntarget == 1
 
     # setup joint implied covariance matrix
-    if ntarget>1:
-        target_precision = np.linalg.inv(target_cov)
-    else:
-        target_precision = 1./target_cov
-        opt_offset = opt_offset.reshape((opt_offset.shape[0],1))
+
+    target_precision = np.linalg.inv(target_cov)
 
     implied_precision = np.zeros((ntarget + nopt, ntarget + nopt))
 
