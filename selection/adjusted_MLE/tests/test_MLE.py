@@ -46,7 +46,7 @@ def test_lasso(n=100, p=50, s=5, signal=5., B= 500, seed_n = 0, lam_frac=1., ran
             boot_sample[b, :] = mle_map(target_boot)[0]
 
         print("estimated sd", boot_sample.std(0))
-        return np.true_divide((approx_MLE- true_target), boot_sample.std(0))
+        return np.true_divide((approx_MLE- true_target), boot_sample.std(0)), ((approx_MLE- true_target).sum())/float(nactive)
     else:
         return None
 
@@ -64,13 +64,17 @@ if __name__ == "__main__":
 
     ndraw = 50
     boot_pivot= []
+    bias = 0.
     for i in range(ndraw):
-        pivot = test_lasso(n=100, p=50, s=0, signal=5., B= 5000, seed_n = i)
-        if pivot is not None:
+        boot = test_lasso(n=100, p=50, s=0, signal=5., B= 10000, seed_n = i)
+        if boot is not None:
+            pivot = boot[0]
+            bias += boot[1]
             for j in range(pivot.shape[0]):
                 boot_pivot.append(pivot[j])
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
+    sys.stderr.write("overall_bias" + str(bias/float(ndraw)) + "\n")
     plt.clf()
     ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
     grid = np.linspace(0, 1, 101)
