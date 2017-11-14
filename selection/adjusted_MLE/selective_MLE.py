@@ -96,31 +96,27 @@ def solve_UMVU(target_transform,
     M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
     conditioned_value = data_offset + opt_offset
-    #print("shapes", data_offset.shape, opt_offset.shape, conditioned_value.shape)
 
     linear_term = implied_cross.T.dot(np.linalg.inv(implied_target))
     offset_term = -B.T.dot(randomizer_precision).dot(conditioned_value)
-    #print("check shapes", linear_term.dot(target_observed).shape, offset_term.shape)
     natparam_transform = (linear_term, offset_term)
     conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
 
     conditional_precision = implied_precision[ntarget:,ntarget:]
 
-    #print("check shapes", conditional_natural_parameter.shape, conditional_precision.shape)
     soln, value, hess = solve_barrier_nonneg(conditional_natural_parameter,
                                              conditional_precision,
                                              feasible_point=feasible_point)
     M_1_inv = np.linalg.inv(M_1)
     offset_term = - M_1_inv.dot(M_2.dot(conditioned_value))
-    linear_term = np.vstack([M_1_inv, -M_1_inv.dot(L)])
     mle_transform = (M_1_inv, -M_1_inv.dot(L), offset_term)
 
     def mle_map(natparam_transform, mle_transform, feasible_point, conditional_precision, target_observed):
         param_lin, param_offset = natparam_transform
         mle_target_lin, mle_soln_lin, mle_offset = mle_transform
         soln, value, hess = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
-                                           conditional_precision,
-                                           feasible_point=feasible_point)
+                                                 conditional_precision,
+                                                 feasible_point=feasible_point)
         hessian = mle_target_lin+ mle_soln_lin.dot(hess).dot(conditional_precision).dot(param_lin)
         return mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset, value, hessian
 
@@ -187,7 +183,6 @@ def solve_barrier_nonneg(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    print("check", np.diag(barrier_hessian(current)))
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
     return current, current_value, hess
 
