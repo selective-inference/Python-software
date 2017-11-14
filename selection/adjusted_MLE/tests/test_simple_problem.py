@@ -100,7 +100,24 @@ def check_approx_fisher_simple(true_mean, threshold=2, randomization_scale=1., n
 
     print(diff/float(nsim))
 
-check_approx_fisher_simple(true_mean=-1., threshold=2, randomization_scale=1., nsim=100)
+def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2):
+
+    resid_matrix = np.identity(n) - np.ones((n, n)) / n
+    U, D, V = np.linalg.svd(resid_matrix)
+    U = U[:, :-1]
+
+    while True:
+        target_Z, omega = np.random.standard_normal(2)
+        target_Z += true_mean * np.sqrt(n)
+        if target_Z + omega > threshold:
+            Zval = U.dot(np.random.standard_normal(n - 1))
+            Zval += target_Z * np.ones(n) / np.sqrt(n)
+            break
+
+    approx_MLE, value, var, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
+    return np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(var))
+
+#check_approx_fisher_simple(true_mean=-1., threshold=2, randomization_scale=1., nsim=100)
 
 # if __name__ == "__main__":
 #     n = 1000
@@ -153,3 +170,24 @@ check_approx_fisher_simple(true_mean=-1., threshold=2, randomization_scale=1., n
 #             plt.plot(grid, ecdf(grid), c='red', marker='^')
 #             plt.plot([0,1],[0,1], 'k--')
 #             plt.savefig('bootstrap_simple.png')
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    ndraw = 200
+    pivot_obs_info=[]
+    for i in range(ndraw):
+        result = pivot_approx_fisher_simple(n=300, true_mean = -0.1, threshold=2)
+        pivot_obs_info.append(result)
+
+    print("here", np.asarray(pivot_obs_info))
+
+    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    grid = np.linspace(0, 1, 101)
+
+    plt.clf()
+    print("ecdf", ecdf(grid))
+    plt.plot(grid, ecdf(grid), c='red', marker='^')
+    plt.plot([0,1],[0,1], 'k--')
+    plt.show()
+    #plt.savefig('bootstrap_simple.png')
