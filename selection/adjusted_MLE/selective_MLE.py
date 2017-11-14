@@ -132,7 +132,6 @@ def solve_barrier_nonneg(conjugate_arg,
                          nstep=30,
                          tol=1.e-8):
 
-    #conjugate_arg = precision.dot(mean_vec)
     scaling = np.sqrt(np.diag(precision))
 
     if feasible_point is None:
