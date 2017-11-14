@@ -56,7 +56,6 @@ def test_lasso(n=100, p=50, s=5, signal=5., B=500, seed_n=0, lam_frac=1., random
     else:
         return None
 
-
 def test_bias_lasso(nsim=500):
     bias = 0
     for _ in range(nsim):
@@ -65,26 +64,26 @@ def test_bias_lasso(nsim=500):
     print(bias / nsim)
 
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    ndraw = 100
-    boot_pivot = []
-    bias = 0.
-    for i in range(ndraw):
-        boot = test_lasso(n=300, p=1, s=1, signal=5., B=1000, seed_n=i)
-        if boot is not None:
-            pivot = boot[0]
-            bias += boot[1]
-            for j in range(pivot.shape[0]):
-                boot_pivot.append(pivot[j])
-
-        sys.stderr.write("iteration completed" + str(i) + "\n")
-        sys.stderr.write("overall_bias" + str(bias / float(ndraw)) + "\n")
-        if i % 10 == 0:
-            plt.clf()
-            ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
-            grid = np.linspace(0, 1, 101)
-            print("ecdf", ecdf(grid))
-            plt.plot(grid, ecdf(grid), c='red', marker='^')
-            plt.plot(grid, grid, 'k--')
+# if __name__ == "__main__":
+#     import matplotlib.pyplot as plt
+#
+#     ndraw = 100
+#     boot_pivot = []
+#     bias = 0.
+#     for i in range(ndraw):
+#         boot = test_lasso(n=300, p=1, s=1, signal=5., B=1000, seed_n=i)
+#         if boot is not None:
+#             pivot = boot[0]
+#             bias += boot[1]
+#             for j in range(pivot.shape[0]):
+#                 boot_pivot.append(pivot[j])
+#
+#         sys.stderr.write("iteration completed" + str(i) + "\n")
+#         sys.stderr.write("overall_bias" + str(bias / float(ndraw)) + "\n")
+#         if i % 10 == 0:
+#             plt.clf()
+#             ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
+#             grid = np.linspace(0, 1, 101)
+#             print("ecdf", ecdf(grid))
+#             plt.plot(grid, ecdf(grid), c='red', marker='^')
+#             plt.plot(grid, grid, 'k--')

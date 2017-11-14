@@ -107,9 +107,9 @@ def solve_UMVU(target_transform,
     conditional_precision = implied_precision[ntarget:,ntarget:]
 
     #print("check shapes", conditional_natural_parameter.shape, conditional_precision.shape)
-    soln, value = solve_barrier_nonneg(conditional_natural_parameter,
-                                       conditional_precision,
-                                       feasible_point=feasible_point)
+    soln, value, hess = solve_barrier_nonneg(conditional_natural_parameter,
+                                             conditional_precision,
+                                             feasible_point=feasible_point)
     M_1_inv = np.linalg.inv(M_1)
     offset_term = - M_1_inv.dot(M_2.dot(conditioned_value))
     linear_term = np.vstack([M_1_inv, -M_1_inv.dot(L)])
@@ -118,14 +118,15 @@ def solve_UMVU(target_transform,
     def mle_map(natparam_transform, mle_transform, feasible_point, conditional_precision, target_observed):
         param_lin, param_offset = natparam_transform
         mle_target_lin, mle_soln_lin, mle_offset = mle_transform
-        soln, value = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
+        soln, value, hess = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
                                            conditional_precision,
                                            feasible_point=feasible_point)
-        return mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset, value
+        hessian = mle_target_lin+ mle_soln_lin.dot(hess).dot(conditional_precision).dot(param_lin)
+        return mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset, value, hessian
 
     mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, feasible_point, conditional_precision)
-    sel_MLE, value = mle_partial(target_observed)
-    return np.squeeze(sel_MLE), value, mle_partial
+    sel_MLE, value, hessian = mle_partial(target_observed)
+    return np.squeeze(sel_MLE), value, hessian, mle_partial
 
 
 def solve_barrier_nonneg(conjugate_arg,
@@ -143,6 +144,7 @@ def solve_barrier_nonneg(conjugate_arg,
 
     objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. + np.log(1.+ 1./(u / scaling)).sum()
     grad = lambda u: -conjugate_arg + precision.dot(u) + (1./(scaling + u) - 1./u)
+    barrier_hessian = lambda u: (-1./((scaling + u)**2.) + 1./(u**2.))
 
     current = feasible_point
     current_value = np.inf
@@ -185,7 +187,9 @@ def solve_barrier_nonneg(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    return current, current_value
+    print("check", np.diag(barrier_hessian(current)))
+    hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
+    return current, current_value, hess
 
 
 
