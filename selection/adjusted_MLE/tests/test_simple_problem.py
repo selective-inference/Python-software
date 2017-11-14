@@ -63,12 +63,16 @@ def test_orthogonal_lasso(n=5):
 
 def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
 
+    resid_matrix = np.identity(n) - np.ones((n,n)) / n
+    U, D, V = np.linalg.svd(resid_matrix)
+    U = U[:,:-1]
+
     while True:
-        Zval = np.random.normal(true_mean, 1, n)
-        omega = np.random.normal(0, 1)
-        target_Z = ((Zval).sum())/np.sqrt(n)
-        check = target_Z + omega - threshold
-        if check>0.:
+        target_Z, omega = np.random.standard_normal(2)
+        target_Z += true_mean * np.sqrt(n)
+        if target_Z + omega > threshold:
+            Zval = U.dot(np.random.standard_normal(n-1))
+            Zval += target_Z * np.ones(n) / np.sqrt(n)
             break
 
     approx_MLE, value, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
@@ -118,17 +122,19 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 100
+    ndraw = 200
     boot_pivot=[]
     for i in range(ndraw):
-        boot_result = bootstrap_simple(n= 100, B=1000, true_mean=1., threshold=2.)
+        boot_result = bootstrap_simple(n=300, B=5000, true_mean=0., threshold=2.)
         boot_pivot.append(boot_result[4])
 
-    print("boot sample", np.asarray(boot_pivot).shape, boot_pivot)
-    ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
-    grid = np.linspace(0, 1, 101)
+        print("boot sample", np.asarray(boot_pivot).shape, boot_pivot)
+        ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
+        grid = np.linspace(0, 1, 101)
 
-    plt.clf()
-    print("ecdf", ecdf(grid))
-    plt.plot(grid, ecdf(grid), c='red', marker='^')
-    plt.show()
+        if i % 10 == 0:
+            plt.clf()
+            print("ecdf", ecdf(grid))
+            plt.plot(grid, ecdf(grid), c='red', marker='^')
+            plt.plot([0,1],[0,1], 'k--')
+            plt.savefig('bootstrap_simple.png')
