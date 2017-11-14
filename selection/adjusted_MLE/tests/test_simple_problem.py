@@ -3,7 +3,7 @@ import numpy as np, sys
 
 from scipy.stats import norm as ndist
 from selection.adjusted_MLE.selective_MLE import solve_UMVU
-from selection.adjusted_MLE.tests.exact_MLE import grad_CGF
+from selection.adjusted_MLE.tests.exact_MLE import grad_CGF, fisher_info
 from statsmodels.distributions.empirical_distribution import ECDF
 
 def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
@@ -87,6 +87,21 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
            np.squeeze((boot_sample - np.mean(boot_sample)) / np.std(boot_sample)), \
            np.true_divide(approx_MLE - np.sqrt(n)*true_mean, np.std(boot_sample))
 
+def check_approx_fisher_simple(true_mean, threshold=2, randomization_scale=1., nsim=200):
+    diff = 0.
+    for _ in range(nsim):
+        Z = sim_simple_problem(true_mean, threshold, randomization_scale)
+        approx = simple_problem(Z, threshold=threshold, randomization_scale=randomization_scale)
+        approx_std = np.sqrt(np.diag(approx[2]))
+
+        exact_std = 1./np.sqrt(fisher_info(approx[0], randomization_scale = 1., threshold = 2))
+        diff += np.abs(exact_std-approx_std)
+        print("difference", np.abs(exact_std-approx_std))
+
+    print(diff/float(nsim))
+
+check_approx_fisher_simple(true_mean=-1., threshold=2, randomization_scale=1., nsim=100)
+
 # if __name__ == "__main__":
 #     n = 1000
 #     Zval = np.random.normal(0, 1, n)
@@ -119,22 +134,22 @@ def bootstrap_simple(n= 100, B=100, true_mean=0., threshold=2.):
 #     plt.legend()
 #     plt.show()
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    ndraw = 200
-    boot_pivot=[]
-    for i in range(ndraw):
-        boot_result = bootstrap_simple(n=300, B=5000, true_mean=0., threshold=2.)
-        boot_pivot.append(boot_result[4])
-
-        print("boot sample", np.asarray(boot_pivot).shape, boot_pivot)
-        ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
-        grid = np.linspace(0, 1, 101)
-
-        if i % 10 == 0:
-            plt.clf()
-            print("ecdf", ecdf(grid))
-            plt.plot(grid, ecdf(grid), c='red', marker='^')
-            plt.plot([0,1],[0,1], 'k--')
-            plt.savefig('bootstrap_simple.png')
+# if __name__ == "__main__":
+#     import matplotlib.pyplot as plt
+#
+#     ndraw = 200
+#     boot_pivot=[]
+#     for i in range(ndraw):
+#         boot_result = bootstrap_simple(n=300, B=5000, true_mean=0., threshold=2.)
+#         boot_pivot.append(boot_result[4])
+#
+#         print("boot sample", np.asarray(boot_pivot).shape, boot_pivot)
+#         ecdf = ECDF(ndist.cdf(np.asarray(boot_pivot)))
+#         grid = np.linspace(0, 1, 101)
+#
+#         if i % 10 == 0:
+#             plt.clf()
+#             print("ecdf", ecdf(grid))
+#             plt.plot(grid, ecdf(grid), c='red', marker='^')
+#             plt.plot([0,1],[0,1], 'k--')
+#             plt.savefig('bootstrap_simple.png')
