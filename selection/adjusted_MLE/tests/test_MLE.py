@@ -108,8 +108,6 @@ def orthogonal_lasso_approx(n=100, p=5, s=1, signal=0., lam_frac=1., randomizati
             beta[:s] = np.linspace(signal[0], signal[1], s)
 
         X = np.identity(n)[:,:p]
-        X -= X.mean(0)[None, :]
-        X /= (X.std(0)[None, :] * np.sqrt(n))
         sigma = 1.
         y = (X.dot(beta) + sigma* np.random.standard_normal(n))
 
@@ -210,7 +208,7 @@ if __name__ == "__main__":
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = orthogonal_lasso_approx(n=300, p=5, s=3, signal=7.)
+        approx = orthogonal_lasso_approx(n=300, p=5, s=3, signal=5.)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
@@ -228,5 +226,5 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot(grid, grid, 'k--')
     #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p5_amp7.png")
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p5_amp5.png")
 
