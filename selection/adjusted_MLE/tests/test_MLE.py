@@ -10,11 +10,13 @@ from statsmodels.distributions.empirical_distribution import ECDF
 
 
 def test_lasso(n=100, p=50, s=5, signal=5., B=500, seed_n=0, lam_frac=1., randomization_scale=1.):
-    # np.random.seed(seed_n)
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     n, p = X.shape
+    if p>1:
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+    else:
+        lam = 2.
 
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
     loss = rr.glm.gaussian(X, y)
     epsilon = 1. / np.sqrt(n)
     W = np.ones(p) * lam
@@ -57,42 +59,41 @@ def test_lasso(n=100, p=50, s=5, signal=5., B=500, seed_n=0, lam_frac=1., random
         return None
 
 def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomization_scale=1.):
-    # np.random.seed(seed_n)
-    X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
-    n, p = X.shape
 
-    lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
-    loss = rr.glm.gaussian(X, y)
-    epsilon = 1. / np.sqrt(n)
-    W = np.ones(p) * lam
-    penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
-    M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale)
+    while True:
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
+        n, p = X.shape
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
 
-    M_est.solve_map()
-    active = M_est._overall
+        loss = rr.glm.gaussian(X, y)
+        epsilon = 1./np.sqrt(n)
+        W = np.ones(p) * lam
+        penalty = rr.group_lasso(np.arange(p),
+                                 weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
-    # true_target = beta[active]
-    nactive = np.sum(active)
-    sys.stderr.write("number of active selected by lasso" + str(nactive) + "\n")
-    if nactive > 0:
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale)
 
-        approx_MLE, value, var, mle_map = solve_UMVU(M_est.target_transform,
-                                                     M_est.opt_transform,
-                                                     M_est.target_observed,
-                                                     M_est.feasible_point,
-                                                     M_est.target_cov,
-                                                     M_est.randomizer_precision)
+        M_est.solve_map()
+        active = M_est._overall
 
-        approx_std = np.sqrt(np.diag(var))
-        print("approx_std", approx_std)
-        return np.true_divide((approx_MLE - true_target), approx_std), ((approx_MLE - true_target).sum()) / float(nactive)
+        true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
+        nactive = np.sum(active)
 
-    else:
-        return None
+        # sys.stderr.write("number of active selected by lasso" + str(nactive) + "\n")
+        if nactive > 0:
+            #print("true target", true_target)
+            approx_MLE, value, var, mle_map = solve_UMVU(M_est.target_transform,
+                                                         M_est.opt_transform,
+                                                         M_est.target_observed,
+                                                         M_est.feasible_point,
+                                                         M_est.target_cov,
+                                                         M_est.randomizer_precision)
+
+            break
+
+    return (approx_MLE - true_target)/np.sqrt(np.diag(var)), (approx_MLE - true_target).sum()/float(nactive)
 
 
 def test_bias_lasso(nsim=500):
@@ -130,11 +131,11 @@ def test_bias_lasso(nsim=500):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 200
+    ndraw = 500
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=300, p=1, s=0, signal=5.)
+        approx = test_lasso_approx_var(n=300, p=50, s=5, signal=5.)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
@@ -142,15 +143,15 @@ if __name__ == "__main__":
                 pivot_obs_info.append(pivot[j])
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
-        sys.stderr.write("overall_bias" + str(bias / float(ndraw)) + "\n")
+        sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
 
-        if i % 10 == 0:
-            plt.clf()
-            ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-            grid = np.linspace(0, 1, 101)
-            print("ecdf", ecdf(grid))
-            plt.plot(grid, ecdf(grid), c='red', marker='^')
-            plt.plot(grid, grid, 'k--')
-            #plt.show()
-            plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p1.png")
+    #if i % 10 == 0:
+    plt.clf()
+    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    grid = np.linspace(0, 1, 101)
+    print("ecdf", ecdf(grid))
+    plt.plot(grid, ecdf(grid), c='red', marker='^')
+    plt.plot(grid, grid, 'k--')
+    plt.show()
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p1_amp5.png")
 

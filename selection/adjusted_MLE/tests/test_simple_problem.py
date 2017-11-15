@@ -109,13 +109,29 @@ def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2):
     while True:
         target_Z, omega = np.random.standard_normal(2)
         target_Z += true_mean * np.sqrt(n)
-        if target_Z + omega > threshold:
+        if np.abs(target_Z + omega) > threshold:
             Zval = U.dot(np.random.standard_normal(n - 1))
             Zval += target_Z * np.ones(n) / np.sqrt(n)
             break
 
-    approx_MLE, value, var, mle_map = simple_problem(target_Z, n=1, threshold=2, randomization_scale=1.)
-    return np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(var))
+    n1 =1
+    target_observed = np.atleast_1d(target_Z)
+    target_transform = (-np.identity(n1), np.zeros(n1))
+    s = np.asscalar(np.sign(target_Z + omega))
+    opt_transform = (s*np.identity(n1), np.ones(n1) * (s*threshold))
+    feasible_point = np.ones(n1)
+    randomization_scale = 1.
+    randomizer_precision = np.identity(n1) / randomization_scale ** 2
+    target_cov = np.identity(n1)
+
+    approx_MLE, value, var, mle_map = solve_UMVU(target_transform,
+                                                 opt_transform,
+                                                 target_observed,
+                                                 feasible_point,
+                                                 target_cov,
+                                                 randomizer_precision)
+
+    return np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(var)), approx_MLE - np.sqrt(n)*true_mean
 
 #check_approx_fisher_simple(true_mean=-1., threshold=2, randomization_scale=1., nsim=100)
 
@@ -176,18 +192,19 @@ if __name__ == "__main__":
 
     ndraw = 200
     pivot_obs_info=[]
+    bias = 0.
     for i in range(ndraw):
         result = pivot_approx_fisher_simple(n=300, true_mean = -0.1, threshold=2)
-        pivot_obs_info.append(result)
+        pivot_obs_info.append(result[0])
+        bias += result[1]
 
-    print("here", np.asarray(pivot_obs_info))
+    sys.stderr.write("overall_bias" + str(bias / float(ndraw)) + "\n")
 
     ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
     grid = np.linspace(0, 1, 101)
 
     plt.clf()
-    print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot([0,1],[0,1], 'k--')
     plt.show()
-    #plt.savefig('bootstrap_simple.png')
+    #plt.savefig('/Users/snigdhapanigrahi/Desktop/signed_approx_info_simple_amp_neg1.png')

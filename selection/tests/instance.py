@@ -20,7 +20,7 @@ def _design(n, p, rho, equicorrelated):
         X = np.random.standard_normal((n, p)).dot(cholX.T)
     return X
 
-def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0.3, signal=7,
+def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
                       random_signs=False, df=np.inf,
                       scale=True, center=True,
                       equicorrelated=True):

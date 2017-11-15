@@ -41,8 +41,8 @@ class M_estimator_map(M_estimator):
         self.target_cov = self.score_cov[:self.nactive, :self.nactive]
 
     def solve_map(self):
-        self.feasible_point = np.abs(self.initial_soln[self._overall])
-
+        #self.feasible_point = np.abs(self.initial_soln[self._overall])
+        self.feasible_point = np.ones(self._overall.sum())
         self.A = np.dot(self._score_linear_term, self.score_target_cov).dot(np.linalg.inv(self.target_cov))
         self.data_offset = self._score_linear_term.dot(self.observed_score_state)- self.A.dot(self.target_observed)
         self.target_transform = (self.A, self.data_offset)
@@ -79,8 +79,6 @@ def solve_UMVU(target_transform,
     target_precision = np.linalg.inv(target_cov)
 
     implied_precision = np.zeros((ntarget + nopt, ntarget + nopt))
-
-    #print("shapes", A.shape, (A.T.dot(randomizer_precision).dot(A)).shape, target_precision.shape)
     implied_precision[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + target_precision
     implied_precision[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
     implied_precision[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
