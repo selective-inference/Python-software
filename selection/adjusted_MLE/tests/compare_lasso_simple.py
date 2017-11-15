@@ -28,6 +28,7 @@ def test_lasso_approx_var(n=100, p=1, s=0, signal=0., lam_frac=1., randomization
         nactive = np.sum(active)
         if nactive > 0:
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
+            print("true target", true_target)
             approx_MLE, value, var, mle_map = solve_UMVU(M_est.target_transform,
                                                          M_est.opt_transform,
                                                          M_est.target_observed,
@@ -35,6 +36,7 @@ def test_lasso_approx_var(n=100, p=1, s=0, signal=0., lam_frac=1., randomization
                                                          M_est.target_cov,
                                                          M_est.randomizer_precision)
 
+            print("approx_MLE", approx_MLE)
             #print("check maps", M_est.opt_transform, M_est.target_transform, M_est.feasible_point, M_est.target_cov,
             #      M_est.randomizer_precision, M_est.target_observed)
 
@@ -96,15 +98,17 @@ if __name__ == "__main__":
     pivot_lasso = []
     pivot_simple = []
     diff = 0.
+    bias = 0.
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=300, p=1, s=1, signal=-2.)
+        approx = test_lasso_approx_var(n=300, p=1, s=1, signal=5.)
         if approx is not None:
             pivot_lasso.append(approx[0])
             pivot_simple.append(approx[2])
-            diff += approx[0]-approx[2]
+            bias += approx[1]
+            #diff += approx[0]-approx[2]
         sys.stderr.write("iteration completed" + str(i) + "\n")
-
-    sys.stderr.write("diff" + str(diff) + "\n")
+        sys.stderr.write("bias" + str(bias/float(i)) + "\n")
+    #sys.stderr.write("diff" + str(diff) + "\n")
 
     #if i % 10 == 0:
     plt.clf()
