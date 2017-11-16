@@ -129,7 +129,30 @@ def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2, epsilon = 0.2
     print("approx MLE", approx_MLE, np.sqrt(n)*true_mean)
     return np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(var)), approx_MLE - np.sqrt(n)*true_mean
 
-#check_approx_fisher_simple(true_mean=-1., threshold=2, randomization_scale=1., nsim=100)
+def test_matrices_simple(true_mean = 0., threshold=2, epsilon = 0.2):
+
+    while True:
+        target_Z, omega = np.random.standard_normal(2)
+        target_Z += true_mean
+        if ((target_Z + omega) - threshold)>0.:
+            break
+
+    target_observed = np.atleast_1d(target_Z)
+    target_transform = (-np.identity(1), np.zeros(1))
+    opt_transform = ((np.identity(1) + epsilon), np.ones(1) * (threshold))
+    feasible_point = np.ones(1)
+    randomization_scale = 1.
+    randomizer_precision = np.identity(1) / randomization_scale ** 2.
+    target_cov = np.identity(1)
+
+    approx_MLE, value, var, mle_map = solve_UMVU(target_transform,
+                                                 opt_transform,
+                                                 target_observed,
+                                                 feasible_point,
+                                                 target_cov,
+                                                 randomizer_precision)
+
+#test_matrices_simple(true_mean=2., threshold=2, epsilon=0.2)
 
 # if __name__ == "__main__":
 #     n = 1000
@@ -190,7 +213,7 @@ if __name__ == "__main__":
     pivot_obs_info=[]
     bias = 0.
     for i in range(ndraw):
-        result = pivot_approx_fisher_simple(n=300, true_mean = 0.3, threshold=2)
+        result = pivot_approx_fisher_simple(n=300, true_mean = 0.2, threshold=2)
         pivot_obs_info.append(result[0])
         bias += result[1]
         sys.stderr.write("bias" + str(bias / float(i)) + "\n")

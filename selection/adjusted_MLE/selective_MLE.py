@@ -93,14 +93,18 @@ def solve_UMVU(target_transform,
     M_1 = np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(target_precision)
     M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
+    print("check matrices", M_1, M_2, L, data_offset, opt_offset)
+
     conditioned_value = data_offset + opt_offset
 
-    linear_term = implied_cross.T.dot(np.linalg.inv(implied_target))
+    linear_term = implied_precision[ntarget:,ntarget:].dot(implied_cross.T.dot(np.linalg.inv(implied_target)))
     offset_term = -B.T.dot(randomizer_precision).dot(conditioned_value)
     natparam_transform = (linear_term, offset_term)
     conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
 
     conditional_precision = implied_precision[ntarget:,ntarget:]
+
+    print("check conditional parameters", conditional_natural_parameter-(1.2*target_observed)+2.4, conditional_precision)
 
     soln, value, hess = solve_barrier_nonneg(conditional_natural_parameter,
                                              conditional_precision,
