@@ -96,7 +96,8 @@ def approximate_inference(X,
                                        naive_risk)))
 
 
-def test_lasso(n=200, p=5, s=1, signal=5):
+def test_lasso(n=20, p=5, s=1, signal=5):
+
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
     true_mean = X.dot(beta)
     lasso = approximate_inference(X,

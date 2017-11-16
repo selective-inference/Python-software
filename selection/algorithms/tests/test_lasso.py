@@ -247,12 +247,12 @@ def test_data_carving_sqrt_lasso(n=200,
                                  return_only_screening=True):
     
     X, y, beta, true_active, sigma = instance(n=n, 
-                                         p=p, 
-                                         s=s, 
-                                         sigma=sigma, 
-                                         rho=rho, 
-                                         signal=signal, 
-                                         df=df)
+                                              p=p, 
+                                              s=s, 
+                                              sigma=sigma, 
+                                              rho=rho, 
+                                              signal=signal, 
+                                              df=df)
     mu = np.dot(X, beta)
 
     idx = np.arange(n)
@@ -365,7 +365,7 @@ def test_data_carving_logistic(n=700,
 
         Xa = X[:,DC.active]
 
-        active = np.zeros(p, np.bool)
+        active = np.zeros(p+1, np.bool)
         active[true_active] = 1
         v = (carve, split, active)
         return v
@@ -435,7 +435,7 @@ def test_data_carving_poisson(n=500,
 
         Xa = X[:,DC.active]
 
-        active = np.zeros(p, np.bool)
+        active = np.zeros(p+1, np.bool)
         active[true_active] = 1
         v = (carve, split, active)
         return v
