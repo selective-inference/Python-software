@@ -6,13 +6,13 @@ from selection.adjusted_MLE.selective_MLE import solve_UMVU
 from selection.adjusted_MLE.tests.exact_MLE import grad_CGF, fisher_info
 from statsmodels.distributions.empirical_distribution import ECDF
 
-def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
+def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1., epsilon = 0.05):
     """
     Simple problem: randomizaiton of sd 1 and thresholded at 2 (default args)
     """
     target_observed = np.atleast_1d(target_observed)
     target_transform = (-np.identity(n), np.zeros(n))
-    opt_transform = (np.identity(n), np.ones(n) * threshold)
+    opt_transform = (np.identity(n)+ epsilon, np.ones(n) * threshold)
     feasible_point = np.ones(n)
     randomizer_precision = np.identity(n) / randomization_scale ** 2
     target_cov = np.identity(n)
@@ -25,16 +25,16 @@ def simple_problem(target_observed=2, n=1, threshold=2, randomization_scale=1.):
                       randomizer_precision)
 
 
-def sim_simple_problem(true_mean, threshold=2, randomization_scale=1.):
+def sim_simple_problem(true_mean, threshold=2, randomization_scale=1., epsilon = 0.05):
     while True:
         Z, W = np.random.standard_normal(2)
         Z += true_mean
         W *= randomization_scale
-        if Z + W > threshold:
+        if ((Z + W) - threshold)/(1.+epsilon)>0.:
             return Z
 
 
-def check_unbiased(true_mean, threshold=2, randomization_scale=1., nsim=5000):
+def check_unbiased(true_mean, threshold=2, randomization_scale=1., nsim=5000, epsilon = 0.05):
     bias = 0
     for _ in range(nsim):
         Z = sim_simple_problem(true_mean, threshold, randomization_scale)
@@ -43,6 +43,7 @@ def check_unbiased(true_mean, threshold=2, randomization_scale=1., nsim=5000):
 
     return bias / nsim
 
+#print(check_unbiased(-1., threshold=2, randomization_scale=1., nsim=5000, epsilon = 0.05))
 
 def test_orthogonal_lasso(n=5):
     Zval = np.random.normal(0, 1, n)
@@ -100,25 +101,19 @@ def check_approx_fisher_simple(true_mean, threshold=2, randomization_scale=1., n
 
     print(diff/float(nsim))
 
-def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2):
-
-    resid_matrix = np.identity(n) - np.ones((n, n)) / n
-    U, D, V = np.linalg.svd(resid_matrix)
-    U = U[:, :-1]
+def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2, epsilon = 0.2):
 
     while True:
         target_Z, omega = np.random.standard_normal(2)
         target_Z += true_mean * np.sqrt(n)
-        if np.abs(target_Z + omega) > threshold:
-            Zval = U.dot(np.random.standard_normal(n - 1))
-            Zval += target_Z * np.ones(n) / np.sqrt(n)
+        if ((target_Z + omega) - threshold)/(1.+epsilon)>0.:
             break
 
     n1 =1
     target_observed = np.atleast_1d(target_Z)
     target_transform = (-np.identity(n1), np.zeros(n1))
-    s = np.asscalar(np.sign(target_Z + omega))
-    opt_transform = (s*np.identity(n1), np.ones(n1) * (s*threshold))
+    #s = np.asscalar(np.sign(target_Z + omega))
+    opt_transform = ((np.identity(n1)+epsilon), np.ones(n1) * (threshold))
     feasible_point = np.ones(n1)
     randomization_scale = 1.
     randomizer_precision = np.identity(n1) / randomization_scale ** 2
@@ -131,6 +126,7 @@ def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2):
                                                  target_cov,
                                                  randomizer_precision)
 
+    print("approx MLE", approx_MLE, np.sqrt(n)*true_mean)
     return np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(var)), approx_MLE - np.sqrt(n)*true_mean
 
 #check_approx_fisher_simple(true_mean=-1., threshold=2, randomization_scale=1., nsim=100)
@@ -194,9 +190,10 @@ if __name__ == "__main__":
     pivot_obs_info=[]
     bias = 0.
     for i in range(ndraw):
-        result = pivot_approx_fisher_simple(n=300, true_mean = -0.1, threshold=2)
+        result = pivot_approx_fisher_simple(n=300, true_mean = 0.3, threshold=2)
         pivot_obs_info.append(result[0])
         bias += result[1]
+        sys.stderr.write("bias" + str(bias / float(i)) + "\n")
 
     sys.stderr.write("overall_bias" + str(bias / float(ndraw)) + "\n")
 
@@ -207,4 +204,4 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot([0,1],[0,1], 'k--')
     plt.show()
-    #plt.savefig('/Users/snigdhapanigrahi/Desktop/signed_approx_info_simple_amp_neg1.png')
+#     #plt.savefig('/Users/snigdhapanigrahi/Desktop/signed_approx_info_simple_amp_neg1.png')

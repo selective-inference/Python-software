@@ -127,7 +127,7 @@ def solve_barrier_nonneg(conjugate_arg,
                          precision,
                          feasible_point=None,
                          step=1,
-                         nstep=30,
+                         nstep=100,
                          tol=1.e-8):
 
     scaling = np.sqrt(np.diag(precision))
