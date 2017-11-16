@@ -14,7 +14,7 @@ def test_lasso_approx_var(n=100, p=1, s=0, signal=0., lam_frac=1., randomization
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
         loss = rr.glm.gaussian(X, y)
-        epsilon = 0.
+        epsilon = 1./np.sqrt(n)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -44,7 +44,7 @@ def test_lasso_approx_var(n=100, p=1, s=0, signal=0., lam_frac=1., randomization
             target_observed = np.atleast_1d(M_est.target_observed)
             target_transform = (-np.identity(1), np.zeros(1))
             s = np.asscalar(np.sign(opt_offset))
-            opt_transform = (s * np.identity(1), np.ones(1) * (s * 2.))
+            opt_transform = (s * (np.identity(1)+epsilon), np.ones(1) * (s * 2.))
             feasible_point = np.ones(1)
             randomizer_precision = np.identity(1) / randomization_scale ** 2
             target_cov = np.identity(1)
@@ -100,7 +100,7 @@ if __name__ == "__main__":
     diff = 0.
     bias = 0.
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=300, p=1, s=1, signal=5.)
+        approx = test_lasso_approx_var(n=300, p=1, s=1, signal=-1.)
         if approx is not None:
             pivot_lasso.append(approx[0])
             pivot_simple.append(approx[2])

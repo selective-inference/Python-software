@@ -113,7 +113,6 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
 
         #lam = 2.
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
-        print("lam", lam)
         loss = rr.glm.gaussian(X, y)
         epsilon = 0.
         W = np.ones(p) * lam
@@ -209,7 +208,7 @@ if __name__ == "__main__":
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = orthogonal_lasso_approx(n=300, p=5, s=3, signal=5.)
+        approx = orthogonal_lasso_approx(n=300, p=5, s=5, signal=0.)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
