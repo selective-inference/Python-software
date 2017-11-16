@@ -213,7 +213,7 @@ if __name__ == "__main__":
     pivot_obs_info=[]
     bias = 0.
     for i in range(ndraw):
-        result = pivot_approx_fisher_simple(n=300, true_mean = 0.2, threshold=2)
+        result = pivot_approx_fisher_simple(n=300, true_mean = -0.1, threshold=2)
         pivot_obs_info.append(result[0])
         bias += result[1]
         sys.stderr.write("bias" + str(bias / float(i)) + "\n")
