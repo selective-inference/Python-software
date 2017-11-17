@@ -46,11 +46,11 @@ def test_opt_weighted_intervals(ndraw=20000, burnin=2000):
         if nactive==0:
             results.append(None)
         else:
-            sel_pivots, sel_ci = conv.summary(selected_features,
-                                          parameter=beta[selected_features],
-                                          ndraw=ndraw,
-                                          burnin=burnin,
-                                          compute_intervals=True)
+            sel_pivots, sel_pval, sel_ci = conv.summary(selected_features,
+                                                        parameter=beta[selected_features],
+                                                        ndraw=ndraw,
+                                                        burnin=burnin,
+                                                        compute_intervals=True)
             print(sel_pivots)
             results.append((rand, sel_pivots, sel_ci, beta[selected_features]))
 

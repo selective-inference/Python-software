@@ -103,18 +103,18 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
 
         signal = np.atleast_1d(signal)
         if signal.shape == (1,):
-            beta[:s] = signal[0]
+            beta[:s] = signal[0] * (1 + np.fabs(np.random.standard_normal(s)))
         else:
             beta[:s] = np.linspace(signal[0], signal[1], s)
 
-        X = np.identity(n)[:,:p]
-        sigma = 1.
-        y = (X.dot(beta) + sigma* np.random.standard_normal(n))
+        X = np.linalg.svd(np.random.standard_normal((n,p)))[0][:,:p]
 
-        #lam = 2.
-        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
+        sigma = 1.
+        y = sigma * (X.dot(beta) + np.random.standard_normal(n))
+
+        lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
         loss = rr.glm.gaussian(X, y)
-        epsilon = 1./np.sqrt(n)
+        epsilon = sigma / np.sqrt(n)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -126,7 +126,7 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
         active = M_est._overall
 
         nactive = np.sum(active)
-
+        print('nactive', nactive)
         if nactive >0:
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
             print("true_target", true_target)
@@ -142,10 +142,10 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
     return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum() / float(nactive)
 
 
-def test_bias_lasso(nsim=500):
+def test_bias_lasso(nsim=2000):
     bias = 0
     for _ in range(nsim):
-        bias += test_lasso(n=100, p=50, s=5, signal=5., seed_n=0, lam_frac=1., randomization_scale=1.)[0]
+        bias += test_lasso(n=100, p=50, s=5, signal=2.5, seed_n=0, lam_frac=1., randomization_scale=1.)[0]
 
     print(bias / nsim)
 
@@ -204,21 +204,20 @@ def test_bias_lasso(nsim=500):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 500
+    ndraw = 1000
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = orthogonal_lasso_approx(n=300, p=5, s=5, signal=5.)
+        approx = orthogonal_lasso_approx(n=300, p=20, s=5, signal=2.8, lam_frac=0.8)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
             print("bias in iteration", approx[1])
-            for j in range(pivot.shape[0]):
-                pivot_obs_info.append(pivot[j])
+            pivot_obs_info.extend(pivot)
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
-    print("pivot", np.asarray(pivot_obs_info))
+
     plt.clf()
     ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
     grid = np.linspace(0, 1, 101)

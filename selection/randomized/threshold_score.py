@@ -185,7 +185,7 @@ class threshold_score(query):
             grad_log_density = None
             projection = None
 
-            self._sampler = optimization_sampler(self.observed_opt_state,
+            self._sampler = optimization_sampler(np.zeros(()), # nothing to sample
                                                  self.observed_internal_state.copy(),
                                                  self.score_transform,
                                                  self.opt_transform,
