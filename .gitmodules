@@ -4,3 +4,6 @@
 [submodule "R-software"]
 	path = R-software
 	url = https://github.com/selective-inference/R-software
+[submodule "C-software"]
+	path = C-software
+	url = https://github.com/selective-inference/C-software

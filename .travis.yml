@@ -39,12 +39,12 @@ matrix:
       env:
         # Sdist install should collect all dependencies
         - INSTALL_TYPE=sdist
-        - DEPENDS=
+        - DEPENDS="cython numpy scipy"
     - python: 2.7
       env:
         # Wheel install should collect all dependencies
         - INSTALL_TYPE=wheel
-        - DEPENDS=
+        - DEPENDS="cython numpy scipy"
     - python: 2.7
       env:
         - INSTALL_TYPE=requirements
@@ -53,7 +53,6 @@ before_install:
   - source travis-tools/utils.sh
   - travis_before_install
   # Install regreg 
-  - python -c "import numpy; print(numpy.version.version)"
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
   - pip install -r requirements.txt
@@ -73,16 +72,16 @@ install:
     else
       pip install  -r requirements.txt; 
     fi
-  - pip install -e .
+  - git submodule init
+  - git submodule update
   - cd R-software
   - git submodule init
   - git submodule update
-  - rm -f selectiveInference/src/RcppExports.cpp
-  - rm -f selectiveInference/R/RcppExports.R
   - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
-  - sudo Rscript -e "install.packages(c('glmnet', 'intervals'), repos='http://cloud.r-project.org')"
+  - sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC'), repos='http://cloud.r-project.org')"
   - sudo R CMD INSTALL selectiveInference
   - cd ..
+  - python -c "from statsmodels.api import PHReg"
   - travis_install $INSTALL_TYPE
 
 # command to run tests, e.g. python setup.py test
