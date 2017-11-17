@@ -174,24 +174,50 @@ def test_bias_lasso(nsim=2000):
 #             plt.plot(grid, ecdf(grid), c='red', marker='^')
 #             plt.plot(grid, grid, 'k--')
 
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    ndraw = 500
+    bias = 0.
+    pivot_obs_info= []
+    for i in range(ndraw):
+        approx = test_lasso_approx_var(n=300, p=200, s=5, signal=3.)
+        if approx is not None:
+            pivot = approx[0]
+            bias += approx[1]
+            for j in range(pivot.shape[0]):
+                pivot_obs_info.append(pivot[j])
+
+        sys.stderr.write("iteration completed" + str(i) + "\n")
+        sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
+
+    #if i % 10 == 0:
+    plt.clf()
+    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    grid = np.linspace(0, 1, 101)
+    print("ecdf", ecdf(grid))
+    plt.plot(grid, ecdf(grid), c='red', marker='^')
+    plt.plot(grid, grid, 'k--')
+    #plt.show()
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p200_n300_amp_3.png")
+
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
 #
-#     ndraw = 500
+#     ndraw = 1000
 #     bias = 0.
 #     pivot_obs_info= []
 #     for i in range(ndraw):
-#         approx = test_lasso_approx_var(n=300, p=50, s=5, signal=0.)
+#         approx = orthogonal_lasso_approx(n=300, p=20, s=5, signal=2.8, lam_frac=0.8)
 #         if approx is not None:
 #             pivot = approx[0]
 #             bias += approx[1]
-#             for j in range(pivot.shape[0]):
-#                 pivot_obs_info.append(pivot[j])
+#             print("bias in iteration", approx[1])
+#             pivot_obs_info.extend(pivot)
 #
 #         sys.stderr.write("iteration completed" + str(i) + "\n")
 #         sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
 #
-#     #if i % 10 == 0:
 #     plt.clf()
 #     ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
 #     grid = np.linspace(0, 1, 101)
@@ -199,30 +225,4 @@ def test_bias_lasso(nsim=2000):
 #     plt.plot(grid, ecdf(grid), c='red', marker='^')
 #     plt.plot(grid, grid, 'k--')
 #     plt.show()
-#     plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p1_amp5.png")
-
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    ndraw = 1000
-    bias = 0.
-    pivot_obs_info= []
-    for i in range(ndraw):
-        approx = orthogonal_lasso_approx(n=300, p=20, s=5, signal=2.8, lam_frac=0.8)
-        if approx is not None:
-            pivot = approx[0]
-            bias += approx[1]
-            print("bias in iteration", approx[1])
-            pivot_obs_info.extend(pivot)
-
-        sys.stderr.write("iteration completed" + str(i) + "\n")
-        sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
-
-    plt.clf()
-    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-    grid = np.linspace(0, 1, 101)
-    print("ecdf", ecdf(grid))
-    plt.plot(grid, ecdf(grid), c='red', marker='^')
-    plt.plot(grid, grid, 'k--')
-    plt.show()
-    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p5_amp5.png")
+#     #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p5_amp5.png")
