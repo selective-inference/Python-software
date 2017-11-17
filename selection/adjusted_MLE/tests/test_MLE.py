@@ -89,7 +89,7 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
                                                          M_est.target_cov,
                                                          M_est.randomizer_precision)
 
-            print("approx_MLE", approx_MLE)
+            print("approx_MLE and sd", approx_MLE, np.sqrt(np.diag(var)))
             break
 
 
@@ -181,7 +181,7 @@ if __name__ == "__main__":
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=300, p=200, s=5, signal=3.)
+        approx = test_lasso_approx_var(n=300, p=50, s=5, signal=3.)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
@@ -198,8 +198,8 @@ if __name__ == "__main__":
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p200_n300_amp_3.png")
+    plt.show()
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p200_n300_amp_3.png")
 
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt

@@ -71,7 +71,7 @@ def approx_fisher_info(mu, randomization_scale=0.5, threshold=2):
 
     variance = 1 + randomization_scale ** 2.
     minimizer = approx_grad_cgf(mu)[2]
-    return (1./ variance**2.)* (1./((1./variance) + grad_log_hessian(minimizer, variance)))+ ((randomization_scale ** 2.)/variance)
+    return (1./ variance**2.)* (1./((1./variance) + grad_log_hessian(minimizer, randomization_scale**2.)))+ ((randomization_scale ** 2.)/variance)
 
 def simulate_truncated(mu, randomization_scale = 0.5, threshold = 2):
     while True:
