@@ -119,7 +119,7 @@ def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2, epsilon = 0.2
     randomization_scale = 1.
     randomizer_precision = np.identity(n1) / randomization_scale ** 2
     target_cov = np.identity(n1)
-    simple_var = 1./approx_fisher_info(np.sqrt(n)*true_mean, randomization_scale=1., threshold=2)
+    simple_var = 1./approx_fisher_info(target_observed, randomization_scale=1., threshold=2)
 
     approx_MLE, value, var, mle_map = solve_UMVU(target_transform,
                                                  opt_transform,
@@ -131,7 +131,7 @@ def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2, epsilon = 0.2
     print("approx MLE", approx_MLE, np.sqrt(n)*true_mean, var)
     print("diff", simple_var- var)
     return np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(var)), approx_MLE - np.sqrt(n)*true_mean, \
-           np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(simple_var))
+           np.squeeze((approx_MLE - np.sqrt(n)*true_mean)/np.sqrt(simple_var)), simple_var- var
 
 
 #test_matrices_simple(true_mean=2., threshold=2, epsilon=0.2)
@@ -194,13 +194,16 @@ if __name__ == "__main__":
     ndraw = 500
     pivot_obs_info=[]
     bias = 0.
+    diff = 0.
     for i in range(ndraw):
-        result = pivot_approx_fisher_simple(n=300, true_mean = -0.2, threshold=2)
+        result = pivot_approx_fisher_simple(n=300, true_mean = -0.3, threshold=2)
         pivot_obs_info.append(result[2])
+        diff += result[3]
         bias += result[1]
         sys.stderr.write("bias" + str(bias / float(i)) + "\n")
 
     sys.stderr.write("overall_bias" + str(bias / float(ndraw)) + "\n")
+    sys.stderr.write("difference between variances" + str(diff / float(ndraw)) + "\n")
 
     ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
     grid = np.linspace(0, 1, 101)
@@ -209,4 +212,4 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot([0,1],[0,1], 'k--')
     plt.show()
-#     #plt.savefig('/Users/snigdhapanigrahi/Desktop/signed_approx_info_simple_amp_neg1.png')
+#   #plt.savefig('/Users/snigdhapanigrahi/Desktop/signed_approx_info_simple_amp_neg1.png')

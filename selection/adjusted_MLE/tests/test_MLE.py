@@ -181,7 +181,7 @@ if __name__ == "__main__":
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=300, p=50, s=5, signal=3.)
+        approx = test_lasso_approx_var(n=300, p=200, s=5, signal=3.)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
