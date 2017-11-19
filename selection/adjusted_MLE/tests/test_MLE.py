@@ -90,10 +90,8 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
                                                          M_est.randomizer_precision)
 
             #print("approx_MLE and sd", approx_MLE, np.sqrt(np.diag(var)))
-            #print("approx sd", var)
+            print("approx sd", np.sqrt(np.diag(var)))
             break
-
-
 
     return (approx_MLE - true_target)/np.sqrt(np.diag(var)), (approx_MLE - true_target).sum()/float(nactive)
 
@@ -137,6 +135,8 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
                                                          M_est.feasible_point,
                                                          M_est.target_cov,
                                                          M_est.randomizer_precision)
+
+            print("approx sd", np.sqrt(np.diag(var)))
             break
 
     return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum() / float(nactive)
@@ -177,11 +177,11 @@ def test_bias_lasso(nsim=2000):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 500
+    ndraw = 1000
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=300, p=200, s=5, signal=3.)
+        approx = test_lasso_approx_var(n=300, p=200, s=10, signal=3.)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
