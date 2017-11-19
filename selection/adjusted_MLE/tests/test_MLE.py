@@ -89,7 +89,8 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
                                                          M_est.target_cov,
                                                          M_est.randomizer_precision)
 
-            print("approx_MLE and sd", approx_MLE, np.sqrt(np.diag(var)))
+            #print("approx_MLE and sd", approx_MLE, np.sqrt(np.diag(var)))
+            #print("approx sd", var)
             break
 
 
@@ -136,7 +137,6 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
                                                          M_est.feasible_point,
                                                          M_est.target_cov,
                                                          M_est.randomizer_precision)
-            print("approx sd", np.sqrt(np.diag(var)), approx_MLE)
             break
 
     return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum() / float(nactive)
@@ -208,7 +208,7 @@ if __name__ == "__main__":
 #     bias = 0.
 #     pivot_obs_info= []
 #     for i in range(ndraw):
-#         approx = orthogonal_lasso_approx(n=300, p=20, s=5, signal=2.8, lam_frac=0.8)
+#         approx = orthogonal_lasso_approx(n=300, p=20, s=5, signal=-1.3, lam_frac=0.8)
 #         if approx is not None:
 #             pivot = approx[0]
 #             bias += approx[1]
