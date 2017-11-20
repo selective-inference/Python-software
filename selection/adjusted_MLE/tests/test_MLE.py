@@ -52,8 +52,8 @@ def test_lasso(n=100, p=50, s=5, signal=5., B=500, seed_n=0, lam_frac=1., random
             boot_sample[b, :] = mle_map(target_boot)[0]
 
         print("estimated sd", boot_sample.std(0))
-        return np.true_divide((approx_MLE - true_target), boot_sample.std(0)), (
-        (approx_MLE - true_target).sum()) / float(nactive)
+        return np.true_divide((approx_MLE - true_target), boot_sample.std(0)),\
+               ((approx_MLE - true_target).sum()) / float(nactive)
 
     else:
         return None
@@ -62,7 +62,8 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
 
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.2, signal=signal, sigma=1.,
+                                                       random_signs=True, equicorrelated=False)
         n, p = X.shape
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
 
@@ -93,7 +94,7 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
             print("approx sd", np.sqrt(np.diag(var)))
             break
 
-    return (approx_MLE - true_target)/np.sqrt(np.diag(var)), (approx_MLE - true_target).sum()/float(nactive)
+    return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum()/float(nactive)
 
 def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomization_scale=1.):
 
@@ -177,11 +178,11 @@ def test_bias_lasso(nsim=2000):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 1000
+    ndraw = 500
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=300, p=200, s=10, signal=3.)
+        approx = test_lasso_approx_var(n=3000, p=1000, s=20, signal=3.5)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
@@ -189,7 +190,7 @@ if __name__ == "__main__":
                 pivot_obs_info.append(pivot[j])
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
-        sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
+        sys.stderr.write("overall_bias" + str(bias / float(i+1)) + "\n")
 
     #if i % 10 == 0:
     plt.clf()
@@ -199,7 +200,7 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot(grid, grid, 'k--')
     plt.show()
-    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p200_n300_amp_3.png")
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p1000_n3000_amp_0_AR1_0.2.png")
 
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt

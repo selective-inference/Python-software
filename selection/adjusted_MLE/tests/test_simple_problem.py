@@ -115,6 +115,8 @@ def pivot_approx_fisher_simple(n=100, true_mean = 0., threshold=2, epsilon = 0.2
     target_transform = (-np.identity(n1), np.zeros(n1))
     #s = np.asscalar(np.sign(target_Z + omega))
     opt_transform = ((np.identity(n1)+epsilon), np.ones(n1) * (threshold))
+    print("shapes", (np.ones(n1) * (threshold)).shape, (np.identity(n1)+epsilon).shape, np.identity(n1).shape,
+          np.zeros(n1).shape, target_observed.shape)
     feasible_point = np.ones(n1)
     randomization_scale = 1.
     randomizer_precision = np.identity(n1) / randomization_scale ** 2
