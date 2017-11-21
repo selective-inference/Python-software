@@ -67,7 +67,7 @@ def BH_approx(n=100, p=50, s=5, signal=5., randomization_scale=1., sigma=1., lev
     while True:
 
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.2, signal=signal, sigma=sigma,
-                                                       random_signs=True, equicorrelated=False)
+                                                       random_signs=False, equicorrelated=False)
 
         omega = randomization_scale * np.random.standard_normal(p)
         p_values = 2.*(1. - ndist.cdf(np.abs(X.T.dot(y)+omega)/np.sqrt(1.+ randomization_scale**2.)))
@@ -115,7 +115,7 @@ def BH_approx(n=100, p=50, s=5, signal=5., randomization_scale=1., sigma=1., lev
                                                          sigma*np.identity(nactive),
                                                          randomization_scale*np.identity(p))
 
-            print("approx sd", np.sqrt(np.diag(var)))
+            #print("approx sd", np.sqrt(np.diag(var)))
             break
 
     return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum() / float(nactive)
@@ -151,7 +151,7 @@ if __name__ == "__main__":
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = BH_approx(n=300, p=1000, s=50, signal=3.5, randomization_scale=1., sigma=1., level=0.10)
+        approx = BH_approx(n=1000, p=2000, s=100, signal=3.5, randomization_scale=1., sigma=1., level=0.10)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
