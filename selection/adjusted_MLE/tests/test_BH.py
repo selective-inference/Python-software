@@ -19,7 +19,7 @@ def BH_selection(p_values, level):
 
     active = np.zeros(m, np.bool)
     active[E_sel] = 1
-    return order_sig+1, active
+    return order_sig+1, active, p_values[indices_order[order_sig+1]]
 
 def orthogonal_BH_approx(n=100, s=3, signal=3, randomization_scale=1., sigma = 1., level=0.10):
 
@@ -36,9 +36,9 @@ def orthogonal_BH_approx(n=100, s=3, signal=3, randomization_scale=1., sigma = 1
         omega = randomization_scale * np.random.standard_normal(n)
 
         p_values = 2.*(1. - ndist.cdf(np.abs(y+omega)/np.sqrt(1.+ randomization_scale**2.)))
-        K, active = BH_selection(p_values, level)
+        K, active, p_threshold = BH_selection(p_values, level)
 
-        threshold = np.sqrt(1.+ randomization_scale**2.)*ndist.ppf(1.-(K*level)/n)
+        threshold = np.sqrt(1.+ randomization_scale**2.)*ndist.ppf(1.-np.max((K*level)/n, p_threshold))
         target_observed = y[active]
         target_transform = (-np.identity(K), np.zeros(K))
         s = np.sign(target_observed + omega[active])
@@ -71,12 +71,12 @@ def BH_approx(n=100, p=50, s=5, signal=5., randomization_scale=1., sigma=1., lev
 
         omega = randomization_scale * np.random.standard_normal(p)
         p_values = 2.*(1. - ndist.cdf(np.abs(X.T.dot(y)+omega)/np.sqrt(1.+ randomization_scale**2.)))
-        K, active = BH_selection(p_values, level)
+        K, active, p_threshold = BH_selection(p_values, level)
         nactive = active.sum()
 
         if nactive >0:
 
-            threshold = np.sqrt(1. + randomization_scale ** 2.) * ndist.ppf(1. - (K * level) / n)
+            threshold = np.sqrt(1. + randomization_scale ** 2.) * ndist.ppf(1.-max((K*level)/n, p_threshold))
 
             X_active_inv = np.linalg.inv(X[:, active].T.dot(X[:, active]))
             projection_perp = np.identity(n) - X[:, active].dot(X_active_inv).dot(X[:, active].T)
