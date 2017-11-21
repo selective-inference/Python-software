@@ -96,7 +96,7 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
 
     return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum()/float(nactive)
 
-def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomization_scale=1.):
+def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomization_scale=1., sigma = 1.):
 
     while True:
         beta = np.zeros(p)
@@ -109,7 +109,6 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
 
         X = np.linalg.svd(np.random.standard_normal((n,p)))[0][:,:p]
 
-        sigma = 1.
         y = sigma * (X.dot(beta) + np.random.standard_normal(n))
 
         lam = sigma * lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
@@ -175,50 +174,24 @@ def test_bias_lasso(nsim=2000):
 #             plt.plot(grid, ecdf(grid), c='red', marker='^')
 #             plt.plot(grid, grid, 'k--')
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-
-    ndraw = 500
-    bias = 0.
-    pivot_obs_info= []
-    for i in range(ndraw):
-        approx = test_lasso_approx_var(n=3000, p=1000, s=20, signal=3.5)
-        if approx is not None:
-            pivot = approx[0]
-            bias += approx[1]
-            for j in range(pivot.shape[0]):
-                pivot_obs_info.append(pivot[j])
-
-        sys.stderr.write("iteration completed" + str(i) + "\n")
-        sys.stderr.write("overall_bias" + str(bias / float(i+1)) + "\n")
-
-    #if i % 10 == 0:
-    plt.clf()
-    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-    grid = np.linspace(0, 1, 101)
-    print("ecdf", ecdf(grid))
-    plt.plot(grid, ecdf(grid), c='red', marker='^')
-    plt.plot(grid, grid, 'k--')
-    plt.show()
-    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p1000_n3000_amp_0_AR1_0.2.png")
-
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
 #
-#     ndraw = 1000
+#     ndraw = 500
 #     bias = 0.
 #     pivot_obs_info= []
 #     for i in range(ndraw):
-#         approx = orthogonal_lasso_approx(n=300, p=20, s=5, signal=-1.3, lam_frac=0.8)
+#         approx = test_lasso_approx_var(n=3000, p=1000, s=20, signal=3.5)
 #         if approx is not None:
 #             pivot = approx[0]
 #             bias += approx[1]
-#             print("bias in iteration", approx[1])
-#             pivot_obs_info.extend(pivot)
+#             for j in range(pivot.shape[0]):
+#                 pivot_obs_info.append(pivot[j])
 #
 #         sys.stderr.write("iteration completed" + str(i) + "\n")
-#         sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
+#         sys.stderr.write("overall_bias" + str(bias / float(i+1)) + "\n")
 #
+#     #if i % 10 == 0:
 #     plt.clf()
 #     ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
 #     grid = np.linspace(0, 1, 101)
@@ -226,4 +199,30 @@ if __name__ == "__main__":
 #     plt.plot(grid, ecdf(grid), c='red', marker='^')
 #     plt.plot(grid, grid, 'k--')
 #     plt.show()
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p1000_n3000_amp_0_AR1_0.2.png")
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    ndraw = 500
+    bias = 0.
+    pivot_obs_info= []
+    for i in range(ndraw):
+        approx = orthogonal_lasso_approx(n=300, p=20, s=5, signal=2.8, lam_frac=0.8)
+        if approx is not None:
+            pivot = approx[0]
+            bias += approx[1]
+            print("bias in iteration", approx[1])
+            pivot_obs_info.extend(pivot)
+
+        sys.stderr.write("iteration completed" + str(i) + "\n")
+        sys.stderr.write("overall_bias" + str(bias / float(i)) + "\n")
+
+    plt.clf()
+    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    grid = np.linspace(0, 1, 101)
+    print("ecdf", ecdf(grid))
+    plt.plot(grid, ecdf(grid), c='red', marker='^')
+    plt.plot(grid, grid, 'k--')
+    plt.show()
 #     #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p5_amp5.png")
