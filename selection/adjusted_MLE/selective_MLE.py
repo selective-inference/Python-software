@@ -4,7 +4,7 @@ from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization, randomization_scale = 1.):
+    def __init__(self, loss, epsilon, penalty, randomization, randomization_scale = 1., sigma= 1.):
         M_estimator.__init__(self, loss, epsilon, penalty, randomization)
         self.randomizer = randomization
         self.randomization_scale = randomization_scale
@@ -34,7 +34,8 @@ class M_estimator_map(M_estimator):
         projection_perp = np.identity(n) - X[:, self._overall].dot(X_active_inv).dot(X[:, self._overall].T)
         score_cov[:self.nactive, :self.nactive] = X_active_inv
         score_cov[self.nactive:, self.nactive:] = X[:, ~self._overall].T.dot(projection_perp).dot(X[:, ~self._overall])
-        self.score_cov = score_cov
+        self.score_cov = (sigma**2.) * score_cov
+
         self.observed_score_state = self.observed_internal_state
         self.target_observed = self.observed_internal_state[:self.nactive]
         self.score_target_cov = self.score_cov[:, :self.nactive]
