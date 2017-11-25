@@ -8,7 +8,7 @@ from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from statsmodels.distributions.empirical_distribution import ECDF
 
-def test_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.5):
+def test_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.):
 
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=sigma,
@@ -32,12 +32,12 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
         nactive = np.sum(active)
 
         if nactive > 0:
-            approx_MLE, value, var, mle_map = solve_UMVU(M_est.target_transform,
-                                                         M_est.opt_transform,
-                                                         M_est.target_observed,
-                                                         M_est.feasible_point,
-                                                         M_est.target_cov,
-                                                         M_est.randomizer_precision)
+            approx_MLE, var, mle_map = solve_UMVU(M_est.target_transform,
+                                                  M_est.opt_transform,
+                                                  M_est.target_observed,
+                                                  M_est.feasible_point,
+                                                  M_est.target_cov,
+                                                  M_est.randomizer_precision)
 
             boot_sample = np.zeros((B, nactive))
             resid = y - X[:, active].dot(M_est.target_observed)
@@ -59,7 +59,7 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 500
+    ndraw = 100
     bias = 0.
     pivot_obs_info= []
     pivot_bootstrap = []
@@ -86,5 +86,5 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf_approx(grid), c='red', marker='^')
     plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
     plt.plot(grid, grid, 'k--')
-    #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n300_p50_amp3.5_sigma1.5.png")
+    plt.show()
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n2000_p2000_amp3.5_sigma1.png")

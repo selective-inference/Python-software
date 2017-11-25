@@ -108,29 +108,43 @@ def solve_UMVU(target_transform,
     M_1_inv = np.linalg.inv(M_1)
     offset_term = - M_1_inv.dot(M_2.dot(conditioned_value))
     mle_transform = (M_1_inv, -M_1_inv.dot(L), offset_term)
+    var_transform = (-implied_precision[ntarget:,:ntarget].dot(M_1),
+                     -implied_precision[ntarget:,:ntarget].dot(M_2.dot(conditioned_value)))
 
-    def mle_map(natparam_transform, mle_transform, feasible_point, conditional_precision, target_observed):
+    cross_covariance = np.linalg.inv(implied_precision[:ntarget, :ntarget]).dot(implied_precision[:ntarget, ntarget:])
+    var_matrices = (np.linalg.inv(implied_opt), np.linalg.inv(implied_precision[:ntarget,:ntarget]),
+                    cross_covariance,target_precision)
+
+    def mle_map(natparam_transform, mle_transform, var_transform, var_matrices,
+                feasible_point, conditional_precision, target_observed):
+
         param_lin, param_offset = natparam_transform
         mle_target_lin, mle_soln_lin, mle_offset = mle_transform
+
+
         soln, value, _ = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
                                                  conditional_precision,
                                                  feasible_point=feasible_point)
+        selective_MLE = mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset
 
-        return mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset, value
+        var_target_lin, var_offset = var_transform
+        var_precision, inv_precision_target, cross_covariance, target_precision =  var_matrices
+        _, _, hess = solve_barrier_nonneg(var_target_lin.dot(selective_MLE) + var_offset + mle_offset,
+                                          var_precision,
+                                          feasible_point=None,
+                                          step=1,
+                                          nstep=250)
 
-    mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, feasible_point, conditional_precision)
-    sel_MLE, value = mle_partial(target_observed)
+        hessian = target_precision.dot(inv_precision_target +
+                                       cross_covariance.dot(hess).dot(cross_covariance.T)).dot(target_precision)
 
-    conditional_par = -implied_precision[ntarget:,:ntarget].dot(M_1.dot(sel_MLE)+ M_2.dot(conditioned_value))
-    _ , _ , hess = solve_barrier_nonneg(conditional_par + offset_term,
-                                        np.linalg.inv(implied_opt),
-                                        feasible_point=feasible_point)
+        return selective_MLE, hessian
 
-    cross_covariance = np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(implied_precision[:ntarget,ntarget:])
-    hessian = target_precision.dot(np.linalg.inv(implied_precision[:ntarget,:ntarget])
-                                   + cross_covariance.dot(hess).dot(cross_covariance.T)).dot(target_precision)
+    mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, var_transform, var_matrices,
+                                    feasible_point, conditional_precision)
+    sel_MLE, hessian = mle_partial(target_observed)
 
-    return np.squeeze(sel_MLE), value, np.linalg.inv(hessian), mle_partial
+    return np.squeeze(sel_MLE), np.linalg.inv(hessian), mle_partial
 
 
 def solve_barrier_nonneg(conjugate_arg,
