@@ -138,13 +138,13 @@ def solve_UMVU(target_transform,
         hessian = target_precision.dot(inv_precision_target +
                                        cross_covariance.dot(hess).dot(cross_covariance.T)).dot(target_precision)
 
-        return selective_MLE, hessian
+        return selective_MLE, np.linalg.inv(hessian)
 
     mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, var_transform, var_matrices,
                                     feasible_point, conditional_precision)
-    sel_MLE, hessian = mle_partial(target_observed)
+    sel_MLE, inv_hessian = mle_partial(target_observed)
 
-    return np.squeeze(sel_MLE), np.linalg.inv(hessian), mle_partial
+    return np.squeeze(sel_MLE), inv_hessian, mle_partial
 
 
 def solve_barrier_nonneg(conjugate_arg,
