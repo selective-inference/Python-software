@@ -54,7 +54,7 @@ def boot_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
 
             break
 
-def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=0.8, randomization_scale=1., sigma= 1.):
+def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=50000, lam_frac=1., randomization_scale=1., sigma= 1.):
 
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=sigma,
@@ -93,6 +93,8 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=0.8, ran
                 target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
                 boot_mle = mle_map(target_boot)
                 boot_pivot[b, :] = np.true_divide(boot_mle[0]- approx_MLE, np.sqrt(np.diag(boot_mle[1])))
+
+                sys.stderr.write("bootstrap sample" + str(b) + "\n")
 
             break
 
@@ -135,7 +137,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     bias = 0.
-    approx = boot_pivot_approx_var(n=1000, p=2000, s=20, signal=3.5)
+    approx = boot_pivot_approx_var(n=1000, p=300, s=20, signal=3.5)
     if approx is not None:
         pivot_boot = approx[0]
         bias = approx[1]

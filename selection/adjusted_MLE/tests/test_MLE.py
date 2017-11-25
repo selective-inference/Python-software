@@ -82,12 +82,12 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
         nactive = np.sum(active)
 
         if nactive > 0:
-            approx_MLE, value, var, mle_map = solve_UMVU(M_est.target_transform,
-                                                         M_est.opt_transform,
-                                                         M_est.target_observed,
-                                                         M_est.feasible_point,
-                                                         M_est.target_cov,
-                                                         M_est.randomizer_precision)
+            approx_MLE, var, mle_map = solve_UMVU(M_est.target_transform,
+                                                  M_est.opt_transform,
+                                                  M_est.target_observed,
+                                                  M_est.feasible_point,
+                                                  M_est.target_cov,
+                                                  M_est.randomizer_precision)
 
             #print("approx_MLE and sd", approx_MLE, np.sqrt(np.diag(var)))
             print("approx sd", np.sqrt(np.diag(var)))
@@ -128,12 +128,12 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
         if nactive >0:
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
             print("true_target", true_target)
-            approx_MLE, value, var, mle_map = solve_UMVU(M_est.target_transform,
-                                                         M_est.opt_transform,
-                                                         M_est.target_observed,
-                                                         M_est.feasible_point,
-                                                         M_est.target_cov,
-                                                         M_est.randomizer_precision)
+            approx_MLE, var, mle_map = solve_UMVU(M_est.target_transform,
+                                                  M_est.opt_transform,
+                                                  M_est.target_observed,
+                                                  M_est.feasible_point,
+                                                  M_est.target_cov,
+                                                  M_est.randomizer_precision)
 
             print("approx sd", np.sqrt(np.diag(var)))
             break
@@ -180,7 +180,7 @@ if __name__ == "__main__":
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=100, p=50, s=5, signal=3.5)
+        approx = test_lasso_approx_var(n=1000, p=300, s=20, signal=3.5)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
