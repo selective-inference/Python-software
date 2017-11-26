@@ -180,7 +180,7 @@ if __name__ == "__main__":
     bias = 0.
     pivot_obs_info= []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=4000, p=2000, s=20, signal=3.5)
+        approx = test_lasso_approx_var(n=5000, p=4000, s=20, signal=3.5)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
@@ -197,8 +197,8 @@ if __name__ == "__main__":
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.show()
-    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p4000_n1000_amp_3.5.png")
+    #plt.show()
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p4000_n5000_amp_3.5.png")
 
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
