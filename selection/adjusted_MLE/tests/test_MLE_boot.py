@@ -54,7 +54,7 @@ def boot_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
 
             break
 
-def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=20000, lam_frac=1., randomization_scale=1., sigma= 1.):
+def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.):
 
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=sigma,
@@ -93,11 +93,12 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=20000, lam_frac=1., ran
                 target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
                 boot_mle = mle_map(target_boot)
                 boot_pivot[b, :] = np.true_divide(boot_mle[0]- approx_MLE, np.sqrt(np.diag(boot_mle[1])))
-                sys.stderr.write("bootstrap sample" + str(b) + "\n")
+                #sys.stderr.write("bootstrap sample" + str(b) + "\n")
 
             break
 
-    return boot_pivot.reshape((B*nactive,)), boot_pivot.mean(0).sum()/nactive, boot_pivot.std(0)
+    return boot_pivot.reshape((B*nactive,)), boot_pivot.mean(0).sum()/nactive, boot_pivot.std(0), \
+           np.true_divide(approx_MLE - true_target, boot_pivot.std(0)), (approx_MLE - true_target).sum() / float(nactive)
 
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
@@ -135,16 +136,24 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=20000, lam_frac=1., ran
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
+    ndraw = 100
     bias = 0.
-    approx = boot_pivot_approx_var(n=300, p=50, s=5, signal=3.5)
-    if approx is not None:
-        pivot_boot = approx[0]
-        bias = approx[1]
+    pivot_obs_info = []
 
-    #sys.stderr.write("overall_bias" + str(bias) + "\n")
+    for i in range(ndraw):
+        approx = boot_pivot_approx_var(n=1000, p=2000, s=20, signal=3.5, B=1000)
+        if approx is not None:
+            pivot_boot = approx[3]
+            bias += approx[4]
+
+            for j in range(pivot_boot.shape[0]):
+                pivot_obs_info.append(pivot_boot[j])
+
+        sys.stderr.write("iteration completed" + str(i) + "\n")
+        sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
 
     plt.clf()
-    ecdf_boot = ECDF(ndist.cdf(np.asarray(pivot_boot)))
+    ecdf_boot = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
     grid = np.linspace(0, 1, 101)
     print("ecdf", ecdf_boot(grid))
     plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
