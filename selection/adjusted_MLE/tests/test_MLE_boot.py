@@ -78,7 +78,7 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
         nactive = np.sum(active)
 
         if nactive > 0:
-            approx_MLE, var, mle_map = solve_UMVU(M_est.target_transform,
+            approx_MLE, var, mle_map, _, _ = solve_UMVU(M_est.target_transform,
                                                   M_est.opt_transform,
                                                   M_est.target_observed,
                                                   M_est.feasible_point,
@@ -141,7 +141,7 @@ if __name__ == "__main__":
     pivot_obs_info = []
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=1000, p=2000, s=20, signal=3.5, B=1000)
+        approx = boot_pivot_approx_var(n=1000, p=4000, s=20, signal=3.5, B=1200)
         if approx is not None:
             pivot_boot = approx[3]
             bias += approx[4]
@@ -158,5 +158,5 @@ if __name__ == "__main__":
     print("ecdf", ecdf_boot(grid))
     plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
     plt.plot(grid, grid, 'k--')
-    plt.show()
-    #plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n2000_p2000_amp3.5_sigma1.png")
+    #plt.show()
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n1000_p4000_amp3.5_sigma1.png")

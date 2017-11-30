@@ -99,6 +99,7 @@ def solve_UMVU(target_transform,
 
     linear_term = implied_precision[ntarget:,ntarget:].dot(implied_cross.T.dot(np.linalg.inv(implied_target)))
     offset_term = -B.T.dot(randomizer_precision).dot(conditioned_value)
+
     natparam_transform = (linear_term, offset_term)
     conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
 
@@ -144,7 +145,9 @@ def solve_UMVU(target_transform,
                                     feasible_point, conditional_precision)
     sel_MLE, inv_hessian = mle_partial(target_observed)
 
-    return np.squeeze(sel_MLE), inv_hessian, mle_partial
+    implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(randomizer_precision).dot(conditioned_value), offset_term])
+
+    return np.squeeze(sel_MLE), inv_hessian, mle_partial, implied_cov, implied_cov.dot(implied_parameter)
 
 
 def solve_barrier_nonneg(conjugate_arg,
