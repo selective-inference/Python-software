@@ -1,5 +1,6 @@
 from __future__ import print_function
 import numpy as np, sys
+import scipy.stats as stats
 
 import regreg.api as rr
 from selection.tests.instance import gaussian_instance
@@ -87,7 +88,9 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
             print("approx sd", np.sqrt(np.diag(var)))
             break
 
-    return np.true_divide((approx_MLE - true_target), np.sqrt(np.diag(var))), (approx_MLE - true_target).sum()/float(nactive)
+    return np.true_divide((approx_MLE - true_target), np.sqrt(np.diag(var))), (approx_MLE - true_target).sum()/float(nactive),\
+           np.true_divide((approx_MLE-true_target).dot((approx_MLE-true_target)), (true_target).dot(true_target)), \
+           np.true_divide((M_est.target_observed-true_target).dot((M_est.target_observed-true_target)), (true_target).dot(true_target))
 
 
 if __name__ == "__main__":
@@ -95,23 +98,34 @@ if __name__ == "__main__":
 
     ndraw = 100
     bias = 0.
+    risk_selMLE = 0.
+    risk_relLASSO = 0.
     pivot_obs_info = []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=500, p=100, s=10, signal=3.5)
+        approx = test_lasso_approx_var(n=500, p=2000, s=20, signal=1.25)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
+            risk_selMLE += approx[2]
+            risk_relLASSO += approx[3]
             for j in range(pivot.shape[0]):
                 pivot_obs_info.append(pivot[j])
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
+        sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
+        sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
 
     # if i % 10 == 0:
+    # plt.clf()
+    # ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    # grid = np.linspace(0, 1, 101)
+    # print("ecdf", ecdf(grid))
+    # plt.plot(grid, ecdf(grid), c='red', marker='^')
+    # plt.plot(grid, grid, 'k--')
+    # plt.show()
+
+    import pylab
     plt.clf()
-    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-    grid = np.linspace(0, 1, 101)
-    print("ecdf", ecdf(grid))
-    plt.plot(grid, ecdf(grid), c='red', marker='^')
-    plt.plot(grid, grid, 'k--')
-    plt.show()
+    stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=pylab)
+    pylab.show()
