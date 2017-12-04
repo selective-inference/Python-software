@@ -9,6 +9,7 @@ from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from statsmodels.distributions.empirical_distribution import ECDF
 import selection.constraints.affine as AC
 
+
 def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.):
 
     while True:
@@ -88,5 +89,5 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
     plt.plot(grid, ecdf_mle(grid), c='red', marker='^')
     plt.plot(grid, grid, 'k--')
-    #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/selective_Boot_pivot_n1000_p4000_amp3.5_sigma1.png")
+    plt.show()
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/selective_Boot_pivot_n1000_p4000_amp3.5_sigma1.png")
