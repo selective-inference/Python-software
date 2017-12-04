@@ -12,6 +12,7 @@ import statsmodels.api as sm
 from selection.randomized.M_estimator import M_estimator
 from rpy2.robjects.packages import importr
 from rpy2 import robjects
+from scipy.stats import t as tdist
 
 glmnet = importr('glmnet')
 import rpy2.robjects.numpy2ri
@@ -45,10 +46,10 @@ def glmnet_sigma(X, y):
         return np.array([1.])
 
 
-def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomization_scale=1.):
+def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.,
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.2, signal=signal, sigma=1.,
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
 
@@ -59,6 +60,9 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
             print("sigma est", sigma_est)
+
+        snr = (beta.T).dot(X.T.dot(X)).dot(beta)
+        print("snr", snr)
 
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
 
@@ -89,20 +93,19 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
             break
 
     return np.true_divide((approx_MLE - true_target), np.sqrt(np.diag(var))), (approx_MLE - true_target).sum()/float(nactive),\
-           np.true_divide((approx_MLE-true_target).dot((approx_MLE-true_target)), (true_target).dot(true_target)), \
-           np.true_divide((M_est.target_observed-true_target).dot((M_est.target_observed-true_target)), (true_target).dot(true_target))
+           (approx_MLE-true_target).dot((approx_MLE-true_target)), (M_est.target_observed-true_target).dot((M_est.target_observed-true_target))
 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 100
+    ndraw = 500
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
     pivot_obs_info = []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=500, p=2000, s=20, signal=1.25)
+        approx = test_lasso_approx_var(n=500, p=100, s=5, signal=0.25)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
@@ -116,16 +119,15 @@ if __name__ == "__main__":
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
 
-    # if i % 10 == 0:
-    # plt.clf()
-    # ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-    # grid = np.linspace(0, 1, 101)
-    # print("ecdf", ecdf(grid))
-    # plt.plot(grid, ecdf(grid), c='red', marker='^')
-    # plt.plot(grid, grid, 'k--')
-    # plt.show()
-
-    import pylab
     plt.clf()
-    stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=pylab)
-    pylab.show()
+    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    grid = np.linspace(0, 1, 101)
+    print("ecdf", ecdf(grid))
+    plt.plot(grid, ecdf(grid), c='red', marker='^')
+    plt.plot(grid, grid, 'k--')
+    plt.show()
+
+    #import pylab
+    #plt.clf()
+    #stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=pylab)
+    #pylab.show()
