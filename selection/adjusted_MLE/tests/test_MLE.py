@@ -83,12 +83,12 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
         nactive = np.sum(active)
 
         if nactive > 0:
-            approx_MLE, var, mle_map = solve_UMVU(M_est.target_transform,
-                                                  M_est.opt_transform,
-                                                  M_est.target_observed,
-                                                  M_est.feasible_point,
-                                                  M_est.target_cov,
-                                                  M_est.randomizer_precision)
+            approx_MLE, var, mle_map, _, _ = solve_UMVU(M_est.target_transform,
+                                                        M_est.opt_transform,
+                                                        M_est.target_observed,
+                                                        M_est.feasible_point,
+                                                        M_est.target_cov,
+                                                        M_est.randomizer_precision)
 
             #print("approx_MLE and sd", approx_MLE, np.sqrt(np.diag(var)))
             print("approx sd", np.sqrt(np.diag(var)))
@@ -189,7 +189,6 @@ if __name__ == "__main__":
                 pivot_obs_info.append(pivot[j])
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
-        sys.stderr.write("overall_bias" + str(bias/float(ndraw)) + "\n")
         if i % 10 == 0:
             plt.clf()
             ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
