@@ -58,6 +58,12 @@ EXTS.append(Extension('selection.algorithms.debiased_lasso_utils',
                       libraries=['m'],
                       include_dirs=['C-software/src']))
 
+EXTS.append(Extension('selection.randomized.selective_MLE_utils',
+                      ['selection/randomized/selective_MLE_utils.pyx',
+                       'C-software/src/randomized_lasso.c'],
+                      libraries=['m'],
+                      include_dirs=['C-software/src']))
+
 # Cython is a dependency for building extensions, iff we don't have stamped
 # up pyx and c files.
 build_ext, need_cython = cyproc_exts(EXTS,

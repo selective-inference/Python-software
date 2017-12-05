@@ -4,7 +4,7 @@ from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization, randomization_scale = 1.):
+    def __init__(self, loss, epsilon, penalty, randomization, randomization_scale = 1., sigma= 1.):
         M_estimator.__init__(self, loss, epsilon, penalty, randomization)
         self.randomizer = randomization
         self.randomization_scale = randomization_scale
@@ -34,26 +34,26 @@ class M_estimator_map(M_estimator):
         projection_perp = np.identity(n) - X[:, self._overall].dot(X_active_inv).dot(X[:, self._overall].T)
         score_cov[:self.nactive, :self.nactive] = X_active_inv
         score_cov[self.nactive:, self.nactive:] = X[:, ~self._overall].T.dot(projection_perp).dot(X[:, ~self._overall])
-        self.score_cov = score_cov
+        self.score_cov = (sigma**2.) * score_cov
+
         self.observed_score_state = self.observed_internal_state
         self.target_observed = self.observed_internal_state[:self.nactive]
         self.score_target_cov = self.score_cov[:, :self.nactive]
         self.target_cov = self.score_cov[:self.nactive, :self.nactive]
 
     def solve_map(self):
-        self.feasible_point = np.abs(self.initial_soln[self._overall])
-
+        #self.feasible_point = np.abs(self.initial_soln[self._overall])
+        self.feasible_point = np.ones(self._overall.sum())
         self.A = np.dot(self._score_linear_term, self.score_target_cov).dot(np.linalg.inv(self.target_cov))
         self.data_offset = self._score_linear_term.dot(self.observed_score_state)- self.A.dot(self.target_observed)
         self.target_transform = (self.A, self.data_offset)
 
     def solve_map_univariate_target(self, j):
-        self.feasible_point = np.abs(self.initial_soln[self._overall])[j]
-
+        #self.feasible_point = np.abs(self.initial_soln[self._overall])[j]
+        self.feasible_point = np.ones(self._overall.sum())
         self.A = np.dot(self._score_linear_term, self.score_target_cov[:, j]) / self.target_cov[j, j]
         self.data_offset = self._score_linear_term.dot(self.observed_score_state) - self.A * self.target_observed[j]
-        self.target_transform = (self.A.reshape((self.A.shape[0],1)),
-                                 self.data_offset.reshape((self.data_offset.shape[0],1)))
+        self.target_transform = (self.A.reshape((self.A.shape[0],1)),self.data_offset)
 
 
 def solve_UMVU(target_transform,
@@ -79,8 +79,6 @@ def solve_UMVU(target_transform,
     target_precision = np.linalg.inv(target_cov)
 
     implied_precision = np.zeros((ntarget + nopt, ntarget + nopt))
-
-    #print("shapes", A.shape, (A.T.dot(randomizer_precision).dot(A)).shape, target_precision.shape)
     implied_precision[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + target_precision
     implied_precision[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
     implied_precision[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
@@ -95,47 +93,70 @@ def solve_UMVU(target_transform,
     M_1 = np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(target_precision)
     M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
 
-    conditioned_value = data_offset + opt_offset
-    #print("shapes", data_offset.shape, opt_offset.shape, conditioned_value.shape)
+    #print("check matrices", M_1, M_2, L, data_offset, opt_offset)
 
-    linear_term = implied_cross.T.dot(np.linalg.inv(implied_target))
+    conditioned_value = data_offset + opt_offset
+
+    linear_term = implied_precision[ntarget:,ntarget:].dot(implied_cross.T.dot(np.linalg.inv(implied_target)))
     offset_term = -B.T.dot(randomizer_precision).dot(conditioned_value)
-    #print("check shapes", linear_term.dot(target_observed).shape, offset_term.shape)
+
     natparam_transform = (linear_term, offset_term)
     conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
 
     conditional_precision = implied_precision[ntarget:,ntarget:]
+    #print("check conditional parameters", conditional_natural_parameter-(1.2*target_observed)+2.4, conditional_precision)
 
-    #print("check shapes", conditional_natural_parameter.shape, conditional_precision.shape)
-    soln, value = solve_barrier_nonneg(conditional_natural_parameter,
-                                       conditional_precision,
-                                       feasible_point=feasible_point)
     M_1_inv = np.linalg.inv(M_1)
     offset_term = - M_1_inv.dot(M_2.dot(conditioned_value))
-    linear_term = np.vstack([M_1_inv, -M_1_inv.dot(L)])
     mle_transform = (M_1_inv, -M_1_inv.dot(L), offset_term)
+    var_transform = (-implied_precision[ntarget:,:ntarget].dot(M_1),
+                     -implied_precision[ntarget:,:ntarget].dot(M_2.dot(conditioned_value)))
 
-    def mle_map(natparam_transform, mle_transform, feasible_point, conditional_precision, target_observed):
+    cross_covariance = np.linalg.inv(implied_precision[:ntarget, :ntarget]).dot(implied_precision[:ntarget, ntarget:])
+    var_matrices = (np.linalg.inv(implied_opt), np.linalg.inv(implied_precision[:ntarget,:ntarget]),
+                    cross_covariance,target_precision)
+
+    def mle_map(natparam_transform, mle_transform, var_transform, var_matrices,
+                feasible_point, conditional_precision, target_observed):
+
         param_lin, param_offset = natparam_transform
         mle_target_lin, mle_soln_lin, mle_offset = mle_transform
-        soln, value = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
-                                           conditional_precision,
-                                           feasible_point=feasible_point)
-        return mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset, value
 
-    mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, feasible_point, conditional_precision)
-    sel_MLE, value = mle_partial(target_observed)
-    return np.squeeze(sel_MLE), value, mle_partial
+
+        soln, value, _ = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
+                                                 conditional_precision,
+                                                 feasible_point=feasible_point)
+        selective_MLE = mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset
+
+        var_target_lin, var_offset = var_transform
+        var_precision, inv_precision_target, cross_covariance, target_precision =  var_matrices
+        _, _, hess = solve_barrier_nonneg(var_target_lin.dot(selective_MLE) + var_offset + mle_offset,
+                                          var_precision,
+                                          feasible_point=None,
+                                          step=1,
+                                          nstep=250)
+
+        hessian = target_precision.dot(inv_precision_target +
+                                       cross_covariance.dot(hess).dot(cross_covariance.T)).dot(target_precision)
+
+        return selective_MLE, np.linalg.inv(hessian)
+
+    mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, var_transform, var_matrices,
+                                    feasible_point, conditional_precision)
+    sel_MLE, inv_hessian = mle_partial(target_observed)
+
+    implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(randomizer_precision).dot(conditioned_value), offset_term])
+
+    return np.squeeze(sel_MLE), inv_hessian, mle_partial, implied_cov, implied_cov.dot(implied_parameter)
 
 
 def solve_barrier_nonneg(conjugate_arg,
                          precision,
                          feasible_point=None,
                          step=1,
-                         nstep=30,
+                         nstep=150,
                          tol=1.e-8):
 
-    #conjugate_arg = precision.dot(mean_vec)
     scaling = np.sqrt(np.diag(precision))
 
     if feasible_point is None:
@@ -143,6 +164,7 @@ def solve_barrier_nonneg(conjugate_arg,
 
     objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. + np.log(1.+ 1./(u / scaling)).sum()
     grad = lambda u: -conjugate_arg + precision.dot(u) + (1./(scaling + u) - 1./u)
+    barrier_hessian = lambda u: (-1./((scaling + u)**2.) + 1./(u**2.))
 
     current = feasible_point
     current_value = np.inf
@@ -185,7 +207,8 @@ def solve_barrier_nonneg(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    return current, current_value
+    hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
+    return current, current_value, hess
 
 
 
