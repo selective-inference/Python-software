@@ -27,21 +27,17 @@ def glmnet_sigma(X, y):
 
                 out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
                 lam_minCV = out$lambda.min
-
-                coef = coef(out, s = "lambda.min")
-                linear.fit = lm(y~ X[, which(coef>0.001)-1])
-                sigma_est = summary(linear.fit)$sigma
-                return(sigma_est)
+                return(lam_minCV)
                 }''')
 
     try:
-        sigma_cv_R = robjects.globalenv['glmnet_cv']
+        lambda_cv_R = robjects.globalenv['glmnet_cv']
         n, p = X.shape
         r_X = robjects.r.matrix(X, nrow=n, ncol=p)
         r_y = robjects.r.matrix(y, nrow=n, ncol=1)
 
-        sigma_est = sigma_cv_R(r_X, r_y)
-        return sigma_est
+        lam_minCV = lambda_cv_R(r_X, r_y)
+        return lam_minCV
     except:
         return np.array([1.])
 
@@ -49,19 +45,20 @@ def glmnet_sigma(X, y):
 def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.2, signal=signal, sigma=1.,
-                                                       random_signs=True, equicorrelated=False)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=1.,
+                                                       random_signs=False, equicorrelated=False)
         n, p = X.shape
 
         if p>n:
-            sigma_est = glmnet_sigma(X, y)[0]
+            sigma_est = np.std(y)/2.
             print("sigma est", sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
             print("sigma est", sigma_est)
 
-        snr = (beta.T).dot(X.T.dot(X)).dot(beta)
+        #sigma_est = 1.
+        snr = (beta.T).dot(X.T.dot(X)).dot(beta)/n
         print("snr", snr)
 
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
@@ -99,13 +96,13 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
-    ndraw = 500
+    ndraw = 100
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
     pivot_obs_info = []
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=500, p=100, s=5, signal=0.25)
+        approx = test_lasso_approx_var(n=5000, p=4000, s=20, signal=3.5)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
@@ -125,9 +122,10 @@ if __name__ == "__main__":
     print("ecdf", ecdf(grid))
     plt.plot(grid, ecdf(grid), c='red', marker='^')
     plt.plot(grid, grid, 'k--')
+    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p4000_n5000_amp_3.5.png")
     plt.show()
 
-    #import pylab
-    #plt.clf()
-    #stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=pylab)
-    #pylab.show()
+    # import pylab
+    # plt.clf()
+    # stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=pylab)
+    # pylab.show()

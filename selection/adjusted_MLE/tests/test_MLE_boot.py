@@ -141,7 +141,7 @@ if __name__ == "__main__":
     pivot_obs_info = []
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=1000, p=4000, s=20, signal=3.5, B=1200)
+        approx = boot_pivot_approx_var(n=5000, p=4000, s=20, signal=3.5, B=1200)
         if approx is not None:
             pivot_boot = approx[3]
             bias += approx[4]
@@ -159,4 +159,4 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
     plt.plot(grid, grid, 'k--')
     #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n1000_p4000_amp3.5_sigma1.png")
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n5000_p4000_amp3.5_sigma1.png")

@@ -68,7 +68,7 @@ if __name__ == "__main__":
     pivot_mle = []
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=1000, p=4000, s=20, signal=3.5, B=2000)
+        approx = boot_pivot_approx_var(n=5000, p=4000, s=20, signal=3.5, B=2000)
         if approx is not None:
             pivot_boot = approx[3]
             mle_boot = approx[4]

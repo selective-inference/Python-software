@@ -147,7 +147,7 @@ def solve_UMVU(target_transform,
 
     implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(randomizer_precision).dot(conditioned_value), offset_term])
 
-    return np.squeeze(sel_MLE), inv_hessian, mle_partial, implied_cov, implied_cov.dot(implied_parameter)
+    return np.squeeze(sel_MLE), inv_hessian, mle_partial, implied_cov, implied_cov.dot(implied_parameter), mle_transform
 
 
 def solve_barrier_nonneg(conjugate_arg,
