@@ -96,8 +96,8 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
 def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.,
-                                                       random_signs=False, equicorrelated=False)
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.7, signal=signal, sigma=1.,
+                                                       random_signs=True, equicorrelated=False)
         n, p = X.shape
 
         if p>n:
