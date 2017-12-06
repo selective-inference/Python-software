@@ -7,11 +7,41 @@ from scipy.stats import norm as ndist
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from statsmodels.distributions.empirical_distribution import ECDF
+from rpy2.robjects.packages import importr
+from rpy2 import robjects
+from scipy.stats import t as tdist
+
+glmnet = importr('glmnet')
+import rpy2.robjects.numpy2ri
+
+rpy2.robjects.numpy2ri.activate()
+
+def glmnet_sigma(X, y):
+    robjects.r('''
+                glmnet_cv = function(X,y){
+                y = as.matrix(y)
+                X = as.matrix(X)
+
+                out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
+                lam_minCV = out$lambda.min
+                return(lam_minCV)
+                }''')
+
+    try:
+        lambda_cv_R = robjects.globalenv['glmnet_cv']
+        n, p = X.shape
+        r_X = robjects.r.matrix(X, nrow=n, ncol=p)
+        r_y = robjects.r.matrix(y, nrow=n, ncol=1)
+
+        lam_minCV = lambda_cv_R(r_X, r_y)
+        return lam_minCV
+    except:
+        return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
 
 def boot_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=sigma,
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=sigma,
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
@@ -57,10 +87,14 @@ def boot_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
 def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=sigma,
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.2, signal=signal, sigma=sigma,
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
-        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
+
+        sigma_est = np.std(y) / np.sqrt(2.)
+        sys.stderr.write("est sigma" + str(sigma_est) + "\n")
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        #lam = glmnet_sigma(X, y)
 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1./np.sqrt(n)
@@ -69,7 +103,7 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
         randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
-        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale, sigma=sigma)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale, sigma=sigma_est)
 
         M_est.solve_map()
         active = M_est._overall
@@ -78,12 +112,12 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
         nactive = np.sum(active)
 
         if nactive > 0:
-            approx_MLE, var, mle_map, _, _ = solve_UMVU(M_est.target_transform,
-                                                  M_est.opt_transform,
-                                                  M_est.target_observed,
-                                                  M_est.feasible_point,
-                                                  M_est.target_cov,
-                                                  M_est.randomizer_precision)
+            approx_MLE, var, mle_map, _, _, _ = solve_UMVU(M_est.target_transform,
+                                                           M_est.opt_transform,
+                                                           M_est.target_observed,
+                                                           M_est.feasible_point,
+                                                           M_est.target_cov,
+                                                           M_est.randomizer_precision)
 
             boot_pivot = np.zeros((B, nactive))
             resid = y - X[:, active].dot(M_est.target_observed)
@@ -141,7 +175,7 @@ if __name__ == "__main__":
     pivot_obs_info = []
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=5000, p=4000, s=20, signal=3.5, B=1200)
+        approx = boot_pivot_approx_var(n=2000, p=4000, s=20, signal=3.5, B=1200)
         if approx is not None:
             pivot_boot = approx[3]
             bias += approx[4]
@@ -159,4 +193,4 @@ if __name__ == "__main__":
     plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
     plt.plot(grid, grid, 'k--')
     #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n5000_p4000_amp3.5_sigma1.png")
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n2000_p4000_amp3.5_rho_0.2_sigma1.png")

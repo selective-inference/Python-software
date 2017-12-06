@@ -104,7 +104,6 @@ def solve_UMVU(target_transform,
     conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
 
     conditional_precision = implied_precision[ntarget:,ntarget:]
-    #print("check conditional parameters", conditional_natural_parameter-(1.2*target_observed)+2.4, conditional_precision)
 
     M_1_inv = np.linalg.inv(M_1)
     mle_offset_term = - M_1_inv.dot(M_2.dot(conditioned_value))
@@ -121,9 +120,11 @@ def solve_UMVU(target_transform,
 
         param_lin, param_offset = natparam_transform
         mle_target_lin, mle_soln_lin, mle_offset = mle_transform
+
         soln, value, _ = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
-                                                 conditional_precision,
-                                                 feasible_point=feasible_point)
+                                              conditional_precision,
+                                              feasible_point=feasible_point)
+
         selective_MLE = mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset
 
         var_target_lin, var_offset = var_transform

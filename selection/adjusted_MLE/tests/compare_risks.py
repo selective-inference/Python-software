@@ -61,7 +61,8 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
         snr = (beta.T).dot(X.T.dot(X)).dot(beta)/n
         print("snr", snr)
 
-        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        #lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        lam = glmnet_sigma(X, y)
 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1./np.sqrt(n)
@@ -79,12 +80,12 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
         nactive = np.sum(active)
 
         if nactive > 0:
-            approx_MLE, var, mle_map, _, _ = solve_UMVU(M_est.target_transform,
-                                                        M_est.opt_transform,
-                                                        M_est.target_observed,
-                                                        M_est.feasible_point,
-                                                        M_est.target_cov,
-                                                        M_est.randomizer_precision)
+            approx_MLE, var, mle_map, _, _, _ = solve_UMVU(M_est.target_transform,
+                                                           M_est.opt_transform,
+                                                           M_est.target_observed,
+                                                           M_est.feasible_point,
+                                                           M_est.target_cov,
+                                                           M_est.randomizer_precision)
 
             print("approx sd", np.sqrt(np.diag(var)))
             break
@@ -92,40 +93,119 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
     return np.true_divide((approx_MLE - true_target), np.sqrt(np.diag(var))), (approx_MLE - true_target).sum()/float(nactive),\
            (approx_MLE-true_target).dot((approx_MLE-true_target)), (M_est.target_observed-true_target).dot((M_est.target_observed-true_target))
 
+def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
+
+    while True:
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.,
+                                                       random_signs=False, equicorrelated=False)
+        n, p = X.shape
+
+        if p>n:
+            sigma_est = np.std(y)/2.
+            print("sigma est", sigma_est)
+        else:
+            ols_fit = sm.OLS(y, X).fit()
+            sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
+            print("sigma est", sigma_est)
+
+        #sigma_est = 1.
+        snr = (beta.T).dot(X.T.dot(X)).dot(beta)/n
+        print("snr", snr)
+
+        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        #lam = glmnet_sigma(X, y)
+
+        loss = rr.glm.gaussian(X, y)
+        epsilon = 1./np.sqrt(n)
+        W = np.ones(p) * lam
+        penalty = rr.group_lasso(np.arange(p),
+                                 weights=dict(zip(np.arange(p), W)), lagrange=1.)
+
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale, sigma = sigma_est)
+
+        M_est.solve_map()
+        active = M_est._overall
+
+        true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
+        nactive = np.sum(active)
+        print("number of variables selected by LASSO", nactive)
+
+        if nactive > 0:
+            approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
+                                                                       M_est.opt_transform,
+                                                                       M_est.target_observed,
+                                                                       M_est.feasible_point,
+                                                                       M_est.target_cov,
+                                                                       M_est.randomizer_precision)
+
+            mle_target_lin, mle_soln_lin, mle_offset = mle_transform
+            break
+
+    est_Sigma = X[:, active].T.dot(X[:, active])
+    ind_est = mle_target_lin.dot(M_est.target_observed) + mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset
+    signal_amp = (true_target.T).dot(est_Sigma).dot(true_target)
+    return (approx_MLE - true_target).sum()/float(nactive),\
+           (approx_MLE-true_target).dot(est_Sigma).dot((approx_MLE-true_target))/ signal_amp, \
+           (M_est.target_observed-true_target).dot(est_Sigma).dot((M_est.target_observed-true_target))/ signal_amp,\
+           (ind_est - true_target).dot(est_Sigma).dot((ind_est - true_target))/ signal_amp
+
+
+# if __name__ == "__main__":
+#     import matplotlib.pyplot as plt
+#
+#     ndraw = 100
+#     bias = 0.
+#     risk_selMLE = 0.
+#     risk_relLASSO = 0.
+#     pivot_obs_info = []
+#     for i in range(ndraw):
+#         approx = test_lasso_approx_var(n=5000, p=4000, s=20, signal=3.5)
+#         if approx is not None:
+#             pivot = approx[0]
+#             bias += approx[1]
+#             risk_selMLE += approx[2]
+#             risk_relLASSO += approx[3]
+#             for j in range(pivot.shape[0]):
+#                 pivot_obs_info.append(pivot[j])
+#
+#         sys.stderr.write("iteration completed" + str(i) + "\n")
+#         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
+#         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
+#         sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
+#
+#     plt.clf()
+#     ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+#     grid = np.linspace(0, 1, 101)
+#     print("ecdf", ecdf(grid))
+#     plt.plot(grid, ecdf(grid), c='red', marker='^')
+#     plt.plot(grid, grid, 'k--')
+#     #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p4000_n5000_amp_3.5.png")
+#     plt.show()
+#
+#     # import pylab
+#     # plt.clf()
+#     # stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=pylab)
+#     # pylab.show()
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
 
     ndraw = 100
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
-    pivot_obs_info = []
+    risk_indest = 0.
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=5000, p=4000, s=20, signal=3.5)
+        approx = risk_selective_mle(n=500, p=100, s=5, signal=4.)
         if approx is not None:
-            pivot = approx[0]
-            bias += approx[1]
-            risk_selMLE += approx[2]
-            risk_relLASSO += approx[3]
-            for j in range(pivot.shape[0]):
-                pivot_obs_info.append(pivot[j])
+            bias += approx[0]
+            risk_selMLE += approx[1]
+            risk_relLASSO += approx[2]
+            risk_indest += approx[3]
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
+        sys.stderr.write("overall_indepestrisk" + str(risk_indest / float(i + 1)) + "\n")
 
-    plt.clf()
-    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-    grid = np.linspace(0, 1, 101)
-    print("ecdf", ecdf(grid))
-    plt.plot(grid, ecdf(grid), c='red', marker='^')
-    plt.plot(grid, grid, 'k--')
-    #plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p4000_n5000_amp_3.5.png")
-    plt.show()
-
-    # import pylab
-    # plt.clf()
-    # stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=pylab)
-    # pylab.show()
