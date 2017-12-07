@@ -108,13 +108,13 @@ def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomiza
 
         if p>n:
             sigma_est = np.std(y)/2.
+            #sigma_est = 1.
             print("sigma est", sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
             print("sigma est", sigma_est)
 
-        #sigma_est = 1.
         snr = (beta.T).dot(X.T.dot(X)).dot(beta)/n
         print("snr", snr)
 
@@ -184,7 +184,7 @@ if __name__ == "__main__":
     risk_LASSO = 0.
     risk_LASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=100, s=5, signal=3.5)
+        approx = risk_selective_mle_full(n=500, p=5000, s=5, signal=3.5)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -198,6 +198,6 @@ if __name__ == "__main__":
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_indepestrisk" + str(risk_indest / float(i + 1)) + "\n")
-        sys.stderr.write("overall_relLASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
+        sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
 
