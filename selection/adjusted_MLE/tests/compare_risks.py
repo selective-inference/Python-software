@@ -26,8 +26,8 @@ def glmnet_sigma(X, y):
                 X = as.matrix(X)
 
                 out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
-                lam_minCV = out$lambda.min
-                return(lam_minCV)
+                lam_1se = out$lambda.1se
+                return(lam_1se)
                 }''')
 
     try:
@@ -36,10 +36,10 @@ def glmnet_sigma(X, y):
         r_X = robjects.r.matrix(X, nrow=n, ncol=p)
         r_y = robjects.r.matrix(y, nrow=n, ncol=1)
 
-        lam_minCV = lambda_cv_R(r_X, r_y)
-        return lam_minCV
+        lam_1se = lambda_cv_R(r_X, r_y)
+        return lam_1se*n
     except:
-        return np.array([1.])
+        return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
 
 
 def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
@@ -96,7 +96,7 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
 def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.7, signal=signal, sigma=1.,
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=1.,
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
 
@@ -112,8 +112,8 @@ def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_
         snr = (beta.T).dot(X.T.dot(X)).dot(beta)/n
         print("snr", snr)
 
-        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
-        #lam = glmnet_sigma(X, y)
+        #lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        lam = glmnet_sigma(X, y)
 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1./np.sqrt(n)
@@ -145,10 +145,12 @@ def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_
     est_Sigma = X[:, active].T.dot(X[:, active])
     ind_est = mle_target_lin.dot(M_est.target_observed) + mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset
     signal_amp = (true_target.T).dot(est_Sigma).dot(true_target)
-    return (approx_MLE - true_target).sum()/float(nactive),\
-           (approx_MLE-true_target).dot(est_Sigma).dot((approx_MLE-true_target))/ signal_amp, \
-           (M_est.target_observed-true_target).dot(est_Sigma).dot((M_est.target_observed-true_target))/ signal_amp,\
-           (ind_est - true_target).dot(est_Sigma).dot((ind_est - true_target))/ signal_amp
+    target_par = beta[active]
+
+    return (approx_MLE - target_par).sum()/float(nactive),\
+           (approx_MLE-target_par).dot(est_Sigma).dot((approx_MLE-target_par))/ signal_amp, \
+           (M_est.target_observed-target_par).dot(est_Sigma).dot((M_est.target_observed-target_par))/ signal_amp,\
+           (ind_est - target_par).dot(est_Sigma).dot((ind_est - target_par))/ signal_amp
 
 
 # if __name__ == "__main__":
@@ -196,7 +198,7 @@ if __name__ == "__main__":
     risk_relLASSO = 0.
     risk_indest = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle(n=500, p=100, s=5, signal=4.)
+        approx = risk_selective_mle(n=500, p=1000, s=5, signal=5.)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
