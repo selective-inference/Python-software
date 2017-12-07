@@ -27,6 +27,7 @@ class M_estimator_map(M_estimator):
         X, _ = self.loss.data
         n, p = X.shape
         self.p = p
+
         self.randomizer_precision = (1. / self.randomization_scale) * np.identity(p)
 
         score_cov = np.zeros((p, p))
