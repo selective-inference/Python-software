@@ -39,7 +39,7 @@ def glmnet_sigma(X, y):
     except:
         return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
 
-def boot_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.):
+def boot_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=0.7, sigma= 1.):
 
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=sigma,
@@ -85,10 +85,10 @@ def boot_lasso_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
 
             break
 
-def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=1., sigma= 1.):
+def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., randomization_scale=0.7, sigma= 1.):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.2, signal=signal, sigma=sigma,
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=sigma,
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
 
@@ -117,6 +117,8 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
 
         true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
         nactive = np.sum(active)
+        print("number of variables selected by randomized LASSO", nactive)
+
         coverage = np.zeros(nactive)
 
         if nactive > 0:
@@ -189,7 +191,7 @@ if __name__ == "__main__":
     coverage = 0.
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=500, p=100, s=5, signal=3., B=1200)
+        approx = boot_pivot_approx_var(n=10000, p=2000, s=20, signal=5., B=1200)
         if approx is not None:
             pivot_boot = approx[3]
             bias += approx[4]
