@@ -139,7 +139,7 @@ def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomiza
         M_est.solve_map()
         active = M_est._overall
 
-        true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
+        #true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
         nactive = np.sum(active)
         print("number of variables selected by randomized LASSO", nactive)
 
@@ -154,7 +154,6 @@ def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomiza
             mle_target_lin, mle_soln_lin, mle_offset = mle_transform
             break
 
-    #est_Sigma = X.T.dot(X)
     Sigma, _ = AR1(rho=0.35, p=p)
     ind_est = np.zeros(p)
     ind_est[active] = mle_target_lin.dot(M_est.target_observed) + mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset
