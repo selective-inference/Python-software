@@ -36,8 +36,11 @@ def glmnet_sigma(X, y):
     except:
         return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
 
+def relative_risk(est, truth, Sigma):
 
-def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
+    return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
+
+def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=np.sqrt(0.1)):
 
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=1.,
@@ -89,17 +92,20 @@ def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_
     est_Sigma = X[:, active].T.dot(X[:, active])
     ind_est = mle_target_lin.dot(M_est.target_observed) + mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset
     target_par = beta[active]
-    signal_amp = (target_par.T).dot(est_Sigma).dot(target_par)
     Lasso_est = M_est.observed_opt_state[:nactive]
 
-    return (approx_MLE - target_par).sum()/float(nactive),\
-           ((approx_MLE-target_par).T).dot(est_Sigma).dot((approx_MLE-target_par))/ signal_amp, \
-           ((M_est.target_observed-target_par).T).dot(est_Sigma).dot((M_est.target_observed-target_par))/ signal_amp,\
-           ((ind_est - target_par).T).dot(est_Sigma).dot((ind_est - target_par))/ signal_amp,\
-           ((Lasso_est - target_par).T).dot(est_Sigma).dot((Lasso_est - target_par)) / signal_amp
+    return (approx_MLE - target_par).sum()/float(nactive), \
+           relative_risk(approx_MLE, target_par, est_Sigma),\
+           relative_risk(M_est.target_observed, target_par, est_Sigma),\
+           relative_risk(ind_est, target_par, est_Sigma),\
+           relative_risk(Lasso_est, target_par, est_Sigma)
 
+def AR1(rho, p):
+    idx = np.arange(p)
+    cov = rho ** np.abs(np.subtract.outer(idx, idx))
+    return cov, np.linalg.cholesky(cov)
 
-def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
+def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=np.sqrt(0.1)):
 
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=1.,
@@ -148,11 +154,11 @@ def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomiza
             mle_target_lin, mle_soln_lin, mle_offset = mle_transform
             break
 
-    est_Sigma = X.T.dot(X)
+    #est_Sigma = X.T.dot(X)
+    Sigma, _ = AR1(rho=0.35, p=p)
     ind_est = np.zeros(p)
     ind_est[active] = mle_target_lin.dot(M_est.target_observed) + mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset
     target_par = beta
-    signal_amp = (target_par.T).dot(est_Sigma).dot(target_par)
 
     Lasso_est = np.zeros(p)
     Lasso_est[active] = M_est.observed_opt_state[:nactive]
@@ -164,15 +170,20 @@ def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomiza
 
     M_est_nonrand = M_estimator(loss, epsilon, penalty, randomization.isotropic_gaussian((p,), scale=0.005))
     M_est_nonrand.solve()
+    rel_Lasso_nonrand = np.zeros(p)
+    rel_Lasso_nonrand[M_est_nonrand._overall] = M_est_nonrand.observed_internal_state[M_est_nonrand._overall.sum()]
     Lasso_nonrand = np.zeros(p)
-    Lasso_nonrand[M_est_nonrand._overall] = M_est_nonrand.observed_internal_state[M_est_nonrand._overall.sum()]
+    Lasso_nonrand[M_est_nonrand._overall] = M_est_nonrand.observed_opt_state[:M_est_nonrand._overall.sum()]
 
-    return (selective_MLE - target_par).sum()/float(nactive),\
-           ((selective_MLE-target_par).T).dot(est_Sigma).dot((selective_MLE-target_par))/ signal_amp, \
-           ((relaxed_Lasso-target_par).T).dot(est_Sigma).dot((relaxed_Lasso-target_par))/ signal_amp,\
-           ((ind_est - target_par).T).dot(est_Sigma).dot((ind_est - target_par))/ signal_amp,\
-           ((Lasso_est - target_par).T).dot(est_Sigma).dot((Lasso_est - target_par)) / signal_amp,\
-           ((Lasso_nonrand - target_par).T).dot(est_Sigma).dot((Lasso_nonrand - target_par)) / signal_amp
+    print("number of variables selected by non-randomized LASSO", M_est_nonrand._overall.sum())
+
+    return (selective_MLE - target_par).sum()/float(nactive), \
+           relative_risk(selective_MLE, target_par, Sigma), \
+           relative_risk(relaxed_Lasso, target_par, Sigma), \
+           relative_risk(ind_est, target_par, Sigma), \
+           relative_risk(Lasso_est, target_par, Sigma), \
+           relative_risk(rel_Lasso_nonrand, target_par, Sigma),\
+           relative_risk(Lasso_nonrand, target_par, Sigma)
 
 if __name__ == "__main__":
 
@@ -182,16 +193,18 @@ if __name__ == "__main__":
     risk_relLASSO = 0.
     risk_indest = 0.
     risk_LASSO = 0.
+    risk_relLASSO_nonrand = 0.
     risk_LASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=5000, s=5, signal=3.5)
+        approx = risk_selective_mle_full(n=300, p=1000, s=5, signal=3.)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
             risk_relLASSO += approx[2]
             risk_indest += approx[3]
             risk_LASSO += approx[4]
-            risk_LASSO_nonrand += approx[5]
+            risk_relLASSO_nonrand += approx[5]
+            risk_LASSO_nonrand += approx[6]
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
@@ -199,5 +212,6 @@ if __name__ == "__main__":
         sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_indepestrisk" + str(risk_indest / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
-        sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
+        sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
+        sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
 
