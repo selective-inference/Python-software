@@ -40,6 +40,11 @@ def relative_risk(est, truth, Sigma):
 
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
+def AR1(rho, p):
+    idx = np.arange(p)
+    cov = rho ** np.abs(np.subtract.outer(idx, idx))
+    return cov, np.linalg.cholesky(cov)
+
 def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=np.sqrt(0.1)):
 
     while True:
@@ -99,11 +104,6 @@ def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_
            relative_risk(M_est.target_observed, target_par, est_Sigma),\
            relative_risk(ind_est, target_par, est_Sigma),\
            relative_risk(Lasso_est, target_par, est_Sigma)
-
-def AR1(rho, p):
-    idx = np.arange(p)
-    cov = rho ** np.abs(np.subtract.outer(idx, idx))
-    return cov, np.linalg.cholesky(cov)
 
 def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=np.sqrt(0.1)):
 

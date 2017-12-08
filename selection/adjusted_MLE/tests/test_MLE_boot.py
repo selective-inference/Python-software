@@ -10,6 +10,7 @@ from statsmodels.distributions.empirical_distribution import ECDF
 from rpy2.robjects.packages import importr
 from rpy2 import robjects
 from scipy.stats import t as tdist
+import statsmodels.api as sm
 
 glmnet = importr('glmnet')
 import rpy2.robjects.numpy2ri
@@ -23,8 +24,8 @@ def glmnet_sigma(X, y):
                 X = as.matrix(X)
 
                 out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
-                lam_minCV = out$lambda.min
-                return(lam_minCV)
+                lam_1se = out$lambda.1se
+                return(lam_1se)
                 }''')
 
     try:
@@ -33,8 +34,8 @@ def glmnet_sigma(X, y):
         r_X = robjects.r.matrix(X, nrow=n, ncol=p)
         r_y = robjects.r.matrix(y, nrow=n, ncol=1)
 
-        lam_minCV = lambda_cv_R(r_X, r_y)
-        return lam_minCV
+        lam_1se = lambda_cv_R(r_X, r_y)
+        return lam_1se*n
     except:
         return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
 
@@ -91,10 +92,16 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
 
-        sigma_est = np.std(y) / np.sqrt(2.)
-        sys.stderr.write("est sigma" + str(sigma_est) + "\n")
-        lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
-        #lam = glmnet_sigma(X, y)
+        if p>n:
+            sigma_est = np.std(y)/2.
+            print("sigma est", sigma_est)
+        else:
+            ols_fit = sm.OLS(y, X).fit()
+            sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
+            print("sigma est", sigma_est)
+
+        #lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        lam = glmnet_sigma(X, y)
 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1./np.sqrt(n)
@@ -110,6 +117,7 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
 
         true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
         nactive = np.sum(active)
+        coverage = np.zeros(nactive)
 
         if nactive > 0:
             approx_MLE, var, mle_map, _, _, _ = solve_UMVU(M_est.target_transform,
@@ -129,10 +137,15 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
                 boot_pivot[b, :] = np.true_divide(boot_mle[0]- approx_MLE, np.sqrt(np.diag(boot_mle[1])))
                 #sys.stderr.write("bootstrap sample" + str(b) + "\n")
 
+            boot_std = boot_pivot.std(0)
+            for j in range(nactive):
+                if (approx_MLE[j] - (1.65 * boot_std[j])) <= true_target[j] and true_target[j] <= (approx_MLE[j] + (1.65 * boot_std[j])):
+                    coverage[j] += 1
             break
 
     return boot_pivot.reshape((B*nactive,)), boot_pivot.mean(0).sum()/nactive, boot_pivot.std(0), \
-           np.true_divide(approx_MLE - true_target, boot_pivot.std(0)), (approx_MLE - true_target).sum() / float(nactive)
+           np.true_divide(approx_MLE - true_target, boot_pivot.std(0)), (approx_MLE - true_target).sum() / float(nactive),\
+           coverage.sum() / float(nactive)
 
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
@@ -173,24 +186,27 @@ if __name__ == "__main__":
     ndraw = 100
     bias = 0.
     pivot_obs_info = []
+    coverage = 0.
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=2000, p=4000, s=20, signal=3.5, B=1200)
+        approx = boot_pivot_approx_var(n=500, p=100, s=5, signal=3., B=1200)
         if approx is not None:
             pivot_boot = approx[3]
             bias += approx[4]
+            coverage += approx[5]
 
             for j in range(pivot_boot.shape[0]):
                 pivot_obs_info.append(pivot_boot[j])
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
+        sys.stderr.write("overall coverage" + str(coverage / float(i + 1)) + "\n")
 
-    plt.clf()
-    ecdf_boot = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-    grid = np.linspace(0, 1, 101)
-    print("ecdf", ecdf_boot(grid))
-    plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
-    plt.plot(grid, grid, 'k--')
-    #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n2000_p4000_amp3.5_rho_0.2_sigma1.png")
+    # plt.clf()
+    # ecdf_boot = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    # grid = np.linspace(0, 1, 101)
+    # print("ecdf", ecdf_boot(grid))
+    # plt.plot(grid, ecdf_boot(grid), c='blue', marker='^')
+    # plt.plot(grid, grid, 'k--')
+    # #plt.show()
+    # plt.savefig("/Users/snigdhapanigrahi/Desktop/Boot_pivot_n2000_p4000_amp3.5_rho_0.2_sigma1.png")

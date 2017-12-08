@@ -61,7 +61,7 @@ def test_lasso(n=100, p=50, s=5, signal=5., B=500, seed_n=0, lam_frac=1., random
 def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomization_scale=1.):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0., signal=signal, sigma=1.,
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=1.,
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
@@ -80,20 +80,26 @@ def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomizatio
 
         true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
         nactive = np.sum(active)
+        coverage = np.zeros(nactive)
 
         if nactive > 0:
-            approx_MLE, var, mle_map = solve_UMVU(M_est.target_transform,
-                                                  M_est.opt_transform,
-                                                  M_est.target_observed,
-                                                  M_est.feasible_point,
-                                                  M_est.target_cov,
-                                                  M_est.randomizer_precision)
+            approx_MLE, var, mle_map, _, _, _ = solve_UMVU(M_est.target_transform,
+                                                           M_est.opt_transform,
+                                                           M_est.target_observed,
+                                                           M_est.feasible_point,
+                                                           M_est.target_cov,
+                                                           M_est.randomizer_precision)
 
-            #print("approx_MLE and sd", approx_MLE, np.sqrt(np.diag(var)))
             print("approx sd", np.sqrt(np.diag(var)))
+            approx_sd = np.sqrt(np.diag(var))
+            print("approx sd", approx_sd)
+            for j in range(nactive):
+                if (approx_MLE[j] - (1.65 * approx_sd[j])) <= true_target[j] and true_target[j]<= (approx_MLE[j] + (1.65 * approx_sd[j])):
+                    coverage[j] += 1
             break
 
-    return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum()/float(nactive)
+    return np.true_divide((approx_MLE - true_target),approx_sd), (approx_MLE - true_target).sum()/float(nactive), \
+           coverage.sum()/float(nactive)
 
 def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomization_scale=1., sigma = 1.):
 
@@ -125,6 +131,7 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
 
         nactive = np.sum(active)
         print('nactive', nactive)
+        coverage = np.zeros(nactive)
         if nactive >0:
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(X.dot(beta))
             print("true_target", true_target)
@@ -135,11 +142,15 @@ def orthogonal_lasso_approx(n=100, p=5, s=3, signal=3, lam_frac=1., randomizatio
                                                   M_est.target_cov,
                                                   M_est.randomizer_precision)
 
-            print("approx sd", np.sqrt(np.diag(var)))
+            approx_sd = np.sqrt(np.diag(var))
+            print("approx sd", approx_sd)
+            for j in range(nactive):
+                if (approx_MLE[j]-(1.65*approx_sd[j]))<= true_target[j] and (approx_MLE[j] + (1.65*approx_sd[j])) >= true_target[j]:
+                    coverage[j] += 1
             break
 
-    return np.true_divide((approx_MLE - true_target),np.sqrt(np.diag(var))), (approx_MLE - true_target).sum() / float(nactive)
-
+    return np.true_divide((approx_MLE - true_target),approx_sd), (approx_MLE - true_target).sum()/float(nactive), \
+           coverage.sum()/float(nactive)
 
 def test_bias_lasso(nsim=2000):
     bias = 0
@@ -179,26 +190,29 @@ if __name__ == "__main__":
     ndraw = 500
     bias = 0.
     pivot_obs_info= []
+    coverage = 0.
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=5000, p=4000, s=20, signal=3.5)
+        approx = test_lasso_approx_var(n=500, p=100, s=5, signal=3.5)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]
-            for j in range(pivot.shape[0]):
-                pivot_obs_info.append(pivot[j])
+            coverage += approx[2]
+            #for j in range(pivot.shape[0]):
+            #    pivot_obs_info.append(pivot[j])
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i+1)) + "\n")
+        sys.stderr.write("coverage so far" + str(coverage / float(i + 1)) + "\n")
 
     #if i % 10 == 0:
-    plt.clf()
-    ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
-    grid = np.linspace(0, 1, 101)
-    print("ecdf", ecdf(grid))
-    plt.plot(grid, ecdf(grid), c='red', marker='^')
-    plt.plot(grid, grid, 'k--')
-    #plt.show()
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p4000_n5000_amp_3.5.png")
+    # plt.clf()
+    # ecdf = ECDF(ndist.cdf(np.asarray(pivot_obs_info)))
+    # grid = np.linspace(0, 1, 101)
+    # print("ecdf", ecdf(grid))
+    # plt.plot(grid, ecdf(grid), c='red', marker='^')
+    # plt.plot(grid, grid, 'k--')
+    # #plt.show()
+    # plt.savefig("/Users/snigdhapanigrahi/Desktop/approx_info_selective_MLE_lasso_p4000_n5000_amp_3.5.png")
 
 # if __name__ == "__main__":
 #     import matplotlib.pyplot as plt
