@@ -105,7 +105,7 @@ def risk_selective_mle(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_
            relative_risk(ind_est, target_par, est_Sigma),\
            relative_risk(Lasso_est, target_par, est_Sigma)
 
-def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=np.sqrt(0.1)):
+def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomization_scale=0.7):
 
     while True:
         X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=1.,
@@ -128,7 +128,7 @@ def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomiza
         lam = glmnet_sigma(X, y)
 
         loss = rr.glm.gaussian(X, y)
-        epsilon = 1./np.sqrt(n)
+        epsilon = 1. /np.sqrt(n)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     risk_relLASSO_nonrand = 0.
     risk_LASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=300, p=1000, s=5, signal=3.)
+        approx = risk_selective_mle_full(n=200, p=1000, s=10, signal=3.)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]

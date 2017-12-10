@@ -191,7 +191,7 @@ if __name__ == "__main__":
     coverage = 0.
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=10000, p=2000, s=20, signal=5., B=1200)
+        approx = boot_pivot_approx_var(n=4000, p=2000, s=20, signal=5., B=1200)
         if approx is not None:
             pivot_boot = approx[3]
             bias += approx[4]
