@@ -6,15 +6,24 @@ rpy2.robjects.numpy2ri.activate()
 
 import numpy as np
 
-def sim_xy(n, p, nval, rho=0, s=5):
+def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
     source('~/best-subset/bestsubset/R/sim.R')
     ''')
 
     r_simulate = robjects.globalenv['sim.xy']
-    print(r_simulate(n, p, nval, rho=rho, s=s))
+    sim = r_simulate(n, p, nval, rho, s, beta_type, snr)
+    X = np.array(sim.rx2('x'))
+    y = np.array(sim.rx2('y'))
+    X_val = np.array(sim.rx2('xval'))
+    y_val = np.array(sim.rx2('yval'))
+    Sigma = np.array(sim.rx2('Sigma'))
+    beta = np.array(sim.rx2('beta'))
+    sigma = np.array(sim.rx2('sigma'))
 
-#sim_xy(n=50, p=10, nval=50)
+    return X, y, X_val, y_val, Sigma, beta, sigma
+
+sim_xy(n=50, p=10, nval=50)
 
 def tuned_lasso(X, Y, X_val,Y_val):
     robjects.r('''
@@ -45,5 +54,5 @@ def tuned_lasso(X, Y, X_val,Y_val):
     estimator = r_lasso(r_X, r_y, r_X_val, r_y_val)
     return (estimator)
 
-print(tuned_lasso(np.random.standard_normal((50,10)), np.random.standard_normal(50),
-                  np.random.standard_normal((50,10)), np.random.standard_normal(50)))
+#print(tuned_lasso(np.random.standard_normal((50,10)), np.random.standard_normal(50),
+#                  np.random.standard_normal((50,10)), np.random.standard_normal(50)))
