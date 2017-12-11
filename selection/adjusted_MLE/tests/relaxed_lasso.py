@@ -62,10 +62,17 @@ def tuned_lasso(X, y, X_val,y_val):
 
         rel.lasso = lasso(X,Y,intercept=FALSE, nrelax=10, nlam=50)
         beta.hat = as.matrix(coef(rel.lasso))
+        print(dim(beta.hat))
+
+        min.lam = min(rel.lasso$lambda)
+        max.lam = max(rel.lasso$lambda)
+        lam.seq = exp(seq(log(max.lam),log(min.lam),length=rel.lasso$nlambda))
 
         muhat.val = as.matrix(predict(rel.lasso, X.val))
         err.val = colMeans((muhat.val - Y.val)^2)
-        return(beta.hat[,which.min(err.val)])
+        opt_lam = ceiling(which.min(err.val)/10)
+        lambda.tuned = lam.seq[opt_lam]
+        return(list(beta.hat = beta.hat[,which.min(err.val)], lambda.tuned = lambda.tuned))
         }''')
 
     r_lasso = robjects.globalenv['tuned_lasso_estimator']
@@ -77,8 +84,10 @@ def tuned_lasso(X, y, X_val,y_val):
 
     r_X_val = robjects.r.matrix(X_val, nrow=nval, ncol=p)
     r_y_val = robjects.r.matrix(y_val, nrow=nval, ncol=1)
-    estimator = np.array(r_lasso(r_X, r_y, r_X_val, r_y_val))
-    return estimator
+    tuned_est = r_lasso(r_X, r_y, r_X_val, r_y_val)
+    estimator = np.array(tuned_est.rx2('beta.hat'))
+    lam_tuned = np.array(tuned_est.rx2('lambda.tuned'))
+    return estimator, lam_tuned
 
 def relative_risk(est, truth, Sigma):
 
@@ -88,8 +97,7 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
                             lam_frac=1., randomization_scale=np.sqrt(0.5)):
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
-        rel_LASSO = tuned_lasso(X, y, X_val, y_val)
-        # print("beta", beta, X.std(0), X.mean(0))
+        rel_LASSO, lam_tuned = tuned_lasso(X, y, X_val, y_val)
 
         X -= X.mean(0)[None, :]
         X /= (X.std(0)[None, :] * np.sqrt(n))
@@ -104,8 +112,11 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
 
-        lam_min, lam_1se = glmnet_sigma(X, y)
-        lam = lam_1se[0]
+        #lam_min, lam_1se = glmnet_sigma(X, y)
+        #lam = lam_1se[0]
+        lam = np.sqrt(n)*lam_tuned[0]
+
+        #print("lam_tuned", np.sqrt(n)*lam_tuned, lam)
 
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),

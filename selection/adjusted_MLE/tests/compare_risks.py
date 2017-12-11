@@ -130,6 +130,7 @@ def risk_selective_mle_full(n=500, p=100, s=5, signal=5., lam_frac=1., randomiza
         #lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
         lam_min, lam_1se = glmnet_sigma(X, y)
         lam = lam_1se[0]
+        print("lambda from glmnet", lam)
 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. /np.sqrt(n)
