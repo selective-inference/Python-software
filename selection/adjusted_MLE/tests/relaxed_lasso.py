@@ -62,7 +62,6 @@ def tuned_lasso(X, y, X_val,y_val):
 
         rel.lasso = lasso(X,Y,intercept=FALSE, nrelax=10, nlam=50)
         beta.hat = as.matrix(coef(rel.lasso))
-        print(dim(beta.hat))
 
         min.lam = min(rel.lasso$lambda)
         max.lam = max(rel.lasso$lambda)
@@ -72,7 +71,7 @@ def tuned_lasso(X, y, X_val,y_val):
         err.val = colMeans((muhat.val - Y.val)^2)
         opt_lam = ceiling(which.min(err.val)/10)
         lambda.tuned = lam.seq[opt_lam]
-        return(list(beta.hat = beta.hat[,which.min(err.val)], lambda.tuned = lambda.tuned))
+        return(list(beta.hat = beta.hat[,which.min(err.val)], lambda.tuned = lambda.tuned, lambda.seq = lam.seq))
         }''')
 
     r_lasso = robjects.globalenv['tuned_lasso_estimator']
@@ -87,20 +86,24 @@ def tuned_lasso(X, y, X_val,y_val):
     tuned_est = r_lasso(r_X, r_y, r_X_val, r_y_val)
     estimator = np.array(tuned_est.rx2('beta.hat'))
     lam_tuned = np.array(tuned_est.rx2('lambda.tuned'))
-    return estimator, lam_tuned
+    lam_seq = np.array(tuned_est.rx2('lambda.seq'))
+    return estimator, lam_tuned, lam_seq
 
 def relative_risk(est, truth, Sigma):
 
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                            lam_frac=1., randomization_scale=np.sqrt(0.5)):
+                            lam_frac=1., randomization_scale=np.sqrt(0.25)):
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
-        rel_LASSO, lam_tuned = tuned_lasso(X, y, X_val, y_val)
+        rel_LASSO, lam_tuned, lam_seq = tuned_lasso(X, y, X_val, y_val)
 
         X -= X.mean(0)[None, :]
         X /= (X.std(0)[None, :] * np.sqrt(n))
+
+        X_val -= X_val.mean(0)[None, :]
+        X_val /= (X_val.std(0)[None, :] * np.sqrt(n))
         if p > n:
             sigma_est = np.std(y) / 2.
             print("sigma est", sigma_est)
@@ -112,17 +115,39 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
 
-        #lam_min, lam_1se = glmnet_sigma(X, y)
-        #lam = lam_1se[0]
-        lam = np.sqrt(n)*lam_tuned[0]
+        lam_min, lam_1se = glmnet_sigma(X, y)
+        lam = lam_1se[0]
+        #lam = np.sqrt(n)*lam_tuned[0]
+
+        lam_seq = np.linspace(0.5* lam_1se, lam_1se, num=50)
+        print("lam seq", lam_seq)
 
         #print("lam_tuned", np.sqrt(n)*lam_tuned, lam)
+        err = np.zeros(50)
+        for k in range(50):
+            lam = lam_seq[k]
+            W = np.ones(p) * lam
+            penalty = rr.group_lasso(np.arange(p),
+                                     weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
+            randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
+                                    sigma=sigma_est)
+
+            M_est.solve_map()
+            active = M_est._overall
+            nactive = np.sum(active)
+            Lasso_est = np.zeros(p)
+            Lasso_est[active] = M_est.observed_opt_state[:nactive]
+            err[k] = np.mean((y-X.dot(Lasso_est))**2.)
+
+        lam = lam_seq[np.argmin(err)]
+        print("err seq", err, lam)
+
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
-
-        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
                                 sigma=sigma_est)
 
