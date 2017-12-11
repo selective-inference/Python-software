@@ -199,7 +199,7 @@ if __name__ == "__main__":
     risk_relLASSO_nonrand = 0.
     risk_LASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=100, s=5, signal=3.13)
+        approx = risk_selective_mle_full(n=500, p=100, s=5, signal=5.)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]

@@ -16,28 +16,23 @@ def glmnet_sigma(X, y):
                 glmnet_cv = function(X,y){
                 y = as.matrix(y)
                 X = as.matrix(X)
-
+                n = nrow(X)
                 out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
                 lam_1se = out$lambda.1se
-                active = which(coef(out, s="lambda.1se") != 0)
-                print(active)
-                return(list(lambda=lam_1se, active = active, lasso_est = as.vector(coef(out, s = "lambda.1se")[active])))
+                lam_min = out$lambda.min
+                return(list(lam_min = n * as.numeric(lam_min), lam_1se = n* as.numeric(lam_1se)))
                 }''')
 
-    try:
-        lambda_cv_R = robjects.globalenv['glmnet_cv']
-        n, p = X.shape
-        r_X = robjects.r.matrix(X, nrow=n, ncol=p)
-        r_y = robjects.r.matrix(y, nrow=n, ncol=1)
+    lambda_cv_R = robjects.globalenv['glmnet_cv']
+    n, p = X.shape
+    r_X = robjects.r.matrix(X, nrow=n, ncol=p)
+    r_y = robjects.r.matrix(y, nrow=n, ncol=1)
 
-        out = lambda_cv_R(r_X, r_y)
-        lam_1se = out.rx2('lambda')
-        lasso_est = np.array(out.rx2('lasso_est'))
-        active = np.array(out.rx2('active'))
-        print("lasso est", lasso_est, active, lam_1se)
-        return lam_1se*n, lasso_est, active
-    except:
-        return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)), 0, 0
+    lam = lambda_cv_R(r_X, r_y)
+    lam_min = np.array(lam.rx2('lam_min'))
+    lam_1se = np.array(lam.rx2('lam_1se'))
+    return lam_min, lam_1se
+
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
@@ -91,63 +86,65 @@ def relative_risk(est, truth, Sigma):
 
 def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
                             lam_frac=1., randomization_scale=np.sqrt(0.5)):
+    while True:
+        X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
+        rel_LASSO = tuned_lasso(X, y, X_val, y_val)
+        # print("beta", beta, X.std(0), X.mean(0))
 
-    X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
-    rel_LASSO = tuned_lasso(X, y, X_val, y_val)
-    #print("beta", beta, X.std(0), X.mean(0))
+        X -= X.mean(0)[None, :]
+        X /= (X.std(0)[None, :] * np.sqrt(n))
+        if p > n:
+            sigma_est = np.std(y) / 2.
+            print("sigma est", sigma_est)
+        else:
+            ols_fit = sm.OLS(y, X).fit()
+            sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
+            print("sigma est", sigma_est)
 
-    X -= X.mean(0)[None, :]
-    X/= (X.std(0)[None, :] * np.sqrt(n))
-    if p > n:
-        sigma_est = np.std(y) / 2.
-        print("sigma est", sigma_est)
-    else:
-        ols_fit = sm.OLS(y, X).fit()
-        sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
-        print("sigma est", sigma_est)
+        loss = rr.glm.gaussian(X, y)
+        epsilon = 1. / np.sqrt(n)
 
-    loss = rr.glm.gaussian(X, y)
-    epsilon = 1. / np.sqrt(n)
+        lam_min, lam_1se = glmnet_sigma(X, y)
+        lam = lam_1se[0]
 
-    lam, lasso_est, lasso_active = glmnet_sigma(X, y)
-    print("lambda from glmnet", lam, lasso_est, lasso_active)
+        W = np.ones(p) * lam
+        penalty = rr.group_lasso(np.arange(p),
+                                 weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-    W = np.ones(p) * lam
-    penalty = rr.group_lasso(np.arange(p),
-                             weights=dict(zip(np.arange(p), W)), lagrange=1.)
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
+                                sigma=sigma_est)
 
-    randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
-    M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
-                            sigma=sigma_est)
+        M_est.solve_map()
+        active = M_est._overall
 
-    M_est.solve_map()
-    active = M_est._overall
+        nactive = np.sum(active)
+        print("number of variables selected by randomized LASSO", nactive)
 
-    nactive = np.sum(active)
-    print("number of variables selected by randomized LASSO", nactive)
+        if nactive > 0:
+            approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
+                                                                       M_est.opt_transform,
+                                                                       M_est.target_observed,
+                                                                       M_est.feasible_point,
+                                                                       M_est.target_cov,
+                                                                       M_est.randomizer_precision)
 
-    if nactive > 0:
-        approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
-                                                                   M_est.opt_transform,
-                                                                   M_est.target_observed,
-                                                                   M_est.feasible_point,
-                                                                   M_est.target_cov,
-                                                                   M_est.randomizer_precision)
+            mle_target_lin, mle_soln_lin, mle_offset = mle_transform
 
-        mle_target_lin, mle_soln_lin, mle_offset = mle_transform
+            break
 
     ind_est = np.zeros(p)
-    ind_est[active] = mle_target_lin.dot(M_est.target_observed) +\
+    ind_est[active] = mle_target_lin.dot(M_est.target_observed) + \
                       mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset
-    ind_est/= np.sqrt(n)
+    ind_est /= np.sqrt(n)
     target_par = beta
 
     Lasso_est = np.zeros(p)
-    Lasso_est[active] = M_est.observed_opt_state[:nactive]/np.sqrt(n)
+    Lasso_est[active] = M_est.observed_opt_state[:nactive] / np.sqrt(n)
     selective_MLE = np.zeros(p)
-    selective_MLE[active] = approx_MLE/np.sqrt(n)
+    selective_MLE[active] = approx_MLE / np.sqrt(n)
     relaxed_Lasso = np.zeros(p)
-    relaxed_Lasso[active] = M_est.target_observed/np.sqrt(n)
+    relaxed_Lasso[active] = M_est.target_observed / np.sqrt(n)
 
     #print("target", target_par, Sigma)
     return (selective_MLE - target_par).sum() / float(nactive), \
@@ -159,7 +156,7 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
 
 if __name__ == "__main__":
 
-    ndraw = 1
+    ndraw = 100
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
