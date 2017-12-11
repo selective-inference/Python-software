@@ -19,22 +19,21 @@ def glmnet_sigma(X, y):
                 glmnet_cv = function(X,y){
                 y = as.matrix(y)
                 X = as.matrix(X)
-
+                n = nrow(X)
                 out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
-                lam_1se = out$lambda.1se
-                return(lam_1se)
+                #lam_1se = out$lambda.1se
+                lam_min = out$lambda.min
+                return(n * as.numeric(lam_min))
                 }''')
 
-    try:
-        lambda_cv_R = robjects.globalenv['glmnet_cv']
-        n, p = X.shape
-        r_X = robjects.r.matrix(X, nrow=n, ncol=p)
-        r_y = robjects.r.matrix(y, nrow=n, ncol=1)
+    lambda_cv_R = robjects.globalenv['glmnet_cv']
+    n, p = X.shape
+    r_X = robjects.r.matrix(X, nrow=n, ncol=p)
+    r_y = robjects.r.matrix(y, nrow=n, ncol=1)
 
-        lam_1se = lambda_cv_R(r_X, r_y)
-        return lam_1se*n
-    except:
-        return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
+    lam_1se = lambda_cv_R(r_X, r_y)
+    print("lambda", lam_1se)
+    return lam_1se
 
 def relative_risk(est, truth, Sigma):
 
@@ -195,7 +194,7 @@ if __name__ == "__main__":
     risk_relLASSO_nonrand = 0.
     risk_LASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=100, s=5, signal=3.)
+        approx = risk_selective_mle_full(n=200, p=1000, s=5, signal=3.13)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]

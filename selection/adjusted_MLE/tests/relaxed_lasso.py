@@ -19,7 +19,9 @@ def glmnet_sigma(X, y):
 
                 out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
                 lam_1se = out$lambda.1se
-                return(lam_1se)
+                active = which(coef(out, s="lambda.1se") != 0)
+                print(active)
+                return(list(lambda=lam_1se, active = active, lasso_est = as.vector(coef(out, s = "lambda.1se")[active])))
                 }''')
 
     try:
@@ -28,10 +30,14 @@ def glmnet_sigma(X, y):
         r_X = robjects.r.matrix(X, nrow=n, ncol=p)
         r_y = robjects.r.matrix(y, nrow=n, ncol=1)
 
-        lam_1se = lambda_cv_R(r_X, r_y)
-        return lam_1se*n
+        out = lambda_cv_R(r_X, r_y)
+        lam_1se = out.rx2('lambda')
+        lasso_est = np.array(out.rx2('lasso_est'))
+        active = np.array(out.rx2('active'))
+        print("lasso est", lasso_est, active, lam_1se)
+        return lam_1se*n, lasso_est, active
     except:
-        return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
+        return 0.75 * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)), 0, 0
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
@@ -83,11 +89,12 @@ def relative_risk(est, truth, Sigma):
 
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
-def risk_selective_mle_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
+def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
                             lam_frac=1., randomization_scale=np.sqrt(0.5)):
 
     X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
     rel_LASSO = tuned_lasso(X, y, X_val, y_val)
+    #print("beta", beta, X.std(0), X.mean(0))
 
     X -= X.mean(0)[None, :]
     X/= (X.std(0)[None, :] * np.sqrt(n))
@@ -99,10 +106,12 @@ def risk_selective_mle_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, 
         sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
         print("sigma est", sigma_est)
 
-    lam = glmnet_sigma(X, y)
-
     loss = rr.glm.gaussian(X, y)
     epsilon = 1. / np.sqrt(n)
+
+    lam, lasso_est, lasso_active = glmnet_sigma(X, y)
+    print("lambda from glmnet", lam, lasso_est, lasso_active)
+
     W = np.ones(p) * lam
     penalty = rr.group_lasso(np.arange(p),
                              weights=dict(zip(np.arange(p), W)), lagrange=1.)
@@ -140,6 +149,7 @@ def risk_selective_mle_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, 
     relaxed_Lasso = np.zeros(p)
     relaxed_Lasso[active] = M_est.target_observed/np.sqrt(n)
 
+    #print("target", target_par, Sigma)
     return (selective_MLE - target_par).sum() / float(nactive), \
            relative_risk(selective_MLE, target_par, Sigma), \
            relative_risk(relaxed_Lasso, target_par, Sigma), \
@@ -149,7 +159,7 @@ def risk_selective_mle_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, 
 
 if __name__ == "__main__":
 
-    ndraw = 100
+    ndraw = 1
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -157,7 +167,7 @@ if __name__ == "__main__":
     risk_LASSO = 0.
     risk_relLASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=100, nval=100, rho=0., s=5, beta_type=2, snr=0.1)
+        approx = risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.1)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
