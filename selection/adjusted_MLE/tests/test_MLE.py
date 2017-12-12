@@ -61,7 +61,7 @@ def test_lasso(n=100, p=50, s=5, signal=5., B=500, seed_n=0, lam_frac=1., random
 def test_lasso_approx_var(n=100, p=50, s=5, signal=5., lam_frac=1., randomization_scale=1.):
 
     while True:
-        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.35, signal=signal, sigma=1.,
+        X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=s, rho=0.70, signal=signal, sigma=1.,
                                                        random_signs=True, equicorrelated=False)
         n, p = X.shape
         lam = lam_frac * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma
@@ -192,7 +192,7 @@ if __name__ == "__main__":
     pivot_obs_info= []
     coverage = 0.
     for i in range(ndraw):
-        approx = test_lasso_approx_var(n=500, p=100, s=5, signal=3.5)
+        approx = test_lasso_approx_var(n=500, p=100, s=5, signal=3.)
         if approx is not None:
             pivot = approx[0]
             bias += approx[1]

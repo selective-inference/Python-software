@@ -103,27 +103,30 @@ def relative_risk(est, truth, Sigma):
 
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
-def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                            lam_frac=1., randomization_scale=np.sqrt(0.25)):
+def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2, randomization_scale=np.sqrt(0.25)):
+
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
+        true_mean = X.dot(beta)
         rel_LASSO, est_LASSO, lam_tuned, lam_seq = tuned_lasso(X, y, X_val, y_val)
+        active_nonrand = (rel_LASSO != 0)
+        nactive_nonrand = active_nonrand.sum()
 
         X -= X.mean(0)[None, :]
         X /= (X.std(0)[None, :] * np.sqrt(n))
 
         X_val -= X_val.mean(0)[None, :]
         X_val /= (X_val.std(0)[None, :] * np.sqrt(n))
+
         if p > n:
             sigma_est = np.std(y) / 2.
-            print("sigma est", sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
-            print("sigma est", sigma_est)
 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
+
 
         lam_seq = np.linspace(0.75, 2.75, num= 100)\
                   *np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
@@ -146,20 +149,36 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
             err[k] = np.mean((y_val-X_val.dot(Lasso_est))**2.)
 
         lam = lam_seq[np.argmin(err)]
-        print("err seq", err, lam)
         randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
         M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
                                 sigma=sigma_est)
-
         M_est.solve_map()
         active = M_est._overall
-
         nactive = np.sum(active)
+
         print("number of variables selected by randomized LASSO", nactive)
         print("number of variables selected by tuned LASSO", (rel_LASSO!=0).sum())
+        true_signals = np.zeros(p, np.bool)
+        true_signals[beta != 0] = 1
+        screened_randomized = np.logical_and(active, true_signals).sum() / float(s)
+        screened_nonrandomized = np.logical_and(active_nonrand, true_signals).sum() / float(s)
+
+        true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
+        unad_sd = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
+        true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])).\
+            dot(X[:, active_nonrand].T).dot(true_mean)
+        unad_sd_nonrand = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
+        coverage_sel = 0.
+        coverage_rand = 0.
+        coverage_nonrand = 0.
+
+        for k in range(nactive_nonrand):
+            if (rel_LASSO[k]-(1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
+                    and (rel_LASSO[k]+(1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
+                coverage_nonrand += 1
 
         if nactive > 0:
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
@@ -170,26 +189,30 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
                                                                        M_est.randomizer_precision)
 
             mle_target_lin, mle_soln_lin, mle_offset = mle_transform
+            approx_sd = np.sqrt(np.diag(var))
 
+            for j in range(nactive):
+                if (approx_MLE[j]-(1.65*approx_sd[j]))<= true_target[j] and (approx_MLE[j] + (1.65*approx_sd[j])) >= true_target[j]:
+                    coverage_sel += 1
+                if (M_est.target_observed[j]-(1.65*unad_sd[j]))<= true_target[j] and (M_est.target_observed[j]+(1.65*unad_sd[j])) >= true_target[j]:
+                    coverage_rand += 1
             break
+
+    target_par = beta
 
     ind_est = np.zeros(p)
     ind_est[active] = mle_target_lin.dot(M_est.target_observed) + \
                       mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset
     ind_est /= np.sqrt(n)
-    target_par = beta
 
-    Lasso_est = np.zeros(p)
-    Lasso_est[active] = M_est.observed_opt_state[:nactive] / np.sqrt(n)
-    selective_MLE = np.zeros(p)
-    selective_MLE[active] = approx_MLE / np.sqrt(n)
     relaxed_Lasso = np.zeros(p)
     relaxed_Lasso[active] = M_est.target_observed / np.sqrt(n)
 
-    true_signals = np.zeros(p, np.bool)
-    true_signals[beta!=0] = 1
-    screened_randomized = np.logical_and(active, true_signals).sum()/5.
-    screened_nonrandomized = np.logical_and(rel_LASSO!=0, true_signals).sum()/5.
+    Lasso_est = np.zeros(p)
+    Lasso_est[active] = M_est.observed_opt_state[:nactive] / np.sqrt(n)
+
+    selective_MLE = np.zeros(p)
+    selective_MLE[active] = approx_MLE / np.sqrt(n)
 
     return (selective_MLE - target_par).sum() / float(nactive), \
            relative_risk(selective_MLE, target_par, Sigma), \
@@ -199,7 +222,10 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
            relative_risk(rel_LASSO, target_par, Sigma),\
            relative_risk(est_LASSO, target_par, Sigma), \
            screened_randomized,\
-           screened_nonrandomized
+           screened_nonrandomized,\
+           coverage_sel/float(nactive),\
+           coverage_rand/float(nactive), \
+           coverage_nonrand/float(nactive_nonrand)
 
 if __name__ == "__main__":
 
@@ -213,9 +239,13 @@ if __name__ == "__main__":
     risk_LASSO_nonrand = 0.
     spower_rand = 0.
     spower_nonrand = 0.
+    coverage_sel = 0.
+    coverage_rand = 0.
+    coverage_nonrand = 0.
+
     for i in range(ndraw):
         np.random.seed(i)
-        approx = risk_selective_mle_full(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.20)
+        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.40)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -226,17 +256,26 @@ if __name__ == "__main__":
             risk_LASSO_nonrand += approx[6]
             spower_rand += approx[7]
             spower_nonrand += approx[8]
+            coverage_sel += approx[9]
+            coverage_rand += approx[10]
+            coverage_nonrand += approx[11]
 
-        sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_indepestrisk" + str(risk_indest / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
+
         sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSO_rand_spower" + str(spower_rand / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSO_norand_spower" + str(spower_nonrand / float(i + 1)) + "\n")
+
+        sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
+        sys.stderr.write("randomized coverage" + str(coverage_rand / float(i + 1)) + "\n")
+        sys.stderr.write("nonrandomized coverage" + str(coverage_nonrand / float(i + 1)) + "\n")
+
+        sys.stderr.write("iteration completed" + str(i) + "\n")
 
 
 
