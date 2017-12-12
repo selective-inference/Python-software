@@ -125,14 +125,7 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
 
-        #lam_min, lam_1se = glmnet_sigma(X, y)
-        #lam = lam_1se[0]
-
-        #lam_seq = np.linspace(0.5* lam_1se, lam_1se, num=50)
-        #lam_seq = np.sqrt(n)* ext_lam_seq
-        #print("lam seq", lam_seq)
-
-        lam_seq = np.linspace(0.75, 2.5, num= 100)\
+        lam_seq = np.linspace(0.75, 2.75, num= 100)\
                   *np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
         err = np.zeros(100)
         for k in range(100):
@@ -193,17 +186,24 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
     relaxed_Lasso = np.zeros(p)
     relaxed_Lasso[active] = M_est.target_observed / np.sqrt(n)
 
+    true_signals = np.zeros(p, np.bool)
+    true_signals[beta!=0] = 1
+    screened_randomized = np.logical_and(active, true_signals).sum()/5.
+    screened_nonrandomized = np.logical_and(rel_LASSO!=0, true_signals).sum()/5.
+
     return (selective_MLE - target_par).sum() / float(nactive), \
            relative_risk(selective_MLE, target_par, Sigma), \
            relative_risk(relaxed_Lasso, target_par, Sigma), \
            relative_risk(ind_est, target_par, Sigma),\
            relative_risk(Lasso_est, target_par, Sigma),\
            relative_risk(rel_LASSO, target_par, Sigma),\
-           relative_risk(est_LASSO, target_par, Sigma)
+           relative_risk(est_LASSO, target_par, Sigma), \
+           screened_randomized,\
+           screened_nonrandomized
 
 if __name__ == "__main__":
 
-    ndraw = 100
+    ndraw = 50
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -211,8 +211,11 @@ if __name__ == "__main__":
     risk_LASSO = 0.
     risk_relLASSO_nonrand = 0.
     risk_LASSO_nonrand = 0.
+    spower_rand = 0.
+    spower_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.1)
+        np.random.seed(i)
+        approx = risk_selective_mle_full(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.20)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -221,6 +224,8 @@ if __name__ == "__main__":
             risk_LASSO += approx[4]
             risk_relLASSO_nonrand += approx[5]
             risk_LASSO_nonrand += approx[6]
+            spower_rand += approx[7]
+            spower_nonrand += approx[8]
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
@@ -230,6 +235,8 @@ if __name__ == "__main__":
         sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
+        sys.stderr.write("overall_LASSO_rand_spower" + str(spower_rand / float(i + 1)) + "\n")
+        sys.stderr.write("overall_LASSO_norand_spower" + str(spower_nonrand / float(i + 1)) + "\n")
 
 
 
