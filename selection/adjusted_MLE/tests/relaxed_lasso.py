@@ -165,6 +165,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         true_signals[beta != 0] = 1
         screened_randomized = np.logical_and(active, true_signals).sum() / float(s)
         screened_nonrandomized = np.logical_and(active_nonrand, true_signals).sum() / float(s)
+        false_positive_randomized = np.logical_and(active, ~true_signals).sum()/float(nactive)
+        false_positive_nonrandomized = np.logical_and(active_nonrand, ~true_signals).sum()/float(nactive_nonrand)
 
         true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
         unad_sd = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
@@ -223,6 +225,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
            relative_risk(est_LASSO, target_par, Sigma), \
            screened_randomized,\
            screened_nonrandomized,\
+           false_positive_randomized, \
+           false_positive_nonrandomized,\
            coverage_sel/float(nactive),\
            coverage_rand/float(nactive), \
            coverage_nonrand/float(nactive_nonrand)
@@ -239,6 +243,8 @@ if __name__ == "__main__":
     risk_LASSO_nonrand = 0.
     spower_rand = 0.
     spower_nonrand = 0.
+    false_positive_randomized = 0.
+    false_positive_nonrandomized = 0.
     coverage_sel = 0.
     coverage_rand = 0.
     coverage_nonrand = 0.
@@ -256,9 +262,11 @@ if __name__ == "__main__":
             risk_LASSO_nonrand += approx[6]
             spower_rand += approx[7]
             spower_nonrand += approx[8]
-            coverage_sel += approx[9]
-            coverage_rand += approx[10]
-            coverage_nonrand += approx[11]
+            false_positive_randomized += approx[9]
+            false_positive_nonrandomized += approx[10]
+            coverage_sel += approx[11]
+            coverage_rand += approx[12]
+            coverage_nonrand += approx[13]
 
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
@@ -266,10 +274,12 @@ if __name__ == "__main__":
         sys.stderr.write("overall_indepestrisk" + str(risk_indest / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
-
         sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
+
         sys.stderr.write("overall_LASSO_rand_spower" + str(spower_rand / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSO_norand_spower" + str(spower_nonrand / float(i + 1)) + "\n")
+        sys.stderr.write("overall_LASSO_rand_falsepositives" + str(false_positive_randomized / float(i + 1)) + "\n")
+        sys.stderr.write("overall_LASSO_norand_falsepositives" + str(false_positive_nonrandomized / float(i + 1)) + "\n")
 
         sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
         sys.stderr.write("randomized coverage" + str(coverage_rand / float(i + 1)) + "\n")
