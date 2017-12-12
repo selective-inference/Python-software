@@ -60,19 +60,27 @@ def tuned_lasso(X, y, X_val,y_val):
         Y.val = as.vector(Y.val)
         X.val = as.matrix(X.val)
 
-        rel.lasso = lasso(X,Y,intercept=FALSE, nrelax=10, nlam=50)
-        beta.hat = as.matrix(coef(rel.lasso))
+        rel.LASSO = lasso(X,Y,intercept=FALSE, nrelax=10, nlam=50)
+        LASSO = lasso(X,Y,intercept=FALSE,nlam=50)
+        beta.hat.rellasso = as.matrix(coef(rel.LASSO))
+        beta.hat.lasso = as.matrix(coef(LASSO))
 
-        min.lam = min(rel.lasso$lambda)
-        max.lam = max(rel.lasso$lambda)
-        lam.seq = exp(seq(log(max.lam),log(min.lam),length=rel.lasso$nlambda))
-        ext.lam.seq = exp(seq(1.25*log(max.lam),log(min.lam),length=100))
-        muhat.val = as.matrix(predict(rel.lasso, X.val))
-        err.val = colMeans((muhat.val - Y.val)^2)
-        opt_lam = ceiling(which.min(err.val)/10)
+        min.lam = min(rel.LASSO$lambda)
+        max.lam = max(rel.LASSO$lambda)
+        lam.seq = exp(seq(log(max.lam),log(min.lam),length=rel.LASSO$nlambda))
+
+        muhat.val.rellasso = as.matrix(predict(rel.LASSO, X.val))
+        muhat.val.lasso = as.matrix(predict(LASSO, X.val))
+
+        err.val.rellasso = colMeans((muhat.val.rellasso - Y.val)^2)
+        err.val.lasso = colMeans((muhat.val.lasso - Y.val)^2)
+
+        opt_lam = ceiling(which.min(err.val.rellasso)/10)
         lambda.tuned = lam.seq[opt_lam]
-        return(list(beta.hat = beta.hat[,which.min(err.val)], lambda.tuned = lambda.tuned, lambda.seq = lam.seq,
-        ext.lambda.seq = ext.lam.seq))
+
+        return(list(beta.hat.rellasso = beta.hat.rellasso[,which.min(err.val.rellasso)],
+        beta.hat.lasso = beta.hat.lasso[,which.min(err.val.lasso)],
+        lambda.tuned = lambda.tuned, lambda.seq = lam.seq))
         }''')
 
     r_lasso = robjects.globalenv['tuned_lasso_estimator']
@@ -81,15 +89,15 @@ def tuned_lasso(X, y, X_val,y_val):
     nval, _ = X_val.shape
     r_X = robjects.r.matrix(X, nrow=n, ncol=p)
     r_y = robjects.r.matrix(y, nrow=n, ncol=1)
-
     r_X_val = robjects.r.matrix(X_val, nrow=nval, ncol=p)
     r_y_val = robjects.r.matrix(y_val, nrow=nval, ncol=1)
+
     tuned_est = r_lasso(r_X, r_y, r_X_val, r_y_val)
-    estimator = np.array(tuned_est.rx2('beta.hat'))
+    estimator_rellasso = np.array(tuned_est.rx2('beta.hat.rellasso'))
+    estimator_lasso = np.array(tuned_est.rx2('beta.hat.lasso'))
     lam_tuned = np.array(tuned_est.rx2('lambda.tuned'))
     lam_seq = np.array(tuned_est.rx2('lambda.seq'))
-    ext_lam_seq = np.array(tuned_est.rx2('ext.lambda.seq'))
-    return estimator, lam_tuned, lam_seq, ext_lam_seq
+    return estimator_rellasso, estimator_lasso, lam_tuned, lam_seq
 
 def relative_risk(est, truth, Sigma):
 
@@ -99,7 +107,7 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
                             lam_frac=1., randomization_scale=np.sqrt(0.25)):
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
-        rel_LASSO, lam_tuned, lam_seq, ext_lam_seq = tuned_lasso(X, y, X_val, y_val)
+        rel_LASSO, est_LASSO, lam_tuned, lam_seq = tuned_lasso(X, y, X_val, y_val)
 
         X -= X.mean(0)[None, :]
         X /= (X.std(0)[None, :] * np.sqrt(n))
@@ -190,7 +198,8 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
            relative_risk(relaxed_Lasso, target_par, Sigma), \
            relative_risk(ind_est, target_par, Sigma),\
            relative_risk(Lasso_est, target_par, Sigma),\
-           relative_risk(rel_LASSO, target_par, Sigma)
+           relative_risk(rel_LASSO, target_par, Sigma),\
+           relative_risk(est_LASSO, target_par, Sigma)
 
 if __name__ == "__main__":
 
@@ -201,8 +210,9 @@ if __name__ == "__main__":
     risk_indest = 0.
     risk_LASSO = 0.
     risk_relLASSO_nonrand = 0.
+    risk_LASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.15)
+        approx = risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.1)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -210,6 +220,7 @@ if __name__ == "__main__":
             risk_indest += approx[3]
             risk_LASSO += approx[4]
             risk_relLASSO_nonrand += approx[5]
+            risk_LASSO_nonrand += approx[6]
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
@@ -218,6 +229,7 @@ if __name__ == "__main__":
         sys.stderr.write("overall_indepestrisk" + str(risk_indest / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
         sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
+        sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
 
 
 
