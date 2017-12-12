@@ -66,12 +66,13 @@ def tuned_lasso(X, y, X_val,y_val):
         min.lam = min(rel.lasso$lambda)
         max.lam = max(rel.lasso$lambda)
         lam.seq = exp(seq(log(max.lam),log(min.lam),length=rel.lasso$nlambda))
-
+        ext.lam.seq = exp(seq(1.25*log(max.lam),log(min.lam),length=100))
         muhat.val = as.matrix(predict(rel.lasso, X.val))
         err.val = colMeans((muhat.val - Y.val)^2)
         opt_lam = ceiling(which.min(err.val)/10)
         lambda.tuned = lam.seq[opt_lam]
-        return(list(beta.hat = beta.hat[,which.min(err.val)], lambda.tuned = lambda.tuned, lambda.seq = lam.seq))
+        return(list(beta.hat = beta.hat[,which.min(err.val)], lambda.tuned = lambda.tuned, lambda.seq = lam.seq,
+        ext.lambda.seq = ext.lam.seq))
         }''')
 
     r_lasso = robjects.globalenv['tuned_lasso_estimator']
@@ -87,7 +88,8 @@ def tuned_lasso(X, y, X_val,y_val):
     estimator = np.array(tuned_est.rx2('beta.hat'))
     lam_tuned = np.array(tuned_est.rx2('lambda.tuned'))
     lam_seq = np.array(tuned_est.rx2('lambda.seq'))
-    return estimator, lam_tuned, lam_seq
+    ext_lam_seq = np.array(tuned_est.rx2('ext.lambda.seq'))
+    return estimator, lam_tuned, lam_seq, ext_lam_seq
 
 def relative_risk(est, truth, Sigma):
 
@@ -97,7 +99,7 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
                             lam_frac=1., randomization_scale=np.sqrt(0.25)):
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
-        rel_LASSO, lam_tuned, lam_seq = tuned_lasso(X, y, X_val, y_val)
+        rel_LASSO, lam_tuned, lam_seq, ext_lam_seq = tuned_lasso(X, y, X_val, y_val)
 
         X -= X.mean(0)[None, :]
         X /= (X.std(0)[None, :] * np.sqrt(n))
@@ -115,16 +117,17 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
 
-        lam_min, lam_1se = glmnet_sigma(X, y)
-        lam = lam_1se[0]
-        #lam = np.sqrt(n)*lam_tuned[0]
+        #lam_min, lam_1se = glmnet_sigma(X, y)
+        #lam = lam_1se[0]
 
-        lam_seq = np.linspace(0.5* lam_1se, lam_1se, num=50)
-        print("lam seq", lam_seq)
+        #lam_seq = np.linspace(0.5* lam_1se, lam_1se, num=50)
+        #lam_seq = np.sqrt(n)* ext_lam_seq
+        #print("lam seq", lam_seq)
 
-        #print("lam_tuned", np.sqrt(n)*lam_tuned, lam)
-        err = np.zeros(50)
-        for k in range(50):
+        lam_seq = np.linspace(0.75, 2.5, num= 100)\
+                  *np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        err = np.zeros(100)
+        for k in range(100):
             lam = lam_seq[k]
             W = np.ones(p) * lam
             penalty = rr.group_lasso(np.arange(p),
@@ -139,11 +142,10 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
             nactive = np.sum(active)
             Lasso_est = np.zeros(p)
             Lasso_est[active] = M_est.observed_opt_state[:nactive]
-            err[k] = np.mean((y-X.dot(Lasso_est))**2.)
+            err[k] = np.mean((y_val-X_val.dot(Lasso_est))**2.)
 
         lam = lam_seq[np.argmin(err)]
         print("err seq", err, lam)
-
         randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
@@ -156,6 +158,7 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
 
         nactive = np.sum(active)
         print("number of variables selected by randomized LASSO", nactive)
+        print("number of variables selected by tuned LASSO", (rel_LASSO!=0).sum())
 
         if nactive > 0:
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
@@ -182,7 +185,6 @@ def risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, 
     relaxed_Lasso = np.zeros(p)
     relaxed_Lasso[active] = M_est.target_observed / np.sqrt(n)
 
-    #print("target", target_par, Sigma)
     return (selective_MLE - target_par).sum() / float(nactive), \
            relative_risk(selective_MLE, target_par, Sigma), \
            relative_risk(relaxed_Lasso, target_par, Sigma), \
@@ -200,7 +202,7 @@ if __name__ == "__main__":
     risk_LASSO = 0.
     risk_relLASSO_nonrand = 0.
     for i in range(ndraw):
-        approx = risk_selective_mle_full(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.1)
+        approx = risk_selective_mle_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.15)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
