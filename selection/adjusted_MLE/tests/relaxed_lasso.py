@@ -168,19 +168,37 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         false_positive_randomized = np.logical_and(active, ~true_signals).sum()/float(nactive)
         false_positive_nonrandomized = np.logical_and(active_nonrand, ~true_signals).sum()/float(nactive_nonrand)
 
+        true_set = np.asarray([u for u in range(p) if true_signals[u]])
+        active_set = np.asarray([t for t in range(p) if active[t]])
+        active_set_nonrand = np.asarray([s for s in range(p) if active_nonrand[s]])
+        active_bool = np.zeros(nactive, np.bool)
+        for x in range(nactive):
+            active_bool[x] = (np.in1d(active_set[x],true_set).sum()>0)
+        active_bool_nonrand= np.zeros(nactive_nonrand, np.bool)
+        for y in range(nactive_nonrand):
+            active_bool_nonrand[y] = (np.in1d(active_set_nonrand[y],true_set).sum()>0)
+
         true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
         unad_sd = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
         true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])).\
             dot(X[:, active_nonrand].T).dot(true_mean)
         unad_sd_nonrand = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
+
         coverage_sel = 0.
         coverage_rand = 0.
         coverage_nonrand = 0.
+        power_sel = 0.
+        power_rand = 0.
+        power_nonrand = 0.
 
         for k in range(nactive_nonrand):
             if (rel_LASSO[k]-(1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
                     and (rel_LASSO[k]+(1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
                 coverage_nonrand += 1
+            #print("non randomized intervals", rel_LASSO[k]-(1.65 * unad_sd_nonrand[k]),rel_LASSO[k]+(1.65 * unad_sd_nonrand[k]))
+            if active_bool_nonrand[k] == True and ((rel_LASSO[k]-(1.65 * unad_sd_nonrand[k])) > 0.
+                                                   or (rel_LASSO[k]+(1.65 * unad_sd_nonrand[k])) <0.):
+                power_nonrand += 1
 
         if nactive > 0:
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
@@ -196,8 +214,13 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             for j in range(nactive):
                 if (approx_MLE[j]-(1.65*approx_sd[j]))<= true_target[j] and (approx_MLE[j] + (1.65*approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
+                #print("randomized intervals", (approx_MLE[j]-(1.65*approx_sd[j])),(approx_MLE[j] + (1.65 * approx_sd[j])))
+                if active_bool[j]==True and ((approx_MLE[j]-(1.65*approx_sd[j]))> 0. or (approx_MLE[j] + (1.65*approx_sd[j])) < 0.):
+                    power_sel += 1
                 if (M_est.target_observed[j]-(1.65*unad_sd[j]))<= true_target[j] and (M_est.target_observed[j]+(1.65*unad_sd[j])) >= true_target[j]:
                     coverage_rand += 1
+                if active_bool[j]==True and ((M_est.target_observed[j]-(1.65*unad_sd[j]))>0. or (M_est.target_observed[j]+(1.65*unad_sd[j]))<0.):
+                    power_rand += 1
             break
 
     target_par = beta
@@ -229,7 +252,10 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
            false_positive_nonrandomized,\
            coverage_sel/float(nactive),\
            coverage_rand/float(nactive), \
-           coverage_nonrand/float(nactive_nonrand)
+           coverage_nonrand/float(nactive_nonrand), \
+           power_sel/float(s), \
+           power_rand/float(s), \
+           power_nonrand/float(s)
 
 if __name__ == "__main__":
 
@@ -248,10 +274,13 @@ if __name__ == "__main__":
     coverage_sel = 0.
     coverage_rand = 0.
     coverage_nonrand = 0.
+    power_sel = 0.
+    power_rand = 0.
+    power_nonrand = 0.
 
     for i in range(ndraw):
         np.random.seed(i)
-        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.40)
+        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.50)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -267,6 +296,9 @@ if __name__ == "__main__":
             coverage_sel += approx[11]
             coverage_rand += approx[12]
             coverage_nonrand += approx[13]
+            power_sel += approx[14]
+            power_rand += approx[15]
+            power_nonrand += approx[16]
 
         sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
         sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
@@ -284,6 +316,10 @@ if __name__ == "__main__":
         sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
         sys.stderr.write("randomized coverage" + str(coverage_rand / float(i + 1)) + "\n")
         sys.stderr.write("nonrandomized coverage" + str(coverage_nonrand / float(i + 1)) + "\n")
+
+        sys.stderr.write("selective power" + str(power_sel / float(i + 1)) + "\n")
+        sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
+        sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n")
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
 
