@@ -170,7 +170,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         true_set = np.asarray([u for u in range(p) if true_signals[u]])
         active_set = np.asarray([t for t in range(p) if active[t]])
-        active_set_nonrand = np.asarray([s for s in range(p) if active_nonrand[s]])
+        active_set_nonrand = np.asarray([q for q in range(p) if active_nonrand[q]])
         active_bool = np.zeros(nactive, np.bool)
         for x in range(nactive):
             active_bool[x] = (np.in1d(active_set[x],true_set).sum()>0)
@@ -214,7 +214,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             for j in range(nactive):
                 if (approx_MLE[j]-(1.65*approx_sd[j]))<= true_target[j] and (approx_MLE[j] + (1.65*approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
-                #print("randomized intervals", (approx_MLE[j]-(1.65*approx_sd[j])),(approx_MLE[j] + (1.65 * approx_sd[j])))
+                print("randomized intervals", (approx_MLE[j]-(1.65*approx_sd[j])),(approx_MLE[j] + (1.65 * approx_sd[j])))
                 if active_bool[j]==True and ((approx_MLE[j]-(1.65*approx_sd[j]))> 0. or (approx_MLE[j] + (1.65*approx_sd[j])) < 0.):
                     power_sel += 1
                 if (M_est.target_observed[j]-(1.65*unad_sd[j]))<= true_target[j] and (M_est.target_observed[j]+(1.65*unad_sd[j])) >= true_target[j]:
@@ -280,7 +280,7 @@ if __name__ == "__main__":
 
     for i in range(ndraw):
         np.random.seed(i)
-        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.50)
+        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.20)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
