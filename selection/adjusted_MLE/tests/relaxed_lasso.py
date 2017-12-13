@@ -117,7 +117,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         X /= (X.std(0)[None, :] * np.sqrt(n))
 
         X_val -= X_val.mean(0)[None, :]
-        X_val /= (X_val.std(0)[None, :] * np.sqrt(n))
+        X_val /= (X_val.std(0)[None, :] * np.sqrt(nval))
 
         if p > n:
             sigma_est = np.std(y) / 2.
@@ -262,7 +262,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
 if __name__ == "__main__":
 
-    ndraw = 100
+    ndraw = 150
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -282,8 +282,7 @@ if __name__ == "__main__":
     power_nonrand = 0.
 
     for i in range(ndraw):
-        np.random.seed(i)
-        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.05)
+        approx = inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.10)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
