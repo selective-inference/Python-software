@@ -103,7 +103,8 @@ def relative_risk(est, truth, Sigma):
 
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
-def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2, randomization_scale=np.sqrt(0.25)):
+def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
+                     randomization_scale=np.sqrt(0.25)):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
@@ -163,10 +164,10 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         print("number of variables selected by tuned LASSO", (rel_LASSO!=0).sum())
         true_signals = np.zeros(p, np.bool)
         true_signals[beta != 0] = 1
-        screened_randomized = np.logical_and(active, true_signals).sum() / float(s)
-        screened_nonrandomized = np.logical_and(active_nonrand, true_signals).sum() / float(s)
-        false_positive_randomized = np.logical_and(active, ~true_signals).sum()/float(nactive)
-        false_positive_nonrandomized = np.logical_and(active_nonrand, ~true_signals).sum()/float(nactive_nonrand)
+        screened_randomized = np.logical_and(active, true_signals).sum() /float(s)
+        screened_nonrandomized = np.logical_and(active_nonrand, true_signals).sum() /float(s)
+        false_positive_randomized = np.logical_and(active, ~true_signals).sum()/max(float(nactive), 1.)
+        false_positive_nonrandomized = np.logical_and(active_nonrand, ~true_signals).sum()/max(float(nactive_nonrand),1.)
 
         true_set = np.asarray([u for u in range(p) if true_signals[u]])
         active_set = np.asarray([t for t in range(p) if active[t]])
@@ -195,7 +196,6 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             if (rel_LASSO[k]-(1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
                     and (rel_LASSO[k]+(1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
                 coverage_nonrand += 1
-            #print("non randomized intervals", rel_LASSO[k]-(1.65 * unad_sd_nonrand[k]),rel_LASSO[k]+(1.65 * unad_sd_nonrand[k]))
             if active_bool_nonrand[k] == True and ((rel_LASSO[k]-(1.65 * unad_sd_nonrand[k])) > 0.
                                                    or (rel_LASSO[k]+(1.65 * unad_sd_nonrand[k])) <0.):
                 power_nonrand += 1
@@ -211,10 +211,13 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             mle_target_lin, mle_soln_lin, mle_offset = mle_transform
             approx_sd = np.sqrt(np.diag(var))
 
+            if nactive == 1:
+                approx_MLE = np.array([approx_MLE])
+                approx_sd = np.array([approx_sd])
+
             for j in range(nactive):
                 if (approx_MLE[j]-(1.65*approx_sd[j]))<= true_target[j] and (approx_MLE[j] + (1.65*approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
-                print("randomized intervals", (approx_MLE[j]-(1.65*approx_sd[j])),(approx_MLE[j] + (1.65 * approx_sd[j])))
                 if active_bool[j]==True and ((approx_MLE[j]-(1.65*approx_sd[j]))> 0. or (approx_MLE[j] + (1.65*approx_sd[j])) < 0.):
                     power_sel += 1
                 if (M_est.target_observed[j]-(1.65*unad_sd[j]))<= true_target[j] and (M_est.target_observed[j]+(1.65*unad_sd[j])) >= true_target[j]:
@@ -250,16 +253,16 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
            screened_nonrandomized,\
            false_positive_randomized, \
            false_positive_nonrandomized,\
-           coverage_sel/float(nactive),\
-           coverage_rand/float(nactive), \
-           coverage_nonrand/float(nactive_nonrand), \
+           coverage_sel/max(float(nactive),1.),\
+           coverage_rand/max(float(nactive),1.), \
+           coverage_nonrand/max(float(nactive_nonrand),1.), \
            power_sel/float(s), \
            power_rand/float(s), \
            power_nonrand/float(s)
 
 if __name__ == "__main__":
 
-    ndraw = 50
+    ndraw = 100
     bias = 0.
     risk_selMLE = 0.
     risk_relLASSO = 0.
@@ -280,7 +283,7 @@ if __name__ == "__main__":
 
     for i in range(ndraw):
         np.random.seed(i)
-        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.20)
+        approx = inference_approx(n=500, p=100, nval=100, rho=0.70, s=5, beta_type=2, snr=0.05)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
