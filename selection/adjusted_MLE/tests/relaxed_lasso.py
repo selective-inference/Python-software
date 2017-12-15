@@ -238,17 +238,22 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
     target_par = beta
 
     ind_est = np.zeros(p)
-    partial_ind_est = ind_est[active] = (mle_target_lin.dot(M_est.target_observed) +
-                                         mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset)/ np.sqrt(n)
+    ind_est[active] = (mle_target_lin.dot(M_est.target_observed) +
+                                         mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset)
+    partial_ind_est = ind_est[active]
+    ind_est /= np.sqrt(n)
 
     relaxed_Lasso = np.zeros(p)
-    partial_relaxed_Lasso = relaxed_Lasso[active] = M_est.target_observed / np.sqrt(n)
+    relaxed_Lasso[active] = M_est.target_observed / np.sqrt(n)
+    partial_relaxed_Lasso = M_est.target_observed
 
     Lasso_est = np.zeros(p)
-    partial_Lasso_est = Lasso_est[active] = M_est.observed_opt_state[:nactive] / np.sqrt(n)
+    Lasso_est[active] = M_est.observed_opt_state[:nactive] / np.sqrt(n)
+    partial_Lasso_est = M_est.observed_opt_state[:nactive]
 
     selective_MLE = np.zeros(p)
-    partial_selective_MLE = selective_MLE[active] = approx_MLE / np.sqrt(n)
+    selective_MLE[active] = approx_MLE / np.sqrt(n)
+    partial_selective_MLE = approx_MLE
 
     partial_Sigma = (Sigma[:, active])[active,:]
     partial_Sigma_nonrand = (Sigma[:, active_nonrand])[active_nonrand,:]
@@ -274,8 +279,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
            relative_risk(partial_relaxed_Lasso, true_target, partial_Sigma), \
            relative_risk(partial_ind_est, true_target, partial_Sigma),\
            relative_risk(partial_Lasso_est, true_target, partial_Sigma),\
-           relative_risk(rel_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand),\
-           relative_risk(est_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand),
+           relative_risk(np.sqrt(n)*rel_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand),\
+           relative_risk(np.sqrt(n)*est_LASSO[active_nonrand], true_target_nonrand, partial_Sigma_nonrand),
 
 
 if __name__ == "__main__":
@@ -306,7 +311,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.05)
+        approx = inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.42)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
