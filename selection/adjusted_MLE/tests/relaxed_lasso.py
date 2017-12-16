@@ -1,4 +1,4 @@
-from __future__ import print_function
+from __future__ import print_function, division
 from rpy2.robjects.packages import importr
 from rpy2 import robjects
 
@@ -36,10 +36,11 @@ def glmnet_sigma(X, y):
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
-    source('~/best-subset/bestsubset/R/sim.R')
+    library(bestsubset) # source('~/best-subset/bestsubset/R/sim.R')
+    sim_xy = bestsubset::sim.xy
     ''')
 
-    r_simulate = robjects.globalenv['sim.xy']
+    r_simulate = robjects.globalenv['sim_xy']
     sim = r_simulate(n, p, nval, rho, s, beta_type, snr)
     X = np.array(sim.rx2('x'))
     y = np.array(sim.rx2('y'))
@@ -53,7 +54,7 @@ def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
 
 def tuned_lasso(X, y, X_val,y_val):
     robjects.r('''
-        source('~/best-subset/bestsubset/R/lasso.R')
+        #source('~/best-subset/bestsubset/R/lasso.R')
         tuned_lasso_estimator = function(X,Y,X.val,Y.val){
         Y = as.matrix(Y)
         X = as.matrix(X)
@@ -104,7 +105,7 @@ def relative_risk(est, truth, Sigma):
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                     randomization_scale=np.sqrt(0.25)):
+                     randomization_scale=np.sqrt(0.1)):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
@@ -125,20 +126,22 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
 
+        y = y - y.mean()
+        y_val = y_val - y_val.mean()
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
 
 
         lam_seq = np.linspace(0.75, 2.75, num= 100)\
-                  *np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+                  * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
         err = np.zeros(100)
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         for k in range(100):
             lam = lam_seq[k]
             W = np.ones(p) * lam
             penalty = rr.group_lasso(np.arange(p),
                                      weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-            randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
             M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
                                     sigma=sigma_est)
 
@@ -146,10 +149,19 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             active = M_est._overall
             nactive = np.sum(active)
             Lasso_est = np.zeros(p)
-            Lasso_est[active] = M_est.observed_opt_state[:nactive]
+            
+            approx_MLE = solve_UMVU(M_est.target_transform,
+                                    M_est.opt_transform,
+                                    M_est.target_observed,
+                                    M_est.feasible_point,
+                                    M_est.target_cov,
+                                    M_est.randomizer_precision)[0]
+            Lasso_est[active] = approx_MLE
+            
             err[k] = np.mean((y_val-X_val.dot(Lasso_est))**2.)
 
         lam = lam_seq[np.argmin(err)]
+        print('lambda', lam)
         randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
@@ -242,23 +254,24 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
     selective_MLE = np.zeros(p)
     selective_MLE[active] = approx_MLE / np.sqrt(n)
 
-    return (selective_MLE - target_par).sum() / float(nactive), \
-           relative_risk(selective_MLE, target_par, Sigma), \
-           relative_risk(relaxed_Lasso, target_par, Sigma), \
-           relative_risk(ind_est, target_par, Sigma),\
-           relative_risk(Lasso_est, target_par, Sigma),\
-           relative_risk(rel_LASSO, target_par, Sigma),\
-           relative_risk(est_LASSO, target_par, Sigma), \
-           screened_randomized,\
-           screened_nonrandomized,\
-           false_positive_randomized, \
-           false_positive_nonrandomized,\
-           coverage_sel/max(float(nactive),1.),\
-           coverage_rand/max(float(nactive),1.), \
-           coverage_nonrand/max(float(nactive_nonrand),1.), \
-           power_sel/float(s), \
-           power_rand/float(s), \
-           power_nonrand/float(s)
+    if screened_randomized == 1.:
+        return (selective_MLE - target_par).sum() / float(nactive), \
+               relative_risk(selective_MLE, target_par, Sigma), \
+               relative_risk(relaxed_Lasso, target_par, Sigma), \
+               relative_risk(ind_est, target_par, Sigma),\
+               relative_risk(Lasso_est, target_par, Sigma),\
+               relative_risk(rel_LASSO, target_par, Sigma),\
+               relative_risk(est_LASSO, target_par, Sigma), \
+               screened_randomized,\
+               screened_nonrandomized,\
+               false_positive_randomized, \
+               false_positive_nonrandomized,\
+               coverage_sel/max(float(nactive),1.),\
+               coverage_rand/max(float(nactive),1.), \
+               coverage_nonrand/max(float(nactive_nonrand),1.), \
+               power_sel/float(s), \
+               power_rand/float(s), \
+               power_nonrand/float(s)
 
 if __name__ == "__main__":
 
@@ -281,8 +294,9 @@ if __name__ == "__main__":
     power_rand = 0.
     power_nonrand = 0.
 
+    count = 0
     for i in range(ndraw):
-        approx = inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.10)
+        approx = inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=.1)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -301,29 +315,30 @@ if __name__ == "__main__":
             power_sel += approx[14]
             power_rand += approx[15]
             power_nonrand += approx[16]
+            count += 1
 
-        sys.stderr.write("overall_bias" + str(bias / float(i + 1)) + "\n")
-        sys.stderr.write("overall_selrisk" + str(risk_selMLE / float(i + 1)) + "\n")
-        sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / float(i + 1)) + "\n")
-        sys.stderr.write("overall_indepestrisk" + str(risk_indest / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / float(i + 1)) + "\n")
-        sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n")
+            sys.stderr.write("overall_bias" + str(bias / count) + "\n")
+            sys.stderr.write("overall_selrisk" + str(risk_selMLE / count) + "\n")
+            sys.stderr.write("overall_relLASSOrisk" + str(risk_relLASSO / count) + "\n")
+            sys.stderr.write("overall_indepestrisk" + str(risk_indest / count) + "\n")
+            sys.stderr.write("overall_LASSOrisk" + str(risk_LASSO / count) + "\n")
+            sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / count) + "\n")
+            sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / count) + "\n")
 
-        sys.stderr.write("overall_LASSO_rand_spower" + str(spower_rand / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSO_norand_spower" + str(spower_nonrand / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSO_rand_falsepositives" + str(false_positive_randomized / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSO_norand_falsepositives" + str(false_positive_nonrandomized / float(i + 1)) + "\n")
+            sys.stderr.write("overall_LASSO_rand_spower" + str(spower_rand / count) + "\n")
+            sys.stderr.write("overall_LASSO_norand_spower" + str(spower_nonrand / count) + "\n")
+            sys.stderr.write("overall_LASSO_rand_falsepositives" + str(false_positive_randomized / count) + "\n")
+            sys.stderr.write("overall_LASSO_norand_falsepositives" + str(false_positive_nonrandomized / count) + "\n")
 
-        sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
-        sys.stderr.write("randomized coverage" + str(coverage_rand / float(i + 1)) + "\n")
-        sys.stderr.write("nonrandomized coverage" + str(coverage_nonrand / float(i + 1)) + "\n")
+            sys.stderr.write("selective coverage" + str(coverage_sel / count) + "\n")
+            sys.stderr.write("randomized coverage" + str(coverage_rand / count) + "\n")
+            sys.stderr.write("nonrandomized coverage" + str(coverage_nonrand / count) + "\n")
 
-        sys.stderr.write("selective power" + str(power_sel / float(i + 1)) + "\n")
-        sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
-        sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n")
+            sys.stderr.write("selective power" + str(power_sel / count) + "\n")
+            sys.stderr.write("randomized power" + str(power_rand / count) + "\n")
+            sys.stderr.write("nonrandomized power" + str(power_nonrand / count) + "\n")
 
-        sys.stderr.write("iteration completed" + str(i) + "\n")
+            sys.stderr.write("iteration completed, count" + str((i + 1, count)) + "\n")
 
 
 
