@@ -105,7 +105,7 @@ def relative_risk(est, truth, Sigma):
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                     randomization_scale=np.sqrt(0.1)):
+                     randomization_scale=np.sqrt(0.25)):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
@@ -254,7 +254,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
     selective_MLE = np.zeros(p)
     selective_MLE[active] = approx_MLE / np.sqrt(n)
 
-    if screened_randomized == 1.:
+    if True: # screened_randomized == 1.:
         return (selective_MLE - target_par).sum() / float(nactive), \
                relative_risk(selective_MLE, target_par, Sigma), \
                relative_risk(relaxed_Lasso, target_par, Sigma), \
@@ -296,7 +296,7 @@ if __name__ == "__main__":
 
     count = 0
     for i in range(ndraw):
-        approx = inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=.1)
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.2)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
