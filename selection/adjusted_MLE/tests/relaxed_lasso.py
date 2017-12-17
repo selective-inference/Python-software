@@ -120,6 +120,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         else:
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
+            print("sigma and sigma_est", sigma, sigma_est)
 
         if target == "debiased":
             M = np.zeros((p, p))
@@ -136,14 +137,14 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         lam_seq = np.linspace(0.75, 2.75, num=100) \
                   * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
         err = np.zeros(100)
-        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale*sigma_est)
         for k in range(100):
             lam = lam_seq[k]
             W = np.ones(p) * lam
             penalty = rr.group_lasso(np.arange(p),
                                      weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale,
+            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale*sigma_est,
                                     sigma=sigma_est)
 
             active = M_est._overall
@@ -163,13 +164,12 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         lam = lam_seq[np.argmin(err)]
         print('lambda', lam)
-        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale*sigma_est)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
-        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale,
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale*sigma_est,
                                 sigma=sigma_est)
-        M_est.solve_map()
         active = M_est._overall
         nactive = np.sum(active)
 
@@ -229,6 +229,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 power_nonrand += 1
 
         if nactive > 0:
+            M_est.solve_map()
             approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
                                                                        M_est.opt_transform,
                                                                        M_est.target_observed,
@@ -248,6 +249,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                     approx_MLE[j] + (1.65 * approx_sd[j])) >= \
                         true_target[j]:
                     coverage_sel += 1
+                #print("selective intervals",(approx_MLE[j] - (1.65 * approx_sd[j])), (approx_MLE[j] + (1.65 * approx_sd[j])))
                 if active_bool[j] == True and (
                                 (approx_MLE[j] - (1.65 * approx_sd[j])) > 0. or (
                             approx_MLE[j] + (1.65 * approx_sd[j])) < 0.):
@@ -255,6 +257,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 if (M_est.target_observed[j] - (1.65 * unad_sd[j])) <= true_target[j] and (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) >= true_target[j]:
                     coverage_rand += 1
+                #print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),
+                #      (M_est.target_observed[j] + (1.65 * unad_sd[j])))
                 if active_bool[j] == True and ((M_est.target_observed[j] - (1.65 * unad_sd[j])) > 0. or (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) < 0.):
                     power_rand += 1
@@ -338,7 +342,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.2)
+        approx = inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.1)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -376,18 +380,18 @@ if __name__ == "__main__":
         sys.stderr.write("overall_relLASSOrisk_norand" + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
         sys.stderr.write("overall_LASSOrisk_norand" + str(risk_LASSO_nonrand / float(i + 1)) + "\n"+"\n")
 
-        sys.stderr.write("overall_LASSO_rand_spower" + str(spower_rand / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSO_norand_spower" + str(spower_nonrand / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSO_rand_falsepositives" + str(false_positive_randomized / float(i + 1)) + "\n")
-        sys.stderr.write("overall_LASSO_norand_falsepositives" + str(false_positive_nonrandomized / float(i + 1)) + "\n"+"\n")
+        # sys.stderr.write("overall_LASSO_rand_spower" + str(spower_rand / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_LASSO_norand_spower" + str(spower_nonrand / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_LASSO_rand_falsepositives" + str(false_positive_randomized / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_LASSO_norand_falsepositives" + str(false_positive_nonrandomized / float(i + 1)) + "\n"+"\n")
 
         sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
         sys.stderr.write("randomized coverage" + str(coverage_rand / float(i + 1)) + "\n")
         sys.stderr.write("nonrandomized coverage" + str(coverage_nonrand / float(i + 1)) + "\n"+"\n")
 
-        sys.stderr.write("selective power" + str(power_sel / float(i + 1)) + "\n")
-        sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
-        sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n"+"\n")
+        # sys.stderr.write("selective power" + str(power_sel / float(i + 1)) + "\n")
+        # sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
+        # sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n"+"\n")
 
         # sys.stderr.write("overall_partial_selrisk" + str(partial_risk_selMLE / float(i + 1)) + "\n")
         # sys.stderr.write("overall_partial_relLASSOrisk" + str(partial_risk_relLASSO / float(i + 1)) + "\n")
