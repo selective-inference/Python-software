@@ -100,7 +100,7 @@ def relative_risk(est, truth, Sigma):
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                         randomization_scale=np.sqrt(0.10), target="partial"):
+                         randomization_scale=np.sqrt(0.25), target="partial"):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
@@ -195,8 +195,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             unad_sd =  np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
             true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])). \
                 dot(X[:, active_nonrand].T).dot(true_mean)
-            unad_sd_nonrand = np.sqrt(
-                np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
+            unad_sd_nonrand = np.sqrt(np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
         elif target == "full":
             X_full_inv = np.linalg.pinv(X)
             true_target = X_full_inv[active].dot(true_mean)
@@ -218,11 +217,11 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         power_nonrand = 0.
 
         for k in range(nactive_nonrand):
-            if (rel_LASSO[k] - (1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
-                    and (rel_LASSO[k] + (1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
+            if ((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
+                    and ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
                 coverage_nonrand += 1
-            if active_bool_nonrand[k] == True and ((rel_LASSO[k] - (1.65 * unad_sd_nonrand[k])) > 0.
-                                                   or (rel_LASSO[k] + (1.65 * unad_sd_nonrand[k])) < 0.):
+            if active_bool_nonrand[k] == True and (((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])) > 0.
+                                                   or ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) < 0.):
                 power_nonrand += 1
 
         if nactive > 0:
@@ -242,11 +241,10 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 approx_sd = np.array([approx_sd])
 
             for j in range(nactive):
-                if (approx_MLE[j] - (1.65 * approx_sd[j])) <= true_target[j] and (
-                    approx_MLE[j] + (1.65 * approx_sd[j])) >= \
-                        true_target[j]:
+                if (approx_MLE[j] - (1.65 * approx_sd[j])) <= true_target[j] and \
+                                (approx_MLE[j] + (1.65 * approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
-                #print("selective intervals",(approx_MLE[j] - (1.65 * approx_sd[j])), (approx_MLE[j] + (1.65 * approx_sd[j])))
+                print("selective intervals",(approx_MLE[j] - (1.65 * approx_sd[j])), (approx_MLE[j] + (1.65 * approx_sd[j])))
                 if active_bool[j] == True and (
                                 (approx_MLE[j] - (1.65 * approx_sd[j])) > 0. or (
                             approx_MLE[j] + (1.65 * approx_sd[j])) < 0.):
@@ -254,8 +252,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 if (M_est.target_observed[j] - (1.65 * unad_sd[j])) <= true_target[j] and (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) >= true_target[j]:
                     coverage_rand += 1
-                #print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),
-                #      (M_est.target_observed[j] + (1.65 * unad_sd[j])))
+                print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),
+                      (M_est.target_observed[j] + (1.65 * unad_sd[j])))
                 if active_bool[j] == True and ((M_est.target_observed[j] - (1.65 * unad_sd[j])) > 0. or (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) < 0.):
                     power_rand += 1

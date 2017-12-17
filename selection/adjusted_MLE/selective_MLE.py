@@ -39,7 +39,7 @@ class M_estimator_map(M_estimator):
 
         self.observed_score_state = self.observed_internal_state
 
-        target = 'debiased'
+        target = 'partial'
         if self.nactive>0:
             if target == "partial":
                 self.target_observed = self.observed_internal_state[:self.nactive]
