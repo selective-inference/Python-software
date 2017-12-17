@@ -11,6 +11,7 @@ import regreg.api as rr
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from scipy.stats import norm as ndist
+from selection.algorithms.debiased_lasso import _find_row_approx_inverse
 
 def glmnet_sigma(X, y):
     robjects.r('''
@@ -99,7 +100,7 @@ def relative_risk(est, truth, Sigma):
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                         randomization_scale=np.sqrt(0.25)):
+                         randomization_scale=np.sqrt(0.25), target="debiased"):
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
         true_mean = X.dot(beta)
@@ -119,6 +120,13 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
 
+        if target == "debiased":
+            M = np.zeros((p, p))
+            for var in range(p):
+                M[:, var] = _find_row_approx_inverse(X.T.dot(X), var, delta=0.5)
+        else:
+            M = np.identity(p)
+            
         y = y - y.mean()
         y_val = y_val - y_val.mean()
         loss = rr.glm.gaussian(X, y)
@@ -134,7 +142,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             penalty = rr.group_lasso(np.arange(p),
                                      weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
-            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
+            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale,
                                     sigma=sigma_est)
 
             active = M_est._overall
@@ -158,7 +166,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p),
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
-        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale,
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale,
                                 sigma=sigma_est)
         M_est.solve_map()
         active = M_est._overall
@@ -315,7 +323,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=500, p=100, nval=500, rho=0.35, s=10, beta_type=2, snr=0.2)
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.2)
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -366,12 +374,12 @@ if __name__ == "__main__":
         sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
         sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n"+"\n")
 
-        sys.stderr.write("overall_partial_selrisk" + str(partial_risk_selMLE / float(i + 1)) + "\n")
-        sys.stderr.write("overall_partial_relLASSOrisk" + str(partial_risk_relLASSO / float(i + 1)) + "\n")
-        sys.stderr.write("overall_partial_indepestrisk" + str(partial_risk_indest / float(i + 1)) + "\n")
-        sys.stderr.write("overall_partial_LASSOrisk" + str(partial_risk_LASSO / float(i + 1)) + "\n")
-        sys.stderr.write("overall_partial_relLASSOrisk_norand" + str(partial_risk_relLASSO_nonrand / float(i + 1)) + "\n")
-        sys.stderr.write("overall_partial_LASSOrisk_norand" + str(partial_risk_LASSO_nonrand / float(i + 1)) + "\n"+ "\n")
+        # sys.stderr.write("overall_partial_selrisk" + str(partial_risk_selMLE / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_partial_relLASSOrisk" + str(partial_risk_relLASSO / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_partial_indepestrisk" + str(partial_risk_indest / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_partial_LASSOrisk" + str(partial_risk_LASSO / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_partial_relLASSOrisk_norand" + str(partial_risk_relLASSO_nonrand / float(i + 1)) + "\n")
+        # sys.stderr.write("overall_partial_LASSOrisk_norand" + str(partial_risk_LASSO_nonrand / float(i + 1)) + "\n"+ "\n")
 
         sys.stderr.write("iteration completed" + str(i) + "\n")
 

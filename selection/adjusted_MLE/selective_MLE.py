@@ -4,7 +4,7 @@ from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization, randomization_scale = 1., sigma= 1.):
+    def __init__(self, loss, epsilon, penalty, randomization, M, randomization_scale = 1., sigma= 1.):
         M_estimator.__init__(self, loss, epsilon, penalty, randomization)
         self.randomizer = randomization
         self.randomization_scale = randomization_scale
@@ -39,7 +39,7 @@ class M_estimator_map(M_estimator):
 
         self.observed_score_state = self.observed_internal_state
 
-        target = 'full'
+        target = 'debiased'
         if self.nactive>0:
             if target == "partial":
                 self.target_observed = self.observed_internal_state[:self.nactive]
@@ -47,6 +47,14 @@ class M_estimator_map(M_estimator):
                 self.target_cov = self.score_cov[:self.nactive, :self.nactive]
             elif target == 'full':
                 X_full_inv = np.linalg.pinv(X)[self._overall]
+                self.target_observed = X_full_inv.dot(y)  # unique to OLS!!!!
+                self.target_cov = (sigma ** 2) * X_full_inv.dot(X_full_inv.T)
+                self.score_target_cov = np.zeros((p, self.nactive))
+                self.score_target_cov[:self.nactive] = np.linalg.pinv(X[:, self._overall]).dot(X_full_inv.T)
+                self.score_target_cov[self.nactive:] = X[:, ~self._overall].T.dot(projection_perp.dot(X_full_inv.T))
+                self.score_target_cov *= sigma ** 2
+            elif target == 'debiased':
+                X_full_inv = M.dot(X.T)[self._overall]
                 self.target_observed = X_full_inv.dot(y)  # unique to OLS!!!!
                 self.target_cov = (sigma ** 2) * X_full_inv.dot(X_full_inv.T)
                 self.score_target_cov = np.zeros((p, self.nactive))
