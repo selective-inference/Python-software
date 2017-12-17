@@ -100,7 +100,8 @@ def relative_risk(est, truth, Sigma):
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                         randomization_scale=np.sqrt(0.25), target="debiased"):
+                         randomization_scale=np.sqrt(0.25), target="partial"):
+
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
         true_mean = X.dot(beta)
@@ -126,7 +127,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 M[:, var] = _find_row_approx_inverse(X.T.dot(X), var, delta=0.5)
         else:
             M = np.identity(p)
-            
+
         y = y - y.mean()
         y_val = y_val - y_val.mean()
         loss = rr.glm.gaussian(X, y)
@@ -192,11 +193,25 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         for y in range(nactive_nonrand):
             active_bool_nonrand[y] = (np.in1d(active_set_nonrand[y], true_set).sum() > 0)
 
-        true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
-        unad_sd = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
-        true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])). \
-            dot(X[:, active_nonrand].T).dot(true_mean)
-        unad_sd_nonrand = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
+        if target == "partial":
+            true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
+            unad_sd = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
+            true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])). \
+                dot(X[:, active_nonrand].T).dot(true_mean)
+            unad_sd_nonrand = sigma_est * np.sqrt(
+                np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
+        elif target == "full":
+            X_full_inv = np.linalg.pinv(X)
+            true_target = X_full_inv[active].dot(true_mean)
+            unad_sd = sigma_est * np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
+            true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
+            unad_sd_nonrand = sigma_est * np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
+        elif target == "debiased":
+            X_full_inv = M.dot(X.T)
+            true_target = X_full_inv[active].dot(true_mean)
+            unad_sd = sigma_est * np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
+            true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
+            unad_sd_nonrand = sigma_est * np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
 
         coverage_sel = 0.
         coverage_rand = 0.
