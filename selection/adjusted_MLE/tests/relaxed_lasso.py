@@ -100,7 +100,7 @@ def relative_risk(est, truth, Sigma):
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
 def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2,
-                         randomization_scale=np.sqrt(0.25), target="partial"):
+                         randomization_scale=np.sqrt(0.10), target="partial"):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho, s=s, beta_type=beta_type, snr=snr)
@@ -130,26 +130,25 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             M = np.identity(p)
 
         y = y - y.mean()
+        y /= sigma_est
         y_val = y_val - y_val.mean()
+        y_val /= sigma_est
+        true_mean /= sigma_est
+
         loss = rr.glm.gaussian(X, y)
         epsilon = 1. / np.sqrt(n)
-
-        lam_seq = np.linspace(0.75, 2.75, num=100) \
-                  * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0)) * sigma_est
+        lam_seq = np.linspace(0.75, 2.75, num=100) * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
         err = np.zeros(100)
-        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale*sigma_est)
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         for k in range(100):
             lam = lam_seq[k]
             W = np.ones(p) * lam
-            penalty = rr.group_lasso(np.arange(p),
-                                     weights=dict(zip(np.arange(p), W)), lagrange=1.)
-
-            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale*sigma_est,
-                                    sigma=sigma_est)
+            penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
+            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale, sigma=1.)
 
             active = M_est._overall
             nactive = active.sum()
-            Lasso_est = np.zeros(p)
+            approx_MLE_est = np.zeros(p)
             if nactive>0:
                 M_est.solve_map()
                 approx_MLE = solve_UMVU(M_est.target_transform,
@@ -158,18 +157,16 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                                         M_est.feasible_point,
                                         M_est.target_cov,
                                         M_est.randomizer_precision)[0]
-                Lasso_est[active] = approx_MLE
+                approx_MLE_est[active] = approx_MLE
 
-            err[k] = np.mean((y_val - X_val.dot(Lasso_est)) ** 2.)
+            err[k] = np.mean((y_val - X_val.dot(approx_MLE_est)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
         print('lambda', lam)
-        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale*sigma_est)
+        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         W = np.ones(p) * lam
-        penalty = rr.group_lasso(np.arange(p),
-                                 weights=dict(zip(np.arange(p), W)), lagrange=1.)
-        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale*sigma_est,
-                                sigma=sigma_est)
+        penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale,sigma=1.)
         active = M_est._overall
         nactive = np.sum(active)
 
@@ -195,23 +192,23 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         if target == "partial":
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
-            unad_sd = sigma_est * np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
+            unad_sd =  np.sqrt(np.diag(np.linalg.inv(X[:, active].T.dot(X[:, active]))))
             true_target_nonrand = np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand])). \
                 dot(X[:, active_nonrand].T).dot(true_mean)
-            unad_sd_nonrand = sigma_est * np.sqrt(
+            unad_sd_nonrand = np.sqrt(
                 np.diag(np.linalg.inv(X[:, active_nonrand].T.dot(X[:, active_nonrand]))))
         elif target == "full":
             X_full_inv = np.linalg.pinv(X)
             true_target = X_full_inv[active].dot(true_mean)
-            unad_sd = sigma_est * np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
+            unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
             true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
-            unad_sd_nonrand = sigma_est * np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
+            unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
         elif target == "debiased":
             X_full_inv = M.dot(X.T)
             true_target = X_full_inv[active].dot(true_mean)
-            unad_sd = sigma_est * np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
+            unad_sd = np.sqrt(np.diag(X_full_inv[active].dot(X_full_inv[active].T)))
             true_target_nonrand = X_full_inv[active_nonrand].dot(true_mean)
-            unad_sd_nonrand = sigma_est * np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
+            unad_sd_nonrand = np.sqrt(np.diag(X_full_inv[active_nonrand].dot(X_full_inv[active_nonrand].T)))
 
         coverage_sel = 0.
         coverage_rand = 0.
@@ -271,18 +268,18 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
     ind_est[active] = (mle_target_lin.dot(M_est.target_observed) +
                                          mle_soln_lin.dot(M_est.observed_opt_state[:nactive]) + mle_offset)
     partial_ind_est = ind_est[active]
-    ind_est /= np.sqrt(n)
+    ind_est /= (np.sqrt(n)*(1./sigma_est))
 
     relaxed_Lasso = np.zeros(p)
-    relaxed_Lasso[active] = M_est.target_observed / np.sqrt(n)
+    relaxed_Lasso[active] = M_est.target_observed / (np.sqrt(n)*(1./sigma_est))
     partial_relaxed_Lasso = M_est.target_observed
 
     Lasso_est = np.zeros(p)
-    Lasso_est[active] = M_est.observed_opt_state[:nactive] / np.sqrt(n)
+    Lasso_est[active] = M_est.observed_opt_state[:nactive] / (np.sqrt(n)*(1./sigma_est))
     partial_Lasso_est = M_est.observed_opt_state[:nactive]
 
     selective_MLE = np.zeros(p)
-    selective_MLE[active] = approx_MLE / np.sqrt(n)
+    selective_MLE[active] = approx_MLE / (np.sqrt(n)*(1./sigma_est))
     partial_selective_MLE = approx_MLE
 
     partial_Sigma = (Sigma[:, active])[active,:]
