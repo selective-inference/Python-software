@@ -117,6 +117,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         if p > n:
             sigma_est = np.std(y) / 2.
+            #sigma_est = np.std(y)
             print("sigma and sigma_est", sigma, sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
@@ -165,10 +166,10 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         lam = lam_seq[np.argmin(err)]
         print('lambda', lam)
-        randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
-        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, target=target, randomization_scale=randomization_scale,sigma=1.)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, target=target,
+                                randomization_scale=randomization_scale,sigma=1.)
         active = M_est._overall
         nactive = np.sum(active)
 
@@ -189,8 +190,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         for x in range(nactive):
             active_bool[x] = (np.in1d(active_set[x], true_set).sum() > 0)
         active_bool_nonrand = np.zeros(nactive_nonrand, np.bool)
-        for y in range(nactive_nonrand):
-            active_bool_nonrand[y] = (np.in1d(active_set_nonrand[y], true_set).sum() > 0)
+        for w in range(nactive_nonrand):
+            active_bool_nonrand[w] = (np.in1d(active_set_nonrand[w], true_set).sum() > 0)
 
         if target == "partial":
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
@@ -222,8 +223,6 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             if ((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
                     and ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
                 coverage_nonrand += 1
-            #print("tuned nonrandomized intervals", ((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])),
-            #      ((np.sqrt(n) * rel_LASSO[k] / sigma_est) + (1.65 * unad_sd_nonrand[k])))
             if active_bool_nonrand[k] == True and (((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])) > 0.
                                                    or ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) < 0.):
                 power_nonrand += 1
@@ -240,6 +239,22 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             mle_target_lin, mle_soln_lin, mle_offset = mle_transform
             approx_sd = np.sqrt(np.diag(var))
 
+            if p>n:
+                B = 1000
+                boot_pivot = np.zeros((B, nactive))
+                resid = y - X[:, active].dot(M_est.target_observed)
+                for b in range(B):
+                    boot_indices = np.random.choice(n, n, replace=True)
+                    boot_vector = (X[boot_indices, :][:, active]).T.dot(resid[boot_indices])
+                    #target_boot = (np.linalg.inv(X.T.dot(X)).dot(X[boot_indices, :].T))[active].dot(resid[boot_indices]) + M_est.target_observed
+                    target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
+                    #print("check", target_boot, M_est.target_observed)
+                    boot_mle = mle_map(target_boot)
+                    #print("target_boot", boot_mle[0], approx_MLE)
+                    boot_pivot[b, :] = np.true_divide(boot_mle[0] - approx_MLE, np.sqrt(np.diag(boot_mle[1])))
+
+                boot_sd = boot_pivot.std(0)
+
             if nactive == 1:
                 approx_MLE = np.array([approx_MLE])
                 approx_sd = np.array([approx_sd])
@@ -249,6 +264,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                                 (approx_MLE[j] + (1.65 * approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
                 print("selective intervals",(approx_MLE[j] - (1.65 * approx_sd[j])), (approx_MLE[j] + (1.65 * approx_sd[j])))
+                if p>n:
+                    print("boot intervals", (approx_MLE[j] - (1.65 * boot_sd[j])), (approx_MLE[j] + (1.65 * boot_sd[j])))
                 if active_bool[j] == True and (
                                 (approx_MLE[j] - (1.65 * approx_sd[j])) > 0. or (
                             approx_MLE[j] + (1.65 * approx_sd[j])) < 0.):
@@ -256,7 +273,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 if (M_est.target_observed[j] - (1.65 * unad_sd[j])) <= true_target[j] and (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) >= true_target[j]:
                     coverage_rand += 1
-                #print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),(M_est.target_observed[j] + (1.65 * unad_sd[j])))
+                print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),(M_est.target_observed[j] + (1.65 * unad_sd[j])))
                 if active_bool[j] == True and ((M_est.target_observed[j] - (1.65 * unad_sd[j])) > 0. or (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) < 0.):
                     power_rand += 1
@@ -340,7 +357,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.10, target="full")
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
