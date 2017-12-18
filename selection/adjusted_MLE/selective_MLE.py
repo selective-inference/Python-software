@@ -4,7 +4,7 @@ from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization, M, randomization_scale = 1., sigma= 1.):
+    def __init__(self, loss, epsilon, penalty, randomization, M, target="partial", randomization_scale = 1., sigma= 1.):
         M_estimator.__init__(self, loss, epsilon, penalty, randomization)
         self.randomizer = randomization
         self.randomization_scale = randomization_scale
@@ -39,7 +39,6 @@ class M_estimator_map(M_estimator):
 
         self.observed_score_state = self.observed_internal_state
 
-        target = 'partial'
         if self.nactive>0:
             if target == "partial":
                 self.target_observed = self.observed_internal_state[:self.nactive]

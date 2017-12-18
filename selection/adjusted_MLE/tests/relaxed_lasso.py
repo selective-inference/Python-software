@@ -117,15 +117,17 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         if p > n:
             sigma_est = np.std(y) / 2.
+            print("sigma and sigma_est", sigma, sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
             sigma_est = np.linalg.norm(ols_fit.resid) / np.sqrt(n - p - 1.)
             print("sigma and sigma_est", sigma, sigma_est)
 
         if target == "debiased":
-            M = np.zeros((p, p))
-            for var in range(p):
-                M[:, var] = _find_row_approx_inverse(X.T.dot(X), var, delta=0.5)
+            # M = np.zeros((p, p))
+            # for var in range(p):
+            #     M[:, var] = _find_row_approx_inverse(X.T.dot(X), var, delta=0.5)
+            M = np.linalg.inv(Sigma)
         else:
             M = np.identity(p)
 
@@ -144,7 +146,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             lam = lam_seq[k]
             W = np.ones(p) * lam
             penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
-            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale, sigma=1.)
+            M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, target=target, randomization_scale=randomization_scale, sigma=1.)
 
             active = M_est._overall
             nactive = active.sum()
@@ -166,7 +168,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
         W = np.ones(p) * lam
         penalty = rr.group_lasso(np.arange(p), weights=dict(zip(np.arange(p), W)), lagrange=1.)
-        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, randomization_scale=randomization_scale,sigma=1.)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M, target=target, randomization_scale=randomization_scale,sigma=1.)
         active = M_est._overall
         nactive = np.sum(active)
 
@@ -220,6 +222,8 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             if ((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])) <= true_target_nonrand[k] \
                     and ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) >= true_target_nonrand[k]:
                 coverage_nonrand += 1
+            #print("tuned nonrandomized intervals", ((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])),
+            #      ((np.sqrt(n) * rel_LASSO[k] / sigma_est) + (1.65 * unad_sd_nonrand[k])))
             if active_bool_nonrand[k] == True and (((np.sqrt(n)*rel_LASSO[k]/sigma_est) - (1.65 * unad_sd_nonrand[k])) > 0.
                                                    or ((np.sqrt(n)*rel_LASSO[k]/sigma_est) + (1.65 * unad_sd_nonrand[k])) < 0.):
                 power_nonrand += 1
@@ -252,8 +256,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 if (M_est.target_observed[j] - (1.65 * unad_sd[j])) <= true_target[j] and (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) >= true_target[j]:
                     coverage_rand += 1
-                print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),
-                      (M_est.target_observed[j] + (1.65 * unad_sd[j])))
+                #print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),(M_est.target_observed[j] + (1.65 * unad_sd[j])))
                 if active_bool[j] == True and ((M_est.target_observed[j] - (1.65 * unad_sd[j])) > 0. or (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) < 0.):
                     power_rand += 1
@@ -337,7 +340,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.1)
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.10, target="full")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
@@ -384,9 +387,9 @@ if __name__ == "__main__":
         sys.stderr.write("randomized coverage" + str(coverage_rand / float(i + 1)) + "\n")
         sys.stderr.write("nonrandomized coverage" + str(coverage_nonrand / float(i + 1)) + "\n"+"\n")
 
-        # sys.stderr.write("selective power" + str(power_sel / float(i + 1)) + "\n")
-        # sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
-        # sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n"+"\n")
+        sys.stderr.write("selective power" + str(power_sel / float(i + 1)) + "\n")
+        sys.stderr.write("randomized power" + str(power_rand / float(i + 1)) + "\n")
+        sys.stderr.write("nonrandomized power" + str(power_nonrand / float(i + 1)) + "\n"+"\n")
 
         # sys.stderr.write("overall_partial_selrisk" + str(partial_risk_selMLE / float(i + 1)) + "\n")
         # sys.stderr.write("overall_partial_relLASSOrisk" + str(partial_risk_relLASSO / float(i + 1)) + "\n")
