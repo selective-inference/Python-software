@@ -153,8 +153,7 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
                 if (approx_MLE[j] - (1.65 * approx_sd[j])) <= true_target[j] and \
                                 (approx_MLE[j] + (1.65 * approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
-                print("selective intervals", (approx_MLE[j] - (1.65 * approx_sd[j])),
-                      (approx_MLE[j] + (1.65 * approx_sd[j])))
+                print("selective intervals", (approx_MLE[j] - (1.65 * approx_sd[j])),(approx_MLE[j] + (1.65 * approx_sd[j])))
 
             break
 
@@ -167,8 +166,10 @@ if __name__ == "__main__":
     coverage_sel = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=300, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=1000, p=2000, nval=500, rho=0.35, s=20, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
             coverage_sel += approx
 
         sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
+
+        sys.stderr.write("iteration completed" + str(i) + "\n")

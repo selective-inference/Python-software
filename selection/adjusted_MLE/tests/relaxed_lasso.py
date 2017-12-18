@@ -38,10 +38,12 @@ def glmnet_sigma(X, y):
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
-    source('~/best-subset/bestsubset/R/sim.R')
+    #source('~/best-subset/bestsubset/R/sim.R')
+    library(bestsubset)
+    sim_xy = bestsubset::sim.xy
     ''')
 
-    r_simulate = robjects.globalenv['sim.xy']
+    r_simulate = robjects.globalenv['sim_xy']
     sim = r_simulate(n, p, nval, rho, s, beta_type, snr)
     X = np.array(sim.rx2('x'))
     y = np.array(sim.rx2('y'))
@@ -55,7 +57,7 @@ def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
 
 def tuned_lasso(X, y, X_val,y_val):
     robjects.r('''
-        source('~/best-subset/bestsubset/R/lasso.R')
+        #source('~/best-subset/bestsubset/R/lasso.R')
         tuned_lasso_estimator = function(X,Y,X.val,Y.val){
         Y = as.matrix(Y)
         X = as.matrix(X)
