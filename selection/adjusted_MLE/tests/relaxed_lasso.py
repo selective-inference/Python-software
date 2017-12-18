@@ -117,7 +117,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         if p > n:
             sigma_est = np.std(y) / 2.
-            #sigma_est = np.std(y)
+            #sigma_est = sigma
             print("sigma and sigma_est", sigma, sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
@@ -357,7 +357,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]

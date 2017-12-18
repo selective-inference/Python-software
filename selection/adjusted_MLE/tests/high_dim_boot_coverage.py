@@ -66,8 +66,8 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
         X_val /= (X_val.std(0)[None, :] * np.sqrt(nval))
 
         if p > n:
-            #sigma_est = np.std(y) / 2.
-            sigma_est = np.std(y)
+            sigma_est = np.std(y) / 2.
+            #sigma_est = np.std(y)
             print("sigma and sigma_est", sigma, sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
@@ -130,7 +130,7 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
                                                                        M_est.randomizer_precision)
 
             approx_sd = np.sqrt(np.diag(var))
-            B = 1000
+            B = 2000
             boot_pivot = np.zeros((B, nactive))
             resid = y - X[:, active].dot(M_est.target_observed)
             for b in range(B):
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     coverage_sel = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=300, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
             coverage_sel += approx
 
