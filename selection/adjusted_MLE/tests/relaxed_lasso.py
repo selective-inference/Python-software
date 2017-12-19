@@ -38,8 +38,7 @@ def glmnet_sigma(X, y):
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
-    #source('~/best-subset/bestsubset/R/sim.R')
-    library(bestsubset)
+    library(bestsubset) #source('~/best-subset/bestsubset/R/sim.R')
     sim_xy = bestsubset::sim.xy
     ''')
 
@@ -359,7 +358,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="full")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
