@@ -38,10 +38,11 @@ def glmnet_sigma(X, y):
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
-    source('~/best-subset/bestsubset/R/sim.R')
+    library(bestsubset) #source('~/best-subset/bestsubset/R/sim.R')
+    sim_xy = bestsubset::sim.xy
     ''')
 
-    r_simulate = robjects.globalenv['sim.xy']
+    r_simulate = robjects.globalenv['sim_xy']
     sim = r_simulate(n, p, nval, rho, s, beta_type, snr)
     X = np.array(sim.rx2('x'))
     y = np.array(sim.rx2('y'))
@@ -137,6 +138,7 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
                 boot_indices = np.random.choice(n, n, replace=True)
                 boot_vector = (X[boot_indices, :][:, active]).T.dot(resid[boot_indices])
                 target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
+                #print("target_boot", target_boot)
                 boot_mle = mle_map(target_boot)
                 #print("target_boot", boot_mle[0], approx_MLE)
                 boot_pivot[b, :] = np.true_divide(boot_mle[0] - approx_MLE, np.sqrt(np.diag(boot_mle[1])))
@@ -162,11 +164,11 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
 
 if __name__ == "__main__":
 
-    ndraw = 100
+    ndraw = 50
     coverage_sel = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=1000, p=2000, nval=500, rho=0.35, s=20, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=2000, p=1000, nval=1000, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
             coverage_sel += approx
 
