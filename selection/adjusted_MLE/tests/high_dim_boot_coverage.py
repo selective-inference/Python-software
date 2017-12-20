@@ -11,7 +11,7 @@ import regreg.api as rr
 from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 from scipy.stats import norm as ndist
-from selection.algorithms.debiased_lasso import _find_row_approx_inverse
+import scipy.stats as stats
 
 def glmnet_sigma(X, y):
     robjects.r('''
@@ -68,7 +68,6 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
 
         if p > n:
             sigma_est = np.std(y) / 2.
-            #sigma_est = np.std(y)
             print("sigma and sigma_est", sigma, sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
@@ -131,23 +130,23 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
                                                                        M_est.randomizer_precision)
 
             approx_sd = np.sqrt(np.diag(var))
-            B = 2000
-            boot_pivot = np.zeros((B, nactive))
-            resid = y - X[:, active].dot(M_est.target_observed)
-            for b in range(B):
-                boot_indices = np.random.choice(n, n, replace=True)
-                boot_vector = (X[boot_indices, :][:, active]).T.dot(resid[boot_indices])
-                target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
-                #print("target_boot", target_boot)
-                boot_mle = mle_map(target_boot)
-                #print("target_boot", boot_mle[0], approx_MLE)
-                boot_pivot[b, :] = np.true_divide(boot_mle[0] - approx_MLE, np.sqrt(np.diag(boot_mle[1])))
+            # B = 2000
+            # boot_pivot = np.zeros((B, nactive))
+            # resid = y - X[:, active].dot(M_est.target_observed)
+            # for b in range(B):
+            #     boot_indices = np.random.choice(n, n, replace=True)
+            #     boot_vector = (X[boot_indices, :][:, active]).T.dot(resid[boot_indices])
+            #     target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
+            #     #print("target_boot", target_boot)
+            #     boot_mle = mle_map(target_boot)
+            #     #print("target_boot", boot_mle[0], approx_MLE)
+            #     boot_pivot[b, :] = np.true_divide(boot_mle[0] - approx_MLE, np.sqrt(np.diag(boot_mle[1])))
+            #
+            # approx_sd = boot_pivot.std(0)
 
-            approx_sd = boot_pivot.std(0)
-
-            if nactive == 1:
-                approx_MLE = np.array([approx_MLE])
-                approx_sd = np.array([approx_sd])
+            #if nactive == 1:
+            #    approx_MLE = np.array([approx_MLE])
+            #    approx_sd = np.array([approx_sd])
 
             coverage_sel = 0
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
@@ -160,18 +159,28 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
             break
 
     if True:
-        return coverage_sel/float(nactive)
+        return coverage_sel/float(nactive), np.true_divide(approx_MLE- true_target, approx_sd)
 
 if __name__ == "__main__":
 
-    ndraw = 50
+    import matplotlib.pyplot as plt
+    ndraw = 100
     coverage_sel = 0.
-
+    pivot_obs_info = []
     for i in range(ndraw):
-        approx = inference_approx(n=2000, p=1000, nval=1000, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
         if approx is not None:
-            coverage_sel += approx
+            coverage_sel += approx[0]
+            pivot = approx[1]
+            for j in range(pivot.shape[0]):
+                pivot_obs_info.append(pivot[j])
 
         sys.stderr.write("selective coverage" + str(coverage_sel / float(i + 1)) + "\n")
-
         sys.stderr.write("iteration completed" + str(i) + "\n")
+        sys.stderr.write("pivot" + str(pivot_obs_info) + "\n")
+
+    stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=plt)
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/high_10.png")
+
+
+
