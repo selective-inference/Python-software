@@ -144,9 +144,9 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
             #
             # approx_sd = boot_pivot.std(0)
 
-            #if nactive == 1:
-            #    approx_MLE = np.array([approx_MLE])
-            #    approx_sd = np.array([approx_sd])
+            if nactive == 1:
+                approx_MLE = np.array([approx_MLE])
+                approx_sd = np.array([approx_sd])
 
             coverage_sel = 0
             true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     coverage_sel = 0.
     pivot_obs_info = []
     for i in range(ndraw):
-        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="partial")
+        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.20, target="partial")
         if approx is not None:
             coverage_sel += approx[0]
             pivot = approx[1]
@@ -180,7 +180,7 @@ if __name__ == "__main__":
         sys.stderr.write("pivot" + str(pivot_obs_info) + "\n")
 
     stats.probplot(np.asarray(pivot_obs_info), dist="norm", plot=plt)
-    plt.savefig("/Users/snigdhapanigrahi/Desktop/high_10.png")
+    plt.savefig("/Users/snigdhapanigrahi/Desktop/high_10_0.20_.png")
 
 
 
