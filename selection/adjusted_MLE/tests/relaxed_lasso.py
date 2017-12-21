@@ -1,17 +1,20 @@
 from __future__ import print_function, division
+from scipy.stats import norm as ndist
+import numpy as np, sys
+
+import regreg.api as rr
+import statsmodels.api as sm
+
+# rpy2 imports
+
 from rpy2.robjects.packages import importr
 from rpy2 import robjects
-
 import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
 
-import statsmodels.api as sm
-import numpy as np, sys
-import regreg.api as rr
 from selection.randomized.api import randomization
-from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
-from scipy.stats import norm as ndist
-from selection.algorithms.debiased_lasso import _find_row_approx_inverse
+from selection.randomized.selective_MLE import selective_MLE as solve_selective_MLE
+from selection.adjusted_MLE.selective_MLE import M_estimator_map
 
 def glmnet_sigma(X, y):
     robjects.r('''
@@ -127,9 +130,6 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             print("sigma and sigma_est", sigma, sigma_est)
 
         if target == "debiased":
-            # M = np.zeros((p, p))
-            # for var in range(p):
-            #     M[:, var] = _find_row_approx_inverse(X.T.dot(X), var, delta=0.5)
             M = np.linalg.inv(Sigma)
         else:
             M = np.identity(p)
@@ -157,12 +157,12 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             approx_MLE_est = np.zeros(p)
             if nactive>0:
                 M_est.solve_map()
-                approx_MLE = solve_UMVU(M_est.target_transform,
-                                        M_est.opt_transform,
-                                        M_est.target_observed,
-                                        M_est.feasible_point,
-                                        M_est.target_cov,
-                                        M_est.randomizer_precision)[0]
+                approx_MLE = solve_selective_MLE(M_est.target_observed,
+                                                 M_est.target_cov,
+                                                 M_est.target_transform,
+                                                 M_est.opt_transform,
+                                                 M_est.feasible_point,
+                                                 M_est.randomizer_precision)[0]
                 approx_MLE_est[active] = approx_MLE
 
             err[k] = np.mean((y_val - X_val.dot(approx_MLE_est)) ** 2.)
@@ -233,12 +233,12 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
 
         if nactive > 0:
             M_est.solve_map()
-            approx_MLE, var, mle_map, _, _, mle_transform = solve_UMVU(M_est.target_transform,
-                                                                       M_est.opt_transform,
-                                                                       M_est.target_observed,
-                                                                       M_est.feasible_point,
-                                                                       M_est.target_cov,
-                                                                       M_est.randomizer_precision)
+            approx_MLE, var, mle_map, _, _, mle_transform = solve_selective_MLE(M_est.target_observed,
+                                                                                M_est.target_cov,
+                                                                                M_est.target_transform,
+                                                                                M_est.opt_transform,
+                                                                                M_est.feasible_point,
+                                                                                M_est.randomizer_precision)
 
             mle_target_lin, mle_soln_lin, mle_offset = mle_transform
             approx_sd = np.sqrt(np.diag(var))
