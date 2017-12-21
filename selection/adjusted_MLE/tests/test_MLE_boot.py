@@ -111,7 +111,7 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
                                  weights=dict(zip(np.arange(p), W)), lagrange=1.)
 
         randomizer = randomization.isotropic_gaussian((p,), scale=randomization_scale)
-        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, randomization_scale=randomization_scale, sigma=sigma_est)
+        M_est = M_estimator_map(loss, epsilon, penalty, randomizer, M= np.identity(p), target="partial", randomization_scale=randomization_scale, sigma=1.)
 
         M_est.solve_map()
         active = M_est._overall
@@ -137,6 +137,7 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
                 boot_vector = (X[boot_indices, :][:, active]).T.dot(resid[boot_indices])
                 target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
                 boot_mle = mle_map(target_boot)
+                #print("boot mle", boot_mle[0], approx_MLE)
                 boot_pivot[b, :] = np.true_divide(boot_mle[0]- approx_MLE, np.sqrt(np.diag(boot_mle[1])))
                 #sys.stderr.write("bootstrap sample" + str(b) + "\n")
 
@@ -144,6 +145,7 @@ def boot_pivot_approx_var(n=100, p=50, s=5, signal=5., B=1000, lam_frac=1., rand
             for j in range(nactive):
                 if (approx_MLE[j] - (1.65 * boot_std[j])) <= true_target[j] and true_target[j] <= (approx_MLE[j] + (1.65 * boot_std[j])):
                     coverage[j] += 1
+                print("intervals", (approx_MLE[j] - (1.65 * boot_std[j])), (approx_MLE[j] + (1.65 * boot_std[j])))
             break
 
     return boot_pivot.reshape((B*nactive,)), boot_pivot.mean(0).sum()/nactive, boot_pivot.std(0), \
@@ -192,7 +194,7 @@ if __name__ == "__main__":
     coverage = 0.
 
     for i in range(ndraw):
-        approx = boot_pivot_approx_var(n=500, p=100, s=5, signal=3., B=1200)
+        approx = boot_pivot_approx_var(n=100, p=1000, s=5, signal=1.42, B=500)
         if approx is not None:
             pivot_boot = approx[3]
             bias += approx[4]

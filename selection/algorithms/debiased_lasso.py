@@ -4,7 +4,7 @@ from regreg.api import (quadratic_loss,
                         l1norm,
                         simple_problem)
 
-from .debiased_lasso_utils import solve_wide_
+#from .debiased_lasso_utils import solve_wide_
 from ..constraints.affine import constraints
 
 def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1.e-6, 'max_its':500}):

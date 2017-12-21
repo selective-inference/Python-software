@@ -4,7 +4,7 @@ from selection.randomized.M_estimator import M_estimator
 
 class M_estimator_map(M_estimator):
 
-    def __init__(self, loss, epsilon, penalty, randomization, randomization_scale = 1., sigma= 1.):
+    def __init__(self, loss, epsilon, penalty, randomization, M, target="partial", randomization_scale = 1., sigma= 1.):
         M_estimator.__init__(self, loss, epsilon, penalty, randomization)
         self.randomizer = randomization
         self.randomization_scale = randomization_scale
@@ -39,29 +39,35 @@ class M_estimator_map(M_estimator):
 
         self.observed_score_state = self.observed_internal_state
 
-        target = 'full'
-        if target == "partial":
-            self.target_observed = self.observed_internal_state[:self.nactive]
-            self.score_target_cov = self.score_cov[:, :self.nactive]
-            self.target_cov = self.score_cov[:self.nactive, :self.nactive]
-        elif target == 'full':
-            X_full_inv = np.linalg.pinv(X)[self._overall]
-            self.target_observed = X_full_inv.dot(y)       # unique to OLS!!!!
-            self.target_cov = (sigma**2) * X_full_inv.dot(X_full_inv.T)
-            self.score_target_cov = np.zeros((p, self.nactive))
-            self.score_target_cov[:self.nactive] = np.linalg.pinv(X[:,self._overall]).dot(X_full_inv.T)
-            self.score_target_cov[self.nactive:] = X[:, ~self._overall].T.dot(projection_perp.dot(X_full_inv.T))
-            self.score_target_cov *= sigma**2
+        if self.nactive>0:
+            if target == "partial":
+                self.target_observed = self.observed_internal_state[:self.nactive]
+                self.score_target_cov = self.score_cov[:, :self.nactive]
+                self.target_cov = self.score_cov[:self.nactive, :self.nactive]
+            elif target == 'full':
+                X_full_inv = np.linalg.pinv(X)[self._overall]
+                self.target_observed = X_full_inv.dot(y)  # unique to OLS!!!!
+                self.target_cov = (sigma ** 2) * X_full_inv.dot(X_full_inv.T)
+                self.score_target_cov = np.zeros((p, self.nactive))
+                self.score_target_cov[:self.nactive] = np.linalg.pinv(X[:, self._overall]).dot(X_full_inv.T)
+                self.score_target_cov[self.nactive:] = X[:, ~self._overall].T.dot(projection_perp.dot(X_full_inv.T))
+                self.score_target_cov *= sigma ** 2
+            elif target == 'debiased':
+                X_full_inv = M.dot(X.T)[self._overall]
+                self.target_observed = X_full_inv.dot(y)  # unique to OLS!!!!
+                self.target_cov = (sigma ** 2) * X_full_inv.dot(X_full_inv.T)
+                self.score_target_cov = np.zeros((p, self.nactive))
+                self.score_target_cov[:self.nactive] = np.linalg.pinv(X[:, self._overall]).dot(X_full_inv.T)
+                self.score_target_cov[self.nactive:] = X[:, ~self._overall].T.dot(projection_perp.dot(X_full_inv.T))
+                self.score_target_cov *= sigma ** 2
 
     def solve_map(self):
-        #self.feasible_point = np.abs(self.initial_soln[self._overall])
         self.feasible_point = np.ones(self._overall.sum())
         self.A = np.dot(self._score_linear_term, self.score_target_cov).dot(np.linalg.inv(self.target_cov))
         self.data_offset = self._score_linear_term.dot(self.observed_score_state)- self.A.dot(self.target_observed)
         self.target_transform = (self.A, self.data_offset)
 
     def solve_map_univariate_target(self, j):
-        #self.feasible_point = np.abs(self.initial_soln[self._overall])[j]
         self.feasible_point = np.ones(self._overall.sum())
         self.A = np.dot(self._score_linear_term, self.score_target_cov[:, j]) / self.target_cov[j, j]
         self.data_offset = self._score_linear_term.dot(self.observed_score_state) - self.A * self.target_observed[j]
@@ -219,6 +225,7 @@ def solve_barrier_nonneg(conjugate_arg,
 
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
     return current, current_value, hess
+
 
 
 
