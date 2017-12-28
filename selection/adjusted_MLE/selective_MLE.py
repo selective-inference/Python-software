@@ -151,7 +151,7 @@ def solve_UMVU(target_transform,
                                           var_precision,
                                           feasible_point=None,
                                           step=1,
-                                          nstep=250)
+                                          nstep=2000)
 
         hessian = target_precision.dot(inv_precision_target +
                                        cross_covariance.dot(hess).dot(cross_covariance.T)).dot(target_precision)
@@ -170,7 +170,7 @@ def solve_barrier_nonneg(conjugate_arg,
                          precision,
                          feasible_point=None,
                          step=1,
-                         nstep=150,
+                         nstep=2000,
                          tol=1.e-8):
 
     scaling = np.sqrt(np.diag(precision))
