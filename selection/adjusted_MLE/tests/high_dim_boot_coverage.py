@@ -199,7 +199,7 @@ if __name__ == "__main__":
     coverage_sel0 = 0.
     pivot_obs_info = []
     for i in range(ndraw):
-        approx = inference_approx(n=200, p=1000, nval=200, rho=0.35, s=10, beta_type=2, snr=0.10, target="full")
+        approx = inference_approx(n=200, p=1000, nval=200, rho=0.35, s=10, beta_type=1, snr=0.20, target="full")
         if approx is not None:
             coverage_sel += approx[0]
             coverage_sel0 += approx[1]
