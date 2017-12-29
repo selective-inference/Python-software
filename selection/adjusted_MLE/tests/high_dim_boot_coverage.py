@@ -1,5 +1,4 @@
 from __future__ import print_function
-from rpy2.robjects.packages import importr
 from rpy2 import robjects
 
 import rpy2.robjects.numpy2ri
@@ -12,32 +11,9 @@ from selection.randomized.api import randomization
 from selection.adjusted_MLE.selective_MLE import M_estimator_map, solve_UMVU
 import scipy.stats as stats
 
-def glmnet_sigma(X, y):
-    robjects.r('''
-                glmnet_cv = function(X,y){
-                y = as.matrix(y)
-                X = as.matrix(X)
-                n = nrow(X)
-                out = cv.glmnet(X, y, standardize=FALSE, intercept=FALSE)
-                lam_1se = out$lambda.1se
-                lam_min = out$lambda.min
-                return(list(lam_min = n * as.numeric(lam_min), lam_1se = n* as.numeric(lam_1se)))
-                }''')
-
-    lambda_cv_R = robjects.globalenv['glmnet_cv']
-    n, p = X.shape
-    r_X = robjects.r.matrix(X, nrow=n, ncol=p)
-    r_y = robjects.r.matrix(y, nrow=n, ncol=1)
-
-    lam = lambda_cv_R(r_X, r_y)
-    lam_min = np.array(lam.rx2('lam_min'))
-    lam_1se = np.array(lam.rx2('lam_1se'))
-    return lam_min, lam_1se
-
-
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
-    library(bestsubset) #source('~/best-subset/bestsubset/R/sim.R')
+    library(bestsubset)
     sim_xy = bestsubset::sim.xy
     ''')
 
@@ -135,15 +111,17 @@ def inference_approx(n=100, p=1000, nval=100, rho=0.35, s=5, beta_type=2, snr=0.
                 approx_sd = np.array([approx_sd])
 
             coverage_sel = 0.
-            #true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
-            true_target = np.linalg.pinv(X)[active].dot(true_mean)
+            if target == "full":
+                true_target = np.linalg.pinv(X)[active].dot(true_mean)
+            if target == "partial":
+                true_target = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(X[:, active].T).dot(true_mean)
             print("true target", true_target)
 
             for j in range(nactive):
                 if (approx_MLE[j] - (1.65 * approx_sd[j])) <= true_target[j] and (approx_MLE[j] + (1.65 * approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
 
-                print("selective intervals wo bootstrap", sigma_est*(approx_MLE[j] - (1.65 * approx_sd[j])),
+                print("selective intervals", sigma_est*(approx_MLE[j] - (1.65 * approx_sd[j])),
                       sigma_est *(approx_MLE[j] + (1.65 * approx_sd[j])))
 
             break
@@ -158,7 +136,7 @@ if __name__ == "__main__":
     coverage_sel = 0.
     pivot_obs_info = []
     for i in range(ndraw):
-        approx = inference_approx(n=500, p=4000, nval=500, rho=0.35, s=10, beta_type=1, snr=0.20, target="full")
+        approx = inference_approx(n=500, p=2500, nval=500, rho=0.35, s=20, beta_type=1, snr=0.10, target="full")
         if approx is not None:
             coverage_sel += approx[0]
             pivot = approx[1]
