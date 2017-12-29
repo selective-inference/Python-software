@@ -117,8 +117,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         X_val /= (X_val.std(0)[None, :] * np.sqrt(nval))
 
         if p > n:
-            sigma_est = np.std(y) / 2.
-            #sigma_est = sigma
+            sigma_est = np.std(y)
             print("sigma and sigma_est", sigma, sigma_est)
         else:
             ols_fit = sm.OLS(y, X).fit()
@@ -216,6 +215,7 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
         coverage_sel = 0.
         coverage_rand = 0.
         coverage_nonrand = 0.
+
         power_sel = 0.
         power_rand = 0.
         power_nonrand = 0.
@@ -240,22 +240,6 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
             mle_target_lin, mle_soln_lin, mle_offset = mle_transform
             approx_sd = np.sqrt(np.diag(var))
 
-            if p>n:
-                B = 1000
-                boot_pivot = np.zeros((B, nactive))
-                resid = y - X[:, active].dot(M_est.target_observed)
-                for b in range(B):
-                    boot_indices = np.random.choice(n, n, replace=True)
-                    boot_vector = (X[boot_indices, :][:, active]).T.dot(resid[boot_indices])
-                    #target_boot = (np.linalg.inv(X.T.dot(X)).dot(X[boot_indices, :].T))[active].dot(resid[boot_indices]) + M_est.target_observed
-                    target_boot = np.linalg.inv(X[:, active].T.dot(X[:, active])).dot(boot_vector) + M_est.target_observed
-                    #print("check", target_boot, M_est.target_observed)
-                    boot_mle = mle_map(target_boot)
-                    #print("target_boot", boot_mle[0], approx_MLE)
-                    boot_pivot[b, :] = np.true_divide(boot_mle[0] - approx_MLE, np.sqrt(np.diag(boot_mle[1])))
-
-                boot_sd = boot_pivot.std(0)
-
             if nactive == 1:
                 approx_MLE = np.array([approx_MLE])
                 approx_sd = np.array([approx_sd])
@@ -264,17 +248,20 @@ def inference_approx(n=500, p=100, nval=100, rho=0.35, s=5, beta_type=2, snr=0.2
                 if (approx_MLE[j] - (1.65 * approx_sd[j])) <= true_target[j] and \
                                 (approx_MLE[j] + (1.65 * approx_sd[j])) >= true_target[j]:
                     coverage_sel += 1
-                print("selective intervals",(approx_MLE[j] - (1.65 * approx_sd[j])), (approx_MLE[j] + (1.65 * approx_sd[j])))
-                if p>n:
-                    print("boot intervals", (approx_MLE[j] - (1.65 * boot_sd[j])), (approx_MLE[j] + (1.65 * boot_sd[j])))
+                print("selective intervals",sigma_est* (approx_MLE[j] - (1.65 * approx_sd[j])),
+                      sigma_est* (approx_MLE[j] + (1.65 * approx_sd[j])))
+
                 if active_bool[j] == True and (
                                 (approx_MLE[j] - (1.65 * approx_sd[j])) > 0. or (
                             approx_MLE[j] + (1.65 * approx_sd[j])) < 0.):
                     power_sel += 1
+
                 if (M_est.target_observed[j] - (1.65 * unad_sd[j])) <= true_target[j] and (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) >= true_target[j]:
                     coverage_rand += 1
-                print("randomized intervals", (M_est.target_observed[j] - (1.65 * unad_sd[j])),(M_est.target_observed[j] + (1.65 * unad_sd[j])))
+                print("randomized intervals", sigma_est* (M_est.target_observed[j] - (1.65 * unad_sd[j])),
+                      sigma_est* (M_est.target_observed[j] + (1.65 * unad_sd[j])))
+
                 if active_bool[j] == True and ((M_est.target_observed[j] - (1.65 * unad_sd[j])) > 0. or (
                             M_est.target_observed[j] + (1.65 * unad_sd[j])) < 0.):
                     power_rand += 1
@@ -358,7 +345,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=100, p=1000, nval=100, rho=0.35, s=10, beta_type=2, snr=0.10, target="full")
+        approx = inference_approx(n=200, p=1000, nval=200, rho=0.35, s=10, beta_type=2, snr=0.10, target="full")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
