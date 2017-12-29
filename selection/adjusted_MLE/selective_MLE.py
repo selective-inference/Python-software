@@ -79,18 +79,13 @@ def solve_UMVU(target_transform,
                target_observed,
                feasible_point,
                target_cov,
-               randomizer_precision,
-               step=1,
-               nstep=30,
-               tol=1.e-8):
+               randomizer_precision):
 
     A, data_offset = target_transform # data_offset = N
     B, opt_offset = opt_transform     # opt_offset = u
 
     nopt = B.shape[1]
     ntarget = A.shape[1]
-
-    #assert ntarget == 1
 
     # setup joint implied covariance matrix
 
@@ -110,8 +105,6 @@ def solve_UMVU(target_transform,
     L = implied_cross.dot(np.linalg.inv(implied_opt))
     M_1 = np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(target_precision)
     M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
-
-    #print("check matrices", M_1, M_2, L, data_offset, opt_offset)
 
     conditioned_value = data_offset + opt_offset
 
@@ -141,7 +134,10 @@ def solve_UMVU(target_transform,
 
         soln, value, _ = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
                                               conditional_precision,
-                                              feasible_point=feasible_point)
+                                              feasible_point=feasible_point,
+                                              step=1,
+                                              nstep=2000,
+                                              tol=1.e-8)
 
         selective_MLE = mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset
 
@@ -170,7 +166,7 @@ def solve_barrier_nonneg(conjugate_arg,
                          precision,
                          feasible_point=None,
                          step=1,
-                         nstep=2000,
+                         nstep=1000,
                          tol=1.e-8):
 
     scaling = np.sqrt(np.diag(precision))

@@ -345,7 +345,7 @@ if __name__ == "__main__":
     partial_risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        approx = inference_approx(n=200, p=1000, nval=200, rho=0.35, s=10, beta_type=2, snr=0.10, target="full")
+        approx = inference_approx(n=200, p=2000, nval=200, rho=0.35, s=10, beta_type=2, snr=0.05, target="full")
         if approx is not None:
             bias += approx[0]
             risk_selMLE += approx[1]
