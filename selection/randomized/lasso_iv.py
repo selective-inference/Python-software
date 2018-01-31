@@ -3,6 +3,7 @@ Classes encapsulating some common workflows in randomized setting
 """
 
 from copy import copy
+import functools
 
 import numpy as np
 import regreg.api as rr
@@ -16,7 +17,7 @@ import regreg.api as rr
 #                   pairs_bootstrap_glm)
 
 from .randomization import randomization
-from .query import multiple_queries
+from .query import multiple_queries, optimization_sampler
 from .M_estimator import restricted_Mest
 
 class lasso_iv(object):
@@ -76,17 +77,17 @@ class lasso_iv(object):
         # form the projected design and response
 
         P_Z = Z.dot(np.linalg.pinv(Z))
-        X = np.hstack([Z, np.atleast_1d(D)])
+        X = np.hstack([Z, D.reshape((-1,1))])
         P_ZX = P_Z.dot(X)
         P_ZY = P_Z.dot(Y)
 
+        self.Z = Z
         self.P_ZX, self.P_ZY = P_ZX, P_ZY
         self.loglike = rr.glm.gaussian(P_ZX, P_ZY)
         self.nfeature = p = self.loglike.shape[0]
 
-        feature_weights
         if np.asarray(feature_weights).shape == ():
-            feature_weights = np.ones(loglike.shape[0] - 1) * feature_weights
+            feature_weights = np.ones(self.loglike.shape[0] - 1) * feature_weights
         self.feature_weights = np.hstack([np.asarray(feature_weights), 0])
 
         if randomizer == 'laplace':
@@ -98,12 +99,10 @@ class lasso_iv(object):
 
         self.ridge_term = ridge_term
         self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
+        self.loss = self.loglike
 
 
-    def fit(self, 
-            solve_args={'tol':1.e-12, 'min_its':50}, 
-            views=[], 
-            nboot=1000):
+    def fit(self, solve_args={'tol':1.e-12, 'min_its':50}):
         """
         Fit the randomized lasso using `regreg`.
 
@@ -131,7 +130,7 @@ class lasso_iv(object):
         # Randomization and quadratic term, e/2*\|x|_2^2, term setup (x = parameters penalized)
         random_linear_term = self.randomizer.sample()
         # rr.identity_quadratic essentially amounts to epsilon/2 * \|x - 0\|^2 + <-random_linear_term, x> + 0
-        random_loss = rr.identity_quadratic(epsilon, 0, -random_linear_term, 0)
+        random_loss = rr.identity_quadratic(self.ridge_term, 0, -random_linear_term, 0)
         self.loss.quadratic = random_loss
 
         # Optimization problem   
@@ -146,14 +145,15 @@ class lasso_iv(object):
         # for sampler
 
         self.inactive_weighted_sup = rr.weighted_supnorm(self.penalty.weights[self.inactive_set], bound=1.)
-        self.active_slice = self.active_set
+        self.active_slice = self.active_set.copy()
         self.active_slice[-1] = 0 # this is beta -- no constraint on sign
         self.active_signs = self.signs[self.active_set][:-1]
         self.subgrad_slice = self.inactive_set
 
         self.observed_opt_state = np.zeros_like(self.soln)
         self.observed_opt_state[self.active_set] = self.soln[self.active_set]
-        self.observed_opt_state[self.inactive_set] = -self.loss.smooth_objective(self.soln)[self.inactive_set]
+        self.observed_opt_state[self.inactive_set] = -(self.loss.smooth_objective(self.soln,'grad') +
+                                                       self.loss.quadratic.objective(self.soln,'grad'))[self.inactive_set]
 
         return self.signs
 
@@ -180,32 +180,37 @@ class lasso_iv(object):
             H = (self.P_ZX.T.dot(self.P_ZX) + np.identity(self.P_ZX.shape[1]) * self.ridge_term)[:,self.active_set]
             S = self.P_ZX.T.dot(self.P_ZY)
 
-            opt_linear = np.zeros(H.shape)
+            #opt_linear = np.zeros(H.shape)
+            opt_linear = np.zeros((H.shape[0], H.shape[0]))
             opt_linear[:, self.active_set] = H
             opt_linear[:, self.inactive_set][self.inactive_set] = np.identity(self.inactive_set.sum())
 
             opt_offset = np.zeros(opt_linear.shape[0])
             opt_offset[self.active_set] = self.feature_weights[self.active_set] * self.signs[self.active_set]
 
-            def grad_log_density(rand_gradient,
-                                 opt_linear,
+            opt_transform = opt_linear, opt_offset
+
+            def grad_log_density(opt_transform,
+                                 rand_gradient,
                                  S,
                                  opt_state):
                 opt_linear, opt_offset = opt_transform
-                full_state = opt_linear.dot(opt_state) - S
+                opt_state = np.atleast_2d(opt_state)
+                full_state = np.squeeze(opt_linear.dot(opt_state.T) + (opt_offset)[:, None]).T - S
                 deriv = opt_linear.T.dot(rand_gradient(full_state).T)
                 return deriv
                 
-            grad_log_density = functools.partial(grad_log_density, opt_transform, S, self.randomization.gradient)
+            grad_log_density = functools.partial(grad_log_density, opt_transform, self.randomizer.gradient)
 
-            def log_density(rand_log_density,
-                            opt_linear,
+            def log_density(opt_transform,
+                            rand_log_density,
                             S,
                             opt_state):
-                full_state = opt_linear.dot(opt_state) - S
+                opt_state = np.atleast_2d(opt_state)
+                full_state = np.squeeze(opt_linear.dot(opt_state.T) + (opt_offset)[:, None]).T - S
                 return rand_log_density(full_state)
 
-            log_density = functools.partial(log_density, opt_linear, S, self.randomization.gradient)
+            log_density = functools.partial(log_density, opt_transform, self.randomizer.log_density)
 
             self._sampler = optimization_sampler(self.observed_opt_state,
                                                  S,
@@ -220,6 +225,7 @@ class lasso_iv(object):
 
     def summary(self,
                 parameter=None,
+                Sigma=1.,
                 level=0.9,
                 ndraw=10000, 
                 burnin=2000,
@@ -238,6 +244,8 @@ class lasso_iv(object):
         parameter : np.array
             Hypothesized value for parameter -- defaults to 0.
 
+        Sigma : true Sigma_11, known for now
+
         level : float
             Confidence level.
 
@@ -254,20 +262,25 @@ class lasso_iv(object):
 
         # compute tsls
 
-        two_stage_ls = ...
-        target_cov = variance of tsls
-        score_cov = cov(two_stage_ls, S)
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        P_ZE = self.Z[:,self.active_slice[:-1]].dot(np.linalg.pinv(self.Z[:,self.active_slice[:-1]]))
+        P_ZD = self.P_ZX[:,-1]
+        two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
+        two_stage_ls = np.atleast_1d(two_stage_ls)
+        target_cov = np.atleast_2d(1.)
+        score_cov = -1.*np.sqrt(Sigma/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        score_cov = np.atleast_2d(score_cov)
 
         opt_sample = self.sampler.sample(ndraw, burnin)
 
-        pivots = opt_sample.coefficient_pvalues(two_stage_ls, target_cov, score_cov, parameter=parameter, sample=opt_sample)
-        if not np.all(parameter == 0):
-            pvalues = opt_sample.coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=np.zeros_like(parameter), sample=opt_sample)
+        pivots = self.sampler.coefficient_pvalues(two_stage_ls, target_cov, score_cov, parameter=parameter, sample=opt_sample)
+        if np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(two_stage_ls, target_cov, score_cov, parameter=np.zeros_like(parameter), sample=opt_sample)
         else:
             pvalues = pivots
 
         intervals = None
         if compute_intervals:
-            intervals = opt_sample.confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_samples[0])
+            intervals = self.sampler.confidence_intervals(two_stage_ls, target_cov, score_cov, sample=opt_sample)
 
         return pivots, pvalues, intervals
