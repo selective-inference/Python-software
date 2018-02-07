@@ -61,6 +61,7 @@ def solve_barrier_nonneg(conjugate_arg,
         The Hessian of the value function.
 
     """
+
     p = precision.shape[0]
     scaling = np.sqrt(np.diag(precision))
 
@@ -150,8 +151,6 @@ def selective_MLE(target_observed,
     nopt = B.shape[1]
     ntarget = A.shape[1]
 
-    #assert ntarget == 1
-
     # setup joint implied covariance matrix
 
     target_precision = np.linalg.inv(target_cov)
@@ -170,8 +169,6 @@ def selective_MLE(target_observed,
     L = implied_cross.dot(np.linalg.inv(implied_opt))
     M_1 = np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(target_precision)
     M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
-
-    #print("check matrices", M_1, M_2, L, data_offset, opt_offset)
 
     conditioned_value = data_offset + opt_offset
 
@@ -201,31 +198,28 @@ def selective_MLE(target_observed,
 
         soln, value, _ = solve_barrier_nonneg(param_lin.dot(target_observed) + param_offset,
                                               conditional_precision,
-                                              max_iter=200)
+                                              feasible_point=feasible_point,
+                                              step=1,
+                                              nstep=2000,
+                                              tol=1.e-8)
 
         selective_MLE = mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset
 
         var_target_lin, var_offset = var_transform
         var_precision, inv_precision_target, cross_covariance, target_precision =  var_matrices
-        p = var_precision.shape[0]
-        grad, opt_val, opt_proposed = np.ones((3, p), np.float)
-        scaling = np.sqrt(np.diag(conditional_precision))
-
         _, _, hess = solve_barrier_nonneg(var_target_lin.dot(selective_MLE) + var_offset + mle_offset,
-                                          var_precision)
+                                          var_precision,
+                                          feasible_point=None,
+                                          step=1,
+                                          nstep=2000)
 
         hessian = target_precision.dot(inv_precision_target +
                                        cross_covariance.dot(hess).dot(cross_covariance.T)).dot(target_precision)
 
         return selective_MLE, np.linalg.inv(hessian)
 
-    mle_partial = partial(mle_map, 
-                          natparam_transform, 
-                          mle_transform, 
-                          var_transform, 
-                          var_matrices,
-                          feasible_point, 
-                          conditional_precision)
+    mle_partial = functools.partial(mle_map, natparam_transform, mle_transform, var_transform, var_matrices,
+                                    feasible_point, conditional_precision)
     sel_MLE, inv_hessian = mle_partial(target_observed)
 
     implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(randomizer_precision).dot(conditioned_value), offset_term])

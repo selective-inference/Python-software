@@ -29,7 +29,7 @@ def barrier_solve_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient v
                    np.ndarray[DTYPE_float_t, ndim=2] precision,     # Precision matrix of Gaussian
                    np.ndarray[DTYPE_float_t, ndim=1] scaling,       # Diagonal scaling matrix for log barrier
                    double initial_step,
-                   int max_iter=100,
+                   int max_iter=1000,
                    double value_tol=1.e-6):
    
     ndim = precision.shape[0]
