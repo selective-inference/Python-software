@@ -34,7 +34,6 @@ class lasso(object):
 
     """
 
-
     def __init__(self, 
                  loglike, 
                  feature_weights,
@@ -89,8 +88,10 @@ class lasso(object):
         self.penalty = rr.group_lasso(np.arange(p),
                                       weights=dict(zip(np.arange(p), self.feature_weights)), lagrange=1.)
 
-    def fit(self, solve_args={'tol':1.e-12, 'min_its':50}, 
-            views=[], nboot=1000):
+    def fit(self, 
+            solve_args={'tol':1.e-12, 'min_its':50}, 
+            views=[], 
+            nboot=1000):
         """
         Fit the randomized lasso using `regreg`.
 
