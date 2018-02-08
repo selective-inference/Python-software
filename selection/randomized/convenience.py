@@ -16,7 +16,6 @@ from .glm import (glm_group_lasso,
                   pairs_bootstrap_glm)
 from .randomization import randomization
 from .query import multiple_queries
-from .M_estimator import restricted_Mest
 
 class step(lasso):
 

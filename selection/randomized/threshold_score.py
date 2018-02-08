@@ -5,7 +5,7 @@ import regreg.api as rr
 
 from .query import query, optimization_sampler
 from .reconstruction import reconstruct_full_from_internal, reconstruct_score
-from .M_estimator import restricted_Mest
+from .base import restricted_estimator
 
 class threshold_score(query):
 
@@ -98,7 +98,7 @@ class threshold_score(query):
         self._marginalize_subgradient = True # need to find a better place to set this...
 
         if beta_active is None:
-            beta_active = self.beta_active = restricted_Mest(self.loss, active, solve_args=self.solve_args)
+            beta_active = self.beta_active = restricted_estimator(self.loss, active, solve_args=self.solve_args)
 
         self.randomize()
 

@@ -18,6 +18,7 @@ from .query import (query,
 
 from .reconstruction import reconstruct_full_from_internal
 from .randomization import split, randomization
+from .base import restricted_estimator
 from .glm import (pairs_bootstrap_glm,
                   glm_nonparametric_bootstrap)
 
@@ -186,7 +187,7 @@ class lasso_view(query):
         W = self.loss.saturated_loss.hessian(X.dot(beta_bar))
         _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
         _hessian_unpen = np.dot(X.T, X[:, unpenalized] * W[:, None])
-        #self._hessian = _hessian
+
         _score_linear_term[:, est_slice] = -np.hstack([_hessian_active, _hessian_unpen])
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
@@ -1382,38 +1383,4 @@ class lasso(object):
         return L
 
 
-def restricted_estimator(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
-    """
-    Fit a restricted model using only columns `active`.
-
-    Parameters
-    ----------
-
-    Mest_loss : objective function
-        A GLM loss.
-
-    active : ndarray
-        Which columns to use.
-
-    solve_args : dict
-        Passed to `solve`.
-
-    Returns
-    -------
-
-    soln : ndarray
-        Solution to restricted problem.
-
-    """
-    X, Y = Mest_loss.data
-
-    if not Mest_loss._is_transform and hasattr(Mest_loss, 'saturated_loss'): # M_est is a glm
-        X_restricted = X[:,active]
-        loss_restricted = rr.affine_smooth(Mest_loss.saturated_loss, X_restricted)
-    else:
-        I_restricted = ra.selector(active, ra.astransform(X).input_shape[0], ra.identity((active.sum(),)))
-        loss_restricted = rr.affine_smooth(Mest_loss, I_restricted.T)
-    beta_E = loss_restricted.solve(**solve_args)
-    
-    return beta_E
 

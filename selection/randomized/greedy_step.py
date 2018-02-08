@@ -3,7 +3,7 @@ import numpy as np
 import regreg.api as rr
 
 from .query import query, optimization_sampler
-from .M_estimator import restricted_Mest
+from .base import restricted_estimator
 from .reconstruction import reconstruct_full_from_internal
 
 class greedy_score_step(query):
@@ -69,7 +69,7 @@ class greedy_score_step(query):
                          self.beta_active)
 
         if beta_active is None:
-            beta_active = self.beta_active = restricted_Mest(self.loss, active, solve_args=solve_args)
+            beta_active = self.beta_active = restricted_estimator(self.loss, active, solve_args=solve_args)
             
         beta_full = np.zeros(loss.shape)
         beta_full[active] = beta_active
