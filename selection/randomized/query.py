@@ -1,3 +1,7 @@
+
+
+
+
 from itertools import product
 import numpy as np
 
@@ -8,6 +12,7 @@ from regreg.affine import power_L
 
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
+from ..constraints.affine import sample_from_constraints
 from .reconstruction import reconstruct_full_from_internal
 
 class query(object):
@@ -129,6 +134,208 @@ class multiple_queries(object):
 
 class optimization_sampler(object):
 
+    def __init__(self):
+        raise NotImplementedError("abstract method")
+
+    def sample(self):
+        raise NotImplementedError("abstract method")
+
+    def hypothesis_test(self,
+                        test_stat,
+                        observed_value,
+                        target_cov,
+                        score_cov,
+                        sample_args=(),
+                        sample=None,
+                        parameter=0,
+                        alternative='twosided'):
+
+        '''
+        Sample `target` from selective density
+        using projected Langevin sampler with
+        gradient map `self.gradient` and
+        projection map `self.projection`.
+
+        Parameters
+        ----------
+
+        test_stat : callable
+           Test statistic to evaluate on sample from
+           selective distribution.
+
+        observed_value : float
+           Observed value of test statistic.
+           Used in p-value calculation.
+
+        sample_args : sequence
+           Arguments to `self.sample` if sample is None.
+
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc. If not None,
+           `ndraw, burnin, stepsize` are ignored.
+
+        parameter : np.float (optional)
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+        Returns
+        -------
+        gradient : np.float
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+            sample = self.sample(*sample_args)
+
+        if parameter is None:
+            parameter = self.reference
+
+        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
+
+        target_inv_cov = np.linalg.inv(target_cov)
+        delta = target_inv_cov.dot(parameter - self.reference)
+        W = np.exp(sample.dot(delta))
+
+        family = discrete_family(sample_test_stat, W)
+        pval = family.cdf(0, observed_value)
+
+        if alternative == 'greater':
+            return 1 - pval
+        elif alternative == 'less':
+            return pval
+        else:
+            return 2 * min(pval, 1 - pval)
+
+    def confidence_intervals(self,
+                             observed_target,
+                             target_cov,
+                             score_cov,
+                             sample_args=(),
+                             sample=None,
+                             level=0.9):
+        '''
+
+        Parameters
+        ----------
+
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+
+        sample_args : sequence
+           Arguments to `self.sample` if sample is None.
+
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc.
+
+        level : float (optional)
+            Specify the
+            confidence level.
+
+        Notes
+        -----
+
+        Construct selective confidence intervals
+        for each parameter of the target.
+
+        Returns
+        -------
+
+        intervals : [(float, float)]
+            List of confidence intervals.
+        '''
+
+        if sample is None:
+            sample = self.sample(*sample_args)
+        else:
+            ndraw = sample.shape[0]
+
+        _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
+                                            observed_target, ndraw)
+
+        limits = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            limits.append(_intervals.confidence_interval(keep, level=level))
+
+        return np.array(limits)
+
+    def coefficient_pvalues(self,
+                            observed_target,
+                            target_cov,
+                            score_cov,
+                            parameter=None,
+                            sample_args=(),
+                            sample=None,
+                            alternative='twosided'):
+        '''
+        Construct selective p-values
+        for each parameter of the target.
+
+        Parameters
+        ----------
+
+        observed : np.float
+            A vector of parameters with shape `self.shape`,
+            representing coordinates of the target.
+
+        parameter : np.float (optional)
+            A vector of parameters with shape `self.shape`
+            at which to evaluate p-values. Defaults
+            to `np.zeros(self.shape)`.
+
+        sample_args : sequence
+           Arguments to `self.sample` if sample is None.
+
+        sample : np.array (optional)
+           If not None, assumed to be a sample of shape (-1,) + `self.shape`
+           representing a sample of the target from parameters `self.reference`.
+           Allows reuse of the same sample for construction of confidence
+           intervals, hypothesis tests, etc.
+
+        alternative : ['greater', 'less', 'twosided']
+            What alternative to use.
+
+        Returns
+        -------
+        pvalues : np.float
+
+        '''
+
+        if alternative not in ['greater', 'less', 'twosided']:
+            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+
+        if sample is None:
+            sample = self.sample(*sample_args)
+        else:
+            ndraw = sample.shape[0]
+
+        if parameter is None:
+            parameter = np.zeros(observed_target.shape[0])
+
+        _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
+                                            observed_target, ndraw)
+        pvals = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternative))
+
+        return np.array(pvals)
+
+class langevin_sampler(optimization_sampler):
+
     '''
     Object to sample only optimization variables of a selective sampler
     fixing the observed score.
@@ -173,19 +380,21 @@ class optimization_sampler(object):
 
         Parameters
         ----------
+
         ndraw : int
            How long a chain to return?
+
         burnin : int
            How many samples to discard?
+
         stepsize : float
            Stepsize for Langevin sampler. Defaults
            to a crude estimate based on the
            dimension of the problem.
-        keep_opt : bool
-           Should we return optimization variables
-           as well as the target?
+
         Returns
         -------
+
         gradient : np.float
         '''
 
@@ -208,202 +417,6 @@ class optimization_sampler(object):
                 samples.append(target_langevin.state.copy())
         return np.asarray(samples)
 
-    def hypothesis_test(self,
-                        test_stat,
-                        observed_value,
-                        target_cov,
-                        score_cov,
-                        ndraw=10000,
-                        burnin=2000,
-                        stepsize=None,
-                        sample=None,
-                        parameter=None,
-                        alternative='twosided'):
-
-        '''
-        Sample `target` from selective density
-        using projected Langevin sampler with
-        gradient map `self.gradient` and
-        projection map `self.projection`.
-        Parameters
-        ----------
-        test_stat : callable
-           Test statistic to evaluate on sample from
-           selective distribution.
-        observed_value : float
-           Observed value of test statistic.
-           Used in p-value calculation.
-        ndraw : int
-           How long a chain to return?
-        burnin : int
-           How many samples to discard?
-        stepsize : float
-           Stepsize for Langevin sampler. Defaults
-           to a crude estimate based on the
-           dimension of the problem.
-        sample : np.array (optional)
-           If not None, assumed to be a sample of shape (-1,) + `self.shape`
-           representing a sample of the target from parameters `self.reference`.
-           Allows reuse of the same sample for construction of confidence
-           intervals, hypothesis tests, etc. If not None,
-           `ndraw, burnin, stepsize` are ignored.
-        parameter : np.float (optional)
-           If not None, defaults to `self.reference`.
-           Otherwise, sample is reweighted using Gaussian tilting.
-        alternative : ['greater', 'less', 'twosided']
-            What alternative to use.
-        Returns
-        -------
-        gradient : np.float
-        '''
-
-        if alternative not in ['greater', 'less', 'twosided']:
-            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
-
-        if sample is None:
-            sample = self.sample(ndraw, burnin, stepsize=stepsize)
-
-        if parameter is None:
-            parameter = self.reference
-
-        sample_test_stat = np.squeeze(np.array([test_stat(x) for x in sample]))
-
-        delta = self.target_inv_cov.dot(parameter - self.reference)
-        W = np.exp(sample.dot(delta))
-
-        family = discrete_family(sample_test_stat, W)
-        pval = family.cdf(0, observed_value)
-
-        if alternative == 'greater':
-            return 1 - pval
-        elif alternative == 'less':
-            return pval
-        else:
-            return 2 * min(pval, 1 - pval)
-
-    def confidence_intervals(self,
-                             observed_target,
-                             target_cov,
-                             score_cov,
-                             ndraw=10000,
-                             burnin=2000,
-                             stepsize=None,
-                             sample=None,
-                             level=0.9):
-        '''
-        Parameters
-        ----------
-        observed : np.float
-            A vector of parameters with shape `self.shape`,
-            representing coordinates of the target.
-        ndraw : int
-           How long a chain to return?
-        burnin : int
-           How many samples to discard?
-        stepsize : float
-           Stepsize for Langevin sampler. Defaults
-           to a crude estimate based on the
-           dimension of the problem.
-        sample : np.array (optional)
-           If not None, assumed to be a sample of shape (-1,) + `self.shape`
-           representing a sample of the target from parameters `self.reference`.
-           Allows reuse of the same sample for construction of confidence
-           intervals, hypothesis tests, etc.
-        level : float (optional)
-            Specify the
-            confidence level.
-        Notes
-        -----
-        Construct selective confidence intervals
-        for each parameter of the target.
-        Returns
-        -------
-        intervals : [(float, float)]
-            List of confidence intervals.
-        '''
-
-        if sample is None:
-            sample = self.sample(ndraw, burnin, stepsize=stepsize)
-        else:
-            ndraw = sample.shape[0]
-
-        _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target, ndraw)
-
-        limits = []
-
-        for i in range(observed_target.shape[0]):
-            keep = np.zeros_like(observed_target)
-            keep[i] = 1.
-            limits.append(_intervals.confidence_interval(keep, level=level))
-
-        return np.array(limits)
-
-    def coefficient_pvalues(self,
-                            observed_target,
-                            target_cov,
-                            score_cov,
-                            parameter=None,
-                            ndraw=10000,
-                            burnin=2000,
-                            stepsize=None,
-                            sample=None,
-                            alternative='twosided'):
-        '''
-        Construct selective p-values
-        for each parameter of the target.
-        Parameters
-        ----------
-        observed : np.float
-            A vector of parameters with shape `self.shape`,
-            representing coordinates of the target.
-        parameter : np.float (optional)
-            A vector of parameters with shape `self.shape`
-            at which to evaluate p-values. Defaults
-            to `np.zeros(self.shape)`.
-        ndraw : int
-           How long a chain to return?
-        burnin : int
-           How many samples to discard?
-        stepsize : float
-           Stepsize for Langevin sampler. Defaults
-           to a crude estimate based on the
-           dimension of the problem.
-        sample : np.array (optional)
-           If not None, assumed to be a sample of shape (-1,) + `self.shape`
-           representing a sample of the target from parameters `self.reference`.
-           Allows reuse of the same sample for construction of confidence
-           intervals, hypothesis tests, etc.
-        alternative : ['greater', 'less', 'twosided']
-            What alternative to use.
-        Returns
-        -------
-        pvalues : np.float
-
-        '''
-
-        if alternative not in ['greater', 'less', 'twosided']:
-            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
-
-        if sample is None:
-            sample = self.sample(ndraw, burnin, stepsize=stepsize)
-        else:
-            ndraw = sample.shape[0]
-
-        if parameter is None:
-            parameter = np.zeros(observed_target.shape[0])
-
-        _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target, ndraw)
-        pvals = []
-
-        for i in range(observed_target.shape[0]):
-            keep = np.zeros_like(observed_target)
-            keep[i] = 1.
-            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternative))
-
-        return np.array(pvals)
-
     def crude_lipschitz(self):
         """
         A crude Lipschitz constant for the
@@ -418,6 +431,70 @@ class optimization_sampler(object):
             lipschitz += power_L(transform[0])**2 * objective.randomization.lipschitz
             lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
         return lipschitz
+
+class affine_gaussian_sampler(optimization_sampler):
+
+    '''
+    Sample from an affine truncated Gaussian
+    '''
+
+    def __init__(self,
+                 affine_con,
+                 initial_point,
+                 observed_internal_state,
+                 log_density,
+                 selection_info=None):
+
+        '''
+        Parameters
+        ----------
+
+        multi_view : `multiple_queries`
+           Instance of `multiple_queries`. Attributes
+           `objectives`, `score_info` are key
+           attributed. (Should maybe change constructor
+           to reflect only what is needed.)
+        '''
+
+        self.affine_con = affine_con
+        self.initial_point = initial_point
+        self.observed_internal_state = observed_internal_state
+        self.selection_info = selection_info
+        self.log_density = log_density
+
+    def sample(self, ndraw, burnin):
+        '''
+        Sample `target` from selective density
+        using projected Langevin sampler with
+        gradient map `self.gradient` and
+        projection map `self.projection`.
+
+        Parameters
+        ----------
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : int
+           How many samples to discard?
+
+        '''
+
+        return sample_from_constraints(self.affine_con,
+                                       self.initial_point,
+                                       ndraw=ndraw,
+                                       burnin=burnin)
+        # sample_from_constraints
+
+#     def log_density(self, 
+#                     internal_state,
+#                     opt_sample):
+#         """
+#         Conditional density of opt variables for a given value of the internal state.
+#         """
+#         # Hmm.....
+#         return np.random.sample(opt_sample.shape[0])
+
 
 class optimization_intervals(object):
 

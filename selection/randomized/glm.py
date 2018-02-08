@@ -466,16 +466,6 @@ class split_glm_group_lasso(M_estimator_split):
 
         return bootstrap_score
 
-
-class glm_group_lasso_parametric(M_estimator):
-
-    # this setup_sampler returns only the active set
-
-    def setup_sampler(self):
-
-        return self.selection_variable['variables']
-
-
 class glm_greedy_step(greedy_score_step, glm):
 
     # XXX this makes the assumption that our
@@ -500,24 +490,6 @@ class glm_threshold_score(threshold_score):
         return bootstrap_score
 
 
-class fixedX_group_lasso(M_estimator):
-
-    def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
-        loss = glm.gaussian(X, Y)
-        M_estimator.__init__(self,
-                             loss, 
-                             epsilon, 
-                             penalty, 
-                             randomization, solve_args=solve_args)
-
-    def setup_sampler(self):
-
-        X, Y = self.loss.data
-
-        bootstrap_score = resid_bootstrap(self.loss,
-                                          self.selection_variable['variables'],
-                                          ~self.selection_variable['variables'])[0]
-        return bootstrap_score
 
 # Methods to form appropriate covariances
 
