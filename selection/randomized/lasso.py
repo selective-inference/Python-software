@@ -20,7 +20,8 @@ from .reconstruction import reconstruct_full_from_internal
 from .randomization import split, randomization
 from .base import restricted_estimator
 from .glm import (pairs_bootstrap_glm,
-                  glm_nonparametric_bootstrap)
+                  glm_nonparametric_bootstrap,
+                  glm_parametric_covariance)
 
 class lasso_view(query):
 
@@ -330,7 +331,7 @@ class lasso_view(query):
                                                         self.score_transform, 
                                                         self.observed_internal_state, 
                                                         np.zeros(opt_linear.shape[1]))
-                cond_mean = cond_cov.dot(opt_linear.T.dot(prec.dot(offset)))
+                cond_mean = -cond_cov.dot(opt_linear.T.dot(prec.dot(offset)))
 
                 # need a log_density function
                 # the conditional density of opt variables
@@ -341,8 +342,8 @@ class lasso_view(query):
 
                 def log_density(logdens_offset, logdens_linear, cond_prec, score, opt):
                     mean_term = logdens_linear.dot(score.T).T + logdens_offset
-                    diff = opt - mean_term
-                    return - 0.5 * np.sum(diff * cond_prec.dot(diff.T).T, 1)
+                    arg = opt + mean_term
+                    return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
                 log_density = functools.partial(log_density, logdens_offset, logdens_linear, cond_precision)
 
                 # now make the constraints
@@ -557,7 +558,7 @@ class lasso_view(query):
                                                     self.score_transform, 
                                                     self.observed_internal_state, 
                                                     np.zeros(new_linear.shape[1]))
-            cond_mean = cond_cov.dot(new_linear.T.dot(prec.dot(offset)))
+            cond_mean = -cond_cov.dot(new_linear.T.dot(prec.dot(offset)))
 
             # need a log_density function
             # the conditional density of opt variables
@@ -568,8 +569,8 @@ class lasso_view(query):
 
             def log_density(logdens_offset, logdens_linear, cond_prec, score, opt):
                 mean_term = logdens_linear.dot(score.T).T + logdens_offset
-                diff = opt - mean_term
-                return - 0.5 * np.sum(diff * cond_prec.dot(diff.T).T, 1)
+                arg = opt + mean_term
+                return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
             log_density = functools.partial(log_density, logdens_offset, logdens_linear, cond_precision)
 
             # now make the constraints
@@ -590,10 +591,6 @@ class lasso_view(query):
             inactive_lagrange = self.penalty.weights[moving_inactive]
             b_subgrad = np.hstack([inactive_lagrange,
                                    inactive_lagrange])
-
-            print(self._overall)
-            print(A_scaling.shape, A_subgrad.shape)
-            print(b_scaling.shape, b_subgrad.shape)
 
             linear_term = np.vstack([A_scaling, A_subgrad])
             offset = np.hstack([b_scaling, b_subgrad])
@@ -832,6 +829,9 @@ class lasso(object):
         if parameter is None:
             parameter = np.zeros(self.loglike.shape[0])
 
+        if np.asarray(selected_features).dtype != np.bool:
+            raise ValueError('selected_features should be a boolean array')
+
         unpenalized_mle = restricted_estimator(self.loglike, selected_features)
 
         if self.parametric_cov_estimator == False:
@@ -853,13 +853,11 @@ class lasso(object):
             else:
                 target_cov, score_cov = form_covariances(target_info,  
                                                          cross_terms=[cov_info])
-
             opt_samplers.append(q.sampler)
 
         opt_samples = [opt_sampler.sample(ndraw,
                                           burnin) for opt_sampler in opt_samplers]
 
-        print(opt_samplers)
         ### TODO -- this only uses one view -- what about other queries?
 
         pivots = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=parameter, sample=opt_samples[0])

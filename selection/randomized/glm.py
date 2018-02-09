@@ -510,6 +510,7 @@ def resid_bootstrap(gaussian_loss,
 def parametric_cov(glm_loss, 
                    target_with_linear_func, 
                    cross_terms=(),
+                   dispersion=None,
                    solve_args={'min_its':50, 'tol':1.e-10}):
 
     # cross_terms are different active sets
@@ -532,14 +533,20 @@ def parametric_cov(glm_loss,
 
     # weights and Q at the target
     W_T = _WQ(target)
+
     X_T = X[:,target]
     XW_T = W_T[:, None] * X_T
     Q_T_inv = np.linalg.inv(X_T.T.dot(XW_T))
 
     beta_T = restricted_estimator(glm_loss, target, solve_args=solve_args)
-    sigma_T = np.sqrt(np.sum((Y-glm_loss.saturated_loss.mean_function(X_T.dot(beta_T)))**2)/(n-np.sum(target)))
 
-    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT)* (sigma_T **2)]
+    # this is Pearson's X^2 dispersion estimator
+    if dispersion is None:
+        sigma_T = np.sqrt(np.sum((Y-glm_loss.saturated_loss.mean_function(X_T.dot(beta_T)))**2)/(n-np.sum(target)))
+    else:
+        sigma_T = dispersion
+
+    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT) * (sigma_T **2)]
 
     for cross in cross_terms:
         # the covariances are for (\bar{\beta}_{C}, N_C) -- C for cross
@@ -555,7 +562,10 @@ def parametric_cov(glm_loss,
         null_block = null_block.dot(Q_T_inv)
 
         beta_C = restricted_estimator(glm_loss, cross, solve_args=solve_args)
-        sigma_C = np.sqrt(np.sum((Y - glm_loss.saturated_loss.mean_function(X_C.dot(beta_C))) ** 2) / (n - np.sum(cross)))
+        if dispersion is None:
+            sigma_C = np.sqrt(np.sum((Y - glm_loss.saturated_loss.mean_function(X_C.dot(beta_C))) ** 2) / (n - np.sum(cross)))
+        else:
+            sigma_C = dispersion
 
         covariances.append(np.vstack([beta_block, null_block]).dot(linear_funcT).T * sigma_T * sigma_C)
 
