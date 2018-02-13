@@ -542,11 +542,11 @@ def parametric_cov(glm_loss,
 
     # this is Pearson's X^2 dispersion estimator
     if dispersion is None:
-        sigma_T = np.sqrt(np.sum((Y-glm_loss.saturated_loss.mean_function(X_T.dot(beta_T)))**2)/(n-np.sum(target)))
+        sigma_T = np.sqrt(np.sum((Y-glm_loss.saturated_loss.mean_function(X_T.dot(beta_T)))**2 / W_T)/(n-np.sum(target)))
     else:
         sigma_T = dispersion
 
-    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT) * (sigma_T **2)]
+    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT) * (sigma_T**2)]
 
     for cross in cross_terms:
         # the covariances are for (\bar{\beta}_{C}, N_C) -- C for cross
@@ -563,7 +563,8 @@ def parametric_cov(glm_loss,
 
         beta_C = restricted_estimator(glm_loss, cross, solve_args=solve_args)
         if dispersion is None:
-            sigma_C = np.sqrt(np.sum((Y - glm_loss.saturated_loss.mean_function(X_C.dot(beta_C))) ** 2) / (n - np.sum(cross)))
+            sigma_C = sigma_T # Hmm... not sure here 
+            # sigma_C = np.sqrt(np.sum((Y - glm_loss.saturated_loss.mean_function(X_C.dot(beta_C)) / W_C) ** 2) / (n - np.sum(cross)))
         else:
             sigma_C = dispersion
 

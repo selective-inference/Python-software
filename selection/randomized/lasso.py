@@ -25,7 +25,13 @@ from .glm import (pairs_bootstrap_glm,
 
 class lasso_view(query):
 
-    def __init__(self, loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
+    def __init__(self, 
+                 loss, 
+                 epsilon, 
+                 penalty, 
+                 randomization, 
+                 perturb=None,
+                 solve_args={'min_its':50, 'tol':1.e-10}):
         """
         Fits the logistic regression to a candidate active set, without penalty.
         Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
@@ -69,9 +75,10 @@ class lasso_view(query):
          
     # Methods needed for subclassing a query
 
-    def solve(self, solve_args={'min_its':20, 'tol':1.e-10}, nboot=2000):
+    def solve(self, solve_args={'min_its':20, 'tol':1.e-10}, nboot=2000,
+              perturb=None):
 
-        self.randomize()
+        self.randomize(perturb=perturb)
 
         (loss,
          randomized_loss,
@@ -128,12 +135,11 @@ class lasso_view(query):
         self.initial_subgrad = initial_subgrad
 
         initial_scalings = np.fabs(self.initial_soln[active])
-        initial_subgrad = initial_subgrad[self._inactive]
         initial_unpenalized = self.initial_soln[self._unpenalized]
 
         self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized,
-                                                  initial_subgrad], axis=0)
+                                                  self.initial_subgrad[self._inactive]], axis=0)
 
         # set the _solved bit
 
@@ -233,11 +239,7 @@ class lasso_view(query):
 
         _opt_affine_term = np.zeros(p)
         idx = 0
-        if np.asarray(penalty.lagrange).shape in [(), (1,)]:
-            _opt_affine_term[active] = active_signs[active] * penalty.lagrange
-            
-        else:
-            _opt_affine_term[active] = active_signs[active] * penalty.lagrange[active]
+        _opt_affine_term[active] = active_signs[active] * self._lagrange[active]
 
         # two transforms that encode score and optimization
         # variable roles 
@@ -367,6 +369,7 @@ class lasso_view(query):
                                          mean=cond_mean,
                                          covariance=cond_cov)
 
+                logdens_transform = (logdens_linear, logdens_offset)
                 self._sampler = affine_gaussian_sampler(affine_con,
                                                         self.observed_opt_state,
                                                         self.observed_internal_state,
@@ -424,7 +427,6 @@ class lasso_view(query):
         subgrad_idx = range(self._active.sum() + self._unpenalized.sum(),
                             self._active.sum() + self._unpenalized.sum() +
                             moving_inactive.sum())
-        subgrad_slice = subgrad_idx
         for _i, _s in zip(inactive_moving_idx, subgrad_idx):
             new_linear[_i, _s] = 1.
 
@@ -436,15 +438,9 @@ class lasso_view(query):
         condition_linear = np.zeros((opt_linear.shape[0], (self._active.sum() +
                                                            self._unpenalized.sum() +
                                                            condition_inactive.sum())))
-        inactive_condition_idx = np.nonzero(condition_inactive)[0]
-        subgrad_condition_idx = range(self._active.sum() + self._unpenalized.sum(),
-                                      self._active.sum() + self._unpenalized.sum() + condition_inactive.sum())
 
-        for _i, _s in zip(inactive_condition_idx, subgrad_condition_idx):
-            condition_linear[_i, _s] = 1.
-
-        new_offset = condition_linear[:,subgrad_condition_idx].dot(self.initial_subgrad[condition_inactive]) + opt_offset
-
+        new_offset = opt_offset + 0.
+        new_offset[condition_inactive] += self.initial_subgrad[condition_inactive]
         new_opt_transform = (new_linear, new_offset)
 
         if not hasattr(self.randomization, "cov_prec") or marginalize.sum(): # use Langevin -- not gaussian
@@ -564,7 +560,8 @@ class lasso_view(query):
             # the conditional density of opt variables
             # given the score
 
-            logdens_offset = cond_cov.dot(new_linear.T.dot(prec.dot(score_offset + opt_offset)))
+            logdens_offset = cond_cov.dot(new_linear.T.dot(prec.dot(
+                                                           score_offset + opt_offset)))
             logdens_linear = cond_cov.dot(new_linear.T.dot(prec.dot(score_linear)))
 
             def log_density(logdens_offset, logdens_linear, cond_prec, score, opt):
@@ -600,10 +597,12 @@ class lasso_view(query):
                                      mean=cond_mean,
                                      covariance=cond_cov)
 
+            logdens_transform = (logdens_linear, logdens_offset)
             self._sampler = affine_gaussian_sampler(affine_con,
                                                     observed_opt_state,
                                                     self.observed_internal_state,
                                                     log_density,
+                                                    logdens_transform,
                                                     selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
 
 
@@ -722,7 +721,7 @@ class lasso(object):
 
     def fit(self, 
             solve_args={'tol':1.e-12, 'min_its':50}, 
-            views=[], 
+            perturb=None,
             nboot=1000):
         """
         Fit the randomized lasso using `regreg`.
@@ -732,9 +731,6 @@ class lasso(object):
 
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
-
-        views : list
-             Other views of the data, e.g. cross-validation.
 
         Returns
         -------
@@ -749,12 +745,8 @@ class lasso(object):
             self._view = glm_lasso_parametric(self.loglike, self.ridge_term, self.penalty, self.randomizer)
         else:
             self._view = glm_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
-        self._view.solve(nboot=nboot)
+        self._view.solve(nboot=nboot, perturb=perturb)
 
-        views = copy(views); views.append(self._view)
-        self._queries = multiple_queries(views)
-        self._queries.solve()
-   
         self.signs = np.sign(self._view.initial_soln)
         self.selection_variable = self._view.selection_variable
         return self.signs
@@ -795,7 +787,8 @@ class lasso(object):
                 ndraw=10000, 
                 burnin=2000,
                 compute_intervals=False,
-                bootstrap_sampler=False):
+                bootstrap_sampler=False,
+                subset=None):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -823,7 +816,7 @@ class lasso(object):
             Use wild bootstrap instead of Gaussian plugin.
 
         """
-        if not hasattr(self, "_queries"):
+        if not hasattr(self, "_view"):
             raise ValueError('run `fit` method before producing summary.')
 
         if parameter is None:
@@ -844,7 +837,7 @@ class lasso(object):
             form_covariances = glm_parametric_covariance(self.loglike)
 
         opt_samplers = []
-        for q in self._queries.objectives:
+        for q in [self._view]:
             cov_info = q.setup_sampler()
             if self.parametric_cov_estimator == False:
                 target_cov, score_cov = form_covariances(target_info,  
@@ -858,7 +851,10 @@ class lasso(object):
         opt_samples = [opt_sampler.sample(ndraw,
                                           burnin) for opt_sampler in opt_samplers]
 
-        ### TODO -- this only uses one view -- what about other queries?
+        if subset is not None:
+            target_cov = target_cov[subset][:,subset]
+            score_cov = score_cov[subset]
+            unpenalized_mle = unpenalized_mle[subset]
 
         pivots = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=parameter, sample=opt_samples[0])
         if not np.all(parameter == 0):
@@ -940,7 +936,7 @@ class lasso(object):
 
         mean_diag = np.mean((X**2).sum(0))
         if ridge_term is None:
-            ridge_term = np.std(Y)**2 * mean_diag / np.sqrt(n)
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y)
@@ -1020,7 +1016,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = mean_diag / np.sqrt(n)
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 
@@ -1105,7 +1101,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = np.std(Y)**2 * mean_diag / np.sqrt(n)
+            ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y)
@@ -1183,7 +1179,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = np.std(counts)**2 * mean_diag / np.sqrt(n)
+            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts)

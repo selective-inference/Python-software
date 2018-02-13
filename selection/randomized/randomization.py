@@ -85,14 +85,15 @@ class randomization(rr.smooth_atom):
         """
         return np.squeeze(self._log_density(perturbation))
 
-    def randomize(self, loss, epsilon=0):
+    def randomize(self, loss, epsilon=0, perturb=None):
         """
         Randomize the loss.
         """
         randomized_loss = rr.smooth_sum([loss])
-        _randomZ = self.sample()
-        randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -_randomZ, 0)
-        return randomized_loss, _randomZ
+        if perturb is None:
+            perturb = self.sample()
+        randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -perturb, 0)
+        return randomized_loss, perturb
 
     @staticmethod
     def isotropic_gaussian(shape, scale):

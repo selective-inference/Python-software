@@ -17,19 +17,20 @@ from .reconstruction import reconstruct_full_from_internal
 
 class query(object):
 
-    def __init__(self, randomization):
+    def __init__(self, randomization, perturb=None):
 
         self.randomization = randomization
+        self.perturb = perturb
         self._solved = False
         self._randomized = False
         self._setup = False
 
     # Methods reused by subclasses
 
-    def randomize(self):
+    def randomize(self, perturb=None):
 
         if not self._randomized:
-            self.randomized_loss, self._initial_omega = self.randomization.randomize(self.loss, self.epsilon)
+            self.randomized_loss, self._initial_omega = self.randomization.randomize(self.loss, self.epsilon, perturb=perturb)
         self._randomized = True
 
     def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
@@ -443,6 +444,7 @@ class affine_gaussian_sampler(optimization_sampler):
                  initial_point,
                  observed_internal_state,
                  log_density,
+                 logdens_transform,
                  selection_info=None):
 
         '''
@@ -461,6 +463,7 @@ class affine_gaussian_sampler(optimization_sampler):
         self.observed_internal_state = observed_internal_state
         self.selection_info = selection_info
         self.log_density = log_density
+        self.logdens_transform = logdens_transform
 
     def sample(self, ndraw, burnin):
         '''
@@ -484,16 +487,6 @@ class affine_gaussian_sampler(optimization_sampler):
                                        self.initial_point,
                                        ndraw=ndraw,
                                        burnin=burnin)
-        # sample_from_constraints
-
-#     def log_density(self, 
-#                     internal_state,
-#                     opt_sample):
-#         """
-#         Conditional density of opt variables for a given value of the internal state.
-#         """
-#         # Hmm.....
-#         return np.random.sample(opt_sample.shape[0])
 
 
 class optimization_intervals(object):
