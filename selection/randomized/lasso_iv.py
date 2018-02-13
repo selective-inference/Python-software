@@ -120,8 +120,7 @@ class lasso_iv(object):
 
         random_linear_term = self.randomizer.sample()
         # rr.identity_quadratic essentially amounts to epsilon/2 * \|x - 0\|^2 + <-random_linear_term, x> + 0
-        random_loss = rr.identity_quadratic(self.ridge_term, 0, -random_linear_term, 0)
-        self.loss.quadratic = random_loss
+        self.loss.quadratic = rr.identity_quadratic(self.ridge_term, 0, -random_linear_term, 0)
 
         # Optimization problem   
         problem = rr.simple_problem(self.loss, self.penalty)
