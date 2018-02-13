@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 n, p = 500, 50
 
-def test_condition_subgrad(n=n, p=p, signal=np.sqrt(2.5 * np.log(p)), s=0, ndraw=50000, burnin=5000, param=False, sigma=1, full=True, rho=0.2, useR=False):
+def test_condition_subgrad(n=n, p=p, signal=np.sqrt(2.5 * np.log(p)), s=5, ndraw=50000, burnin=5000, param=False, sigma=1, full=True, rho=0.2, useR=True):
     """
     Compare to R randomized lasso
     """
@@ -164,7 +164,8 @@ def Rpval(X, Y, W, noise_scale=None):
         rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam, noise_scale=noise_scale)')
     else:
         rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam)')
-    rpy.r('rand_inf = selectiveInference:::randomizedLassoInf(soln, sampler="norejection")')
+    rpy.r('full_targets=selectiveInference:::set.target(soln,type="full")')
+    rpy.r('rand_inf = selectiveInference:::randomizedLassoInf(soln, sampler="norejection", full_targets=full_targets)')
     pval = np.asarray(rpy.r('rand_inf$pvalues'))
     vars = np.asarray(rpy.r('soln$active_set')) - 1 
 
