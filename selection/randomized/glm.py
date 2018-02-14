@@ -9,7 +9,6 @@ from .base import restricted_estimator
 from .greedy_step import greedy_score_step
 from .threshold_score import threshold_score
 
-
 def pairs_bootstrap_glm(glm_loss,
                         active, 
                         beta_full=None, 
@@ -313,84 +312,6 @@ def set_alpha_matrix(glm_loss,
     obs_residuals = Y - glm_loss.saturated_loss.mean_function(X_full.dot(beta_overall))
 
     return np.dot(np.dot(_Qinv, X_active.T), np.diag(obs_residuals))
-
-
-def _parametric_cov_glm(glm_loss,
-                        active,
-                        beta_full=None,
-                        inactive=None,
-                        solve_args={'min_its': 50, 'tol': 1.e-10}):
-    """
-    Compute parametric covariance of
-    the estimates ($\bar{\beta}_E^*$) of a generalized 
-    linear model (GLM) restricted to `active`
-    as well as, optionally, the inactive coordinates of the score of the 
-    GLM evaluated at the estimates ($\nabla \ell(\bar{\beta}_E)[-E]$) where
-    $\bar{\beta}_E$ is padded with zeros where necessary.
-
-    Parameters
-    ----------
-
-    glm_loss : regreg.smooth.glm.glm
-        The loss of the generalized linear model.
-
-    active : np.bool
-        Boolean indexing array
-
-    beta_full : np.float (optional)
-        Solution to the restricted problem, zero except where active is nonzero.
-
-    inactive : np.bool (optional)
-        Boolean indexing array
-
-    solve_args : dict
-        Arguments passed to solver of restricted problem (`restricted_estimator`) if 
-        beta_full is None.
-
-    Returns
-    -------
-
-    Sigma : np.float
-        Covariance matrix.
-
-    """
-    X, Y = glm_loss.data
-    n, p = X.shape
-
-    if beta_full is None:
-        beta_active = restricted_estimator(glm_loss, active, solve_args=solve_args)
-        beta_full = np.zeros(glm_loss.shape)
-        beta_full[active] = beta_active
-    else:
-        beta_active = beta_full[active]
-
-    X_active = X[:, active]
-
-    nactive = active.sum()
-    ntotal = nactive
-
-    if inactive is not None:
-        X_inactive = X[:, inactive]
-        ntotal += inactive.sum()
-
-    _W = np.diag(glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
-    _Q = X_active.T.dot(_W.dot(X_active))
-    _Qinv = np.linalg.inv(_Q)
-    if inactive is not None:
-        _C = X_inactive.T.dot(_W.dot(X_active))
-        _I = _C.dot(_Qinv)
-
-    nactive = active.sum()
-
-    mat = np.zeros((p, n))
-    mat[:nactive, :] = _Qinv.dot(X_active.T)
-    if ntotal > nactive:
-        mat1 = np.dot(np.dot(_W, X_active), np.dot(_Qinv, X_active.T))
-        mat[nactive:, :] = X[:, inactive].T.dot(np.identity(n) - mat1)
-
-    Sigma_full = np.dot(mat, np.dot(_W, mat.T))
-    return Sigma_full
-
 
 class glm_greedy_step(greedy_score_step, glm):
 

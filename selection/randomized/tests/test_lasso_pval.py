@@ -8,9 +8,9 @@ from selection.randomized.lasso import lasso
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-n, p = 500, 200
+n, p = 500, 20
 
-def test_condition_subgrad(n=n, p=p, signal=np.sqrt(1.5 * np.log(p)), s=5, ndraw=50000, burnin=5000, param=False, sigma=1, full=True, rho=0.2, useR=True):
+def test_condition_subgrad(n=n, p=p, signal=np.sqrt(2 * np.log(p)), s=5, ndraw=5000, burnin=1000, param=True, sigma=1, full=True, rho=0.2, useR=True, randomizer_scale=1):
     """
     Compare to R randomized lasso
     """
@@ -27,13 +27,14 @@ def test_condition_subgrad(n=n, p=p, signal=np.sqrt(1.5 * np.log(p)), s=5, ndraw
 
     n, p = X.shape
 
-    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma
+    W = np.ones(X.shape[1]) * 1.5 * sigma
 
     conv = const(X, 
                  Y, 
                  W, 
                  randomizer='gaussian', 
-                 parametric_cov_estimator=param)
+                 parametric_cov_estimator=param,
+                 randomizer_scale=randomizer_scale)
     
     nboot = 2000
     signs = conv.fit(nboot=nboot)
@@ -57,7 +58,7 @@ def test_condition_subgrad(n=n, p=p, signal=np.sqrt(1.5 * np.log(p)), s=5, ndraw
         if not useR:
             return pval[beta[keep] == 0], pval[beta[keep] != 0]
         else:
-            pval, selected_idx = Rpval(X, Y, W, 1.)[:2]
+            pval, selected_idx = Rpval(X, Y, W, randomizer_scale)[:2]
             return [p for j, p in zip(selected_idx, pval) if beta[j] == 0], [p for j, p in zip(selected_idx, pval) if beta[j] != 0]
     else:
         return [p for j, p in zip(selected_idx, pval) if beta[j] == 0], [p for j, p in zip(selected_idx, pval) if beta[j] != 0]
@@ -138,10 +139,13 @@ def main(nsim=500):
     from statsmodels.distributions import ECDF
 
     for i in range(nsim):
-        p0, pA = test_condition_subgrad()
+        try:
+            p0, pA = test_condition_subgrad(n=200, p=10)
+        except:
+            p0, pA = [], []
         P0.extend(p0)
         PA.extend(pA)
-        print(np.mean(P0), np.std(P0))
+        print(np.mean(P0), np.std(P0), np.mean(np.array(PA) < 0.05))
     
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)
@@ -164,8 +168,9 @@ def Rpval(X, Y, W, noise_scale=None):
         rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam, noise_scale=noise_scale)')
     else:
         rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam)')
-    rpy.r('full_targets=selectiveInference:::set.target(soln,type="partial")')
-    rpy.r('rand_inf = selectiveInference:::randomizedLassoInf(soln, sampler="norejection", full_targets=full_targets)')
+    rpy.r('full_targets=selectiveInference:::set.target(soln,type="full")')
+    print('here')
+    rpy.r('rand_inf = selectiveInference:::randomizedLassoInf(soln, sampler="restrictedMVN", full_targets=full_targets, nsample=10000, burnin=3000)')
     pval = np.asarray(rpy.r('rand_inf$pvalues'))
     vars = np.asarray(rpy.r('soln$active_set')) - 1 
 
@@ -181,7 +186,7 @@ def Rpval(X, Y, W, noise_scale=None):
     ridge = rpy.r('soln$ridge_term')
 
     try:
-        pval = 2 * np.minimum(pval, 1 - pval)
+        #pval = 2 * np.minimum(pval, 1 - pval)
         return pval, vars, L, O, rand, active, soln, ridge, cond_cov, cond_mean
     except:
         return [], []

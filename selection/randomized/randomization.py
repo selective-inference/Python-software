@@ -117,7 +117,6 @@ class randomization(rr.smooth_atom):
         CGF_conjugate = isotropic_gaussian_CGF_conjugate(shape, scale)
 
         p = np.product(shape)
-        I = np.identity(p)
         constant = -0.5 * p * np.log(2 * np.pi * scale**2)
         return randomization(shape,
                              density,
@@ -130,7 +129,7 @@ class randomization(rr.smooth_atom):
                              log_density = lambda x: -0.5 * (np.atleast_2d(x)**2).sum(1) / scale**2 + constant,
                              CGF=CGF,
                              CGF_conjugate=CGF_conjugate,
-                             cov_prec=(scale**2 * I, I / scale**2)
+                             cov_prec=(scale**2, 1. / scale**2)
                              )
 
     @staticmethod

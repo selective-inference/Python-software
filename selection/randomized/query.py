@@ -1,7 +1,3 @@
-
-
-
-
 from itertools import product
 import numpy as np
 
@@ -488,7 +484,6 @@ class affine_gaussian_sampler(optimization_sampler):
                                        ndraw=ndraw,
                                        burnin=burnin)
 
-
 class optimization_intervals(object):
 
     def __init__(self,
@@ -513,7 +508,7 @@ class optimization_intervals(object):
                     tiled_opt_sample = opt_sample[:nsample]
             else:
                 tiled_sample = None
-            tiled_sampling_info.append((opt_sampler, opt_sample, t_cov, score_cov))
+            tiled_sampling_info.append((opt_sampler, tiled_opt_sample, t_cov, score_cov))
 
         self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
