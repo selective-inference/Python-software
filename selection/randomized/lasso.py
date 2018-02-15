@@ -1676,7 +1676,7 @@ class highdim(lasso):
         if compute_intervals:
             intervals = self.sampler.confidence_intervals(observed_target, 
                                                           cov_target, 
-                                                          cov_target_interval, 
+                                                          cov_target_score,
                                                           sample=opt_sample)
 
         return pivots, pvalues, intervals
