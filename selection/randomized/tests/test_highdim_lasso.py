@@ -9,14 +9,13 @@ from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-
-def test_condition_subgrad(n=200, p=10, signal=np.sqrt(2 * np.log(10)), s=5, ndraw=5000, burnin=1000, param=True, sigma=3, full=True, rho=0.2, randomizer_scale=1):
+def test_highdim_lasso(n=200, p=10, signal_fac=1.5, s=5, ndraw=5000, burnin=1000, sigma=3, full=False, rho=0.4, randomizer_scale=1):
     """
     Compare to R randomized lasso
     """
 
-
     inst, const = gaussian_instance, highdim.gaussian
+    signal = np.sqrt(signal_fac * np.log(p))
     X, Y, beta = inst(n=n,
                       p=p, 
                       signal=signal, 
@@ -28,12 +27,12 @@ def test_condition_subgrad(n=200, p=10, signal=np.sqrt(2 * np.log(10)), s=5, ndr
 
     n, p = X.shape
 
-    W = np.ones(X.shape[1]) * 1.5 * sigma
+    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma
 
     conv = const(X, 
                  Y, 
                  W, 
-                 randomizer_scale=randomizer_scale)
+                 randomizer_scale=randomizer_scale * sigma)
     
     signs = conv.fit()
     nonzero = signs != 0
@@ -89,12 +88,11 @@ def main(nsim=500):
     P0, PA = [], []
     from statsmodels.distributions import ECDF
 
-    n, p = 500, 20
+    n, p = 500, 200
 
     for i in range(nsim):
-        p0, pA = test_condition_subgrad(n=n, p=p, full=False)
         try:
-            p0, pA = test_condition_subgrad(n=n, p=p, full=False)
+            p0, pA = test_highdim_lasso(n=n, p=p, full=False)
         except:
             p0, pA = [], []
         P0.extend(p0)

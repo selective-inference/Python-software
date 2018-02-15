@@ -1645,14 +1645,14 @@ class highdim(lasso):
             parameter = np.zeros(self.loglike.shape[0])
 
         if target == 'selected':
-            observed_target, cov_target, cov_target_score, alternative = self.selected_targets(features=features, dispersion=dispersion)
+            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
         elif target == 'full':
             X, y = self.loglike.data
             n, p = X.shape
             if n > p:
-                observed_target, cov_target, cov_target_score, alternative = self.full_targets(features=features, dispersion=dispersion)
+                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
             else:
-                observed_target, cov_target, cov_target_score, alternative = self.debiased_targets(features=features, dispersion=dispersion)
+                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
 
         opt_sample = self.sampler.sample(ndraw,  burnin)
 
@@ -1661,14 +1661,14 @@ class highdim(lasso):
                                                   cov_target_score, 
                                                   parameter=parameter, 
                                                   sample=opt_sample, 
-                                                  alternative=alternative)
+                                                  alternatives=alternatives)
         if not np.all(parameter == 0):
             pvalues = self.sampler.coefficient_pvalues(observed_target, 
                                                        cov_target, 
                                                        cov_target_score, 
                                                        parameter=np.zeros_like(parameter), 
                                                        sample=opt_sample, 
-                                                       alternative=alternative)
+                                                       alternatives=alternatives)
         else:
             pvalues = pivots
 
@@ -1701,7 +1701,7 @@ class highdim(lasso):
             observed_target = self._beta_full[overall]
             crosscov_target_score = score_linear.dot(cov_target)
             Xfeat = X[:,overall]
-            alternative = [{1:'greater', -1:'less'}[int(s)] for s in self.selection_variable['sign'][active]] + ['two-sided'] * unpenalized.sum()
+            alternatives = [{1:'greater', -1:'less'}[int(s)] for s in self.selection_variable['sign'][active]] + ['twosided'] * unpenalized.sum()
 
         else:
 
@@ -1718,21 +1718,21 @@ class highdim(lasso):
             _score_linear = -Xfeat.T.dot(self._W[:, None] * X).T
             crosscov_target_score = _score_linear.dot(cov_target)
             observed_target = one_step
-            alternative = ['two-sided'] * overall.sum()
+            alternatives = ['twosided'] * overall.sum()
             for i, f in enumerate(np.nonzero(features)[0]):
                 if active[f]:
-                    alternative[i] = {1:'greater', -1:'less'}[int(self.selection_variable['sign'][f])]
+                    alternatives[i] = {1:'greater', -1:'less'}[int(self.selection_variable['sign'][f])]
 
         if dispersion is None: # use Pearson's X^2
             dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(observed_target)))**2 / self._W).sum() / (n - Xfeat.shape[1])
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def full_targets(self, features=None, dispersion=None):
 
         if features is None:
             features = self._overall
-        features_b = np.zeros_like(self._overall)
+        features_b = np.zeros(self._overall.shape, np.bool)
         features_b[features] = True
         features = features_b
 
@@ -1753,9 +1753,13 @@ class highdim(lasso):
         if dispersion is None: # use Pearson's X^2
             dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step)))**2 / self._W).sum() / (n - p)
 
-        alternative = ['two-sided'] * features.sum()
+        alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion
+        for i, f in enumerate(np.nonzero(features)[0]):
+            if self._active[f]:
+                alternatives[i] = {1:'greater', -1:'less'}[int(self.selection_variable['sign'][f])]
+
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def debiased_targets(self, dispersion=None):
         

@@ -263,7 +263,7 @@ class optimization_sampler(object):
                             parameter=None,
                             sample_args=(),
                             sample=None,
-                            alternative='twosided'):
+                            alternatives=None):
         '''
         Construct selective p-values
         for each parameter of the target.
@@ -289,7 +289,7 @@ class optimization_sampler(object):
            Allows reuse of the same sample for construction of confidence
            intervals, hypothesis tests, etc.
 
-        alternative : ['greater', 'less', 'twosided']
+        alternatives : list of ['greater', 'less', 'twosided']
             What alternative to use.
 
         Returns
@@ -298,8 +298,8 @@ class optimization_sampler(object):
 
         '''
 
-        if alternative not in ['greater', 'less', 'twosided']:
-            raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
+        if alternatives is None:
+            alternatives = ['twosided'] * observed_target.shape[0]
 
         if sample is None:
             sample = self.sample(*sample_args)
@@ -316,7 +316,7 @@ class optimization_sampler(object):
         for i in range(observed_target.shape[0]):
             keep = np.zeros_like(observed_target)
             keep[i] = 1.
-            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternative))
+            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternatives[i]))
 
         return np.array(pvals)
 
