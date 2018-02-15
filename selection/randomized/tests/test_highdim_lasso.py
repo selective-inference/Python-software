@@ -92,7 +92,7 @@ def main(nsim=500):
 
     for i in range(nsim):
         try:
-            p0, pA = test_highdim_lasso(n=n, p=p, full=False)
+            p0, pA = test_highdim_lasso(n=n, p=p, full=True)
         except:
             p0, pA = [], []
         P0.extend(p0)

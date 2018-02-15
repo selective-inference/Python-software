@@ -1755,10 +1755,6 @@ class highdim(lasso):
 
         alternatives = ['twosided'] * features.sum()
 
-        for i, f in enumerate(np.nonzero(features)[0]):
-            if self._active[f]:
-                alternatives[i] = {1:'greater', -1:'less'}[int(self.selection_variable['sign'][f])]
-
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def debiased_targets(self, dispersion=None):
