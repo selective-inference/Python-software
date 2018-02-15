@@ -15,7 +15,7 @@ from ..api import randomization, multiple_queries, pairs_bootstrap_glm, glm_grou
 from ..glm import bootstrap_cov
 from ...distributions.discrete_family import discrete_family
 from ...sampling.langevin import projected_langevin
-from ..target import reconstruct_internal
+from ..reconstruct import reconstruct_internal
 
 @register_report(['pvalue', 'active'])
 @wait_for_return_value()

@@ -13,7 +13,7 @@ from .query import query, optimization_sampler
 from .reconstruction import reconstruct_full_from_internal
 from .randomization import split
 
-class M_estimator(query):
+class group_lasso_view(query):
 
     def __init__(self, loss, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
         """
@@ -111,6 +111,7 @@ class M_estimator(query):
                 unpenalized[group] = True
 
         self.active_penalty = active_penalty
+
         # solve the restricted problem
 
         self._overall = active + unpenalized > 0
@@ -197,12 +198,12 @@ class M_estimator(query):
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
         Mest_slice = slice(0, overall.sum())
-        # _Mest_hessian = _hessian[:,overall]
         X, y = loss.data
         W = self.loss.saturated_loss.hessian(X.dot(beta_full))
-        _Mest_hessian = np.dot(X.T, X[:, overall] * W[:, None])
-        self._Mest_hessian = _Mest_hessian
-        _score_linear_term[:, Mest_slice] = -_Mest_hessian / _sqrt_scaling
+        _Mest_hessian_active = np.dot(X.T, X[:, active] * W[:, None])
+        _Mest_hessian_unpen = np.dot(X.T, X[:, unpenalized] * W[:, None])
+
+        _score_linear_term[:, Mest_slice] = -np.hstack([_Mest_hessian_active, _Mest_hessian_unpen]) / _sqrt_scaling
 
         # N_{-(E \cup U)} piece -- inactive coordinates of score of M estimator at unpenalized solution
 
@@ -217,7 +218,6 @@ class M_estimator(query):
         if len(active_directions)==0:
             _opt_hessian=0
         else:
-            #_opt_hessian = (_hessian + epsilon * np.identity(p)).dot(active_directions)
             _opt_hessian = np.dot(_Mest_hessian, active_directions[overall]) + epsilon * active_directions
         _opt_linear_term[:, scaling_slice] = _opt_hessian / _sqrt_scaling
 
@@ -228,7 +228,6 @@ class M_estimator(query):
         unpenalized_slice = slice(active_groups.sum(), active_groups.sum() + unpenalized.sum())
         unpenalized_directions = np.identity(p)[:,unpenalized]
         if unpenalized.sum():
-            #_opt_linear_term[:, unpenalized_slice] = (_hessian + epsilon * np.identity(p)).dot(unpenalized_directions) / _sqrt_scaling
             _opt_linear_term[:, unpenalized_slice] = (np.dot(_Mest_hessian, unpenalized_directions[overall])
                                                       + epsilon * unpenalized_directions) / _sqrt_scaling
         self.observed_opt_state[unpenalized_slice] *= _sqrt_scaling
@@ -287,30 +286,11 @@ class M_estimator(query):
 
         self.nboot = nboot
 
-
-#         if not self._setup:
-#             raise ValueError('setup_sampler should be called before using this function')
-
-#         if ('subgradient' not in self.selection_variable and 
-#             'scaling' not in self.selection_variable): # have not conditioned on any thing else
-
-#         elif ('subgradient' not in self.selection_variable and
-#               'scaling' in self.selection_variable): # conditioned on the initial scalings
-#                                                      # only the subgradient in opt_state
-#             new_state = self.group_lasso_dual.bound_prox(opt_state)
-#         elif ('subgradient' in self.selection_variable and
-#               'scaling' not in self.selection_variable): # conditioned on the subgradient
-#                                                          # only the scaling in opt_state
-#             new_state = np.maximum(opt_state, 0)
-#         else:
-#             new_state = opt_state
-#         return new_state
-
-
     def get_sampler(self):
         # setup the default optimization sampler
 
         if not hasattr(self, "_sampler"):
+
             def projection(group_lasso_dual, subgrad_slice, scaling_slice, opt_state):
                 """
                 Full projection for Langevin.
@@ -634,14 +614,14 @@ def restricted_Mest(Mest_loss, active, solve_args={'min_its':50, 'tol':1.e-10}):
     
     return beta_E
 
-class M_estimator_split(M_estimator):
+class group_lasso_split(group_lasso_view):
 
     def __init__(self, loss, epsilon, subsample_size, penalty, solve_args={'min_its':50, 'tol':1.e-10}):
 
         total_size = loss.saturated_loss.shape[0]
         self.randomization = split(loss.shape, subsample_size, total_size)
 
-        M_estimator.__init__(self, loss, epsilon, penalty, self.randomization, solve_args=solve_args)
+        group_lasso.__init__(self, loss, epsilon, penalty, self.randomization, solve_args=solve_args)
 
         total_size = loss.saturated_loss.shape[0]
         if subsample_size > total_size:
@@ -650,11 +630,11 @@ class M_estimator_split(M_estimator):
         self.total_size, self.subsample_size = total_size, subsample_size
         
 
-class M_estimator_group_lasso(M_estimator):
+class group_lasso_group_lasso(group_lasso_view):
 
     def __init__(self, loss, epsilon, penalty, randomization, solve_args={'min_its': 50, 'tol': 1.e-10}):
 
-        M_estimator.__init__(self, loss, epsilon, penalty, randomization, solve_args=solve_args)
+        group_lasso.__init__(self, loss, epsilon, penalty, randomization, solve_args=solve_args)
 
         self.Q = self._Mest_hessian[self._overall,:] + epsilon * np.identity(self._overall.sum())
         self.Qinv = np.linalg.inv(self.Q)
@@ -709,3 +689,78 @@ class M_estimator_group_lasso(M_estimator):
         der[self.scaling_slice] = np.array([np.matrix.trace(jacobian_inv_blocks[i]) for i in range(scalings.shape[0])])
         return der
 
+
+#### Subclasses of different randomized views
+
+class glm_group_lasso(group_lasso_view):
+
+    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
+
+        bootstrap_score = pairs_bootstrap_glm(self.loss,
+                                              self.selection_variable['variables'],
+                                              beta_full=self._beta_full,
+                                              inactive=~self.selection_variable['variables'])[0]
+
+        return bootstrap_score
+
+class split_glm_group_lasso(group_lasso_split):
+
+    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}, B=1000):
+
+        # now we need to estimate covariance of
+        # loss.grad(\beta_E^*) - 1/pi * randomized_loss.grad(\beta_E^*)
+
+        m, n, p = self.subsample_size, self.total_size, self.loss.shape[0] # shorthand
+        
+        from .glm import pairs_bootstrap_score # need to correct these imports!!!
+
+        bootstrap_score = pairs_bootstrap_score(self.loss,
+                                                self._overall,
+                                                beta_active=self._beta_full[self._overall],
+                                                solve_args=solve_args)
+
+        # find unpenalized MLE on subsample
+
+        newq, oldq = identity_quadratic(0, 0, 0, 0), self.randomized_loss.quadratic
+        self.randomized_loss.quadratic = newq
+        beta_active_subsample = restricted_Mest(self.randomized_loss,
+                                                self._overall)
+
+        bootstrap_score_split = pairs_bootstrap_score(self.loss,
+                                                      self._overall,
+                                                      beta_active=beta_active_subsample,
+                                                      solve_args=solve_args)
+        self.randomized_loss.quadratic = oldq
+
+        inv_frac = n / m
+        
+        def subsample_diff(m, n, indices):
+            subsample = np.random.choice(indices, size=m, replace=False)
+            full_score = bootstrap_score(indices) # a sum of n terms
+            randomized_score = bootstrap_score_split(subsample) # a sum of m terms
+            return full_score - randomized_score * inv_frac
+
+        first_moment = np.zeros(p)
+        second_moment = np.zeros((p, p))
+        
+        _n = np.arange(n)
+        for _ in range(B):
+            indices = np.random.choice(_n, size=n, replace=True)
+            randomized_score = subsample_diff(m, n, indices)
+            first_moment += randomized_score
+            second_moment += np.multiply.outer(randomized_score, randomized_score)
+
+        first_moment /= B
+        second_moment /= B
+
+        cov = second_moment - np.multiply.outer(first_moment,
+                                                first_moment)
+
+        self.randomization.set_covariance(cov)
+
+        bootstrap_score = pairs_bootstrap_glm(self.loss,
+                                              self.selection_variable['variables'],
+                                              beta_full=self._beta_full,
+                                              inactive=~self.selection_variable['variables'])[0]
+
+        return bootstrap_score
