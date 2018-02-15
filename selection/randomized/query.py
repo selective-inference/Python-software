@@ -9,7 +9,6 @@ from regreg.affine import power_L
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
 from ..constraints.affine import sample_from_constraints
-from .reconstruction import reconstruct_full_from_internal
 
 class query(object):
 
@@ -47,18 +46,9 @@ class query(object):
         observed_target_state = np.atleast_1d(observed_target_state)
 
         linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
+        offset = self.observed_score_state - linear_part.dot(observed_target_state) + score_offset
 
-        offset = self.observed_internal_state - linear_part.dot(observed_target_state)
-
-        # now compute the composition of this map with
-        # self.score_transform
-
-        score_linear, score_offset = self.score_transform
-        composition_linear_part = score_linear.dot(linear_part)
-
-        composition_offset = score_linear.dot(offset) + score_offset
-
-        return (composition_linear_part, composition_offset)
+        return (linear_part, offset)
 
     def get_sampler(self):
         if hasattr(self, "_sampler"):
@@ -80,11 +70,10 @@ class query(object):
         Setup query to prepare for sampling.
         Should set a few key attributes:
 
-            - observed_internal_state
+            - observed_score_state
             - num_opt_var
             - observed_opt_state
             - opt_transform
-            - score_transform
 
         """
         raise NotImplementedError('abstract method -- only keyword arguments')
@@ -340,7 +329,7 @@ class langevin_sampler(optimization_sampler):
 
     def __init__(self,
                  observed_opt_state,
-                 observed_internal_state,
+                 observed_score_state,
                  score_transform,
                  opt_transform,
                  projection,
@@ -360,11 +349,11 @@ class langevin_sampler(optimization_sampler):
         '''
 
         self.observed_opt_state = observed_opt_state.copy()
-        self.observed_internal_state = observed_internal_state.copy()
+        self.observed_score_state = observed_score_state.copy()
         self.score_linear, self.score_offset = score_transform
         self.opt_linear, self.opt_offset = opt_transform
         self.projection = projection
-        self.gradient = lambda opt: - grad_log_density(self.observed_internal_state, opt)
+        self.gradient = lambda opt: - grad_log_density(self.observed_score_state, opt)
         self.log_density = log_density
         self.selection_info = selection_info # a way to record what view and what was conditioned on -- not used in calculations
 
@@ -438,9 +427,8 @@ class affine_gaussian_sampler(optimization_sampler):
     def __init__(self,
                  affine_con,
                  initial_point,
-                 observed_internal_state,
+                 observed_score_state,
                  log_density,
-                 logdens_transform,
                  selection_info=None):
 
         '''
@@ -456,10 +444,9 @@ class affine_gaussian_sampler(optimization_sampler):
 
         self.affine_con = affine_con
         self.initial_point = initial_point
-        self.observed_internal_state = observed_internal_state
+        self.observed_score_state = observed_score_state
         self.selection_info = selection_info
         self.log_density = log_density
-        self.logdens_transform = logdens_transform
 
     def sample(self, ndraw, burnin):
         '''
@@ -513,7 +500,7 @@ class optimization_intervals(object):
         self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
         for opt_sampler, opt_sample, _, _ in opt_sampling_info:
-            self._logden += opt_sampler.log_density(opt_sampler.observed_internal_state, opt_sample)
+            self._logden += opt_sampler.log_density(opt_sampler.observed_score_state, opt_sample)
 
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
@@ -552,11 +539,10 @@ class optimization_intervals(object):
         for opt_sampler, opt_sample, _, score_cov in self.opt_sampling_info:
             cur_score_cov = linear_func.dot(score_cov)
 
-            # cur_nuisance is in the view's internal coordinates
-            cur_nuisance = opt_sampler.observed_internal_state - cur_score_cov * observed_stat / target_cov
+            # cur_nuisance is in the view's score coordinates
+            cur_nuisance = opt_sampler.observed_score_state - cur_score_cov * observed_stat / target_cov
             nuisance.append(cur_nuisance)
             translate_dirs.append(cur_score_cov / target_cov)
-
 
         weights = self._weights(sample_stat + candidate,  # normal sample under candidate
                                 nuisance,                 # nuisance sufficient stats for each view
@@ -605,7 +591,7 @@ class optimization_intervals(object):
         # for each projected (through linear_func) normal sample
         # using the linear decomposition
 
-        # We need access to the map that takes observed_internal for each view
+        # We need access to the map that takes observed_score for each view
         # and constructs the full randomization -- this is the reconstruction map
         # for each view
 
@@ -616,12 +602,12 @@ class optimization_intervals(object):
 
         # In this function, \hat{\theta}_i will change with the Monte Carlo sample
 
-        internal_sample = []
+        score_sample = []
         _lognum = 0
         for i, opt_info in enumerate(self.opt_sampling_info):
             opt_sampler, opt_sample = opt_info[:2]
-            internal_sample = np.multiply.outer(sample_stat, translate_dirs[i]) + nuisance[i][None, :] # these are now internal coordinates
-            _lognum += opt_sampler.log_density(internal_sample, opt_sample)
+            score_sample = np.multiply.outer(sample_stat, translate_dirs[i]) + nuisance[i][None, :] # these are now score coordinates
+            _lognum += opt_sampler.log_density(score_sample, opt_sample)
 
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()

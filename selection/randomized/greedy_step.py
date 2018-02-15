@@ -4,7 +4,6 @@ import regreg.api as rr
 
 from .query import query, optimization_sampler
 from .base import restricted_estimator
-from .reconstruction import reconstruct_full_from_internal
 
 class greedy_score_step(query):
 
@@ -76,22 +75,20 @@ class greedy_score_step(query):
             
         # score at unpenalized M-estimator
 
-        self.observed_internal_state = - self.loss.smooth_objective(beta_full, 'grad')[candidate]
+        self.observed_internal_state = self.observed_score_state = - self.loss.smooth_objective(beta_full, 'grad')[candidate]
         self._randomZ = self.randomization.sample()
 
         self.num_opt_var = self._randomZ.shape[0]
 
         # find the randomized maximizer
 
-        # score transform is identity here so internal is the same as score coords
-
-        randomized_score = self.observed_internal_state - self._randomZ
+        randomized_score = self.observed_score_state - self._randomZ
         terms = self.group_lasso_dual.terms(randomized_score)
 
         # assuming a.s. unique maximizing group here
 
         maximizing_group = np.unique(self.group_lasso_dual.groups)[np.argmax(terms)]
-        maximizing_subgrad = self.observed_internal_state[self.group_lasso_dual.groups == maximizing_group]
+        maximizing_subgrad = self.observed_score_state[self.group_lasso_dual.groups == maximizing_group]
         maximizing_subgrad /= np.linalg.norm(maximizing_subgrad) # this is now a unit vector
         maximizing_subgrad *= self.group_lasso_dual.weights[maximizing_group] # now a vector of length given by weight of maximizing group
         self.maximizing_subgrad = np.zeros(candidate.sum())
@@ -162,26 +159,25 @@ class greedy_score_step(query):
             projection = functools.partial(projection, self.group_lasso_dual_epigraph)
 
             def grad_log_density(query,
-                                 opt_linear,
                                  rand_gradient,
-                                 internal_state,
+                                 score_state,
                                  opt_state):
-                full_state = reconstruct_full_from_internal(query.opt_transform, query.score_transform, internal_state, opt_state)
+                full_state = score_state + reconstruct_opt(query.opt_transform, opt_state)
                 return opt_linear.T.dot(rand_gradient(full_state))
 
-            grad_log_density = functools.partial(grad_log_density, self, self.opt_transform[0], self.randomization.gradient)
+            grad_log_density = functools.partial(grad_log_density, self, self.randomization.gradient)
 
             def log_density(query,
                             opt_linear,
                             rand_log_density,
-                            internal_state,
+                            score_state,
                             opt_state):
-                full_state = reconstruct_full_from_internal(query.opt_transform, query.score_transform, internal_state, opt_state)
+                full_state = score_state + reconstruct_opt(query.opt_transform, opt_state)
                 return rand_log_density(full_state)
-            log_density = functools.partial(log_density, self, self.opt_transform[0], self.randomization.log_density)
+            log_density = functools.partial(log_density, self, self.randomization.log_density)
 
             self._sampler = optimization_sampler(self.observed_opt_state,
-                                                 self.observed_internal_state.copy(),
+                                                 self.observed_score_state,
                                                  self.score_transform,
                                                  self.opt_transform,
                                                  projection,

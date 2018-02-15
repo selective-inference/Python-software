@@ -4,7 +4,6 @@ import numpy as np
 import regreg.api as rr
 
 from .query import query, optimization_sampler
-from .reconstruction import reconstruct_full_from_internal, reconstruct_score
 from .base import restricted_estimator
 
 class threshold_score(query):
@@ -118,7 +117,7 @@ class threshold_score(query):
 
         self.interior = ~self.boundary
 
-        self.observed_internal_state = candidate_score
+        self.observed_internal_state = self.observed_score_state = candidate_score
 
         active_signs = np.sign(randomized_score[self.boundary])
         self.selection_variable = {'boundary_set': self.boundary,
@@ -150,17 +149,15 @@ class threshold_score(query):
         if not hasattr(self, "_sampler"):
 
             def log_density(boundary, 
-                            score_transform,
                             threshold,
                             _density,
                             _cdf,
-                            internal_state, 
+                            score_state, 
                             opt_state):
                 """
                 marginalizing over the sub-gradient
                 """
 
-                score_state = np.atleast_2d(reconstruct_score(score_transform, internal_state))
                 logdens = 0
                 weights = np.zeros_like(boundary, np.float)
 
@@ -173,7 +170,6 @@ class threshold_score(query):
 
             log_density = functools.partial(log_density,
                                             self.boundary,
-                                            self.score_transform,
                                             self.threshold,
                                             self.randomization._density,
                                             self.randomization._cdf)
@@ -186,7 +182,7 @@ class threshold_score(query):
             projection = None
 
             self._sampler = optimization_sampler(np.zeros(()), # nothing to sample
-                                                 self.observed_internal_state.copy(),
+                                                 self.observed_score_state,
                                                  self.score_transform,
                                                  self.opt_transform,
                                                  projection,
