@@ -371,10 +371,12 @@ class lasso_view(query):
                                          mean=cond_mean,
                                          covariance=cond_cov)
 
+                logdens_transform = (logdens_linear, opt_offset)
                 self._sampler = affine_gaussian_sampler(affine_con,
                                                         self.observed_opt_state,
                                                         self.observed_score_state,
                                                         log_density,
+                                                        logdens_transform,
                                                         selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
 
         return self._sampler
@@ -593,10 +595,12 @@ class lasso_view(query):
                                      mean=cond_mean,
                                      covariance=cond_cov)
 
+            logdens_transform = (logdens_linear, new_offset)
             self._sampler = affine_gaussian_sampler(affine_con,
                                                     observed_opt_state,
                                                     self.observed_score_state,
                                                     log_density,
+                                                    logdens_transform,
                                                     selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
 
 
@@ -1591,10 +1595,12 @@ class highdim(lasso):
                                  mean=cond_mean,
                                  covariance=cond_cov)
 
+        logdens_transform = (logdens_linear, opt_offset)
         self.sampler = affine_gaussian_sampler(affine_con,
                                                self.observed_opt_state,
                                                self.observed_score_state,
                                                log_density,
+                                               logdens_transform,
                                                selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
         
         return active_signs
@@ -1718,10 +1724,7 @@ class highdim(lasso):
             _score_linear = -Xfeat.T.dot(self._W[:, None] * X).T
             crosscov_target_score = _score_linear.dot(cov_target)
             observed_target = one_step
-            alternatives = ['twosided'] * overall.sum()
-            for i, f in enumerate(np.nonzero(features)[0]):
-                if active[f]:
-                    alternatives[i] = {1:'greater', -1:'less'}[int(self.selection_variable['sign'][f])]
+            alternatives = ['twosided'] * features.sum()
 
         if dispersion is None: # use Pearson's X^2
             dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(observed_target)))**2 / self._W).sum() / (n - Xfeat.shape[1])
@@ -1754,7 +1757,6 @@ class highdim(lasso):
             dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step)))**2 / self._W).sum() / (n - p)
 
         alternatives = ['twosided'] * features.sum()
-
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def debiased_targets(self, dispersion=None):
