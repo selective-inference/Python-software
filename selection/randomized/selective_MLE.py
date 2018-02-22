@@ -88,9 +88,8 @@ def solve_barrier_nonneg(conjugate_arg,
 def selective_MLE(target_observed,
                   target_cov,
                   target_transform,
-                  opt_transform,
+                  cond_cov,
                   feasible_point,
-                  randomizer_precision,
                   step=1,
                   max_iter=30,
                   tol=1.e-8):
@@ -145,50 +144,62 @@ def selective_MLE(target_observed,
 
     """
 
-    A, data_offset = target_transform # data_offset = N
-    B, opt_offset = opt_transform     # opt_offset = u
+    """
 
-    nopt = B.shape[1]
+    Notes
+    -----
+
+    With $(A, b)$ as `target_transform`, $\Sigma$ as `target_cov`  and $\Sigma_R$ as `cond_cov`, the joint density of
+    the target $\hat{\theta}$ under $H_0:\theta^*=0$ is proportional to
+
+    .. math::
+
+        (\theta, \omega) \mapsto \phi_{(\theta^*,\Sigma)}(\theta) \phi_{A\theta + b, \Sigma_R}(\omega) 1_K(\omega)
+
+    with $K$ representing the constraints on the randomization.
+    """
+
+    A, b = target_linear, target_offset = target_transform
+
+    cond_precision = np.linalg.inv(cond_cov)
+    target_precision = np.linalg.inv(target_cov)
+
+    nopt = cond_precision.shape[0]
     ntarget = A.shape[1]
 
     # setup joint implied covariance matrix
 
-    target_precision = np.linalg.inv(target_cov)
-
     implied_precision = np.zeros((ntarget + nopt, ntarget + nopt))
-    implied_precision[:ntarget,:ntarget] = A.T.dot(randomizer_precision).dot(A) + target_precision
-    implied_precision[:ntarget,ntarget:] = A.T.dot(randomizer_precision).dot(B)
-    implied_precision[ntarget:,:ntarget] = B.T.dot(randomizer_precision).dot(A)
-    implied_precision[ntarget:,ntarget:] = B.T.dot(randomizer_precision).dot(B)
+    implied_precision[:ntarget,:ntarget] = A.T.dot(cond_precision).dot(A) + target_precision
+    implied_precision[:ntarget,ntarget:] = A.T.dot(cond_precision)
+    implied_precision[ntarget:,:ntarget] = cond_precision.dot(A)
+    implied_precision[ntarget:,ntarget:] = cond_precision
     implied_cov = np.linalg.inv(implied_precision)
 
-    implied_opt = implied_cov[ntarget:,ntarget:]
-    implied_target = implied_cov[:ntarget,:ntarget]
-    implied_cross = implied_cov[:ntarget,ntarget:]
+    implied_opt = implied_cov[ntarget:, ntarget:]
+    implied_target = implied_cov[:ntarget, :ntarget]
+    implied_cross = implied_cov[:ntarget, ntarget:]
 
     L = implied_cross.dot(np.linalg.inv(implied_opt))
     M_1 = np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(target_precision)
-    M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T.dot(randomizer_precision))
-
-    conditioned_value = data_offset + opt_offset
+    M_2 = -np.linalg.inv(implied_precision[:ntarget,:ntarget]).dot(A.T)
 
     linear_term = implied_precision[ntarget:,ntarget:].dot(implied_cross.T.dot(np.linalg.inv(implied_target)))
-    offset_term = -B.T.dot(randomizer_precision).dot(conditioned_value)
 
-    natparam_transform = (linear_term, offset_term)
-    conditional_natural_parameter = linear_term.dot(target_observed) + offset_term
+    natparam_transform = (linear_term, target_offset)
+    conditional_natural_parameter = linear_term.dot(target_observed) - target_offset
 
     conditional_precision = implied_precision[ntarget:,ntarget:]
 
     M_1_inv = np.linalg.inv(M_1)
-    mle_offset_term = - M_1_inv.dot(M_2.dot(conditioned_value))
+    mle_offset_term = - M_1_inv.dot(M_2.dot(target_offset))
     mle_transform = (M_1_inv, -M_1_inv.dot(L), mle_offset_term)
     var_transform = (-implied_precision[ntarget:,:ntarget].dot(M_1),
-                     -implied_precision[ntarget:,:ntarget].dot(M_2.dot(conditioned_value)))
+                     -implied_precision[ntarget:,:ntarget].dot(M_2.dot(target_offset)))
 
     cross_covariance = np.linalg.inv(implied_precision[:ntarget, :ntarget]).dot(implied_precision[:ntarget, ntarget:])
     var_matrices = (np.linalg.inv(implied_opt), np.linalg.inv(implied_precision[:ntarget,:ntarget]),
-                    cross_covariance,target_precision)
+                    cross_covariance, target_precision)
 
     def mle_map(natparam_transform, mle_transform, var_transform, var_matrices,
                 feasible_point, conditional_precision, target_observed):
@@ -204,6 +215,8 @@ def selective_MLE(target_observed,
                                               tol=1.e-8)
 
         selective_MLE = mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset
+
+        # why are we resolving? hmm...
 
         var_target_lin, var_offset = var_transform
         var_precision, inv_precision_target, cross_covariance, target_precision =  var_matrices
@@ -222,6 +235,6 @@ def selective_MLE(target_observed,
                                     feasible_point, conditional_precision)
     sel_MLE, inv_hessian = mle_partial(target_observed)
 
-    implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(randomizer_precision).dot(conditioned_value), offset_term])
+    implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(target_offset), -target_offset])
 
     return np.squeeze(sel_MLE), inv_hessian, mle_partial, implied_cov, implied_cov.dot(implied_parameter), mle_transform
