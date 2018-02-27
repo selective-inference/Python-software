@@ -66,16 +66,15 @@ class lasso_view(query):
         (self.loss,
          self.epsilon,
          self.penalty,
-         self.randomization,
-         self.solve_args) = (loss,
-                             epsilon,
-                             penalty,
-                             randomization,
-                             solve_args)
+         self.randomization) = (loss,
+                                epsilon,
+                                penalty,
+                                randomization)
          
     # Methods needed for subclassing a query
 
-    def solve(self, solve_args={'min_its':20, 'tol':1.e-10}, nboot=2000,
+    def solve(self, nboot=2000,
+              solve_args={'min_its':20, 'tol':1.e-10}, 
               perturb=None):
 
         self.randomize(perturb=perturb)
@@ -84,13 +83,11 @@ class lasso_view(query):
          randomized_loss,
          epsilon,
          penalty,
-         randomization,
-         solve_args) = (self.loss,
-                        self.randomized_loss, 
-                        self.epsilon,
-                        self.penalty,
-                        self.randomization,
-                        self.solve_args)
+         randomization) = (self.loss,
+                           self.randomized_loss, 
+                           self.epsilon,
+                           self.penalty,
+                           self.randomization)
 
         # initial solution
 
@@ -329,12 +326,13 @@ class lasso_view(query):
 
                 if prec_array:
                     cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+                    cond_cov = np.linalg.inv(cond_precision)
                     logdens_linear = cond_cov.dot(opt_linear.T.dot(prec))
                 else:
                     cond_precision = opt_linear.T.dot(opt_linear) * prec
+                    cond_cov = np.linalg.inv(cond_precision)
                     logdens_linear = cond_cov.dot(opt_linear.T) * prec
 
-                cond_cov = np.linalg.inv(cond_precision)
                 cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
                 # need a log_density function
@@ -548,12 +546,13 @@ class lasso_view(query):
 
             if prec_array:
                 cond_precision = new_linear.T.dot(prec.dot(new_linear))
+                cond_cov = np.linalg.inv(cond_precision)
                 logdens_linear = cond_cov.dot(new_linear.T.dot(prec))
             else:
                 cond_precision = new_linear.T.dot(new_linear) * prec
+                cond_cov = np.linalg.inv(cond_precision)
                 logdens_linear = cond_cov.dot(new_linear.T) * prec
 
-            cond_cov = np.linalg.inv(cond_precision)
             cond_mean = -logdens_linear.dot(self.observed_score_state + new_offset)
 
             def log_density(logdens_linear, offset, cond_prec, score, opt):
@@ -739,7 +738,7 @@ class lasso(object):
             self._view = glm_lasso_parametric(self.loglike, self.ridge_term, self.penalty, self.randomizer)
         else:
             self._view = glm_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
-        self._view.solve(nboot=nboot, perturb=perturb)
+        self._view.solve(nboot=nboot, perturb=perturb, solve_args=solve_args)
 
         self.signs = np.sign(self._view.initial_soln)
         self.selection_variable = self._view.selection_variable
@@ -1457,7 +1456,7 @@ class highdim(lasso):
         self._initial_omega = perturb
         quad = rr.identity_quadratic(self.ridge_term, 0, -perturb)
         problem = rr.simple_problem(self.loglike, self.penalty)
-        self.initial_soln = problem.solve(quad)
+        self.initial_soln = problem.solve(quad, **solve_args)
 
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
@@ -1570,6 +1569,7 @@ class highdim(lasso):
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = cond_cov.dot(opt_linear.T) * prec
+
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
