@@ -1660,32 +1660,35 @@ class highdim(lasso):
             else:
                 observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
 
-        opt_sample = self.sampler.sample(ndraw,  burnin)
+        if self._overall.sum() > 0:
+            opt_sample = self.sampler.sample(ndraw,  burnin)
 
-        pivots = self.sampler.coefficient_pvalues(observed_target, 
-                                                  cov_target, 
-                                                  cov_target_score, 
-                                                  parameter=parameter, 
-                                                  sample=opt_sample, 
-                                                  alternatives=alternatives)
-        if not np.all(parameter == 0):
-            pvalues = self.sampler.coefficient_pvalues(observed_target, 
-                                                       cov_target, 
-                                                       cov_target_score, 
-                                                       parameter=np.zeros_like(parameter), 
-                                                       sample=opt_sample, 
-                                                       alternatives=alternatives)
+            pivots = self.sampler.coefficient_pvalues(observed_target, 
+                                                      cov_target, 
+                                                      cov_target_score, 
+                                                      parameter=parameter, 
+                                                      sample=opt_sample, 
+                                                      alternatives=alternatives)
+            if not np.all(parameter == 0):
+                pvalues = self.sampler.coefficient_pvalues(observed_target, 
+                                                           cov_target, 
+                                                           cov_target_score, 
+                                                           parameter=np.zeros_like(parameter), 
+                                                           sample=opt_sample, 
+                                                           alternatives=alternatives)
+            else:
+                pvalues = pivots
+
+            intervals = None
+            if compute_intervals:
+                intervals = self.sampler.confidence_intervals(observed_target, 
+                                                              cov_target, 
+                                                              cov_target_score,
+                                                              sample=opt_sample)
+
+            return pivots, pvalues, intervals
         else:
-            pvalues = pivots
-
-        intervals = None
-        if compute_intervals:
-            intervals = self.sampler.confidence_intervals(observed_target, 
-                                                          cov_target, 
-                                                          cov_target_score,
-                                                          sample=opt_sample)
-
-        return pivots, pvalues, intervals
+            return [], [], []
 
     # Targets of inference
     # and covariance with score representation
