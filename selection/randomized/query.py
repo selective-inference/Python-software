@@ -429,6 +429,7 @@ class affine_gaussian_sampler(optimization_sampler):
                  initial_point,
                  observed_score_state,
                  log_density,
+                 logdens_transform, # described how score enters log_density.
                  selection_info=None):
 
         '''
