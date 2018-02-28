@@ -51,7 +51,8 @@ class lasso_iv(highdim):
         if penalty is None:
             penalty = 2.01 * np.sqrt(n * np.log(n))
         penalty = np.ones(loglike.shape[0]) * penalty
-        penalty[-1] = 0.
+        #penalty[-1] = 0.
+        penalty[-1] /= 1000.
 
         if ridge_term is None:
             ridge_term = 1. * np.sqrt(n)
@@ -189,6 +190,196 @@ class lasso_iv(highdim):
     
         return Z, D, Y, alpha, beta, gamma
 
+
+# rescaled version of lasso_iv which uses the scaled \sqrt{n} beta_hat as target
+# only need to change observed_target, cov_target, cov_target_score and also parameter input
+class rescaled_lasso_iv(lasso_iv):
+
+    def summary(self,
+                parameter=None,
+                Sigma_11=1.,
+                level=0.95,
+                ndraw=10000, 
+                burnin=2000,
+                compute_intervals=False):
+        """
+        Produce p-values and confidence intervals for targets
+        of model including selected features
+
+        Parameters
+        ----------
+
+        selected_features : np.bool
+            Binary encoding of which features to use in final
+            model and targets.
+
+        parameter : np.array
+            Hypothesized value for parameter beta_star -- defaults to 0.
+
+        Sigma_11 : true Sigma_11, known for now
+
+        level : float
+            Confidence level.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        """
+
+        if parameter is None: # this is for pivot -- could use true beta^*
+            parameter = np.zeros(1)
+
+        n, _ = self.Z.shape
+        parameter *= np.sqrt(n)
+        parameter = np.atleast_1d(parameter)
+
+        # compute tsls, i.e. the observed_target
+
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
+        P_ZX, P_ZY = self.loglike.data
+        P_ZD = P_ZX[:,-1]
+        #two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma_11*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
+        denom = P_ZD.dot(P_Z - P_ZE).dot(P_ZD)
+        two_stage_ls = (P_ZD.dot(P_Z - P_ZE).dot(P_ZY)) / denom
+        two_stage_ls = np.atleast_1d(two_stage_ls)
+        observed_target = two_stage_ls
+        observed_target *= np.sqrt(n)
+
+        # only has the parametric version right now
+        # compute cov_target, cov_target_score
+
+        cov_target = np.atleast_2d(Sigma_11/denom)
+        cov_target *= n
+        #score_cov = -1.*np.sqrt(Sigma_11/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target_score = -1.*(Sigma_11/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target_score = np.atleast_2d(cov_target_score)
+        cov_target_score *= np.sqrt(n)
+
+        alternatives = ['twosided']
+
+        opt_sample = self.sampler.sample(ndraw, burnin)
+
+        pivots = self.sampler.coefficient_pvalues(observed_target, 
+                                                  cov_target, 
+                                                  cov_target_score, 
+                                                  parameter=parameter, 
+                                                  sample=opt_sample,
+                                                  alternatives=alternatives)
+
+        if not np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(observed_target, 
+                                                       cov_target, 
+                                                       cov_target_score, 
+                                                       parameter=np.zeros_like(parameter), 
+                                                       sample=opt_sample,
+                                                       alternatives=alternatives)
+        else:
+            pvalues = pivots
+
+        intervals = None
+        if compute_intervals:
+            intervals = self.sampler.confidence_intervals(observed_target, 
+                                                          cov_target, 
+                                                          cov_target_score, 
+                                                          sample=opt_sample)
+
+        return pivots, pvalues, intervals
+
+
+# use the tsls statistic instead of tsls beta as target
+# the null pivot is usable but CI is WRONG because of the importance weight
+class stat_lasso_iv(lasso_iv):
+
+    def summary(self,
+                parameter=None,
+                Sigma_11=1.,
+                level=0.95,
+                ndraw=10000, 
+                burnin=2000,
+                compute_intervals=False):
+        """
+        Produce p-values and confidence intervals for targets
+        of model including selected features
+
+        Parameters
+        ----------
+
+        selected_features : np.bool
+            Binary encoding of which features to use in final
+            model and targets.
+
+        parameter : np.array
+            Hypothesized value for parameter beta_star -- defaults to 0.
+
+        Sigma_11 : true Sigma_11, known for now
+
+        level : float
+            Confidence level.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        """
+
+        if parameter is None: # this is for pivot -- could use true beta^*
+            parameter = 0.
+
+        # compute tsls, i.e. the observed_target
+
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
+        P_ZX, P_ZY = self.loglike.data
+        P_ZD = P_ZX[:,-1]
+        two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(P_ZY-P_ZD*parameter))/np.sqrt(Sigma_11*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
+        #denom = P_ZD.dot(P_Z - P_ZE).dot(P_ZD)
+        #two_stage_ls = (P_ZD.dot(P_Z - P_ZE).dot(P_ZY)) / denom
+        two_stage_ls = np.atleast_1d(two_stage_ls)
+        observed_target = two_stage_ls
+
+        # only has the parametric version right now
+        # compute cov_target, cov_target_score
+
+        cov_target = np.atleast_2d(1.)
+
+        cov_target_score = -1.*np.sqrt(Sigma_11/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        #cov_target_score = -1.*(Sigma_11/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target_score = np.atleast_2d(cov_target_score)
+
+        alternatives = ['twosided']
+
+        opt_sample = self.sampler.sample(ndraw, burnin)
+
+        # set parameter to be zero!
+        pivots = self.sampler.coefficient_pvalues(observed_target, 
+                                                  cov_target, 
+                                                  cov_target_score, 
+                                                  sample=opt_sample,
+                                                  alternatives=alternatives)
+
+        if not np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(observed_target, 
+                                                       cov_target, 
+                                                       cov_target_score, 
+                                                       sample=opt_sample,
+                                                       alternatives=alternatives)
+        else:
+            pvalues = pivots
+
+        intervals = None
+        if compute_intervals:
+            intervals = self.sampler.confidence_intervals(observed_target, 
+                                                          cov_target, 
+                                                          cov_target_score, 
+                                                          sample=opt_sample)
+
+        return pivots, pvalues, intervals
 
         
 
