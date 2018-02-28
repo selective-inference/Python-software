@@ -7,11 +7,12 @@ import functools
 
 import numpy as np
 import regreg.api as rr
-from .randomization import randomization
-from .query import multiple_queries, optimization_sampler
-from .M_estimator import restricted_Mest
+from .lasso import highdim
+#from .randomization import randomization
+#from .query import multiple_queries, optimization_sampler
+#from .M_estimator import restricted_Mest
 
-class lasso_iv(object):
+class lasso_iv(highdim):
 
     r"""
     A class for the LASSO with invalid instrumental variables for post-selection inference.
@@ -29,188 +30,38 @@ class lasso_iv(object):
 
     """
 
-    def __init__(self, 
-                 Y,
-                 D, 
-                 Z,
-                 feature_weights,
-                 ridge_term,
-                 randomizer_scale,
-                 randomizer='gaussian'):
-        r"""
-
-        Create a new post-selection object for the IV LASSO problem
-
-        hard-code the covariance and variance info
-
-        Parameters
-        ----------
-
-        Y : response
-
-        D : treatment of interest
-
-        Z : instruments
-
-        feature_weights : np.ndarray
-            Feature weights for L-1 penalty for alpha. If a float,
-            it is brodcast to all features.
-
-        ridge_term : float
-            How big a ridge term to add?
-
-        randomizer_scale : float
-            Scale for IID components of randomization.
-
-        randomizer : str (optional)
-            One of ['laplace', 'logistic', 'gaussian']
-
-
-        """
-
+    # add .Z field for lasso IV subclass
+    def __init__(self,
+                 Y, 
+                 D,
+                 Z, 
+                 penalty=None, 
+                 ridge_term=None,
+                 randomizer_scale=None):
+    
         # form the projected design and response
-
         P_Z = Z.dot(np.linalg.pinv(Z))
         X = np.hstack([Z, D.reshape((-1,1))])
         P_ZX = P_Z.dot(X)
         P_ZY = P_Z.dot(Y)
+        loglike = rr.glm.gaussian(P_ZX, P_ZY)
 
+        n, p = Z.shape
+
+        if penalty is None:
+            penalty = 2.01 * np.sqrt(n * np.log(n))
+        penalty = np.ones(loglike.shape[0]) * penalty
+        penalty[-1] = 0.
+
+        if ridge_term is None:
+            ridge_term = 1. * np.sqrt(n)
+
+        if randomizer_scale is None:
+            randomizer_scale = 0.5*np.sqrt(n)
+
+        highdim.__init__(self, loglike, penalty, ridge_term, randomizer_scale)
         self.Z = Z
-        self.P_ZX, self.P_ZY = P_ZX, P_ZY
-        self.loglike = rr.glm.gaussian(P_ZX, P_ZY)
-        self.nfeature = p = self.loglike.shape[0]
 
-        if np.asarray(feature_weights).shape == ():
-            feature_weights = np.ones(self.loglike.shape[0] - 1) * feature_weights
-        self.feature_weights = np.hstack([np.asarray(feature_weights), 0])
-
-        if randomizer == 'laplace':
-            self.randomizer = randomization.laplace((p,), scale=randomizer_scale)
-        elif randomizer == 'gaussian':
-            self.randomizer = randomization.isotropic_gaussian((p,), scale=randomizer_scale)
-        elif randomizer == 'logistic':
-            self.randomizer = randomization.logistic((p,), scale=randomizer_scale)
-
-        self.ridge_term = ridge_term
-        self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
-        self.loss = self.loglike
-
-
-    def fit(self, solve_args={'tol':1.e-12, 'min_its':50}):
-        """
-        Fit the randomized lasso using `regreg`.
-
-        Parameters
-        ----------
-
-        solve_args : keyword args
-             Passed to `regreg.problems.simple_problem.solve`.
-
-        Returns
-        -------
-
-        signs : np.float
-             all signs of randomized lasso solution.
-             
-        """
-
-        p = self.nfeature
-
-        # solve the optimization problem here, return the sign pattern
-
-        random_linear_term = self.randomizer.sample()
-        # rr.identity_quadratic essentially amounts to epsilon/2 * \|x - 0\|^2 + <-random_linear_term, x> + 0
-        self.loss.quadratic = rr.identity_quadratic(self.ridge_term, 0, -random_linear_term, 0)
-
-        # Optimization problem   
-        problem = rr.simple_problem(self.loss, self.penalty)
-        problem.solve(**solve_args) 
-        self.soln = problem.coefs
-
-        self.signs = np.sign(self.soln)
-        self.active_set = self.signs != 0
-        self.inactive_set = ~self.active_set
-
-        # for sampler
-
-        self.inactive_weighted_sup = rr.weighted_supnorm(self.penalty.weights[self.inactive_set], bound=1.)
-        self.active_slice = self.active_set.copy() # copy() is necessary
-        self.active_slice[-1] = 0 # this is beta -- no constraint on sign
-        self.active_signs = self.signs[self.active_set][:-1]
-        self.subgrad_slice = self.inactive_set
-
-        self.observed_opt_state = np.zeros_like(self.soln)
-        self.observed_opt_state[self.active_set] = self.soln[self.active_set]
-        # subgrad part already has lambda, btw [-lam,lam]
-        self.observed_opt_state[self.inactive_set] = -(self.loss.smooth_objective(self.soln,'grad') +
-                                                       self.loss.quadratic.objective(self.soln,'grad'))[self.inactive_set]
-
-        return self.signs
-
-    def get_sampler(self):
-        # setup the default optimization sampler
-
-        if not hasattr(self, "_sampler"):
-            def projection(weighted_sup, subgrad_slice, active_slice, opt_state):
-                """
-                Full projection for Langevin.
-
-                The state here will be only the state of the optimization variables.
-                """
-
-                new_state = opt_state.copy() # not really necessary to copy
-                new_state[active_slice] = np.maximum(self.active_signs * opt_state[active_slice], 0) * self.active_signs
-                new_state[subgrad_slice] = weighted_sup.bound_prox(opt_state[subgrad_slice])
-                return new_state
-
-            projection = functools.partial(projection, self.inactive_weighted_sup, self.subgrad_slice, self.active_slice)
-
-            # X^TX matrix
-            H = (self.P_ZX.T.dot(self.P_ZX) + np.identity(self.P_ZX.shape[1]) * self.ridge_term)[:,self.active_set]
-            S = self.P_ZX.T.dot(self.P_ZY)
-
-            opt_linear = np.zeros((H.shape[0], H.shape[0]))
-            opt_linear[:, self.active_set] = H
-            opt_linear[:, self.inactive_set][self.inactive_set] = np.identity(self.inactive_set.sum())
-
-            opt_offset = np.zeros(opt_linear.shape[0])
-            # off_set not include beta
-            opt_offset[self.active_slice] = self.feature_weights[self.active_slice] * self.signs[self.active_slice]
-
-            opt_transform = opt_linear, opt_offset
-
-            def grad_log_density(opt_transform,
-                                 rand_gradient,
-                                 S,
-                                 opt_state):
-                opt_linear, opt_offset = opt_transform
-                opt_state = np.atleast_2d(opt_state)
-                full_state = np.squeeze(opt_linear.dot(opt_state.T) + (opt_offset)[:, None]).T - S
-                deriv = opt_linear.T.dot(rand_gradient(full_state).T)
-                return deriv
-                
-            grad_log_density = functools.partial(grad_log_density, opt_transform, self.randomizer.gradient)
-
-            def log_density(opt_transform,
-                            rand_log_density,
-                            S,
-                            opt_state):
-                opt_state = np.atleast_2d(opt_state)
-                full_state = np.squeeze(opt_linear.dot(opt_state.T) + (opt_offset)[:, None]).T - S
-                return rand_log_density(full_state)
-
-            log_density = functools.partial(log_density, opt_transform, self.randomizer.log_density)
-
-            self._sampler = optimization_sampler(self.observed_opt_state,
-                                                 S.copy(),
-                                                 (-np.identity(S.shape[0]), np.zeros(S.shape[0])),
-                                                 opt_transform,
-                                                 projection,
-                                                 grad_log_density,
-                                                 log_density)
-        return self._sampler
-
-    sampler = property(get_sampler)
 
     def summary(self,
                 parameter=None,
@@ -249,30 +100,100 @@ class lasso_iv(object):
         if parameter is None: # this is for pivot -- could use true beta^*
             parameter = np.zeros(1)
 
-        # compute tsls
+        parameter = np.atleast_1d(parameter)
+
+        # compute tsls, i.e. the observed_target
 
         P_Z = self.Z.dot(np.linalg.pinv(self.Z))
-        P_ZE = self.Z[:,self.active_slice[:-1]].dot(np.linalg.pinv(self.Z[:,self.active_slice[:-1]]))
-        P_ZD = self.P_ZX[:,-1]
+        P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
+        P_ZX, P_ZY = self.loglike.data
+        P_ZD = P_ZX[:,-1]
         #two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
         denom = P_ZD.dot(P_Z - P_ZE).dot(P_ZD)
-        two_stage_ls = (P_ZD.dot(P_Z - P_ZE).dot(self.P_ZY)) / denom
+        two_stage_ls = (P_ZD.dot(P_Z - P_ZE).dot(P_ZY)) / denom
         two_stage_ls = np.atleast_1d(two_stage_ls)
-        target_cov = np.atleast_2d(Sigma/denom)
+        observed_target = two_stage_ls
+
+        # only has the parametric version right now
+        # compute cov_target, cov_target_score
+
+        cov_target = np.atleast_2d(Sigma/denom)
         #score_cov = -1.*np.sqrt(Sigma/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
-        score_cov = -1.*(Sigma/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
-        score_cov = np.atleast_2d(score_cov)
+        cov_target_score = -1.*(Sigma/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target_score = np.atleast_2d(cov_target_score)
+
+        alternatives = ['twosided']
 
         opt_sample = self.sampler.sample(ndraw, burnin)
 
-        pivots = self.sampler.coefficient_pvalues(two_stage_ls, target_cov, score_cov, parameter=parameter, sample=opt_sample)
-        if np.all(parameter == 0):
-            pvalues = self.sampler.coefficient_pvalues(two_stage_ls, target_cov, score_cov, parameter=np.zeros_like(parameter), sample=opt_sample)
+        pivots = self.sampler.coefficient_pvalues(observed_target, 
+                                                  cov_target, 
+                                                  cov_target_score, 
+                                                  parameter=parameter, 
+                                                  sample=opt_sample,
+                                                  alternatives=alternatives)
+
+        if not np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(observed_target, 
+                                                       cov_target, 
+                                                       cov_target_score, 
+                                                       parameter=np.zeros_like(parameter), 
+                                                       sample=opt_sample,
+                                                       alternatives=alternatives)
         else:
             pvalues = pivots
 
         intervals = None
         if compute_intervals:
-            intervals = self.sampler.confidence_intervals(two_stage_ls, target_cov, score_cov, sample=opt_sample)
+            intervals = self.sampler.confidence_intervals(observed_target, 
+                                                          cov_target, 
+                                                          cov_target_score, 
+                                                          sample=opt_sample)
 
         return pivots, pvalues, intervals
+
+    @staticmethod
+    def bigaussian_instance(n=1000,p=10,
+                            s=3,snr=7.,random_signs=False, #true alpha parameter
+                            gsnr = 1., #true gamma parameter
+                            beta = 1., #true beta parameter
+                            Sigma = np.array([[1., 0.8], [0.8, 1.]]), #noise variance matrix
+                            rho=0,scale=False,center=True): #Z matrix structure, note that scale=TRUE will simulate weak IV case!
+
+        # Generate parameters
+        # --> Alpha coefficients
+        alpha = np.zeros(p) 
+        alpha[:s] = snr 
+        if random_signs:
+            alpha[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
+        active = np.zeros(p, np.bool)
+        active[:s] = True
+        # --> gamma coefficient
+        gamma = np.repeat([gsnr],p)
+
+        # Generate samples
+        # Generate Z matrix 
+        Z = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
+            np.sqrt(rho) * np.random.standard_normal(n)[:,None])
+        if center:
+            Z -= Z.mean(0)[None,:]
+        if scale:
+            Z /= (Z.std(0)[None,:] * np.sqrt(n))
+        #    Z /= np.sqrt(n)
+        # Generate error term
+        mean = [0, 0]
+        errorTerm = np.random.multivariate_normal(mean,Sigma,n)
+        # Generate D and Y
+        D = Z.dot(gamma) + errorTerm[:,1]
+        Y = Z.dot(alpha) + D * beta + errorTerm[:,0]
+    
+        return Z, D, Y, alpha, beta, gamma
+
+
+        
+
+
+
+
+
+
