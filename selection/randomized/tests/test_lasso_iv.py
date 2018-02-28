@@ -5,26 +5,26 @@ from selection.randomized.lasso_iv import lasso_iv
 import matplotlib.pyplot as plt
 from statsmodels.distributions import ECDF
 
-# sigma is the true Sigma_{12}
-def test_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, sigma=0.8, gsnr=1., beta_star=1.):
+# Sigma_12 is the true Sigma_{12}
+def test_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
 
     #inst, const = bigaussian_instance, lasso_iv
-    Z, D, Y, alpha, beta_star, gamma = lasso_iv.bigaussian_instance(n=n,p=p,s=s, gsnr=gsnr,beta=beta_star,Sigma=np.array([[1., sigma],[sigma, 1.]]))
+    Z, D, Y, alpha, beta_star, gamma = lasso_iv.bigaussian_instance(n=n,p=p,s=s, gsnr=gsnr,beta=beta_star,Sigma=np.array([[1., Sigma_12],[Sigma_12, 1.]]))
 
     #n, p = Z.shape
 
     conv = lasso_iv(Y, D, Z)
     conv.fit()
 
-    pivot, _, _ = conv.summary(parameter=beta_star, Sigma=sigma)
+    pivot, _, _ = conv.summary(parameter=beta_star)
 
-    return pivot
+    return pivot, _
 
-def test_pivots(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, sigma=0.8, gsnr=1., beta_star=1.):
+def test_pivots(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
     P0 = []
     for i in range(nsim):
         try:
-            p0 = test_lasso_iv_instance(n=n, p=p, s=s, sigma=sigma, gsnr=gsnr, beta_star=beta_star)
+            p0 = test_lasso_iv_instance(n=n, p=p, s=s, Sigma_12=Sigma_12, gsnr=gsnr, beta_star=beta_star)
         except:
             p0 = []
         P0.extend(p0)
@@ -44,13 +44,13 @@ def main(nsim=500):
     from statsmodels.distributions import ECDF
 
     n, p, s = 1000, 10, 3
-    sigma = 0.8
+    Sigma_12 = 0.8
     gsnr = 1.
     beta_star = 1.
 
     for i in range(nsim):
         try:
-            p0 = test_lasso_iv_instance(n=n, p=p, s=s, sigma=sigma, gsnr=gsnr, beta_star=beta_star)
+            p0 = test_lasso_iv_instance(n=n, p=p, s=s, Sigma_12=Sigma_12, gsnr=gsnr, beta_star=beta_star)
         except:
             p0 = []
         P0.extend(p0)
