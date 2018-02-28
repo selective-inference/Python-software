@@ -65,7 +65,7 @@ class lasso_iv(highdim):
 
     def summary(self,
                 parameter=None,
-                Sigma=1.,
+                Sigma_11=1.,
                 level=0.95,
                 ndraw=10000, 
                 burnin=2000,
@@ -84,7 +84,7 @@ class lasso_iv(highdim):
         parameter : np.array
             Hypothesized value for parameter beta_star -- defaults to 0.
 
-        Sigma : true Sigma_11, known for now
+        Sigma_11 : true Sigma_11, known for now
 
         level : float
             Confidence level.
@@ -108,7 +108,7 @@ class lasso_iv(highdim):
         P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
         P_ZX, P_ZY = self.loglike.data
         P_ZD = P_ZX[:,-1]
-        #two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
+        #two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma_11*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
         denom = P_ZD.dot(P_Z - P_ZE).dot(P_ZD)
         two_stage_ls = (P_ZD.dot(P_Z - P_ZE).dot(P_ZY)) / denom
         two_stage_ls = np.atleast_1d(two_stage_ls)
@@ -117,9 +117,9 @@ class lasso_iv(highdim):
         # only has the parametric version right now
         # compute cov_target, cov_target_score
 
-        cov_target = np.atleast_2d(Sigma/denom)
-        #score_cov = -1.*np.sqrt(Sigma/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
-        cov_target_score = -1.*(Sigma/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target = np.atleast_2d(Sigma_11/denom)
+        #score_cov = -1.*np.sqrt(Sigma_11/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target_score = -1.*(Sigma_11/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
         cov_target_score = np.atleast_2d(cov_target_score)
 
         alternatives = ['twosided']
