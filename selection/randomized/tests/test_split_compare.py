@@ -5,7 +5,7 @@ import regreg.api as rr
 
 import selection.tests.reports as reports
 
-from ...tests.flags import SMALL_SAMPLES, SET_SEED
+from ...tests.flags import SMALL_SAMPLES
 from selection.api import (randomization, 
                            split_glm_group_lasso)
 

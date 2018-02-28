@@ -63,7 +63,7 @@ def reconstruct_full_from_internal(opt_transform, score_transform, internal_stat
     Reconstruct original randomization state from internal state data
     and optimization state.
     """
-    randomization_internal = reconstruct_score(score_transform, internal_state)
+    randomization_score = reconstruct_score(score_transform, internal_state)
     randomization_opt = reconstruct_opt(opt_transform, opt_state)
-    return randomization_internal + randomization_opt
+    return randomization_score + randomization_opt
 
