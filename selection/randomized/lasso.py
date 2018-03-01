@@ -1744,6 +1744,7 @@ class highdim(lasso):
         # working out conditional law of opt variables given
         # target after decomposing score wrt target
 
+        print(observed_target, cov_target, cov_target_score)
         return self.sampler.selective_MLE(observed_target, cov_target, cov_target_score, solve_args=solve_args)
 
     # Targets of inference
