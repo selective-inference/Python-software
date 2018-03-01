@@ -2,7 +2,7 @@ import numpy as np
 import nose.tools as nt
 
 import selection.randomized.lasso as L; reload(L)
-from selection.randomized.lasso import highdim 
+from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
@@ -14,24 +14,24 @@ def test_onedim_lasso(n=5000, p=1, signal_fac=1.5, s=1, ndraw=5000, burnin=1000,
     inst, const = gaussian_instance, highdim.gaussian
     signal = signal_fac * np.sqrt(2 * np.log(p+1.))
     X, Y, beta = inst(n=n,
-                      p=p, 
-                      signal=signal, 
-                      s=s, 
-                      equicorrelated=False, 
-                      rho=rho, 
-                      sigma=sigma, 
+                      p=p,
+                      signal=signal,
+                      s=s,
+                      equicorrelated=False,
+                      rho=rho,
+                      sigma=sigma,
                       random_signs=True)[:3]
 
     n, p = X.shape
 
     W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p+1.)) * sigma
 
-    conv = const(X, 
-                 Y, 
-                 W, 
+    conv = const(X,
+                 Y,
+                 W,
                  randomizer_scale=randomizer_scale * sigma,
                  ridge_term=0.)
-    
+
     signs = conv.fit()
     nonzero = signs != 0
 
@@ -43,6 +43,7 @@ def test_onedim_lasso(n=5000, p=1, signal_fac=1.5, s=1, ndraw=5000, burnin=1000,
         print(np.linalg.pinv(X[:,nonzero]).dot(Y), 'relaxed')
         print(pv)
 
+test_onedim_lasso()
 
 def main(nsim=500):
 
@@ -59,7 +60,7 @@ def main(nsim=500):
         P0.extend(p0)
         PA.extend(pA)
         print(np.mean(P0), np.std(P0), np.mean(np.array(PA) < 0.05))
-    
+
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)
             plt.clf()

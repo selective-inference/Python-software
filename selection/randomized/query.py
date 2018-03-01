@@ -6,7 +6,7 @@ from scipy.optimize import bisect
 
 from regreg.affine import power_L
 
-from .selective_MLE import solve_barrier_nonneg
+#from .selective_MLE import solve_barrier_nonneg
 
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
