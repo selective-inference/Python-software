@@ -6,7 +6,7 @@ from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-def test_onedim_lasso(n=200, p=1, signal_fac=1.5, s=1, ndraw=5000, burnin=1000, sigma=3, full=True, rho=0.4, randomizer_scale=1):
+def test_onedim_lasso(n=5000, p=1, signal_fac=1.5, s=1, ndraw=5000, burnin=1000, sigma=3, full=True, rho=0.4, randomizer_scale=1):
     """
     Compare to R randomized lasso
     """
@@ -29,30 +29,19 @@ def test_onedim_lasso(n=200, p=1, signal_fac=1.5, s=1, ndraw=5000, burnin=1000, 
     conv = const(X, 
                  Y, 
                  W, 
-                 randomizer_scale=randomizer_scale * sigma)
+                 randomizer_scale=randomizer_scale * sigma,
+                 ridge_term=0.)
     
     signs = conv.fit()
     nonzero = signs != 0
 
     if nonzero.sum():
+
         estimate, _, _, pv = conv.selective_MLE(target="full")
         print(estimate, 'selective MLE')
         print(beta[nonzero], 'truth')
         print(np.linalg.pinv(X[:,nonzero]).dot(Y), 'relaxed')
-        print(pv[beta[nonzero] == 0], pv[beta[nonzero] != 0])
-
-        if full:
-            _, pval, intervals = conv.summary(target="full",
-                                              ndraw=ndraw,
-                                              burnin=burnin, 
-                                              compute_intervals=False)
-        else:
-            _, pval, intervals = conv.summary(target="selected",
-                                              ndraw=ndraw,
-                                              burnin=burnin, 
-                                              compute_intervals=False)
-
-        return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
+        print(pv)
 
 
 def main(nsim=500):

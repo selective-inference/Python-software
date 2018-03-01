@@ -369,6 +369,7 @@ class lasso_view(query):
                                          covariance=cond_cov)
 
                 logdens_transform = (logdens_linear, opt_offset)
+
                 self._sampler = affine_gaussian_sampler(affine_con,
                                                         self.observed_opt_state,
                                                         self.observed_score_state,
@@ -1595,6 +1596,7 @@ class highdim(lasso):
                                  covariance=cond_cov)
 
         logdens_transform = (logdens_linear, opt_offset)
+
         self.sampler = affine_gaussian_sampler(affine_con,
                                                self.observed_opt_state,
                                                self.observed_score_state,
