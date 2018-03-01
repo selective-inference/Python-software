@@ -6,31 +6,21 @@ from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-def test_onedim_lasso(n=5000, p=1, signal_fac=1.5, s=1, ndraw=5000, burnin=1000, sigma=3, full=True, rho=0.4, randomizer_scale=1):
+def test_onedim_lasso(n=500000, W=1.5, beta=2., sigma=1, randomizer_scale=1):
     """
     Compare to R randomized lasso
     """
 
-    inst, const = gaussian_instance, highdim.gaussian
-    signal = signal_fac * np.sqrt(2 * np.log(p+1.))
-    X, Y, beta = inst(n=n,
-                      p=p, 
-                      signal=signal, 
-                      s=s, 
-                      equicorrelated=False, 
-                      rho=rho, 
-                      sigma=sigma, 
-                      random_signs=True)[:3]
+    beta = np.array([beta])
+    X = np.random.standard_normal((n, 1))
+    X /= np.sqrt((X**2).sum(0))[None, :]
+    Y = X.dot(beta) + sigma * np.random.standard_normal(n)
 
-    n, p = X.shape
-
-    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p+1.)) * sigma
-
-    conv = const(X, 
-                 Y, 
-                 W, 
-                 randomizer_scale=randomizer_scale * sigma,
-                 ridge_term=0.)
+    conv = highdim.gaussian(X, 
+                            Y, 
+                            W * np.ones(X.shape[1]), 
+                            randomizer_scale=randomizer_scale * sigma,
+                            ridge_term=0.)
     
     signs = conv.fit()
     nonzero = signs != 0
