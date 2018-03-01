@@ -9,7 +9,7 @@ from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-def test_highdim_lasso(n=200, p=10, signal_fac=1.5, s=5, ndraw=5000, burnin=1000, sigma=3, full=False, rho=0.4, randomizer_scale=1):
+def test_highdim_lasso(n=200, p=50, signal_fac=1.5, s=5, ndraw=5000, burnin=1000, sigma=3, full=True, rho=0.4, randomizer_scale=1):
     """
     Compare to R randomized lasso
     """
@@ -37,7 +37,11 @@ def test_highdim_lasso(n=200, p=10, signal_fac=1.5, s=5, ndraw=5000, burnin=1000
     signs = conv.fit()
     nonzero = signs != 0
 
-    print conv.selective_MLE(target="full")
+    estimate, _, _, pv = conv.selective_MLE(target="full")
+    print(estimate, 'selective MLE')
+    print(beta[nonzero], 'truth')
+    print(np.linalg.pinv(X[:,nonzero]).dot(Y), 'relaxed')
+    print(pv[beta[nonzero] == 0], pv[beta[nonzero] != 0])
 
     if full:
         _, pval, intervals = conv.summary(target="full",

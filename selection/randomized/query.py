@@ -6,6 +6,8 @@ from scipy.optimize import bisect
 
 from regreg.affine import power_L
 
+from .selective_MLE import solve_barrier_nonneg
+
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
 from ..constraints.affine import sample_from_constraints
@@ -472,6 +474,37 @@ class affine_gaussian_sampler(optimization_sampler):
                                        self.initial_point,
                                        ndraw=ndraw,
                                        burnin=burnin)
+
+    def selective_MLE(self, observed_target, cov_target, cov_target_score, solve_args={}):
+        """
+        Selective MLE based on approximation of
+        CGF.
+
+        """
+        prec_target = np.linalg.inv(cov_target)
+        logdens_lin, logdens_off = self.logdens_transform
+        target_lin = logdens_lin.dot(cov_target_score.T.dot(prec_target))
+        target_offset = self.affine_con.mean - target_lin.dot(observed_target)
+
+        cov_opt = self.affine_con.covariance
+        prec_opt = np.linalg.inv(cov_opt)
+        conjugate_arg = prec_opt.dot(target_lin.dot(observed_target) + target_offset) # same as prec_opt.dot(self.sampler.affine_con.mean)
+
+        val, soln, hess = solve_barrier_nonneg(conjugate_arg,
+                                               prec_opt,
+                                               **solve_args)
+
+        final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(target_lin.dot(observed_target) + target_offset - soln)))
+
+        L = target_lin.T.dot(prec_opt)
+        observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
+        observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
+
+        Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
+        pvalues = ndist.cdf(Z_scores)
+        pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
+        return final_estimator, observed_info_mean, Z_scores, pvalues
+
 
 class optimization_intervals(object):
 

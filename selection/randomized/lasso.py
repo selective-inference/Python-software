@@ -21,7 +21,6 @@ from .base import restricted_estimator
 from .glm import (pairs_bootstrap_glm,
                   glm_nonparametric_bootstrap,
                   glm_parametric_covariance)
-from .selective_MLE import solve_barrier_nonneg
 
 class lasso_view(query):
 
@@ -1745,31 +1744,7 @@ class highdim(lasso):
         # working out conditional law of opt variables given
         # target after decomposing score wrt target
 
-        prec_target = np.linalg.inv(cov_target)
-        logdens_lin, logdens_off = self.sampler.logdens_transform
-        target_lin = logdens_lin.dot(cov_target_score.T.dot(prec_target))
-        target_offset = self.sampler.affine_con.mean - target_lin.dot(observed_target)
-
-        # solve the barrier constrained problem
-
-        cov_opt = self.sampler.affine_con.covariance
-        prec_opt = np.linalg.inv(cov_opt)
-        conjugate_arg = prec_opt.dot(target_lin.dot(observed_target) + target_offset) # same as prec_opt.dot(self.sampler.affine_con.mean)
-
-        val, soln, hess = solve_barrier_nonneg(conjugate_arg,
-                                               prec_opt,
-                                               **solve_args)
-
-        final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(target_lin.dot(observed_target) + target_offset - soln)))
-
-        L = target_lin.T.dot(prec_opt)
-        observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
-        observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
-
-        Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
-        pvalues = ndist.cdf(Z_scores)
-        pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
-        return final_estimator, observed_info_mean, Z_scores, pvalues
+        return self.sampler.selective_MLE(observed_target, cov_target, cov_target_score, solve_args=solve_args)
 
     # Targets of inference
     # and covariance with score representation
