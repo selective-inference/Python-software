@@ -34,24 +34,25 @@ def test_onedim_lasso(n=200, p=1, signal_fac=1.5, s=1, ndraw=5000, burnin=1000, 
     signs = conv.fit()
     nonzero = signs != 0
 
-    estimate, _, _, pv = conv.selective_MLE(target="full")
-    print(estimate, 'selective MLE')
-    print(beta[nonzero], 'truth')
-    print(np.linalg.pinv(X[:,nonzero]).dot(Y), 'relaxed')
-    print(pv[beta[nonzero] == 0], pv[beta[nonzero] != 0])
+    if nonzero.sum():
+        estimate, _, _, pv = conv.selective_MLE(target="full")
+        print(estimate, 'selective MLE')
+        print(beta[nonzero], 'truth')
+        print(np.linalg.pinv(X[:,nonzero]).dot(Y), 'relaxed')
+        print(pv[beta[nonzero] == 0], pv[beta[nonzero] != 0])
 
-    if full:
-        _, pval, intervals = conv.summary(target="full",
-                                          ndraw=ndraw,
-                                          burnin=burnin, 
-                                          compute_intervals=False)
-    else:
-        _, pval, intervals = conv.summary(target="selected",
-                                          ndraw=ndraw,
-                                          burnin=burnin, 
-                                          compute_intervals=False)
+        if full:
+            _, pval, intervals = conv.summary(target="full",
+                                              ndraw=ndraw,
+                                              burnin=burnin, 
+                                              compute_intervals=False)
+        else:
+            _, pval, intervals = conv.summary(target="selected",
+                                              ndraw=ndraw,
+                                              burnin=burnin, 
+                                              compute_intervals=False)
 
-    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
+        return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
 
 def main(nsim=500):

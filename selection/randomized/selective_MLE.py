@@ -66,7 +66,7 @@ def solve_barrier_nonneg(conjugate_arg,
     scaling = np.sqrt(np.diag(precision))
 
     if initial is None:
-        initial, proposed, grad = np.zeros((3, p))
+        initial, proposed, grad = np.ones((3, p))
 
     if step is None:
         step = 1. / power_L(precision)
@@ -83,7 +83,7 @@ def solve_barrier_nonneg(conjugate_arg,
     barrier_hessian = lambda u: (-1./((scaling + u)**2.) + 1./(u**2.))
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(soln)))
 
-    return val, soln, hess
+    return soln, val, hess
 
 def selective_MLE(target_observed,
                   target_cov,

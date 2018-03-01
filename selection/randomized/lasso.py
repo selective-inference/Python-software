@@ -1745,7 +1745,11 @@ class highdim(lasso):
         # target after decomposing score wrt target
 
         print(observed_target, cov_target, cov_target_score)
-        return self.sampler.selective_MLE(observed_target, cov_target, cov_target_score, solve_args=solve_args)
+        return self.sampler.selective_MLE(observed_target, 
+                                          cov_target, 
+                                          cov_target_score, 
+                                          feasible_point=self.observed_opt_state,
+                                          solve_args=solve_args)
 
     # Targets of inference
     # and covariance with score representation
