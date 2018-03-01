@@ -37,6 +37,8 @@ def test_highdim_lasso(n=200, p=10, signal_fac=1.5, s=5, ndraw=5000, burnin=1000
     signs = conv.fit()
     nonzero = signs != 0
 
+    print conv.selective_MLE(target="full")
+
     if full:
         _, pval, intervals = conv.summary(target="full",
                                           ndraw=ndraw,

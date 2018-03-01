@@ -448,6 +448,7 @@ class affine_gaussian_sampler(optimization_sampler):
         self.observed_score_state = observed_score_state
         self.selection_info = selection_info
         self.log_density = log_density
+        self.logdens_transform = logdens_transform
 
     def sample(self, ndraw, burnin):
         '''
