@@ -483,17 +483,23 @@ class affine_gaussian_sampler(optimization_sampler):
         """
         prec_target = np.linalg.inv(cov_target)
         logdens_lin, logdens_off = self.logdens_transform
-        target_lin = logdens_lin.dot(cov_target_score.T.dot(prec_target))
+        target_lin = -logdens_lin.dot(cov_target_score.T.dot(prec_target))
         target_offset = self.affine_con.mean - target_lin.dot(observed_target)
 
         cov_opt = self.affine_con.covariance
+        #print("cov target", cov_target, prec_target)
         prec_opt = np.linalg.inv(cov_opt)
-        conjugate_arg = prec_opt.dot(target_lin.dot(observed_target) + target_offset) # same as prec_opt.dot(self.sampler.affine_con.mean)
 
+        conjugate_arg = prec_opt.dot(target_lin.dot(observed_target) + target_offset)# same as prec_opt.dot(self.sampler.affine_con.mean)
+
+        #print("precision randomization", prec_opt, conjugate_arg, feasible_point)
+        feasible_point = np.ones(prec_opt.shape[0])
         soln, val, hess = solve_barrier_nonneg_(conjugate_arg,
                                                 prec_opt,
                                                 feasible_point=feasible_point,
                                                 **solve_args)
+
+        print("check target lin and target offset", target_lin, target_offset)
 
         final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(target_lin.dot(observed_target) + target_offset - soln)))
 
@@ -691,11 +697,11 @@ def naive_pvalues(diag_cov, observed, parameter):
     return pvalues
 
 def solve_barrier_nonneg_(conjugate_arg,
-                         precision,
-                         feasible_point=None,
-                         step=1,
-                         nstep=1000,
-                         tol=1.e-8):
+                          precision,
+                          feasible_point=None,
+                          step=1,
+                          nstep=1000,
+                          tol=1.e-8):
 
     scaling = np.sqrt(np.diag(precision))
 
@@ -747,6 +753,6 @@ def solve_barrier_nonneg_(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    print(grad(current))
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
     return current, current_value, hess
+
