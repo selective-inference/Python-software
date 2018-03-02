@@ -86,8 +86,8 @@ def solve_UMVU(target_transform,
     sel_MLE, inv_hessian = mle_partial(target_observed)
 
     #print("shapes", target_precision.dot(sel_MLE).shape,  A.T.dot(randomizer_precision).shape, offset_term.shape)
-    implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(randomizer_precision).dot(conditioned_value),
-                                   offset_term*np.ones((1,1))])
+    #implied_parameter = np.hstack([target_precision.dot(sel_MLE)-A.T.dot(randomizer_precision).dot(conditioned_value),
+    #                               offset_term*np.ones((1,1))])
 
     print("selective MLE", sel_MLE)
     return np.squeeze(sel_MLE)
