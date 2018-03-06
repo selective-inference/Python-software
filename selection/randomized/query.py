@@ -6,7 +6,7 @@ from scipy.optimize import bisect
 
 from regreg.affine import power_L
 
-from .selective_MLE import solve_barrier_nonneg
+# from .selective_MLE import solve_barrier_nonneg
 
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
@@ -483,19 +483,24 @@ class affine_gaussian_sampler(optimization_sampler):
         """
         prec_target = np.linalg.inv(cov_target)
         logdens_lin, logdens_off = self.logdens_transform
-        target_lin = logdens_lin.dot(cov_target_score.T.dot(prec_target))
+        target_lin = - logdens_lin.dot(cov_target_score.T.dot(prec_target)) # this determines how the conditional mean of optimization variables
+                                                                            # vary with target
+                                                                            # logdens_lin determines how the argument of the optimization density
+                                                                            # depends on the score, not how the mean depends on score, hence the minus sign
         target_offset = self.affine_con.mean - target_lin.dot(observed_target)
 
         cov_opt = self.affine_con.covariance
         prec_opt = np.linalg.inv(cov_opt)
-        conjugate_arg = prec_opt.dot(target_lin.dot(observed_target) + target_offset) # same as prec_opt.dot(self.sampler.affine_con.mean)
 
+        conjugate_arg = prec_opt.dot(self.affine_con.mean)
+
+        feasible_point = np.ones(prec_opt.shape[0])
         soln, val, hess = solve_barrier_nonneg_(conjugate_arg,
                                                 prec_opt,
                                                 feasible_point=feasible_point,
                                                 **solve_args)
 
-        final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(target_lin.dot(observed_target) + target_offset - soln)))
+        final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean - soln)))
 
         L = target_lin.T.dot(prec_opt)
         observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
@@ -505,7 +510,6 @@ class affine_gaussian_sampler(optimization_sampler):
         pvalues = ndist.cdf(Z_scores)
         pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
         return final_estimator, observed_info_mean, Z_scores, pvalues
-
 
 class optimization_intervals(object):
 
@@ -691,11 +695,11 @@ def naive_pvalues(diag_cov, observed, parameter):
     return pvalues
 
 def solve_barrier_nonneg_(conjugate_arg,
-                         precision,
-                         feasible_point=None,
-                         step=1,
-                         nstep=1000,
-                         tol=1.e-8):
+                          precision,
+                          feasible_point=None,
+                          step=1,
+                          nstep=1000,
+                          tol=1.e-8):
 
     scaling = np.sqrt(np.diag(precision))
 
@@ -747,6 +751,6 @@ def solve_barrier_nonneg_(conjugate_arg,
         if itercount % 4 == 0:
             step *= 2
 
-    print(grad(current))
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(current)))
     return current, current_value, hess
+
