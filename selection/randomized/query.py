@@ -475,7 +475,7 @@ class affine_gaussian_sampler(optimization_sampler):
                                        ndraw=ndraw,
                                        burnin=burnin)
 
-    def selective_MLE(self, observed_target, cov_target, cov_target_score, feasible_point, solve_args={}):
+    def selective_MLE(self, observed_target, cov_target, cov_target_score, feasible_point, solve_args={}, alpha=0.1):
         """
         Selective MLE based on approximation of
         CGF.
@@ -509,7 +509,11 @@ class affine_gaussian_sampler(optimization_sampler):
         Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
         pvalues = ndist.cdf(Z_scores)
         pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
-        return final_estimator, observed_info_mean, Z_scores, pvalues
+
+        quantile = ndist.ppf(1 - alpha / 2.)
+        intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
+                               final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
+        return final_estimator, observed_info_mean, Z_scores, pvalues, intervals
 
 class optimization_intervals(object):
 
