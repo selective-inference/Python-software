@@ -36,7 +36,8 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=1, randomizer_scale=1):
 
             target_Z = X.T.dot(Y) / np.sqrt((X**2).sum(0))
 
-            estimate, I, Z, pv = conv.sampler.selective_MLE(target_Z, sigma**2 * np.ones((1,1)), -sigma**2 * np.ones((1,1)), None)
+            estimate, I, Z, pv = conv.sampler.selective_MLE(target_Z, sigma**2 * np.ones((1,1)), -sigma**2 * np.ones((1,1)), np.ones((1,)),
+                                                            solve_args={'tol':1.e-12})
 
             target_transform = (-np.identity(1), np.zeros(1))
             s = signs
@@ -48,7 +49,7 @@ def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=1, randomizer_scale=1):
                                     target_Z,
                                     np.ones(1),
                                     (sigma ** 2.) * np.identity(1),
-                                    (1. / (sigma ** 2.)) * np.identity(1))
+                                    (1. / (sigma ** 2.)) * np.identity(1), tol=1.e-12)
 
             print(estimate, approx_MLE, 'selective MLE')
             print(beta[nonzero], 'truth')
@@ -63,7 +64,7 @@ def test_agreement(seed=0):
 
     np.random.seed(seed)
 
-    beta_seq = np.linspace(-6., 6., 300)
+    beta_seq = np.hstack([np.linspace(-6., -2., 100), np.linspace(2, 6, 100)])
     MLE_check = []
     MLE_cur = []
     MLE_prev = []
@@ -81,7 +82,7 @@ def test_agreement(seed=0):
     MLE_prev = np.hstack(MLE_prev)
     pivot = np.hstack(pivot)
 
-    np.testing.assert_allclose(MLE_check, MLE_prev)
+    np.testing.assert_allclose(MLE_check, MLE_prev, rtol=1.e-5)
     nt.assert_true(np.linalg.norm(MLE_cur - MLE_prev) / np.linalg.norm(MLE_prev) < 1.e-2)
 
     return beta_seq, MLE_cur, MLE_prev, pivot
@@ -110,7 +111,8 @@ def solve_UMVU(target_transform,
                target_observed,
                feasible_point,
                target_cov,
-               randomizer_precision):
+               randomizer_precision,
+               tol=1.e-8):
 
     A, data_offset = target_transform # data_offset = N
     B, opt_offset = opt_transform     # opt_offset = u
@@ -168,7 +170,7 @@ def solve_UMVU(target_transform,
                                               feasible_point=feasible_point,
                                               step=1,
                                               nstep=2000,
-                                              tol=1.e-8)
+                                              tol=tol)
 
         selective_MLE = mle_target_lin.dot(target_observed) + mle_soln_lin.dot(soln) + mle_offset
 
