@@ -9,7 +9,7 @@ from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-def test_highdim_lasso(n=200, p=50, signal_fac=1.5, s=5, ndraw=5000, burnin=1000, sigma=3, full=True, rho=0.4, randomizer_scale=1):
+def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, full=True, rho=0.4, randomizer_scale=1):
     """
     Compare to R randomized lasso
     """
@@ -27,21 +27,16 @@ def test_highdim_lasso(n=200, p=50, signal_fac=1.5, s=5, ndraw=5000, burnin=1000
 
     n, p = X.shape
 
-    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma
+    sigma_ = np.std(Y)
+    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
 
     conv = const(X, 
                  Y, 
                  W, 
-                 randomizer_scale=randomizer_scale * sigma)
+                 randomizer_scale=randomizer_scale * sigma_)
     
     signs = conv.fit()
     nonzero = signs != 0
-
-    estimate, _, _, pv = conv.selective_MLE(target="full")
-    print(estimate, 'selective MLE')
-    print(beta[nonzero], 'truth')
-    print(np.linalg.pinv(X[:,nonzero]).dot(Y), 'relaxed')
-    print(pv[beta[nonzero] == 0], pv[beta[nonzero] != 0])
 
     if full:
         _, pval, intervals = conv.summary(target="full",
@@ -103,7 +98,7 @@ def main(nsim=500):
             p0, pA = [], []
         P0.extend(p0)
         PA.extend(pA)
-        print(np.mean(P0), np.std(P0), np.mean(np.array(PA) < 0.05))
+        print(np.mean(P0), np.std(P0), np.mean(np.array(PA) < 0.05), 'null pvalue + power')
     
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)

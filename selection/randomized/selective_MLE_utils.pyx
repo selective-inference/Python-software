@@ -1,7 +1,5 @@
 import warnings
 import numpy as np, cython
-from regreg.api import power_L
-
 cimport numpy as np
 
 DTYPE_float = np.float
@@ -30,7 +28,7 @@ def barrier_solve_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient v
                    np.ndarray[DTYPE_float_t, ndim=1] scaling,       # Diagonal scaling matrix for log barrier
                    double initial_step,
                    int max_iter=1000,
-                   double value_tol=1.e-6):
+                   double value_tol=1.e-8):
    
     ndim = precision.shape[0]
 
@@ -45,4 +43,28 @@ def barrier_solve_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient v
                            value_tol,
                            initial_step)
 
-    return opt_variable, value
+    barrier_hessian = lambda u, v: (-1./((v + u)**2.) + 1./(u**2.))			  
+    hess = np.linalg.inv(precision + np.diag(barrier_hessian(opt_variable, scaling)))
+    return value, opt_variable, hess
+
+def solve_barrier_nonneg(conjugate_arg,
+                         precision,
+                         feasible_point,
+                         step=1,
+                         max_iter=1000,
+                         tol=1.e-8):
+
+    gradient = np.zeros_like(conjugate_arg)
+    opt_variable = np.asarray(feasible_point)
+    opt_proposed = opt_variable.copy()
+    scaling = np.sqrt(np.diag(precision))
+    
+    return barrier_solve_(gradient,
+                          opt_variable,
+                          opt_proposed,
+                          conjugate_arg,
+                          precision,
+                          scaling,
+                          step,
+                          max_iter=max_iter,
+                          value_tol=tol)
