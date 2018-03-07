@@ -382,8 +382,36 @@ class stat_lasso_iv(lasso_iv):
         return pivots, pvalues, intervals
 
         
+def test_lasso_iv(ndraw=5000, burnin=1000):
 
+    Z, D, Y, alpha, beta, gamma = lasso_iv.bigaussian_instance()
+    PZ = Z.dot(np.linalg.pinv(Z))
 
+    n, p = Z.shape
+
+    penalty = 2.01 * np.sqrt(n * np.log(n))
+    penalty = np.ones(p + 1) * penalty
+    penalty[-1] = 0.
+
+    L = highdim.gaussian(PZ.dot(np.hstack([Z, D.reshape((-1,1))])), PZ.dot(Y), penalty)
+    signs = L.fit()
+    nonzero = np.nonzero(signs != 0)[0]
+
+    if p not in set(nonzero):
+        raise ValueError('last should always be selected!')
+
+    if set(nonzero).issuperset(np.nonzero(alpha)[0]) and len(nonzero) <= p :
+        parameter = np.hstack([alpha[nonzero[:-1]], beta])
+
+        pivots, pval, intervals = L.summary(target="selected",
+                                            parameter=parameter,
+                                            ndraw=ndraw,
+                                            burnin=burnin, 
+                                            compute_intervals=True,
+                                            dispersion=1.)
+        return pivots[-1:], (intervals[-1][0] < beta) * (intervals[-1][1] > beta)
+
+    return [], np.nan
 
 
 
