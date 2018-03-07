@@ -3,8 +3,7 @@ import functools
 from copy import copy
 
 import numpy as np
-import scipy
-from scipy import matrix
+from scipy.stats import norm as ndist
 
 import regreg.api as rr
 import regreg.affine as ra
@@ -66,16 +65,15 @@ class lasso_view(query):
         (self.loss,
          self.epsilon,
          self.penalty,
-         self.randomization,
-         self.solve_args) = (loss,
-                             epsilon,
-                             penalty,
-                             randomization,
-                             solve_args)
+         self.randomization) = (loss,
+                                epsilon,
+                                penalty,
+                                randomization)
          
     # Methods needed for subclassing a query
 
-    def solve(self, solve_args={'min_its':20, 'tol':1.e-10}, nboot=2000,
+    def solve(self, nboot=2000,
+              solve_args={'min_its':20, 'tol':1.e-10}, 
               perturb=None):
 
         self.randomize(perturb=perturb)
@@ -84,13 +82,11 @@ class lasso_view(query):
          randomized_loss,
          epsilon,
          penalty,
-         randomization,
-         solve_args) = (self.loss,
-                        self.randomized_loss, 
-                        self.epsilon,
-                        self.penalty,
-                        self.randomization,
-                        self.solve_args)
+         randomization) = (self.loss,
+                           self.randomized_loss, 
+                           self.epsilon,
+                           self.penalty,
+                           self.randomization)
 
         # initial solution
 
@@ -329,12 +325,13 @@ class lasso_view(query):
 
                 if prec_array:
                     cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+                    cond_cov = np.linalg.inv(cond_precision)
                     logdens_linear = cond_cov.dot(opt_linear.T.dot(prec))
                 else:
                     cond_precision = opt_linear.T.dot(opt_linear) * prec
+                    cond_cov = np.linalg.inv(cond_precision)
                     logdens_linear = cond_cov.dot(opt_linear.T) * prec
 
-                cond_cov = np.linalg.inv(cond_precision)
                 cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
                 # need a log_density function
@@ -371,10 +368,13 @@ class lasso_view(query):
                                          mean=cond_mean,
                                          covariance=cond_cov)
 
+                logdens_transform = (logdens_linear, opt_offset)
+
                 self._sampler = affine_gaussian_sampler(affine_con,
                                                         self.observed_opt_state,
                                                         self.observed_score_state,
                                                         log_density,
+                                                        logdens_transform,
                                                         selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
 
         return self._sampler
@@ -548,12 +548,13 @@ class lasso_view(query):
 
             if prec_array:
                 cond_precision = new_linear.T.dot(prec.dot(new_linear))
+                cond_cov = np.linalg.inv(cond_precision)
                 logdens_linear = cond_cov.dot(new_linear.T.dot(prec))
             else:
                 cond_precision = new_linear.T.dot(new_linear) * prec
+                cond_cov = np.linalg.inv(cond_precision)
                 logdens_linear = cond_cov.dot(new_linear.T) * prec
 
-            cond_cov = np.linalg.inv(cond_precision)
             cond_mean = -logdens_linear.dot(self.observed_score_state + new_offset)
 
             def log_density(logdens_linear, offset, cond_prec, score, opt):
@@ -593,10 +594,12 @@ class lasso_view(query):
                                      mean=cond_mean,
                                      covariance=cond_cov)
 
+            logdens_transform = (logdens_linear, new_offset)
             self._sampler = affine_gaussian_sampler(affine_con,
                                                     observed_opt_state,
                                                     self.observed_score_state,
                                                     log_density,
+                                                    logdens_transform,
                                                     selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
 
 
@@ -739,7 +742,7 @@ class lasso(object):
             self._view = glm_lasso_parametric(self.loglike, self.ridge_term, self.penalty, self.randomizer)
         else:
             self._view = glm_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
-        self._view.solve(nboot=nboot, perturb=perturb)
+        self._view.solve(nboot=nboot, perturb=perturb, solve_args=solve_args)
 
         self.signs = np.sign(self._view.initial_soln)
         self.selection_variable = self._view.selection_variable
@@ -1457,7 +1460,7 @@ class highdim(lasso):
         self._initial_omega = perturb
         quad = rr.identity_quadratic(self.ridge_term, 0, -perturb)
         problem = rr.simple_problem(self.loglike, self.penalty)
-        self.initial_soln = problem.solve(quad)
+        self.initial_soln = problem.solve(quad, **solve_args)
 
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
@@ -1570,6 +1573,7 @@ class highdim(lasso):
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = cond_cov.dot(opt_linear.T) * prec
+
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
@@ -1591,10 +1595,13 @@ class highdim(lasso):
                                  mean=cond_mean,
                                  covariance=cond_cov)
 
+        logdens_transform = (logdens_linear, opt_offset)
+
         self.sampler = affine_gaussian_sampler(affine_con,
                                                self.observed_opt_state,
                                                self.observed_score_state,
                                                log_density,
+                                               logdens_transform,
                                                selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
         
         return active_signs
@@ -1654,32 +1661,96 @@ class highdim(lasso):
             else:
                 observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
 
-        opt_sample = self.sampler.sample(ndraw,  burnin)
+        if self._overall.sum() > 0:
+            opt_sample = self.sampler.sample(ndraw,  burnin)
 
-        pivots = self.sampler.coefficient_pvalues(observed_target, 
-                                                  cov_target, 
-                                                  cov_target_score, 
-                                                  parameter=parameter, 
-                                                  sample=opt_sample, 
-                                                  alternatives=alternatives)
-        if not np.all(parameter == 0):
-            pvalues = self.sampler.coefficient_pvalues(observed_target, 
-                                                       cov_target, 
-                                                       cov_target_score, 
-                                                       parameter=np.zeros_like(parameter), 
-                                                       sample=opt_sample, 
-                                                       alternatives=alternatives)
+            pivots = self.sampler.coefficient_pvalues(observed_target, 
+                                                      cov_target, 
+                                                      cov_target_score, 
+                                                      parameter=parameter, 
+                                                      sample=opt_sample, 
+                                                      alternatives=alternatives)
+            if not np.all(parameter == 0):
+                pvalues = self.sampler.coefficient_pvalues(observed_target, 
+                                                           cov_target, 
+                                                           cov_target_score, 
+                                                           parameter=np.zeros_like(parameter), 
+                                                           sample=opt_sample, 
+                                                           alternatives=alternatives)
+            else:
+                pvalues = pivots
+
+            intervals = None
+            if compute_intervals:
+                intervals = self.sampler.confidence_intervals(observed_target, 
+                                                              cov_target, 
+                                                              cov_target_score,
+                                                              sample=opt_sample)
+
+            return pivots, pvalues, intervals
         else:
-            pvalues = pivots
+            return [], [], []
 
-        intervals = None
-        if compute_intervals:
-            intervals = self.sampler.confidence_intervals(observed_target, 
-                                                          cov_target, 
-                                                          cov_target_interval, 
-                                                          sample=opt_sample)
+    def selective_MLE(self,
+                      target="selected",
+                      features=None,
+                      parameter=None,
+                      level=0.9,
+                      compute_intervals=False,
+                      dispersion=None,
+                      solve_args={}):
+        """
 
-        return pivots, pvalues, intervals
+        Parameters
+        ----------
+
+        target : one of ['selected', 'full']
+
+        features : np.bool
+            Binary encoding of which features to use in final
+            model and targets.
+
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+
+        level : float
+            Confidence level.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        compute_intervals : bool
+            Compute confidence intervals?
+
+        dispersion : float (optional)
+            Use a known value for dispersion, or Pearson's X^2?
+
+        """
+
+        if parameter is None:
+            parameter = np.zeros(self.loglike.shape[0])
+
+        if target == 'selected':
+            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
+        elif target == 'full':
+            X, y = self.loglike.data
+            n, p = X.shape
+            if n > p:
+                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
+            else:
+                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
+
+        # working out conditional law of opt variables given
+        # target after decomposing score wrt target
+
+        return self.sampler.selective_MLE(observed_target, 
+                                          cov_target, 
+                                          cov_target_score, 
+                                          self.observed_opt_state,
+                                          solve_args=solve_args)
 
     # Targets of inference
     # and covariance with score representation
@@ -1718,10 +1789,7 @@ class highdim(lasso):
             _score_linear = -Xfeat.T.dot(self._W[:, None] * X).T
             crosscov_target_score = _score_linear.dot(cov_target)
             observed_target = one_step
-            alternatives = ['twosided'] * overall.sum()
-            for i, f in enumerate(np.nonzero(features)[0]):
-                if active[f]:
-                    alternatives[i] = {1:'greater', -1:'less'}[int(self.selection_variable['sign'][f])]
+            alternatives = ['twosided'] * features.sum()
 
         if dispersion is None: # use Pearson's X^2
             dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(observed_target)))**2 / self._W).sum() / (n - Xfeat.shape[1])
@@ -1754,11 +1822,6 @@ class highdim(lasso):
             dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step)))**2 / self._W).sum() / (n - p)
 
         alternatives = ['twosided'] * features.sum()
-
-        for i, f in enumerate(np.nonzero(features)[0]):
-            if self._active[f]:
-                alternatives[i] = {1:'greater', -1:'less'}[int(self.selection_variable['sign'][f])]
-
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def debiased_targets(self, dispersion=None):
