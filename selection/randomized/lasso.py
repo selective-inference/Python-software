@@ -2246,12 +2246,18 @@ class highdim(lasso):
         else:
             totalQ = randomQ
 
-        soln, sqrt_loss = solve_sqrt_lasso(X, Y, weights=feature_weights, quadratic=totalQ, solve_args={'min_its':1000, 'tol':1.e-12})
+        soln, sqrt_loss = solve_sqrt_lasso(X, 
+                                           Y, 
+                                           weights=feature_weights, 
+                                           quadratic=totalQ, 
+                                           solve_args={'min_its':1000, 'tol':1.e-12},
+                                           force_fat=True)
         active_set = (soln != 0)
         X_A = X[:,active_set]
         unrestricted_soln = np.linalg.pinv(X_A).dot(Y)
-#        sigma_hat = np.linalg.norm(Y - X_A.dot(unrestricted_soln)) / np.sqrt(n - active_set.sum())
+
         denom = np.linalg.norm(Y - X.dot(soln))
+
         subgrad_ = perturb - X.T.dot(X.dot(soln) - Y) / denom
         coef, center, linear_term, cons = totalQ.coef, totalQ.center, totalQ.linear_term, totalQ.constant_term
         rescaledQ = rr.identity_quadratic(coef * denom,
@@ -2259,16 +2265,14 @@ class highdim(lasso):
                                           linear_term * denom,
                                           cons * denom)
 
-        loglike = rr.glm.gaussian(X, Y, coef=1., quadratic=rescaledQ)
+        loglike = rr.glm.gaussian(X, Y, coef=1.)
         
         # sanity check
 
         new_weights = feature_weights * denom
         pen = rr.weighted_l1norm(new_weights, lagrange=1.)
         prob = rr.simple_problem(loglike, pen)
-        soln2 = prob.solve(quadratic=rescaledQ, min_its=500, tol=1.e-12)
-
-        stop
+        soln2 = prob.solve(quadratic=rescaledQ, min_its=1000, tol=1.e-12)
 
         return highdim(loglike, np.asarray(feature_weights),
                        ridge_term * denom, 

@@ -70,7 +70,7 @@ def test_sqrt_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, full=Tru
 
     n, p = X.shape
 
-    W = np.ones(X.shape[1]) * choose_lambda(X) * 0.5
+    W = np.ones(X.shape[1]) * choose_lambda(X)
 
     conv = const(X, 
                  Y, 

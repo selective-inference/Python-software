@@ -239,7 +239,7 @@ def l2norm_glm(X,
                   initial=initial,
                   offset=offset)
 
-def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_args={}):
+def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_args={}, force_fat=False):
     """
 
     Solve the square-root LASSO optimization problem:
@@ -273,7 +273,7 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_arg
         A quadratic term added to objective function.
     """
     n, p = X.shape
-    if n > p:
+    if n > p and not force_fat:
         return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)
     else:
         return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)
@@ -449,6 +449,9 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, so
 
     soln = problem.solve(new_quadratic, **solve_args)
     _loss = sqlasso_objective(X, Y)
+    subgrad2 = _loss.smooth_objective(soln[:-1], 'grad') + new_quadratic.objective(soln, 'grad')[:-1]
+    subgrad = loss.smooth_objective(soln, 'grad') + new_quadratic.objective(soln, 'grad')
+    print(subgrad[soln != 0])
     return soln[:-1], _loss
 
 def estimate_sigma(observed, truncated_df, lower_bound, upper_bound, untruncated_df=0, factor=3, npts=50, nsample=2000):
