@@ -940,7 +940,7 @@ class lasso(object):
 
         mean_diag = np.mean((X**2).sum(0))
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
@@ -1025,7 +1025,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 
@@ -1112,7 +1112,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(times) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
@@ -1192,7 +1192,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
@@ -1290,7 +1290,7 @@ class lasso(object):
 
         mean_diag = np.mean((X**2).sum(0))
         if ridge_term is None:
-            ridge_term = (np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.sqrt(n / (n - 1.))
@@ -1863,7 +1863,7 @@ class highdim(lasso):
 
         mean_diag = np.mean((X**2).sum(0))
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
@@ -1941,7 +1941,7 @@ class highdim(lasso):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 
@@ -2021,7 +2021,7 @@ class highdim(lasso):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(times) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
@@ -2095,7 +2095,7 @@ class highdim(lasso):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n-1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
@@ -2183,14 +2183,14 @@ class highdim(lasso):
         n, p = X.shape
 
         if np.asarray(feature_weights).shape == ():
-            feature_weights = np.ones(loglike.shape) * feature_weights
+            feature_weights = np.ones(p) * feature_weights
 
         mean_diag = np.mean((X**2).sum(0))
         if ridge_term is None:
-            ridge_term = (np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.sqrt(mean_diag) / (n - 1)
 
         if randomizer_scale is None:
-            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.sqrt(n / (n - 1.))
+            randomizer_scale = 0.5 * np.sqrt(mean_diag) / np.sqrt(n-1)
 
         if perturb is None:
             perturb = np.random.standard_normal(p) * randomizer_scale
