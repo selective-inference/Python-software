@@ -7,9 +7,10 @@ rpy.r('library(selectiveInference)')
 import selection.randomized.lasso as L; reload(L)
 from selection.randomized.lasso import highdim 
 from selection.tests.instance import gaussian_instance
+from selection.algorithms.sqrt_lasso import choose_lambda
 import matplotlib.pyplot as plt
 
-def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, full=True, rho=0.4, randomizer_scale=1):
+def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, full=True, rho=0.4, randomizer_scale=1, ndraw=5000, burnin=1000):
     """
     Compare to R randomized lasso
     """
@@ -34,6 +35,47 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, full=True, rh
                  Y, 
                  W, 
                  randomizer_scale=randomizer_scale * sigma_)
+    
+    signs = conv.fit()
+    nonzero = signs != 0
+
+    if full:
+        _, pval, intervals = conv.summary(target="full",
+                                          ndraw=ndraw,
+                                          burnin=burnin, 
+                                          compute_intervals=False)
+    else:
+        _, pval, intervals = conv.summary(target="selected",
+                                          ndraw=ndraw,
+                                          burnin=burnin, 
+                                          compute_intervals=False)
+
+    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
+
+def test_sqrt_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, full=True, rho=0.4, randomizer_scale=1, ndraw=5000, burnin=1000):
+    """
+    Compare to R randomized lasso
+    """
+
+    inst, const = gaussian_instance, highdim.sqrt_lasso
+    signal = np.sqrt(signal_fac * np.log(p))
+    X, Y, beta = inst(n=n,
+                      p=p, 
+                      signal=signal, 
+                      s=s, 
+                      equicorrelated=False, 
+                      rho=rho, 
+                      sigma=sigma, 
+                      random_signs=True)[:3]
+
+    n, p = X.shape
+
+    W = np.ones(X.shape[1]) * choose_lambda(X) * 0.5
+
+    conv = const(X, 
+                 Y, 
+                 W, 
+                 randomizer_scale=randomizer_scale / np.sqrt(n))
     
     signs = conv.fit()
     nonzero = signs != 0
