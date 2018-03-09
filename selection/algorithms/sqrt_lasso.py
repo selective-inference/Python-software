@@ -449,9 +449,6 @@ def solve_sqrt_lasso_skinny(X, Y, weights=None, initial=None, quadratic=None, so
 
     soln = problem.solve(new_quadratic, **solve_args)
     _loss = sqlasso_objective(X, Y)
-    subgrad2 = _loss.smooth_objective(soln[:-1], 'grad') + new_quadratic.objective(soln, 'grad')[:-1]
-    subgrad = loss.smooth_objective(soln, 'grad') + new_quadratic.objective(soln, 'grad')
-    print(subgrad[soln != 0])
     return soln[:-1], _loss
 
 def estimate_sigma(observed, truncated_df, lower_bound, upper_bound, untruncated_df=0, factor=3, npts=50, nsample=2000):
