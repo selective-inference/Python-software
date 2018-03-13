@@ -32,7 +32,26 @@ cdef extern from "debias.h":
                   int objective_stop,         # Break based on convergence of objective value? #
                   int parameter_stop)         # Break based on parameter convergence? #
 
-
+   int check_KKT_wide(double *theta_ptr,        # current theta #
+                      double *gradient_ptr,     # X^TX/ncase times theta + linear_func#
+                      double *X_theta_ptr,      # Current fitted values #
+                      double *X_ptr,            # Sqrt of non-neg def matrix -- X^TX/ncase = nndef #
+                      double *linear_func_ptr,  # Linear term in objective #   
+                      int *need_update_ptr,     # Which coordinates need to be updated? #
+                      int nfeature,             # how many columns in X #
+                      int ncase,                # how many rows in X #
+                      double *bound_ptr,        # Lagrange multiplers for \ell_1 #
+                      double ridge_term,        # Ridge / ENet term #
+                      double tol)               # precision for checking KKT conditions #        
+   
+   void update_gradient_wide(double *gradient_ptr,     # X^TX/ncase times theta + linear_func #
+                             double *X_theta_ptr,      # Current fitted values #
+                             double *X_ptr,            # Sqrt of non-neg def matrix -- X^TX/ncase = nndef #
+                             double *linear_func_ptr,  # Linear term in objective #   
+                             int *need_update_ptr,     # Which coordinates need to be updated? #
+                             int nfeature,             # how many columns in X #
+                             int ncase)                # how many rows in X #
+   
 def solve_wide_(np.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-neg def matrix -- X^TX/ncase = nndef 
                 np.ndarray[DTYPE_float_t, ndim=1] X_theta,      # Fitted values   #
                 np.ndarray[DTYPE_float_t, ndim=1] linear_func,  # Linear term in objective #
@@ -79,3 +98,42 @@ def solve_wide_(np.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-ne
                parameter_stop,
                objective_stop)
 
+    # Check whether feasible
+
+    ncase = X.shape[0]
+    nfeature = X.shape[1]
+
+    kkt_check = check_KKT_wide(<double *>theta.data,
+                                <double *>gradient.data,
+                                <double *>X_theta.data,
+                                <double *>X.data,
+                                <double *>linear_func.data,
+                                <int *>need_update.data,
+                                ncase,
+                                nfeature,
+                                <double *>bound.data,
+                                ridge_term,
+                                kkt_tol)
+
+    max_active_check = nactive[0] >= max_active
+
+    # Make sure gradient is updated -- essentially a matrix multiply
+
+    update_gradient_wide(<double *>gradient.data,
+                          <double *>X_theta.data,
+                          <double *>X.data,
+                          <double *>linear_func.data,
+                          <int *>need_update.data,
+                          ncase,
+                          nfeature)
+
+    return {'soln':theta,
+            'gradient':gradient,
+            'X_theta':X_theta,
+            'linear_func':linear_func,
+            'iter':iter,
+            'kkt_check':kkt_check,
+            'ever_active':ever_active,
+            'nactive':nactive,
+            'max_active_check':max_active_check}
+              

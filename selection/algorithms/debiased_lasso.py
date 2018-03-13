@@ -6,6 +6,115 @@ from regreg.api import (quadratic_loss,
 
 #from .debiased_lasso_utils import solve_wide_
 from ..constraints.affine import constraints
+from .debiased_lasso_utils import solve_wide_
+
+def debiasing_row(X,
+                  j, 
+                  delta=None,
+                  linesearch=True,     # do a linesearch?
+                  scaling_factor=1.5,  # multiplicative factor for linesearch
+                  max_active=None,     # how big can active set get?
+                  max_try=10,          # how many steps in linesearch?
+                  warn_kkt=FALSE,      # warn if KKT does not seem to be satisfied?
+                  max_iter=50,         # how many iterations for each optimization problem
+                  kkt_stop=True,       # stop based on KKT conditions?
+                  parameter_stop=True, # stop based on relative convergence of parameter?
+                  objective_stop=True, # stop based on relative decrease in objective?
+                  kkt_tol=1.e-4,       # tolerance for the KKT conditions
+                  parameter_tol=1.e-4, # tolerance for relative convergence of parameter
+                  objective_tol=1.e-4  # tolerance for relative decrease in objective
+                  ):
+    """
+    Find a row of debiasing matrix using line search of
+    Javanmard and Montanari.
+
+    """
+
+    n, p = X.shape
+
+    if max_active is None:
+      max_active = min(n, p)
+
+    soln = np.zeros(p)
+    ever_active = np.zeros(p, np.int)
+    ever_active[0] = row
+    nactive = 1
+
+    linear_func = np.zeros(p)
+    linear_func[row] = -1
+    gradient = linear_func.copy()
+
+    counter_idx = 1
+    incr = 0;
+
+    last_output = None
+
+    Xsoln = np.zeros(n) # X\hat{\beta}
+
+    while (counter_idx < max_try):
+
+        result = solve_wide_(Xinfo,                      # this is a design matrix
+                             as.numeric(rep(bound, p)),  # vector of Lagrange multipliers
+                             0,                          # ridge_term 
+                             max_iter, 
+                             soln, 
+                             linear_func, 
+                             gradient, 
+                             Xsoln,
+                             ever_active, 
+                             nactive, 
+                             kkt_tol, 
+                             objective_tol, 
+                             parameter_tol,
+                             max_active,
+                             kkt_stop,
+                             objective_stop,	
+                             parameter_stop)
+
+      iter = result$iter
+
+      # Logic for whether we should continue the line search
+
+      if not linesearch: break
+
+      if counter_idx == 1:
+          if iter == (max_iter+1):
+              incr = 1 # was the original problem feasible? 1 if not
+          else:
+              incr = 0 # original problem was feasible
+
+      if incr == 1: # trying to find a feasible point
+         if iter < (max_iter+1) and counter_idx > 1:
+             break
+         bound = bound * scaling_factor;
+      else if iter == (max_iter + 1) and counter_idx > 1:
+            result = last_output # problem seems infeasible because we didn't solve it
+   	    break               # so we revert to previously found solution
+      
+      bound = bound / scaling_factor
+
+      # If the active set has grown to a certain size
+      # then we stop, presuming problem has become
+      # infeasible.
+
+      # We revert to the previous solution
+	
+      if result['max_active_check']:
+	  result = last_output
+	  break
+      
+      counter_idx += 1
+      last_output = {'soln':result['soln'],
+                     'kkt_check':result['kkt_check']}
+
+    # Check feasibility
+
+    if warn_kkt and not result$kkt_check:
+        warning("Solution for row of M does not seem to be feasible")
+
+    return {'soln':result['soln'],
+            'kkt_check':result['kkt_check'],
+            'gradient':result['gradient']}
 
 def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1.e-6, 'max_its':500}):
     """
