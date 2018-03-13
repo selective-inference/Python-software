@@ -75,28 +75,28 @@ def solve_wide_(np.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-ne
                 int objective_stop,                             # Break based on convergence of objective value? #
                 int parameter_stop):                            # Break based on parameter convergence? #
 
-    solve_wide(<double *>X.data,
-               <double *>X_theta.data,
-               <double *>linear_func.data,
-               <double *>nndef_diag.data,
-               <double *>gradient.data,
-               <int *>need_update.data,
-               <int *>ever_active.data,
-               <int *>nactive.data,
-	       <int>X.shape[0],
-	       <int>X.shape[1],
-               <double *>bound.data,
-               ridge_term,
-               <double *>theta.data,
-               <double *>theta_old.data,
-               maxiter,
-               kkt_tol,
-               parameter_tol,
-               objective_tol,
-               max_active,
-               kkt_stop,
-               parameter_stop,
-               objective_stop)
+    niter = solve_wide(<double *>X.data,
+                        <double *>X_theta.data,
+                        <double *>linear_func.data,
+                        <double *>nndef_diag.data,
+                        <double *>gradient.data,
+                        <int *>need_update.data,
+                        <int *>ever_active.data,
+                        <int *>nactive.data,
+                        <int>X.shape[0],
+                        <int>X.shape[1],
+                        <double *>bound.data,
+                        ridge_term,
+                        <double *>theta.data,
+                        <double *>theta_old.data,
+                        maxiter,
+                        kkt_tol,
+                        parameter_tol,
+                        objective_tol,
+                        max_active,
+                        kkt_stop,
+                        parameter_stop,
+                        objective_stop)
 
     # Check whether feasible
 
@@ -104,16 +104,17 @@ def solve_wide_(np.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-ne
     nfeature = X.shape[1]
 
     kkt_check = check_KKT_wide(<double *>theta.data,
-                                <double *>gradient.data,
-                                <double *>X_theta.data,
-                                <double *>X.data,
-                                <double *>linear_func.data,
-                                <int *>need_update.data,
-                                ncase,
-                                nfeature,
-                                <double *>bound.data,
-                                ridge_term,
-                                kkt_tol)
+                               <double *>gradient.data,
+                               <double *>X_theta.data,
+                               <double *>X.data,
+                               <double *>linear_func.data,
+                               <int *>need_update.data,
+                               ncase,
+                               nfeature,
+                               <double *>bound.data,
+                               ridge_term,
+                               kkt_tol)
+    print(kkt_check, 'kkt')
 
     max_active_check = nactive[0] >= max_active
 
@@ -131,7 +132,7 @@ def solve_wide_(np.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-ne
             'gradient':gradient,
             'X_theta':X_theta,
             'linear_func':linear_func,
-            'iter':iter,
+            'iter':niter,
             'kkt_check':kkt_check,
             'ever_active':ever_active,
             'nactive':nactive,

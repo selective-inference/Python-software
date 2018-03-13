@@ -2,14 +2,13 @@ import numpy as np
 import nose.tools as nt
 import numpy.testing.decorators as dec
 
-from selection.tests.instance import gaussian_instance as instance
-import selection.tests.reports as reports
+from ...tests.instance import gaussian_instance as instance
 
-from selection.algorithms.lasso import lasso 
-from selection.algorithms.debiased_lasso import (debiased_lasso_inference,
-                                                 _find_row_approx_inverse,
-                                                 _find_row_approx_inverse_X)
-import regreg.api as rr
+from ..lasso import lasso 
+from ..debiased_lasso import (debiased_lasso_inference,
+                              _find_row_approx_inverse,
+                              _find_row_approx_inverse_X,
+                              debiasing_matrix)
 
 def test_gaussian(n=100, p=20):
 
@@ -41,7 +40,8 @@ def test_approx_inverse(n=50, p=100):
     soln = _find_row_approx_inverse(S, j, delta, solve_args={'min_its':500, 'tol':1.e-14, 'max_its':1000} )
 
     soln_C = _find_row_approx_inverse_X(X, j, delta, kkt_tol=1.e-14, parameter_tol=1.e-14, maxiter=1000, objective_tol=1.e-14)
-
+    soln_C2 = debiasing_matrix(X, j, delta, kkt_tol=1.e-14, parameter_tol=1.e-14, max_iter=1000, objective_tol=1.e-14, linesearch=False)
+    stop
     basis_vector = np.zeros(p)
     basis_vector[j] = 1.
 
@@ -49,7 +49,7 @@ def test_approx_inverse(n=50, p=100):
 
     U = - S.dot(-soln) - basis_vector
 
-    yield nt.assert_true, np.fabs(U).max() < delta * 1.001
-    yield nt.assert_equal, np.sign(U[j]), -np.sign(soln[j])
-    yield nt.assert_raises, ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta
-    yield np.testing.assert_allclose, soln, soln_C, 1.e-3
+    #yield nt.assert_true, np.fabs(U).max() < delta * 1.001
+    #yield nt.assert_equal, np.sign(U[j]), -np.sign(soln[j])
+    #yield nt.assert_raises, ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta
+    #yield np.testing.assert_allclose, soln, soln_C, 1.e-3
