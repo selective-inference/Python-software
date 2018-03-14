@@ -3,11 +3,6 @@ from warnings import warn
 import numpy as np
 from scipy.stats import norm as ndist
 
-from regreg.api import (quadratic_loss,
-                        identity_quadratic,
-                        l1norm,
-                        simple_problem)
-
 from ..constraints.affine import constraints
 from .debiased_lasso_utils import solve_wide_
 
@@ -35,6 +30,9 @@ def debiasing_matrix(X,
 
     n, p = X.shape
 
+    if bound is None:
+        bound = (1./np.sqrt(n)) * ndist.ppf(1.-(0.1/(p**2)))
+
     if max_active is None:
         max_active = max(50, 0.3 * n)
 
@@ -48,7 +46,7 @@ def debiasing_matrix(X,
         soln = np.zeros(p)
         soln_old = np.zeros(p)
         ever_active = np.zeros(p, np.int)
-        ever_active[0] = row
+        ever_active[0] = row + 1 # C code is 1-based
         nactive = np.array([1], np.int)
 
         linear_func = np.zeros(p)
@@ -62,15 +60,14 @@ def debiasing_matrix(X,
 
         Xsoln = np.zeros(n) # X\hat{\beta}
 
-        bound_vec = np.zeros(p) * bound
         ridge_term = 0
 
         need_update = np.zeros(p, np.int)
 
         while (counter_idx < max_try):
+            bound_vec = np.ones(p) * bound
 
-            print(soln)
-            result = solve_wide_(X,                          # this is a design matrix
+            result = solve_wide_(X,       
                                  Xsoln,
                                  linear_func,
                                  nndef_diag,
@@ -96,6 +93,8 @@ def debiasing_matrix(X,
             # Logic for whether we should continue the line search
 
             if not linesearch: break
+#                M[idx] = result['soln'].copy()
+#                break
 
             if counter_idx == 1:
                 if niter == (max_iter+1):
@@ -132,49 +131,13 @@ def debiasing_matrix(X,
             if warn_kkt and not result['kkt_check']:
                 warn("Solution for row of M does not seem to be feasible")
 
-            M[idx] = result['soln'] * 1.
+        M[idx] = result['soln'] * 1.
 
-    return M
+    return np.squeeze(M)
 
-def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1.e-6, 'max_its':500}):
-    """
-
-    Find an approximation of j-th row of inverse of Sigma.
-
-    Solves the problem
-
-    .. math::
-
-        \text{min}_{\theta} \frac{1}{2} \theta^TS\theta
-
-    subject to $\|\Sigma \hat{\theta} - e_j\|_{\infty} \leq \delta$ with
-    $e_j$ the $j$-th elementary basis vector and `S` as $\Sigma$, 
-    and `delta` as $\delta$.
-
-    Described in Table 1, display (4) of https://arxiv.org/pdf/1306.3171.pdf
-
-    """
-    p = Sigma.shape[0]
-    elem_basis = np.zeros(p, np.float)
-    elem_basis[j] = 1.
-    loss = quadratic_loss(p, Q=Sigma)
-    penalty = l1norm(p, lagrange=delta)
-    iq = identity_quadratic(0, 0, elem_basis, 0)
-    problem = simple_problem(loss, penalty)
-    dual_soln = problem.solve(iq, **solve_args)
-
-    soln = -dual_soln
-
-    # check feasibility -- if it fails miserably
-    # presume delta was too small
-
-    feasibility_gap = np.fabs(Sigma.dot(soln) - elem_basis).max()
-    if feasibility_gap > (1.01) * delta:
-        raise ValueError('does not seem to be a feasible point -- try increasing delta')
-
-    return soln
-
-def _find_row_approx_inverse_X(X, j, delta, 
+def _find_row_approx_inverse_X(X, 
+                               j, 
+                               delta, 
                                maxiter=50,
                                kkt_tol=1.e-4,
                                objective_tol=1.e-4,

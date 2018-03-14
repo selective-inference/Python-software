@@ -114,7 +114,6 @@ def solve_wide_(np.ndarray[DTYPE_float_t, ndim=2] X,            # Sqrt of non-ne
                                <double *>bound.data,
                                ridge_term,
                                kkt_tol)
-    print(kkt_check, 'kkt')
 
     max_active_check = nactive[0] >= max_active
 
