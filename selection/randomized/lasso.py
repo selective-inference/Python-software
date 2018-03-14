@@ -22,6 +22,7 @@ from .base import restricted_estimator
 from .glm import (pairs_bootstrap_glm,
                   glm_nonparametric_bootstrap,
                   glm_parametric_covariance)
+from ..algorithms.debiased_lasso import debiasing_matrix
 
 class lasso_view(query):
 
@@ -1614,10 +1615,10 @@ class highdim(lasso):
 
         if target == 'selected':
             observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
-        elif target == 'full':
+        else:
             X, y = self.loglike.data
             n, p = X.shape
-            if n > p:
+            if n > p and target == 'full':
                 observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
             else:
                 observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
@@ -1761,9 +1762,9 @@ class highdim(lasso):
 
         if features is None:
             features = self._overall
-        features_b = np.zeros(self._overall.shape, np.bool)
-        features_b[features] = True
-        features = features_b
+        features_bool = np.zeros(self._overall.shape, np.bool)
+        features_bool[features] = True
+        features = features_bool
 
         X, y = self.loglike.data
         n, p = X.shape
@@ -1785,17 +1786,41 @@ class highdim(lasso):
         alternatives = ['twosided'] * features.sum()
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
-    def debiased_targets(self, dispersion=None):
-        
-        raise NotImplementedError
+    def debiased_targets(self, features=None, dispersion=None, **debiasing_args):
 
-        if not hasattr(self, "_debiased_targets"):
-            X, y = self.loglike.data
-            n, p = X.shape
+        if features is None:
+            features = self._overall
+        features_bool = np.zeros(self._overall.shape, np.bool)
+        features_bool[features] = True
+        features = features_bool
 
-            self._debiased_targets = observed_target, cov_target, crosscov_target_score
+        X, y = self.loglike.data
+        n, p = X.shape
 
-        return self._debiased_targets
+        # target is one-step estimator
+
+        G = self.loglike.smooth_objective(self.initial_soln, 'grad')
+        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None], 
+                                                  np.nonzero(features)[0],
+                                                  **debiasing_args)) / n
+        observed_target = self.initial_soln[features] - Qinv_hat.dot(G)
+        if p > n:
+            M1 = Qinv_hat.dot(X.T)
+            cov_target = (M1 * self._W[None,:]).dot(M1.T)
+            crosscov_target_score = -(M1 * self._W[None,:]).dot(X).T
+        else:
+            Qfull = X.T.dot(self._W[:, None] * X)
+            cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
+            crosscov_target_score = -Qinv_hat.dot(Qfull).T
+
+        if dispersion is None: # use Pearson's X^2
+            Xfeat = X[:,features]
+            Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
+            relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
+            dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - features.sum()) 
+
+        alternatives = ['twosided'] * features.sum()
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     @staticmethod
     def gaussian(X, 
@@ -1870,7 +1895,6 @@ class highdim(lasso):
 
         return highdim(loglike, np.asarray(feature_weights) / sigma**2,
                        ridge_term, randomizer_scale)
-
 
     @staticmethod
     def logistic(X, 
