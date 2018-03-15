@@ -93,8 +93,6 @@ def debiasing_matrix(X,
             # Logic for whether we should continue the line search
 
             if not linesearch: break
-#                M[idx] = result['soln'].copy()
-#                break
 
             if counter_idx == 1:
                 if niter == (max_iter+1):
@@ -112,6 +110,10 @@ def debiasing_matrix(X,
 
             bound = bound / scaling_factor
 
+            counter_idx += 1
+            last_output = {'soln':result['soln'],
+                           'kkt_check':result['kkt_check']}
+
             # If the active set has grown to a certain size
             # then we stop, presuming problem has become
             # infeasible.
@@ -121,10 +123,6 @@ def debiasing_matrix(X,
             if result['max_active_check']:
                 result = last_output
                 break
-
-            counter_idx += 1
-            last_output = {'soln':result['soln'],
-                           'kkt_check':result['kkt_check']}
 
             # Check feasibility
 
@@ -225,7 +223,7 @@ def debiased_lasso_inference(lasso_obj, variables, delta):
     """
 
     if not lasso_obj.ignore_inactive_constraints:
-        raise ValueError('debiased lasso should be fit ignoring active constraints as implied covariance between active and inactive score is 0')
+        raise ValueError('debiased lasso should be fit ignoring inactive constraints as implied covariance between active and inactive score is 0')
 
     # should we check that loglike is gaussian
 
