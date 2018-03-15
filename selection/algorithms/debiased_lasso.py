@@ -112,6 +112,10 @@ def debiasing_matrix(X,
 
             bound = bound / scaling_factor
 
+            counter_idx += 1
+            last_output = {'soln':result['soln'],
+                           'kkt_check':result['kkt_check']}
+
             # If the active set has grown to a certain size
             # then we stop, presuming problem has become
             # infeasible.
@@ -121,10 +125,6 @@ def debiasing_matrix(X,
             if result['max_active_check']:
                 result = last_output
                 break
-
-            counter_idx += 1
-            last_output = {'soln':result['soln'],
-                           'kkt_check':result['kkt_check']}
 
             # Check feasibility
 

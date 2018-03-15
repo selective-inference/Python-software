@@ -1797,13 +1797,26 @@ class highdim(lasso):
         X, y = self.loglike.data
         n, p = X.shape
 
-        # target is one-step estimator
+        # relevant rows of approximate inverse
 
-        G = self.loglike.smooth_objective(self.initial_soln, 'grad')
         Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None], 
                                                   np.nonzero(features)[0],
                                                   **debiasing_args)) / n
-        observed_target = self.initial_soln[features] - Qinv_hat.dot(G)
+
+        # target is one-step estimator
+        # this one starts at our randomized solution
+
+        G_rand = self.loglike.smooth_objective(self.initial_soln, 'grad')
+        observed_target_rand = self.initial_soln[features] - Qinv_hat.dot(G_rand)
+
+        # this one step starts at the unrandomized solution
+
+        problem = rr.simple_problem(self.loglike, self.penalty)
+        nonrand_soln = problem.solve()
+        G_nonrand = self.loglike.smooth_objective(nonrand_soln, 'grad')
+
+        observed_target = nonrand_soln[features] - Qinv_hat.dot(G_nonrand)
+
         if p > n:
             M1 = Qinv_hat.dot(X.T)
             cov_target = (M1 * self._W[None,:]).dot(M1.T)
@@ -1816,7 +1829,7 @@ class highdim(lasso):
         if dispersion is None: # use Pearson's X^2
             Xfeat = X[:,features]
             Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
-            relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
+            relaxed_soln = nonrand_soln[features] - np.linalg.inv(Qrelax).dot(G_nonrand[features])
             dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - features.sum()) 
 
         alternatives = ['twosided'] * features.sum()

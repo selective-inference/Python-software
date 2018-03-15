@@ -33,7 +33,10 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full'
     n, p = X.shape
 
     sigma_ = np.std(Y)
-    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
+    if target is not 'debiased':
+        W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
+    else:
+        W = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
 
     conv = const(X, 
                  Y, 
@@ -174,13 +177,17 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3):
             p0, pA = [], []
         P0.extend(p0)
         PA.extend(pA)
-        print(np.mean(P0), np.std(P0), np.mean(np.array(PA) < 0.05), 'null pvalue + power')
+
+        P0_clean = np.array(P0)
+        
+        P0_clean = P0_clean[P0_clean > 1.e-5] # 
+        print(np.mean(P0_clean), np.std(P0_clean), np.mean(np.array(PA) < 0.05), np.mean(np.array(P0) < 0.05), np.mean(P0_clean < 0.05), np.mean(np.array(P0) < 1e-5), 'null pvalue + power + failure')
     
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)
             plt.clf()
-            if len(P0) > 0:
-                plt.plot(U, ECDF(P0)(U))
+            if len(P0_clean) > 0:
+                plt.plot(U, ECDF(P0_clean)(U))
             if len(PA) > 0:
                 plt.plot(U, ECDF(PA)(U), 'r')
             plt.plot([0, 1], [0, 1], 'k--')
