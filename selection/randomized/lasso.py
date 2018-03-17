@@ -9,6 +9,7 @@ import regreg.api as rr
 import regreg.affine as ra
 
 from ..constraints.affine import constraints
+from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 
 from .query import (query, 
                     multiple_queries,
@@ -21,6 +22,7 @@ from .base import restricted_estimator
 from .glm import (pairs_bootstrap_glm,
                   glm_nonparametric_bootstrap,
                   glm_parametric_covariance)
+from ..algorithms.debiased_lasso import debiasing_matrix
 
 class lasso_view(query):
 
@@ -668,7 +670,8 @@ class lasso(object):
                  ridge_term,
                  randomizer_scale,
                  randomizer='gaussian',
-                 parametric_cov_estimator=False):
+                 parametric_cov_estimator=False,
+                 perturb=None):
         r"""
 
         Create a new post-selection object for the LASSO problem
@@ -715,6 +718,7 @@ class lasso(object):
 
         self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
 
+        self._initial_omega = perturb
 
     def fit(self, 
             solve_args={'tol':1.e-12, 'min_its':50}, 
@@ -737,12 +741,15 @@ class lasso(object):
              
         """
 
+        if perturb is not None:
+            self._initial_omega = perturb
+
         p = self.nfeature
         if self.parametric_cov_estimator==True:
             self._view = glm_lasso_parametric(self.loglike, self.ridge_term, self.penalty, self.randomizer)
         else:
             self._view = glm_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
-        self._view.solve(nboot=nboot, perturb=perturb, solve_args=solve_args)
+        self._view.solve(nboot=nboot, perturb=self._initial_omega, solve_args=solve_args)
 
         self.signs = np.sign(self._view.initial_soln)
         self.selection_variable = self._view.selection_variable
@@ -874,7 +881,8 @@ class lasso(object):
                  quadratic=None,
                  ridge_term=None,
                  randomizer_scale=None,
-                 randomizer='gaussian'):
+                 randomizer='gaussian',
+                 perturb=None):
         r"""
         Squared-error LASSO with feature weights.
 
@@ -933,14 +941,18 @@ class lasso(object):
 
         mean_diag = np.mean((X**2).sum(0))
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return lasso(loglike, np.asarray(feature_weights) / sigma**2,
-                     ridge_term, randomizer_scale, randomizer=randomizer,
-                     parametric_cov_estimator=parametric_cov_estimator)
+        return lasso(loglike, 
+                     np.asarray(feature_weights) / sigma**2,
+                     ridge_term, 
+                     randomizer_scale, 
+                     randomizer=randomizer,
+                     parametric_cov_estimator=parametric_cov_estimator,
+                     perturb=perturb)
 
     @staticmethod
     def logistic(X, 
@@ -951,7 +963,8 @@ class lasso(object):
                  quadratic=None,
                  ridge_term=None,
                  randomizer='gaussian',
-                 randomizer_scale=None):
+                 randomizer_scale=None,
+                 perturb=None):
         r"""
         Logistic LASSO with feature weights.
 
@@ -1013,7 +1026,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 
@@ -1022,7 +1035,8 @@ class lasso(object):
                      ridge_term, 
                      randomizer_scale,
                      parametric_cov_estimator=parametric_cov_estimator,
-                     randomizer=randomizer)
+                     randomizer=randomizer,
+                     perturb=perturb)
 
     @staticmethod
     def coxph(X, 
@@ -1033,7 +1047,8 @@ class lasso(object):
               quadratic=None,
               ridge_term=None,
               randomizer='gaussian',
-              randomizer_scale=None):
+              randomizer_scale=None,
+              perturb=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
 
@@ -1098,7 +1113,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(times) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
@@ -1108,7 +1123,8 @@ class lasso(object):
                      ridge_term,
                      randomizer_scale, 
                      randomizer=randomizer,
-                     parametric_cov_estimator=parametric_cov_estimator)
+                     parametric_cov_estimator=parametric_cov_estimator,
+                     perturb=perturb)
 
     @staticmethod
     def poisson(X, 
@@ -1118,7 +1134,8 @@ class lasso(object):
                 quadratic=None,
                 ridge_term=None,
                 randomizer_scale=None,
-                randomizer='gaussian'):
+                randomizer='gaussian',
+                perturb=None):
         r"""
         Poisson log-linear LASSO with feature weights.
 
@@ -1176,7 +1193,7 @@ class lasso(object):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
@@ -1186,7 +1203,8 @@ class lasso(object):
                      ridge_term,
                      randomizer_scale, 
                      randomizer=randomizer,
-                     parametric_cov_estimator=parametric_cov_estimator)
+                     parametric_cov_estimator=parametric_cov_estimator,
+                     perturb=perturb)
 
     @staticmethod
     def sqrt_lasso(X, 
@@ -1197,7 +1215,7 @@ class lasso(object):
                    sigma_estimate='truncated',
                    solve_args={'min_its':200},
                    randomizer_scale=None,
-                   randomizer='gaussian'):
+                   perturb=None):
         r"""
         Use sqrt-LASSO to choose variables.
 
@@ -1249,9 +1267,6 @@ class lasso(object):
         randomizer_scale : float
             Scale for IID components of randomizer.
 
-        randomizer : str
-            One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
 
@@ -1269,109 +1284,49 @@ class lasso(object):
 
         """
 
-        raise NotImplementedError
-
         n, p = X.shape
 
-        # scale for randomization seems kind of meaningless here...
+        if np.asarray(feature_weights).shape == ():
+            feature_weights = np.ones(loglike.shape) * feature_weights
 
         mean_diag = np.mean((X**2).sum(0))
-        ridge_term = (np.std(Y)**2 * mean_diag / np.sqrt(n)) * n / (n - 1.)
-        randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+        if ridge_term is None:
+            ridge_term = np.sqrt(mean_diag) / np.sqrt(n - 1)
 
-        if np.asarray(feature_weights).shape == ():
-            feature_weights = np.ones(p) * feature_weights
-        feature_weights = np.asarray(feature_weights)
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.sqrt(n / (n - 1.))
 
-        # TODO: refits sqrt lasso more than once -- make an override for avoiding refitting?
+        if perturb is None:
+            perturb = np.random.standard_normal(p) * randomizer_scale
 
-        soln = solve_sqrt_lasso(X, Y, weights=feature_weights, quadratic=quadratic, solve_args=solve_args)[0]
-
-        # find active set, and estimate of sigma
-
-        active = (soln != 0)
-        nactive = active.sum()
-
-        if nactive:
-
-            subgrad = np.sign(soln[active]) * feature_weights[active]
-            X_E = X[:,active]
-            X_Ei = np.linalg.pinv(X_E)
-            sigma_E = np.linalg.norm(Y - X_E.dot(X_Ei.dot(Y))) / np.sqrt(n - nactive)
-            multiplier = np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
-
-            # check truncation interval for sigma_E
-
-            # the KKT conditions imply an inequality like
-            # \hat{\sigma}_E \cdot LHS \leq RHS
-
-            penalized = feature_weights[active] != 0
-
-            if penalized.sum():
-                D_E = np.sign(soln[active][penalized]) # diagonal matrix of signs
-                LHS = D_E * np.linalg.solve(X_E.T.dot(X_E), subgrad)[penalized]
-                RHS = D_E * X_Ei.dot(Y)[penalized] 
-
-                ratio = RHS / LHS
-
-                group1 = LHS > 0
-                upper_bound = np.inf
-                if group1.sum():
-                    upper_bound = min(upper_bound, np.min(ratio[group1])) # necessarily these will have RHS > 0
-
-                group2 = (LHS <= 0) * (RHS <= 0) # we can ignore the other possibility since this gives a lower bound of 0
-                lower_bound = 0
-                if group2.sum():
-                    lower_bound = max(lower_bound, np.max(ratio[group2]))
-
-                upper_bound /= multiplier
-                lower_bound /= multiplier
-
-            else:
-                lower_bound = 0
-                upper_bound = np.inf
-
-            _sigma_estimator_args = (sigma_E, 
-                                     n - nactive,
-                                     lower_bound, 
-                                     upper_bound)
-
-            if sigma_estimate == 'truncated':
-                _sigma_hat = estimate_sigma(*_sigma_estimator_args)
-            elif sigma_estimate == 'OLS':
-                _sigma_hat = sigma_E
-            else:
-                raise ValueError('sigma_estimate must be one of ["truncated", "OLS"]')
-        else:
-            _sigma_hat = np.linalg.norm(Y) / np.sqrt(n)
-            multiplier = np.sqrt(n)
-            sigma_E = _sigma_hat
-
-        # XXX how should quadratic be changed?
-        # multiply everything by sigma_E?
+        randomQ = rr.identity_quadratic(ridge_term, 0, -perturb, 0) # a ridge + linear term
 
         if quadratic is not None:
-            qc = quadratic.collapsed()
-            qc.coef *= np.sqrt(n - nactive) / sigma_E
-            qc.linear_term *= np.sqrt(n - nactive) / sigma_E
-            quadratic = qc
+            totalQ = randomQ + quadratic
+        else:
+            totalQ = randomQ
 
-        loglike = rr.glm.gaussian(X, Y, quadratic=quadratic)
+        soln, sqrt_loss = solve_sqrt_lasso(X, 
+                                           Y, 
+                                           weights=feature_weights, 
+                                           quadratic=totalQ, 
+                                           solve_args=solve_args,
+                                           force_fat=True)
 
-        L = lasso(loglike, feature_weights * multiplier * sigma_E,
-                  parametric_cov_estimator=parametric_cov_estimator,
-                  ignore_inactive_constraints=True)
+        denom = np.linalg.norm(Y - X.dot(soln))
 
-        # these arguments are reused for data carving
+        loglike = rr.glm.gaussian(X, Y)
+        
+        raise NotImplementedError('lasso_view needs to be modified so that the initial randomization can be set at construction time')
 
-        if nactive:
-            L._sigma_hat = _sigma_hat
-            L._sigma_estimator_args = _sigma_estimator_args
-            L._weight_multiplier = multiplier * sigma_E
-            L._multiplier = multiplier
-            L.lasso_solution = soln
+        return lasso(loglike, 
+                     np.asarray(feature_weights) * denom, 
+                     ridge_term * denom, 
+                     randomizer_scale * denom, 
+                     randomizer='gaussian',
+                     parametric_cov_estimator=parametric_cov_estimator,
+                     perturb=perturb)
 
-        return L
 
 #### High dimensional version
 #### - parametric covariance
@@ -1397,7 +1352,8 @@ class highdim(lasso):
                  loglike, 
                  feature_weights,
                  ridge_term,
-                 randomizer_scale):
+                 randomizer_scale,
+                 perturb=None):
         r"""
 
         Create a new post-selection object for the LASSO problem
@@ -1418,6 +1374,9 @@ class highdim(lasso):
         randomizer_scale : float
             Scale for IID components of randomization.
 
+        perturb : np.ndarray
+            Random perturbation subtracted as a linear
+            term in the objective function.
 
         """
 
@@ -1431,7 +1390,7 @@ class highdim(lasso):
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         self.ridge_term = ridge_term
         self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
-
+        self._initial_omega = perturb # random perturbation
 
     def fit(self, 
             solve_args={'tol':1.e-12, 'min_its':50}, 
@@ -1455,10 +1414,13 @@ class highdim(lasso):
 
         p = self.nfeature
 
-        if perturb is None:
-            perturb = self.randomizer.sample()
-        self._initial_omega = perturb
-        quad = rr.identity_quadratic(self.ridge_term, 0, -perturb)
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
+
+        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
         problem = rr.simple_problem(self.loglike, self.penalty)
         self.initial_soln = problem.solve(quad, **solve_args)
 
@@ -1653,10 +1615,10 @@ class highdim(lasso):
 
         if target == 'selected':
             observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
-        elif target == 'full':
+        else:
             X, y = self.loglike.data
             n, p = X.shape
-            if n > p:
+            if n > p and target == 'full':
                 observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
             else:
                 observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
@@ -1800,9 +1762,9 @@ class highdim(lasso):
 
         if features is None:
             features = self._overall
-        features_b = np.zeros(self._overall.shape, np.bool)
-        features_b[features] = True
-        features = features_b
+        features_bool = np.zeros(self._overall.shape, np.bool)
+        features_bool[features] = True
+        features = features_bool
 
         X, y = self.loglike.data
         n, p = X.shape
@@ -1824,28 +1786,50 @@ class highdim(lasso):
         alternatives = ['twosided'] * features.sum()
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
-    def debiased_targets(self, dispersion=None):
-        
-        raise NotImplementedError
+    def debiased_targets(self, features=None, dispersion=None, **debiasing_args):
 
-        if not hasattr(self, "_debiased_targets"):
-            X, y = self.loglike.data
-            n, p = X.shape
+        if features is None:
+            features = self._overall
+        features_bool = np.zeros(self._overall.shape, np.bool)
+        features_bool[features] = True
+        features = features_bool
 
-            self._debiased_targets = observed_target, cov_target, crosscov_target_score
+        X, y = self.loglike.data
+        n, p = X.shape
 
-        return self._debiased_targets
+        # target is one-step estimator
+
+        G = self.loglike.smooth_objective(self.initial_soln, 'grad')
+        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None], 
+                                                  np.nonzero(features)[0],
+                                                  **debiasing_args)) / n
+        observed_target = self.initial_soln[features] - Qinv_hat.dot(G)
+        if p > n:
+            M1 = Qinv_hat.dot(X.T)
+            cov_target = (M1 * self._W[None,:]).dot(M1.T)
+            crosscov_target_score = -(M1 * self._W[None,:]).dot(X).T
+        else:
+            Qfull = X.T.dot(self._W[:, None] * X)
+            cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
+            crosscov_target_score = -Qinv_hat.dot(Qfull).T
+
+        if dispersion is None: # use Pearson's X^2
+            Xfeat = X[:,features]
+            Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
+            relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
+            dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - features.sum()) 
+
+        alternatives = ['twosided'] * features.sum()
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     @staticmethod
     def gaussian(X, 
                  Y, 
                  feature_weights, 
                  sigma=1.,
-                 parametric_cov_estimator=False,
                  quadratic=None,
                  ridge_term=None,
-                 randomizer_scale=None,
-                 randomizer='gaussian'):
+                 randomizer_scale=None):
         r"""
         Squared-error LASSO with feature weights.
 
@@ -1904,24 +1888,21 @@ class highdim(lasso):
 
         mean_diag = np.mean((X**2).sum(0))
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
         return highdim(loglike, np.asarray(feature_weights) / sigma**2,
-                     ridge_term, randomizer_scale)
-
+                       ridge_term, randomizer_scale)
 
     @staticmethod
     def logistic(X, 
                  successes, 
                  feature_weights, 
                  trials=None,
-                 parametric_cov_estimator=False,
                  quadratic=None,
                  ridge_term=None,
-                 randomizer='gaussian',
                  randomizer_scale=None):
         r"""
         Logistic LASSO with feature weights.
@@ -1984,7 +1965,7 @@ class highdim(lasso):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 
@@ -1997,10 +1978,8 @@ class highdim(lasso):
               times, 
               status, 
               feature_weights,
-              parametric_cov_estimator=False,
               quadratic=None,
               ridge_term=None,
-              randomizer='gaussian',
               randomizer_scale=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
@@ -2066,7 +2045,7 @@ class highdim(lasso):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(times) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
@@ -2080,11 +2059,9 @@ class highdim(lasso):
     def poisson(X, 
                 counts, 
                 feature_weights,
-                parametric_cov_estimator=False,
                 quadratic=None,
                 ridge_term=None,
-                randomizer_scale=None,
-                randomizer='gaussian'):
+                randomizer_scale=None):
         r"""
         Poisson log-linear LASSO with feature weights.
 
@@ -2142,7 +2119,7 @@ class highdim(lasso):
         mean_diag = np.mean((X**2).sum(0))
 
         if ridge_term is None:
-            ridge_term = (np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n)) * np.sqrt(n / (n - 1.))
+            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n-1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
@@ -2157,11 +2134,10 @@ class highdim(lasso):
                    Y, 
                    feature_weights, 
                    quadratic=None,
-                   parametric_cov_estimator=False,
-                   sigma_estimate='truncated',
-                   solve_args={'min_its':200},
+                   ridge_term=None,
                    randomizer_scale=None,
-                   randomizer='gaussian'):
+                   solve_args={'min_its':200},
+                   perturb=None):
         r"""
         Use sqrt-LASSO to choose variables.
 
@@ -2199,11 +2175,6 @@ class highdim(lasso):
             used to estimate covariance for inference
             in second stage.
 
-        sigma_estimate : str
-            One of 'truncated' or 'OLS'. Method
-            used to estimate $\sigma$ when using
-            parametric covariance.
-
         solve_args : dict
             Arguments passed to solver.
 
@@ -2233,5 +2204,44 @@ class highdim(lasso):
 
         """
 
-        raise NotImplementedError
+        n, p = X.shape
+
+        if np.asarray(feature_weights).shape == ():
+            feature_weights = np.ones(p) * feature_weights
+
+        mean_diag = np.mean((X**2).sum(0))
+        if ridge_term is None:
+            ridge_term = np.sqrt(mean_diag) / (n - 1)
+
+        if randomizer_scale is None:
+            randomizer_scale = 0.5 * np.sqrt(mean_diag) / np.sqrt(n-1)
+
+        if perturb is None:
+            perturb = np.random.standard_normal(p) * randomizer_scale
+
+        randomQ = rr.identity_quadratic(ridge_term, 0, -perturb, 0) # a ridge + linear term
+
+        if quadratic is not None:
+            totalQ = randomQ + quadratic
+        else:
+            totalQ = randomQ
+
+        soln, sqrt_loss = solve_sqrt_lasso(X, 
+                                           Y, 
+                                           weights=feature_weights, 
+                                           quadratic=totalQ, 
+                                           solve_args=solve_args,
+                                           force_fat=True)
+
+        denom = np.linalg.norm(Y - X.dot(soln))
+        loglike = rr.glm.gaussian(X, Y)
+        
+        obj = highdim(loglike, np.asarray(feature_weights) * denom,
+                      ridge_term * denom, 
+                      randomizer_scale * denom, 
+                      perturb=perturb * denom)
+        obj._sqrt_soln = soln
+
+        return obj
+
 
