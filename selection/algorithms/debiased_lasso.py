@@ -45,6 +45,7 @@ def _find_row_approx_inverse(Sigma, j, delta, solve_args={'min_its':100, 'tol':1
 
     return soln
 
+
 def _find_row_approx_inverse_X(X, j, delta, 
                                maxiter=50,
                                kkt_tol=1.e-4,

@@ -19,7 +19,7 @@ def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, rand
     X, Y, beta = inst(n=n,
                       p=p, 
                       signal=signal, 
-                      s=s, 
+                      s=s,
                       equicorrelated=False, 
                       rho=rho, 
                       sigma=sigma, 
@@ -115,3 +115,6 @@ def main(nsim=500, full=True, full_dispersion=False):
             plt.plot([0, 1], [0, 1], 'k--')
             plt.savefig("plot.pdf")
     plt.show()
+
+main()
+
