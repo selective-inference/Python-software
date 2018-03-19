@@ -2,7 +2,7 @@ import numpy as np
 import nose.tools as nt
 import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
-rpy.r('library(selectiveInference)')
+#rpy.r('library(selectiveInference)')
 
 import selection.randomized.lasso as L; reload(L)
 from selection.randomized.lasso import highdim 
@@ -87,6 +87,8 @@ def test_selected_targets(n=2000, p=200, signal_fac=1.5, s=5, sigma=3, rho=0.4, 
     coverage = (beta_target > intervals[:,0]) * (beta_target < intervals[:,1])
     return pval[beta_target == 0], pval[beta_target != 0], coverage
 
+print(test_selected_targets())
+
 def main(nsim=500, full=True, full_dispersion=False):
 
     P0, PA, cover = [], [], []
@@ -116,5 +118,5 @@ def main(nsim=500, full=True, full_dispersion=False):
             plt.savefig("plot.pdf")
     plt.show()
 
-main()
+#main()
 
