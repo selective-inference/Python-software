@@ -95,7 +95,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
 
     sigma_ = np.std(y)
-    print("naive estimate of sigma_", sigma_)
+    print("naive estimate of sigma", sigma_)
 
     const = highdim.gaussian
     lam_seq = sigma_* np.linspace(0.75, 2.75, num=100) * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
@@ -135,6 +135,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
 
     sys.stderr.write("selMLE risk" + str(relative_risk(sel_MLE, beta, Sigma)) + "\n")
     sys.stderr.write("indep est risk" + str(relative_risk(ind_estimator, beta, Sigma)) + "\n")
+    sys.stderr.write("randomized LASSO est risk" + str(relative_risk(randomized_lasso.initial_soln/np.sqrt(n), beta, Sigma)) + "\n")
     sys.stderr.write("relLASSO risk" + str(relative_risk(rel_LASSO, beta, Sigma)) + "\n")
     sys.stderr.write("LASSO risk" + str(relative_risk(est_LASSO, beta, Sigma)) + "\n")
 

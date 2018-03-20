@@ -494,10 +494,10 @@ class affine_gaussian_sampler(optimization_sampler):
 
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
-        #feasible_point = np.ones(prec_opt.shape[0])
+        init_soln = np.ones(prec_opt.shape[0])
         val, soln, hess = solve_barrier_nonneg(conjugate_arg,
                                                prec_opt,
-                                               feasible_point,
+                                               init_soln,
                                                **solve_args)
 
         final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean - soln)))
