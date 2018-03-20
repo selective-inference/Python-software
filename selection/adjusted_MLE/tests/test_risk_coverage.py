@@ -81,15 +81,21 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
     nactive_nonrand = active_nonrand.sum()
     true_mean = X.dot(beta)
 
-    dispersion = None
-    if full_dispersion:
-        dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y)))**2 / (n - p)
+    X -= X.mean(0)[None, :]
+    X /= (X.std(0)[None, :] * np.sqrt(n))
+    X_val -= X_val.mean(0)[None, :]
+    X_val /= (X_val.std(0)[None, :] * np.sqrt(nval))
 
     sigma_ = np.std(y)
+    print("naive estimate of sigma_", sigma_)
 
     _y = y
     y = y - y.mean()
     y_val = y_val - y_val.mean()
+
+    dispersion = None
+    if full_dispersion:
+        dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
 
     const = highdim.gaussian
     lam_seq = sigma_* np.linspace(0.75, 2.75, num=100) * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
@@ -109,8 +115,24 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
     lam = lam_seq[np.argmin(err)]
-    #sys.stderr.write("lambda from tuned relaxed LASSO" + str(lam_tuned) + "\n")
+    sys.stderr.write("lambda from tuned relaxed LASSO" + str(sigma_*lam_tuned) + "\n")
     sys.stderr.write("lambda from randomized LASSO" + str(lam) + "\n")
+
+    randomized_lasso = const(X,
+                             y,
+                             lam,
+                             randomizer_scale=randomizer_scale * sigma_)
+
+    signs = randomized_lasso.fit()
+    nonzero = signs != 0
+
+    print("nonzero", nonzero.sum())
+    sel_MLE = np.zeros(p)
+    estimate, _, _, pval, intervals = randomized_lasso.selective_MLE(target=target, dispersion=dispersion)
+    sel_MLE[nonzero] = estimate / np.sqrt(n)
+
+    sys.stderr.write("overall_selrisk" + str(relative_risk(rel_LASSO, beta, Sigma)) + "\n")
+    sys.stderr.write("overall_relLASSOrisk" + str(relative_risk(sel_MLE, beta, Sigma)) + "\n")
 
 
 comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
