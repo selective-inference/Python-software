@@ -86,9 +86,6 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
     X_val -= X_val.mean(0)[None, :]
     X_val /= (X_val.std(0)[None, :] * np.sqrt(nval))
 
-    sigma_ = np.std(y)
-    print("naive estimate of sigma_", sigma_)
-
     _y = y
     y = y - y.mean()
     y_val = y_val - y_val.mean()
@@ -96,6 +93,9 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
     dispersion = None
     if full_dispersion:
         dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
+
+    sigma_ = np.std(y)
+    print("naive estimate of sigma_", sigma_)
 
     const = highdim.gaussian
     lam_seq = sigma_* np.linspace(0.75, 2.75, num=100) * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
@@ -108,7 +108,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
                      randomizer_scale=randomizer_scale * sigma_)
         signs = conv.fit()
         nonzero = signs != 0
-        estimate, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
+        estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
 
         full_estimate = np.zeros(p)
         full_estimate[nonzero] = estimate
@@ -128,11 +128,15 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
 
     print("nonzero", nonzero.sum())
     sel_MLE = np.zeros(p)
-    estimate, _, _, pval, intervals = randomized_lasso.selective_MLE(target=target, dispersion=dispersion)
+    estimate, _, _, pval, intervals, ind_unbiased_estimator = randomized_lasso.selective_MLE(target=target, dispersion=dispersion)
     sel_MLE[nonzero] = estimate / np.sqrt(n)
+    ind_estimator = np.zeros(p)
+    ind_estimator[nonzero] = ind_unbiased_estimator / np.sqrt(n)
 
-    sys.stderr.write("overall_selrisk" + str(relative_risk(rel_LASSO, beta, Sigma)) + "\n")
-    sys.stderr.write("overall_relLASSOrisk" + str(relative_risk(sel_MLE, beta, Sigma)) + "\n")
+    sys.stderr.write("selMLE risk" + str(relative_risk(sel_MLE, beta, Sigma)) + "\n")
+    sys.stderr.write("indep est risk" + str(relative_risk(ind_estimator, beta, Sigma)) + "\n")
+    sys.stderr.write("relLASSO risk" + str(relative_risk(rel_LASSO, beta, Sigma)) + "\n")
+    sys.stderr.write("LASSO risk" + str(relative_risk(est_LASSO, beta, Sigma)) + "\n")
 
 
 comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,

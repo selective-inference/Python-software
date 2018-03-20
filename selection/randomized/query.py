@@ -494,14 +494,15 @@ class affine_gaussian_sampler(optimization_sampler):
 
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
-        feasible_point = np.ones(prec_opt.shape[0])
+        #feasible_point = np.ones(prec_opt.shape[0])
         val, soln, hess = solve_barrier_nonneg(conjugate_arg,
                                                prec_opt,
                                                feasible_point,
                                                **solve_args)
 
         final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean - soln)))
-
+        ind_unbiased_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean
+                                                                                                - feasible_point)))
         L = target_lin.T.dot(prec_opt)
         observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
         observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
@@ -513,7 +514,7 @@ class affine_gaussian_sampler(optimization_sampler):
         quantile = ndist.ppf(1 - alpha / 2.)
         intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                                final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
-        return final_estimator, observed_info_mean, Z_scores, pvalues, intervals
+        return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
 class optimization_intervals(object):
 
