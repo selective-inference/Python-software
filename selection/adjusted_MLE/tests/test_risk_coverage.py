@@ -73,7 +73,7 @@ def tuned_lasso(X, y, X_val,y_val):
         estimate.tuned = coef(fit, s=lambda.tuned.lasso)[-1]
 
         #print(paste("compare estimates", max(abs(estimate.tuned-(beta.hat.lasso[,which.min(err.val.lasso)])[-1])),
-        length(which(estimate.tuned!=0)), length(which((beta.hat.lasso[,which.min(err.val.lasso)])[-1]!=0))))
+        #length(which(estimate.tuned!=0)), length(which((beta.hat.lasso[,which.min(err.val.lasso)])[-1]!=0))))
 
         return(list(beta.hat.rellasso = (beta.hat.rellasso[,which.min(err.val.rellasso)])[-1],
         beta.hat.lasso = (beta.hat.lasso[,which.min(err.val.lasso)])[-1],
@@ -202,7 +202,7 @@ if __name__ == "__main__":
     risk_LASSO_nonrand = 0.
 
     for i in range(ndraw):
-        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
+        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=3, snr=0.2,
                                            randomizer_scale=np.sqrt(0.25), target="selected", full_dispersion=True)
 
         risk_selMLE += output[0]
