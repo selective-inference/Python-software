@@ -4,7 +4,27 @@ import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
 
 import selection.randomized.lasso as L; reload(L)
-from selection.randomized.lasso import highdim
+from selection.randomized.lasso import lasso, highdim
+
+def glmnet_lasso(X, y, lambda_val):
+    robjects.r('''
+                glmnet_LASSO = function(X,y,lambda){
+                y = as.matrix(y)
+                X = as.matrix(X)
+                lam = as.matrix(lambda)[1,1]
+                n = nrow(X)
+                fit = glmnet(X, y, standardize=TRUE, intercept=FALSE)
+                estimate = coef(fit, s=lam)[-1]
+                return(list(estimate = estimate))
+                }''')
+
+    lambda_R = robjects.globalenv['glmnet_LASSO']
+    n, p = X.shape
+    r_X = robjects.r.matrix(X, nrow=n, ncol=p)
+    r_y = robjects.r.matrix(y, nrow=n, ncol=1)
+    r_lam = robjects.r.matrix(lambda_val, nrow=1, ncol=1)
+    estimate = np.array(lambda_R(r_X, r_y, r_lam).rx2('estimate'))
+    return estimate
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
     robjects.r('''
@@ -31,23 +51,34 @@ def tuned_lasso(X, y, X_val,y_val):
         X = as.matrix(X)
         Y.val = as.vector(Y.val)
         X.val = as.matrix(X.val)
-        rel.LASSO = lasso(X,Y,intercept=FALSE, nrelax=10, nlam=50)
-        LASSO = lasso(X,Y,intercept=FALSE,nlam=50)
+        rel.LASSO = lasso(X,Y,intercept=TRUE, nrelax=10, nlam=50, standardize=TRUE)
+        LASSO = lasso(X,Y,intercept=TRUE,nlam=50, standardize=TRUE)
         beta.hat.rellasso = as.matrix(coef(rel.LASSO))
         beta.hat.lasso = as.matrix(coef(LASSO))
         min.lam = min(rel.LASSO$lambda)
         max.lam = max(rel.LASSO$lambda)
+        print(paste("max and min values of lambda", max.lam, min.lam))
+
         lam.seq = exp(seq(log(max.lam),log(min.lam),length=rel.LASSO$nlambda))
         muhat.val.rellasso = as.matrix(predict(rel.LASSO, X.val))
         muhat.val.lasso = as.matrix(predict(LASSO, X.val))
         err.val.rellasso = colMeans((muhat.val.rellasso - Y.val)^2)
         err.val.lasso = colMeans((muhat.val.lasso - Y.val)^2)
-        #print(err.val.rellasso)
+
         opt_lam = ceiling(which.min(err.val.rellasso)/10)
-        lambda.tuned = lam.seq[opt_lam]
-        return(list(beta.hat.rellasso = beta.hat.rellasso[,which.min(err.val.rellasso)],
-        beta.hat.lasso = beta.hat.lasso[,which.min(err.val.lasso)],
-        lambda.tuned = lambda.tuned, lambda.seq = lam.seq))
+        lambda.tuned.rellasso = lam.seq[opt_lam]
+        lambda.tuned.lasso = lam.seq[which.min(err.val.lasso)]
+
+        fit = glmnet(X, Y, standardize=TRUE, intercept=TRUE)
+        estimate.tuned = coef(fit, s=lambda.tuned.lasso)[-1]
+
+        print(paste("compare estimates", max(abs(estimate.tuned-(beta.hat.lasso[,which.min(err.val.lasso)])[-1])),
+        length(which(estimate.tuned!=0)), length(which((beta.hat.lasso[,which.min(err.val.lasso)])[-1]!=0))))
+
+        return(list(beta.hat.rellasso = (beta.hat.rellasso[,which.min(err.val.rellasso)])[-1],
+        beta.hat.lasso = (beta.hat.lasso[,which.min(err.val.lasso)])[-1],
+        lambda.tuned.rellasso = lambda.tuned.rellasso, lambda.tuned.lasso= lambda.tuned.lasso,
+        lambda.seq = lam.seq))
         }''')
 
     r_lasso = robjects.globalenv['tuned_lasso_estimator']
@@ -62,9 +93,10 @@ def tuned_lasso(X, y, X_val,y_val):
     tuned_est = r_lasso(r_X, r_y, r_X_val, r_y_val)
     estimator_rellasso = np.array(tuned_est.rx2('beta.hat.rellasso'))
     estimator_lasso = np.array(tuned_est.rx2('beta.hat.lasso'))
-    lam_tuned = np.array(tuned_est.rx2('lambda.tuned'))
+    lam_tuned_rellasso = np.array(tuned_est.rx2('lambda.tuned.rellasso'))
+    lam_tuned_lasso = np.array(tuned_est.rx2('lambda.tuned.lasso'))
     lam_seq = np.array(tuned_est.rx2('lambda.seq'))
-    return estimator_rellasso, estimator_lasso, lam_tuned, lam_seq
+    return estimator_rellasso, estimator_lasso, lam_tuned_rellasso, lam_tuned_lasso, lam_seq
 
 def relative_risk(est, truth, Sigma):
 
@@ -76,11 +108,12 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
 
     X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho,
                                                     s=s, beta_type=beta_type, snr=snr)
-    rel_LASSO, est_LASSO, lam_tuned, lam_seq = tuned_lasso(X, y, X_val, y_val)
-    active_nonrand = (rel_LASSO != 0)
+    rel_LASSO, est_LASSO, lam_tuned_rellasso, lam_tuned_lasso, lam_seq = tuned_lasso(X, y, X_val, y_val)
+    active_nonrand = (est_LASSO != 0)
     nactive_nonrand = active_nonrand.sum()
     true_mean = X.dot(beta)
 
+    _X = X
     X -= X.mean(0)[None, :]
     X /= (X.std(0)[None, :] * np.sqrt(n))
     X_val -= X_val.mean(0)[None, :]
@@ -95,10 +128,23 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
 
     sigma_ = np.std(y)
-    print("naive estimate of sigma", sigma_)
+    LASSO_py = lasso.gaussian(X, y, np.asscalar((sigma**2.)*lam_tuned_lasso))
+    soln = LASSO_py.fit()
+    #print("compare solns", soln, est_LASSO)
+    active_LASSO = (soln != 0)
+    nactive_LASSO = active_LASSO.sum()
+
+    # LASSO_rand0 = highdim.gaussian(X,
+    #                                y,
+    #                                np.asscalar((sigma_**2)*lam_tuned_lasso),
+    #                                randomizer_scale=0.00000001)
+    # signs_rand0 = LASSO_rand0.fit()
+
+    #glm_LASSO = glmnet_lasso(X, y, np.asscalar(lam_tuned_lasso))
 
     const = highdim.gaussian
-    lam_seq = sigma_* np.linspace(0.75, 2.75, num=100) * np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
+    lam_seq = sigma_* np.linspace(0.25, 2.75, num=100) * \
+              np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
     err = np.zeros(100)
     for k in range(100):
         W = lam_seq[k]
@@ -115,8 +161,8 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
     lam = lam_seq[np.argmin(err)]
-    sys.stderr.write("lambda from tuned relaxed LASSO" + str(sigma_*lam_tuned) + "\n")
-    sys.stderr.write("lambda from randomized LASSO" + str(lam) + "\n")
+    sys.stderr.write("lambda from tuned relaxed LASSO " + str((sigma_**2)*lam_tuned_lasso) + "\n")
+    sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
 
     randomized_lasso = const(X,
                              y,
@@ -125,21 +171,26 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
 
     signs = randomized_lasso.fit()
     nonzero = signs != 0
+    sys.stderr.write("active variables selected by tuned LASSO " + str(nactive_nonrand) + "\n")
+    sys.stderr.write("active variables selected by LASSO in python " + str(nactive_LASSO)+ "\n")
+    #sys.stderr.write("recall glmnet at tuned lambda " + str((glm_LASSO!=0).sum()) + "\n")
+    sys.stderr.write("active variables selected by randomized LASSO " + str(nonzero.sum()) + "\n")
 
-    print("nonzero", nonzero.sum())
     sel_MLE = np.zeros(p)
     estimate, _, _, pval, intervals, ind_unbiased_estimator = randomized_lasso.selective_MLE(target=target, dispersion=dispersion)
     sel_MLE[nonzero] = estimate / np.sqrt(n)
     ind_estimator = np.zeros(p)
     ind_estimator[nonzero] = ind_unbiased_estimator / np.sqrt(n)
 
-    sys.stderr.write("selMLE risk" + str(relative_risk(sel_MLE, beta, Sigma)) + "\n")
-    sys.stderr.write("indep est risk" + str(relative_risk(ind_estimator, beta, Sigma)) + "\n")
-    sys.stderr.write("randomized LASSO est risk" + str(relative_risk(randomized_lasso.initial_soln/np.sqrt(n), beta, Sigma)) + "\n")
-    sys.stderr.write("relLASSO risk" + str(relative_risk(rel_LASSO, beta, Sigma)) + "\n")
-    sys.stderr.write("LASSO risk" + str(relative_risk(est_LASSO, beta, Sigma)) + "\n")
+    sys.stderr.write("selMLE risk " + str(relative_risk(sel_MLE, beta, Sigma)) + "\n")
+    sys.stderr.write("indep est risk " + str(relative_risk(ind_estimator, beta, Sigma)) + "\n")
+    sys.stderr.write("randomized LASSO est risk " + str(relative_risk(randomized_lasso.initial_soln/np.sqrt(n), beta, Sigma)) + "\n")
+    sys.stderr.write("relaxed rand LASSO est risk " + str(relative_risk(randomized_lasso._beta_full/np.sqrt(n), beta, Sigma))+ "\n"+"\n")
 
+    sys.stderr.write("relLASSO risk " + str(relative_risk(rel_LASSO, beta, Sigma)) + "\n")
+    sys.stderr.write("LASSO risk " + str(relative_risk(est_LASSO, beta, Sigma)) + "\n")
 
 comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
-                          randomizer_scale=np.sqrt(0.25), target = "selected", full_dispersion = True)
+                          randomizer_scale=np.sqrt(0.25), target = "selected",
+                          full_dispersion = True)
 
