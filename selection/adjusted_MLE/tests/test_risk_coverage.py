@@ -57,7 +57,7 @@ def tuned_lasso(X, y, X_val,y_val):
         beta.hat.lasso = as.matrix(coef(LASSO))
         min.lam = min(rel.LASSO$lambda)
         max.lam = max(rel.LASSO$lambda)
-        print(paste("max and min values of lambda", max.lam, min.lam))
+        #print(paste("max and min values of lambda", max.lam, min.lam))
 
         lam.seq = exp(seq(log(max.lam),log(min.lam),length=rel.LASSO$nlambda))
         muhat.val.rellasso = as.matrix(predict(rel.LASSO, X.val))
@@ -72,7 +72,7 @@ def tuned_lasso(X, y, X_val,y_val):
         fit = glmnet(X, Y, standardize=TRUE, intercept=TRUE)
         estimate.tuned = coef(fit, s=lambda.tuned.lasso)[-1]
 
-        print(paste("compare estimates", max(abs(estimate.tuned-(beta.hat.lasso[,which.min(err.val.lasso)])[-1])),
+        #print(paste("compare estimates", max(abs(estimate.tuned-(beta.hat.lasso[,which.min(err.val.lasso)])[-1])),
         length(which(estimate.tuned!=0)), length(which((beta.hat.lasso[,which.min(err.val.lasso)])[-1]!=0))))
 
         return(list(beta.hat.rellasso = (beta.hat.rellasso[,which.min(err.val.rellasso)])[-1],
@@ -182,15 +182,44 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
     ind_estimator = np.zeros(p)
     ind_estimator[nonzero] = ind_unbiased_estimator / np.sqrt(n)
 
-    sys.stderr.write("selMLE risk " + str(relative_risk(sel_MLE, beta, Sigma)) + "\n")
-    sys.stderr.write("indep est risk " + str(relative_risk(ind_estimator, beta, Sigma)) + "\n")
-    sys.stderr.write("randomized LASSO est risk " + str(relative_risk(randomized_lasso.initial_soln/np.sqrt(n), beta, Sigma)) + "\n")
-    sys.stderr.write("relaxed rand LASSO est risk " + str(relative_risk(randomized_lasso._beta_full/np.sqrt(n), beta, Sigma))+ "\n"+"\n")
+    return relative_risk(sel_MLE, beta, Sigma),\
+           relative_risk(ind_estimator, beta, Sigma),\
+           relative_risk(randomized_lasso.initial_soln / np.sqrt(n), beta, Sigma),\
+           relative_risk(randomized_lasso._beta_full / np.sqrt(n), beta, Sigma), \
+           relative_risk(rel_LASSO, beta, Sigma),\
+           relative_risk(est_LASSO, beta, Sigma)
 
-    sys.stderr.write("relLASSO risk " + str(relative_risk(rel_LASSO, beta, Sigma)) + "\n")
-    sys.stderr.write("LASSO risk " + str(relative_risk(est_LASSO, beta, Sigma)) + "\n")
+if __name__ == "__main__":
 
-comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
-                          randomizer_scale=np.sqrt(0.25), target = "selected",
-                          full_dispersion = True)
+    ndraw = 50
+    bias = 0.
+    risk_selMLE = 0.
+    risk_indest = 0.
+    risk_LASSO_rand = 0.
+    risk_relLASSO_rand = 0.
+
+    risk_relLASSO_nonrand = 0.
+    risk_LASSO_nonrand = 0.
+
+    for i in range(ndraw):
+        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
+                                           randomizer_scale=np.sqrt(0.25), target="selected", full_dispersion=True)
+
+        risk_selMLE += output[0]
+        risk_indest += output[1]
+        risk_LASSO_rand += output[2]
+        risk_relLASSO_rand += output[3]
+        risk_relLASSO_nonrand += output[4]
+        risk_LASSO_nonrand += output[5]
+
+        sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
+        sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
+        sys.stderr.write("overall randomized LASSO est risk " + str(risk_LASSO_rand / float(i + 1)) + "\n")
+        sys.stderr.write("overall relaxed rand LASSO est risk " + str(risk_relLASSO_rand / float(i + 1)) + "\n"+ "\n")
+
+        sys.stderr.write("overall relLASSO risk " + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
+        sys.stderr.write("overall LASSO risk " + str(risk_LASSO_nonrand / float(i + 1)) + "\n" + "\n")
+
+        sys.stderr.write("iteration completed" + str(i+1) + "\n")
+
 
