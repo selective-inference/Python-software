@@ -4,7 +4,8 @@ import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
 
 import selection.randomized.lasso as L; reload(L)
-from selection.randomized.lasso import lasso, highdim
+from selection.randomized.lasso import highdim
+from selection.algorithms.lasso import lasso
 
 def glmnet_lasso(X, y, lambda_val):
     robjects.r('''
@@ -128,11 +129,15 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
 
     sigma_ = np.std(y)
-    LASSO_py = lasso.gaussian(X, y, np.asscalar((sigma**2.)*lam_tuned_lasso))
+    LASSO_py = lasso.gaussian(X, y, np.asscalar((sigma_**2.)*lam_tuned_lasso), np.asscalar(sigma_))
     soln = LASSO_py.fit()
     #print("compare solns", soln, est_LASSO)
     active_LASSO = (soln != 0)
     nactive_LASSO = active_LASSO.sum()
+    Lee = LASSO_py.summary(alternative='twosided', alpha=0.10, UMAU=False, compute_intervals=True)
+    Lee_intervals = np.zeros((nactive_LASSO,2))
+    Lee_intervals[:,0] = np.asarray(Lee['lower_confidence'])
+    Lee_intervals[:,1] = np.asarray(Lee['upper_confidence'])
 
     # LASSO_rand0 = highdim.gaussian(X,
     #                                y,
@@ -140,7 +145,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
     #                                randomizer_scale=0.00000001)
     # signs_rand0 = LASSO_rand0.fit()
 
-    #glm_LASSO = glmnet_lasso(X, y, np.asscalar(lam_tuned_lasso))
+    glm_LASSO = glmnet_lasso(X, y, np.asscalar(lam_tuned_lasso))
 
     const = highdim.gaussian
     lam_seq = sigma_* np.linspace(0.25, 2.75, num=100) * \
@@ -161,7 +166,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
     lam = lam_seq[np.argmin(err)]
-    sys.stderr.write("lambda from tuned relaxed LASSO " + str((sigma_**2)*lam_tuned_lasso) + "\n")
+    sys.stderr.write("lambda from tuned relaxed LASSO " + str((sigma**2.)*lam_tuned_lasso) + "\n")
     sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
 
     randomized_lasso = const(X,
@@ -173,21 +178,37 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
     nonzero = signs != 0
     sys.stderr.write("active variables selected by tuned LASSO " + str(nactive_nonrand) + "\n")
     sys.stderr.write("active variables selected by LASSO in python " + str(nactive_LASSO)+ "\n")
-    #sys.stderr.write("recall glmnet at tuned lambda " + str((glm_LASSO!=0).sum()) + "\n")
-    sys.stderr.write("active variables selected by randomized LASSO " + str(nonzero.sum()) + "\n")
+    sys.stderr.write("recall glmnet at tuned lambda " + str((glm_LASSO!=0).sum()) + "\n")
+    sys.stderr.write("active variables selected by randomized LASSO " + str(nonzero.sum()) + "\n"+"\n")
 
     sel_MLE = np.zeros(p)
-    estimate, _, _, pval, intervals, ind_unbiased_estimator = randomized_lasso.selective_MLE(target=target, dispersion=dispersion)
+    estimate, _, _, pval, sel_intervals, ind_unbiased_estimator = randomized_lasso.selective_MLE(target=target,
+                                                                                             dispersion=dispersion)
     sel_MLE[nonzero] = estimate / np.sqrt(n)
     ind_estimator = np.zeros(p)
     ind_estimator[nonzero] = ind_unbiased_estimator / np.sqrt(n)
+
+    if target == "selected":
+        beta_target_rand = np.linalg.pinv(X[:, nonzero]).dot(true_mean)
+        beta_target_nonrand = np.linalg.pinv(X[:, active_LASSO]).dot(true_mean)
+
+    elif target == "full":
+        beta_target_rand = beta[nonzero]
+        beta_target_nonrand = np.linalg.pinv(X[:, active_LASSO]).dot(true_mean)
+
+    coverage_selective = ((beta_target_rand > sel_intervals[:, 0])
+                          * (beta_target_rand < sel_intervals[:, 1])).sum()/float(nonzero.sum())
+    coverage_Lee = ((beta_target_nonrand > Lee_intervals[:, 0])
+                    *(beta_target_nonrand < Lee_intervals[:, 1])).sum()/float(nactive_LASSO)
 
     return relative_risk(sel_MLE, beta, Sigma),\
            relative_risk(ind_estimator, beta, Sigma),\
            relative_risk(randomized_lasso.initial_soln / np.sqrt(n), beta, Sigma),\
            relative_risk(randomized_lasso._beta_full / np.sqrt(n), beta, Sigma), \
            relative_risk(rel_LASSO, beta, Sigma),\
-           relative_risk(est_LASSO, beta, Sigma)
+           relative_risk(est_LASSO, beta, Sigma), \
+           coverage_selective, \
+           coverage_Lee
 
 if __name__ == "__main__":
 
@@ -201,8 +222,11 @@ if __name__ == "__main__":
     risk_relLASSO_nonrand = 0.
     risk_LASSO_nonrand = 0.
 
+    coverage_selMLE = 0.
+    coverage_Lee = 0.
+
     for i in range(ndraw):
-        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=3, snr=0.2,
+        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.25,
                                            randomizer_scale=np.sqrt(0.25), target="selected", full_dispersion=True)
 
         risk_selMLE += output[0]
@@ -212,6 +236,9 @@ if __name__ == "__main__":
         risk_relLASSO_nonrand += output[4]
         risk_LASSO_nonrand += output[5]
 
+        coverage_selMLE += output[6]
+        coverage_Lee += output[7]
+
         sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
         sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
         sys.stderr.write("overall randomized LASSO est risk " + str(risk_LASSO_rand / float(i + 1)) + "\n")
@@ -219,6 +246,9 @@ if __name__ == "__main__":
 
         sys.stderr.write("overall relLASSO risk " + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
         sys.stderr.write("overall LASSO risk " + str(risk_LASSO_nonrand / float(i + 1)) + "\n" + "\n")
+
+        sys.stderr.write("overall selective coverage " + str(coverage_selMLE/ float(i + 1)) + "\n" )
+        sys.stderr.write("overall Lee coverage " + str(coverage_Lee / float(i + 1)) + "\n" + "\n")
 
         sys.stderr.write("iteration completed" + str(i+1) + "\n")
 
