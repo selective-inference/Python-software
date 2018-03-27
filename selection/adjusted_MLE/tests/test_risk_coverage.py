@@ -141,7 +141,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         glm_LASSO = glmnet_lasso(X, y, np.asscalar(lam_tuned_lasso))
 
         const = highdim.gaussian
-        lam_seq = (sigma_ **2.) * np.linspace(0.25, 2.75, num=100) * \
+        lam_seq = sigma_ * np.linspace(0.25, 2.75, num=100) * \
                   np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
         err = np.zeros(100)
         for k in range(100):
@@ -159,7 +159,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
             err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
-        sys.stderr.write("lambda from tuned relaxed LASSO " + str((sigma **2.)*lam_tuned_lasso) + "\n")
+        sys.stderr.write("lambda from tuned relaxed LASSO " + str(n*lam_tuned_lasso) + "\n")
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
 
         randomized_lasso = const(X,
