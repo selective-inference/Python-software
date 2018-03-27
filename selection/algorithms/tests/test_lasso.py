@@ -10,6 +10,7 @@ from selection.tests.decorators import set_sampling_params_iftrue, wait_for_retu
 import selection.tests.reports as reports
 
 from selection.algorithms.lasso import (lasso, 
+                                        lasso_full,
                                         data_carving, 
                                         data_splitting,
                                         split_model, 
@@ -754,6 +755,44 @@ def test_equivalence_sqrtlasso(n=200, p=400, s=10, sigma=3.):
     np.testing.assert_allclose(G1[3:], G2[3:])
     np.testing.assert_allclose(soln1, soln2)
     
+def test_gaussian_full(n=100, p=20):
+
+    y = np.random.standard_normal(n)
+    X = np.random.standard_normal((n,p))
+
+    lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
+    Q = rr.identity_quadratic(0.01, 0, np.ones(p), 0)
+
+    weights_with_zeros = 0.5*lam_theor * np.ones(p)
+    weights_with_zeros[:3] = 0.
+
+    L = lasso_full.gaussian(X, y, weights_with_zeros, 1., quadratic=Q)
+    L.fit()
+    print(L.summary(compute_intervals=True))
+
+def test_logistic_full():
+
+    for Y, T in [(np.random.binomial(1,0.5,size=(10,)),
+                  np.ones(10)),
+                 (np.random.binomial(1,0.5,size=(10,)),
+                  None),
+                 (np.random.binomial(3,0.5,size=(10,)),
+                  3*np.ones(10))]:
+        X = np.random.standard_normal((10,5))
+
+        L = lasso_full.logistic(X, Y, 0.1, trials=T)
+        L.fit()
+        L.summary(compute_intervals=True)
+
+def test_poisson_full():
+
+    X = np.random.standard_normal((10,5))
+    Y = np.random.poisson(10, size=(10,))
+
+    L = lasso_full.poisson(X, Y, 0.1)
+    L.fit()
+    L.summary(compute_intervals=True)
+
 def report(niter=50, **kwargs):
 
     # these are all our null tests
