@@ -103,9 +103,10 @@ def relative_risk(est, truth, Sigma):
 
     return (est-truth).T.dot(Sigma).dot(est-truth)/truth.T.dot(Sigma).dot(truth)
 
-def coverage(intervals, truth, npars):
+def coverage(intervals, truth, npars, active_bool):
 
-    return ((truth > intervals[:, 0])*(truth < intervals[:, 1])).sum() / float(npars)
+    return ((truth > intervals[:, 0])*(truth < intervals[:, 1])).sum() / float(npars),\
+           ((active_bool)*(np.logical_or((0. < intervals[:, 0]),(0. > intervals[:,1])))).sum()/ float(npars)
 
 def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
                               randomizer_scale=np.sqrt(0.25), target = "selected",
@@ -159,7 +160,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
             err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
-        sys.stderr.write("lambda from tuned relaxed LASSO " + str(n*lam_tuned_lasso) + "\n")
+        sys.stderr.write("lambda from tuned relaxed LASSO " + str((sigma_**2)*lam_tuned_lasso) + "\n")
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
 
         randomized_lasso = const(X,
@@ -208,6 +209,26 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
                 unad_intervals = np.vstack([post_LASSO_OLS - 1.65 * unad_sd,
                                             post_LASSO_OLS + 1.65 * unad_sd]).T
 
+            true_signals = np.zeros(p, np.bool)
+            true_signals[beta != 0] = 1
+            true_set = np.asarray([u for u in range(p) if true_signals[u]])
+            active_set_rand = np.asarray([t for t in range(p) if nonzero[t]])
+            active_set_nonrand = np.asarray([q for q in range(p) if active_nonrand[q]])
+            active_set_LASSO = np.asarray([r for r in range(p) if active_LASSO[r]])
+
+            active_rand_bool = np.zeros(nonzero.sum(), np.bool)
+            for x in range(nonzero.sum()):
+                active_rand_bool[x] = (np.in1d(active_set_rand[x], true_set).sum() > 0)
+            active_nonrand_bool = np.zeros(nactive_nonrand, np.bool)
+            for w in range(nactive_nonrand):
+                active_nonrand_bool[w] = (np.in1d(active_set_nonrand[w], true_set).sum() > 0)
+            active_LASSO_bool = np.zeros(nactive_LASSO, np.bool)
+            for z in range(nactive_LASSO):
+                active_LASSO_bool[z] = (np.in1d(active_set_LASSO[z], true_set).sum() > 0)
+
+            cov_sel, power_sel = coverage(sel_intervals, beta_target_rand, nonzero.sum(), active_rand_bool)
+            cov_Lee, power_Lee = coverage(Lee_intervals, beta_target_nonrand_py, nactive_LASSO,  active_LASSO_bool)
+            cov_unad, power_unad = coverage(unad_intervals, beta_target_nonrand, nactive_nonrand, active_nonrand_bool)
             break
 
     if True:
@@ -217,16 +238,19 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
                relative_risk(randomized_lasso._beta_full / np.sqrt(n), beta, Sigma), \
                relative_risk(rel_LASSO, beta, Sigma), \
                relative_risk(est_LASSO, beta, Sigma), \
-               coverage(sel_intervals, beta_target_rand, nonzero.sum()), \
-               coverage(Lee_intervals, beta_target_nonrand_py, nactive_LASSO), \
-               coverage(unad_intervals, beta_target_nonrand, nactive_nonrand), \
+               cov_sel,\
+               cov_Lee,\
+               cov_unad,\
                (sel_intervals[:, 1] - sel_intervals[:, 0]).sum() / float(nonzero.sum()), \
                (Lee_intervals[:, 1] - Lee_intervals[:, 0]).sum() / float(nactive_LASSO), \
-               (unad_intervals[:, 1] - unad_intervals[:, 0]).sum() / float(nactive_nonrand)
+               (unad_intervals[:, 1] - unad_intervals[:, 0]).sum() / float(nactive_nonrand), \
+               power_sel,  \
+               power_Lee, \
+               power_unad
 
 if __name__ == "__main__":
 
-    ndraw = 50
+    ndraw = 10
     bias = 0.
     risk_selMLE = 0.
     risk_indest = 0.
@@ -244,8 +268,12 @@ if __name__ == "__main__":
     length_Lee = 0.
     length_unad = 0.
 
+    power_sel = 0.
+    power_Lee = 0.
+    power_unad = 0.
+
     for i in range(ndraw):
-        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.25,
+        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=.25,
                                            randomizer_scale=np.sqrt(0.25), target="selected", full_dispersion=True)
 
         risk_selMLE += output[0]
@@ -263,6 +291,10 @@ if __name__ == "__main__":
         length_Lee += output[10]
         length_unad += output[11]
 
+        power_sel += output[12]
+        power_Lee += output[13]
+        power_unad += output[14]
+
         sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
         sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
         sys.stderr.write("overall randomized LASSO est risk " + str(risk_LASSO_rand / float(i + 1)) + "\n")
@@ -278,6 +310,10 @@ if __name__ == "__main__":
         sys.stderr.write("overall selective length " + str(length_sel / float(i + 1)) + "\n")
         sys.stderr.write("overall Lee length " + str(length_Lee / float(i + 1)) + "\n")
         sys.stderr.write("overall unad length " + str(length_unad / float(i + 1)) + "\n" + "\n")
+
+        sys.stderr.write("overall selective power " + str(power_sel / float(i + 1)) + "\n")
+        sys.stderr.write("overall Lee power " + str(power_Lee / float(i + 1)) + "\n")
+        sys.stderr.write("overall unad power " + str(power_unad / float(i + 1)) + "\n" + "\n")
 
         sys.stderr.write("iteration completed " + str(i+1) + "\n")
 
