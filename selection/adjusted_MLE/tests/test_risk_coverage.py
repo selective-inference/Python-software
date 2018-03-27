@@ -106,7 +106,7 @@ def relative_risk(est, truth, Sigma):
 def coverage(intervals, truth, npars, active_bool):
 
     return ((truth > intervals[:, 0])*(truth < intervals[:, 1])).sum() / float(npars),\
-           ((active_bool)*(np.logical_or((0. < intervals[:, 0]),(0. > intervals[:,1])))).sum()/ float(npars)
+           ((active_bool)*(np.logical_or((0. < intervals[:, 0]),(0. > intervals[:,1])))).sum()
 
 def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.2,
                               randomizer_scale=np.sqrt(0.25), target = "selected",
@@ -244,13 +244,13 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
                (sel_intervals[:, 1] - sel_intervals[:, 0]).sum() / float(nonzero.sum()), \
                (Lee_intervals[:, 1] - Lee_intervals[:, 0]).sum() / float(nactive_LASSO), \
                (unad_intervals[:, 1] - unad_intervals[:, 0]).sum() / float(nactive_nonrand), \
-               power_sel,  \
-               power_Lee, \
-               power_unad
+               power_sel/float((beta != 0).sum()),  \
+               power_Lee/float((beta != 0).sum()), \
+               power_unad/float((beta != 0).sum())
 
 if __name__ == "__main__":
 
-    ndraw = 10
+    ndraw = 50
     bias = 0.
     risk_selMLE = 0.
     risk_indest = 0.
