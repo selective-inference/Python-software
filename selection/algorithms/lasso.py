@@ -1996,9 +1996,12 @@ class lasso_full(lasso):
                 E = self.active
                 Qi = np.linalg.inv(Q)
                 self._QiE = Qi[E][:,E]
-                self._beta_barE = Qi[E].dot(self._Qbeta_bar)
+                self._beta_bar = Qi.dot(self._Qbeta_bar)
+                self._beta_barE = self._beta_bar[E]
                 one_step = self._beta_barE
-                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X[:,self.active].dot(one_step)))**2 / self._W).sum() / (n - len(self.active)))
+                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(self._beta_bar)))**2 / self._W).sum() / (n - p))
+                
+                print(self._sigma, 'sigma')
             else:
                 raise NotImplementedError('debiased LASSO goes here')
         else:
@@ -2039,8 +2042,10 @@ class lasso_full(lasso):
             idx = self.active[j]
             lower, upper = _truncation_interval(Qbeta_bar, X, W, QiE[j,j], idx, beta_barE[j], self.feature_weights)
 
+
             sd = sigma * np.sqrt(QiE[j,j])
             tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
+            print(sd, 'sd', j)
             pvalue = tg.cdf(beta_barE[j])
             pvalue = float(2 * min(pvalue, 1 - pvalue))
 

@@ -35,10 +35,10 @@ def truncation_interval(Qbeta_bar, Q, Qi_jj, j, beta_barj, lagrange):
     p = Qbeta_bar.shape[0]
     I = np.identity(p)
     nuisance = Qbeta_bar - I[:,j] / Qi_jj * beta_barj
-    
+
     center = nuisance[j] - Q[j].dot(restricted_soln)
-    upper = (lagrange[j] + center) * Qi_jj
-    lower = (lagrange[j] - center) * Qi_jj
+    upper = (lagrange[j] - center) * Qi_jj
+    lower = (-lagrange[j] - center) * Qi_jj
 
     return lower, upper
 
@@ -70,7 +70,10 @@ def test_agreement(n=200, p=100, s=4):
     S = LF.summary()
 
     for i, j in enumerate(LF.active):
-        print(np.array(S['lower_truncation'])[i], np.array(S['upper_truncation'])[i]) 
+        l, u = (np.array(S['lower_truncation'])[i], 
+                np.array(S['upper_truncation'])[i]) 
         lower, upper =  truncation_interval(Qbeta_bar, Q, QiE[i,i], j, beta_barE[i], lagrange)
-        print(lower, upper, 'old')
-    stop
+        np.testing.assert_allclose(l, lower)
+        np.testing.assert_allclose(u, upper)
+
+
