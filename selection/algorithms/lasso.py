@@ -31,6 +31,7 @@ from regreg.api import (glm,
                         identity_quadratic)
 
 from .sqrt_lasso import solve_sqrt_lasso, estimate_sigma
+from .debiased_lasso import debiasing_matrix
 
 from ..constraints.affine import (constraints, selection_interval,
                                  interval_constraints,
@@ -1928,7 +1929,10 @@ class lasso_full(lasso):
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
 
-    def fit(self, lasso_solution=None, solve_args={'tol':1.e-12, 'min_its':50}):
+    def fit(self, 
+            lasso_solution=None, 
+            solve_args={'tol':1.e-12, 'min_its':50},
+            debiasing_args={}):
         """
         Fit the lasso using `regreg`.
         This sets the attributes `soln`, `onestep` and
@@ -1996,13 +2000,31 @@ class lasso_full(lasso):
                 E = self.active
                 Qi = np.linalg.inv(Q)
                 self._QiE = Qi[E][:,E]
-                self._beta_bar = Qi.dot(self._Qbeta_bar)
+                _beta_bar = Qi.dot(self._Qbeta_bar)
                 self._beta_barE = self._beta_bar[E]
                 one_step = self._beta_barE
-                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(self._beta_bar)))**2 / self._W).sum() / (n - p))
+                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
                 
             else:
-                raise NotImplementedError('debiased LASSO goes here')
+
+                X, y = self.loglike.data
+
+                # target is one-step estimator
+
+                G = self.loglike.smooth_objective(lasso_solution, 'grad')
+                Qinv_hat = np.atleast_2d(debiasing_matrix(
+                                             X * np.sqrt(self._W)[:, None], 
+                                             self.active,
+                                             **debiasing_args)) / n
+                observed_target = lasso_solution[self.active] - Qinv_hat.dot(G)
+                M1 = Qinv_hat.dot(X.T)
+                self._QiE = (M1 * self._W[None,:]).dot(M1.T)
+                Xfeat = X[:,self.active]
+                Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
+                relaxed_soln = lasso_solution[self.active] - np.linalg.inv(Qrelax).dot(G[self.active])
+                self._beta_barE = observed_target
+                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - len(self.active)))
+
         else:
             self.active = []
             self.inactive = np.arange(lasso_solution.shape[0])
