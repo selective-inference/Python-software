@@ -1844,7 +1844,8 @@ def additive_noise(X,
 # Liu, Markovic, Tibs selection
 # put this into library!
 
-def _solve_restricted_problem(Qbeta_bar, X, W, lagrange, initial=None):
+def _solve_restricted_problem(Qbeta_bar, X, W, lagrange, initial=None,
+                              min_its=30, tol=1.e-12):
     p = Qbeta_bar.shape[0]
 
     loss = squared_error(X * np.sqrt(W)[:, None], np.zeros(X.shape[0]))
@@ -1859,7 +1860,7 @@ def _solve_restricted_problem(Qbeta_bar, X, W, lagrange, initial=None):
     problem = simple_problem(loss, pen)
     if initial is not None:
         problem.coefs[:] = initial
-    soln = problem.solve(tol=1.e-12, min_its=30)
+    soln = problem.solve(tol=tol, min_its=min_its)
     return soln
 
 def _truncation_interval(Qbeta_bar, X, W, Qi_jj, j, beta_barj, lagrange):
@@ -2048,16 +2049,18 @@ class lasso_full(lasso):
             else:
                 l, u = np.nan, np.nan
 
-            result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u))
+            result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
 
         df = pd.DataFrame(index=self.active,
                           data=dict([(n, d) for n, d in zip(['variable',
                                                              'pval', 
                                                              'lasso', 
-                                                             'onestep', 
+                                                             'onestep',
+                                                             'sd',
                                                              'lower_confidence', 
                                                              'upper_confidence',
-                                                             'sd'], 
+                                                             'lower_truncation', 
+                                                             'upper_truncation'], 
                                                             np.array(result).T)]))
         df['variable'] = df['variable'].astype(int)
         return df
