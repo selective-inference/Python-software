@@ -2001,7 +2001,7 @@ class lasso_full(lasso):
                 Qi = np.linalg.inv(Q)
                 self._QiE = Qi[E][:,E]
                 _beta_bar = Qi.dot(self._Qbeta_bar)
-                self._beta_barE = self._beta_bar[E]
+                self._beta_barE = _beta_bar[E]
                 one_step = self._beta_barE
                 self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
                 
