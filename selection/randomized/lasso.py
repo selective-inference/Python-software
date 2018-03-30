@@ -1786,7 +1786,10 @@ class highdim(lasso):
         alternatives = ['twosided'] * features.sum()
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
-    def debiased_targets(self, features=None, dispersion=None, **debiasing_args):
+    def debiased_targets(self, 
+                         features=None, 
+                         dispersion=None, 
+                         debiasing_args={}):
 
         if features is None:
             features = self._overall
