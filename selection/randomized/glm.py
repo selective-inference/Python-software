@@ -9,6 +9,9 @@ from .base import restricted_estimator
 from .greedy_step import greedy_score_step
 from .threshold_score import threshold_score
 
+import regreg.api as rr
+import regreg.affine as ra
+
 def pairs_bootstrap_glm(glm_loss,
                         active, 
                         beta_full=None, 
