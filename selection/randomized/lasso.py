@@ -5,13 +5,19 @@ from copy import copy
 import numpy as np
 from scipy.stats import norm as ndist
 
+import functools
+from copy import copy
+
+import numpy as np
+from scipy.stats import norm as ndist
+
 import regreg.api as rr
 import regreg.affine as ra
 
 from ..constraints.affine import constraints
 from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 
-from .query import (query, 
+from .query import (query,
                     multiple_queries,
                     langevin_sampler,
                     affine_gaussian_sampler)
@@ -24,42 +30,33 @@ from .glm import (pairs_bootstrap_glm,
                   glm_parametric_covariance)
 from ..algorithms.debiased_lasso import debiasing_matrix
 
-class lasso_view(query):
 
-    def __init__(self, 
-                 loss, 
-                 epsilon, 
-                 penalty, 
-                 randomization, 
+class lasso_view(query):
+    def __init__(self,
+                 loss,
+                 epsilon,
+                 penalty,
+                 randomization,
                  perturb=None,
-                 solve_args={'min_its':50, 'tol':1.e-10}):
+                 solve_args={'min_its': 50, 'tol': 1.e-10}):
         """
         Fits the logistic regression to a candidate active set, without penalty.
         Calls the method bootstrap_covariance() to bootstrap the covariance matrix.
-
-        Computes $\bar{\beta}_E$ which is the restricted 
+        Computes $\bar{\beta}_E$ which is the restricted
         M-estimator (i.e. subject to the constraint $\beta_{-E}=0$).
-
         Parameters:
         -----------
-
         active: np.bool
             The active set from fitting the logistic lasso
-
         solve_args: dict
             Arguments to be passed to regreg solver.
-
         Returns:
         --------
-
         None
-
         Notes:
         ------
-
         Sets self._beta_unpenalized which will be used in the covariance matrix calculation.
         Also computes Hessian of loss at restricted M-estimator as well as the bootstrap covariance.
-
         """
 
         query.__init__(self, randomization)
@@ -71,11 +68,11 @@ class lasso_view(query):
                                 epsilon,
                                 penalty,
                                 randomization)
-         
+
     # Methods needed for subclassing a query
 
     def solve(self, nboot=2000,
-              solve_args={'min_its':20, 'tol':1.e-10}, 
+              solve_args={'min_its': 20, 'tol': 1.e-10},
               perturb=None):
 
         self.randomize(perturb=perturb)
@@ -85,7 +82,7 @@ class lasso_view(query):
          epsilon,
          penalty,
          randomization) = (self.loss,
-                           self.randomized_loss, 
+                           self.randomized_loss,
                            self.epsilon,
                            self.penalty,
                            self.randomization)
@@ -121,15 +118,15 @@ class lasso_view(query):
         self._unpenalized = unpenalized
 
         _active_signs = active_signs.copy()
-        _active_signs[unpenalized] = np.nan # don't release sign of unpenalized variables
-        self.selection_variable = {'sign':_active_signs,
-                                   'variables':self._overall}
+        _active_signs[unpenalized] = np.nan  # don't release sign of unpenalized variables
+        self.selection_variable = {'sign': _active_signs,
+                                   'variables': self._overall}
 
         # initial state for opt variables
 
-        initial_subgrad = -(self.randomized_loss.smooth_objective(self.initial_soln, 'grad') + 
-                            self.randomized_loss.quadratic.objective(self.initial_soln, 'grad')) 
-                          # the quadratic of a smooth_atom is not included in computing the smooth_objective
+        initial_subgrad = -(self.randomized_loss.smooth_objective(self.initial_soln, 'grad') +
+                            self.randomized_loss.quadratic.objective(self.initial_soln, 'grad'))
+        # the quadratic of a smooth_atom is not included in computing the smooth_objective
         self.initial_subgrad = initial_subgrad
 
         initial_scalings = np.fabs(self.initial_soln[active])
@@ -200,9 +197,9 @@ class lasso_view(query):
         null_idx = np.arange(overall.sum(), p)
         inactive_idx = np.nonzero(inactive)[0]
         for _i, _n in zip(inactive_idx, null_idx):
-            _score_linear_term[_i,_n] = -1
+            _score_linear_term[_i, _n] = -1
 
-        # c_E piece 
+        # c_E piece
 
         def signed_basis_vector(p, j, s):
             v = np.zeros(p)
@@ -224,14 +221,14 @@ class lasso_view(query):
         unpenalized_directions = np.array([signed_basis_vector(p, j, 1) for j in np.nonzero(unpenalized)[0]]).T
         if unpenalized.sum():
             _opt_linear_term[:, unpenalized_slice] = (_hessian_unpen
-                                                      + epsilon * unpenalized_directions) 
+                                                      + epsilon * unpenalized_directions)
 
-        # subgrad piece
+            # subgrad piece
 
         subgrad_idx = range(active.sum() + unpenalized.sum(), active.sum() + inactive.sum() + unpenalized.sum())
         subgrad_slice = slice(active.sum() + unpenalized.sum(), active.sum() + inactive.sum() + unpenalized.sum())
         for _i, _s in zip(inactive_idx, subgrad_idx):
-            _opt_linear_term[_i,_s] = 1
+            _opt_linear_term[_i, _s] = 1
 
         # form affine part
 
@@ -240,7 +237,7 @@ class lasso_view(query):
         _opt_affine_term[active] = active_signs[active] * self._lagrange[active]
 
         # two transforms that encode score and optimization
-        # variable roles 
+        # variable roles
 
         self.opt_transform = (_opt_linear_term, _opt_affine_term)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
@@ -273,18 +270,17 @@ class lasso_view(query):
             penalty, inactive = self.penalty, self._inactive
             inactive_lagrange = self.penalty.weights[inactive]
 
-            if not hasattr(self.randomization, "cov_prec"): # means randomization is not Gaussian
+            if not hasattr(self.randomization, "cov_prec"):  # means randomization is not Gaussian
 
                 dual = rr.weighted_supnorm(1. / inactive_lagrange, bound=1.)
 
                 def projection(dual, subgrad_slice, scaling_slice, opt_state):
                     """
                     Full projection for Langevin.
-
                     The state here will be only the state of the optimization variables.
                     """
 
-                    new_state = opt_state.copy() # not really necessary to copy
+                    new_state = opt_state.copy()  # not really necessary to copy
                     new_state[scaling_slice] = np.maximum(opt_state[scaling_slice], 0)
                     new_state[subgrad_slice] = dual.bound_prox(opt_state[subgrad_slice])
                     return new_state
@@ -347,6 +343,7 @@ class lasso_view(query):
                         mean_term = logdens_linear.dot(score.T + offset[:, None]).T
                     arg = opt + mean_term
                     return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+
                 log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
 
                 # now make the constraints
@@ -377,7 +374,7 @@ class lasso_view(query):
                                                         self.observed_score_state,
                                                         log_density,
                                                         logdens_transform,
-                                                        selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
+                                                        selection_info=self.selection_variable)  # should be signs and the subgradients we've conditioned on
 
         return self._sampler
 
@@ -386,7 +383,6 @@ class lasso_view(query):
     def decompose_subgradient(self, condition=None, marginalize=None):
         """
         ADD DOCSTRING
-
         condition and marginalize should be disjoint
         """
 
@@ -446,20 +442,20 @@ class lasso_view(query):
         new_offset[condition_inactive] += self.initial_subgrad[condition_inactive]
         new_opt_transform = (new_linear, new_offset)
 
-        if not hasattr(self.randomization, "cov_prec") or marginalize.sum(): # use Langevin -- not gaussian
+        if not hasattr(self.randomization, "cov_prec") or marginalize.sum():  # use Langevin -- not gaussian
 
             def _fraction(_cdf, _pdf, full_state_plus, full_state_minus, margin_inactive):
                 return (np.divide(_pdf(full_state_plus) - _pdf(full_state_minus),
                                   _cdf(full_state_plus) - _cdf(full_state_minus)))[margin_inactive]
 
-            def new_grad_log_density(query, 
+            def new_grad_log_density(query,
                                      limits_marginal,
                                      margin_inactive,
                                      _cdf,
                                      _pdf,
                                      new_opt_transform,
                                      deriv_log_dens,
-                                     score_state, 
+                                     score_state,
                                      opt_state):
 
                 full_state = score_state + reconstruct_opt(new_opt_transform, opt_state)
@@ -467,7 +463,7 @@ class lasso_view(query):
                 p = query.penalty.shape[0]
                 weights = np.zeros(p)
 
-                if margin_inactive.sum()>0:
+                if margin_inactive.sum() > 0:
                     full_state_plus = full_state + limits_marginal * margin_inactive
                     full_state_minus = full_state - limits_marginal * margin_inactive
                     weights[margin_inactive] = _fraction(_cdf, _pdf, full_state_plus, full_state_minus, margin_inactive)
@@ -483,7 +479,7 @@ class lasso_view(query):
                                                      new_opt_transform,
                                                      self.randomization._derivative_log_density)
 
-            def new_log_density(query, 
+            def new_log_density(query,
                                 limits_marginal,
                                 margin_inactive,
                                 _cdf,
@@ -499,14 +495,15 @@ class lasso_view(query):
                 p = query.penalty.shape[0]
                 logdens = np.zeros(full_state.shape[0])
 
-                if margin_inactive.sum()>0:
+                if margin_inactive.sum() > 0:
                     full_state_plus = full_state + limits_marginal * margin_inactive
                     full_state_minus = full_state - limits_marginal * margin_inactive
-                    logdens += np.sum(np.log(_cdf(full_state_plus) - _cdf(full_state_minus))[:,margin_inactive], axis=1)
+                    logdens += np.sum(np.log(_cdf(full_state_plus) - _cdf(full_state_minus))[:, margin_inactive],
+                                      axis=1)
 
-                logdens += log_dens(full_state[:,~margin_inactive])
+                logdens += log_dens(full_state[:, ~margin_inactive])
 
-                return np.squeeze(logdens) # should this be negative to match the gradient log density?
+                return np.squeeze(logdens)  # should this be negative to match the gradient log density?
 
             new_log_density = functools.partial(new_log_density,
                                                 self,
@@ -602,13 +599,11 @@ class lasso_view(query):
                                                     self.observed_score_state,
                                                     log_density,
                                                     logdens_transform,
-                                                    selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
+                                                    selection_info=self.selection_variable)  # should be signs and the subgradients we've conditioned on
 
 
 class glm_lasso(lasso_view):
-
-    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
-
+    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
         bootstrap_score = pairs_bootstrap_glm(self.loss,
                                               self.selection_variable['variables'],
                                               beta_full=self._beta_full,
@@ -616,29 +611,25 @@ class glm_lasso(lasso_view):
 
         return bootstrap_score
 
-class glm_lasso_parametric(lasso_view):
 
+class glm_lasso_parametric(lasso_view):
     # this setup_sampler returns only the active set
 
     def setup_sampler(self):
-
         return self.selection_variable['variables']
 
 
 class fixedX_lasso(lasso_view):
-
-    def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
-
+    def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its': 50, 'tol': 1.e-10}):
         loss = glm.gaussian(X, Y)
         lasso_view.__init__(self,
-                            loss, 
-                            epsilon, 
-                            penalty, 
-                            randomization, 
+                            loss,
+                            epsilon,
+                            penalty,
+                            randomization,
                             solve_args=solve_args)
 
     def setup_sampler(self):
-
         X, Y = self.loss.data
 
         bootstrap_score = resid_bootstrap(self.loss,
@@ -646,26 +637,22 @@ class fixedX_lasso(lasso_view):
                                           ~self.selection_variable['variables'])[0]
         return bootstrap_score
 
+
 ##### The class for users
 
 class lasso(object):
-
     r"""
     A class for the LASSO for post-selection inference.
     The problem solved is
-
     .. math::
-
-        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
+        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 +
             \lambda \|\beta\|_1 - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2
-
     where $\lambda$ is `lam`, $\omega$ is a randomization generated below
     and the last term is a small ridge penalty.
-
     """
 
-    def __init__(self, 
-                 loglike, 
+    def __init__(self,
+                 loglike,
                  feature_weights,
                  ridge_term,
                  randomizer_scale,
@@ -673,29 +660,20 @@ class lasso(object):
                  parametric_cov_estimator=False,
                  perturb=None):
         r"""
-
         Create a new post-selection object for the LASSO problem
-
         Parameters
         ----------
-
         loglike : `regreg.smooth.glm.glm`
             A (negative) log-likelihood as implemented in `regreg`.
-
         feature_weights : np.ndarray
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomization.
-
         randomizer : str (optional)
             One of ['laplace', 'logistic', 'gaussian']
-
-
         """
 
         self.loglike = loglike
@@ -710,7 +688,7 @@ class lasso(object):
         if randomizer == 'laplace':
             self.randomizer = randomization.laplace((p,), scale=randomizer_scale)
         elif randomizer == 'gaussian':
-            self.randomizer = randomization.isotropic_gaussian((p,),randomizer_scale)
+            self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         elif randomizer == 'logistic':
             self.randomizer = randomization.logistic((p,), scale=randomizer_scale)
 
@@ -720,32 +698,28 @@ class lasso(object):
 
         self._initial_omega = perturb
 
-    def fit(self, 
-            solve_args={'tol':1.e-12, 'min_its':50}, 
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
             perturb=None,
             nboot=1000):
         """
         Fit the randomized lasso using `regreg`.
-
         Parameters
         ----------
-
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
-
         Returns
         -------
-
         signs : np.float
              Support and non-zero signs of randomized lasso solution.
-             
+
         """
 
         if perturb is not None:
             self._initial_omega = perturb
 
         p = self.nfeature
-        if self.parametric_cov_estimator==True:
+        if self.parametric_cov_estimator == True:
             self._view = glm_lasso_parametric(self.loglike, self.ridge_term, self.penalty, self.randomizer)
         else:
             self._view = glm_lasso(self.loglike, self.ridge_term, self.penalty, self.randomizer)
@@ -759,36 +733,29 @@ class lasso(object):
                               condition=None,
                               marginalize=None):
         """
-
         Marginalize over some if inactive part of subgradient
         if applicable.
-
         Parameters
         ----------
-
         condition : np.bool
              Which groups' subgradients should we condition on.
-
         marginalize : np.bool
              Which groups' subgradients should we marginalize over.
-
         Returns
         -------
-
         None
-
         """
 
         if not hasattr(self, "_view"):
             raise ValueError("fit method should be run first")
-        self._view.decompose_subgradient(condition=condition, 
+        self._view.decompose_subgradient(condition=condition,
                                          marginalize=marginalize)
 
     def summary(self,
                 selected_features,
                 parameter=None,
                 level=0.9,
-                ndraw=10000, 
+                ndraw=10000,
                 burnin=2000,
                 compute_intervals=False,
                 bootstrap_sampler=False,
@@ -796,29 +763,21 @@ class lasso(object):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
-
         Parameters
         ----------
-
         selected_features : np.bool
             Binary encoding of which features to use in final
             model and targets.
-
         parameter : np.array
             Hypothesized value for parameter -- defaults to 0.
-
         level : float
             Confidence level.
-
         ndraw : int (optional)
             Defaults to 1000.
-
         burnin : int (optional)
             Defaults to 1000.
-
         bootstrap : bool
             Use wild bootstrap instead of Gaussian plugin.
-
         """
         if not hasattr(self, "_view"):
             raise ValueError('run `fit` method before producing summary.')
@@ -844,11 +803,11 @@ class lasso(object):
         for q in [self._view]:
             cov_info = q.setup_sampler()
             if self.parametric_cov_estimator == False:
-                target_cov, score_cov = form_covariances(target_info,  
+                target_cov, score_cov = form_covariances(target_info,
                                                          cross_terms=[cov_info],
                                                          nsample=q.nboot)
             else:
-                target_cov, score_cov = form_covariances(target_info,  
+                target_cov, score_cov = form_covariances(target_info,
                                                          cross_terms=[cov_info])
             opt_samplers.append(q.sampler)
 
@@ -856,26 +815,29 @@ class lasso(object):
                                           burnin) for opt_sampler in opt_samplers]
 
         if subset is not None:
-            target_cov = target_cov[subset][:,subset]
+            target_cov = target_cov[subset][:, subset]
             score_cov = score_cov[subset]
             unpenalized_mle = unpenalized_mle[subset]
 
-        pivots = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=parameter, sample=opt_samples[0])
+        pivots = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=parameter,
+                                                     sample=opt_samples[0])
         if not np.all(parameter == 0):
-            pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov, parameter=np.zeros_like(parameter), sample=opt_samples[0])
+            pvalues = opt_samplers[0].coefficient_pvalues(unpenalized_mle, target_cov, score_cov,
+                                                          parameter=np.zeros_like(parameter), sample=opt_samples[0])
         else:
             pvalues = pivots
 
         intervals = None
         if compute_intervals:
-            intervals = opt_samplers[0].confidence_intervals(unpenalized_mle, target_cov, score_cov, sample=opt_samples[0])
+            intervals = opt_samplers[0].confidence_intervals(unpenalized_mle, target_cov, score_cov,
+                                                             sample=opt_samples[0])
 
         return pivots, pvalues, intervals
 
     @staticmethod
-    def gaussian(X, 
-                 Y, 
-                 feature_weights, 
+    def gaussian(X,
+                 Y,
+                 feature_weights,
                  sigma=1.,
                  parametric_cov_estimator=False,
                  quadratic=None,
@@ -885,79 +847,65 @@ class lasso(object):
                  perturb=None):
         r"""
         Squared-error LASSO with feature weights.
-
-        Objective function (before randomizer) is 
+        Objective function (before randomizer) is
         $$
         \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\lambda$ is `feature_weights`. The ridge term
         is determined by the Hessian and `np.std(Y)` (scaled by $\sqrt{n/(n-1)}$) by default,
         as is the randomizer scale.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         Y : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         sigma : float (optional)
             Noise variance. Set to 1 if `covariance_estimator` is not None.
             This scales the loglikelihood by `sigma**(-2)`.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
 
-        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
+        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
         n, p = X.shape
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
         if ridge_term is None:
             ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return lasso(loglike, 
-                     np.asarray(feature_weights) / sigma**2,
-                     ridge_term, 
-                     randomizer_scale, 
+        return lasso(loglike,
+                     np.asarray(feature_weights) / sigma ** 2,
+                     ridge_term,
+                     randomizer_scale,
                      randomizer=randomizer,
                      parametric_cov_estimator=parametric_cov_estimator,
                      perturb=perturb)
 
     @staticmethod
-    def logistic(X, 
-                 successes, 
-                 feature_weights, 
+    def logistic(X,
+                 successes,
+                 feature_weights,
                  trials=None,
                  parametric_cov_estimator=False,
                  quadratic=None,
@@ -967,81 +915,67 @@ class lasso(object):
                  perturb=None):
         r"""
         Logistic LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
-        where $\ell$ is the negative of the logistic 
+        where $\ell$ is the negative of the logistic
         log-likelihood (half the logistic deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         successes : ndarray
             Shape (n,) -- response vector. An integer number of successes.
             For data that is proportions, multiply the proportions
             by the number of trials first.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         trials : ndarray (optional)
             Number of trials per response, defaults to
-            ones the same shape as Y. 
-
+            ones the same shape as Y.
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
         n, p = X.shape
 
         loglike = rr.glm.logistic(X, successes, trials=trials, quadratic=quadratic)
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
             ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
-            randomizer_scale = np.sqrt(mean_diag) * 0.5 
+            randomizer_scale = np.sqrt(mean_diag) * 0.5
 
-        return lasso(loglike, feature_weights, 
-                     ridge_term, 
+        return lasso(loglike, feature_weights,
+                     ridge_term,
                      randomizer_scale,
                      parametric_cov_estimator=parametric_cov_estimator,
                      randomizer=randomizer,
                      perturb=perturb)
 
     @staticmethod
-    def coxph(X, 
-              times, 
-              status, 
+    def coxph(X,
+              times,
+              status,
               feature_weights,
               parametric_cov_estimator=False,
               quadratic=None,
@@ -1051,66 +985,50 @@ class lasso(object):
               perturb=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell^{\text{Cox}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
-        where $\ell^{\text{Cox}}$ is the 
+        where $\ell^{\text{Cox}}$ is the
         negative of the log of the Cox partial
         likelihood and $\lambda$ is `feature_weights`.
-
         Uses Efron's tie breaking method.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         times : ndarray
             Shape (n,) -- the survival times.
-
         status : ndarray
             Shape (n,) -- the censoring status.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
         loglike = coxph_obj(X, times, status, quadratic=quadratic)
 
         # scale for randomization seems kind of meaningless here...
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
             ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
@@ -1118,17 +1036,17 @@ class lasso(object):
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return lasso(loglike, 
-                     feature_weights, 
+        return lasso(loglike,
+                     feature_weights,
                      ridge_term,
-                     randomizer_scale, 
+                     randomizer_scale,
                      randomizer=randomizer,
                      parametric_cov_estimator=parametric_cov_estimator,
                      perturb=perturb)
 
     @staticmethod
-    def poisson(X, 
-                counts, 
+    def poisson(X,
+                counts,
                 feature_weights,
                 parametric_cov_estimator=False,
                 quadratic=None,
@@ -1138,51 +1056,37 @@ class lasso(object):
                 perturb=None):
         r"""
         Poisson log-linear LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\ell^{\text{Poisson}}$ is the negative
         of the log of the Poisson likelihood (half the deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         counts : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
         n, p = X.shape
@@ -1190,7 +1094,7 @@ class lasso(object):
 
         # scale for randomizer seems kind of meaningless here...
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
             ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n - 1)
@@ -1198,90 +1102,73 @@ class lasso(object):
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
 
-        return lasso(loglike, 
-                     feature_weights, 
+        return lasso(loglike,
+                     feature_weights,
                      ridge_term,
-                     randomizer_scale, 
+                     randomizer_scale,
                      randomizer=randomizer,
                      parametric_cov_estimator=parametric_cov_estimator,
                      perturb=perturb)
 
     @staticmethod
-    def sqrt_lasso(X, 
-                   Y, 
-                   feature_weights, 
+    def sqrt_lasso(X,
+                   Y,
+                   feature_weights,
                    quadratic=None,
                    parametric_cov_estimator=False,
                    sigma_estimate='truncated',
-                   solve_args={'min_its':200},
+                   solve_args={'min_its': 200},
                    randomizer_scale=None,
                    perturb=None):
         r"""
         Use sqrt-LASSO to choose variables.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\lambda$ is `feature_weights`. After solving the problem
-        treat as if `gaussian` with implied variance and choice of 
+        treat as if `gaussian` with implied variance and choice of
         multiplier. See arxiv.org/abs/1504.08031 for details.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         Y : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         covariance : str
             One of 'parametric' or 'sandwich'. Method
             used to estimate covariance for inference
             in second stage.
-
         sigma_estimate : str
             One of 'truncated' or 'OLS'. Method
             used to estimate $\sigma$ when using
             parametric covariance.
-
         solve_args : dict
             Arguments passed to solver.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
+
         Notes
         -----
-
         Unlike other variants of LASSO, this
         solves the problem on construction as the active
         set is needed to find equivalent gaussian LASSO.
-
         Assumes parametric model is correct for inference,
         i.e. does not accept a covariance estimator.
-
         """
 
         n, p = X.shape
@@ -1289,7 +1176,7 @@ class lasso(object):
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
         if ridge_term is None:
             ridge_term = np.sqrt(mean_diag) / np.sqrt(n - 1)
 
@@ -1299,30 +1186,31 @@ class lasso(object):
         if perturb is None:
             perturb = np.random.standard_normal(p) * randomizer_scale
 
-        randomQ = rr.identity_quadratic(ridge_term, 0, -perturb, 0) # a ridge + linear term
+        randomQ = rr.identity_quadratic(ridge_term, 0, -perturb, 0)  # a ridge + linear term
 
         if quadratic is not None:
             totalQ = randomQ + quadratic
         else:
             totalQ = randomQ
 
-        soln, sqrt_loss = solve_sqrt_lasso(X, 
-                                           Y, 
-                                           weights=feature_weights, 
-                                           quadratic=totalQ, 
+        soln, sqrt_loss = solve_sqrt_lasso(X,
+                                           Y,
+                                           weights=feature_weights,
+                                           quadratic=totalQ,
                                            solve_args=solve_args,
                                            force_fat=True)
 
         denom = np.linalg.norm(Y - X.dot(soln))
 
         loglike = rr.glm.gaussian(X, Y)
-        
-        raise NotImplementedError('lasso_view needs to be modified so that the initial randomization can be set at construction time')
 
-        return lasso(loglike, 
-                     np.asarray(feature_weights) * denom, 
-                     ridge_term * denom, 
-                     randomizer_scale * denom, 
+        raise NotImplementedError(
+            'lasso_view needs to be modified so that the initial randomization can be set at construction time')
+
+        return lasso(loglike,
+                     np.asarray(feature_weights) * denom,
+                     ridge_term * denom,
+                     randomizer_scale * denom,
                      randomizer='gaussian',
                      parametric_cov_estimator=parametric_cov_estimator,
                      perturb=perturb)
@@ -1333,51 +1221,38 @@ class lasso(object):
 #### - Gaussian randomization
 
 class highdim(lasso):
-
     r"""
     A class for the LASSO for post-selection inference.
     The problem solved is
-
     .. math::
-
-        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
+        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 +
             \lambda \|\beta\|_1 - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2
-
     where $\lambda$ is `lam`, $\omega$ is a randomization generated below
     and the last term is a small ridge penalty.
-
     """
 
-    def __init__(self, 
-                 loglike, 
+    def __init__(self,
+                 loglike,
                  feature_weights,
                  ridge_term,
                  randomizer_scale,
                  perturb=None):
         r"""
-
         Create a new post-selection object for the LASSO problem
-
         Parameters
         ----------
-
         loglike : `regreg.smooth.glm.glm`
             A (negative) log-likelihood as implemented in `regreg`.
-
         feature_weights : np.ndarray
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomization.
-
         perturb : np.ndarray
             Random perturbation subtracted as a linear
             term in the objective function.
-
         """
 
         self.loglike = loglike
@@ -1390,26 +1265,22 @@ class highdim(lasso):
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         self.ridge_term = ridge_term
         self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
-        self._initial_omega = perturb # random perturbation
+        self._initial_omega = perturb  # random perturbation
 
-    def fit(self, 
-            solve_args={'tol':1.e-12, 'min_its':50}, 
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
             perturb=None):
         """
         Fit the randomized lasso using `regreg`.
-
         Parameters
         ----------
-
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
-
         Returns
         -------
-
         signs : np.float
              Support and non-zero signs of randomized lasso solution.
-             
+
         """
 
         p = self.nfeature
@@ -1437,14 +1308,14 @@ class highdim(lasso):
         self._unpenalized = unpenalized
 
         _active_signs = active_signs.copy()
-        _active_signs[unpenalized] = np.nan # don't release sign of unpenalized variables
-        self.selection_variable = {'sign':_active_signs,
-                                   'variables':self._overall}
+        _active_signs[unpenalized] = np.nan  # don't release sign of unpenalized variables
+        self.selection_variable = {'sign': _active_signs,
+                                   'variables': self._overall}
 
         # initial state for opt variables
 
-        initial_subgrad = -(self.loglike.smooth_objective(self.initial_soln, 'grad') + 
-                            quad.objective(self.initial_soln, 'grad')) 
+        initial_subgrad = -(self.loglike.smooth_objective(self.initial_soln, 'grad') +
+                            quad.objective(self.initial_soln, 'grad'))
         self.initial_subgrad = initial_subgrad
 
         initial_scalings = np.fabs(self.initial_soln[active])
@@ -1510,10 +1381,10 @@ class highdim(lasso):
         unpenalized_directions = np.array([signed_basis_vector(p, j, 1) for j in np.nonzero(unpenalized)[0]]).T
         if unpenalized.sum():
             _opt_linear_term[:, unpenalized_slice] = (_hessian_unpen
-                                                      + self.ridge_term * unpenalized_directions) 
+                                                      + self.ridge_term * unpenalized_directions)
 
         # two transforms that encode score and optimization
-        # variable roles 
+        # variable roles
 
         self.opt_transform = (_opt_linear_term, self.initial_subgrad)
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
@@ -1545,6 +1416,7 @@ class highdim(lasso):
                 mean_term = logdens_linear.dot(score.T + offset[:, None]).T
             arg = opt + mean_term
             return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+
         log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
 
         # now make the constraints
@@ -1564,8 +1436,8 @@ class highdim(lasso):
                                                self.observed_score_state,
                                                log_density,
                                                logdens_transform,
-                                               selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
-        
+                                               selection_info=self.selection_variable)  # should be signs and the subgradients we've conditioned on
+
         return active_signs
 
     def summary(self,
@@ -1573,79 +1445,72 @@ class highdim(lasso):
                 features=None,
                 parameter=None,
                 level=0.9,
-                ndraw=10000, 
+                ndraw=10000,
                 burnin=2000,
                 compute_intervals=False,
                 dispersion=None):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
-
         Parameters
         ----------
-
         target : one of ['selected', 'full']
-
         features : np.bool
             Binary encoding of which features to use in final
             model and targets.
-
         parameter : np.array
             Hypothesized value for parameter -- defaults to 0.
-
         level : float
             Confidence level.
-
         ndraw : int (optional)
             Defaults to 1000.
-
         burnin : int (optional)
             Defaults to 1000.
-
         compute_intervals : bool
             Compute confidence intervals?
-
         dispersion : float (optional)
             Use a known value for dispersion, or Pearson's X^2?
-
         """
 
         if parameter is None:
             parameter = np.zeros(self.loglike.shape[0])
 
         if target == 'selected':
-            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
+            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
+                                                                                                dispersion=dispersion)
         else:
             X, y = self.loglike.data
             n, p = X.shape
             if n > p and target == 'full':
-                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
+                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
+                                                                                                dispersion=dispersion)
             else:
-                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
+                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
+                                                                                                    dispersion=dispersion)
 
         if self._overall.sum() > 0:
-            opt_sample = self.sampler.sample(ndraw,  burnin)
+            opt_sample = self.sampler.sample(ndraw, burnin)
 
-            pivots = self.sampler.coefficient_pvalues(observed_target, 
-                                                      cov_target, 
-                                                      cov_target_score, 
-                                                      parameter=parameter, 
-                                                      sample=opt_sample, 
+            pivots = self.sampler.coefficient_pvalues(observed_target,
+                                                      cov_target,
+                                                      cov_target_score,
+                                                      parameter=parameter,
+                                                      sample=opt_sample,
                                                       alternatives=alternatives)
             if not np.all(parameter == 0):
-                pvalues = self.sampler.coefficient_pvalues(observed_target, 
-                                                           cov_target, 
-                                                           cov_target_score, 
-                                                           parameter=np.zeros_like(parameter), 
-                                                           sample=opt_sample, 
+                pvalues = self.sampler.coefficient_pvalues(observed_target,
+                                                           cov_target,
+                                                           cov_target_score,
+                                                           parameter=np.zeros_like(parameter),
+                                                           sample=opt_sample,
                                                            alternatives=alternatives)
             else:
                 pvalues = pivots
 
             intervals = None
             if compute_intervals:
-                intervals = self.sampler.confidence_intervals(observed_target, 
-                                                              cov_target, 
+                intervals = self.sampler.confidence_intervals(observed_target,
+                                                              cov_target,
                                                               cov_target_score,
                                                               sample=opt_sample)
 
@@ -1662,55 +1527,48 @@ class highdim(lasso):
                       dispersion=None,
                       solve_args={}):
         """
-
         Parameters
         ----------
-
         target : one of ['selected', 'full']
-
         features : np.bool
             Binary encoding of which features to use in final
             model and targets.
-
         parameter : np.array
             Hypothesized value for parameter -- defaults to 0.
-
         level : float
             Confidence level.
-
         ndraw : int (optional)
             Defaults to 1000.
-
         burnin : int (optional)
             Defaults to 1000.
-
         compute_intervals : bool
             Compute confidence intervals?
-
         dispersion : float (optional)
             Use a known value for dispersion, or Pearson's X^2?
-
         """
 
         if parameter is None:
             parameter = np.zeros(self.loglike.shape[0])
 
         if target == 'selected':
-            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
+            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
+                                                                                                dispersion=dispersion)
         elif target == 'full':
             X, y = self.loglike.data
             n, p = X.shape
             if n > p:
-                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
+                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
+                                                                                                dispersion=dispersion)
             else:
-                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
+                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
+                                                                                                    dispersion=dispersion)
 
         # working out conditional law of opt variables given
         # target after decomposing score wrt target
 
-        return self.sampler.selective_MLE(observed_target, 
-                                          cov_target, 
-                                          cov_target_score, 
+        return self.sampler.selective_MLE(observed_target,
+                                          cov_target,
+                                          cov_target_score,
                                           self.observed_opt_state,
                                           solve_args=solve_args)
 
@@ -1733,8 +1591,9 @@ class highdim(lasso):
             cov_target = np.linalg.inv(Q)
             observed_target = self._beta_full[overall]
             crosscov_target_score = score_linear.dot(cov_target)
-            Xfeat = X[:,overall]
-            alternatives = [{1:'greater', -1:'less'}[int(s)] for s in self.selection_variable['sign'][active]] + ['twosided'] * unpenalized.sum()
+            Xfeat = X[:, overall]
+            alternatives = [{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] + [
+                                                                                                                       'twosided'] * unpenalized.sum()
 
         else:
 
@@ -1742,7 +1601,7 @@ class highdim(lasso):
             features_b[features] = True
             features = features_b
 
-            Xfeat = X[:,features]
+            Xfeat = X[:, features]
             Qfeat = Xfeat.T.dot(self._W[:, None] * Xfeat)
             Gfeat = self.loglike.smooth_objective(self.initial_soln, 'grad')[features]
             Qfeat_inv = np.linalg.inv(Qfeat)
@@ -1753,8 +1612,9 @@ class highdim(lasso):
             observed_target = one_step
             alternatives = ['twosided'] * features.sum()
 
-        if dispersion is None: # use Pearson's X^2
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(observed_target)))**2 / self._W).sum() / (n - Xfeat.shape[1])
+        if dispersion is None:  # use Pearson's X^2
+            dispersion = ((y - self.loglike.saturated_loss.mean_function(
+                Xfeat.dot(observed_target))) ** 2 / self._W).sum() / (n - Xfeat.shape[1])
 
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
@@ -1775,18 +1635,22 @@ class highdim(lasso):
         G = self.loglike.smooth_objective(self.initial_soln, 'grad')
         Qfull_inv = np.linalg.inv(Qfull)
         one_step = self.initial_soln - Qfull_inv.dot(G)
-        cov_target = Qfull_inv[features][:,features]
+        cov_target = Qfull_inv[features][:, features]
         observed_target = one_step[features]
         crosscov_target_score = np.zeros((p, cov_target.shape[0]))
         crosscov_target_score[features] = -np.identity(cov_target.shape[0])
 
-        if dispersion is None: # use Pearson's X^2
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step)))**2 / self._W).sum() / (n - p)
+        if dispersion is None:  # use Pearson's X^2
+            dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step))) ** 2 / self._W).sum() / (
+            n - p)
 
         alternatives = ['twosided'] * features.sum()
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
-    def debiased_targets(self, features=None, dispersion=None, **debiasing_args):
+    def debiased_targets(self,
+                         features=None,
+                         dispersion=None,
+                         debiasing_args={}):
 
         if features is None:
             features = self._overall
@@ -1800,315 +1664,258 @@ class highdim(lasso):
         # target is one-step estimator
 
         G = self.loglike.smooth_objective(self.initial_soln, 'grad')
-        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None], 
+        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None],
                                                   np.nonzero(features)[0],
                                                   **debiasing_args)) / n
         observed_target = self.initial_soln[features] - Qinv_hat.dot(G)
         if p > n:
             M1 = Qinv_hat.dot(X.T)
-            cov_target = (M1 * self._W[None,:]).dot(M1.T)
-            crosscov_target_score = -(M1 * self._W[None,:]).dot(X).T
+            cov_target = (M1 * self._W[None, :]).dot(M1.T)
+            crosscov_target_score = -(M1 * self._W[None, :]).dot(X).T
         else:
             Qfull = X.T.dot(self._W[:, None] * X)
             cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
             crosscov_target_score = -Qinv_hat.dot(Qfull).T
 
-        if dispersion is None: # use Pearson's X^2
-            Xfeat = X[:,features]
+        if dispersion is None:  # use Pearson's X^2
+            Xfeat = X[:, features]
             Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
             relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - features.sum()) 
+            dispersion = ((y - self.loglike.saturated_loss.mean_function(
+                Xfeat.dot(relaxed_soln))) ** 2 / self._W).sum() / (n - features.sum())
 
         alternatives = ['twosided'] * features.sum()
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     @staticmethod
-    def gaussian(X, 
-                 Y, 
-                 feature_weights, 
+    def gaussian(X,
+                 Y,
+                 feature_weights,
                  sigma=1.,
                  quadratic=None,
                  ridge_term=None,
                  randomizer_scale=None):
         r"""
         Squared-error LASSO with feature weights.
-
-        Objective function (before randomizer) is 
+        Objective function (before randomizer) is
         $$
         \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\lambda$ is `feature_weights`. The ridge term
         is determined by the Hessian and `np.std(Y)` by default,
         as is the randomizer scale.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         Y : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         sigma : float (optional)
             Noise variance. Set to 1 if `covariance_estimator` is not None.
             This scales the loglikelihood by `sigma**(-2)`.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
 
-        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
+        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
         n, p = X.shape
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
         if ridge_term is None:
             ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return highdim(loglike, np.asarray(feature_weights) / sigma**2,
+        return highdim(loglike, np.asarray(feature_weights) / sigma ** 2,
                        ridge_term, randomizer_scale)
 
     @staticmethod
-    def logistic(X, 
-                 successes, 
-                 feature_weights, 
+    def logistic(X,
+                 successes,
+                 feature_weights,
                  trials=None,
                  quadratic=None,
                  ridge_term=None,
                  randomizer_scale=None):
         r"""
         Logistic LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
-        where $\ell$ is the negative of the logistic 
+        where $\ell$ is the negative of the logistic
         log-likelihood (half the logistic deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         successes : ndarray
             Shape (n,) -- response vector. An integer number of successes.
             For data that is proportions, multiply the proportions
             by the number of trials first.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         trials : ndarray (optional)
             Number of trials per response, defaults to
-            ones the same shape as Y. 
-
+            ones the same shape as Y.
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
         n, p = X.shape
 
         loglike = rr.glm.logistic(X, successes, trials=trials, quadratic=quadratic)
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
             ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
-            randomizer_scale = np.sqrt(mean_diag) * 0.5 
+            randomizer_scale = np.sqrt(mean_diag) * 0.5
 
         return highdim(loglike, np.asarray(feature_weights),
                        ridge_term, randomizer_scale)
 
     @staticmethod
-    def coxph(X, 
-              times, 
-              status, 
+    def coxph(X,
+              times,
+              status,
               feature_weights,
               quadratic=None,
               ridge_term=None,
               randomizer_scale=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell^{\text{Cox}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
-        where $\ell^{\text{Cox}}$ is the 
+        where $\ell^{\text{Cox}}$ is the
         negative of the log of the Cox partial
         likelihood and $\lambda$ is `feature_weights`.
-
         Uses Efron's tie breaking method.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         times : ndarray
             Shape (n,) -- the survival times.
-
         status : ndarray
             Shape (n,) -- the censoring status.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
         loglike = coxph_obj(X, times, status, quadratic=quadratic)
 
         # scale for randomization seems kind of meaningless here...
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
             ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
- 
-        return lasso(loglike, 
-                     feature_weights, 
+
+        return lasso(loglike,
+                     feature_weights,
                      ridge_term,
                      randomizer_scale)
 
     @staticmethod
-    def poisson(X, 
-                counts, 
+    def poisson(X,
+                counts,
                 feature_weights,
                 quadratic=None,
                 ridge_term=None,
                 randomizer_scale=None):
         r"""
         Poisson log-linear LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\ell^{\text{Poisson}}$ is the negative
         of the log of the Poisson likelihood (half the deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         counts : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
 
         """
         n, p = X.shape
@@ -2116,92 +1923,75 @@ class highdim(lasso):
 
         # scale for randomizer seems kind of meaningless here...
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
 
         if ridge_term is None:
-            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n-1)
+            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
 
-        return lasso(loglike, 
-                     feature_weights, 
+        return lasso(loglike,
+                     feature_weights,
                      ridge_term,
                      randomizer_scale)
 
     @staticmethod
-    def sqrt_lasso(X, 
-                   Y, 
-                   feature_weights, 
+    def sqrt_lasso(X,
+                   Y,
+                   feature_weights,
                    quadratic=None,
                    ridge_term=None,
                    randomizer_scale=None,
-                   solve_args={'min_its':200},
+                   solve_args={'min_its': 200},
                    perturb=None):
         r"""
         Use sqrt-LASSO to choose variables.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\lambda$ is `feature_weights`. After solving the problem
-        treat as if `gaussian` with implied variance and choice of 
+        treat as if `gaussian` with implied variance and choice of
         multiplier. See arxiv.org/abs/1504.08031 for details.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         Y : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         covariance : str
             One of 'parametric' or 'sandwich'. Method
             used to estimate covariance for inference
             in second stage.
-
         solve_args : dict
             Arguments passed to solver.
-
         ridge_term : float
             How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
-
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
-
         Returns
         -------
-
         L : `selection.randomized.convenience.lasso`
-        
+
         Notes
         -----
-
         Unlike other variants of LASSO, this
         solves the problem on construction as the active
         set is needed to find equivalent gaussian LASSO.
-
         Assumes parametric model is correct for inference,
         i.e. does not accept a covariance estimator.
-
         """
 
         n, p = X.shape
@@ -2209,39 +1999,37 @@ class highdim(lasso):
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(p) * feature_weights
 
-        mean_diag = np.mean((X**2).sum(0))
+        mean_diag = np.mean((X ** 2).sum(0))
         if ridge_term is None:
             ridge_term = np.sqrt(mean_diag) / (n - 1)
 
         if randomizer_scale is None:
-            randomizer_scale = 0.5 * np.sqrt(mean_diag) / np.sqrt(n-1)
+            randomizer_scale = 0.5 * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         if perturb is None:
             perturb = np.random.standard_normal(p) * randomizer_scale
 
-        randomQ = rr.identity_quadratic(ridge_term, 0, -perturb, 0) # a ridge + linear term
+        randomQ = rr.identity_quadratic(ridge_term, 0, -perturb, 0)  # a ridge + linear term
 
         if quadratic is not None:
             totalQ = randomQ + quadratic
         else:
             totalQ = randomQ
 
-        soln, sqrt_loss = solve_sqrt_lasso(X, 
-                                           Y, 
-                                           weights=feature_weights, 
-                                           quadratic=totalQ, 
+        soln, sqrt_loss = solve_sqrt_lasso(X,
+                                           Y,
+                                           weights=feature_weights,
+                                           quadratic=totalQ,
                                            solve_args=solve_args,
                                            force_fat=True)
 
         denom = np.linalg.norm(Y - X.dot(soln))
         loglike = rr.glm.gaussian(X, Y)
-        
+
         obj = highdim(loglike, np.asarray(feature_weights) * denom,
-                      ridge_term * denom, 
-                      randomizer_scale * denom, 
+                      ridge_term * denom,
+                      randomizer_scale * denom,
                       perturb=perturb * denom)
         obj._sqrt_soln = soln
 
         return obj
-
-

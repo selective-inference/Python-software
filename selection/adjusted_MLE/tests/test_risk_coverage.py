@@ -133,9 +133,11 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
         dispersion = None
         if full_dispersion:
             dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
+        else:
+            dispersion = np.std(y)
 
         sigma_ = np.std(y)
-        LASSO_py = lasso.gaussian(X, y, np.asscalar((sigma_ ** 2.) * lam_tuned_lasso), np.asscalar(sigma_))
+        LASSO_py = lasso.gaussian(X, y, np.asscalar((sigma_**2.) * lam_tuned_lasso), np.asscalar(sigma_))
         soln = LASSO_py.fit()
         active_LASSO = (soln != 0)
         nactive_LASSO = active_LASSO.sum()
@@ -205,7 +207,7 @@ def comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2
 
                 post_LASSO_OLS = np.linalg.pinv(X)[active_nonrand].dot(y)
                 unad_sd = sigma_ * np.sqrt(
-                    np.diag((np.linalg.pinv(X)[active_nonrand].T.dot(np.linalg.pinv(X)[active_nonrand]))))
+                    np.diag((np.linalg.pinv(X)[active_nonrand].dot(np.linalg.pinv(X)[active_nonrand].T))))
                 unad_intervals = np.vstack([post_LASSO_OLS - 1.65 * unad_sd,
                                             post_LASSO_OLS + 1.65 * unad_sd]).T
 
@@ -273,8 +275,9 @@ if __name__ == "__main__":
     power_unad = 0.
 
     for i in range(ndraw):
-        output = comparison_risk_inference(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=.25,
-                                           randomizer_scale=np.sqrt(0.25), target="selected", full_dispersion=True)
+        output = comparison_risk_inference(n=200, p=500, nval=200, rho=0.35, s=5, beta_type=2, snr=.30,
+                                           randomizer_scale=np.sqrt(0.25), target="selected",
+                                           full_dispersion=False)
 
         risk_selMLE += output[0]
         risk_indest += output[1]
