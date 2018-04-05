@@ -41,8 +41,9 @@ def truncation_interval(Qbeta_bar, Q, Qi_jj, j, beta_barj, lagrange):
 
     return lower, upper
 
-def test_agreement(n=200, p=100, s=4):
+def test_smaller():
 
+    n, p, s = 200, 100, 4
     X, y, beta = gaussian_instance(n=n,
                                    p=p,
                                    s=s)[:3]

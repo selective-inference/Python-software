@@ -1900,6 +1900,15 @@ class lasso_full(lasso):
 
     where $\lambda$ is `lam`.
 
+    Notes
+    -----
+
+    In solving the debiasing problem to approximate the inverse
+    of (X^TWX) in a GLM, this class makes the implicit assumption
+    that the scaling of X is such that diag(X^TWX) is O(n)
+    with n=X.shape[0]. That is, X's are similar to IID samples
+    from a population that does not depend on n.
+
     """
 
     # level for coverage is 1-alpha
@@ -2012,10 +2021,11 @@ class lasso_full(lasso):
                 # target is one-step estimator
 
                 G = self.loglike.smooth_objective(lasso_solution, 'grad')
-                Qinv_hat = np.atleast_2d(debiasing_matrix(
-                                             X * np.sqrt(self._W)[:, None], 
-                                             self.active,
-                                             **debiasing_args)) / n
+                M = debiasing_matrix(X * np.sqrt(W)[:, None], 
+                                     self.active,
+                                     **debiasing_args)
+
+                Qinv_hat = np.atleast_2d(M) / n # the n is to make sure we get rows of the inverse of (X^TWX) instead of (X^TWX/n).
                 observed_target = lasso_solution[self.active] - Qinv_hat.dot(G)
                 M1 = Qinv_hat.dot(X.T)
                 self._QiE = (M1 * self._W[None,:]).dot(M1.T)
