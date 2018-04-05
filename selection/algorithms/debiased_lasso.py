@@ -31,7 +31,9 @@ def debiasing_matrix(X,
     n, p = X.shape
 
     if bound is None:
-        bound = (1. / np.sqrt(n)) * ndist.ppf(1. - (0.1 / (p ** 2)))
+        orig_bound = (1. / np.sqrt(n)) * ndist.ppf(1. - (0.1 / (p ** 2)))
+    else:
+        orig_bound = bound
 
     if max_active is None:
         max_active = max(50, 0.3 * n)
@@ -43,6 +45,7 @@ def debiasing_matrix(X,
 
     for idx, row in enumerate(rows):
 
+        bound = orig_bound
         soln = np.zeros(p)
         soln_old = np.zeros(p)
         ever_active = np.zeros(p, np.int)

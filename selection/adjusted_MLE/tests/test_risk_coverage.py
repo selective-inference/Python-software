@@ -485,7 +485,7 @@ if __name__ == "__main__":
     power_unad = 0.
 
     for i in range(ndraw):
-        output = comparison_risk_inference(n=200, p=500, nval=200, rho=0.35, s=10, beta_type=2, snr=.20,
+        output = comparison_risk_inference(n=200, p=500, nval=200, rho=0.35, s=10, beta_type=2, snr=.30,
                                            randomizer_scale=np.sqrt(0.25), target="full",
                                            full_dispersion=False)
 
