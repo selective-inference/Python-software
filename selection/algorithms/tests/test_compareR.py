@@ -496,7 +496,7 @@ def test_solve_QP():
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_full_lasso_tall():
     n, p, s = 200, 100, 10
-    X, y = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)[:2]
+    X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
 
     lam = 4. * np.sqrt(n)
     X *= np.sqrt(n)
@@ -514,6 +514,7 @@ def test_full_lasso_tall():
         n = nrow(X)
         p = ncol(X)
         sigma_est = sigma(lm(y ~ X - 1))
+        print(sigma_est)
         penalty_factor = rep(1, p);
         lam = lam / n;
         soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="ls")
@@ -539,13 +540,13 @@ def test_full_lasso_wide():
     n, p, s = 30, 50, 10
     X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
 
-    lam = 8. * np.sqrt(n)
+    lam = 6. * np.sqrt(n)
     X *= np.sqrt(n)
     L = lasso_full.gaussian(X, y, lam)
     L.fit()
-    L._sigma = sigma
+
     if len(L.active) > 0:
-        S = L.summary(compute_intervals=False)
+        S = L.summary(compute_intervals=False, dispersion=sigma**2)
         numpy2ri.activate()
 
         rpy.r.assign("X", X)
@@ -573,5 +574,4 @@ def test_full_lasso_wide():
         active_set = rpy.r('active_vars')
 
         nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
-        print('cor', np.corrcoef(pvalues, S['pval'])[0,1])
         numpy2ri.deactivate()

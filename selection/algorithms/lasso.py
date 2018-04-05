@@ -2012,7 +2012,8 @@ class lasso_full(lasso):
                 _beta_bar = Qi.dot(self._Qbeta_bar)
                 self._beta_barE = _beta_bar[E]
                 one_step = self._beta_barE
-                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
+                # Pearson's X^2 to estimate sigma
+                self._pearson_sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
                 
             else:
 
@@ -2033,7 +2034,9 @@ class lasso_full(lasso):
                 Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
                 relaxed_soln = lasso_solution[self.active] - np.linalg.inv(Qrelax).dot(G[self.active])
                 self._beta_barE = observed_target
-                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - len(self.active)))
+
+                # relaxed Pearson's X^2 to estimate sigma
+                self._pearson_sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - len(self.active)))
 
         else:
             self.active = []
@@ -2041,7 +2044,8 @@ class lasso_full(lasso):
         return self.lasso_solution
 
     def summary(self, alpha=0.05,
-                compute_intervals=False):
+                compute_intervals=False,
+                dispersion=None):
         """
         Summary table for inference adjusted for selection.
 
@@ -2054,6 +2058,9 @@ class lasso_full(lasso):
         compute_intervals : bool
             Should we compute confidence intervals?
 
+        dispersion : float
+            Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
+
         Returns
         -------
 
@@ -2064,7 +2071,11 @@ class lasso_full(lasso):
         """
 
         X, y = self.loglike.data
-        W, sigma = self._W, self._sigma
+        W, sigma = self._W, self._pearson_sigma
+        if dispersion is None:
+            sqrt_dispersion = sigma
+        else:
+            sqrt_dispersion = np.sqrt(dispersion)
         active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
 
         result = [] 
@@ -2074,7 +2085,7 @@ class lasso_full(lasso):
             lower, upper = _truncation_interval(Qbeta_bar, X, W, QiE[j,j], idx, beta_barE[j], self.feature_weights)
 
 
-            sd = sigma * np.sqrt(QiE[j,j])
+            sd = sqrt_dispersion * np.sqrt(QiE[j,j])
             tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
             pvalue = tg.cdf(beta_barE[j])
             pvalue = float(2 * min(pvalue, 1 - pvalue))
