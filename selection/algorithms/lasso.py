@@ -1930,7 +1930,8 @@ class lasso_full(lasso):
 
     def __init__(self, 
                  loglike, 
-                 feature_weights):
+                 feature_weights,
+                 sparse_inverse=False):
         r"""
 
         Create a new post-selection for the LASSO problem
@@ -1945,12 +1946,17 @@ class lasso_full(lasso):
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
 
+        sparse_inverse : bool
+             If True, use the sparse LASSO estimate of the
+             inverse of X.T.dot(X).
+
         """
 
         self.loglike = loglike
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
+        self.sparse_inverse = sparse_inverse
 
     def fit(self, 
             lasso_solution=None, 
@@ -1966,7 +1972,6 @@ class lasso_full(lasso):
         ----------
 
         lasso_solution : optional
-
              If not None, this is taken to be the solution
              of the optimization problem. No checks
              are done, though the implied affine
@@ -1974,6 +1979,9 @@ class lasso_full(lasso):
 
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
+
+        debiasing_args : dict
+             Arguments passed to `.debiased_lasso.debiasing_matrix`.
 
         Returns
         -------
@@ -2018,7 +2026,7 @@ class lasso_full(lasso):
             self._Qbeta_bar = X.T.dot(W * X.dot(lasso_solution)) - self.loglike.smooth_objective(lasso_solution, 'grad')
             self._W = W
 
-            if n > p:
+            if n > p and not self.sparse_inverse:
                 Q = self.loglike.hessian(lasso_solution)
                 E = self.active
                 Qi = np.linalg.inv(Q)
