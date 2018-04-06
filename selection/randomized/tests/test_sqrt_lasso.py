@@ -19,7 +19,7 @@ from ..glm import (split_glm_group_lasso,
                    pairs_bootstrap_glm)
 
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
-from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 
 def choose_lambda_with_randomization(X, randomization, quantile=0.90, ndraw=10000):
     X = rr.astransform(X)

@@ -4,9 +4,8 @@ import pandas as pd
 import regreg.api as rr
 
 from ...tests.instance import (gaussian_instance, logistic_instance)
-import selection.tests.reports as reports
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
-from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 
 from ...algorithms.lasso import (glm_sandwich_estimator,
                                         lasso)
@@ -17,9 +16,6 @@ from ...constraints.affine import (constraints,
 from ..cv_view import CV_view, have_glmnet
 from .test_cv_lee_et_al import pivot, equal_tailed_interval
 
-@register_report(['pvalue', 'cover', 'ci_length_clt',
-                  'naive_pvalues', 'covered_naive', 'ci_length_naive',
-                  'active_var'])
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_cv_corrected_nonrandomized_lasso(n=300,
@@ -200,27 +196,3 @@ def test_cv_corrected_nonrandomized_lasso(n=300,
                naive_pvalues, naive_covered, naive_length, active_var
 
 
-def report(niter=100, design="random", **kwargs):
-
-    if design == "fixed":
-        X, _, _, _, _ = gaussian_instance(**kwargs)
-        kwargs.update({'X': X})
-
-    intervals_report = reports.reports['test_cv_corrected_nonrandomized_lasso']
-    screened_results = reports.collect_multiple_runs(intervals_report['test'],
-                                             intervals_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-    screened_results.to_pickle("cv_corrected_nonrandomized_lasso.pkl")
-    results = pd.read_pickle("cv_corrected_nonrandomized_lasso.pkl")
-
-    fig = reports.pvalue_plot(results, label = 'CV corrected')
-    fig.suptitle("CV corrected norandomized Lasso pivots", fontsize=20)
-    fig.savefig('cv_corrected_nonrandomized_lasso_pivots.pdf')
-
-
-def main():
-    np.random.seed(500)
-    kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False}
-    report(niter=1, **kwargs)

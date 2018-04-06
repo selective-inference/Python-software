@@ -6,8 +6,7 @@ from itertools import product
 from selection.tests.flags import SMALL_SAMPLES
 from selection.tests.instance import (gaussian_instance as instance,
                                       logistic_instance)
-from selection.tests.decorators import set_sampling_params_iftrue, wait_for_return_value, register_report
-import selection.tests.reports as reports
+from selection.tests.decorators import set_sampling_params_iftrue, wait_for_return_value
 
 from selection.algorithms.lasso import (lasso, 
                                         lasso_full,
@@ -162,7 +161,6 @@ def test_coxph():
 
     return L, C, P
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value(max_tries=100)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_gaussian(n=200,
@@ -230,7 +228,6 @@ def test_data_carving_gaussian(n=200,
         v = (carve, split, active)
         return v
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_sqrt_lasso(n=200,
@@ -297,7 +294,6 @@ def test_data_carving_sqrt_lasso(n=200,
         return v
 
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_logistic(n=700,
@@ -371,7 +367,6 @@ def test_data_carving_logistic(n=700,
         v = (carve, split, active)
         return v
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_poisson(n=500,
@@ -441,9 +436,6 @@ def test_data_carving_poisson(n=500,
         v = (carve, split, active)
         return v
        
-
-
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
@@ -518,7 +510,6 @@ def test_intervals(n=100, p=20, s=5):
     S = las.summary(compute_intervals=True)
     nominal_intervals(las)
     
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_gaussian_pvals(n=100,
                         p=500,
@@ -541,7 +532,6 @@ def test_gaussian_pvals(n=100,
         S = L.summary('twosided')
         return S['pval'], [v in true_active for v in S['variable']]
 
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_sqrt_lasso_pvals(n=100,
                           p=200,
@@ -572,7 +562,6 @@ def test_sqrt_lasso_pvals(n=100,
         return S['pval'], [v in true_active for v in S['variable']]
 
 
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_sqrt_lasso_sandwich_pvals(n=200,
                                    p=50,
@@ -604,7 +593,6 @@ def test_sqrt_lasso_sandwich_pvals(n=200,
         S = L_SQ.summary('twosided')
         return S['pval'], [v in true_active for v in S['variable']]
 
-@register_report(['pvalue', 'parametric_pvalue', 'active'])
 @wait_for_return_value()
 def test_gaussian_sandwich_pvals(n=200,
                                  p=50,
@@ -664,7 +652,6 @@ def test_gaussian_sandwich_pvals(n=200,
         return P_P, P_S, [v in true_active for v in S['variable']]
 
 
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_logistic_pvals(n=500,
                         p=200,
@@ -793,29 +780,3 @@ def test_poisson_full():
     L.fit()
     L.summary(compute_intervals=True)
 
-def report(niter=50, **kwargs):
-
-    # these are all our null tests
-    fn_names = ['test_gaussian_pvals',
-                'test_logistic_pvals',
-                'test_data_carving_gaussian',
-                'test_data_carving_sqrt_lasso',
-                'test_data_carving_logistic',
-                'test_data_carving_poisson',
-                'test_data_carving_coxph'
-                ]
-
-    dfs = []
-    for fn in fn_names:
-        fn = reports.reports[fn]
-        dfs.append(reports.collect_multiple_runs(fn['test'],
-                                                 fn['columns'],
-                                                 niter,
-                                                 reports.summarize_all))
-    dfs = pd.concat(dfs)
-
-    fig = reports.pvalue_plot(dfs)
-    fig.savefig('algorithms_pvalues.pdf') 
-
-    fig = reports.split_pvalue_plot(dfs)
-    fig.savefig('algorithms_split_pvalues.pdf') 
