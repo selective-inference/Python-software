@@ -1879,7 +1879,7 @@ def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=T
     else:
         return -np.inf, np.inf
     lagrange_cp[j] = np.inf
-    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide) # TODO: use initial solution for speed
+    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide) # TODO: use initial solution for speed
 
     p = Qbeta_bar.shape[0]
     Ij = np.zeros(p)
@@ -2084,45 +2084,47 @@ class lasso_full(lasso):
 
         """
 
-        X, y = self.loglike.data
-        W, sigma = self._W, self._pearson_sigma
-        if dispersion is None:
-            sqrt_dispersion = sigma
-        else:
-            sqrt_dispersion = np.sqrt(dispersion)
-        active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
-
-        result = [] 
-
-        for j in range(len(active_set)):
-            idx = self.active[j]
-            lower, upper = _truncation_interval(Qbeta_bar, (X, W), QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=True)
-
-            sd = sqrt_dispersion * np.sqrt(QiE[j,j])
-            tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
-            pvalue = tg.cdf(beta_barE[j])
-            pvalue = float(2 * min(pvalue, 1 - pvalue))
-
-            if compute_intervals:
-                l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+        if len(self.active) > 0:
+            X, y = self.loglike.data
+            active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
+            W, sigma = self._W, self._pearson_sigma
+            if dispersion is None:
+                sqrt_dispersion = sigma
             else:
-                l, u = np.nan, np.nan
+                sqrt_dispersion = np.sqrt(dispersion)
 
-            result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
 
-        df = pd.DataFrame(index=self.active,
-                          data=dict([(n, d) for n, d in zip(['variable',
-                                                             'pval', 
-                                                             'lasso', 
-                                                             'onestep',
-                                                             'sd',
-                                                             'lower_confidence', 
-                                                             'upper_confidence',
-                                                             'lower_truncation', 
-                                                             'upper_truncation'], 
-                                                            np.array(result).T)]))
-        df['variable'] = df['variable'].astype(int)
-        return df
+            result = [] 
+
+            for j in range(len(active_set)):
+                idx = self.active[j]
+                lower, upper = _truncation_interval(Qbeta_bar, (X, W), QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=True)
+
+                sd = sqrt_dispersion * np.sqrt(QiE[j,j])
+                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
+                pvalue = tg.cdf(beta_barE[j])
+                pvalue = float(2 * min(pvalue, 1 - pvalue))
+
+                if compute_intervals:
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+                else:
+                    l, u = np.nan, np.nan
+
+                result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
+
+            df = pd.DataFrame(index=self.active,
+                              data=dict([(n, d) for n, d in zip(['variable',
+                                                                 'pval', 
+                                                                 'lasso', 
+                                                                 'onestep',
+                                                                 'sd',
+                                                                 'lower_confidence', 
+                                                                 'upper_confidence',
+                                                                 'lower_truncation', 
+                                                                 'upper_truncation'], 
+                                                                np.array(result).T)]))
+            df['variable'] = df['variable'].astype(int)
+            return df
 
     @property
     def soln(self):
@@ -2452,8 +2454,11 @@ class lasso_full_modelX(lasso):
             self._QiE = QiE[:,E]
             self._beta_barE = QiE.dot(self._Qbeta_bar)
 
-            # Pearson's X^2 to estimate sigma
-            self._pearson_sigma = np.sqrt((((y - X.dot(_beta_bar)))**2).sum() / (n - p))
+            # Pearson's X^2 to estimate sigma from relaxed estimator
+            y, X = self.y, self.X
+            n, p = X.shape
+            relaxed_beta_barE = np.linalg.inv(Q[E][:,E]).dot(X[:,E].T.dot(y))
+            self._pearson_sigma = np.sqrt((((y - X[:,E].dot(relaxed_beta_barE)))**2).sum() / (n - p))
 
         else:
             self.active = []
@@ -2487,43 +2492,44 @@ class lasso_full_modelX(lasso):
 
         """
 
-        X, y = self.X, self.y
-        sigma = self._pearson_sigma
-        if dispersion is None:
-            sqrt_dispersion = sigma
-        else:
-            sqrt_dispersion = np.sqrt(dispersion)
-        active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
-
-        result = [] 
-
-        for j in range(len(active_set)):
-            idx = self.active[j]
-            lower, upper = _truncation_interval(Qbeta_bar, Q, QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=False)
-
-            sd = sqrt_dispersion * np.sqrt(QiE[j,j])
-            tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
-            pvalue = tg.cdf(beta_barE[j])
-            pvalue = float(2 * min(pvalue, 1 - pvalue))
-
-            if compute_intervals:
-                l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+        if len(self.active) > 0:
+            X, y = self.X, self.y
+            sigma = self._pearson_sigma
+            if dispersion is None:
+                sqrt_dispersion = sigma
             else:
-                l, u = np.nan, np.nan
+                sqrt_dispersion = np.sqrt(dispersion)
+            active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
 
-            result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
+            result = [] 
 
-        df = pd.DataFrame(index=self.active,
-                          data=dict([(n, d) for n, d in zip(['variable',
-                                                             'pval', 
-                                                             'lasso', 
-                                                             'onestep',
-                                                             'sd',
-                                                             'lower_confidence', 
-                                                             'upper_confidence',
-                                                             'lower_truncation', 
-                                                             'upper_truncation'], 
-                                                            np.array(result).T)]))
-        df['variable'] = df['variable'].astype(int)
-        return df
+            for j in range(len(active_set)):
+                idx = self.active[j]
+                lower, upper = _truncation_interval(Qbeta_bar, self.Q, QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=False)
+
+                sd = sqrt_dispersion * np.sqrt(QiE[j,j])
+                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
+                pvalue = tg.cdf(beta_barE[j])
+                pvalue = float(2 * min(pvalue, 1 - pvalue))
+
+                if compute_intervals:
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+                else:
+                    l, u = np.nan, np.nan
+
+                result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
+
+            df = pd.DataFrame(index=self.active,
+                              data=dict([(n, d) for n, d in zip(['variable',
+                                                                 'pval', 
+                                                                 'lasso', 
+                                                                 'onestep',
+                                                                 'sd',
+                                                                 'lower_confidence', 
+                                                                 'upper_confidence',
+                                                                 'lower_truncation', 
+                                                                 'upper_truncation'], 
+                                                                np.array(result).T)]))
+            df['variable'] = df['variable'].astype(int)
+            return df
 
