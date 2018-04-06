@@ -2458,7 +2458,7 @@ class lasso_full_modelX(lasso):
             y, X = self.y, self.X
             n, p = X.shape
             relaxed_beta_barE = np.linalg.inv(Q[E][:,E]).dot(X[:,E].T.dot(y))
-            self._pearson_sigma = np.sqrt((((y - X[:,E].dot(relaxed_beta_barE)))**2).sum() / (n - p))
+            self._pearson_sigma = np.sqrt(((y - X[:,E].dot(relaxed_beta_barE))**2).sum() / (n - len(self.active)))
 
         else:
             self.active = []
