@@ -16,8 +16,8 @@ from .query import (query,
                     langevin_sampler,
                     affine_gaussian_sampler)
 
-from .reconstruction import reconstruct_full_from_internal
-from .randomization import split, randomization
+from .reconstruction import reconstruct_opt
+from .randomization import randomization
 from .base import restricted_estimator
 from .glm import (pairs_bootstrap_glm,
                   glm_nonparametric_bootstrap,
