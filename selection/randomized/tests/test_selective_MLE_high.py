@@ -42,7 +42,7 @@ def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, rand
     if full_dispersion:
         dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y)))**2 / (n - p)
 
-    estimate, _, _, pval, intervals = conv.selective_MLE(target="full", dispersion=dispersion)
+    estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="full", dispersion=dispersion)
 
     coverage = (beta[nonzero] > intervals[:,0]) * (beta[nonzero] < intervals[:,1])
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage
@@ -80,32 +80,35 @@ def test_selected_targets(n=2000, p=200, signal_fac=1.5, s=5, sigma=3, rho=0.4, 
     if full_dispersion:
         dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y)))**2 / (n - p)
 
-    estimate, _, _, pval, intervals = conv.selective_MLE(target="selected", dispersion=dispersion)
+    estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=dispersion)
 
     beta_target = np.linalg.pinv(X[:,nonzero]).dot(X.dot(beta))
 
     coverage = (beta_target > intervals[:,0]) * (beta_target < intervals[:,1])
     return pval[beta_target == 0], pval[beta_target != 0], coverage
 
-print(test_selected_targets())
-
-def main(nsim=500, full=True, full_dispersion=False):
+def main(nsim=500, full=True):
 
     P0, PA, cover = [], [], []
     from statsmodels.distributions import ECDF
 
-    n, p, s = 500, 200, 20
+    n, p, s = 200, 500, 10
 
     for i in range(nsim):
         if full:
+            if n>p:
+                full_dispersion = True
+            else:
+                full_dispersion = False
             p0, pA, cover_ = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
         else:
+            full_dispersion = True
             p0, pA, cover_ = test_selected_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
 
         cover.extend(cover_)
         P0.extend(p0)
         PA.extend(pA)
-        print(np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.05), np.mean(np.array(PA) < 0.05), np.mean(cover), 'null pvalue + power')
+        print(np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover), 'null pvalue + power')
     
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)
@@ -115,8 +118,8 @@ def main(nsim=500, full=True, full_dispersion=False):
             if len(PA) > 0:
                 plt.plot(U, ECDF(PA)(U), 'r')
             plt.plot([0, 1], [0, 1], 'k--')
-            plt.savefig("plot.pdf")
+            plt.savefig("/Users/snigdhapanigrahi/Desktop/plot.pdf")
     plt.show()
 
-#main()
+main()
 
