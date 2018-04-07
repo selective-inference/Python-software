@@ -9,7 +9,7 @@ from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, randomizer_scale=1, full_dispersion=True):
+def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, randomizer_scale=0.25, full_dispersion=True):
     """
     Compare to R randomized lasso
     """
@@ -92,7 +92,7 @@ def main(nsim=500, full=True):
     P0, PA, cover = [], [], []
     from statsmodels.distributions import ECDF
 
-    n, p, s = 200, 500, 10
+    n, p, s = 200, 1000, 20
 
     for i in range(nsim):
         if full:
