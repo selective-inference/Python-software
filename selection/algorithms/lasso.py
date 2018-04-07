@@ -2342,18 +2342,19 @@ class lasso_full(lasso):
         loglike = glm.poisson(X, counts, quadratic=quadratic)
         return lasso_full(loglike, feature_weights)
 
-class lasso_full_modelX(lasso):
+class lasso_full_modelQ(lasso):
 
     r"""
-    A class for the LASSO for post-selection inference.
+    A class for the LASSO for post-selection inference
+    in which 
     The problem solved is
 
     .. math::
 
-        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
-            \lambda \|\beta\|_1
+        \text{minimize}_{\beta} -(X\beta)^Ty + \frac{1}{2} \beta^TQ\beta + 
+            \sum_i \lambda_i |\beta_i|
 
-    where $\lambda$ is `lam`.
+    where $\lambda$ is `feature_weights`.
 
     Notes
     -----
@@ -2383,7 +2384,9 @@ class lasso_full_modelX(lasso):
 
         Q : np.ndarray((p,p))
 
-        sufficient_stat : np.ndarray(p)
+        X : np.ndarray((n, p))
+
+        y : np.ndarray(n)
 
         feature_weights : np.ndarray
             Feature weights for L-1 penalty. If a float,

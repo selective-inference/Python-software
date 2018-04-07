@@ -5,7 +5,7 @@ import numpy as np, regreg.api as rr
 from ...tests.instance import gaussian_instance
 
 from ..lasso import (lasso_full,
-                     lasso_full_modelX,
+                     lasso_full_modelQ,
                      _truncation_interval,
                      _solve_restricted_problem)
 
@@ -77,7 +77,7 @@ def test_smaller():
         np.testing.assert_allclose(l, lower)
         np.testing.assert_allclose(u, upper)
 
-def test_modelX():
+def test_modelQ():
 
     n, p, s = 200, 50, 4
     X, y, beta = gaussian_instance(n=n,
@@ -91,7 +91,7 @@ def test_modelX():
     LF.fit()
     S = LF.summary(dispersion=1)
 
-    LX = lasso_full_modelX(X.T.dot(X), X, y, lagrange)
+    LX = lasso_full_modelQ(X.T.dot(X), X, y, lagrange)
     LX.fit()
     SX = LX.summary(dispersion=1)
 
