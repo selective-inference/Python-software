@@ -9,7 +9,7 @@ from selection.randomized.lasso import highdim
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
-def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, randomizer_scale=0.25, full_dispersion=True):
+def test_full_targets(n=2000, p=200, signal_fac=0.5, s=5, sigma=3, rho=0.4, randomizer_scale=0.25, full_dispersion=True):
     """
     Compare to R randomized lasso
     """
@@ -25,6 +25,10 @@ def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, rand
                       sigma=sigma, 
                       random_signs=True)[:3]
 
+    idx = np.arange(p)
+    sigmaX = rho ** np.abs(np.subtract.outer(idx, idx))
+    print("snr", beta.T.dot(sigmaX).dot(beta)/((sigma**2.)* n))
+
     n, p = X.shape
 
     sigma_ = np.std(Y)
@@ -37,6 +41,7 @@ def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, rand
     
     signs = conv.fit()
     nonzero = signs != 0
+    print("dimensions", n, p, nonzero.sum())
 
     dispersion = None
     if full_dispersion:
@@ -45,7 +50,7 @@ def test_full_targets(n=2000, p=200, signal_fac=1.1, s=5, sigma=3, rho=0.4, rand
     estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="full", dispersion=dispersion)
 
     coverage = (beta[nonzero] > intervals[:,0]) * (beta[nonzero] < intervals[:,1])
-    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage
+    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
 def test_selected_targets(n=2000, p=200, signal_fac=1.5, s=5, sigma=3, rho=0.4, randomizer_scale=1, full_dispersion=True):
     """
@@ -89,10 +94,10 @@ def test_selected_targets(n=2000, p=200, signal_fac=1.5, s=5, sigma=3, rho=0.4, 
 
 def main(nsim=500, full=True):
 
-    P0, PA, cover = [], [], []
+    P0, PA, cover, length_int = [], [], [], []
     from statsmodels.distributions import ECDF
 
-    n, p, s = 200, 1000, 20
+    n, p, s = 200, 1000, 10
 
     for i in range(nsim):
         if full:
@@ -100,7 +105,8 @@ def main(nsim=500, full=True):
                 full_dispersion = True
             else:
                 full_dispersion = False
-            p0, pA, cover_ = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
+            p0, pA, cover_, intervals = test_full_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
+            avg_length = intervals[:,1]-intervals[:,0]
         else:
             full_dispersion = True
             p0, pA, cover_ = test_selected_targets(n=n, p=p, s=s, full_dispersion=full_dispersion)
@@ -108,7 +114,8 @@ def main(nsim=500, full=True):
         cover.extend(cover_)
         P0.extend(p0)
         PA.extend(pA)
-        print(np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover), 'null pvalue + power')
+        print(np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
+              np.mean(avg_length), 'null pvalue + power + length')
     
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)

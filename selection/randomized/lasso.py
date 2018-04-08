@@ -1683,7 +1683,7 @@ class highdim(lasso):
             relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
             dispersion = ((y - self.loglike.saturated_loss.mean_function(
                 Xfeat.dot(relaxed_soln))) ** 2 / self._W).sum() / (n - features.sum())
-
+            #print("dispersion", np.sqrt(dispersion))
         alternatives = ['twosided'] * features.sum()
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
