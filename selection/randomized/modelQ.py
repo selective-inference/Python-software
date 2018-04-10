@@ -309,7 +309,16 @@ class modelQ(object):
         if parameter is None:
             parameter = np.zeros(self.loss.shape[0])
 
-        observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
+        if target == 'selected':
+            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
+        else:
+            X, y = self.loglike.data
+            n, p = X.shape
+            if n > p and target == 'full':
+                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
+            else:
+                raise NotImplementedError
+                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
 
         if self._overall.sum() > 0:
             opt_sample = self.sampler.sample(ndraw,  burnin)
@@ -342,6 +351,59 @@ class modelQ(object):
             return [], [], []
 
 
+    def selective_MLE(self,
+                      target="selected",
+                      features=None,
+                      parameter=None,
+                      level=0.9,
+                      compute_intervals=False,
+                      dispersion=None,
+                      solve_args={'tol':1.e-12}):
+        """
+
+        Parameters
+        ----------
+
+        target : one of ['selected', 'full']
+
+        features : np.bool
+            Binary encoding of which features to use in final
+            model and targets.
+
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+
+        level : float
+            Confidence level.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        compute_intervals : bool
+            Compute confidence intervals?
+
+        dispersion : float (optional)
+            Use a known value for dispersion, or Pearson's X^2?
+
+        """
+
+        if parameter is None:
+            parameter = np.zeros(self.loss.shape[0])
+
+        observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
+
+        # working out conditional law of opt variables given
+        # target after decomposing score wrt target
+
+        return self.sampler.selective_MLE(observed_target, 
+                                          cov_target, 
+                                          cov_target_score, 
+                                          self.observed_opt_state,
+                                          solve_args=solve_args)
+
     def selected_targets(self, features=None, dispersion=None):
 
         X, y = self.X, self.y
@@ -353,12 +415,14 @@ class modelQ(object):
             noverall = active.sum() + unpenalized.sum()
             overall = active + unpenalized
 
+            Xfeat = X[:,overall]
             score_linear = self.score_transform[0]
             Q = -score_linear[overall]
-            cov_target = np.linalg.inv(Q)
+            Qi = np.linalg.inv(Q)
+            cov_target = Qi.dot(Xfeat.T.dot(Xfeat)).dot(Qi) # sandwich estimator
             observed_target = self._beta_full[overall]
             crosscov_target_score = score_linear.dot(cov_target)
-            Xfeat = X[:,overall]
+            print(cov_target[:5][:,:5])
             alternatives = [{1:'greater', -1:'less'}[int(s)] for s in self.selection_variable['sign'][active]] + ['twosided'] * unpenalized.sum()
 
         else:
@@ -372,13 +436,44 @@ class modelQ(object):
             Gfeat = self.loss.smooth_objective(self.initial_soln, 'grad')[features] - Xfeat.T.dot(y)
             Qfeat_inv = np.linalg.inv(Qfeat)
             one_step = self.initial_soln[features] - Qfeat_inv.dot(Gfeat)
-            cov_target = Qfeat_inv
+            cov_target = Qfeat_inv.dot(Xfeat.T.dot(Xfeat)).dot(Qfeat_inv)
             _score_linear = -self.Q[features]
             crosscov_target_score = _score_linear.dot(cov_target)
             observed_target = one_step
             alternatives = ['twosided'] * features.sum()
 
         if dispersion is None: # use Pearson's X^2
-            dispersion = ((y - Xfeat.dot(observed_target))**2).sum() / (n - Xfeat.shape[1])
+            relaxed = np.linalg.pinv(Xfeat).dot(y)
+            dispersion = ((y - Xfeat.dot(relaxed))**2).sum() / (n - Xfeat.shape[1])
+        print(dispersion, 'dispersion')
 
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+    def full_targets(self, features=None, dispersion=None):
+
+        if features is None:
+            features = self._overall
+        features_bool = np.zeros(self._overall.shape, np.bool)
+        features_bool[features] = True
+        features = features_bool
+
+        X, y = self.loglike.data
+        n, p = X.shape
+
+        # target is one-step estimator
+
+        Qfull = self.Q
+        G = self.loss.smooth_objective(self.initial_soln, 'grad') - X.T.dot(y)
+        Qfull_inv = np.linalg.inv(Qfull)
+        one_step = self.initial_soln - Qfull_inv.dot(G)
+        cov_target = Qfull_inv[features][:,features]
+        observed_target = one_step[features]
+        crosscov_target_score = np.zeros((p, cov_target.shape[0]))
+        crosscov_target_score[features] = -np.identity(cov_target.shape[0])
+
+        if dispersion is None: # use Pearson's X^2
+            dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step)))**2 / self._W).sum() / (n - p)
+
+        alternatives = ['twosided'] * features.sum()
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+

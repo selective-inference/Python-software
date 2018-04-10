@@ -1662,7 +1662,7 @@ class highdim(lasso):
                       level=0.9,
                       compute_intervals=False,
                       dispersion=None,
-                      solve_args={}):
+                      solve_args={'tol':1.e-12}):
         """
 
         Parameters
@@ -1758,6 +1758,7 @@ class highdim(lasso):
         if dispersion is None: # use Pearson's X^2
             dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(observed_target)))**2 / self._W).sum() / (n - Xfeat.shape[1])
 
+        print(dispersion, 'dispersion')
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def full_targets(self, features=None, dispersion=None):
