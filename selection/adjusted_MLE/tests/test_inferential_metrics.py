@@ -129,8 +129,11 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
 
         if full_dispersion:
             dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
+        else:
+            dispersion = None
 
-        sigma_ = np.std(y)
+        #sigma_ = np.std(y)
+        sigma_ = np.sqrt(dispersion)
         LASSO_py = lasso.gaussian(X, y, np.asscalar((sigma_**2.) * lam_tuned_lasso), np.asscalar(sigma_))
         soln = LASSO_py.fit()
         active_LASSO = (soln != 0)
@@ -138,28 +141,33 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
         glm_LASSO = glmnet_lasso(X, y, np.asscalar(lam_tuned_lasso))
 
         const = highdim.gaussian
-        lam_seq = sigma_* np.linspace(0.25, 2.75, num=100) * \
+        num_seq = 25
+        lam_seq = sigma_* np.linspace(0.5, 3, num=num_seq) * \
                   np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
-        err = np.zeros(100)
-        for k in range(100):
-            W = lam_seq[k]
-            conv = const(X,
-                         y,
-                         W * np.ones(p),
-                         randomizer_scale=randomizer_scale * sigma_)
-            signs = conv.fit()
-            nonzero = signs != 0
-            estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
+        scale_seq =  np.linspace(0.10, 0.60, num=10)
+        #lam_seq = np.sqrt(2 * np.log(p)) * sigma_* np.linspace(0.25, 2.75, num=100)
+        err = np.zeros((10, num_seq))
+        for m in range(10):
+            for k in range(num_seq):
+                W = lam_seq[k]
+                conv = const(X,
+                             y,
+                             W * np.ones(p),
+                             randomizer_scale=scale_seq[m] * sigma_)
+                signs = conv.fit()
+                nonzero = signs != 0
+                estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
 
-            full_estimate = np.zeros(p)
-            full_estimate[nonzero] = estimate
-            err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+                full_estimate = np.zeros(p)
+                full_estimate[nonzero] = estimate
+                err[m,k] =np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
-        lam = lam_seq[np.argmin(err)]
+        arg_min = np.argwhere(err == np.min(err))
+        lam = lam_seq[arg_min[0,1]]
+        randomizer_scale = scale_seq[arg_min[0,0]]
 
         # sys.stderr.write("lambda from tuned relaxed LASSO " + str((sigma_**2)*lam_tuned_lasso) + "\n")
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
-        #lam = np.sqrt(2 * np.log(p)) * sigma_
         randomized_lasso = const(X,
                                  y,
                                  lam*np.ones(p),
@@ -371,8 +379,8 @@ if __name__ == "__main__":
     power_Lee = 0.
     power_unad = 0.
 
-    target = "full"
-    n, p, rho, s, beta_type, snr = 200, 1000, 0.35, 10, 1, 0.3
+    target = "selected"
+    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
 
     if target == "selected":
         for i in range(ndraw):
