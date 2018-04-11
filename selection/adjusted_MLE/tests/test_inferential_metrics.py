@@ -19,7 +19,7 @@ def selInf_R(X, y, beta, lam, sigma, alpha=0.1):
                lam = as.matrix(lam)[1,1]
                sigma = as.matrix(sigma)[1,1]
                inf = fixedLassoInf(x = X, y = y, beta = beta, lambda=lam, family = "gaussian",
-                                   intercept=FALSE, sigma=sigma, alpha=alpha,type="full")
+                                   intercept=FALSE, sigma=sigma, alpha=alpha, type="full")
                print(paste("test",inf$ci))
                return(list(ci = inf$ci))}
                ''')
@@ -28,9 +28,9 @@ def selInf_R(X, y, beta, lam, sigma, alpha=0.1):
     n, p = X.shape
     r_X = robjects.r.matrix(X, nrow=n, ncol=p)
     r_y = robjects.r.matrix(y, nrow=n, ncol=1)
-    r_beta = robjects.r.matrix(y, nrow=p, ncol=1)
+    r_beta = robjects.r.matrix(beta, nrow=p, ncol=1)
     r_lam = robjects.r.matrix(lam, nrow=1, ncol=1)
-    r_sigma = robjects.r.matrix(lam, nrow=1, ncol=1)
+    r_sigma = robjects.r.matrix(sigma, nrow=1, ncol=1)
     ci = np.array(inf_R(r_X, r_y, r_beta, r_lam, r_sigma).rx2('ci'))
     return ci
 
@@ -304,7 +304,8 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
         active_LASSO = (soln != 0)
         nactive_LASSO = active_LASSO.sum()
         glm_LASSO = glmnet_lasso(X, y, lam_tuned_lasso)
-        sel_inf = selInf_R(X, y, glm_LASSO, lam_tuned_lasso, sigma_, alpha=0.1)
+        print("shape", glm_LASSO.shape, glm_LASSO)
+        sel_inf = selInf_R(X, y, glm_LASSO, n * lam_tuned_lasso, sigma_, alpha=0.1)
 
         tune_num = 50
         lam_seq = sigma_ * np.linspace(0.25, 2.75, num=tune_num) * \
@@ -409,7 +410,7 @@ if __name__ == "__main__":
     power_unad = 0.
 
     target = "full"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
+    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 1.10
 
     if target == "selected":
         for i in range(ndraw):
