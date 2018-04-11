@@ -267,10 +267,11 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 
         if full_dispersion:
             dispersion = np.linalg.norm(y - X.dot(np.linalg.pinv(X).dot(y))) ** 2 / (n - p)
+            sigma_ = np.sqrt(dispersion)
         else:
             dispersion = None
+            sigma_ = np.std(y)
 
-        sigma_ = np.sqrt(dispersion)
         print("estimated and true sigma", sigma, sigma_)
 
         LASSO_py = lasso.gaussian(X, y, n * lam_tuned_lasso, sigma_)
@@ -296,8 +297,8 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 
             full_estimate = np.zeros(p)
             full_estimate[nonzero] = estimate
-            #err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
-            err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+            err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
+            #err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
@@ -381,8 +382,8 @@ if __name__ == "__main__":
     power_Lee = 0.
     power_unad = 0.
 
-    target = "selected"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
+    target = "full"
+    n, p, rho, s, beta_type, snr = 200, 1000, 0.35, 5, 1, 0.20
 
     if target == "selected":
         for i in range(ndraw):
