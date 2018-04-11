@@ -9,6 +9,16 @@ from selection.randomized.lasso import highdim
 from selection.algorithms.lasso import lasso
 from scipy.stats import norm as ndist
 
+def BHfilter(pval, q=0.2):
+    robjects.r.assign('pval', pval)
+    robjects.r.assign('q', q)
+    robjects.r('Pval = p.adjust(pval, method="BH")')
+    robjects.r('S = which((Pval < q)) - 1')
+    S = robjects.r('S')
+    ind = np.zeros(pval.shape[0], np.bool)
+    ind[np.asarray(S, np.int)] = 1
+    return ind
+
 def selInf_R(X, y, beta, lam, sigma, Type, alpha=0.1):
     robjects.r('''
                library("selectiveInference")
@@ -262,6 +272,18 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
             power_sel = ((active_rand_bool)*(np.logical_or((0. < sel_intervals[:, 0]),(0. > sel_intervals[:,1])))).sum()
             power_Lee = ((active_LASSO_bool)*(np.logical_or((0. < Lee_intervals[:, 0]),(0. > Lee_intervals[:,1])))).sum()
             power_unad = ((active_nonrand_bool)*(np.logical_or((0. < unad_intervals[:, 0]),(0. > unad_intervals[:,1])))).sum()
+
+            sel_discoveries = BHfilter(sel_pval, q=0.2)
+            Lee_discoveries = BHfilter(Lee_pval, q=0.2)
+            unad_discoveries = BHfilter(unad_pval, q=0.2)
+
+            power_sel_dis = (sel_discoveries * active_rand_bool).sum()/float((beta != 0).sum())
+            power_Lee_dis = (Lee_discoveries * active_LASSO_bool).sum() / float((beta != 0).sum())
+            power_unad_dis = (unad_discoveries * active_nonrand_bool).sum() / float((beta != 0).sum())
+
+            fdr_sel_dis = (sel_discoveries * ~active_rand_bool).sum()/max(sel_discoveries.sum(), 1.)
+            fdr_Lee_dis = (Lee_discoveries * ~active_LASSO_bool).sum() / max(Lee_discoveries.sum(), 1.)
+            fdr_sel_dis = (unad_discoveries * ~active_nonrand_bool).sum() / max(unad_discoveries.sum(), 1.)
             break
 
     if True:
