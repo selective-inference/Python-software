@@ -188,9 +188,9 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
             sel_MLE = np.zeros(p)
             estimate, _, _, sel_pval, sel_intervals, ind_unbiased_estimator = randomized_lasso.selective_MLE(target=target,
                                                                                                          dispersion=dispersion)
-            sel_MLE[nonzero] = estimate / np.sqrt(n)
+            sel_MLE[nonzero] = estimate
             ind_estimator = np.zeros(p)
-            ind_estimator[nonzero] = ind_unbiased_estimator / np.sqrt(n)
+            ind_estimator[nonzero] = ind_unbiased_estimator
 
             beta_target_rand = np.linalg.pinv(X[:, nonzero]).dot(true_mean)
             beta_target_nonrand_py = np.linalg.pinv(X[:, active_LASSO]).dot(true_mean)
@@ -231,8 +231,8 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
     if True:
         return relative_risk(sel_MLE, beta, Sigma), \
                relative_risk(ind_estimator, beta, Sigma), \
-               relative_risk(randomized_lasso.initial_soln / np.sqrt(n), beta, Sigma), \
-               relative_risk(randomized_lasso._beta_full / np.sqrt(n), beta, Sigma), \
+               relative_risk(randomized_lasso.initial_soln, beta, Sigma), \
+               relative_risk(randomized_lasso._beta_full, beta, Sigma), \
                relative_risk(rel_LASSO, beta, Sigma), \
                relative_risk(est_LASSO, beta, Sigma), \
                cov_sel,\
@@ -382,7 +382,7 @@ if __name__ == "__main__":
     power_unad = 0.
 
     target = "selected"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.20
+    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
 
     if target == "selected":
         for i in range(ndraw):
