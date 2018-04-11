@@ -9,19 +9,23 @@ from selection.randomized.lasso import highdim
 from selection.algorithms.lasso import lasso
 from scipy.stats import norm as ndist
 
-def selInf_R(X, y, beta, lam, sigma, alpha=0.1):
+def selInf_R(X, y, beta, lam, sigma, Type, alpha=0.1):
     robjects.r('''
                library("selectiveInference")
-               selInf = function(X, y, beta, lam, sigma, alpha= 0.1){
+               selInf = function(X, y, beta, lam, sigma, Type, alpha= 0.1){
                y = as.matrix(y)
                X = as.matrix(X)
                beta = as.matrix(beta)
                lam = as.matrix(lam)[1,1]
                sigma = as.matrix(sigma)[1,1]
+               Type = as.matrix(Type)[1,1]
+               if(Type == 1){
+                   type = "full"} else{
+                   type = "partial"}
                inf = fixedLassoInf(x = X, y = y, beta = beta, lambda=lam, family = "gaussian",
-                                   intercept=FALSE, sigma=sigma, alpha=alpha, type="full")
-               print(paste("test",inf$ci))
-               return(list(ci = inf$ci))}
+                                   intercept=FALSE, sigma=sigma, alpha=alpha, type=type)
+               #print(inf$ci)
+               return(list(ci = inf$ci, pvalue = inf$pv))}
                ''')
 
     inf_R = robjects.globalenv['selInf']
@@ -31,8 +35,11 @@ def selInf_R(X, y, beta, lam, sigma, alpha=0.1):
     r_beta = robjects.r.matrix(beta, nrow=p, ncol=1)
     r_lam = robjects.r.matrix(lam, nrow=1, ncol=1)
     r_sigma = robjects.r.matrix(sigma, nrow=1, ncol=1)
-    ci = np.array(inf_R(r_X, r_y, r_beta, r_lam, r_sigma).rx2('ci'))
-    return ci
+    r_Type = robjects.r.matrix(Type, nrow=1, ncol=1)
+    output = inf_R(r_X, r_y, r_beta, r_lam, r_sigma, r_Type)
+    ci = np.array(output.rx2('ci'))
+    pvalue = np.array(output.rx2('pvalue'))
+    return ci, pvalue
 
 def glmnet_lasso(X, y, lambda_val):
     robjects.r('''
@@ -162,11 +169,13 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
         sigma_ = np.sqrt(dispersion)
         print("estimated and true sigma", sigma, sigma_)
 
-        LASSO_py = lasso.gaussian(X, y, n * lam_tuned_lasso, sigma_)
-        soln = LASSO_py.fit()
-        active_LASSO = (soln != 0)
-        nactive_LASSO = active_LASSO.sum()
+        #LASSO_py = lasso.gaussian(X, y, n * lam_tuned_lasso, sigma_)
+        #soln = LASSO_py.fit()
+        #active_LASSO = (soln != 0)
+        #nactive_LASSO = active_LASSO.sum()
         glm_LASSO = glmnet_lasso(X, y, lam_tuned_lasso)
+        active_LASSO = (glm_LASSO != 0)
+        nactive_LASSO = active_LASSO.sum()
 
         tune_num = 50
         lam_seq = sigma_ * np.linspace(0.25, 2.75, num=tune_num) * \
@@ -206,9 +215,10 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
         sys.stderr.write("active variables selected by randomized LASSO " + str(nonzero.sum()) + "\n" + "\n")
 
         if nactive_LASSO>0 and nonzero.sum()>0 and nactive_nonrand>0:
-            Lee = LASSO_py.summary(alternative='twosided', alpha=0.10, UMAU=False, compute_intervals=True)
-            Lee_intervals = np.vstack([np.asarray(Lee['lower_confidence']), np.asarray(Lee['upper_confidence'])]).T
-            Lee_pval = np.asarray(Lee['pval'])
+            # Lee = LASSO_py.summary(alternative='twosided', alpha=0.10, UMAU=False, compute_intervals=True)
+            # Lee_intervals = np.vstack([np.asarray(Lee['lower_confidence']), np.asarray(Lee['upper_confidence'])]).T
+            # Lee_pval = np.asarray(Lee['pval'])
+            Lee_intervals, Lee_pval = selInf_R(X, y, glm_LASSO, n * lam_tuned_lasso, sigma_, Type=0, alpha=0.1)
 
             sel_MLE = np.zeros(p)
             estimate, _, _, sel_pval, sel_intervals, ind_unbiased_estimator = randomized_lasso.selective_MLE(target=target,
@@ -245,6 +255,7 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
                 active_LASSO_bool[z] = (np.in1d(active_set_LASSO[z], true_set).sum() > 0)
 
             cov_sel, _ = coverage(sel_intervals, sel_pval, beta_target_rand)
+            print("check shapes", Lee_pval.shape, beta_target_nonrand_py.shape)
             cov_Lee, _ = coverage(Lee_intervals, Lee_pval, beta_target_nonrand_py)
             cov_unad, _ = coverage(unad_intervals, unad_pval, beta_target_nonrand)
 
@@ -299,13 +310,9 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 
         print("estimated and true sigma", sigma, sigma_)
 
-        LASSO_py = lasso.gaussian(X, y, n * lam_tuned_lasso, sigma_)
-        soln = LASSO_py.fit()
-        active_LASSO = (soln != 0)
-        nactive_LASSO = active_LASSO.sum()
         glm_LASSO = glmnet_lasso(X, y, lam_tuned_lasso)
-        print("shape", glm_LASSO.shape, glm_LASSO)
-        sel_inf = selInf_R(X, y, glm_LASSO, n * lam_tuned_lasso, sigma_, alpha=0.1)
+        active_LASSO = (glm_LASSO != 0)
+        nactive_LASSO = active_LASSO.sum()
 
         tune_num = 50
         lam_seq = sigma_ * np.linspace(0.25, 2.75, num=tune_num) * \
@@ -344,9 +351,7 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
         sys.stderr.write("active variables selected by randomized LASSO " + str(nonzero.sum()) + "\n" + "\n")
 
         if nonzero.sum()>0 and nactive_nonrand>0 and nonzero.sum()<50:
-            # Lee = LASSO_py.summary(alternative='twosided', alpha=0.10, UMAU=False, compute_intervals=True)
-            # Lee_intervals = np.vstack([np.asarray(Lee['lower_confidence']), np.asarray(Lee['upper_confidence'])]).T
-            # Lee_pval = np.asarray(Lee['pval'])
+            Lee_intervals, Lee_pval = selInf_R(X, y, glm_LASSO, n * lam_tuned_lasso, sigma_, Type=1, alpha=0.1)
 
             sel_MLE = np.zeros(p)
             estimate, _, _, sel_pval, sel_intervals, ind_unbiased_estimator = randomized_lasso.selective_MLE(target=target,
@@ -367,7 +372,7 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
             unad_pval = ndist.cdf(post_LASSO_OLS/unad_sd)
 
             cov_sel, power_sel = coverage(sel_intervals, sel_pval, beta_target_rand)
-            #cov_Lee, power_Lee = coverage(Lee_intervals, Lee_pval, beta_target_nonrand_py)
+            cov_Lee, power_Lee = coverage(Lee_intervals, Lee_pval, beta_target_nonrand_py)
             cov_unad, power_unad = coverage(unad_intervals, unad_pval, beta_target_nonrand)
             break
 
@@ -378,11 +383,14 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
                relative_risk(randomized_lasso._beta_full, beta, Sigma), \
                relative_risk(rel_LASSO, beta, Sigma), \
                relative_risk(est_LASSO, beta, Sigma), \
-               cov_sel,\
+               cov_sel, \
+               cov_Lee,\
                cov_unad,\
-               (sel_intervals[:, 1] - sel_intervals[:, 0]).sum() / float(nonzero.sum()), \
-               (unad_intervals[:, 1] - unad_intervals[:, 0]).sum() / float(nactive_nonrand), \
-               power_sel/float((beta != 0).sum()),  \
+               np.mean(sel_intervals[:, 1] - sel_intervals[:, 0]), \
+               np.mean(Lee_intervals[:, 1] - Lee_intervals[:, 0]),\
+               np.mean(unad_intervals[:, 1] - unad_intervals[:, 0]),\
+               power_sel/float((beta != 0).sum()),\
+               power_Lee/float((beta != 0).sum()),\
                power_unad/float((beta != 0).sum())
 
 if __name__ == "__main__":
@@ -409,8 +417,8 @@ if __name__ == "__main__":
     power_Lee = 0.
     power_unad = 0.
 
-    target = "full"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 1.10
+    target = "selected"
+    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
 
     if target == "selected":
         for i in range(ndraw):
@@ -478,13 +486,16 @@ if __name__ == "__main__":
             risk_LASSO_nonrand += output[5]
 
             coverage_selMLE += output[6]
-            coverage_unad += output[7]
+            coverage_Lee += output[7]
+            coverage_unad += output[8]
 
-            length_sel += output[8]
-            length_unad += output[9]
+            length_sel += output[9]
+            length_Lee += output[10]
+            length_unad += output[11]
 
-            power_sel += output[10]
-            power_unad += output[11]
+            power_sel += output[12]
+            power_Lee += output[13]
+            power_unad += output[14]
 
             sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
             sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
@@ -496,12 +507,15 @@ if __name__ == "__main__":
             sys.stderr.write("overall LASSO risk " + str(risk_LASSO_nonrand / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("overall selective coverage " + str(coverage_selMLE / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee coverage " + str(coverage_Lee / float(i + 1)) + "\n")
             sys.stderr.write("overall unad coverage " + str(coverage_unad / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("overall selective length " + str(length_sel / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee length " + str(length_Lee / float(i + 1)) + "\n")
             sys.stderr.write("overall unad length " + str(length_unad / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("overall selective power " + str(power_sel / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee power " + str(power_Lee / float(i + 1)) + "\n")
             sys.stderr.write("overall unad power " + str(power_unad / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("iteration completed " + str(i + 1) + "\n")
