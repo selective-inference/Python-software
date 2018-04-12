@@ -306,7 +306,13 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
                           power_unad_dis,
                           fdr_sel_dis,
                           fdr_Lee_dis,
-                          fdr_unad_dis))
+                          fdr_unad_dis,
+                          nonzero.sum(),
+                          nactive_LASSO,
+                          nactive_nonrand,
+                          sel_discoveries.sum(),
+                          Lee_discoveries.sum(),
+                          unad_discoveries.sum()))
 
 def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_type=2,
                                    snr=0.2, randomizer_scale=0.5, target = "full",
@@ -477,7 +483,7 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 if __name__ == "__main__":
 
     ndraw = 50
-    output_overall = np.zeros(21)
+    output_overall = np.zeros(27)
 
     target = "selected"
     tuning = "selective_MLE"
@@ -488,6 +494,8 @@ if __name__ == "__main__":
             output = comparison_risk_inference_selected(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
                                                         randomizer_scale=np.sqrt(0.5), target=target, tuning= tuning,
                                                         full_dispersion=True)
+
+            print("output", output)
             output_overall += np.squeeze(output)
 
             sys.stderr.write("overall selMLE risk " + str(output_overall[0] / float(i + 1)) + "\n")
@@ -518,6 +526,14 @@ if __name__ == "__main__":
             sys.stderr.write("overall selective power post BH " + str(output_overall[15] / float(i + 1)) + "\n")
             sys.stderr.write("overall Lee power post BH  " + str(output_overall[16] / float(i + 1)) + "\n")
             sys.stderr.write("overall unad power post BH " + str(output_overall[17] / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("average selective nactive " + str(output_overall[21] / float(i + 1)) + "\n")
+            sys.stderr.write("average Lee nactive  " + str(output_overall[22] / float(i + 1)) + "\n")
+            sys.stderr.write("average tuned LASSO nactive " + str(output_overall[23] / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("average selective discoveries " + str(output_overall[24] / float(i + 1)) + "\n")
+            sys.stderr.write("average Lee discoveries " + str(output_overall[25] / float(i + 1)) + "\n")
+            sys.stderr.write("average tuned LASSO discoveries " + str(output_overall[26] / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("iteration completed " + str(i + 1) + "\n")
 
@@ -560,5 +576,13 @@ if __name__ == "__main__":
             sys.stderr.write("overall selective power post BH " + str(output_overall[15] / float(i + 1)) + "\n")
             sys.stderr.write("overall Lee power post BH  " + str(output_overall[16] / float(i + 1)) + "\n")
             sys.stderr.write("overall unad power post BH " + str(output_overall[17] / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("average selective nactive " + str(output_overall[21] / float(i + 1)) + "\n")
+            sys.stderr.write("average Lee nactive  " + str(output_overall[22] / float(i + 1)) + "\n")
+            sys.stderr.write("average tuned LASSO nactive " + str(output_overall[23] / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("average selective discoveries " + str(output_overall[24] / float(i + 1)) + "\n")
+            sys.stderr.write("average Lee discoveries " + str(output_overall[25] / float(i + 1)) + "\n")
+            sys.stderr.write("average tuned LASSO discoveries " + str(output_overall[26] / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("iteration completed " + str(i + 1) + "\n")

@@ -26,7 +26,7 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
     #snr_values = np.array([0.05, 0.10])
     for snr in snr_values:
 
-        output_overall = np.zeros(21)
+        output_overall = np.zeros(27)
 
         if target == "selected":
             for i in range(ndraw):
