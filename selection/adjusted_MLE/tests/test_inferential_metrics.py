@@ -153,7 +153,7 @@ def coverage(intervals, pval, truth):
 
 def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=2, snr=0.20,
                                        randomizer_scale=np.sqrt(0.25), target = "selected",
-                                       full_dispersion = True):
+                                       tuning = "selective_MLE", full_dispersion = True):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho,
@@ -192,16 +192,17 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
             conv = highdim.gaussian(X,
                                     y,
                                     W,
-                                    randomizer_scale=np.sqrt(n) *
-                                                     randomizer_scale * sigma_)
+                                    randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
             signs = conv.fit()
             nonzero = signs != 0
-            estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
+            if tuning == "selective_MLE":
+                estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
+                full_estimate = np.zeros(p)
+                full_estimate[nonzero] = estimate
+                err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+            elif tuning == "randomized_LASSO":
+                err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
 
-            full_estimate = np.zeros(p)
-            full_estimate[nonzero] = estimate
-            # err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
-            err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
@@ -309,7 +310,7 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
 
 def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_type=2,
                                    snr=0.2, randomizer_scale=0.5, target = "full",
-                                   full_dispersion = True):
+                                   tuning = "selective_MLE", full_dispersion = True):
 
     while True:
         X, y, X_val, y_val, Sigma, beta, sigma = sim_xy(n=n, p=p, nval=nval, rho=rho,
@@ -352,12 +353,13 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
                                     randomizer_scale * sigma_)
             signs = conv.fit()
             nonzero = signs != 0
-            estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
-
-            full_estimate = np.zeros(p)
-            full_estimate[nonzero] = estimate
-            #err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
-            err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+            if tuning == "selective_MLE":
+                estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
+                full_estimate = np.zeros(p)
+                full_estimate[nonzero] = estimate
+                err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+            elif tuning == "randomized_LASSO":
+                err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
@@ -471,13 +473,14 @@ if __name__ == "__main__":
     ndraw = 50
     output_overall = np.zeros(21)
 
-    target = "full"
+    target = "selected"
+    tuning = "selective_MLE"
     n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
 
     if target == "selected":
         for i in range(ndraw):
             output = comparison_risk_inference_selected(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
-                                                        randomizer_scale=np.sqrt(0.5), target=target,
+                                                        randomizer_scale=np.sqrt(0.5), target=target, tuning= tuning,
                                                         full_dispersion=True)
             output_overall += np.squeeze(output)
 
@@ -519,7 +522,7 @@ if __name__ == "__main__":
             full_dispersion = False
         for i in range(ndraw):
             output = comparison_risk_inference_full(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
-                                                    randomizer_scale=np.sqrt(0.25), target=target,
+                                                    randomizer_scale=np.sqrt(0.25), target=target, tuning= tuning,
                                                     full_dispersion=full_dispersion)
             output_overall += np.squeeze(output)
 
