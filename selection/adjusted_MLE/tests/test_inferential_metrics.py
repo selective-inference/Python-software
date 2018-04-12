@@ -465,7 +465,13 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
                           power_unad_dis,
                           fdr_sel_dis,
                           fdr_Lee_dis,
-                          fdr_unad_dis))
+                          fdr_unad_dis,
+                          nonzero.sum(),
+                          nactive_LASSO,
+                          nactive_nonrand,
+                          sel_discoveries.sum(),
+                          Lee_discoveries.sum(),
+                          unad_discoveries.sum()))
 
 
 if __name__ == "__main__":

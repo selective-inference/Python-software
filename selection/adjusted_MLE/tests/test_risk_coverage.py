@@ -49,7 +49,7 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
                                                         full_dispersion=full_dispersion)
                 output_overall += np.squeeze(output)
 
-        output_overall /= ndraw
+        output_overall /= float(ndraw)
         metrics_selective_MLE = pd.DataFrame({"sample_size": n,
                                               "regression_dim": p,
                                               "correlation": rho,
@@ -61,6 +61,8 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
                                               "power": output_overall[12],
                                               "fdr": output_overall[18],
                                               "power_post_BH": output_overall[15],
+                                              "nactive": output_overall[21],
+                                              "ndiscoveries": output_overall[24],
                                               "method": "Selective MLE",
                                               "tuning": tuning}, index=[0])
 
@@ -75,6 +77,8 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
                                                  "power": 0.,
                                                  "fdr": 0.,
                                                  "power_post_BH": 0.,
+                                                 "nactive": output_overall[21],
+                                                 "ndiscoveries": 0.,
                                                  "method": "Randomized LASSO",
                                                  "tuning": tuning}, index=[0])
 
@@ -90,6 +94,8 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
                                     "power": output_overall[13],
                                     "fdr": output_overall[19],
                                     "power_post_BH": output_overall[16],
+                                    "nactive": output_overall[22],
+                                    "ndiscoveries": output_overall[25],
                                     "method": "Lee",
                                     "tuning": tuning}, index=[0])
 
@@ -104,6 +110,8 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
                                      "power": output_overall[14],
                                      "fdr": output_overall[20],
                                      "power_post_BH": output_overall[17],
+                                     "nactive": output_overall[23],
+                                     "ndiscoveries": output_overall[26],
                                      "method": "Naive",
                                      "tuning": tuning}, index=[0])
 
