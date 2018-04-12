@@ -355,8 +355,8 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 
             full_estimate = np.zeros(p)
             full_estimate[nonzero] = estimate
-            err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
-            #err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+            #err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
+            err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
@@ -430,123 +430,72 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
             break
 
     if True:
-        return relative_risk(sel_MLE, beta, Sigma), \
-               relative_risk(ind_estimator, beta, Sigma), \
-               relative_risk(randomized_lasso.initial_soln , beta, Sigma), \
-               relative_risk(randomized_lasso._beta_full, beta, Sigma), \
-               relative_risk(rel_LASSO, beta, Sigma), \
-               relative_risk(est_LASSO, beta, Sigma), \
-               cov_sel, \
-               cov_Lee,\
-               cov_unad,\
-               np.mean(sel_intervals[:, 1] - sel_intervals[:, 0]), \
-               np.mean(Lee_intervals[:, 1] - Lee_intervals[:, 0]),\
-               np.mean(unad_intervals[:, 1] - unad_intervals[:, 0]),\
-               power_sel/float((beta != 0).sum()),\
-               power_Lee/float((beta != 0).sum()),\
-               power_unad/float((beta != 0).sum()),\
-               power_sel_dis, \
-               power_Lee_dis, \
-               power_unad_dis, \
-               fdr_sel_dis, \
-               fdr_Lee_dis, \
-               fdr_unad_dis
+        return np.vstack((relative_risk(sel_MLE, beta, Sigma),
+                          relative_risk(ind_estimator, beta, Sigma),
+                          relative_risk(randomized_lasso.initial_soln , beta, Sigma),
+                          relative_risk(randomized_lasso._beta_full, beta, Sigma),
+                          relative_risk(rel_LASSO, beta, Sigma),
+                          relative_risk(est_LASSO, beta, Sigma),
+                          cov_sel,
+                          cov_Lee,
+                          cov_unad,
+                          np.mean(sel_intervals[:, 1] - sel_intervals[:, 0]),
+                          np.mean(Lee_intervals[:, 1] - Lee_intervals[:, 0]),
+                          np.mean(unad_intervals[:, 1] - unad_intervals[:, 0]),
+                          power_sel/float((beta != 0).sum()),
+                          power_Lee/float((beta != 0).sum()),
+                          power_unad/float((beta != 0).sum()),
+                          power_sel_dis,
+                          power_Lee_dis,
+                          power_unad_dis,
+                          fdr_sel_dis,
+                          fdr_Lee_dis,
+                          fdr_unad_dis))
 
 
 if __name__ == "__main__":
 
     ndraw = 50
-    bias = 0.
-    risk_selMLE = 0.
-    risk_indest = 0.
-    risk_LASSO_rand = 0.
-    risk_relLASSO_rand = 0.
+    output_overall = np.zeros(21)
 
-    risk_relLASSO_nonrand = 0.
-    risk_LASSO_nonrand = 0.
-
-    coverage_selMLE = 0.
-    coverage_Lee = 0.
-    coverage_unad = 0.
-
-    length_sel = 0.
-    length_Lee = 0.
-    length_unad = 0.
-
-    power_sel = 0.
-    power_Lee = 0.
-    power_unad = 0.
-
-    power_sel_dis = 0.
-    power_Lee_dis = 0.
-    power_unad_dis = 0.
-    fdr_sel_dis = 0.
-    fdr_Lee_dis = 0.
-    fdr_unad_dis = 0.
-
-    target = "selected"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.20
+    target = "full"
+    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
 
     if target == "selected":
         for i in range(ndraw):
             output = comparison_risk_inference_selected(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
                                                         randomizer_scale=np.sqrt(0.5), target=target,
                                                         full_dispersion=True)
+            output_overall += np.squeeze(output)
 
-            risk_selMLE += output[0]
-            risk_indest += output[1]
-            risk_LASSO_rand += output[2]
-            risk_relLASSO_rand += output[3]
-            risk_relLASSO_nonrand += output[4]
-            risk_LASSO_nonrand += output[5]
-
-            coverage_selMLE += output[6]
-            coverage_Lee += output[7]
-            coverage_unad += output[8]
-
-            length_sel += output[9]
-            length_Lee += output[10]
-            length_unad += output[11]
-
-            power_sel += output[12]
-            power_Lee += output[13]
-            power_unad += output[14]
-
-            power_sel_dis += output[15]
-            power_Lee_dis += output[16]
-            power_unad_dis += output[17]
-            fdr_sel_dis += output[18]
-            fdr_Lee_dis += output[19]
-            fdr_unad_dis += output[20]
-
-            sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
-            sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
-            sys.stderr.write("overall randomized LASSO est risk " + str(risk_LASSO_rand / float(i + 1)) + "\n")
+            sys.stderr.write("overall selMLE risk " + str(output_overall[0] / float(i + 1)) + "\n")
+            sys.stderr.write("overall indep est risk " + str(output_overall[1] / float(i + 1)) + "\n")
+            sys.stderr.write("overall randomized LASSO est risk " + str(output_overall[2] / float(i + 1)) + "\n")
             sys.stderr.write(
-                "overall relaxed rand LASSO est risk " + str(risk_relLASSO_rand / float(i + 1)) + "\n" + "\n")
+                "overall relaxed rand LASSO est risk " + str(output_overall[3] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall relLASSO risk " + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
-            sys.stderr.write("overall LASSO risk " + str(risk_LASSO_nonrand / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall relLASSO risk " + str(output_overall[4] / float(i + 1)) + "\n")
+            sys.stderr.write("overall LASSO risk " + str(output_overall[5] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective coverage " + str(coverage_selMLE / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee coverage " + str(coverage_Lee / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad coverage " + str(coverage_unad / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective coverage " + str(output_overall[6] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee coverage " + str(output_overall[7] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad coverage " + str(output_overall[8] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective length " + str(length_sel / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee length " + str(length_Lee / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad length " + str(length_unad / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective length " + str(output_overall[9] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee length " + str(output_overall[10] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad length " + str(output_overall[11] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective power " + str(power_sel / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee power " + str(power_Lee / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad power " + str(power_unad / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective power " + str(output_overall[12] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee power " + str(output_overall[13] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad power " + str(output_overall[14] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective fdr " + str(fdr_sel_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee fdr " + str(fdr_Lee_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad fdr " + str(fdr_unad_dis / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective fdr " + str(output_overall[18] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee fdr " + str(output_overall[19] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad fdr " + str(output_overall[20] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective power post BH " + str(power_sel_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee power post BH  " + str(power_Lee_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad power post BH " + str(power_unad_dis / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective power post BH " + str(output_overall[15] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee power post BH  " + str(output_overall[16] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad power post BH " + str(output_overall[17] / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("iteration completed " + str(i + 1) + "\n")
 
@@ -559,60 +508,35 @@ if __name__ == "__main__":
             output = comparison_risk_inference_full(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
                                                     randomizer_scale=np.sqrt(0.25), target=target,
                                                     full_dispersion=full_dispersion)
+            output_overall += np.squeeze(output)
 
-            risk_selMLE += output[0]
-            risk_indest += output[1]
-            risk_LASSO_rand += output[2]
-            risk_relLASSO_rand += output[3]
-            risk_relLASSO_nonrand += output[4]
-            risk_LASSO_nonrand += output[5]
-
-            coverage_selMLE += output[6]
-            coverage_Lee += output[7]
-            coverage_unad += output[8]
-
-            length_sel += output[9]
-            length_Lee += output[10]
-            length_unad += output[11]
-
-            power_sel += output[12]
-            power_Lee += output[13]
-            power_unad += output[14]
-
-            power_sel_dis += output[15]
-            power_Lee_dis += output[16]
-            power_unad_dis += output[17]
-            fdr_sel_dis += output[18]
-            fdr_Lee_dis += output[19]
-            fdr_unad_dis += output[20]
-
-            sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
-            sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
-            sys.stderr.write("overall randomized LASSO est risk " + str(risk_LASSO_rand / float(i + 1)) + "\n")
+            sys.stderr.write("overall selMLE risk " + str(output_overall[0] / float(i + 1)) + "\n")
+            sys.stderr.write("overall indep est risk " + str(output_overall[1] / float(i + 1)) + "\n")
+            sys.stderr.write("overall randomized LASSO est risk " + str(output_overall[2] / float(i + 1)) + "\n")
             sys.stderr.write(
-                "overall relaxed rand LASSO est risk " + str(risk_relLASSO_rand / float(i + 1)) + "\n" + "\n")
+                "overall relaxed rand LASSO est risk " + str(output_overall[3] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall relLASSO risk " + str(risk_relLASSO_nonrand / float(i + 1)) + "\n")
-            sys.stderr.write("overall LASSO risk " + str(risk_LASSO_nonrand / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall relLASSO risk " + str(output_overall[4] / float(i + 1)) + "\n")
+            sys.stderr.write("overall LASSO risk " + str(output_overall[5] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective coverage " + str(coverage_selMLE / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee coverage " + str(coverage_Lee / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad coverage " + str(coverage_unad / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective coverage " + str(output_overall[6] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee coverage " + str(output_overall[7] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad coverage " + str(output_overall[8] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective length " + str(length_sel / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee length " + str(length_Lee / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad length " + str(length_unad / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective length " + str(output_overall[9] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee length " + str(output_overall[10] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad length " + str(output_overall[11] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective power " + str(power_sel / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee power " + str(power_Lee / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad power " + str(power_unad / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective power " + str(output_overall[12] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee power " + str(output_overall[13] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad power " + str(output_overall[14] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective fdr " + str(fdr_sel_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee fdr " + str(fdr_Lee_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad fdr " + str(fdr_unad_dis / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective fdr " + str(output_overall[18] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee fdr " + str(output_overall[19] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad fdr " + str(output_overall[20] / float(i + 1)) + "\n" + "\n")
 
-            sys.stderr.write("overall selective power post BH " + str(power_sel_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall Lee power post BH  " + str(power_Lee_dis / float(i + 1)) + "\n")
-            sys.stderr.write("overall unad power post BH " + str(power_unad_dis / float(i + 1)) + "\n" + "\n")
+            sys.stderr.write("overall selective power post BH " + str(output_overall[15] / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee power post BH  " + str(output_overall[16] / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad power post BH " + str(output_overall[17] / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("iteration completed " + str(i + 1) + "\n")
