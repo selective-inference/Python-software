@@ -418,9 +418,16 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
                 for z in range(nactive_LASSO):
                     active_LASSO_bool[z] = (np.in1d(active_set_LASSO[z], true_set).sum() > 0)
 
-                cov_sel, power_sel = coverage(sel_intervals, sel_pval, beta_target_rand)
-                cov_Lee, power_Lee = coverage(Lee_intervals, Lee_pval, beta_target_nonrand_py)
-                cov_unad, power_unad = coverage(unad_intervals, unad_pval, beta_target_nonrand)
+                cov_sel, _ = coverage(sel_intervals, sel_pval, beta_target_rand)
+                cov_Lee, _ = coverage(Lee_intervals, Lee_pval, beta_target_nonrand_py)
+                cov_unad, _ = coverage(unad_intervals, unad_pval, beta_target_nonrand)
+
+                power_sel = ((active_rand_bool) * (np.logical_or((0. < sel_intervals[:, 0]),
+                                                                 (0. > sel_intervals[:, 1])))).sum()
+                power_Lee = ((active_LASSO_bool) * (np.logical_or((0. < Lee_intervals[:, 0]),
+                                                                  (0. > Lee_intervals[:, 1])))).sum()
+                power_unad = ((active_nonrand_bool) * (np.logical_or((0. < unad_intervals[:, 0]),
+                                                                     (0. > unad_intervals[:, 1])))).sum()
 
                 sel_discoveries = BHfilter(sel_pval, q=0.1)
                 Lee_discoveries = BHfilter(Lee_pval, q=0.1)
