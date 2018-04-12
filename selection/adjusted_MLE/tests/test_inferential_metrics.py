@@ -179,10 +179,6 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
         sigma_ = np.sqrt(dispersion)
         print("estimated and true sigma", sigma, sigma_)
 
-        #LASSO_py = lasso.gaussian(X, y, n * lam_tuned_lasso, sigma_)
-        #soln = LASSO_py.fit()
-        #active_LASSO = (soln != 0)
-        #nactive_LASSO = active_LASSO.sum()
         glm_LASSO = glmnet_lasso(X, y, lam_tuned_lasso)
         active_LASSO = (glm_LASSO != 0)
         nactive_LASSO = active_LASSO.sum()
@@ -265,7 +261,7 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
                 active_LASSO_bool[z] = (np.in1d(active_set_LASSO[z], true_set).sum() > 0)
 
             cov_sel, _ = coverage(sel_intervals, sel_pval, beta_target_rand)
-            print("check shapes", Lee_pval.shape, beta_target_nonrand_py.shape)
+            print("check shapes", Lee_pval.shape, beta_target_nonrand_py.shape, Lee_pval)
             cov_Lee, _ = coverage(Lee_intervals, Lee_pval, beta_target_nonrand_py)
             cov_unad, _ = coverage(unad_intervals, unad_pval, beta_target_nonrand)
 
@@ -273,17 +269,17 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
             power_Lee = ((active_LASSO_bool)*(np.logical_or((0. < Lee_intervals[:, 0]),(0. > Lee_intervals[:,1])))).sum()
             power_unad = ((active_nonrand_bool)*(np.logical_or((0. < unad_intervals[:, 0]),(0. > unad_intervals[:,1])))).sum()
 
-            sel_discoveries = BHfilter(sel_pval, q=0.2)
-            Lee_discoveries = BHfilter(Lee_pval, q=0.2)
-            unad_discoveries = BHfilter(unad_pval, q=0.2)
+            sel_discoveries = BHfilter(sel_pval, q=0.1)
+            Lee_discoveries = BHfilter(Lee_pval, q=0.1)
+            unad_discoveries = BHfilter(unad_pval, q=0.1)
 
             power_sel_dis = (sel_discoveries * active_rand_bool).sum()/float((beta != 0).sum())
             power_Lee_dis = (Lee_discoveries * active_LASSO_bool).sum() / float((beta != 0).sum())
             power_unad_dis = (unad_discoveries * active_nonrand_bool).sum() / float((beta != 0).sum())
 
-            fdr_sel_dis = (sel_discoveries * ~active_rand_bool).sum()/max(sel_discoveries.sum(), 1.)
-            fdr_Lee_dis = (Lee_discoveries * ~active_LASSO_bool).sum() / max(Lee_discoveries.sum(), 1.)
-            fdr_sel_dis = (unad_discoveries * ~active_nonrand_bool).sum() / max(unad_discoveries.sum(), 1.)
+            fdr_sel_dis = (sel_discoveries * ~active_rand_bool).sum() /float(max(sel_discoveries.sum(), 1.))
+            fdr_Lee_dis = (Lee_discoveries * ~active_LASSO_bool).sum() / float(max(Lee_discoveries.sum(), 1.))
+            fdr_unad_dis = (unad_discoveries * ~active_nonrand_bool).sum() / float(max(unad_discoveries.sum(), 1.))
             break
 
     if True:
@@ -301,7 +297,13 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
                np.mean(unad_intervals[:, 1] - unad_intervals[:, 0]), \
                power_sel/float((beta != 0).sum()), \
                power_Lee/float((beta != 0).sum()), \
-               power_unad/float((beta != 0).sum())
+               power_unad/float((beta != 0).sum()), \
+               power_sel_dis, \
+               power_Lee_dis, \
+               power_unad_dis, \
+               fdr_sel_dis, \
+               fdr_Lee_dis, \
+               fdr_unad_dis
 
 
 def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_type=2,
@@ -353,8 +355,8 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 
             full_estimate = np.zeros(p)
             full_estimate[nonzero] = estimate
-            #err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
-            err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+            err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
+            #err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
 
         lam = lam_seq[np.argmin(err)]
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
@@ -393,9 +395,38 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
                                         post_LASSO_OLS + 1.65 * unad_sd]).T
             unad_pval = ndist.cdf(post_LASSO_OLS/unad_sd)
 
+            true_signals = np.zeros(p, np.bool)
+            true_signals[beta != 0] = 1
+            true_set = np.asarray([u for u in range(p) if true_signals[u]])
+            active_set_rand = np.asarray([t for t in range(p) if nonzero[t]])
+            active_set_nonrand = np.asarray([q for q in range(p) if active_nonrand[q]])
+            active_set_LASSO = np.asarray([r for r in range(p) if active_LASSO[r]])
+
+            active_rand_bool = np.zeros(nonzero.sum(), np.bool)
+            for x in range(nonzero.sum()):
+                active_rand_bool[x] = (np.in1d(active_set_rand[x], true_set).sum() > 0)
+            active_nonrand_bool = np.zeros(nactive_nonrand, np.bool)
+            for w in range(nactive_nonrand):
+                active_nonrand_bool[w] = (np.in1d(active_set_nonrand[w], true_set).sum() > 0)
+            active_LASSO_bool = np.zeros(nactive_LASSO, np.bool)
+            for z in range(nactive_LASSO):
+                active_LASSO_bool[z] = (np.in1d(active_set_LASSO[z], true_set).sum() > 0)
+
             cov_sel, power_sel = coverage(sel_intervals, sel_pval, beta_target_rand)
             cov_Lee, power_Lee = coverage(Lee_intervals, Lee_pval, beta_target_nonrand_py)
             cov_unad, power_unad = coverage(unad_intervals, unad_pval, beta_target_nonrand)
+
+            sel_discoveries = BHfilter(sel_pval, q=0.1)
+            Lee_discoveries = BHfilter(Lee_pval, q=0.1)
+            unad_discoveries = BHfilter(unad_pval, q=0.1)
+
+            power_sel_dis = (sel_discoveries * active_rand_bool).sum() / float((beta != 0).sum())
+            power_Lee_dis = (Lee_discoveries * active_LASSO_bool).sum() / float((beta != 0).sum())
+            power_unad_dis = (unad_discoveries * active_nonrand_bool).sum() / float((beta != 0).sum())
+
+            fdr_sel_dis = (sel_discoveries * ~active_rand_bool).sum() / float(max(sel_discoveries.sum(), 1.))
+            fdr_Lee_dis = (Lee_discoveries * ~active_LASSO_bool).sum() / float(max(Lee_discoveries.sum(), 1.))
+            fdr_unad_dis = (unad_discoveries * ~active_nonrand_bool).sum() / float(max(unad_discoveries.sum(), 1.))
             break
 
     if True:
@@ -413,7 +444,14 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
                np.mean(unad_intervals[:, 1] - unad_intervals[:, 0]),\
                power_sel/float((beta != 0).sum()),\
                power_Lee/float((beta != 0).sum()),\
-               power_unad/float((beta != 0).sum())
+               power_unad/float((beta != 0).sum()),\
+               power_sel_dis, \
+               power_Lee_dis, \
+               power_unad_dis, \
+               fdr_sel_dis, \
+               fdr_Lee_dis, \
+               fdr_unad_dis
+
 
 if __name__ == "__main__":
 
@@ -439,8 +477,15 @@ if __name__ == "__main__":
     power_Lee = 0.
     power_unad = 0.
 
+    power_sel_dis = 0.
+    power_Lee_dis = 0.
+    power_unad_dis = 0.
+    fdr_sel_dis = 0.
+    fdr_Lee_dis = 0.
+    fdr_unad_dis = 0.
+
     target = "selected"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
+    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.20
 
     if target == "selected":
         for i in range(ndraw):
@@ -467,6 +512,13 @@ if __name__ == "__main__":
             power_Lee += output[13]
             power_unad += output[14]
 
+            power_sel_dis += output[15]
+            power_Lee_dis += output[16]
+            power_unad_dis += output[17]
+            fdr_sel_dis += output[18]
+            fdr_Lee_dis += output[19]
+            fdr_unad_dis += output[20]
+
             sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
             sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
             sys.stderr.write("overall randomized LASSO est risk " + str(risk_LASSO_rand / float(i + 1)) + "\n")
@@ -487,6 +539,14 @@ if __name__ == "__main__":
             sys.stderr.write("overall selective power " + str(power_sel / float(i + 1)) + "\n")
             sys.stderr.write("overall Lee power " + str(power_Lee / float(i + 1)) + "\n")
             sys.stderr.write("overall unad power " + str(power_unad / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("overall selective fdr " + str(fdr_sel_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee fdr " + str(fdr_Lee_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad fdr " + str(fdr_unad_dis / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("overall selective power post BH " + str(power_sel_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee power post BH  " + str(power_Lee_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad power post BH " + str(power_unad_dis / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("iteration completed " + str(i + 1) + "\n")
 
@@ -519,6 +579,13 @@ if __name__ == "__main__":
             power_Lee += output[13]
             power_unad += output[14]
 
+            power_sel_dis += output[15]
+            power_Lee_dis += output[16]
+            power_unad_dis += output[17]
+            fdr_sel_dis += output[18]
+            fdr_Lee_dis += output[19]
+            fdr_unad_dis += output[20]
+
             sys.stderr.write("overall selMLE risk " + str(risk_selMLE / float(i + 1)) + "\n")
             sys.stderr.write("overall indep est risk " + str(risk_indest / float(i + 1)) + "\n")
             sys.stderr.write("overall randomized LASSO est risk " + str(risk_LASSO_rand / float(i + 1)) + "\n")
@@ -539,5 +606,13 @@ if __name__ == "__main__":
             sys.stderr.write("overall selective power " + str(power_sel / float(i + 1)) + "\n")
             sys.stderr.write("overall Lee power " + str(power_Lee / float(i + 1)) + "\n")
             sys.stderr.write("overall unad power " + str(power_unad / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("overall selective fdr " + str(fdr_sel_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee fdr " + str(fdr_Lee_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad fdr " + str(fdr_unad_dis / float(i + 1)) + "\n" + "\n")
+
+            sys.stderr.write("overall selective power post BH " + str(power_sel_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall Lee power post BH  " + str(power_Lee_dis / float(i + 1)) + "\n")
+            sys.stderr.write("overall unad power post BH " + str(power_unad_dis / float(i + 1)) + "\n" + "\n")
 
             sys.stderr.write("iteration completed " + str(i + 1) + "\n")
