@@ -134,10 +134,10 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
         df_master = df_master.append(metrics_unad, ignore_index=True)
         df_risk = df_risk.append(metrics, ignore_index=True)
 
-    outfile_metrics = os.path.join(outpath, "metrics_beta_type"+ str(beta_type)+"_"+target+".csv")
-    outfile_risk = os.path.join(outpath, "risk_beta_type" + str(beta_type) + "_" + target + ".csv")
+    outfile_metrics = os.path.join(outpath, "metrics_high_beta_type"+ str(beta_type) + "_"+ target + "_rho_"+ str(rho) +".csv")
+    outfile_risk = os.path.join(outpath, "risk_high_beta_type" + str(beta_type) + "_" + target +"_rho_"+ str(rho) + ".csv")
     df_master.to_csv(outfile_metrics, index=False)
     df_risk.to_csv(outfile_risk, index=False)
 
-write_ouput("/Users/snigdhapanigrahi/adjusted_MLE/results", n=500, p=100, rho=0.35, s=5, beta_type=1,
-            target="selected", tuning = "selective_MLE", randomizing_scale= np.sqrt(0.25), ndraw = 50)
+write_ouput("/Users/snigdhapanigrahi/adjusted_MLE/results", n=200, p=1000, rho=0, s=10, beta_type=1,
+            target="full", tuning = "randomized_LASSO", randomizing_scale= np.sqrt(0.25), ndraw = 50)
