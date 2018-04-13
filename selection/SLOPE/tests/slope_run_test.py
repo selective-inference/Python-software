@@ -12,9 +12,12 @@ import numpy as np
 from selection.SLOPE.slope import slope
 import regreg.api as rr
 
-def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian"):
+def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", sigma = None):
     robjects.r('''
-    slope = function(X, Y, W=NA, normalize, choice_weights, fdr = NA){
+    slope = function(X, Y, W , normalize, choice_weights, sigma, fdr = NA){
+      if(is.na(sigma)){
+      sigma=NULL} else{
+      sigma = as.matrix(sigma)[1,1]}
       if(is.na(fdr)){
       fdr = 0.1 }
       if(normalize=="TRUE"){
@@ -25,11 +28,10 @@ def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian"):
         if(choice_weights == "gaussian"){
         lambda = "gaussian"} else{
         lambda = "bhq"}
-        result = SLOPE(X, Y, fdr = fdr, lambda = lambda, normalize = normalize)
+        result = SLOPE(X, Y, fdr = fdr, lambda = lambda, normalize = normalize, sigma = sigma)
        } else{
-        result = SLOPE(X, Y, fdr = fdr, lambda = W, normalize = normalize)
+        result = SLOPE(X, Y, fdr = fdr, lambda = W, normalize = normalize, sigma = sigma)
       }
-      print(paste("estimated sigma", class(result$sigma)))
       return(list(beta = result$beta, E = result$selected, lambda_seq = result$lambda, sigma = result$sigma))
     }''')
 
@@ -50,66 +52,20 @@ def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian"):
             r_choice_weights  = robjects.StrVector('gaussian')
         elif choice_weights is "bhq":
             r_choice_weights = robjects.StrVector('bhq')
-
     else:
         r_W = robjects.r.matrix(W, nrow=p, ncol=1)
 
-    result = r_slope(r_X, r_Y, r_W, r_normalize, r_choice_weights)
+    if sigma is None:
+        r_sigma = robjects.NA_Logical
+    else:
+        r_sigma = robjects.r.matrix(sigma, nrow=1, ncol=1)
+
+    result = r_slope(r_X, r_Y, r_W, r_normalize, r_choice_weights, r_sigma)
 
     return np.asarray(result.rx2('beta')), np.asarray(result.rx2('E')), \
            np.asarray(result.rx2('lambda_seq')), np.asscalar(np.array(result.rx2('sigma')))
 
-def compare_outputs_prechosen_weights():
-
-    n, p = 500, 50
-
-    X = np.random.standard_normal((n, p))
-    Y = np.random.standard_normal(n)
-    W = np.linspace(3, 3.5, p)[::-1]
-
-    output_R = test_slope_R(X, Y, W)
-    print("output R", output_R)
-    beta_R = output_R[0]
-    print("output of est coefs R", beta_R)
-
-    pen = slope(W, lagrange=1.)
-    loss = rr.squared_error(X, Y)
-    problem = rr.simple_problem(loss, pen)
-    soln = problem.solve()
-    print("output of est coefs python", soln)
-
-    print("relative difference in solns", np.linalg.norm(soln-beta_R)/np.linalg.norm(beta_R))
-
-#compare_outputs_prechosen_weights()
-
-# def compare_outputs_SLOPE_weights():
-#
-#     n, p = 500, 50
-#
-#     X = np.random.standard_normal((n, p))
-#     X -= X.mean(0)[None, :]
-#     X /= (X.std(0)[None, :] * np.sqrt(n))
-#     beta = np.zeros(p)
-#     beta[:5] = 5.
-#
-#     Y = X.dot(beta) + np.random.standard_normal(n)
-#
-#     output_R = test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian")
-#     r_beta = output_R[0]
-#     r_lambda_seq = output_R[2]
-#     print("output of est coefs R", r_beta)
-#
-#     W = r_lambda_seq
-#     pen = slope(W, lagrange=1.)
-#
-#     loss = rr.squared_error(X, Y)
-#     problem = rr.simple_problem(loss, pen)
-#     soln = problem.solve()
-#     print("output of est coefs python", soln)
-#
-#     print("relative difference in solns", np.linalg.norm(soln-r_beta)/np.linalg.norm(r_beta))
-
-def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1.1, s=5, sigma=3., rho=0.):
+def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.):
 
     inst = gaussian_instance
     signal = np.sqrt(signal_fac * 2. * np.log(p))
@@ -122,11 +78,15 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1.1, s=5, sigma=3., r
                       sigma=sigma,
                       random_signs=True)[:3]
 
-    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian")
-    print("estimated sigma", r_sigma)
+    sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X, Y, W = None,
+                                                      normalize = True,
+                                                      choice_weights = "gaussian",
+                                                      sigma = sigma_)
+    print("estimated sigma", sigma_, r_sigma)
     print("output of est coefs R", r_beta)
 
-    pen = slope(r_sigma* r_lambda_seq, lagrange=1.)
+    pen = slope(r_sigma * r_lambda_seq, lagrange=1.)
 
     loss = rr.squared_error(X, Y)
     problem = rr.simple_problem(loss, pen)
