@@ -140,16 +140,26 @@ def randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
     indices = np.argsort(-np.abs(initial_soln))
     print("sorted soln", initial_soln[indices], np.abs(initial_subgrad[indices]))
     sorted_soln = initial_soln[indices]
+    sorted_subgrad = initial_subgrad[indices]
 
     cur_indx_array = []
     cur_indx_array .append(0)
     cur_indx = 0
+    pointer = 0
+    subgrad_cluster_indices = np.zeros(p, np.int)
     for j in range(p-1):
         if np.abs(sorted_soln[j+1]) != np.abs(sorted_soln[cur_indx]):
             cur_indx_array.append(j+1)
             cur_indx = j+1
+            subgrad_cluster_indices[cur_indx_array[pointer]:(j+1)] = (np.argsort(-np.abs(sorted_subgrad
+                                                                                         [cur_indx_array[pointer]:(j+1)]))
+                                                                      + cur_indx_array[pointer])
+            pointer = pointer + 1
             if sorted_soln[j+1]== 0:
+                subgrad_cluster_indices[(j+1):] = (np.argsort(-np.abs(sorted_subgrad[j+1:]))+(j+1))
                 break
 
     print("start indices of clusters", cur_indx_array)
+    print("sorted indices of inactive cluster", subgrad_cluster_indices,
+          np.abs(sorted_subgrad[subgrad_cluster_indices]))
 randomized_slope()
