@@ -65,7 +65,7 @@ def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", 
     return np.asarray(result.rx2('beta')), np.asarray(result.rx2('E')), \
            np.asarray(result.rx2('lambda_seq')), np.asscalar(np.array(result.rx2('sigma')))
 
-def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.):
+def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35):
 
     inst = gaussian_instance
     signal = np.sqrt(signal_fac * 2. * np.log(p))
@@ -79,11 +79,14 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
                       random_signs=True)[:3]
 
     sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
-    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X, Y, W = None,
+    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
+                                                      Y,
+                                                      W = None,
                                                       normalize = True,
                                                       choice_weights = "gaussian",
                                                       sigma = sigma_)
     print("estimated sigma", sigma_, r_sigma)
+    print("weights output by R", r_lambda_seq)
     print("output of est coefs R", r_beta)
 
     pen = slope(r_sigma * r_lambda_seq, lagrange=1.)
@@ -95,4 +98,58 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 
     print("relative difference in solns", np.linalg.norm(soln-r_beta)/np.linalg.norm(r_beta))
 
-compare_outputs_SLOPE_weights()
+#compare_outputs_SLOPE_weights()
+
+def randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
+                     randomizer_scale= np.sqrt(0.25),
+                     solve_args={'tol':1.e-12, 'min_its':50}):
+
+    inst = gaussian_instance
+    signal = np.sqrt(signal_fac * 2. * np.log(p))
+    X, Y, beta = inst(n=n,
+                      p=p,
+                      signal=signal,
+                      s=s,
+                      equicorrelated=False,
+                      rho=rho,
+                      sigma=sigma,
+                      random_signs=True)[:3]
+
+    sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
+                                                      Y,
+                                                      W=None,
+                                                      normalize=True,
+                                                      choice_weights="gaussian",
+                                                      sigma=sigma_)
+
+    pen = slope(r_sigma * r_lambda_seq, lagrange=1.)
+
+    loglike = rr.glm.gaussian(X, Y, coef=1., quadratic=None)
+    _initial_omega = randomizer_scale * sigma_* np.random.standard_normal(p)
+    quad = rr.identity_quadratic(0, 0, -_initial_omega, 0)
+    problem = rr.simple_problem(loglike, pen)
+    initial_soln = problem.solve(quad, **solve_args)
+
+    print("initial_soln", initial_soln)
+
+    initial_subgrad = -(loglike.smooth_objective(initial_soln, 'grad') + quad.objective(initial_soln, 'grad'))
+    #print("weights returned by R", r_lambda_seq)
+    print("initial subgrad", np.abs(initial_subgrad))
+
+    indices = np.argsort(-np.abs(initial_soln))
+    print("sorted soln", initial_soln[indices], np.abs(initial_subgrad[indices]))
+    sorted_soln = initial_soln[indices]
+
+    cur_indx_array = []
+    cur_indx_array .append(0)
+    cur_indx = 0
+    for j in range(p-1):
+        if np.abs(sorted_soln[j+1]) != np.abs(sorted_soln[cur_indx]):
+            cur_indx_array.append(j+1)
+            cur_indx = j+1
+            if sorted_soln[j+1]== 0:
+                break
+
+    print("start indices of clusters", cur_indx_array)
+randomized_slope()
