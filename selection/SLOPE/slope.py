@@ -67,7 +67,8 @@ class randomized_slope():
 
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
-        self._unpenalized = np.zeros(p, np.bool)
+
+        print("check active terms", active.sum())
 
         self._overall = overall = active> 0
         self._inactive = inactive = ~self._overall
@@ -100,7 +101,7 @@ class randomized_slope():
         X, y = self.loglike.data
         W = self._W = self.loglike.saturated_loss.hessian(X.dot(beta_bar))
         _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
-        _score_linear_term = _hessian_active
+        _score_linear_term = -_hessian_active
         self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
 
         self.observed_score_state = _score_linear_term.dot(_beta_unpenalized)
@@ -202,6 +203,8 @@ class randomized_slope():
         if target == 'selected':
             observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
                                                                                                 dispersion=dispersion)
+
+            print("check covariance in MLE", cov_target)
         # elif target == 'full':
         #     X, y = self.loglike.data
         #     n, p = X.shape
@@ -231,18 +234,18 @@ class randomized_slope():
 
         if features is None:
             active = self._active
-            unpenalized = self._unpenalized
-            noverall = active.sum() + unpenalized.sum()
-            overall = active + unpenalized
+            noverall = active.sum()
+            overall = active
 
             score_linear = self.score_transform[0]
             Q = -score_linear[overall]
             cov_target = np.linalg.inv(Q)
+            print("check covariance in selected targets", cov_target)
             observed_target = self._beta_full[overall]
             crosscov_target_score = score_linear.dot(cov_target)
             Xfeat = X[:, overall]
             alternatives = [{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] \
-                           + ['twosided'] * unpenalized.sum()
+                           + ['twosided']
 
         else:
 

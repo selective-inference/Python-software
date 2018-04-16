@@ -196,7 +196,7 @@ def test_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35, 
     coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
     return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
 
-def main(nsim=500, full=True):
+def main(nsim=1, full=True):
 
     P0, PA, cover, length_int = [], [], [], []
     from statsmodels.distributions import ECDF

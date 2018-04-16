@@ -516,7 +516,8 @@ class affine_gaussian_sampler(optimization_sampler):
                                final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
 
         print("check 0", observed_info_mean)
-        print("check 1", hess, intervals, final_estimator)
+        print("check 1", cov_target, cov_target.dot(L.dot(target_lin)-L.dot(hess.dot(L.T))).dot(cov_target))
+        #print("check 1", hess, intervals, final_estimator)
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
 class optimization_intervals(object):
