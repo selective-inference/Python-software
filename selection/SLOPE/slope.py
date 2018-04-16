@@ -82,8 +82,9 @@ class randomized_slope():
 
         indices = np.argsort(-np.fabs(self.initial_soln))
         sorted_soln = self.initial_soln[indices]
-        initial_scalings = np.sort(np.fabs(np.unique(self.initial_soln[active])))[::-1]
+        initial_scalings = np.sort(np.unique(np.fabs(self.initial_soln[active])))[::-1]
         self.observed_opt_state = initial_scalings
+        #print("observed opt state", self.observed_opt_state)
 
         _beta_unpenalized = restricted_estimator(self.loglike, self._overall, solve_args=solve_args)
 
@@ -134,6 +135,7 @@ class randomized_slope():
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = cond_cov.dot(opt_linear.T) * prec
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+        #print("shapes", cond_mean.shape, cond_precision.shape)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
             if score.ndim == 1:

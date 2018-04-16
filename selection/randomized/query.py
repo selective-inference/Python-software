@@ -514,6 +514,9 @@ class affine_gaussian_sampler(optimization_sampler):
         quantile = ndist.ppf(1 - alpha / 2.)
         intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                                final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
+
+        print("check 0", observed_info_mean)
+        print("check 1", hess, intervals, final_estimator)
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
 class optimization_intervals(object):

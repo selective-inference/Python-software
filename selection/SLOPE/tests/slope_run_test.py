@@ -13,6 +13,7 @@ from regreg.atoms.slope import slope
 import regreg.api as rr
 
 from selection.SLOPE.slope import randomized_slope
+import matplotlib.pyplot as plt
 
 def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", sigma = None):
     robjects.r('''
@@ -189,7 +190,39 @@ def test_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35, 
     print("dimensions", n, p, nonzero.sum())
 
     estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=sigma_)
+    print("estimate", estimate, pval, intervals)
 
-    print("estimate", estimate)
+    beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+    coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+    return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
 
-test_randomized_slope()
+def main(nsim=500, full=True):
+
+    P0, PA, cover, length_int = [], [], [], []
+    from statsmodels.distributions import ECDF
+
+    for i in range(nsim):
+        p0, pA, cover_, intervals = test_randomized_slope()
+
+        cover.extend(cover_)
+        P0.extend(p0)
+        PA.extend(pA)
+        print(np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
+              'null pvalue + power + length')
+
+        if i % 3 == 0 and i > 0:
+            U = np.linspace(0, 1, 101)
+            plt.clf()
+            if len(P0) > 0:
+                plt.plot(U, ECDF(P0)(U))
+            if len(PA) > 0:
+                plt.plot(U, ECDF(PA)(U), 'r')
+            plt.plot([0, 1], [0, 1], 'k--')
+            plt.savefig("/Users/snigdhapanigrahi/Desktop/plot.pdf")
+    plt.show()
+
+main()
+
+
+
+
