@@ -161,40 +161,44 @@ def test0_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
 
 def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=5, sigma=3., rho=0.35, randomizer_scale= np.sqrt(0.25)):
 
-    inst = gaussian_instance
-    signal = np.sqrt(signal_fac * 2. * np.log(p))
-    X, Y, beta = inst(n=n,
-                      p=p,
-                      signal=signal,
-                      s=s,
-                      equicorrelated=False,
-                      rho=rho,
-                      sigma=sigma,
-                      random_signs=True)[:3]
+    while True:
+        inst = gaussian_instance
+        signal = np.sqrt(signal_fac * 2. * np.log(p))
+        X, Y, beta = inst(n=n,
+                          p=p,
+                          signal=signal,
+                          s=s,
+                          equicorrelated=False,
+                          rho=rho,
+                          sigma=sigma,
+                          random_signs=True)[:3]
 
-    sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
-    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
-                                                      Y,
-                                                      W=None,
-                                                      normalize=True,
-                                                      choice_weights="gaussian",
-                                                      sigma=sigma_)
+        sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+        r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
+                                                          Y,
+                                                          W=None,
+                                                          normalize=True,
+                                                          choice_weights="gaussian",
+                                                          sigma=sigma_)
 
-    conv = randomized_slope.gaussian(X,
-                                     Y,
-                                     r_sigma * r_lambda_seq,
-                                     randomizer_scale=randomizer_scale * sigma_)
+        conv = randomized_slope.gaussian(X,
+                                         Y,
+                                         r_sigma * r_lambda_seq,
+                                         randomizer_scale=randomizer_scale * sigma_)
 
-    signs = conv.fit()
-    nonzero = signs != 0
-    print("dimensions", n, p, nonzero.sum())
+        signs = conv.fit()
+        nonzero = signs != 0
+        print("dimensions", n, p, nonzero.sum())
+        if nonzero.sum() > 0:
+            estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=sigma_)
+            print("estimate", estimate, pval, intervals)
 
-    estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=sigma_)
-    print("estimate", estimate, pval, intervals)
+            beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+            coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+            break
 
-    beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
-    coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
-    return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
+    if True:
+        return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
 
 def main(nsim=100):
 

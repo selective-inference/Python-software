@@ -130,7 +130,7 @@ class randomized_slope():
         opt_linear, opt_offset = self.opt_transform
 
         print("check if correct", np.allclose(-X.T.dot(y-X_clustered.dot(initial_scalings))
-                                              +initial_subgrad,self._initial_omega, rtol=1e-05, atol=1e-08))
+                                              +self.initial_subgrad,self._initial_omega, rtol=1e-05, atol=1e-08))
 
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
@@ -149,15 +149,15 @@ class randomized_slope():
 
         # now make the constraints
 
-        #A_scaling_0 = -np.identity(self.num_opt_var)
-        #A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var-1), :]
-        #for k in range(A_scaling_1.shape[0]):
-        #    A_scaling_1[k,k+1]= 1
-        #A_scaling = np.vstack([A_scaling_0, A_scaling_1])
-        #b_scaling = np.zeros(2*self.num_opt_var-1)
+        A_scaling_0 = -np.identity(self.num_opt_var)
+        A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var-1), :]
+        for k in range(A_scaling_1.shape[0]):
+           A_scaling_1[k,k+1]= 1
+        A_scaling = np.vstack([A_scaling_0, A_scaling_1])
+        b_scaling = np.zeros(2*self.num_opt_var-1)
 
-        A_scaling = -np.identity(self.num_opt_var)
-        b_scaling = np.zeros(self.num_opt_var)
+        # A_scaling = -np.identity(self.num_opt_var)
+        # b_scaling = np.zeros(self.num_opt_var)
 
         affine_con = constraints(A_scaling,
                                  b_scaling,
