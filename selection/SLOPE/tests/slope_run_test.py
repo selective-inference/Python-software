@@ -9,8 +9,10 @@ rpy2.robjects.numpy2ri.activate()
 from selection.tests.instance import gaussian_instance
 
 import numpy as np
-from selection.SLOPE.slope import slope
+from regreg.atoms.slope import slope
 import regreg.api as rr
+
+from selection.SLOPE.slope import randomized_slope
 
 def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", sigma = None):
     robjects.r('''
@@ -100,7 +102,7 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 
 #compare_outputs_SLOPE_weights()
 
-def randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
+def test0_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
                      randomizer_scale= np.sqrt(0.25),
                      solve_args={'tol':1.e-12, 'min_its':50}):
 
@@ -130,36 +132,64 @@ def randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
     quad = rr.identity_quadratic(0, 0, -_initial_omega, 0)
     problem = rr.simple_problem(loglike, pen)
     initial_soln = problem.solve(quad, **solve_args)
-
-    print("initial_soln", initial_soln)
-
     initial_subgrad = -(loglike.smooth_objective(initial_soln, 'grad') + quad.objective(initial_soln, 'grad'))
-    #print("weights returned by R", r_lambda_seq)
-    print("initial subgrad", np.abs(initial_subgrad))
 
     indices = np.argsort(-np.abs(initial_soln))
-    print("sorted soln", initial_soln[indices], np.abs(initial_subgrad[indices]))
     sorted_soln = initial_soln[indices]
-    sorted_subgrad = initial_subgrad[indices]
 
     cur_indx_array = []
-    cur_indx_array .append(0)
+    cur_indx_array.append(0)
     cur_indx = 0
     pointer = 0
-    subgrad_cluster_indices = np.zeros(p, np.int)
+    signs_cluster = []
     for j in range(p-1):
         if np.abs(sorted_soln[j+1]) != np.abs(sorted_soln[cur_indx]):
             cur_indx_array.append(j+1)
             cur_indx = j+1
-            subgrad_cluster_indices[cur_indx_array[pointer]:(j+1)] = (np.argsort(-np.abs(sorted_subgrad
-                                                                                         [cur_indx_array[pointer]:(j+1)]))
-                                                                      + cur_indx_array[pointer])
+            sign_vec = np.zeros(p)
+            sign_vec[np.arange(j+1-cur_indx_array[pointer]) + cur_indx_array[pointer]] = \
+                np.sign(initial_soln[indices[np.arange(j+1-cur_indx_array[pointer]) + cur_indx_array[pointer]]])
+            signs_cluster.append(sign_vec)
             pointer = pointer + 1
             if sorted_soln[j+1]== 0:
-                subgrad_cluster_indices[(j+1):] = (np.argsort(-np.abs(sorted_subgrad[j+1:]))+(j+1))
                 break
 
-    print("start indices of clusters", cur_indx_array)
-    print("sorted indices of inactive cluster", subgrad_cluster_indices,
-          np.abs(sorted_subgrad[subgrad_cluster_indices]))
-randomized_slope()
+    signs_cluster = np.asarray(signs_cluster).T
+    X_clustered = X[:, indices].dot(signs_cluster)
+    print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
+
+def test_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35, randomizer_scale= np.sqrt(0.25)):
+
+    inst = gaussian_instance
+    signal = np.sqrt(signal_fac * 2. * np.log(p))
+    X, Y, beta = inst(n=n,
+                      p=p,
+                      signal=signal,
+                      s=s,
+                      equicorrelated=False,
+                      rho=rho,
+                      sigma=sigma,
+                      random_signs=True)[:3]
+
+    sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
+                                                      Y,
+                                                      W=None,
+                                                      normalize=True,
+                                                      choice_weights="gaussian",
+                                                      sigma=sigma_)
+
+    conv = randomized_slope.gaussian(X,
+                                     Y,
+                                     r_sigma * r_lambda_seq,
+                                     randomizer_scale=randomizer_scale * sigma_)
+
+    signs = conv.fit()
+    nonzero = signs != 0
+    print("dimensions", n, p, nonzero.sum())
+
+    estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=sigma_)
+
+    print("estimate", estimate)
+
+test_randomized_slope()

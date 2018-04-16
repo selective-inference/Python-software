@@ -1,300 +1,289 @@
-"""
-Implementation of the SLOPE proximal operator of
-https://statweb.stanford.edu/~candes/papers/SLOPE.pdf
-"""
-from copy import copy
+from __future__ import print_function
+import functools
 import numpy as np
+from regreg.atoms.slope import slope
+from selection.randomized.randomization import randomization
 import regreg.api as rr
-from scipy import sparse
+from selection.randomized.base import restricted_estimator
+from selection.constraints.affine import constraints
+from selection.randomized.query import (query,
+                                        multiple_queries,
+                                        langevin_sampler,
+                                        affine_gaussian_sampler)
 
-have_isotonic = False
-try:
-    from sklearn.isotonic import IsotonicRegression
+class randomized_slope():
 
-    have_isotonic = True
-except ImportError:
-    raise ValueError('unable to import isotonic regression from sklearn')
+    def __init__(self,
+                 loglike,
+                 feature_weights,
+                 ridge_term,
+                 randomizer_scale,
+                 perturb=None):
+        r"""
+        Create a new post-selection object for the SLOPE problem
+        Parameters
+        ----------
+        loglike : `regreg.smooth.glm.glm`
+            A (negative) log-likelihood as implemented in `regreg`.
+        feature_weights : np.ndarray
+            Feature weights for L-1 penalty. If a float,
+            it is broadcast to all features.
+        ridge_term : float
+            How big a ridge term to add?
+        randomizer_scale : float
+            Scale for IID components of randomization.
+        perturb : np.ndarray
+            Random perturbation subtracted as a linear
+            term in the objective function.
+        """
 
+        self.loglike = loglike
+        self.nfeature = p = self.loglike.shape[0]
 
-from regreg.atoms.seminorms import seminorm
+        if np.asarray(feature_weights).shape == ():
+            feature_weights = np.ones(loglike.shape) * feature_weights
+        self.feature_weights = np.asarray(feature_weights)
 
-from regreg.atoms import _work_out_conjugate
-from regreg.objdoctemplates import objective_doc_templater
-from regreg.doctemplates import (doc_template_user, doc_template_provider)
+        self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+        self.ridge_term = ridge_term
+        self.penalty = slope(feature_weights, lagrange=1.)
+        self._initial_omega = perturb  # random perturbation
 
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
+            perturb=None):
 
-@objective_doc_templater()
-class slope(seminorm):
-    """
-    The SLOPE penalty
-    """
+        p = self.nfeature
 
-    objective_template = r"""\sum_j \lambda_j |(var)s_{(j)}|"""
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
 
-    def __init__(self, weights, lagrange=None, bound=None,
-                 offset=None,
+        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
+        problem = rr.simple_problem(self.loglike, self.penalty)
+        self.initial_soln = problem.solve(quad, **solve_args)
+
+        active_signs = np.sign(self.initial_soln)
+        active = self._active = active_signs != 0
+        self._unpenalized = np.zeros(p, np.bool)
+
+        self._overall = overall = active> 0
+        self._inactive = inactive = ~self._overall
+
+        _active_signs = active_signs.copy()
+        self.selection_variable = {'sign': _active_signs,
+                                   'variables': self._overall}
+
+        initial_subgrad = -(self.loglike.smooth_objective(self.initial_soln, 'grad') +
+                            quad.objective(self.initial_soln, 'grad'))
+        self.initial_subgrad = initial_subgrad
+
+        indices = np.argsort(-np.fabs(self.initial_soln))
+        sorted_soln = self.initial_soln[indices]
+        initial_scalings = np.sort(np.fabs(np.unique(self.initial_soln[active])))[::-1]
+        self.observed_opt_state = initial_scalings
+
+        _beta_unpenalized = restricted_estimator(self.loglike, self._overall, solve_args=solve_args)
+
+        beta_bar = np.zeros(p)
+        beta_bar[overall] = _beta_unpenalized
+        self._beta_full = beta_bar
+
+        self.num_opt_var = self.observed_opt_state.shape[0]
+
+        _opt_linear_term = np.zeros((p, self.num_opt_var))
+        _score_linear_term = np.zeros((p, self.num_opt_var))
+
+        X, y = self.loglike.data
+        W = self._W = self.loglike.saturated_loss.hessian(X.dot(beta_bar))
+        _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
+        _score_linear_term = _hessian_active
+        self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
+        self.observed_score_state = _score_linear_term.dot(_beta_unpenalized)
+        self.observed_score_state[inactive] += self.loglike.smooth_objective(beta_bar, 'grad')[inactive]
+
+        cur_indx_array = []
+        cur_indx_array.append(0)
+        cur_indx = 0
+        pointer = 0
+        signs_cluster = []
+        for j in range(p - 1):
+            if np.abs(sorted_soln[j + 1]) != np.abs(sorted_soln[cur_indx]):
+                cur_indx_array.append(j + 1)
+                cur_indx = j + 1
+                sign_vec = np.zeros(p)
+                sign_vec[np.arange(j + 1 - cur_indx_array[pointer]) + cur_indx_array[pointer]] = \
+                    np.sign(self.initial_soln[indices[np.arange(j + 1 - cur_indx_array[pointer]) + cur_indx_array[pointer]]])
+                signs_cluster.append(sign_vec)
+                pointer = pointer + 1
+                if sorted_soln[j + 1] == 0:
+                    break
+
+        signs_cluster = np.asarray(signs_cluster).T
+        X_clustered = X[:, indices].dot(signs_cluster)
+        _opt_linear_term = -X.T.dot(X_clustered)
+        self.opt_transform = (_opt_linear_term, self.initial_subgrad)
+
+        cov, prec = self.randomizer.cov_prec
+        opt_linear, opt_offset = self.opt_transform
+
+        cond_precision = opt_linear.T.dot(opt_linear) * prec
+        cond_cov = np.linalg.inv(cond_precision)
+        logdens_linear = cond_cov.dot(opt_linear.T) * prec
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        def log_density(logdens_linear, offset, cond_prec, score, opt):
+            if score.ndim == 1:
+                mean_term = logdens_linear.dot(score.T + offset).T
+            else:
+                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
+            arg = opt + mean_term
+            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+
+        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+
+        # now make the constraints
+
+        A_scaling = -np.identity(self.num_opt_var)
+        b_scaling = np.zeros(self.num_opt_var)
+
+        affine_con = constraints(A_scaling,
+                                 b_scaling,
+                                 mean=cond_mean,
+                                 covariance=cond_cov)
+
+        logdens_transform = (logdens_linear, opt_offset)
+
+        self.sampler = affine_gaussian_sampler(affine_con,
+                                               self.observed_opt_state,
+                                               self.observed_score_state,
+                                               log_density,
+                                               logdens_transform,
+                                               selection_info=self.selection_variable)
+        return active_signs
+
+    def selective_MLE(self,
+                      target="selected",
+                      features=None,
+                      parameter=None,
+                      level=0.9,
+                      compute_intervals=False,
+                      dispersion=None,
+                      solve_args={'tol': 1.e-12}):
+        """
+        Parameters
+        ----------
+        target : one of ['selected', 'full']
+        features : np.bool
+            Binary encoding of which features to use in final
+            model and targets.
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+        level : float
+            Confidence level.
+        ndraw : int (optional)
+            Defaults to 1000.
+        burnin : int (optional)
+            Defaults to 1000.
+        compute_intervals : bool
+            Compute confidence intervals?
+        dispersion : float (optional)
+            Use a known value for dispersion, or Pearson's X^2?
+        """
+
+        if parameter is None:
+            parameter = np.zeros(self.loglike.shape[0])
+
+        if target == 'selected':
+            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
+                                                                                                dispersion=dispersion)
+        # elif target == 'full':
+        #     X, y = self.loglike.data
+        #     n, p = X.shape
+        #     if n > p:
+        #         observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
+        #                                                                                         dispersion=dispersion)
+        #     else:
+        #         observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
+        #                                                                                             dispersion=dispersion)
+
+        # working out conditional law of opt variables given
+        # target after decomposing score wrt target
+
+        return self.sampler.selective_MLE(observed_target,
+                                          cov_target,
+                                          cov_target_score,
+                                          self.observed_opt_state,
+                                          solve_args=solve_args)
+
+    # Targets of inference
+    # and covariance with score representation
+
+    def selected_targets(self, features=None, dispersion=None):
+
+        X, y = self.loglike.data
+        n, p = X.shape
+
+        if features is None:
+            active = self._active
+            unpenalized = self._unpenalized
+            noverall = active.sum() + unpenalized.sum()
+            overall = active + unpenalized
+
+            score_linear = self.score_transform[0]
+            Q = -score_linear[overall]
+            cov_target = np.linalg.inv(Q)
+            observed_target = self._beta_full[overall]
+            crosscov_target_score = score_linear.dot(cov_target)
+            Xfeat = X[:, overall]
+            alternatives = [{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] \
+                           + ['twosided'] * unpenalized.sum()
+
+        else:
+
+            features_b = np.zeros_like(self._overall)
+            features_b[features] = True
+            features = features_b
+
+            Xfeat = X[:, features]
+            Qfeat = Xfeat.T.dot(self._W[:, None] * Xfeat)
+            Gfeat = self.loglike.smooth_objective(self.initial_soln, 'grad')[features]
+            Qfeat_inv = np.linalg.inv(Qfeat)
+            one_step = self.initial_soln[features] - Qfeat_inv.dot(Gfeat)
+            cov_target = Qfeat_inv
+            _score_linear = -Xfeat.T.dot(self._W[:, None] * X).T
+            crosscov_target_score = _score_linear.dot(cov_target)
+            observed_target = one_step
+            alternatives = ['twosided'] * features.sum()
+
+        if dispersion is None:  # use Pearson's X^2
+            dispersion = ((y - self.loglike.saturated_loss.mean_function(
+                Xfeat.dot(observed_target))) ** 2 / self._W).sum() / (n - Xfeat.shape[1])
+
+        print(dispersion, 'dispersion')
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+    @staticmethod
+    def gaussian(X,
+                 Y,
+                 feature_weights,
+                 sigma=1.,
                  quadratic=None,
-                 initial=None):
+                 ridge_term=0.,
+                 randomizer_scale=None):
 
-        weights = np.array(weights, np.float)
-        if not np.allclose(-weights, np.sort(-weights)):
-            raise ValueError('weights should be non-increasing')
-        if not np.all(weights > 0):
-            raise ValueError('weights must be positive')
+        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
+        n, p = X.shape
 
-        self.weights = weights
-        self._dummy = np.arange(self.weights.shape[0])
+        mean_diag = np.mean((X ** 2).sum(0))
+        if ridge_term is None:
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
-        seminorm.__init__(self, self.weights.shape,
-                          lagrange=lagrange,
-                          bound=bound,
-                          quadratic=quadratic,
-                          initial=initial,
-                          offset=offset)
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-    def seminorm(self, x, lagrange=None, check_feasibility=False):
-        lagrange = seminorm.seminorm(self, x,
-                                     check_feasibility=check_feasibility,
-                                     lagrange=lagrange)
-        xsort = np.sort(np.fabs(x))[::-1]
-        return lagrange * np.fabs(xsort * self.weights).sum()
+        return randomized_slope(loglike, np.asarray(feature_weights) / sigma ** 2, ridge_term, randomizer_scale)
 
-    @doc_template_user
-    def constraint(self, x, bound=None):
-        bound = seminorm.constraint(self, x, bound=bound)
-        inbox = self.seminorm(x, lagrange=1,
-                              check_feasibility=True) <= bound * (1 + self.tol)
-        if inbox:
-            return 0
-        else:
-            return np.inf
-
-    @doc_template_user
-    def lagrange_prox(self, x, lipschitz=1, lagrange=None):
-        lagrange = seminorm.lagrange_prox(self, x, lipschitz, lagrange)
-        return _basic_proximal_map(x, self.weights * lagrange / lipschitz)
-
-    @doc_template_user
-    def bound_prox(self, x, bound=None):
-        raise NotImplementedError
-
-    def __copy__(self):
-        return self.__class__(self.weights.copy(),
-                              quadratic=self.quadratic,
-                              initial=self.coefs,
-                              bound=copy(self.bound),
-                              lagrange=copy(self.lagrange),
-                              offset=copy(self.offset))
-
-    def __repr__(self):
-        if self.lagrange is not None:
-            if not self.quadratic.iszero:
-                return "%s(%s, lagrange=%f, offset=%s)" % \
-                       (self.__class__.__name__,
-                        str(self.weights),
-                        self.lagrange,
-                        str(self.offset))
-            else:
-                return "%s(%s, lagrange=%f, offset=%s, quadratic=%s)" % \
-                       (self.__class__.__name__,
-                        str(self.weights),
-                        self.lagrange,
-                        str(self.offset),
-                        self.quadratic)
-        else:
-            if not self.quadratic.iszero:
-                return "%s(%s, bound=%f, offset=%s)" % \
-                       (self.__class__.__name__,
-                        str(self.weights),
-                        self.bound,
-                        str(self.offset))
-            else:
-                return "%s(%s, bound=%f, offset=%s, quadratic=%s)" % \
-                       (self.__class__.__name__,
-                        str(self.weights),
-                        self.bound,
-                        str(self.offset),
-                        self.quadratic)
-
-    def get_conjugate(self):
-        if self.quadratic.coef == 0:
-
-            offset, outq = _work_out_conjugate(self.offset, self.quadratic)
-
-            if self.bound is None:
-                cls = conjugate_slope_pairs[self.__class__]
-                atom = cls(self.weights,
-                           bound=self.lagrange,
-                           lagrange=None,
-                           offset=offset,
-                           quadratic=outq)
-            else:
-                cls = conjugate_slope_pairs[self.__class__]
-                atom = cls(self.weights,
-                           lagrange=self.bound,
-                           bound=None,
-                           offset=offset,
-                           quadratic=outq)
-        else:
-            atom = smooth_conjugate(self)
-
-        self._conjugate = atom
-        self._conjugate._conjugate = self
-        return self._conjugate
-
-    conjugate = property(get_conjugate)
-
-
-@objective_doc_templater()
-class slope_conjugate(slope):
-    r"""
-    The dual of the slope penalty:math:`\ell_{\infty}` norm
-    """
-
-    objective_template = r"""P^*(%(var)s)"""
-
-    @doc_template_user
-    def seminorm(self, x, lagrange=None, check_feasibility=False):
-        lagrange = seminorm.seminorm(self, x,
-                                     check_feasibility=check_feasibility,
-                                     lagrange=lagrange)
-        xsort = np.sort(np.fabs(x))[::-1]
-        return lagrange * np.fabs(xsort / self.weights).max()
-
-    @doc_template_user
-    def constraint(self, x, bound=None):
-        bound = seminorm.constraint(self, x, bound=bound)
-        inbox = self.seminorm(x, lagrange=1,
-                              check_feasibility=True) <= bound * (1 + self.tol)
-        if inbox:
-            return 0
-        else:
-            return np.inf
-
-    @doc_template_user
-    def lagrange_prox(self, x, lipschitz=1, lagrange=None):
-        raise NotImplementedError
-
-    @doc_template_user
-    def bound_prox(self, x, bound=None):
-        bound = seminorm.bound_prox(self, x, bound)
-
-        # the proximal map is evaluated
-        # by working out the SLOPE proximal
-        # map and computing the residual
-
-        # might be better to just find the correct cython function instead
-        # of always constructing IsotonicRegression
-
-        _slope_prox = _basic_proximal_map(x, self.weights * bound)
-        return x - _slope_prox
-
-
-def _basic_proximal_map(center, weights):
-    """
-    Proximal algorithm described (2.3) of SLOPE
-    though sklearn isotonic has ordering reversed.
-    """
-
-    # the proximal map sorts the absolute values,
-    # runs isotonic regression with an offset
-    # reassigns the signs
-
-    # might be better to just find the correct cython function instead
-    # of always constructing IsotonicRegression
-
-    ir = IsotonicRegression()
-
-    _dummy = np.arange(center.shape[0])
-    _arg = np.argsort(np.fabs(center))
-    shifted_center = np.fabs(center)[_arg] - weights[::-1]
-    _prox_val = np.clip(ir.fit_transform(_dummy, shifted_center), 0, np.inf)
-    _return_val = np.zeros_like(_prox_val)
-    _return_val[_arg] = _prox_val
-    _return_val *= np.sign(center)
-    return _return_val
-
-
-def _projection_onto_selected_subgradients(prox_arg,
-                                           weights,
-                                           ordering,
-                                           cluster_sizes,
-                                           active_signs,
-                                           last_value_zero=True):
-    """
-    Compute the projection of a point onto the set of
-    subgradients of the SLOPE penalty with a given
-    clustering of the solution and signs of the variables.
-    This is a projection onto a lower dimensional set. The dimension
-    of this set is p -- the dimensions of the `prox_arg` minus
-    the number of unique values in `ordered_clustering` + 1 if the
-    last value of the solution was zero (i.e. solution was sparse).
-    Parameters
-    ----------
-    prox_arg : np.ndarray(p, np.float)
-        Point to project
-    weights : np.ndarray(p, np.float)
-        Weights of the SLOPE penalty.
-    ordering : np.ndarray(p, np.int)
-        Order of original argument to SLOPE prox.
-        First entry corresponds to largest argument of SLOPE prox.
-    cluster_sizes : sequence
-        Sizes of clusters, starting with
-        largest in absolute value.
-    active_signs : np.ndarray(p, np.int)
-         Signs of non-zero coefficients.
-    last_value_zero : bool
-        Is the last solution value equal to 0?
-    """
-
-    result = np.zeros_like(prox_arg)
-
-    ordered_clustering = []
-    cur_idx = 0
-    for cluster_size in cluster_sizes:
-        ordered_clustering.append([ordering[j + cur_idx] for j in range(cluster_size)])
-        cur_idx += cluster_size
-
-    # Now, run appropriate SLOPE prox on each cluster
-    cur_idx = 0
-    for i, cluster in enumerate(ordered_clustering):
-        prox_subarg = np.array([prox_arg[j] for j in cluster])
-
-        # If the value of the soln to the prox was non-zero
-        # then we solve a SLOPE of size 1 smaller than the cluster
-
-        # If the cluster size is 1, the value is just
-        # the corresponding signed weight
-
-        if i < len(ordered_clustering) - 1 or not last_value_zero:
-            if len(cluster) == 1:
-                result[cluster[0]] = weights[cur_idx] * active_signs[cluster[0]]
-            else:
-                indices = [j + cur_idx for j in range(len(cluster))]
-                cluster_weights = weights[indices]
-
-                ir = IsotonicRegression()
-                _ir_result = ir.fit_transform(np.arange(len(cluster)), cluster_weights[::-1])[::-1]
-                result[indices] = -np.multiply(active_signs[indices], _ir_result/2.)
-
-        else:
-            indices = np.array([j + cur_idx for j in range(len(cluster))])
-            cluster_weights = weights[indices]
-
-            pen = slope(cluster_weights, lagrange=1.)
-            loss = rr.squared_error(np.identity(len(cluster)), prox_subarg)
-            slope_problem = rr.simple_problem(loss, pen)
-            result[indices] = prox_subarg - slope_problem.solve()
-
-        cur_idx += len(cluster)
-
-    return result
-
-"""
-For a cluster of size bigger than 1, we solve
-"""
-
-conjugate_slope_pairs = {}
-for n1, n2 in [(slope, slope_conjugate)]:
-    conjugate_slope_pairs[n1] = n2
-    conjugate_slope_pairs[n2] = n1

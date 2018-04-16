@@ -482,12 +482,12 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 
 if __name__ == "__main__":
 
-    ndraw = 50
+    ndraw = 1
     output_overall = np.zeros(27)
 
     target = "selected"
     tuning = "selective_MLE"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.10
+    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.30
 
     if target == "selected":
         for i in range(ndraw):
