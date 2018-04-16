@@ -136,7 +136,6 @@ class randomized_slope():
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = cond_cov.dot(opt_linear.T) * prec
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
-        #print("shapes", cond_mean.shape, cond_precision.shape)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
             if score.ndim == 1:
@@ -204,7 +203,6 @@ class randomized_slope():
             observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
                                                                                                 dispersion=dispersion)
 
-            print("check covariance in MLE", cov_target)
         # elif target == 'full':
         #     X, y = self.loglike.data
         #     n, p = X.shape
@@ -240,7 +238,6 @@ class randomized_slope():
             score_linear = self.score_transform[0]
             Q = -score_linear[overall]
             cov_target = np.linalg.inv(Q)
-            print("check covariance in selected targets", cov_target)
             observed_target = self._beta_full[overall]
             crosscov_target_score = score_linear.dot(cov_target)
             Xfeat = X[:, overall]
