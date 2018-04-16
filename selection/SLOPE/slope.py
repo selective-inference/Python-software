@@ -95,9 +95,6 @@ class randomized_slope():
 
         self.num_opt_var = self.observed_opt_state.shape[0]
 
-        _opt_linear_term = np.zeros((p, self.num_opt_var))
-        _score_linear_term = np.zeros((p, self.num_opt_var))
-
         X, y = self.loglike.data
         W = self._W = self.loglike.saturated_loss.hessian(X.dot(beta_bar))
         _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
@@ -126,11 +123,14 @@ class randomized_slope():
 
         signs_cluster = np.asarray(signs_cluster).T
         X_clustered = X[:, indices].dot(signs_cluster)
-        _opt_linear_term = -X.T.dot(X_clustered)
+        _opt_linear_term = X.T.dot(X_clustered)
         self.opt_transform = (_opt_linear_term, self.initial_subgrad)
 
         cov, prec = self.randomizer.cov_prec
         opt_linear, opt_offset = self.opt_transform
+
+        print("check if correct", np.allclose(-X.T.dot(y-X_clustered.dot(initial_scalings))
+                                              +initial_subgrad,self._initial_omega, rtol=1e-05, atol=1e-08))
 
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
@@ -148,6 +148,13 @@ class randomized_slope():
         log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
 
         # now make the constraints
+
+        #A_scaling_0 = -np.identity(self.num_opt_var)
+        #A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var-1), :]
+        #for k in range(A_scaling_1.shape[0]):
+        #    A_scaling_1[k,k+1]= 1
+        #A_scaling = np.vstack([A_scaling_0, A_scaling_1])
+        #b_scaling = np.zeros(2*self.num_opt_var-1)
 
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = np.zeros(self.num_opt_var)
