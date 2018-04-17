@@ -78,6 +78,193 @@ class lasso_iv(highdim):
         #                                                selection_info=self.selection_variable)
 
 
+    # this is a direct modification of fit() 
+    # to be able to Monte Carlo sample and marginalize inactive subgrads
+    # user can call one of fit() or fit_for_marginalize()
+    # to condition on or MC marginalize over the inactive subgradients
+    def fit_for_marginalize(self, 
+                            solve_args={'tol':1.e-12, 'min_its':50}, 
+                            perturb=None):
+
+        p = self.nfeature
+
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
+
+        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
+        problem = rr.simple_problem(self.loglike, self.penalty)
+        self.initial_soln = problem.solve(quad, **solve_args)
+
+        active_signs = np.sign(self.initial_soln)
+        active = self._active = active_signs != 0
+
+        self._lagrange = self.penalty.weights
+        unpenalized = self._lagrange == 0
+
+        active *= ~unpenalized
+
+        self._overall = overall = (active + unpenalized) > 0
+        self._inactive = inactive = ~self._overall
+        self._unpenalized = unpenalized
+
+        _active_signs = active_signs.copy()
+        _active_signs[unpenalized] = np.nan # don't release sign of unpenalized variables
+        self.selection_variable = {'sign':_active_signs,
+                                   'variables':self._overall}
+
+        # initial state for opt variables
+
+        initial_subgrad = -(self.loglike.smooth_objective(self.initial_soln, 'grad') + 
+                            quad.objective(self.initial_soln, 'grad')) 
+        self.initial_subgrad = initial_subgrad
+
+        initial_scalings = np.fabs(self.initial_soln[active])
+        initial_unpenalized = self.initial_soln[self._unpenalized]
+
+        self.observed_opt_state = np.concatenate([initial_scalings,
+                                                  initial_unpenalized,
+                                                  self.initial_subgrad[self._inactive]], axis=0)
+
+        _beta_unpenalized = restricted_estimator(self.loglike, self._overall, solve_args=solve_args)
+
+        beta_bar = np.zeros(p)
+        beta_bar[overall] = _beta_unpenalized
+        self._beta_full = beta_bar
+
+        # observed state for score in internal coordinates
+
+        self.observed_internal_state = np.hstack([_beta_unpenalized,
+                                                  -self.loglike.smooth_objective(beta_bar, 'grad')[inactive]])
+
+        # form linear part
+
+        self.num_opt_var = self.observed_opt_state.shape[0]
+
+        # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})
+        # E for active
+        # U for unpenalized
+        # -E for inactive
+
+        _opt_linear_term = np.zeros((p, self.num_opt_var))
+        _score_linear_term = np.zeros((p, self.num_opt_var))
+
+        # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
+
+        est_slice = slice(0, overall.sum())
+        X, y = self.loglike.data
+        W = self._W = self.loglike.saturated_loss.hessian(X.dot(beta_bar))
+        _hessian_active = np.dot(X.T, X[:, active] * W[:, None])
+        _hessian_unpen = np.dot(X.T, X[:, unpenalized] * W[:, None])
+
+        _score_linear_term[:, est_slice] = -np.hstack([_hessian_active, _hessian_unpen])
+
+        null_idx = np.arange(overall.sum(), p)
+        inactive_idx = np.nonzero(inactive)[0]
+        for _i, _n in zip(inactive_idx, null_idx):
+            _score_linear_term[_i,_n] = -1
+
+        # set the observed score (data dependent) state
+
+        self.observed_score_state = _score_linear_term.dot(self.observed_internal_state)
+
+        def signed_basis_vector(p, j, s):
+            v = np.zeros(p)
+            v[j] = s
+            return v
+
+        active_directions = np.array([signed_basis_vector(p, j, active_signs[j]) for j in np.nonzero(active)[0]]).T
+
+        scaling_slice = slice(0, active.sum())
+        if np.sum(active) == 0:
+            _opt_hessian = 0
+        else:
+            _opt_hessian = _hessian_active * active_signs[None, active] + self.ridge_term * active_directions
+        _opt_linear_term[:, scaling_slice] = _opt_hessian
+
+        # beta_U piece
+
+        unpenalized_slice = slice(active.sum(), active.sum() + unpenalized.sum())
+        unpenalized_directions = np.array([signed_basis_vector(p, j, 1) for j in np.nonzero(unpenalized)[0]]).T
+        if unpenalized.sum():
+            _opt_linear_term[:, unpenalized_slice] = (_hessian_unpen
+                                                      + self.ridge_term * unpenalized_directions) 
+
+        subgrad_idx = range(active.sum() + unpenalized.sum(), active.sum() + inactive.sum() + unpenalized.sum())
+        subgrad_slice = slice(active.sum() + unpenalized.sum(), active.sum() + inactive.sum() + unpenalized.sum())
+        for _i, _s in zip(inactive_idx, subgrad_idx):
+            _opt_linear_term[_i,_s] = 1
+
+        # two transforms that encode score and optimization
+        # variable roles 
+
+        _opt_affine_term = np.zeros(p)
+        _opt_affine_term[active] = active_signs[active] * self._lagrange[active]
+
+        self.opt_transform = (_opt_linear_term, _opt_affine_term)
+        self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
+        # now store everything needed for the projections
+        # the projection acts only on the optimization
+        # variables
+
+        self._setup = True
+        self.scaling_slice = scaling_slice
+        self.unpenalized_slice = unpenalized_slice
+        self.ndim = self.loglike.shape[0]
+
+        # compute implied mean and covariance
+
+        cov, prec = self.randomizer.cov_prec
+        opt_linear, opt_offset = self.opt_transform
+
+        cond_precision = opt_linear.T.dot(opt_linear) * prec
+        cond_cov = np.linalg.inv(cond_precision)
+        logdens_linear = cond_cov.dot(opt_linear.T) * prec
+
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        def log_density(logdens_linear, offset, cond_prec, score, opt):
+            if score.ndim == 1:
+                mean_term = logdens_linear.dot(score.T + offset).T
+            else:
+                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
+            arg = opt + mean_term
+            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+
+        # now make the constraints
+
+        inactive_lagrange = self.penalty.weights[inactive]
+
+        I = np.identity(cond_cov.shape[0])
+        A_scaling = -I[self.scaling_slice]
+        b_scaling = np.zeros(A_scaling.shape[0])
+        A_subgrad = np.vstack([I[subgrad_slice],-I[subgrad_slice]])
+        b_subgrad = np.hstack([inactive_lagrange,inactive_lagrange])
+
+        linear_term = np.vstack([A_scaling, A_subgrad])
+        offset = np.hstack([b_scaling, b_subgrad])
+
+        affine_con = constraints(linear_term,
+                                 offset,
+                                 mean=cond_mean,
+                                 covariance=cond_cov)
+
+        logdens_transform = (logdens_linear, opt_offset)
+
+        self.sampler = affine_gaussian_sampler(affine_con,
+                                               self.observed_opt_state,
+                                               self.observed_score_state,
+                                               log_density,
+                                               logdens_transform,
+                                               selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
+        
+        return active_signs
+
+
     def summary(self,
                 parameter=None,
                 Sigma_11=1.,

@@ -15,12 +15,15 @@ from statsmodels.distributions import ECDF
 
 # if true_model is True, Sigma_12 is the true Sigma_{12}
 # otherwise Sigma_12 will be the consistent estimator
-def test_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, true_model=True, Sigma_12=0.8, gsnr_invalid=1., gsnr_valid=1., beta_star=1.):
+def test_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, true_model=True, Sigma_12=0.8, gsnr_invalid=1., gsnr_valid=1., beta_star=1., marginalize=False):
 
     Z, D, Y, alpha, beta_star, gamma = lasso_iv.bigaussian_instance(n=n,p=p,s=s, gsnr_invalid=gsnr_invalid, gsnr_valid=gsnr_valid, beta=beta_star,Sigma=np.array([[1., Sigma_12],[Sigma_12, 1.]]))
 
     conv = lasso_iv(Y, D, Z)
-    conv.fit()
+    if marginalize:
+        conv.fit_for_marginalize()
+    else:
+        conv.fit()
 
     if true_model is True:
         sigma_11 = 1.
@@ -33,13 +36,13 @@ def test_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, true_mode
         pivot, _, interval = conv.summary(parameter=beta_star, Sigma_11=sigma_11)
     return pivot, interval
 
-def test_pivots(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, true_model=True, Sigma_12=0.8, gsnr_invalid=1., gsnr_valid=1., beta_star=1.):
+def test_pivots(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, true_model=True, Sigma_12=0.8, gsnr_invalid=1., gsnr_valid=1., beta_star=1., marginalize=False):
     P0 = []
     #intervals = []
     coverages = []
     lengths = []
     for i in range(nsim):
-        p0, interval = test_lasso_iv_instance(n=n, p=p, s=s, true_model=true_model, Sigma_12=Sigma_12, gsnr_invalid=gsnr_invalid, gsnr_valid=gsnr_valid, beta_star=beta_star)
+        p0, interval = test_lasso_iv_instance(n=n, p=p, s=s, true_model=true_model, Sigma_12=Sigma_12, gsnr_invalid=gsnr_invalid, gsnr_valid=gsnr_valid, beta_star=beta_star, marginalize=marginalize)
         if p0 is not None and interval is not None:
             P0.extend(p0)
             #intervals.extend(interval)
