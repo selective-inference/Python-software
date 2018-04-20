@@ -541,9 +541,9 @@ class affine_gaussian_sampler(optimization_sampler):
         param_map = theta + inter_map.dot(mean_param - soln)
         log_normalizer_map = (theta.T.dot(prec_target + target_lin.T.dot(prec_opt).dot(target_lin)).dot(theta))/2. \
                              - theta.T.dot(target_lin.T).prec_opt.dot(soln) - target_offset.T.dot(prec_opt).dot(target_offset)/2. \
-                             + val
+                             + val - (param_map.T.dot(prec_target).param_map)/2.
 
-        jacobian_map = (np.identity(ndim)+ inter_map.dot(target_lin))- inter_map.dot(hess).dot(prec_opt).dot(target_lin)
+        jacobian_map = (np.identity(ndim)+ inter_map.dot(target_lin)) - inter_map.dot(hess).dot(prec_opt.dot(target_lin))
 
         return param_map, log_normalizer_map, jacobian_map
 

@@ -485,7 +485,7 @@ if __name__ == "__main__":
     ndraw = 1
     output_overall = np.zeros(27)
 
-    target = "selected"
+    target = "full"
     tuning = "selective_MLE"
     n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.30
 
