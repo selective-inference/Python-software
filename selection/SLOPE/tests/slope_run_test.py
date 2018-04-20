@@ -159,7 +159,7 @@ def test0_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
     X_clustered = X[:, indices].dot(signs_cluster)
     print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
 
-def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=5, sigma=3., rho=0.35, randomizer_scale= np.sqrt(0.25)):
+def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., randomizer_scale= np.sqrt(0.5)):
 
     while True:
         inst = gaussian_instance
@@ -178,7 +178,7 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=5, sigma=3., rho=0.35,
                                                           Y,
                                                           W=None,
                                                           normalize=True,
-                                                          choice_weights="gaussian",
+                                                          choice_weights="bhq", #put gaussian
                                                           sigma=sigma_)
 
         conv = randomized_slope.gaussian(X,
@@ -203,7 +203,7 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.5, s=5, sigma=3., rho=0.35,
 def main(nsim=100):
 
     P0, PA, cover, length_int = [], [], [], []
-    from statsmodels.distributions import ECDF
+    #from statsmodels.distributions import ECDF
 
     for i in range(nsim):
         p0, pA, cover_, intervals = test_randomized_slope()

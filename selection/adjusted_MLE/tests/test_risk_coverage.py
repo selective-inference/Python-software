@@ -140,4 +140,4 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
     df_risk.to_csv(outfile_risk, index=False)
 
 write_ouput("/Users/snigdhapanigrahi/adjusted_MLE/results", n=200, p=1000, rho=0, s=10, beta_type=1,
-            target="full", tuning = "randomized_LASSO", randomizing_scale= np.sqrt(0.25), ndraw = 50)
+            target="full", tuning = "selective_MLE", randomizing_scale= np.sqrt(0.25), ndraw = 50)

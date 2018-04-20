@@ -129,13 +129,15 @@ class randomized_slope():
         cov, prec = self.randomizer.cov_prec
         opt_linear, opt_offset = self.opt_transform
 
-        print("check if correct", np.allclose(-X.T.dot(y-X_clustered.dot(initial_scalings))
-                                              +self.initial_subgrad,self._initial_omega, rtol=1e-05, atol=1e-08))
+        print("check if correct", np.allclose(self.observed_score_state + opt_offset + opt_linear.dot(initial_scalings),
+                                              self._initial_omega, rtol=1e-05, atol=1e-08))
 
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = cond_cov.dot(opt_linear.T) * prec
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        logdens_transform = (logdens_linear, opt_offset)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
             if score.ndim == 1:
@@ -163,8 +165,6 @@ class randomized_slope():
                                  b_scaling,
                                  mean=cond_mean,
                                  covariance=cond_cov)
-
-        logdens_transform = (logdens_linear, opt_offset)
 
         self.sampler = affine_gaussian_sampler(affine_con,
                                                self.observed_opt_state,

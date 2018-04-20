@@ -518,6 +518,35 @@ class affine_gaussian_sampler(optimization_sampler):
 
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
+    def log_posterior(self, theta, observed_target, cov_target, cov_target_score, feasible_point, solve_args={}):
+
+        prec_target = np.linalg.inv(cov_target)
+        ndim = prec_target.shape[0]
+        logdens_lin, logdens_off = self.logdens_transform
+        target_lin = - logdens_lin.dot(cov_target_score.T.dot(prec_target))
+        target_offset = self.affine_con.mean - target_lin.dot(observed_target)
+
+        cov_opt = self.affine_con.covariance
+        prec_opt = np.linalg.inv(cov_opt)
+
+        mean_param = target_lin.dot(theta)+target_offset
+        conjugate_arg = prec_opt.dot(mean_param)
+        init_soln = feasible_point
+        val, soln, hess = solve_barrier_nonneg(conjugate_arg,
+                                               prec_opt,
+                                               init_soln,
+                                               **solve_args)
+
+        inter_map = cov_target.dot(target_lin.T.dot(prec_opt))
+        param_map = theta + inter_map.dot(mean_param - soln)
+        log_normalizer_map = (theta.T.dot(prec_target + target_lin.T.dot(prec_opt).dot(target_lin)).dot(theta))/2. \
+                             - theta.T.dot(target_lin.T).prec_opt.dot(soln) - target_offset.T.dot(prec_opt).dot(target_offset)/2. \
+                             + val
+
+        jacobian_map = (np.identity(ndim)+ inter_map.dot(target_lin))- inter_map.dot(hess).dot(prec_opt).dot(target_lin)
+
+        return param_map, log_normalizer_map, jacobian_map
+
 class optimization_intervals(object):
 
     def __init__(self,
