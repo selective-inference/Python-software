@@ -518,7 +518,7 @@ class affine_gaussian_sampler(optimization_sampler):
 
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
-    def log_posterior(self, theta, observed_target, cov_target, cov_target_score, feasible_point, solve_args={}):
+    def reparam_map(self, theta, observed_target, cov_target, cov_target_score, feasible_point, solve_args={}):
 
         prec_target = np.linalg.inv(cov_target)
         ndim = prec_target.shape[0]
