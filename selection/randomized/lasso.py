@@ -16,8 +16,8 @@ from .query import (query,
                     langevin_sampler,
                     affine_gaussian_sampler)
 
-from .reconstruction import reconstruct_full_from_internal
-from .randomization import split, randomization
+from .reconstruction import reconstruct_opt
+from .randomization import randomization
 from .base import restricted_estimator
 from .glm import (pairs_bootstrap_glm,
                   glm_nonparametric_bootstrap,
@@ -1335,16 +1335,18 @@ class lasso(object):
 class highdim(lasso):
 
     r"""
-    A class for the LASSO for post-selection inference.
+    A class for the randomized LASSO for post-selection inference.
     The problem solved is
 
     .. math::
 
-        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
-            \lambda \|\beta\|_1 - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2
+        \text{minimize}_{\beta} \ell(\beta) + 
+            \sum_{i=1}^p \lambda_i |\beta_i\| - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2
 
     where $\lambda$ is `lam`, $\omega$ is a randomization generated below
-    and the last term is a small ridge penalty.
+    and the last term is a small ridge penalty. Each static method
+    forms $\ell$ as well as the $\ell_1$ penalty. The generic class
+    forms the remaining two terms in the objective.
 
     """
 
@@ -1660,7 +1662,7 @@ class highdim(lasso):
                       level=0.9,
                       compute_intervals=False,
                       dispersion=None,
-                      solve_args={}):
+                      solve_args={'tol':1.e-12}):
         """
 
         Parameters
@@ -1756,6 +1758,7 @@ class highdim(lasso):
         if dispersion is None: # use Pearson's X^2
             dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(observed_target)))**2 / self._W).sum() / (n - Xfeat.shape[1])
 
+        print(dispersion, 'dispersion')
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def full_targets(self, features=None, dispersion=None):
@@ -1836,7 +1839,7 @@ class highdim(lasso):
         r"""
         Squared-error LASSO with feature weights.
 
-        Objective function (before randomizer) is 
+        Objective function is (before randomization)
         $$
         \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
@@ -1908,7 +1911,7 @@ class highdim(lasso):
                  ridge_term=None,
                  randomizer_scale=None):
         r"""
-        Logistic LASSO with feature weights.
+        Logistic LASSO with feature weights (before randomization)
 
         Objective function is 
         $$
@@ -1987,7 +1990,7 @@ class highdim(lasso):
         r"""
         Cox proportional hazards LASSO with feature weights.
 
-        Objective function is 
+        Objective function is (before randomization)
         $$
         \beta \mapsto \ell^{\text{Cox}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
@@ -2068,7 +2071,7 @@ class highdim(lasso):
         r"""
         Poisson log-linear LASSO with feature weights.
 
-        Objective function is 
+        Objective function is (before randomization)
         $$
         \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
@@ -2144,7 +2147,7 @@ class highdim(lasso):
         r"""
         Use sqrt-LASSO to choose variables.
 
-        Objective function is 
+        Objective function is (before randomization)
         $$
         \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$

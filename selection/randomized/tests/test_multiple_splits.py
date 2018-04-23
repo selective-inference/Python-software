@@ -3,15 +3,13 @@ import numpy as np
 
 import regreg.api as rr
 
-import selection.tests.reports as reports
-
 
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from selection.api import (randomization,
                            split_glm_group_lasso,
                            multiple_queries)
 from ...tests.instance import logistic_instance
-from ...tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
+from ...tests.decorators import wait_for_return_value, set_sampling_params_iftrue
 
 from ..glm import (standard_split_ci,
                    glm_nonparametric_bootstrap,
@@ -20,10 +18,6 @@ from ..glm import (standard_split_ci,
 from ..M_estimator import restricted_Mest
 from ..query import naive_confidence_intervals
 
-@register_report(['pivots_clt', 'pivots_boot',
-                  'covered_clt', 'ci_length_clt',
-                  'covered_boot', 'ci_length_boot',
-                  'active', 'covered_naive'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
 def test_multiple_splits(s=3,
@@ -132,19 +126,3 @@ def test_multiple_splits(s=3,
             ci_length_naive)
 
 
-def report(niter=3, **kwargs):
-
-    kwargs = {'s': 0, 'n': 300, 'p': 20, 'signal': 7, 'split_frac': 0.5, 'nsplits':3}
-    split_report = reports.reports['test_multiple_splits']
-    screened_results = reports.collect_multiple_runs(split_report['test'],
-                                                     split_report['columns'],
-                                                     niter,
-                                                     reports.summarize_all,
-                                                     **kwargs)
-
-    fig = reports.boot_clt_plot(screened_results, inactive=True, active=False)
-    fig.savefig('multiple_splits.pdf') # will have both bootstrap and CLT on plot
-
-
-if __name__=='__main__':
-    report()

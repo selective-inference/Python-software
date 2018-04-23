@@ -98,7 +98,20 @@ def test_compareR(n=50, p=100):
     rpy.r('soln = selectiveInference:::debiasingMatrix(X, TRUE, nrow(X), j)')
     soln_R = np.squeeze(np.asarray(rpy.r('soln')))
 
-    soln_py = debiasing_matrix(X, j, linesearch=True)
+    soln_py = debiasing_matrix(X, j)
+
+    np.testing.assert_allclose(soln_R, soln_py)
+
+    numpy2ri.activate()
+
+    j = np.array([3,5])
+    numpy2ri.activate()
+    rpy.r.assign('X', X)
+    rpy.r.assign('j', j+1)
+    rpy.r('soln = selectiveInference:::debiasingMatrix(X, TRUE, nrow(X), j)')
+    soln_R = np.squeeze(np.asarray(rpy.r('soln')))
+
+    soln_py = debiasing_matrix(X, j)
 
     np.testing.assert_allclose(soln_R, soln_py)
 

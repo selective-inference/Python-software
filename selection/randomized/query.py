@@ -475,7 +475,13 @@ class affine_gaussian_sampler(optimization_sampler):
                                        ndraw=ndraw,
                                        burnin=burnin)
 
-    def selective_MLE(self, observed_target, cov_target, cov_target_score, feasible_point, solve_args={}, alpha=0.1):
+    def selective_MLE(self, 
+                      observed_target, 
+                      cov_target, 
+                      cov_target_score, 
+                      feasible_point, 
+                      solve_args={'tol':1.e-12}, 
+                      alpha=0.1):
         """
         Selective MLE based on approximation of
         CGF.
@@ -495,6 +501,7 @@ class affine_gaussian_sampler(optimization_sampler):
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
         feasible_point = np.ones(prec_opt.shape[0])
+        print('solve', solve_args)
         val, soln, hess = solve_barrier_nonneg(conjugate_arg,
                                                prec_opt,
                                                feasible_point,

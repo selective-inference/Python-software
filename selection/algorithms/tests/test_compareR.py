@@ -7,12 +7,13 @@ import nose.tools as nt
 try:
     import rpy2.robjects as rpy
     rpy2_available = True
+    import rpy2.robjects.numpy2ri as numpy2ri
 except ImportError:
     rpy2_available = False
 
-from selection.algorithms.lasso import lasso
-from selection.algorithms.forward_step import forward_step
-
+from ..lasso import lasso, lasso_full
+from ..forward_step import forward_step
+from ...tests.instance import gaussian_instance
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_fixed_lambda():
@@ -320,8 +321,7 @@ def test_solve_QP_lasso():
     problem = rr.simple_problem(loss, pen)
     soln = problem.solve(min_its=500, tol=1.e-12)
 
-    import rpy2.robjects.numpy2ri
-    rpy2.robjects.numpy2ri.activate()
+    numpy2ri.activate()
 
     rpy.r.assign('X', X)
     rpy.r.assign('Y', Y)
@@ -386,7 +386,7 @@ def test_solve_QP_lasso():
 
     soln_R = np.asarray(rpy.r('soln_R'))
     soln_R_wide = np.asarray(rpy.r('soln_R_wide'))
-    rpy2.robjects.numpy2ri.deactivate()
+    numpy2ri.deactivate()
 
     tol = 1.e-5
     print(soln - soln_R)
@@ -414,8 +414,7 @@ def test_solve_QP():
     problem = rr.simple_problem(loss, pen)
     soln = problem.solve(Q, min_its=500, tol=1.e-12)
 
-    import rpy2.robjects.numpy2ri
-    rpy2.robjects.numpy2ri.activate()
+    numpy2ri.activate()
 
     rpy.r.assign('X', X)
     rpy.r.assign('E', E)
@@ -480,7 +479,7 @@ def test_solve_QP():
 
     soln_R = np.asarray(rpy.r('soln_R'))
     soln_R_wide = np.asarray(rpy.r('soln_R_wide'))
-    rpy2.robjects.numpy2ri.deactivate()
+    numpy2ri.deactivate()
 
     tol = 1.e-5
     print(soln - soln_R)
@@ -494,4 +493,85 @@ def test_solve_QP():
     yield nt.assert_true, np.fabs(G).max() < lam * (1. + 1.e-6), 'testing linfinity norm'
 
     
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+def test_full_lasso_tall():
+    n, p, s = 200, 100, 10
+    X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
 
+    lam = 4. * np.sqrt(n)
+    X *= np.sqrt(n)
+    L = lasso_full.gaussian(X, y, lam)
+    L.fit()
+    if len(L.active) > 0:
+        S = L.summary(compute_intervals=False)
+        numpy2ri.activate()
+
+        rpy.r.assign("X", X)
+        rpy.r.assign("y", y)
+        rpy.r.assign("lam", lam)
+        rpy.r("""
+        y = as.numeric(y)
+        n = nrow(X)
+        p = ncol(X)
+        sigma_est = sigma(lm(y ~ X - 1))
+        print(sigma_est)
+        penalty_factor = rep(1, p);
+        lam = lam / n;
+        soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="ls")
+        print(lam)
+        print(soln)
+        PVS = selectiveInference:::inference_group_lasso(X, y, 
+                                                         soln, groups=1:ncol(X), 
+                                                         lambda=lam, penalty_factor=penalty_factor, 
+                                                         sigma_est, loss="ls", algo="Q", 
+                                                         construct_ci=FALSE)
+        active_vars=PVS$active_vars - 1 # for 0-based
+        pvalues = PVS$pvalues
+        """)
+        pvalues = rpy.r('pvalues')
+        active_set = rpy.r('active_vars')
+
+        nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+
+        numpy2ri.deactivate()
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+def test_full_lasso_wide():
+    n, p, s = 30, 50, 10
+    X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
+
+    lam = 6. * np.sqrt(n)
+    X *= np.sqrt(n)
+    L = lasso_full.gaussian(X, y, lam)
+    L.fit()
+
+    if len(L.active) > 0:
+        S = L.summary(compute_intervals=False, dispersion=sigma**2)
+        numpy2ri.activate()
+
+        rpy.r.assign("X", X)
+        rpy.r.assign("y", y)
+        rpy.r.assign("sigma_est", sigma)
+        rpy.r.assign("lam", lam)
+        rpy.r("""
+
+        y = as.numeric(y)
+        n = nrow(X)
+        p = ncol(X)
+
+        penalty_factor = rep(1, p);
+        lam = lam / n;
+        soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="ls")
+        PVS = selectiveInference:::inference_group_lasso(X, y, 
+                                                         soln, groups=1:ncol(X), 
+                                                         lambda=lam, penalty_factor=penalty_factor, 
+                                                         sigma_est, loss="ls", algo="glmnet", 
+                                                         construct_ci=FALSE)
+        active_vars=PVS$active_vars - 1 # for 0-based
+        pvalues = PVS$pvalues
+        """)
+        pvalues = rpy.r('pvalues')
+        active_set = rpy.r('active_vars')
+
+        nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+        numpy2ri.deactivate()

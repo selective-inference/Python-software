@@ -5,6 +5,7 @@ import numpy as np, regreg.api as rr
 from ...tests.instance import gaussian_instance
 
 from ..lasso import (lasso_full,
+                     lasso_full_modelQ,
                      _truncation_interval,
                      _solve_restricted_problem)
 
@@ -41,8 +42,9 @@ def truncation_interval(Qbeta_bar, Q, Qi_jj, j, beta_barj, lagrange):
 
     return lower, upper
 
-def test_agreement(n=200, p=100, s=4):
+def test_smaller():
 
+    n, p, s = 200, 100, 4
     X, y, beta = gaussian_instance(n=n,
                                    p=p,
                                    s=s)[:3]
@@ -74,6 +76,27 @@ def test_agreement(n=200, p=100, s=4):
         lower, upper =  truncation_interval(Qbeta_bar, Q, QiE[i,i], j, beta_barE[i], lagrange)
         np.testing.assert_allclose(l, lower)
         np.testing.assert_allclose(u, upper)
+
+def test_modelQ():
+
+    n, p, s = 200, 50, 4
+    X, y, beta = gaussian_instance(n=n,
+                                   p=p,
+                                   s=s,
+                                   sigma=1)[:3]
+
+    lagrange = 1. * np.ones(p)
+
+    LF = lasso_full.gaussian(X, y, lagrange)
+    LF.fit()
+    S = LF.summary(dispersion=1)
+
+    LX = lasso_full_modelQ(X.T.dot(X), X, y, lagrange)
+    LX.fit()
+    SX = LX.summary(dispersion=1)
+
+    np.testing.assert_allclose(S['pval'], SX['pval'])
+
 
 
 

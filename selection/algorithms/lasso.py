@@ -28,7 +28,8 @@ from regreg.api import (glm,
                         coxph as coxph_obj,
                         smooth_sum,
                         squared_error,
-                        identity_quadratic)
+                        identity_quadratic,
+                        quadratic_loss)
 
 from .sqrt_lasso import solve_sqrt_lasso, estimate_sigma
 from .debiased_lasso import debiasing_matrix
@@ -1845,15 +1846,23 @@ def additive_noise(X,
 # Liu, Markovic, Tibs selection
 # put this into library!
 
-def _solve_restricted_problem(Qbeta_bar, X, W, lagrange, initial=None,
+def _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange, initial=None,
+                              wide=True,
                               min_its=30, tol=1.e-12):
     p = Qbeta_bar.shape[0]
 
-    loss = squared_error(X * np.sqrt(W)[:, None], np.zeros(X.shape[0]))
+    if wide:
+        X, W = Xinfo
+        loss = squared_error(X * np.sqrt(W)[:, None], np.zeros(X.shape[0]))
+    else:
+        Q = Xinfo
+        loss = quadratic_loss(Q.shape[0], Q=Q)
+        
     loss.quadratic = identity_quadratic(0, 
                                         0, 
                                         -Qbeta_bar, 
                                         0)
+
     lagrange = np.asarray(lagrange)
     if lagrange.shape in [(), (1,)]:
         lagrange = np.ones(p) * lagrange
@@ -1864,20 +1873,25 @@ def _solve_restricted_problem(Qbeta_bar, X, W, lagrange, initial=None,
     soln = problem.solve(tol=tol, min_its=min_its)
     return soln
 
-def _truncation_interval(Qbeta_bar, X, W, Qi_jj, j, beta_barj, lagrange):
+def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=True):
     if lagrange[j] != 0:
         lagrange_cp = lagrange.copy()
     else:
         return -np.inf, np.inf
     lagrange_cp[j] = np.inf
-    restricted_soln = _solve_restricted_problem(Qbeta_bar, X, W, lagrange_cp)
+    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide) # TODO: use initial solution for speed
 
     p = Qbeta_bar.shape[0]
     Ij = np.zeros(p)
     Ij[j] = 1.
     nuisance = Qbeta_bar - Ij / Qi_jj * beta_barj
     
-    Qj = X.T.dot(X[:,j] * W)
+    if wide:
+        X, W = Xinfo
+        Qj = X.T.dot(X[:,j] * W)
+    else:
+        Q = Xinfo
+        Qj = Q[j]
     center = nuisance[j] - Qj.dot(restricted_soln)
     upper = (lagrange[j] - center) * Qi_jj
     lower = (-lagrange[j] - center) * Qi_jj
@@ -1900,6 +1914,15 @@ class lasso_full(lasso):
 
     where $\lambda$ is `lam`.
 
+    Notes
+    -----
+
+    In solving the debiasing problem to approximate the inverse
+    of (X^TWX) in a GLM, this class makes the implicit assumption
+    that the scaling of X is such that diag(X^TWX) is O(n)
+    with n=X.shape[0]. That is, X's are similar to IID samples
+    from a population that does not depend on n.
+
     """
 
     # level for coverage is 1-alpha
@@ -1907,7 +1930,8 @@ class lasso_full(lasso):
 
     def __init__(self, 
                  loglike, 
-                 feature_weights):
+                 feature_weights,
+                 sparse_inverse=False):
         r"""
 
         Create a new post-selection for the LASSO problem
@@ -1922,12 +1946,17 @@ class lasso_full(lasso):
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
 
+        sparse_inverse : bool
+             If True, use the sparse LASSO estimate of the
+             inverse of X.T.dot(X).
+
         """
 
         self.loglike = loglike
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
+        self.sparse_inverse = sparse_inverse
 
     def fit(self, 
             lasso_solution=None, 
@@ -1943,7 +1972,6 @@ class lasso_full(lasso):
         ----------
 
         lasso_solution : optional
-
              If not None, this is taken to be the solution
              of the optimization problem. No checks
              are done, though the implied affine
@@ -1951,6 +1979,9 @@ class lasso_full(lasso):
 
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
+
+        debiasing_args : dict
+             Arguments passed to `.debiased_lasso.debiasing_matrix`.
 
         Returns
         -------
@@ -1995,7 +2026,7 @@ class lasso_full(lasso):
             self._Qbeta_bar = X.T.dot(W * X.dot(lasso_solution)) - self.loglike.smooth_objective(lasso_solution, 'grad')
             self._W = W
 
-            if n > p:
+            if n > p and not self.sparse_inverse:
                 Q = self.loglike.hessian(lasso_solution)
                 E = self.active
                 Qi = np.linalg.inv(Q)
@@ -2003,7 +2034,8 @@ class lasso_full(lasso):
                 _beta_bar = Qi.dot(self._Qbeta_bar)
                 self._beta_barE = _beta_bar[E]
                 one_step = self._beta_barE
-                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
+                # Pearson's X^2 to estimate sigma
+                self._pearson_sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
                 
             else:
 
@@ -2012,10 +2044,11 @@ class lasso_full(lasso):
                 # target is one-step estimator
 
                 G = self.loglike.smooth_objective(lasso_solution, 'grad')
-                Qinv_hat = np.atleast_2d(debiasing_matrix(
-                                             X * np.sqrt(self._W)[:, None], 
-                                             self.active,
-                                             **debiasing_args)) / n
+                M = debiasing_matrix(X * np.sqrt(W)[:, None], 
+                                     self.active,
+                                     **debiasing_args)
+
+                Qinv_hat = np.atleast_2d(M) / n # the n is to make sure we get rows of the inverse of (X^TWX) instead of (X^TWX/n).
                 observed_target = lasso_solution[self.active] - Qinv_hat.dot(G)
                 M1 = Qinv_hat.dot(X.T)
                 self._QiE = (M1 * self._W[None,:]).dot(M1.T)
@@ -2023,7 +2056,9 @@ class lasso_full(lasso):
                 Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
                 relaxed_soln = lasso_solution[self.active] - np.linalg.inv(Qrelax).dot(G[self.active])
                 self._beta_barE = observed_target
-                self._sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - len(self.active)))
+
+                # relaxed Pearson's X^2 to estimate sigma
+                self._pearson_sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - len(self.active)))
 
         else:
             self.active = []
@@ -2031,7 +2066,8 @@ class lasso_full(lasso):
         return self.lasso_solution
 
     def summary(self, alpha=0.05,
-                compute_intervals=False):
+                compute_intervals=False,
+                dispersion=None):
         """
         Summary table for inference adjusted for selection.
 
@@ -2044,6 +2080,9 @@ class lasso_full(lasso):
         compute_intervals : bool
             Should we compute confidence intervals?
 
+        dispersion : float
+            Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
+
         Returns
         -------
 
@@ -2053,42 +2092,47 @@ class lasso_full(lasso):
 
         """
 
-        X, y = self.loglike.data
-        W, sigma = self._W, self._sigma
-        active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
-
-        result = [] 
-
-        for j in range(len(active_set)):
-            idx = self.active[j]
-            lower, upper = _truncation_interval(Qbeta_bar, X, W, QiE[j,j], idx, beta_barE[j], self.feature_weights)
-
-
-            sd = sigma * np.sqrt(QiE[j,j])
-            tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
-            pvalue = tg.cdf(beta_barE[j])
-            pvalue = float(2 * min(pvalue, 1 - pvalue))
-
-            if compute_intervals:
-                l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+        if len(self.active) > 0:
+            X, y = self.loglike.data
+            active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
+            W, sigma = self._W, self._pearson_sigma
+            if dispersion is None:
+                sqrt_dispersion = sigma
             else:
-                l, u = np.nan, np.nan
+                sqrt_dispersion = np.sqrt(dispersion)
 
-            result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
 
-        df = pd.DataFrame(index=self.active,
-                          data=dict([(n, d) for n, d in zip(['variable',
-                                                             'pval', 
-                                                             'lasso', 
-                                                             'onestep',
-                                                             'sd',
-                                                             'lower_confidence', 
-                                                             'upper_confidence',
-                                                             'lower_truncation', 
-                                                             'upper_truncation'], 
-                                                            np.array(result).T)]))
-        df['variable'] = df['variable'].astype(int)
-        return df
+            result = [] 
+
+            for j in range(len(active_set)):
+                idx = self.active[j]
+                lower, upper = _truncation_interval(Qbeta_bar, (X, W), QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=True)
+
+                sd = sqrt_dispersion * np.sqrt(QiE[j,j])
+                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
+                pvalue = tg.cdf(beta_barE[j])
+                pvalue = float(2 * min(pvalue, 1 - pvalue))
+
+                if compute_intervals:
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+                else:
+                    l, u = np.nan, np.nan
+
+                result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
+
+            df = pd.DataFrame(index=self.active,
+                              data=dict([(n, d) for n, d in zip(['variable',
+                                                                 'pval', 
+                                                                 'lasso', 
+                                                                 'onestep',
+                                                                 'sd',
+                                                                 'lower_confidence', 
+                                                                 'upper_confidence',
+                                                                 'lower_truncation', 
+                                                                 'upper_truncation'], 
+                                                                np.array(result).T)]))
+            df['variable'] = df['variable'].astype(int)
+            return df
 
     @property
     def soln(self):
@@ -2297,3 +2341,206 @@ class lasso_full(lasso):
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
         return lasso_full(loglike, feature_weights)
+
+class lasso_full_modelQ(lasso):
+
+    r"""
+    A class for the LASSO for post-selection inference
+    in which 
+    The problem solved is
+
+    .. math::
+
+        \text{minimize}_{\beta} -(X\beta)^Ty + \frac{1}{2} \beta^TQ\beta + 
+            \sum_i \lambda_i |\beta_i|
+
+    where $\lambda$ is `feature_weights`.
+
+    Notes
+    -----
+
+    In solving the debiasing problem to approximate the inverse
+    of (X^TWX) in a GLM, this class makes the implicit assumption
+    that the scaling of X is such that diag(X^TWX) is O(n)
+    with n=X.shape[0]. That is, X's are similar to IID samples
+    from a population that does not depend on n.
+
+    """
+
+    # level for coverage is 1-alpha
+    alpha = 0.05
+
+    def __init__(self, 
+                 Q,               # population or semi-supervised version of X.T.dot(X)
+                 X, 
+                 y,
+                 feature_weights):
+        r"""
+
+        Create a new post-selection for the LASSO problem
+
+        Parameters
+        ----------
+
+        Q : np.ndarray((p,p))
+
+        X : np.ndarray((n, p))
+
+        y : np.ndarray(n)
+
+        feature_weights : np.ndarray
+            Feature weights for L-1 penalty. If a float,
+            it is brodcast to all features.
+
+        """
+
+        self.Q = Q
+        self.X, self.y = X, y
+        self._loss = quadratic_loss(Q.shape[0], Q=Q)
+        self._linear_term = identity_quadratic(0, 0, -X.T.dot(y), 0)
+        if np.asarray(feature_weights).shape == ():
+            feature_weights = np.ones(Q.shape[0]) * feature_weights
+        self.feature_weights = np.asarray(feature_weights)
+
+    def fit(self, 
+            solve_args={'tol':1.e-12, 'min_its':50},
+            debiasing_args={}):
+        """
+        Fit the lasso using `regreg`.
+        This sets the attributes `soln`, `onestep` and
+        forms the constraints necessary for post-selection inference
+        by calling `form_constraints()`.
+
+        Parameters
+        ----------
+
+        lasso_solution : optional
+
+             If not None, this is taken to be the solution
+             of the optimization problem. No checks
+             are done, though the implied affine
+             constraints will generally not be satisfied.
+
+        solve_args : keyword args
+             Passed to `regreg.problems.simple_problem.solve`.
+
+        Returns
+        -------
+
+        soln : np.float
+             Solution to lasso.
+             
+        Notes
+        -----
+
+        If `self` already has an attribute `lasso_solution`
+        this will be taken to be the solution and 
+        no optimization problem will be solved. Supplying
+        the optional argument `lasso_solution` will
+        overwrite `self`'s `lasso_solution`.
+
+        """
+
+        self._penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
+        problem = simple_problem(self._loss, self._penalty)
+        self.lasso_solution = problem.solve(self._linear_term, **solve_args)
+
+        lasso_solution = self.lasso_solution # shorthand after setting it correctly above
+
+        if not np.all(lasso_solution == 0):
+
+            self.active = np.nonzero(lasso_solution != 0)[0]
+            self.inactive = lasso_solution == 0
+            self.active_signs = np.sign(lasso_solution[self.active])
+            self._active_soln = lasso_solution[self.active]
+
+            # Needed for finding truncation intervals
+
+            G = self._loss.smooth_objective(lasso_solution, 'grad') + self._linear_term.objective(lasso_solution, 'grad')
+            self._Qbeta_bar = self.Q.dot(lasso_solution) - G 
+
+            Q = self.Q
+            E = self.active
+            QiE = np.linalg.inv(Q)[E] # maybe we want to use a debised estimate
+            self._QiE = QiE[:,E]
+            self._beta_barE = QiE.dot(self._Qbeta_bar)
+
+            # Pearson's X^2 to estimate sigma from relaxed estimator
+            y, X = self.y, self.X
+            n, p = X.shape
+            relaxed_beta_barE = np.linalg.inv(Q[E][:,E]).dot(X[:,E].T.dot(y))
+            self._pearson_sigma = np.sqrt(((y - X[:,E].dot(relaxed_beta_barE))**2).sum() / (n - len(self.active)))
+
+        else:
+            self.active = []
+            self.inactive = np.arange(lasso_solution.shape[0])
+        return self.lasso_solution
+
+    def summary(self, alpha=0.05,
+                compute_intervals=False,
+                dispersion=None):
+        """
+        Summary table for inference adjusted for selection.
+
+        Parameters
+        ----------
+
+        alpha : float
+            Form (1-alpha)*100% selective confidence intervals.
+
+        compute_intervals : bool
+            Should we compute confidence intervals?
+
+        dispersion : float
+            Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
+
+        Returns
+        -------
+
+        pval_summary : np.recarray
+            Array with one entry per active variable.
+            Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
+
+        """
+
+        if len(self.active) > 0:
+            X, y = self.X, self.y
+            sigma = self._pearson_sigma
+            if dispersion is None:
+                sqrt_dispersion = sigma
+            else:
+                sqrt_dispersion = np.sqrt(dispersion)
+            active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
+
+            result = [] 
+
+            for j in range(len(active_set)):
+                idx = self.active[j]
+                lower, upper = _truncation_interval(Qbeta_bar, self.Q, QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=False)
+
+                sd = sqrt_dispersion * np.sqrt(QiE[j,j])
+                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
+                pvalue = tg.cdf(beta_barE[j])
+                pvalue = float(2 * min(pvalue, 1 - pvalue))
+
+                if compute_intervals:
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+                else:
+                    l, u = np.nan, np.nan
+
+                result.append((idx, pvalue, self.lasso_solution[idx], beta_barE[j], sd, l, u, lower, upper))
+
+            df = pd.DataFrame(index=self.active,
+                              data=dict([(n, d) for n, d in zip(['variable',
+                                                                 'pval', 
+                                                                 'lasso', 
+                                                                 'onestep',
+                                                                 'sd',
+                                                                 'lower_confidence', 
+                                                                 'upper_confidence',
+                                                                 'lower_truncation', 
+                                                                 'upper_truncation'], 
+                                                                np.array(result).T)]))
+            df['variable'] = df['variable'].astype(int)
+            return df
+

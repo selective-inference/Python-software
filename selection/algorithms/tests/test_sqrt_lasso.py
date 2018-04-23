@@ -6,26 +6,21 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-from selection.tests.instance import gaussian_instance as instance
-from selection.tests.decorators import (set_sampling_params_iftrue, 
-                                        set_seed_iftrue, 
-                                        wait_for_return_value,
-                                        register_report)
-import selection.tests.reports as reports
+from ...tests.instance import gaussian_instance as instance
+from ...tests.decorators import (set_sampling_params_iftrue, 
+                                 set_seed_iftrue, 
+                                 wait_for_return_value)
 
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
-from selection.algorithms.sqrt_lasso import (solve_sqrt_lasso, 
-                                             choose_lambda,
-                                             goodness_of_fit,
-                                             sqlasso_objective,
-                                             sqlasso_objective_skinny,
-                                             solve_sqrt_lasso_fat,
-                                             solve_sqrt_lasso_skinny)
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ..sqrt_lasso import (solve_sqrt_lasso, 
+                                      choose_lambda,
+                                      goodness_of_fit,
+                                      sqlasso_objective,
+                                      sqlasso_objective_skinny,
+                                      solve_sqrt_lasso_fat,
+                                      solve_sqrt_lasso_skinny)
+from ..lasso import lasso
 
-
-from selection.algorithms.lasso import lasso
-
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, burnin=10, ndraw=10)
 @dec.slow
@@ -76,15 +71,5 @@ def test_skinny_fat():
 
     np.testing.assert_allclose(soln1, soln2, rtol=1.e-3)
 
-def report(niter=50, **kwargs):
-
-    _report = goodness_of_fit_report = reports.reports['test_goodness_of_fit']
-    runs = reports.collect_multiple_runs(_report['test'],
-                                         _report['columns'],
-                                         niter,
-                                         reports.summarize_all,
-                                         **kwargs)
-    fig = reports.pvalue_plot(runs)
-    fig.savefig('sqrtlasso_goodness_of_fit.pdf')
 
 

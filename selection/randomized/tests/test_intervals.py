@@ -3,10 +3,9 @@ import numpy as np
 
 import regreg.api as rr
 
-import selection.tests.reports as reports
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from ...tests.instance import (gaussian_instance, logistic_instance)
-from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 
 from ..randomization import randomization
 
@@ -17,8 +16,6 @@ from ..glm import (glm_group_lasso,
                    glm_parametric_covariance,
                    pairs_bootstrap_glm)
 
-@register_report(['pvalue', 'cover', 'ci_length_clt',
-                  'naive_pvalues', 'naive_cover', 'ci_length_naive', 'active'])
 @set_seed_iftrue(SET_SEED, seed=20)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
@@ -129,18 +126,4 @@ def test_intervals(s=0,
                 naive_covered, 
                 ci_length_naive, 
                 active_var)
-
-def report(niter=50, **kwargs):
-    kwargs = {'s': 0, 'n': 600, 'p': 100, 'signal': 7, 'bootstrap': False, 'randomizer':'gaussian',
-                    'loss':'gaussian', 'intervals':'old'}
-    intervals_report = reports.reports['test_intervals']
-    runs = reports.collect_multiple_runs(intervals_report['test'],
-                                             intervals_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-    fig = reports.pivot_plot_plus_naive(runs)
-    fig.suptitle('Selective vs naive p-values after group Lasso')
-    fig.savefig('Group_lasso.pdf')
-
 
