@@ -1,37 +1,59 @@
 from __future__ import print_function
+
 import functools
 import numpy as np
-from regreg.atoms.slope import slope
-from selection.randomized.randomization import randomization
-import regreg.api as rr
-from selection.randomized.base import restricted_estimator
-from selection.constraints.affine import constraints
-from selection.randomized.query import (query,
-                                        multiple_queries,
-                                        langevin_sampler,
-                                        affine_gaussian_sampler)
 
-class randomized_slope():
+# sklearn imports
+
+have_isotonic = False
+try:
+    from sklearn.isotonic import IsotonicRegression
+    have_isotonic = True
+except ImportError:
+    raise ValueError('unable to import isotonic regression from sklearn, SLOPE subgradient projection will not work')
+
+# regreg imports
+
+from regreg.atoms.slope import _basic_proximal_map
+import regreg.api as rr
+
+from ..constraints.affine import constraints
+
+from .randomization import randomization
+from .base import restricted_estimator
+from .lasso import highdim
+from .query import (query,
+                    multiple_queries,
+                    langevin_sampler,
+                    affine_gaussian_sampler)
+
+class slope(highdim):
 
     def __init__(self,
                  loglike,
-                 feature_weights,
+                 slope_weights,
                  ridge_term,
                  randomizer_scale,
                  perturb=None):
         r"""
         Create a new post-selection object for the SLOPE problem
+
         Parameters
         ----------
+
         loglike : `regreg.smooth.glm.glm`
             A (negative) log-likelihood as implemented in `regreg`.
-        feature_weights : np.ndarray
-            Feature weights for L-1 penalty. If a float,
+
+        slope_weights : np.ndarray
+            SLOPE weights for L-1 penalty. If a float,
             it is broadcast to all features.
+
         ridge_term : float
             How big a ridge term to add?
+
         randomizer_scale : float
             Scale for IID components of randomization.
+
         perturb : np.ndarray
             Random perturbation subtracted as a linear
             term in the objective function.
@@ -40,13 +62,13 @@ class randomized_slope():
         self.loglike = loglike
         self.nfeature = p = self.loglike.shape[0]
 
-        if np.asarray(feature_weights).shape == ():
-            feature_weights = np.ones(loglike.shape) * feature_weights
-        self.feature_weights = np.asarray(feature_weights)
+        if np.asarray(slope_weights).shape == ():
+            slope_weights = np.ones(loglike.shape) * slope_weights
+        self.slope_weights = np.asarray(slope_weights)
 
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         self.ridge_term = ridge_term
-        self.penalty = slope(feature_weights, lagrange=1.)
+        self.penalty = rr.slope(slope_weights, lagrange=1.)
         self._initial_omega = perturb  # random perturbation
 
     def fit(self,
@@ -64,6 +86,8 @@ class randomized_slope():
         quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
         problem = rr.simple_problem(self.loglike, self.penalty)
         self.initial_soln = problem.solve(quad, **solve_args)
+
+        # now we have to work out SLOPE details, clusters, etc.
 
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
@@ -85,7 +109,8 @@ class randomized_slope():
         sorted_soln = self.initial_soln[indices]
         initial_scalings = np.sort(np.unique(np.fabs(self.initial_soln[active])))[::-1]
         self.observed_opt_state = initial_scalings
-        #print("observed opt state", self.observed_opt_state)
+
+        self._unpenalized = np.zeros(p, np.bool)
 
         _beta_unpenalized = restricted_estimator(self.loglike, self._overall, solve_args=solve_args)
 
@@ -209,16 +234,15 @@ class randomized_slope():
         if target == 'selected':
             observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
                                                                                                 dispersion=dispersion)
-
-        # elif target == 'full':
-        #     X, y = self.loglike.data
-        #     n, p = X.shape
-        #     if n > p:
-        #         observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
-        #                                                                                         dispersion=dispersion)
-        #     else:
-        #         observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
-        #                                                                                             dispersion=dispersion)
+        elif target == 'full':
+            X, y = self.loglike.data
+            n, p = X.shape
+            if n > p:
+                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
+                                                                                                dispersion=dispersion)
+            else:
+                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
+                                                                                                    dispersion=dispersion)
 
         # working out conditional law of opt variables given
         # target after decomposing score wrt target
@@ -231,54 +255,12 @@ class randomized_slope():
 
     # Targets of inference
     # and covariance with score representation
-
-    def selected_targets(self, features=None, dispersion=None):
-
-        X, y = self.loglike.data
-        n, p = X.shape
-
-        if features is None:
-            active = self._active
-            noverall = active.sum()
-            overall = active
-
-            score_linear = self.score_transform[0]
-            Q = -score_linear[overall]
-            cov_target = np.linalg.inv(Q)
-            observed_target = self._beta_full[overall]
-            crosscov_target_score = score_linear.dot(cov_target)
-            Xfeat = X[:, overall]
-            alternatives = [{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] \
-                           + ['twosided']
-
-        else:
-
-            features_b = np.zeros_like(self._overall)
-            features_b[features] = True
-            features = features_b
-
-            Xfeat = X[:, features]
-            Qfeat = Xfeat.T.dot(self._W[:, None] * Xfeat)
-            Gfeat = self.loglike.smooth_objective(self.initial_soln, 'grad')[features]
-            Qfeat_inv = np.linalg.inv(Qfeat)
-            one_step = self.initial_soln[features] - Qfeat_inv.dot(Gfeat)
-            cov_target = Qfeat_inv
-            _score_linear = -Xfeat.T.dot(self._W[:, None] * X).T
-            crosscov_target_score = _score_linear.dot(cov_target)
-            observed_target = one_step
-            alternatives = ['twosided'] * features.sum()
-
-        if dispersion is None:  # use Pearson's X^2
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(
-                Xfeat.dot(observed_target))) ** 2 / self._W).sum() / (n - Xfeat.shape[1])
-
-        print(dispersion, 'dispersion')
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+    # are same as highdim LASSO
 
     @staticmethod
     def gaussian(X,
                  Y,
-                 feature_weights,
+                 slope_weights,
                  sigma=1.,
                  quadratic=None,
                  ridge_term=0.,
@@ -294,21 +276,9 @@ class randomized_slope():
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return randomized_slope(loglike, np.asarray(feature_weights) / sigma ** 2, ridge_term, randomizer_scale)
+        return slope(loglike, np.asarray(slope_weights) / sigma ** 2, ridge_term, randomizer_scale)
 
-"""
-Projection onto selected subgradients of SLOPE
-"""
-import numpy as np
-
-have_isotonic = False
-try:
-    from sklearn.isotonic import IsotonicRegression
-    have_isotonic = True
-except ImportError:
-    raise ValueError('unable to import isotonic regression from sklearn')
-
-from regreg.atoms.slope import _basic_proximal_map
+# Projection onto selected subgradients of SLOPE
 
 def _projection_onto_selected_subgradients(prox_arg,
                                            weights,
@@ -324,20 +294,27 @@ def _projection_onto_selected_subgradients(prox_arg,
     of this set is p -- the dimensions of the `prox_arg` minus
     the number of unique values in `ordered_clustering` + 1 if the
     last value of the solution was zero (i.e. solution was sparse).
+
     Parameters
     ----------
+
     prox_arg : np.ndarray(p, np.float)
         Point to project
+
     weights : np.ndarray(p, np.float)
         Weights of the SLOPE penalty.
+
     ordering : np.ndarray(p, np.int)
         Order of original argument to SLOPE prox.
         First entry corresponds to largest argument of SLOPE prox.
+
     cluster_sizes : sequence
         Sizes of clusters, starting with
         largest in absolute value.
+
     active_signs : np.ndarray(p, np.int)
          Signs of non-zero coefficients.
+
     last_value_zero : bool
         Is the last solution value equal to 0?
     """

@@ -1598,8 +1598,8 @@ class highdim(lasso):
             observed_target = self._beta_full[overall]
             crosscov_target_score = score_linear.dot(cov_target)
             Xfeat = X[:, overall]
-            alternatives = [{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] + [
-                                                                                                                       'twosided'] * unpenalized.sum()
+            alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] + 
+                            ['twosided'] * unpenalized.sum())
 
         else:
 
@@ -1622,7 +1622,6 @@ class highdim(lasso):
             dispersion = ((y - self.loglike.saturated_loss.mean_function(
                 Xfeat.dot(observed_target))) ** 2 / self._W).sum() / (n - Xfeat.shape[1])
 
-        print(dispersion, 'dispersion')
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def full_targets(self, features=None, dispersion=None):
@@ -1690,7 +1689,6 @@ class highdim(lasso):
             relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
             dispersion = ((y - self.loglike.saturated_loss.mean_function(
                 Xfeat.dot(relaxed_soln))) ** 2 / self._W).sum() / (n - features.sum())
-            #print("dispersion", np.sqrt(dispersion))
         alternatives = ['twosided'] * features.sum()
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 

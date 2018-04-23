@@ -12,7 +12,7 @@ import numpy as np
 from regreg.atoms.slope import slope
 import regreg.api as rr
 
-from selection.SLOPE.slope import randomized_slope
+from selection.randomized.slope import slope
 import matplotlib.pyplot as plt
 
 def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", sigma = None):
@@ -181,10 +181,10 @@ def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., ra
                                                           choice_weights="bhq", #put gaussian
                                                           sigma=sigma_)
 
-        conv = randomized_slope.gaussian(X,
-                                         Y,
-                                         r_sigma * r_lambda_seq,
-                                         randomizer_scale=randomizer_scale * sigma_)
+        conv = slope.gaussian(X,
+                              Y,
+                              r_sigma * r_lambda_seq,
+                              randomizer_scale=randomizer_scale * sigma_)
 
         signs = conv.fit()
         nonzero = signs != 0
