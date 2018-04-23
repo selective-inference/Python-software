@@ -199,60 +199,6 @@ class slope(highdim):
                                                selection_info=self.selection_variable)
         return active_signs
 
-    def selective_MLE(self,
-                      target="selected",
-                      features=None,
-                      parameter=None,
-                      level=0.9,
-                      compute_intervals=False,
-                      dispersion=None,
-                      solve_args={'tol': 1.e-12}):
-        """
-        Parameters
-        ----------
-        target : one of ['selected', 'full']
-        features : np.bool
-            Binary encoding of which features to use in final
-            model and targets.
-        parameter : np.array
-            Hypothesized value for parameter -- defaults to 0.
-        level : float
-            Confidence level.
-        ndraw : int (optional)
-            Defaults to 1000.
-        burnin : int (optional)
-            Defaults to 1000.
-        compute_intervals : bool
-            Compute confidence intervals?
-        dispersion : float (optional)
-            Use a known value for dispersion, or Pearson's X^2?
-        """
-
-        if parameter is None:
-            parameter = np.zeros(self.loglike.shape[0])
-
-        if target == 'selected':
-            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
-                                                                                                dispersion=dispersion)
-        elif target == 'full':
-            X, y = self.loglike.data
-            n, p = X.shape
-            if n > p:
-                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
-                                                                                                dispersion=dispersion)
-            else:
-                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
-                                                                                                    dispersion=dispersion)
-
-        # working out conditional law of opt variables given
-        # target after decomposing score wrt target
-
-        return self.sampler.selective_MLE(observed_target,
-                                          cov_target,
-                                          cov_target_score,
-                                          self.observed_opt_state,
-                                          solve_args=solve_args)
-
     # Targets of inference
     # and covariance with score representation
     # are same as highdim LASSO
