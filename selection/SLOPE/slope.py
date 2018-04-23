@@ -295,7 +295,7 @@ class randomized_slope():
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
         return randomized_slope(loglike, np.asarray(feature_weights) / sigma ** 2, ridge_term, randomizer_scale)
-=======
+
 """
 Projection onto selected subgradients of SLOPE
 """
