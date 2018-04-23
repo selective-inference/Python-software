@@ -6,10 +6,10 @@ from itertools import product
 from selection.tests.flags import SMALL_SAMPLES
 from selection.tests.instance import (gaussian_instance as instance,
                                       logistic_instance)
-from selection.tests.decorators import set_sampling_params_iftrue, wait_for_return_value, register_report
-import selection.tests.reports as reports
+from selection.tests.decorators import set_sampling_params_iftrue, wait_for_return_value
 
 from selection.algorithms.lasso import (lasso, 
+                                        lasso_full,
                                         data_carving, 
                                         data_splitting,
                                         split_model, 
@@ -161,7 +161,6 @@ def test_coxph():
 
     return L, C, P
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value(max_tries=100)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_gaussian(n=200,
@@ -229,7 +228,6 @@ def test_data_carving_gaussian(n=200,
         v = (carve, split, active)
         return v
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_sqrt_lasso(n=200,
@@ -296,7 +294,6 @@ def test_data_carving_sqrt_lasso(n=200,
         return v
 
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_logistic(n=700,
@@ -370,7 +367,6 @@ def test_data_carving_logistic(n=700,
         v = (carve, split, active)
         return v
 
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_poisson(n=500,
@@ -440,9 +436,6 @@ def test_data_carving_poisson(n=500,
         v = (carve, split, active)
         return v
        
-
-
-@register_report(['pvalue', 'split_pvalue', 'active'])
 @wait_for_return_value()
 @dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
@@ -517,7 +510,6 @@ def test_intervals(n=100, p=20, s=5):
     S = las.summary(compute_intervals=True)
     nominal_intervals(las)
     
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_gaussian_pvals(n=100,
                         p=500,
@@ -540,7 +532,6 @@ def test_gaussian_pvals(n=100,
         S = L.summary('twosided')
         return S['pval'], [v in true_active for v in S['variable']]
 
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_sqrt_lasso_pvals(n=100,
                           p=200,
@@ -571,7 +562,6 @@ def test_sqrt_lasso_pvals(n=100,
         return S['pval'], [v in true_active for v in S['variable']]
 
 
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_sqrt_lasso_sandwich_pvals(n=200,
                                    p=50,
@@ -603,7 +593,6 @@ def test_sqrt_lasso_sandwich_pvals(n=200,
         S = L_SQ.summary('twosided')
         return S['pval'], [v in true_active for v in S['variable']]
 
-@register_report(['pvalue', 'parametric_pvalue', 'active'])
 @wait_for_return_value()
 def test_gaussian_sandwich_pvals(n=200,
                                  p=50,
@@ -663,7 +652,6 @@ def test_gaussian_sandwich_pvals(n=200,
         return P_P, P_S, [v in true_active for v in S['variable']]
 
 
-@register_report(['pvalue', 'active'])
 @wait_for_return_value()
 def test_logistic_pvals(n=500,
                         p=200,
@@ -754,29 +742,41 @@ def test_equivalence_sqrtlasso(n=200, p=400, s=10, sigma=3.):
     np.testing.assert_allclose(G1[3:], G2[3:])
     np.testing.assert_allclose(soln1, soln2)
     
-def report(niter=50, **kwargs):
+def test_gaussian_full(n=100, p=20):
 
-    # these are all our null tests
-    fn_names = ['test_gaussian_pvals',
-                'test_logistic_pvals',
-                'test_data_carving_gaussian',
-                'test_data_carving_sqrt_lasso',
-                'test_data_carving_logistic',
-                'test_data_carving_poisson',
-                'test_data_carving_coxph'
-                ]
+    y = np.random.standard_normal(n)
+    X = np.random.standard_normal((n,p))
 
-    dfs = []
-    for fn in fn_names:
-        fn = reports.reports[fn]
-        dfs.append(reports.collect_multiple_runs(fn['test'],
-                                                 fn['columns'],
-                                                 niter,
-                                                 reports.summarize_all))
-    dfs = pd.concat(dfs)
+    lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0))
+    Q = rr.identity_quadratic(0.01, 0, np.ones(p), 0)
 
-    fig = reports.pvalue_plot(dfs)
-    fig.savefig('algorithms_pvalues.pdf') 
+    weights_with_zeros = 0.5*lam_theor * np.ones(p)
+    weights_with_zeros[:3] = 0.
 
-    fig = reports.split_pvalue_plot(dfs)
-    fig.savefig('algorithms_split_pvalues.pdf') 
+    L = lasso_full.gaussian(X, y, weights_with_zeros, 1., quadratic=Q)
+    L.fit()
+    print(L.summary(compute_intervals=True))
+
+def test_logistic_full():
+
+    for Y, T in [(np.random.binomial(1,0.5,size=(10,)),
+                  np.ones(10)),
+                 (np.random.binomial(1,0.5,size=(10,)),
+                  None),
+                 (np.random.binomial(3,0.5,size=(10,)),
+                  3*np.ones(10))]:
+        X = np.random.standard_normal((10,5))
+
+        L = lasso_full.logistic(X, Y, 0.1, trials=T)
+        L.fit()
+        L.summary(compute_intervals=True)
+
+def test_poisson_full():
+
+    X = np.random.standard_normal((10,5))
+    Y = np.random.poisson(10, size=(10,))
+
+    L = lasso_full.poisson(X, Y, 0.1)
+    L.fit()
+    L.summary(compute_intervals=True)
+

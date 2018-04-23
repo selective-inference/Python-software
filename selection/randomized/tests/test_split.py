@@ -3,8 +3,7 @@ import numpy as np
 
 import regreg.api as rr
 
-from ...tests.decorators import wait_for_return_value, register_report, set_sampling_params_iftrue
-import selection.tests.reports as reports
+from ...tests.decorators import wait_for_return_value, set_sampling_params_iftrue
 from ...tests.flags import SMALL_SAMPLES
 from ...tests.instance import logistic_instance
 
@@ -14,7 +13,6 @@ from ..glm import (split_glm_group_lasso,
                    pairs_bootstrap_glm)
 from ..M_estimator import restricted_Mest
 
-@register_report(['pvalue', 'cover', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @wait_for_return_value()
 def test_split(s=3,
@@ -94,22 +92,3 @@ def test_split(s=3,
 
         return pvalues, covered, active_var
 
-def report(niter=50, **kwargs):
-
-    split_report = reports.reports['test_split']
-    CLT_runs = reports.collect_multiple_runs(split_report['test'],
-                                             split_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-    kwargs['bootstrap'] = False
-    fig = reports.pivot_plot(CLT_runs, color='b', label='CLT')
-
-    kwargs['bootstrap'] = True
-    bootstrap_runs = reports.collect_multiple_runs(split_report['test'],
-                                                   split_report['columns'],
-                                                   niter,
-                                                   reports.summarize_all,
-                                                   **kwargs)
-    fig = reports.pivot_plot(bootstrap_runs, color='g', label='Bootstrap', fig=fig)
-    fig.savefig('split_pivots.pdf') # will have both bootstrap and CLT on plot

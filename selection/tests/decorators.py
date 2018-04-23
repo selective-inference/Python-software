@@ -5,7 +5,6 @@ import numpy as np
 import nose
 import nose.tools
 
-from .reports import reports
 
 def set_seed_iftrue(condition, seed=10):
     """
@@ -147,24 +146,3 @@ def wait_for_return_value(max_tries=50, strict=True):
 
     return wait_for_decorator
 
-def register_report(columns):
-    """
-    Register a report in selection.tests.reports
-    that can be used to create simulation results
-    """
-
-    def register_decorator(test):
-
-        @wraps(test)
-        def _new_test(*args, **kwargs):
-            return test(*args, **kwargs)
-        if hasattr(test, 'func_name'): # Py2.*
-            name = test.func_name
-        else:
-            name = test.__name__       # Py3.*
-        if name in reports:
-            print('Overwriting existing report %s' % name)
-        reports[name] = {'test':_new_test, 'columns':columns}
-        return nose.tools.make_decorator(test)(_new_test)
-
-    return register_decorator

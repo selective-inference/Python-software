@@ -7,15 +7,13 @@ from copy import copy
 import numpy as np
 import regreg.api as rr
 
-from .glm import (glm_group_lasso,
-                  glm_group_lasso_parametric,
-                  glm_greedy_step,
+from .glm import (glm_greedy_step,
                   glm_threshold_score,
-                  glm_nonparametric_bootstrap,
-                  glm_parametric_covariance,
                   pairs_bootstrap_glm)
 from .randomization import randomization
 from .query import multiple_queries
+
+from .lasso import highdim as lasso
 
 class step(lasso):
 
