@@ -10,6 +10,8 @@ from selection.randomized.query import (query,
                                         langevin_sampler,
                                         affine_gaussian_sampler)
 
+from ..algorithms.debiased_lasso import debiasing_matrix
+
 class marginal_screening():
 
     def __init__(self,
@@ -18,7 +20,7 @@ class marginal_screening():
                  randomizer_scale,
                  perturb=None):
 
-        self.nfeature =  p = score.shape[0]
+        self.nfeature =  p = observed_score.shape[0]
         if np.asarray(threshold).shape == ():
             threshold = np.ones(p) * threshold
         self.threshold = np.asarray(threshold)
@@ -44,7 +46,7 @@ class marginal_screening():
         active_signs = np.sign(randomized_score[self.boundary])
 
         self.observed_opt_state = self._initial_omega[self.boundary] + self.observed_score[self.boundary] - \
-                                  np.diag(active_signs)* self.threshold[self.boundary]
+                                  np.diag(active_signs).dot(self.threshold[self.boundary])
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
@@ -266,7 +268,7 @@ class marginal_screening():
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return marginal_screening(-X.dot(Y), threshold, randomizer_scale)
+        return marginal_screening(X.dot(Y), threshold, randomizer_scale)
 
 
 
