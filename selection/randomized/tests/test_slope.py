@@ -13,6 +13,8 @@ from regreg.atoms.slope import slope
 import regreg.api as rr
 
 from selection.randomized.slope import slope
+from statsmodels.distributions import ECDF
+
 import matplotlib.pyplot as plt
 
 def test_slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", sigma = None):
@@ -101,65 +103,66 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 
     print("relative difference in solns", np.linalg.norm(soln-r_beta)/np.linalg.norm(r_beta))
 
-#compare_outputs_SLOPE_weights()
+# #compare_outputs_SLOPE_weights()
 
-def test0_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
-                     randomizer_scale= np.sqrt(0.25),
-                     solve_args={'tol':1.e-12, 'min_its':50}):
+# def test0_randomized_slope(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35,
+#                      randomizer_scale= np.sqrt(0.25),
+#                      solve_args={'tol':1.e-12, 'min_its':50}):
 
-    inst = gaussian_instance
-    signal = np.sqrt(signal_fac * 2. * np.log(p))
-    X, Y, beta = inst(n=n,
-                      p=p,
-                      signal=signal,
-                      s=s,
-                      equicorrelated=False,
-                      rho=rho,
-                      sigma=sigma,
-                      random_signs=True)[:3]
+#     inst = gaussian_instance
+#     signal = np.sqrt(signal_fac * 2. * np.log(p))
+#     X, Y, beta = inst(n=n,
+#                       p=p,
+#                       signal=signal,
+#                       s=s,
+#                       equicorrelated=False,
+#                       rho=rho,
+#                       sigma=sigma,
+#                       random_signs=True)[:3]
 
-    sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
-    r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
-                                                      Y,
-                                                      W=None,
-                                                      normalize=True,
-                                                      choice_weights="gaussian",
-                                                      sigma=sigma_)
+#     sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+#     r_beta, r_E, r_lambda_seq, r_sigma = test_slope_R(X,
+#                                                       Y,
+#                                                       W=None,
+#                                                       normalize=True,
+#                                                       choice_weights="gaussian",
+#                                                       sigma=sigma_)
 
-    pen = slope(r_sigma * r_lambda_seq, lagrange=1.)
+#     pen = slope(r_sigma * r_lambda_seq, lagrange=1.)
 
-    loglike = rr.glm.gaussian(X, Y, coef=1., quadratic=None)
-    _initial_omega = randomizer_scale * sigma_* np.random.standard_normal(p)
-    quad = rr.identity_quadratic(0, 0, -_initial_omega, 0)
-    problem = rr.simple_problem(loglike, pen)
-    initial_soln = problem.solve(quad, **solve_args)
-    initial_subgrad = -(loglike.smooth_objective(initial_soln, 'grad') + quad.objective(initial_soln, 'grad'))
+#     loglike = rr.glm.gaussian(X, Y, coef=1., quadratic=None)
+#     _initial_omega = randomizer_scale * sigma_* np.random.standard_normal(p)
+#     quad = rr.identity_quadratic(0, 0, -_initial_omega, 0)
+#     problem = rr.simple_problem(loglike, pen)
+#     initial_soln = problem.solve(quad, **solve_args)
+#     initial_subgrad = -(loglike.smooth_objective(initial_soln, 'grad') + quad.objective(initial_soln, 'grad'))
 
-    indices = np.argsort(-np.abs(initial_soln))
-    sorted_soln = initial_soln[indices]
+#     indices = np.argsort(-np.abs(initial_soln))
+#     sorted_soln = initial_soln[indices]
 
-    cur_indx_array = []
-    cur_indx_array.append(0)
-    cur_indx = 0
-    pointer = 0
-    signs_cluster = []
-    for j in range(p-1):
-        if np.abs(sorted_soln[j+1]) != np.abs(sorted_soln[cur_indx]):
-            cur_indx_array.append(j+1)
-            cur_indx = j+1
-            sign_vec = np.zeros(p)
-            sign_vec[np.arange(j+1-cur_indx_array[pointer]) + cur_indx_array[pointer]] = \
-                np.sign(initial_soln[indices[np.arange(j+1-cur_indx_array[pointer]) + cur_indx_array[pointer]]])
-            signs_cluster.append(sign_vec)
-            pointer = pointer + 1
-            if sorted_soln[j+1]== 0:
-                break
+#     cur_indx_array = []
+#     cur_indx_array.append(0)
+#     cur_indx = 0
+#     pointer = 0
+#     signs_cluster = []
+#     for j in range(p-1):
+#         if np.abs(sorted_soln[j+1]) != np.abs(sorted_soln[cur_indx]):
+#             cur_indx_array.append(j+1)
+#             cur_indx = j+1
+#             sign_vec = np.zeros(p)
+#             sign_vec[np.arange(j+1-cur_indx_array[pointer]) + cur_indx_array[pointer]] = \
+#                 np.sign(initial_soln[indices[np.arange(j+1-cur_indx_array[pointer]) + cur_indx_array[pointer]]])
+#             signs_cluster.append(sign_vec)
+#             pointer = pointer + 1
+#             if sorted_soln[j+1]== 0:
+#                 break
 
-    signs_cluster = np.asarray(signs_cluster).T
-    X_clustered = X[:, indices].dot(signs_cluster)
-    print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
+#     signs_cluster = np.asarray(signs_cluster).T
+#     X_clustered = X[:, indices].dot(signs_cluster)
+#     print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
 
-def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., randomizer_scale= np.sqrt(0.5)):
+def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., randomizer_scale= np.sqrt(0.5),
+                          use_MLE=False):
 
     while True:
         inst = gaussian_instance
@@ -190,41 +193,40 @@ def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., ra
         nonzero = signs != 0
         print("dimensions", n, p, nonzero.sum())
         if nonzero.sum() > 0:
-            estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=sigma_)
-            print("estimate", estimate, pval, intervals)
-
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+            if use_MLE:
+                estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=sigma_)
+                print("estimate", estimate, pval, intervals)
+            else:
+                _, pval, intervals = conv.summary(target="selected", dispersion=sigma_, compute_intervals=True)
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
             break
 
-    if True:
-        return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
+    print(beta_target)
+    return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
 
 def main(nsim=100):
 
     P0, PA, cover, length_int = [], [], [], []
-    #from statsmodels.distributions import ECDF
-
+    
     for i in range(nsim):
         p0, pA, cover_, intervals = test_randomized_slope()
 
         cover.extend(cover_)
         P0.extend(p0)
         PA.extend(pA)
-        print(np.mean(cover),'null pvalue + power')
+        print('coverage', np.mean(cover))
 
-    #     if i % 3 == 0 and i > 0:
-    #         U = np.linspace(0, 1, 101)
-    #         plt.clf()
-    #         if len(P0) > 0:
-    #             plt.plot(U, ECDF(P0)(U))
-    #         if len(PA) > 0:
-    #             plt.plot(U, ECDF(PA)(U), 'r')
-    #         plt.plot([0, 1], [0, 1], 'k--')
-    #         plt.savefig("/Users/snigdhapanigrahi/Desktop/plot.pdf")
-    # plt.show()
+        if i % 3 == 0 and i > 0:
+            U = np.linspace(0, 1, 101)
+            plt.clf()
+            if len(P0) > 0:
+                plt.plot(U, ECDF(P0)(U))
+            if len(PA) > 0:
+                plt.plot(U, ECDF(PA)(U), 'r')
+            plt.plot([0, 1], [0, 1], 'k--')
+            plt.draw()
 
-main()
 
 
 

@@ -505,7 +505,7 @@ def test_full_lasso_tall():
         X *= np.sqrt(n)
         L = lasso_full.gaussian(X, y, lam)
         L.fit()
-        if len(L.active) > 0:
+        if len(L.active) > 2:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
             numpy2ri.activate()
 
@@ -551,7 +551,7 @@ def test_full_lasso_tall_logistic():
         X *= np.sqrt(n)
         L = lasso_full.logistic(X, y, lam)
         L.fit()
-        if len(L.active) > 0:
+        if len(L.active) > 2:
             S = L.summary(compute_intervals=False)
             numpy2ri.activate()
 
@@ -585,7 +585,7 @@ def test_full_lasso_tall_logistic():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_full_lasso_wide():
-    n, p, s = 30, 60, 15
+    n, p, s = 100, 200, 15
 
     while True:
         X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
@@ -595,7 +595,7 @@ def test_full_lasso_wide():
         L = lasso_full.gaussian(X, y, lam)
         L.fit()
 
-        if len(L.active) > 0:
+        if len(L.active) > 2:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
             numpy2ri.activate()
 
@@ -623,9 +623,8 @@ def test_full_lasso_wide():
             pvalues = rpy.r('pvalues')
             active_set = rpy.r('active_vars')
 
-            import sys
-            sys.stderr.write(repr(pvalues))
-            sys.stderr.write(repr(S['pval']))
+            print(pvalues)
+            print(np.asarray(S['pval']))
 
             nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
             numpy2ri.deactivate()
@@ -633,7 +632,7 @@ def test_full_lasso_wide():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_full_lasso_wide_logistic():
-    n, p, s = 30, 60, 15
+    n, p, s = 100, 200, 15
 
     while True:
         X, y, _, _ = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)
@@ -643,7 +642,7 @@ def test_full_lasso_wide_logistic():
         L = lasso_full.logistic(X, y, lam)
         L.fit()
 
-        if len(L.active) > 0:
+        if len(L.active) > 2:
             S = L.summary(compute_intervals=False, dispersion=1.)
             numpy2ri.activate()
 
@@ -670,9 +669,8 @@ def test_full_lasso_wide_logistic():
             pvalues = rpy.r('pvalues')
             active_set = rpy.r('active_vars')
 
-            import sys
-            sys.stderr.write(repr(pvalues))
-            sys.stderr.write(repr(S['pval']))
+            print(pvalues)
+            print(np.asarray(S['pval']))
 
             nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
             numpy2ri.deactivate()
