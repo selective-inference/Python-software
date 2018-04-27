@@ -9,25 +9,40 @@ from selection.randomized.query import (query,
                                         multiple_queries,
                                         langevin_sampler,
                                         affine_gaussian_sampler)
+from scipy.stats import norm as ndist
 
 from ..algorithms.debiased_lasso import debiasing_matrix
 
-class marginal_screening():
+def BH_selection(p_values, level):
+
+    m = p_values.shape[0]
+    p_sorted = np.sort(p_values)
+    indices = np.arange(m)
+    indices_order = np.argsort(p_values)
+    order_sig = np.max(indices[p_sorted - np.true_divide(level * (np.arange(m) + 1.), m) <= 0])
+    E_sel = indices_order[:(order_sig+1)]
+
+    active = np.zeros(m, np.bool)
+    active[E_sel] = 1
+    return order_sig+1, active, p_values[indices_order[order_sig+1]]
+
+class BH():
 
     def __init__(self,
                  observed_score,
-                 threshold,
+                 sigma_hat,
                  randomizer_scale,
+                 level,
                  perturb=None):
 
         self.nfeature =  p = observed_score.shape[0]
-        if np.asarray(threshold).shape == ():
-            threshold = np.ones(p) * threshold
-        self.threshold = np.asarray(threshold)
+        self.sigma_hat = sigma_hat
 
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         self._initial_omega = perturb
         self.observed_score = observed_score
+
+        self.level = level
 
     def fit(self, perturb=None):
 
@@ -39,13 +54,17 @@ class marginal_screening():
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        randomized_score = self.observed_score + self._initial_omega
+        randomized_score = -self.observed_score + self._initial_omega
+        p_values = 2. * (1. - ndist.cdf(np.true_divide(np.abs(randomized_score),self.sigma_hat)))
+        K, active, p_threshold = BH_selection(p_values, self.level)
+        threshold = self.sigma_hat * ndist.ppf(1. - max((K * self.level) / p, p_threshold))
+        self.threshold = threshold
 
         self.boundary = np.fabs(randomized_score) > self.threshold
         self.interior = ~self.boundary
         active_signs = np.sign(randomized_score[self.boundary])
 
-        self.observed_opt_state = self._initial_omega[self.boundary] + self.observed_score[self.boundary] - \
+        self.observed_opt_state = self._initial_omega[self.boundary] - self.observed_score[self.boundary] - \
                                   np.diag(active_signs).dot(self.threshold[self.boundary])
         self.num_opt_var = self.observed_opt_state.shape[0]
 
@@ -53,7 +72,7 @@ class marginal_screening():
         opt_linear[self.boundary, :] = np.diag(active_signs)
         opt_offset = np.zeros(p)
         opt_offset[self.boundary] = active_signs * self.threshold[self.boundary]
-        opt_offset[self.interior] = self._initial_omega[self.interior] + self.observed_score[self.interior]
+        opt_offset[self.interior] = self._initial_omega[self.interior] - self.observed_score[self.interior]
         self.opt_transform = (opt_linear, opt_offset)
 
         cov, prec = self.randomizer.cov_prec
@@ -87,7 +106,7 @@ class marginal_screening():
                                                log_density,
                                                logdens_transform,
                                                selection_info=self.selection_variable)
-        return active_signs
+        return self.boundary
 
 
     def selective_MLE(self,
@@ -258,8 +277,8 @@ class marginal_screening():
     @staticmethod
     def gaussian(X,
                  Y,
-                 threshold,
-                 sigma=1.,
+                 sigma = 1.,
+                 level = 0.10,
                  randomizer_scale=None):
 
         n, p = X.shape
@@ -268,7 +287,9 @@ class marginal_screening():
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return marginal_screening(X.dot(Y), threshold, randomizer_scale)
+        sigma_hat = np.sqrt((sigma **2.) * (np.mean((X ** 2).sum(0))) + (randomizer_scale**2.))
+
+        return BH(-X.dot(Y), sigma_hat, randomizer_scale, level)
 
 
 

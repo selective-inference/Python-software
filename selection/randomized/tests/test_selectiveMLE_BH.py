@@ -1,0 +1,46 @@
+import numpy as np
+from selection.randomized.marginal_screening import marginal_screening
+from selection.tests.instance import gaussian_instance
+
+def test_full_targets(n=500, p=100, signal_fac=1.1, s=5, sigma=3, rho=0.4, randomizer_scale=0.25,
+                      full_dispersion=True):
+    """
+    Compare to R randomized lasso
+    """
+
+    inst = gaussian_instance
+    signal = np.sqrt(signal_fac * 2 * np.log(p))
+    X, Y, beta = inst(n=n,
+                      p=p,
+                      signal=signal,
+                      s=s,
+                      equicorrelated=False,
+                      rho=rho,
+                      sigma=sigma,
+                      random_signs=True)[:3]
+
+    idx = np.arange(p)
+    sigmaX = rho ** np.abs(np.subtract.outer(idx, idx))
+    print("snr", beta.T.dot(sigmaX).dot(beta) / ((sigma ** 2.) * n))
+
+    n, p = X.shape
+
+    sigma_ = np.std(Y)
+
+    conv = marginal_screening.gaussian(X,
+                                       Y,
+                                       sigma = sigma_,
+                                       randomizer_scale=randomizer_scale * sigma_)
+
+    boundary = conv.fit()
+    nonzero = boundary != 0
+    print("dimensions", n, p, nonzero.sum())
+
+    dispersion = None
+    if full_dispersion:
+        dispersion = np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p)
+
+    estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="full", dispersion=dispersion)
+
+    coverage = (beta[nonzero] > intervals[:, 0]) * (beta[nonzero] < intervals[:, 1])
+    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
