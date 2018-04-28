@@ -43,11 +43,12 @@ def test_selected_targets(n=500, p=100, signal_fac=1.6, s=5, sigma=3, rho=0.4, r
     estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=dispersion)
 
     beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+    print("beta_target and intervals", beta_target, intervals)
     coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
     print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
-def main(nsim=100):
+def main(nsim=500):
 
     P0, PA, cover, length_int = [], [], [], []
     for i in range(nsim):
