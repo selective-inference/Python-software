@@ -1,8 +1,8 @@
 import numpy as np
 import nose.tools as nt
-import rpy2.robjects as rpy
-from rpy2.robjects import numpy2ri
-rpy.r('library(selectiveInference)')
+#import rpy2.robjects as rpy
+#from rpy2.robjects import numpy2ri
+#rpy.r('library(selectiveInference)')
 
 from selection.randomized.lasso import lasso
 from selection.tests.instance import gaussian_instance

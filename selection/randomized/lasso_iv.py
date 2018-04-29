@@ -703,6 +703,10 @@ class lasso_iv_ar(highdim):
         cov_target_score = np.hstack([self.Z, self.D.reshape((-1,1))]).T.dot(R_ZE).dot(self.Z)
         cov_target_score *= Sigma_11
 
+        # tsls estimator as beta reference for confidence interval
+        denom = self.D.dot(P_Z - P_ZE).dot(self.D)
+        two_stage_ls = self.D.dot(P_Z - P_ZE).dot(self.Y) / denom
+
         # this is for Anderson-Rubin
         alternatives = ['greater']
 
@@ -736,12 +740,21 @@ class lasso_iv_ar(highdim):
                                                           cov_target_score, 
                                                           self.K2,
                                                           self.test_stat,
-                                                          parameter=parameter,
+                                                          parameter=two_stage_ls,
                                                           sample=opt_sample,
                                                           level=level,
                                                           how_many_sd=40)
+        coverage = self.sampler.confidence_interval_coverage(observed_target,
+                                                  cov_target,
+                                                  cov_target_score,
+                                                  self.K2,
+                                                  self.test_stat,
+                                                  beta_reference=two_stage_ls,
+                                                  beta_candidate=parameter,
+                                                  sample=opt_sample,
+                                                  level=level)
 
-        return pivots, pvalues, intervals
+        return pivots, pvalues, coverage
 
     def test_stat(self, parameter, target):
         # target is of n by p
@@ -750,10 +763,11 @@ class lasso_iv_ar(highdim):
         n, p = self.Z.shape
         P_Z = self.Z.dot(np.linalg.pinv(self.Z))
         P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
-        R_ZE = np.identity(n) - P_ZE
+        R_ZE = np.identity(n) - P_Z
         denom = (self.Y-self.D*parameter).dot(R_ZE).dot(self.Y-self.D*parameter) / (n-p)
         ZTZ_inv = np.linalg.inv(self.Z.T.dot(self.Z))
         result = np.sum(target * (ZTZ_inv.dot(target.T).T), axis=1)
+        result = result / (p-np.sum(self._overall[:-1])) / denom
 
         return result
 
@@ -816,6 +830,32 @@ class lasso_iv_ar(highdim):
 
 class affine_gaussian_sampler_iv(affine_gaussian_sampler):
 
+    def confidence_interval_coverage(self,
+                                     observed_target,
+                                     target_cov,
+                                     score_cov,
+                                     linear_func,
+                                     test_stat,
+                                     beta_reference,
+                                     beta_candidate,
+                                     sample_args=(),
+                                     sample=None,
+                                     level=0.95):
+
+        if sample is None:
+            sample = self.sample(*sample_args)
+        else:
+            ndraw = sample.shape[0]
+
+        _intervals = optimization_intervals_iv([(self, sample, target_cov, score_cov)],
+                                            observed_target, ndraw)
+
+
+        pvalue = _intervals.pivot(linear_func,beta_reference,beta_candidate-beta_reference,test_stat,alternative='greater')
+        coverage = pvalue >= (1-level)
+
+        return coverage
+
     def confidence_intervals(self,
                              observed_target,
                              target_cov,
@@ -825,8 +865,9 @@ class affine_gaussian_sampler_iv(affine_gaussian_sampler):
                              beta_reference,
                              sample_args=(),
                              sample=None,
-                             level=0.9,
-                             how_many_sd=20):
+                             level=0.95,
+                             how_many_sd=20,
+                             how_many_steps=100):
         '''
 
         Parameters
@@ -876,7 +917,8 @@ class affine_gaussian_sampler_iv(affine_gaussian_sampler):
         #    keep = np.zeros_like(observed_target)
         #    keep[i] = 1.
         #    limits.append(_intervals.confidence_interval(keep, level=level))
-        limits.append(_intervals.confidence_interval(linear_func, test_stat, beta_reference, level=level, how_many_sd=how_many_sd))
+        limits.append(_intervals.confidence_interval(linear_func, test_stat, 
+            beta_reference, level=level, how_many_sd=how_many_sd, how_many_steps=how_many_steps))
 
         return np.array(limits)
 
@@ -1010,7 +1052,7 @@ class optimization_intervals_iv(optimization_intervals):
         else:
             return 1 - pivot
 
-    def confidence_interval(self, linear_func, test_stat, beta_reference, level=0.90, how_many_sd=20):
+    def confidence_interval(self, linear_func, test_stat, beta_reference, level=0.90, how_many_sd=20, how_many_steps=10):
 
         sample_stat = test_stat(beta_reference, self._normal_sample)
         #observed_stat = test_stat(self.observed.dot(linear_func))
@@ -1041,10 +1083,14 @@ class optimization_intervals_iv(optimization_intervals):
                               test_stat,
                               alternative='greater') - (1 - level)
 
-        upper = bisect(_root, 0., grid_max, xtol=1.e-5*(grid_max - grid_min))
-        lower = bisect(_root, grid_min, 0., xtol=1.e-5*(grid_max - grid_min))
+        # debugging...
+        #upper = bisect(_root, 0., grid_max, xtol=1.e-5*(grid_max - grid_min))
+        #lower = bisect(_root, grid_min, 0., xtol=1.e-5*(grid_max - grid_min))
+        betas = np.linspace(grid_min, grid_max, how_many_steps)
+        pivots = [_root(beta)+(1-level) for beta in betas]
 
-        return lower + beta_reference, upper + beta_reference
+        #return lower + beta_reference, upper + beta_reference
+        return pivots
 
     # Private methods
 

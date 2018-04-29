@@ -75,26 +75,28 @@ def test_lasso_iv_ar_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, true_m
         sigma_11 = conv.estimate_covariance()
 
     pivot = None
-    interval = None
+    coverage = None
     if set(np.nonzero(alpha)[0]).issubset(np.nonzero(conv._overall)[0]) and conv._inactive.sum()>0:
-        pivot, _, interval = conv.summary(parameter=beta_star, Sigma_11=sigma_11)
-    return pivot, interval
+        pivot, _, coverage = conv.summary(parameter=beta_star, Sigma_11=sigma_11)
+    return pivot, coverage
 
 def test_pivots_ar(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, true_model=True, Sigma_12=0.8, gsnr_invalid=1., gsnr_valid=1., beta_star=1.):
     P0 = []
     #intervals = []
-    #coverages = []
+    coverages = []
     #lengths = []
     for i in range(nsim):
-        p0, interval = test_lasso_iv_ar_instance(n=n, p=p, s=s, true_model=true_model, Sigma_12=Sigma_12, gsnr_invalid=gsnr_invalid, gsnr_valid=gsnr_valid, beta_star=beta_star)
+        p0, coverage = test_lasso_iv_ar_instance(n=n, p=p, s=s, true_model=true_model, Sigma_12=Sigma_12, gsnr_invalid=gsnr_invalid, gsnr_valid=gsnr_valid, beta_star=beta_star)
         #if p0 is not None and interval is not None:
         if p0 is not None:
             P0.extend(p0)
+            coverages.extend([coverage])
             #intervals.extend(interval)
             #coverages.extend([(interval[0][0] < beta_star) * (interval[0][1] > beta_star)])
             #lengths.extend([interval[0][1] - interval[0][0]])
 
     print('pivots', np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.05))
+    print('coverage', np.mean(coverages))
     #print('confidence intervals', np.mean(coverages), np.mean(lengths))
 
     #U = np.linspace(0, 1, 101)
