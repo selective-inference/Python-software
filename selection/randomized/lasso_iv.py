@@ -271,7 +271,9 @@ class lasso_iv(highdim):
                 level=0.95,
                 ndraw=10000, 
                 burnin=2000,
-                compute_intervals=True):
+                compute_intervals=True,
+                compute_power=False,
+                beta_alternative=None):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -357,6 +359,13 @@ class lasso_iv(highdim):
                                                           cov_target_score, 
                                                           sample=opt_sample,
                                                           level=level)
+
+        if compute_power:
+            if beta_alternative is None:
+                beta_alternative = np.array([i*0.02+parameter[0] for i in range(-5,6) if i != 0])
+            powers=[~(intervals[0][0]<=beta and beta<=intervals[0][1]) for beta in beta_alternative]
+
+            return pivots, pvalues, intervals, powers
 
         return pivots, pvalues, intervals
 
@@ -649,7 +658,9 @@ class lasso_iv_ar(highdim):
                 level=0.95,
                 ndraw=10000, 
                 burnin=2000,
-                compute_intervals=False):
+                compute_intervals=False,
+                compute_power=False,
+                beta_alternative=None):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -701,11 +712,12 @@ class lasso_iv_ar(highdim):
 
         cov_target = self.Z.T.dot(R_ZE).dot(self.Z) * Sigma_11
         cov_target_score = np.hstack([self.Z, self.D.reshape((-1,1))]).T.dot(R_ZE).dot(self.Z)
-        cov_target_score *= Sigma_11
+        cov_target_score *= - Sigma_11
 
         # tsls estimator as beta reference for confidence interval
         denom = self.D.dot(P_Z - P_ZE).dot(self.D)
         two_stage_ls = self.D.dot(P_Z - P_ZE).dot(self.Y) / denom
+        observed_target_tsls = self.K1 - self.K2 * two_stage_ls
 
         # this is for Anderson-Rubin
         alternatives = ['greater']
@@ -735,7 +747,7 @@ class lasso_iv_ar(highdim):
 
         intervals = None
         if compute_intervals:
-            intervals = self.sampler.confidence_intervals(observed_target, 
+            intervals = self.sampler.confidence_intervals(observed_target_tsls, 
                                                           cov_target, 
                                                           cov_target_score, 
                                                           self.K2,
@@ -744,7 +756,8 @@ class lasso_iv_ar(highdim):
                                                           sample=opt_sample,
                                                           level=level,
                                                           how_many_sd=40)
-        coverage = self.sampler.confidence_interval_coverage(observed_target,
+
+        coverage = self.sampler.confidence_interval_coverage(observed_target_tsls,
                                                   cov_target,
                                                   cov_target_score,
                                                   self.K2,
@@ -754,7 +767,26 @@ class lasso_iv_ar(highdim):
                                                   sample=opt_sample,
                                                   level=level)
 
+        if compute_power:
+            if beta_alternative is None:
+                beta_alternative = np.array([i*0.02+parameter[0] for i in range(-5,6) if i != 0])
+            powers = []
+            for beta in beta_alternative:
+                detection = ~self.sampler.confidence_interval_coverage(observed_target_tsls,
+                                                  cov_target,
+                                                  cov_target_score,
+                                                  self.K2,
+                                                  self.test_stat,
+                                                  beta_reference=two_stage_ls,
+                                                  beta_candidate=beta,
+                                                  sample=opt_sample,
+                                                  level=level)
+                powers.append(detection)
+
+            return pivots, pvalues, coverage, powers
+
         return pivots, pvalues, coverage
+
 
     def test_stat(self, parameter, target):
         # target is of n by p
@@ -763,8 +795,8 @@ class lasso_iv_ar(highdim):
         n, p = self.Z.shape
         P_Z = self.Z.dot(np.linalg.pinv(self.Z))
         P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
-        R_ZE = np.identity(n) - P_Z
-        denom = (self.Y-self.D*parameter).dot(R_ZE).dot(self.Y-self.D*parameter) / (n-p)
+        R_Z = np.identity(n) - P_Z
+        denom = (self.Y-self.D*parameter).dot(R_Z).dot(self.Y-self.D*parameter) / (n-p)
         ZTZ_inv = np.linalg.inv(self.Z.T.dot(self.Z))
         result = np.sum(target * (ZTZ_inv.dot(target.T).T), axis=1)
         result = result / (p-np.sum(self._overall[:-1])) / denom
@@ -852,7 +884,7 @@ class affine_gaussian_sampler_iv(affine_gaussian_sampler):
 
 
         pvalue = _intervals.pivot(linear_func,beta_reference,beta_candidate-beta_reference,test_stat,alternative='greater')
-        coverage = pvalue >= (1-level)
+        coverage = pvalue >= (1.-level)
 
         return coverage
 
@@ -1028,7 +1060,7 @@ class optimization_intervals_iv(optimization_intervals):
             cur_nuisance = opt_sampler.observed_score_state - cur_score_cov.dot(np.linalg.inv(target_cov)).dot(observed_target)
             nuisance.append(cur_nuisance)
             translate_dirs.append(cur_score_cov.dot(np.linalg.inv(target_cov)))
-            translate_dirs_candidate.append(-cur_score_cov.dot(np.linalg.inv(target_cov)).dot(linear_func))
+            translate_dirs_candidate.append(cur_score_cov.dot(np.linalg.inv(target_cov)).dot(linear_func))
 
 
         weights = self._weights(sample_target,  # normal sample under zero
@@ -1041,7 +1073,7 @@ class optimization_intervals_iv(optimization_intervals):
         #pivot = np.mean((sample_stat + candidate <= observed_stat) * weights) / np.mean(weights)
         beta = parameter_reference + candidate
         observed_target_beta = observed_target - linear_func*candidate
-        observed_stat = test_stat(beta, observed_target)
+        observed_stat = test_stat(beta, observed_target_beta)
         sample_stat = test_stat(beta, sample_target)
         pivot = np.mean((sample_stat <= observed_stat) * weights) / np.mean(weights)
 
@@ -1052,7 +1084,7 @@ class optimization_intervals_iv(optimization_intervals):
         else:
             return 1 - pivot
 
-    def confidence_interval(self, linear_func, test_stat, beta_reference, level=0.90, how_many_sd=20, how_many_steps=10):
+    def confidence_interval(self, linear_func, test_stat, beta_reference, level=0.95, how_many_sd=20, how_many_steps=10):
 
         sample_stat = test_stat(beta_reference, self._normal_sample)
         #observed_stat = test_stat(self.observed.dot(linear_func))
