@@ -202,8 +202,9 @@ def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., ra
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
             break
 
-    print(beta_target)
-    return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
+    if True:
+        #print(beta_target)
+        return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
 
 def main(nsim=100):
 
@@ -217,17 +218,16 @@ def main(nsim=100):
         PA.extend(pA)
         print('coverage', np.mean(cover))
 
-        if i % 3 == 0 and i > 0:
-            U = np.linspace(0, 1, 101)
-            plt.clf()
-            if len(P0) > 0:
-                plt.plot(U, ECDF(P0)(U))
-            if len(PA) > 0:
-                plt.plot(U, ECDF(PA)(U), 'r')
-            plt.plot([0, 1], [0, 1], 'k--')
-            plt.draw()
+        # if i % 3 == 0 and i > 0:
+        #     U = np.linspace(0, 1, 101)
+        #     plt.clf()
+        #     if len(P0) > 0:
+        #         plt.plot(U, ECDF(P0)(U))
+        #     if len(PA) > 0:
+        #         plt.plot(U, ECDF(PA)(U), 'r')
+        #     plt.plot([0, 1], [0, 1], 'k--')
+        #     plt.draw()
 
-
-
+main()
 
 

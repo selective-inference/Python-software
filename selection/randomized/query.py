@@ -501,10 +501,11 @@ class affine_gaussian_sampler(optimization_sampler):
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
         init_soln = feasible_point
-        val, soln, hess = solve_barrier_nonneg(conjugate_arg,
-                                               prec_opt,
-                                               init_soln,
-                                               **solve_args)
+        val, soln, hess = _solve_barrier_affine(conjugate_arg,
+                                                prec_opt,
+                                                self.affine_con,
+                                                init_soln,
+                                                **solve_args)
 
         final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean - soln)))
         ind_unbiased_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean
@@ -734,5 +735,71 @@ def naive_pvalues(diag_cov, observed, parameter):
         pval = ndist.cdf((observed[j] - parameter[j])/sigma)
         pvalues[j] = 2 * min(pval, 1-pval)
     return pvalues
+
+def _solve_barrier_affine(conjugate_arg,
+                          precision,
+                          constraints,
+                          feasible_point=None,
+                          step=1,
+                          nstep=1000,
+                          tol=1.e-8):
+
+    con_linear = constraints.linear_part
+    con_offset = constraints.offset
+    scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
+
+    if feasible_point is None:
+        feasible_point = 1. / scaling
+
+    objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
+                          + np.log(1.+ 1./((con_offset-con_linear.dot(u))/ scaling)).sum()
+    grad = lambda u: -conjugate_arg + precision.dot(u) -con_linear.T.dot(1./(scaling + con_offset-con_linear.dot(u)) -
+                                                                       1./(con_offset-con_linear.dot(u)))
+    barrier_hessian = lambda u: con_linear.T.dot(np.diag(-1./((scaling + con_offset-con_linear.dot(u))**2.)
+                                                 + 1./((con_offset-con_linear.dot(u))**2.))).dot(con_linear)
+
+    current = feasible_point
+    current_value = np.inf
+
+    for itercount in range(nstep):
+        newton_step = grad(current)
+
+        # make sure proposal is feasible
+
+        count = 0
+        while True:
+            count += 1
+            proposal = current - step * newton_step
+            if np.all(con_offset-con_linear.dot(proposal) > 0):
+                break
+            step *= 0.5
+            if count >= 40:
+                raise ValueError('not finding a feasible point')
+
+        # make sure proposal is a descent
+
+        count = 0
+        while True:
+            proposal = current - step * newton_step
+            proposed_value = objective(proposal)
+            if proposed_value <= current_value:
+                break
+            step *= 0.5
+
+        # stop if relative decrease is small
+
+        if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+            current = proposal
+            current_value = proposed_value
+            break
+
+        current = proposal
+        current_value = proposed_value
+
+        if itercount % 4 == 0:
+            step *= 2
+
+    hess = np.linalg.inv(precision + barrier_hessian(current))
+    return current, current_value, hess
 
 
