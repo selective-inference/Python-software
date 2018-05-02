@@ -40,7 +40,6 @@ def test_gaussian(n=100, p=20):
 
 def test_approx_inverse(n=50, p=100):
 
-    n, p = 50, 100
     X = np.random.standard_normal((n, p))
     j = 5
     delta = 0.30
@@ -71,9 +70,20 @@ def test_approx_inverse(n=50, p=100):
     yield nt.assert_raises, ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta
     yield np.testing.assert_allclose, soln, soln_C, 1.e-3
 
+def test_approx_inverse_nondegen(n=100, p=20):
+
+    X = np.random.standard_normal((n, p))
+    j = 5
+    delta = 0.30
+    
+    X[:,3] = X[:,3] + X[:,j]
+    X[:,10] = X[:,10] + X[:,j]
+
+    M = debiasing_matrix(X, np.arange(p))
+
+
 def test_compareR(n=50, p=100):
 
-    n, p = 50, 100
     X = np.random.standard_normal((n, p))
     j = 5
     delta = 0.30
@@ -88,7 +98,20 @@ def test_compareR(n=50, p=100):
     rpy.r('soln = selectiveInference:::debiasingMatrix(X, TRUE, nrow(X), j)')
     soln_R = np.squeeze(np.asarray(rpy.r('soln')))
 
-    soln_py = debiasing_matrix(X, j, linesearch=True)
+    soln_py = debiasing_matrix(X, j)
+
+    np.testing.assert_allclose(soln_R, soln_py)
+
+    numpy2ri.activate()
+
+    j = np.array([3,5])
+    numpy2ri.activate()
+    rpy.r.assign('X', X)
+    rpy.r.assign('j', j+1)
+    rpy.r('soln = selectiveInference:::debiasingMatrix(X, TRUE, nrow(X), j)')
+    soln_R = np.squeeze(np.asarray(rpy.r('soln')))
+
+    soln_py = debiasing_matrix(X, j)
 
     np.testing.assert_allclose(soln_R, soln_py)
 

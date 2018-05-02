@@ -10,12 +10,10 @@ from ...api import (randomization,
 from ...tests.instance import (gaussian_instance,
                                logistic_instance)
 
-import selection.tests.reports as reports
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from ...tests.decorators import (wait_for_return_value, 
                                  set_seed_iftrue, 
-                                 set_sampling_params_iftrue, 
-                                 register_report)
+                                 set_sampling_params_iftrue)
 
 from ..query import naive_confidence_intervals, naive_pvalues
 from ..M_estimator import restricted_Mest
@@ -28,8 +26,6 @@ if SMALL_SAMPLES:
 else: 
     nboot = -1
 
-@register_report(['pvalue', 'cover', 'ci_length_clt', 'naive_pvalues', 'naive_cover', 'ci_length_naive',
-                  'active', 'BH_decisions', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, burnin=10, ndraw=10)
 @wait_for_return_value()
@@ -180,31 +176,3 @@ def test_cv(n=100, p=50, s=5, signal=7.5, K=5, rho=0.,
         BH_desicions = multipletests(pvalues, alpha=q, method="fdr_bh")[0]
         return sel_covered, sel_length, naive_pvals, naive_covered, naive_length, active_var, BH_desicions, active_var
 
-
-def report(niter=50, **kwargs):
-    np.random.seed(500)
-    intervals_report = reports.reports['test_cv']
-    runs = reports.collect_multiple_runs(intervals_report['test'],
-                                             intervals_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-
-    pkl_label = ''.join([kwargs['loss'], "_", str(kwargs['condition_on_CVR']), "_", "test_cv.pkl"])
-    pdf_label = ''.join([kwargs['loss'], "_", str(kwargs['condition_on_CVR']), "_", "test_cv.pdf"])
-    runs.to_pickle(pkl_label)
-    runs_read = pd.read_pickle(pkl_label)
-
-    fig = reports.pivot_plot_plus_naive(runs_read)
-    fig.suptitle("CV pivots", fontsize=20)
-    fig.savefig(pdf_label)
-
-
-def main():
-    np.random.seed(500)
-    kwargs = {'n': 600, 'p': 20, 's': 0, 'signal': 3.5, 'K': 5, 'rho': 0.,
-              'randomizer': 'gaussian', 'randomizer_scale': 1.5,
-              'scale1': 0.1, 'scale2': 0.1,  'lam_frac': 1.,
-              'loss': 'logistic', 'intervals': 'old',
-              'bootstrap': False, 'condition_on_CVR': True, 'marginalize_subgrad':  True}
-    report(niter=1, **kwargs)

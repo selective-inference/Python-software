@@ -8,12 +8,10 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 from ...tests.instance import gaussian_instance
 from ...algorithms.lasso import lasso
 
-import selection.tests.reports as reports
 from ...tests.flags import SET_SEED
 from ...tests.decorators import (wait_for_return_value, 
                                  set_seed_iftrue, 
-                                 set_sampling_params_iftrue, 
-                                 register_report)
+                                 set_sampling_params_iftrue)
 
 from ..cv_view import (CV_view, have_glmnet)
 from ..query import (naive_pvalues, naive_confidence_intervals)
@@ -51,9 +49,6 @@ def equal_tailed_interval(L_constraint, Z, U_constraint, S, alpha=0.05):
     return np.array([L_conf, U_conf])
 
 
-@register_report(['pvalue', 'cover', 'ci_length_clt',
-                  'naive_pvalues', 'covered_naive', 'ci_length_naive',
-                  'active_var','BH_decisions'])
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_lee_et_al(n=300,
@@ -196,38 +191,5 @@ def test_lee_et_al(n=300,
                 naive_pvalues, naive_covered, naive_length, active_var, BH_desicions
 
 
-def report(niter=100, design="random", **kwargs):
-
-    if design=="fixed":
-        X, _, _, _, _ = gaussian_instance(**kwargs)
-        kwargs.update({'X':X})
-
-    intervals_report = reports.reports['test_lee_et_al']
-    screened_results = reports.collect_multiple_runs(intervals_report['test'],
-                                             intervals_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-
-    screened_results.to_pickle("lee_et_al_pivots.pkl")
-    results = pd.read_pickle("lee_et_al_pivots.pkl")
-
-    #naive plus lee et al.
-    fig = reports.pivot_plot_plus_naive(results)
-    fig.suptitle("Lee et al. and naive p-values", fontsize=20)
-    fig.savefig('lee_et_al_pivots.pdf')
-
-    # naive only
-    fig1 = reports.naive_pvalue_plot(results)
-    fig1.suptitle("Naive p-values", fontsize=20)
-    fig1.savefig('naive_pvalues.pdf')
-
-
-def main():
-
-    np.random.seed(500)
-    kwargs = {'s': 0, 'n': 500, 'p': 100, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':False,
-              'cross_validation': True, 'condition_on_CVR': False}
-    report(niter=100, **kwargs)
 
 

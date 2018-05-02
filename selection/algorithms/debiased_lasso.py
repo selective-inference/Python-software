@@ -31,7 +31,9 @@ def debiasing_matrix(X,
     n, p = X.shape
 
     if bound is None:
-        bound = (1./np.sqrt(n)) * ndist.ppf(1.-(0.1/(p**2)))
+        orig_bound = (1./np.sqrt(n)) * ndist.ppf(1.-(0.1/(p**2)))
+    else:
+        orig_bound = bound
 
     if max_active is None:
         max_active = max(50, 0.3 * n)
@@ -43,6 +45,7 @@ def debiasing_matrix(X,
 
     for idx, row in enumerate(rows):
 
+        bound = orig_bound
         soln = np.zeros(p)
         soln_old = np.zeros(p)
         ever_active = np.zeros(p, np.int)
@@ -93,8 +96,6 @@ def debiasing_matrix(X,
             # Logic for whether we should continue the line search
 
             if not linesearch: break
-#                M[idx] = result['soln'].copy()
-#                break
 
             if counter_idx == 1:
                 if niter == (max_iter+1):
@@ -225,7 +226,7 @@ def debiased_lasso_inference(lasso_obj, variables, delta):
     """
 
     if not lasso_obj.ignore_inactive_constraints:
-        raise ValueError('debiased lasso should be fit ignoring active constraints as implied covariance between active and inactive score is 0')
+        raise ValueError('debiased lasso should be fit ignoring inactive constraints as implied covariance between active and inactive score is 0')
 
     # should we check that loglike is gaussian
 

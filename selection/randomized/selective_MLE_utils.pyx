@@ -17,6 +17,7 @@ cdef extern from "randomized_lasso.h":
                          double *scaling,                    # Diagonal scaling matrix for log barrier
                          int ndim,                           # Dimension of opt_variable
                          int max_iter,                       # Maximum number of iterations
+                         int min_iter,                       # Minimum number of iterations
                          double value_tol,                   # Tolerance for convergence based on value
                          double initial_step)                # Initial stepsize 
 
@@ -28,6 +29,7 @@ def barrier_solve_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient v
                    np.ndarray[DTYPE_float_t, ndim=1] scaling,       # Diagonal scaling matrix for log barrier
                    double initial_step,
                    int max_iter=1000,
+                   int min_iter=50,
                    double value_tol=1.e-8):
    
     ndim = precision.shape[0]
@@ -40,6 +42,7 @@ def barrier_solve_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient v
                            <double *>scaling.data,
                            ndim,
                            max_iter,
+                           min_iter,
                            value_tol,
                            initial_step)
 
@@ -52,6 +55,7 @@ def solve_barrier_nonneg(conjugate_arg,
                          feasible_point,
                          step=1,
                          max_iter=1000,
+         		 min_iter=50,
                          tol=1.e-8):
 
     gradient = np.zeros_like(conjugate_arg)
@@ -67,4 +71,5 @@ def solve_barrier_nonneg(conjugate_arg,
                           scaling,
                           step,
                           max_iter=max_iter,
+                          min_iter=min_iter,
                           value_tol=tol)

@@ -5,8 +5,7 @@ import regreg.api as rr
 
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
 from ...tests.instance import gaussian_instance
-from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
-import selection.tests.reports as reports
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 
 from ..api import randomization 
 from ..glm import (resid_bootstrap, 
@@ -14,7 +13,6 @@ from ..glm import (resid_bootstrap,
                    fixedX_group_lasso)
 
 
-@register_report(['pvalue', 'cover', 'active'])
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
@@ -79,14 +77,3 @@ def test_fixedX(ndraw=10000, burnin=2000): # nsim needed for decorator
 
         return pvalues, covered, active_var
 
-def report(niter=50, **kwargs):
-
-    fixedX_report = reports.reports['test_fixedX']
-    runs = reports.collect_multiple_runs(fixedX_report['test'],
-                                         fixedX_report['columns'],
-                                         niter,
-                                         reports.summarize_all,
-                                         **kwargs)
-
-    fig = reports.pvalue_plot(runs)
-    fig.savefig('fixedX_pivots.pdf') # will have both bootstrap and CLT on plot
