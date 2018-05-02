@@ -13,7 +13,7 @@ from .glm import (glm_greedy_step,
 from .randomization import randomization
 from .query import multiple_queries
 
-from .lasso import highdim as lasso
+from .lasso import lasso
 
 class step(lasso):
 

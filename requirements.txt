@@ -6,4 +6,5 @@ mpmath
 pyinter
 statsmodels
 sklearn
+regreg
 rpy2
