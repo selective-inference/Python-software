@@ -92,8 +92,6 @@ class slope(highdim):
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
 
-        print("check active terms", active.sum())
-
         self._overall = overall = active> 0
         self._inactive = inactive = ~self._overall
 
@@ -109,7 +107,6 @@ class slope(highdim):
         sorted_soln = self.initial_soln[indices]
         initial_scalings = np.sort(np.unique(np.fabs(self.initial_soln[active])))[::-1]
         self.observed_opt_state = initial_scalings
-
         self._unpenalized = np.zeros(p, np.bool)
 
         _beta_unpenalized = restricted_estimator(self.loglike, self._overall, solve_args=solve_args)
@@ -147,57 +144,55 @@ class slope(highdim):
                     break
 
         signs_cluster = np.asarray(signs_cluster).T
-        X_clustered = X[:, indices].dot(signs_cluster)
-        _opt_linear_term = X.T.dot(X_clustered)
-        self.opt_transform = (_opt_linear_term, self.initial_subgrad)
+        if signs_cluster.size == 0:
+            return active_signs
 
-        cov, prec = self.randomizer.cov_prec
-        opt_linear, opt_offset = self.opt_transform
+        else:
+            X_clustered = X[:, indices].dot(signs_cluster)
+            _opt_linear_term = X.T.dot(X_clustered)
+            self.opt_transform = (_opt_linear_term, self.initial_subgrad)
 
-        print("check if correct", np.allclose(self.observed_score_state + opt_offset + opt_linear.dot(initial_scalings),
-                                              self._initial_omega, rtol=1e-05, atol=1e-08))
+            cov, prec = self.randomizer.cov_prec
+            opt_linear, opt_offset = self.opt_transform
 
-        cond_precision = opt_linear.T.dot(opt_linear) * prec
-        cond_cov = np.linalg.inv(cond_precision)
-        logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+            cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
-        logdens_transform = (logdens_linear, opt_offset)
+            logdens_transform = (logdens_linear, opt_offset)
 
-        def log_density(logdens_linear, offset, cond_prec, score, opt):
-            if score.ndim == 1:
-                mean_term = logdens_linear.dot(score.T + offset).T
-            else:
-                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
-            arg = opt + mean_term
-            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+            def log_density(logdens_linear, offset, cond_prec, score, opt):
+                if score.ndim == 1:
+                    mean_term = logdens_linear.dot(score.T + offset).T
+                else:
+                    mean_term = logdens_linear.dot(score.T + offset[:, None]).T
+                arg = opt + mean_term
+                return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
 
-        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+            log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
 
-        # now make the constraints
+            # now make the constraints
 
-        A_scaling_0 = -np.identity(self.num_opt_var)
-        A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var-1), :]
-        for k in range(A_scaling_1.shape[0]):
-           A_scaling_1[k,k+1]= 1
-        A_scaling = np.vstack([A_scaling_0, A_scaling_1])
-        b_scaling = np.zeros(2*self.num_opt_var-1)
+            A_scaling_0 = -np.identity(self.num_opt_var)
+            A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var - 1), :]
+            for k in range(A_scaling_1.shape[0]):
+                A_scaling_1[k, k + 1] = 1
+            A_scaling = np.vstack([A_scaling_0, A_scaling_1])
+            b_scaling = np.zeros(2 * self.num_opt_var - 1)
 
-        # A_scaling = -np.identity(self.num_opt_var)
-        # b_scaling = np.zeros(self.num_opt_var)
+            affine_con = constraints(A_scaling,
+                                     b_scaling,
+                                     mean=cond_mean,
+                                     covariance=cond_cov)
 
-        affine_con = constraints(A_scaling,
-                                 b_scaling,
-                                 mean=cond_mean,
-                                 covariance=cond_cov)
-
-        self.sampler = affine_gaussian_sampler(affine_con,
-                                               self.observed_opt_state,
-                                               self.observed_score_state,
-                                               log_density,
-                                               logdens_transform,
-                                               selection_info=self.selection_variable)
-        return active_signs
+            self.sampler = affine_gaussian_sampler(affine_con,
+                                                   self.observed_opt_state,
+                                                   self.observed_score_state,
+                                                   log_density,
+                                                   logdens_transform,
+                                                   selection_info=self.selection_variable)
+            return active_signs
 
     # Targets of inference
     # and covariance with score representation

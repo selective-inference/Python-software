@@ -9,23 +9,47 @@ from selection.randomized.query import (query,
                                         multiple_queries,
                                         langevin_sampler,
                                         affine_gaussian_sampler)
+from scipy.stats import norm as ndist
 
-class marginal_screening():
+from ..algorithms.debiased_lasso import debiasing_matrix
+
+def BH_selection(p_values, level):
+
+    m = p_values.shape[0]
+    p_sorted = np.sort(p_values)
+    indices = np.arange(m)
+    indices_order = np.argsort(p_values)
+    order_sig = np.max(indices[p_sorted - np.true_divide(level * (np.arange(m) + 1.), m) <= 0])
+    E_sel = indices_order[:(order_sig+1)]
+    not_sel =indices_order[(order_sig+1):]
+
+    active = np.zeros(m, np.bool)
+    active[E_sel] = 1
+
+    #print("check ordering", ((np.sort(p_values[np.sort(not_sel)])
+    #                          - ((order_sig+1 +np.arange(m-active.sum())+1) * level) /(2.* m))>=0.).sum()+ active.sum())
+    return order_sig+1, active, np.argsort(p_values[np.sort(not_sel)])
+
+class BH():
 
     def __init__(self,
-                 observed_score,
-                 threshold,
+                 X,
+                 Y,
+                 sigma_hat,
                  randomizer_scale,
+                 level,
                  perturb=None):
 
-        self.nfeature =  p = score.shape[0]
-        if np.asarray(threshold).shape == ():
-            threshold = np.ones(p) * threshold
-        self.threshold = np.asarray(threshold)
+        observed_score = -X.T.dot(Y)
+        self.nfeature =  p = observed_score.shape[0]
+        self.sigma_hat = sigma_hat
 
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         self._initial_omega = perturb
         self.observed_score = observed_score
+
+        self.level = level
+        self.data = (X, Y)
 
     def fit(self, perturb=None):
 
@@ -37,21 +61,41 @@ class marginal_screening():
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        randomized_score = self.observed_score + self._initial_omega
+        randomized_score = -self.observed_score + self._initial_omega
+        p_values = 2. * (1. - ndist.cdf(np.true_divide(np.abs(randomized_score),self.sigma_hat)))
+        K, active, sort_notsel_pvals = BH_selection(p_values, self.level)
+        BH_cutoff = self.sigma_hat * ndist.ppf(1. - (K * self.level) /(2.*p))
+        if np.array(BH_cutoff).shape in [(), (1,)]:
+            BH_cutoff = np.ones(p) * BH_cutoff
+        self.BH_cutoff = BH_cutoff
 
-        self.boundary = np.fabs(randomized_score) > self.threshold
+        self.boundary = np.fabs(randomized_score) > self.BH_cutoff
         self.interior = ~self.boundary
-        active_signs = np.sign(randomized_score[self.boundary])
+        active_signs = np.sign(randomized_score)
 
-        self.observed_opt_state = self._initial_omega[self.boundary] + self.observed_score[self.boundary] - \
-                                  np.diag(active_signs)* self.threshold[self.boundary]
+        self.selection_variable = {'sign': active_signs.copy(),
+                                   'variables': self.boundary.copy()}
+
+        threshold = np.zeros(p)
+        threshold[self.boundary] = self.BH_cutoff[self.boundary]
+        cut_off_vector = ndist.ppf(1. - ((K+np.arange(self.interior.sum())+1) * self.level)/float(2.* p))
+
+        indices_interior = np.asarray([u for u in range(p) if self.interior[u]])
+        threshold[indices_interior[sort_notsel_pvals]] = (self.sigma_hat[self.interior])[sort_notsel_pvals] * cut_off_vector
+
+        self.threshold = threshold
+
+        self.observed_opt_state = self._initial_omega[self.boundary] - self.observed_score[self.boundary] - \
+                                  np.diag(active_signs[self.boundary]).dot(self.threshold[self.boundary])
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
-        opt_linear[self.boundary, :] = np.diag(active_signs)
+        opt_linear[self.boundary, :] = np.diag(active_signs[self.boundary])
         opt_offset = np.zeros(p)
-        opt_offset[self.boundary] = active_signs * self.threshold[self.boundary]
-        opt_offset[self.interior] = self._initial_omega[self.interior] + self.observed_score[self.interior]
+        opt_offset[self.boundary] = active_signs[self.boundary] * self.threshold[self.boundary]
+        opt_offset[self.interior] = randomized_score[self.interior]
+
+        print("check", (np.abs(opt_offset[self.interior])< threshold[self.interior]).sum(), self.interior.sum())
         self.opt_transform = (opt_linear, opt_offset)
 
         cov, prec = self.randomizer.cov_prec
@@ -85,7 +129,7 @@ class marginal_screening():
                                                log_density,
                                                logdens_transform,
                                                selection_info=self.selection_variable)
-        return active_signs
+        return self.boundary
 
 
     def selective_MLE(self,
@@ -118,14 +162,14 @@ class marginal_screening():
         """
 
         if parameter is None:
-            parameter = np.zeros(self.loglike.shape[0])
+            parameter = np.zeros(self.nfeature)
 
         if target == 'selected':
             observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
                                                                                                 dispersion=dispersion)
 
         elif target == 'full':
-            X, y = self.loglike.data
+            X, y = self.data
             n, p = X.shape
             if n > p:
                 observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
@@ -143,121 +187,93 @@ class marginal_screening():
 
     def selected_targets(self, features=None, dispersion=None):
 
-        X, y = self.loglike.data
+        X, y = self.data
         n, p = X.shape
 
-        if features is None:
-            active = self._active
-            unpenalized = self._unpenalized
-            noverall = active.sum() + unpenalized.sum()
-            overall = active + unpenalized
-
-            score_linear = self.score_transform[0]
-            Q = -score_linear[overall]
-            cov_target = np.linalg.inv(Q)
-            observed_target = self._beta_full[overall]
-            crosscov_target_score = score_linear.dot(cov_target)
-            Xfeat = X[:, overall]
-            alternatives = [{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] + [
-                                                                                                                       'twosided'] * unpenalized.sum()
-
-        else:
-
-            features_b = np.zeros_like(self._overall)
-            features_b[features] = True
-            features = features_b
-
-            Xfeat = X[:, features]
-            Qfeat = Xfeat.T.dot(self._W[:, None] * Xfeat)
-            Gfeat = self.loglike.smooth_objective(self.initial_soln, 'grad')[features]
-            Qfeat_inv = np.linalg.inv(Qfeat)
-            one_step = self.initial_soln[features] - Qfeat_inv.dot(Gfeat)
-            cov_target = Qfeat_inv
-            _score_linear = -Xfeat.T.dot(self._W[:, None] * X).T
-            crosscov_target_score = _score_linear.dot(cov_target)
-            observed_target = one_step
-            alternatives = ['twosided'] * features.sum()
-
-        if dispersion is None:  # use Pearson's X^2
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(
-                Xfeat.dot(observed_target))) ** 2 / self._W).sum() / (n - Xfeat.shape[1])
+        overall = self.boundary
+        score_linear = -X.T.dot(X[:, overall])
+        Q = -score_linear[overall]
+        cov_target = np.linalg.inv(Q)
+        observed_target = np.linalg.inv(Q).dot(X[:, overall].T.dot(y))
+        crosscov_target_score = score_linear.dot(cov_target)
+        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][self.boundary]])
 
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
-    def full_targets(self, features=None, dispersion=None):
-
-        if features is None:
-            features = self._overall
-        features_bool = np.zeros(self._overall.shape, np.bool)
-        features_bool[features] = True
-        features = features_bool
-
-        X, y = self.loglike.data
-        n, p = X.shape
-
-        # target is one-step estimator
-
-        Qfull = X.T.dot(self._W[:, None] * X)
-        G = self.loglike.smooth_objective(self.initial_soln, 'grad')
-        Qfull_inv = np.linalg.inv(Qfull)
-        one_step = self.initial_soln - Qfull_inv.dot(G)
-        cov_target = Qfull_inv[features][:, features]
-        observed_target = one_step[features]
-        crosscov_target_score = np.zeros((p, cov_target.shape[0]))
-        crosscov_target_score[features] = -np.identity(cov_target.shape[0])
-
-        if dispersion is None:  # use Pearson's X^2
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step))) ** 2 / self._W).sum() / (
-            n - p)
-
-        alternatives = ['twosided'] * features.sum()
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
-
-    def debiased_targets(self,
-                         features=None,
-                         dispersion=None,
-                         debiasing_args={}):
-
-        if features is None:
-            features = self._overall
-        features_bool = np.zeros(self._overall.shape, np.bool)
-        features_bool[features] = True
-        features = features_bool
-
-        X, y = self.loglike.data
-        n, p = X.shape
-
-        # target is one-step estimator
-
-        G = self.loglike.smooth_objective(self.initial_soln, 'grad')
-        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None],
-                                                  np.nonzero(features)[0],
-                                                  **debiasing_args)) / n
-        observed_target = self.initial_soln[features] - Qinv_hat.dot(G)
-        if p > n:
-            M1 = Qinv_hat.dot(X.T)
-            cov_target = (M1 * self._W[None, :]).dot(M1.T)
-            crosscov_target_score = -(M1 * self._W[None, :]).dot(X).T
-        else:
-            Qfull = X.T.dot(self._W[:, None] * X)
-            cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
-            crosscov_target_score = -Qinv_hat.dot(Qfull).T
-
-        if dispersion is None:  # use Pearson's X^2
-            Xfeat = X[:, features]
-            Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
-            relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(
-                Xfeat.dot(relaxed_soln))) ** 2 / self._W).sum() / (n - features.sum())
-
-        alternatives = ['twosided'] * features.sum()
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+    # def full_targets(self, features=None, dispersion=None):
+    #
+    #     if features is None:
+    #         features = self.boundary
+    #     features_bool = np.zeros(self.boundary.shape, np.bool)
+    #     features_bool[features] = True
+    #     features = features_bool
+    #
+    #     X, y = self.data
+    #     n, p = X.shape
+    #
+    #     # target is one-step estimator
+    #
+    #     Qfull = X.T.dot(self._W[:, None] * X)
+    #     G = self.loglike.smooth_objective(self.initial_soln, 'grad')
+    #     Qfull_inv = np.linalg.inv(Qfull)
+    #     one_step = self.initial_soln - Qfull_inv.dot(G)
+    #     cov_target = Qfull_inv[features][:, features]
+    #     observed_target = one_step[features]
+    #     crosscov_target_score = np.zeros((p, cov_target.shape[0]))
+    #     crosscov_target_score[features] = -np.identity(cov_target.shape[0])
+    #
+    #     if dispersion is None:  # use Pearson's X^2
+    #         dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step))) ** 2 / self._W).sum() / (
+    #         n - p)
+    #
+    #     alternatives = ['twosided'] * features.sum()
+    #     return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+    #
+    # def debiased_targets(self,
+    #                      features=None,
+    #                      dispersion=None,
+    #                      debiasing_args={}):
+    #
+    #     if features is None:
+    #         features = self._overall
+    #     features_bool = np.zeros(self._overall.shape, np.bool)
+    #     features_bool[features] = True
+    #     features = features_bool
+    #
+    #     X, y = self.data
+    #     n, p = X.shape
+    #
+    #     # target is one-step estimator
+    #
+    #     G = self.loglike.smooth_objective(self.initial_soln, 'grad')
+    #     Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None],
+    #                                               np.nonzero(features)[0],
+    #                                               **debiasing_args)) / n
+    #     observed_target = self.initial_soln[features] - Qinv_hat.dot(G)
+    #     if p > n:
+    #         M1 = Qinv_hat.dot(X.T)
+    #         cov_target = (M1 * self._W[None, :]).dot(M1.T)
+    #         crosscov_target_score = -(M1 * self._W[None, :]).dot(X).T
+    #     else:
+    #         Qfull = X.T.dot(self._W[:, None] * X)
+    #         cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
+    #         crosscov_target_score = -Qinv_hat.dot(Qfull).T
+    #
+    #     if dispersion is None:  # use Pearson's X^2
+    #         Xfeat = X[:, features]
+    #         Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
+    #         relaxed_soln = self.initial_soln[features] - np.linalg.inv(Qrelax).dot(G[features])
+    #         dispersion = ((y - self.loglike.saturated_loss.mean_function(
+    #             Xfeat.dot(relaxed_soln))) ** 2 / self._W).sum() / (n - features.sum())
+    #
+    #     alternatives = ['twosided'] * features.sum()
+    #     return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     @staticmethod
     def gaussian(X,
                  Y,
-                 threshold,
-                 sigma=1.,
+                 sigma = 1.,
+                 level = 0.10,
                  randomizer_scale=None):
 
         n, p = X.shape
@@ -266,7 +282,9 @@ class marginal_screening():
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return marginal_screening(-X.dot(Y), threshold, randomizer_scale)
+        sigma_hat = np.sqrt((sigma ** 2.) * (np.diag(X.T.dot(X))) + (randomizer_scale**2.))
+
+        return BH(X, Y, sigma_hat, randomizer_scale, level)
 
 
 

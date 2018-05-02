@@ -347,28 +347,36 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
         nactive_LASSO = active_LASSO.sum()
 
         tune_num = 50
+        rand_tune_num = 10
+        rand_scale_seq = np.linspace(0.05, 0.5, num = rand_tune_num)
         lam_seq = sigma_ * np.linspace(0.25, 2.75, num=tune_num) * \
                   np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 2000)))).max(0))
-        err = np.zeros(tune_num)
-        for k in range(tune_num):
-            W = lam_seq[k]*np.ones(p)
-            conv = highdim.gaussian(X,
-                                    y,
-                                    W,
-                                    randomizer_scale=np.sqrt(n) * 
-                                    randomizer_scale * sigma_)
-            signs = conv.fit()
-            nonzero = signs != 0
-            if tuning == "selective_MLE":
-                estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
-                full_estimate = np.zeros(p)
-                full_estimate[nonzero] = estimate
-                err[k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
-            elif tuning == "randomized_LASSO":
-                err[k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
+        err = np.zeros((rand_tune_num, tune_num))
+        for l in range(rand_tune_num):
+            randomizer_scale = rand_scale_seq[l]
+            for k in range(tune_num):
+                W = lam_seq[k] * np.ones(p)
+                conv = highdim.gaussian(X,
+                                        y,
+                                        W,
+                                        randomizer_scale=np.sqrt(n) *
+                                                         randomizer_scale * sigma_)
+                signs = conv.fit()
+                nonzero = signs != 0
+                if tuning == "selective_MLE":
+                    estimate, _, _, _, _, _ = conv.selective_MLE(target=target, dispersion=dispersion)
+                    full_estimate = np.zeros(p)
+                    full_estimate[nonzero] = estimate
+                    err[l, k] = np.mean((y_val - X_val.dot(full_estimate)) ** 2.)
+                elif tuning == "randomized_LASSO":
+                    err[l, k] = np.mean((y_val - X_val.dot(conv.initial_soln)) ** 2.)
 
-        lam = lam_seq[np.argmin(err)]
+        arg_min = np.argwhere(err == np.min(err))
+        lam = lam_seq[arg_min[0, 1]]
+        randomizer_scale = rand_scale_seq[arg_min[0, 0]]
+        #lam = lam_seq[np.argmin(err)]
         sys.stderr.write("lambda from randomized LASSO " + str(lam) + "\n")
+        sys.stderr.write("tuned randomized scale " + str(randomizer_scale) + "\n")
         #print(lam_tuned_lasso * n, lam, lam_seq)
 
         randomized_lasso = highdim.gaussian(X,
@@ -482,20 +490,19 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
 
 if __name__ == "__main__":
 
-    ndraw = 1
+    ndraw = 50
     output_overall = np.zeros(27)
 
-    target = "full"
+    target = "selected"
     tuning = "selective_MLE"
-    n, p, rho, s, beta_type, snr = 500, 100, 0.35, 5, 1, 0.30
+    n, p, rho, s, beta_type, snr = 500, 100, 0.70, 5, 1, 0.10
+    #nval = 100
 
     if target == "selected":
         for i in range(ndraw):
             output = comparison_risk_inference_selected(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr,
-                                                        randomizer_scale=np.sqrt(0.5), target=target, tuning= tuning,
+                                                        randomizer_scale=np.sqrt(0.25), target=target, tuning= tuning,
                                                         full_dispersion=True)
-
-            print("output", output)
             output_overall += np.squeeze(output)
 
             sys.stderr.write("overall selMLE risk " + str(output_overall[0] / float(i + 1)) + "\n")

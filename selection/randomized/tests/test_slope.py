@@ -161,8 +161,8 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 #     X_clustered = X[:, indices].dot(signs_cluster)
 #     print("start indices of clusters", indices, cur_indx_array, signs_cluster.shape, X_clustered.shape)
 
-def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., randomizer_scale= np.sqrt(0.5),
-                          use_MLE=False):
+def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35, randomizer_scale= np.sqrt(0.25),
+                          target = "full", use_MLE=True):
 
     while True:
         inst = gaussian_instance
@@ -181,7 +181,7 @@ def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., ra
                                                           Y,
                                                           W=None,
                                                           normalize=True,
-                                                          choice_weights="bhq", #put gaussian
+                                                          choice_weights="gaussian", #put gaussian
                                                           sigma=sigma_)
 
         conv = slope.gaussian(X,
@@ -193,17 +193,20 @@ def test_randomized_slope(n=500, p=50, signal_fac=1.5, s=5, sigma=1., rho=0., ra
         nonzero = signs != 0
         print("dimensions", n, p, nonzero.sum())
         if nonzero.sum() > 0:
-            beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+            if target == "selected":
+                beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+            else:
+                beta_target = beta[nonzero]
             if use_MLE:
-                estimate, _, _, pval, intervals, _ = conv.selective_MLE(target="selected", dispersion=sigma_)
-                print("estimate", estimate, pval, intervals)
+                estimate, _, _, pval, intervals, _ = conv.selective_MLE(target=target, dispersion=sigma_)
             else:
                 _, pval, intervals = conv.summary(target="selected", dispersion=sigma_, compute_intervals=True)
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
             break
 
-    print(beta_target)
-    return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
+    if True:
+        #print(beta_target)
+        return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
 
 def main(nsim=100):
 
@@ -217,17 +220,16 @@ def main(nsim=100):
         PA.extend(pA)
         print('coverage', np.mean(cover))
 
-        if i % 3 == 0 and i > 0:
-            U = np.linspace(0, 1, 101)
-            plt.clf()
-            if len(P0) > 0:
-                plt.plot(U, ECDF(P0)(U))
-            if len(PA) > 0:
-                plt.plot(U, ECDF(PA)(U), 'r')
-            plt.plot([0, 1], [0, 1], 'k--')
-            plt.draw()
+        # if i % 3 == 0 and i > 0:
+        #     U = np.linspace(0, 1, 101)
+        #     plt.clf()
+        #     if len(P0) > 0:
+        #         plt.plot(U, ECDF(P0)(U))
+        #     if len(PA) > 0:
+        #         plt.plot(U, ECDF(PA)(U), 'r')
+        #     plt.plot([0, 1], [0, 1], 'k--')
+        #     plt.draw()
 
-
-
+main()
 
 
