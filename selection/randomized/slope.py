@@ -92,8 +92,6 @@ class slope(highdim):
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
 
-        print("check active terms", active.sum())
-
         self._overall = overall = active> 0
         self._inactive = inactive = ~self._overall
 
@@ -109,6 +107,7 @@ class slope(highdim):
         sorted_soln = self.initial_soln[indices]
         initial_scalings = np.sort(np.unique(np.fabs(self.initial_soln[active])))[::-1]
         self.observed_opt_state = initial_scalings
+        print("self.observed_opt_state", self.observed_opt_state)
 
         self._unpenalized = np.zeros(p, np.bool)
 
@@ -154,9 +153,6 @@ class slope(highdim):
         cov, prec = self.randomizer.cov_prec
         opt_linear, opt_offset = self.opt_transform
 
-        print("check if correct", np.allclose(self.observed_score_state + opt_offset + opt_linear.dot(initial_scalings),
-                                              self._initial_omega, rtol=1e-05, atol=1e-08))
-
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = cond_cov.dot(opt_linear.T) * prec
@@ -183,8 +179,7 @@ class slope(highdim):
         A_scaling = np.vstack([A_scaling_0, A_scaling_1])
         b_scaling = np.zeros(2*self.num_opt_var-1)
 
-        # A_scaling = -np.identity(self.num_opt_var)
-        # b_scaling = np.zeros(self.num_opt_var)
+        #print("check", (A_scaling.dot(self.observed_opt_state)-b_scaling <= 0).sum(), b_scaling.shape[0])
 
         affine_con = constraints(A_scaling,
                                  b_scaling,

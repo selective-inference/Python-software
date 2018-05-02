@@ -501,6 +501,7 @@ class affine_gaussian_sampler(optimization_sampler):
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
         init_soln = feasible_point
+        print("check query", self.affine_con.linear_part.dot(init_soln)-self.affine_con.offset)
         val, soln, hess = _solve_barrier_affine(conjugate_arg,
                                                 prec_opt,
                                                 self.affine_con,
@@ -800,6 +801,6 @@ def _solve_barrier_affine(conjugate_arg,
             step *= 2
 
     hess = np.linalg.inv(precision + barrier_hessian(current))
-    return current, current_value, hess
+    return current_value, current, hess
 
 
