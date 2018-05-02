@@ -501,7 +501,6 @@ class affine_gaussian_sampler(optimization_sampler):
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
         init_soln = feasible_point
-        print("check query", self.affine_con.linear_part.dot(init_soln)-self.affine_con.offset)
         val, soln, hess = _solve_barrier_affine(conjugate_arg,
                                                 prec_opt,
                                                 self.affine_con,

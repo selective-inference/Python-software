@@ -107,8 +107,6 @@ class slope(highdim):
         sorted_soln = self.initial_soln[indices]
         initial_scalings = np.sort(np.unique(np.fabs(self.initial_soln[active])))[::-1]
         self.observed_opt_state = initial_scalings
-        print("self.observed_opt_state", self.observed_opt_state)
-
         self._unpenalized = np.zeros(p, np.bool)
 
         _beta_unpenalized = restricted_estimator(self.loglike, self._overall, solve_args=solve_args)
@@ -178,8 +176,6 @@ class slope(highdim):
            A_scaling_1[k,k+1]= 1
         A_scaling = np.vstack([A_scaling_0, A_scaling_1])
         b_scaling = np.zeros(2*self.num_opt_var-1)
-
-        #print("check", (A_scaling.dot(self.observed_opt_state)-b_scaling <= 0).sum(), b_scaling.shape[0])
 
         affine_con = constraints(A_scaling,
                                  b_scaling,
