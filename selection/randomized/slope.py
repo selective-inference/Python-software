@@ -144,51 +144,55 @@ class slope(highdim):
                     break
 
         signs_cluster = np.asarray(signs_cluster).T
-        X_clustered = X[:, indices].dot(signs_cluster)
-        _opt_linear_term = X.T.dot(X_clustered)
-        self.opt_transform = (_opt_linear_term, self.initial_subgrad)
+        if signs_cluster.size == 0:
+            return active_signs
 
-        cov, prec = self.randomizer.cov_prec
-        opt_linear, opt_offset = self.opt_transform
+        else:
+            X_clustered = X[:, indices].dot(signs_cluster)
+            _opt_linear_term = X.T.dot(X_clustered)
+            self.opt_transform = (_opt_linear_term, self.initial_subgrad)
 
-        cond_precision = opt_linear.T.dot(opt_linear) * prec
-        cond_cov = np.linalg.inv(cond_precision)
-        logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+            cov, prec = self.randomizer.cov_prec
+            opt_linear, opt_offset = self.opt_transform
 
-        logdens_transform = (logdens_linear, opt_offset)
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+            cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
-        def log_density(logdens_linear, offset, cond_prec, score, opt):
-            if score.ndim == 1:
-                mean_term = logdens_linear.dot(score.T + offset).T
-            else:
-                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
-            arg = opt + mean_term
-            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+            logdens_transform = (logdens_linear, opt_offset)
 
-        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+            def log_density(logdens_linear, offset, cond_prec, score, opt):
+                if score.ndim == 1:
+                    mean_term = logdens_linear.dot(score.T + offset).T
+                else:
+                    mean_term = logdens_linear.dot(score.T + offset[:, None]).T
+                arg = opt + mean_term
+                return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
 
-        # now make the constraints
+            log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
 
-        A_scaling_0 = -np.identity(self.num_opt_var)
-        A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var-1), :]
-        for k in range(A_scaling_1.shape[0]):
-           A_scaling_1[k,k+1]= 1
-        A_scaling = np.vstack([A_scaling_0, A_scaling_1])
-        b_scaling = np.zeros(2*self.num_opt_var-1)
+            # now make the constraints
 
-        affine_con = constraints(A_scaling,
-                                 b_scaling,
-                                 mean=cond_mean,
-                                 covariance=cond_cov)
+            A_scaling_0 = -np.identity(self.num_opt_var)
+            A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var - 1), :]
+            for k in range(A_scaling_1.shape[0]):
+                A_scaling_1[k, k + 1] = 1
+            A_scaling = np.vstack([A_scaling_0, A_scaling_1])
+            b_scaling = np.zeros(2 * self.num_opt_var - 1)
 
-        self.sampler = affine_gaussian_sampler(affine_con,
-                                               self.observed_opt_state,
-                                               self.observed_score_state,
-                                               log_density,
-                                               logdens_transform,
-                                               selection_info=self.selection_variable)
-        return active_signs
+            affine_con = constraints(A_scaling,
+                                     b_scaling,
+                                     mean=cond_mean,
+                                     covariance=cond_cov)
+
+            self.sampler = affine_gaussian_sampler(affine_con,
+                                                   self.observed_opt_state,
+                                                   self.observed_score_state,
+                                                   log_density,
+                                                   logdens_transform,
+                                                   selection_info=self.selection_variable)
+            return active_signs
 
     # Targets of inference
     # and covariance with score representation
