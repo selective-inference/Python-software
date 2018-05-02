@@ -19,18 +19,16 @@ def BH_selection(p_values, level):
     p_sorted = np.sort(p_values)
     indices = np.arange(m)
     indices_order = np.argsort(p_values)
-    order_sig = np.max(indices[p_sorted - np.true_divide(level * (np.arange(m) + 1.), m) <= 0])
+    order_sig = np.max(indices[p_sorted - level * (np.arange(m) + 1.) / m <= 0])
     E_sel = indices_order[:(order_sig+1)]
     not_sel =indices_order[(order_sig+1):]
 
     active = np.zeros(m, np.bool)
     active[E_sel] = 1
 
-    #print("check ordering", ((np.sort(p_values[np.sort(not_sel)])
-    #                          - ((order_sig+1 +np.arange(m-active.sum())+1) * level) /(2.* m))>=0.).sum()+ active.sum())
     return order_sig+1, active, np.argsort(p_values[np.sort(not_sel)])
 
-class BH():
+class BH(object):
 
     def __init__(self,
                  X,
@@ -41,7 +39,7 @@ class BH():
                  perturb=None):
 
         observed_score = -X.T.dot(Y)
-        self.nfeature =  p = observed_score.shape[0]
+        self.nfeature = p = observed_score.shape[0]
         self.sigma_hat = sigma_hat
 
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
