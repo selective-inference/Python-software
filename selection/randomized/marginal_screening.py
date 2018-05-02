@@ -41,7 +41,6 @@ def BH_selection(p_values, level):
 
     return order_sig + 1, active, np.argsort(p_values[np.sort(not_sel)])
 
-
 class marginal_screening(object):
 
     def __init__(self,
@@ -131,24 +130,6 @@ class marginal_screening(object):
                                                selection_info=self.selection_variable)
         return self._selected
 
-    @staticmethod
-    def gaussian(X,
-                 Y,
-                 sigma = 1.,
-                 level = 0.10,
-                 randomizer_scale=None):
-
-        n, p = X.shape
-        mean_diag = np.mean((X ** 2).sum(0))
-
-        if randomizer_scale is None:
-            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
-
-        sigma_hat = np.sqrt((sigma**2.) * (np.diag(X.T.dot(X))) + (randomizer_scale**2.))
-
-        return marginal_screening(X, Y, sigma_hat, randomizer_scale, level)
-
-
     def selective_MLE(self,
                       target="selected",
                       features=None,
@@ -223,6 +204,23 @@ class marginal_screening(object):
         alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][overall]])
 
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+    @staticmethod
+    def gaussian(X,
+                 Y,
+                 sigma = 1.,
+                 level = 0.10,
+                 randomizer_scale=None):
+
+        n, p = X.shape
+        mean_diag = np.mean((X ** 2).sum(0))
+
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+
+        sigma_hat = np.sqrt((sigma**2.) * (np.diag(X.T.dot(X))) + (randomizer_scale**2.))
+
+        return marginal_screening(X, Y, sigma_hat, randomizer_scale, level)
 
 class BH(marginal_screening):
 
