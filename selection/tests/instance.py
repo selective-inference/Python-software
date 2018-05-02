@@ -3,6 +3,8 @@ import pandas as pd
 
 from scipy.stats import t as tdist
 
+_cov_cache = {}
+
 def _design(n, p, rho, equicorrelated):
     """
     Create an equicorrelated or AR(1) design.
@@ -14,8 +16,9 @@ def _design(n, p, rho, equicorrelated):
         def AR1(rho, p):
             idx = np.arange(p)
             cov = rho ** np.abs(np.subtract.outer(idx, idx))
-            return cov, np.linalg.cholesky(cov)
-
+            if ('AR1', p, rho) not in _cov_cache:
+                _cov_cache[('AR1', p, rho)] = cov, np.linalg.cholesky(cov)
+            return _cov_cache[('AR1', p, rho)]
         sigmaX, cholX = AR1(rho=rho, p=p)
         X = np.random.standard_normal((n, p)).dot(cholX.T)
     return X
