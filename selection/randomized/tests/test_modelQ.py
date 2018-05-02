@@ -6,7 +6,7 @@ import nose.tools as nt
 import regreg.api as rr
 
 from ..modelQ import modelQ
-from ..lasso import highdim
+from ..lasso import lasso
 from ...tests.instance import gaussian_instance
 
 def test_modelQ():
@@ -19,7 +19,7 @@ def test_modelQ():
 
     lagrange = 5. * np.ones(p) * np.sqrt(n)
     perturb = np.random.standard_normal(p) * n
-    LH = highdim.gaussian(X, y, lagrange)
+    LH = lasso.gaussian(X, y, lagrange)
     LH.fit(perturb=perturb, solve_args={'min_its':1000})
 
     LQ = modelQ(X.T.dot(X), X, y, lagrange)

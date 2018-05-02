@@ -21,13 +21,13 @@ from ..constraints.affine import constraints
 
 from .randomization import randomization
 from .base import restricted_estimator
-from .lasso import highdim
+from .lasso import lasso
 from .query import (query,
                     multiple_queries,
                     langevin_sampler,
                     affine_gaussian_sampler)
 
-class slope(highdim):
+class slope(lasso):
 
     def __init__(self,
                  loglike,
@@ -196,7 +196,7 @@ class slope(highdim):
 
     # Targets of inference
     # and covariance with score representation
-    # are same as highdim LASSO
+    # are same as LASSO
 
     @staticmethod
     def gaussian(X,

@@ -2,7 +2,7 @@ import numpy as np
 import nose.tools as nt
 
 import selection.randomized.lasso as L; reload(L)
-from selection.randomized.lasso import highdim, lasso
+from selection.randomized.lasso import lasso
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
@@ -11,7 +11,7 @@ def test_full_lasso(n=200, p=30, signal_fac=1.5, s=5, ndraw=5000, burnin=1000, s
     General LASSO -- 
     """
 
-    inst, const = gaussian_instance, highdim.gaussian
+    inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * np.log(p))
     X, Y, beta = inst(n=n,
                       p=p, 

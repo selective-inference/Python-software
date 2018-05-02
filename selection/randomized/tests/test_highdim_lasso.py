@@ -9,7 +9,7 @@ import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
 rpy.r('library(selectiveInference)')
 
-from ..lasso import highdim 
+from ..lasso import lasso
 from ...tests.instance import gaussian_instance
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 import matplotlib.pyplot as plt
@@ -19,7 +19,7 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full'
     Compare to R randomized lasso
     """
 
-    inst, const = gaussian_instance, highdim.gaussian
+    inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * np.log(p))
     X, Y, beta = inst(n=n,
                       p=p, 
@@ -60,7 +60,7 @@ def test_sqrt_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, full=Tru
     Compare to R randomized lasso
     """
 
-    inst, const = gaussian_instance, highdim.sqrt_lasso
+    inst, const = gaussian_instance, lasso.sqrt_lasso
     signal = np.sqrt(signal_fac * 2 * np.log(p))
     X, Y, beta = inst(n=n,
                       p=p, 
@@ -131,7 +131,7 @@ def test_compareR(n=200, p=10, signal=np.sqrt(4) * np.sqrt(2 * np.log(10)), s=5,
     Compare to R randomized lasso
     """
 
-    inst, const = gaussian_instance, highdim.gaussian
+    inst, const = gaussian_instance, lasso.gaussian
     X, Y, beta = inst(n=n, p=p, signal=signal, s=s, equicorrelated=False, rho=0.2, sigma=sigma, random_signs=True)[:3]
 
     n, p = X.shape

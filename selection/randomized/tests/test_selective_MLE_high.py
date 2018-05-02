@@ -5,7 +5,7 @@ from rpy2.robjects import numpy2ri
 #rpy.r('library(selectiveInference)')
 
 import selection.randomized.lasso as L; reload(L)
-from selection.randomized.lasso import highdim 
+from selection.randomized.lasso import lasso
 from selection.tests.instance import gaussian_instance
 import matplotlib.pyplot as plt
 
@@ -14,7 +14,7 @@ def test_full_targets(n=2000, p=200, signal_fac=0.5, s=5, sigma=3, rho=0.4, rand
     Compare to R randomized lasso
     """
 
-    inst, const = gaussian_instance, highdim.gaussian
+    inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
     X, Y, beta = inst(n=n,
                       p=p, 
@@ -57,7 +57,7 @@ def test_selected_targets(n=2000, p=200, signal_fac=1.5, s=5, sigma=3, rho=0.4, 
     Compare to R randomized lasso
     """
 
-    inst, const = gaussian_instance, highdim.gaussian
+    inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
     X, Y, beta = inst(n=n,
                       p=p, 

@@ -5,7 +5,6 @@ import regreg.api as rr
 from ..constraints.affine import constraints
 
 from .query import affine_gaussian_sampler
-from .lasso import highdim
 from .randomization import randomization
 
 class modelQ(object):

@@ -4,8 +4,6 @@ from rpy2 import robjects
 import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
 
-import selection.randomized.lasso as L; reload(L)
-from selection.randomized.lasso import highdim
 from selection.algorithms.lasso import lasso
 from scipy.stats import norm as ndist
 
@@ -189,10 +187,10 @@ def comparison_risk_inference_selected(n=500, p=100, nval=500, rho=0.35, s=5, be
         err = np.zeros(tune_num)
         for k in range(tune_num):
             W = lam_seq[k] * np.ones(p)
-            conv = highdim.gaussian(X,
-                                    y,
-                                    W,
-                                    randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
+            conv = lasso.gaussian(X,
+                                  y,
+                                  W,
+                                  randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
             signs = conv.fit()
             nonzero = signs != 0
             if tuning == "selective_MLE":
