@@ -60,7 +60,7 @@ EXTS.append(Extension('selection.algorithms.debiased_lasso_utils',
 
 EXTS.append(Extension('selection.randomized.selective_MLE_utils',
                       ['selection/randomized/selective_MLE_utils.pyx',
-                       'C-software/src/randomized_lasso.c'],
+                       'C-software/src/selective_mle.c'],
                       libraries=['m'],
                       include_dirs=['C-software/src']))
 
