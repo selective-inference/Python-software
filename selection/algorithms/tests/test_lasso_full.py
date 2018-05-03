@@ -57,7 +57,7 @@ def test_smaller():
     Q = X.T.dot(X)
     Qbeta_bar = X.T.dot(y)
     beta_hat = solve_problem(Qbeta_bar, Q, lagrange)
-    beta_hat2 = _solve_restricted_problem(Qbeta_bar, X, np.ones(X.shape[0]), 
+    beta_hat2 = _solve_restricted_problem(Qbeta_bar, (X, np.ones(X.shape[0])), 
                                           lagrange, min_its=100)
 
     Qi = np.linalg.inv(Q)

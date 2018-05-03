@@ -354,11 +354,11 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
             randomizer_scale = rand_scale_seq[l]
             for k in range(tune_num):
                 W = lam_seq[k] * np.ones(p)
-                conv = highdim.gaussian(X,
-                                        y,
-                                        W,
-                                        randomizer_scale=np.sqrt(n) *
-                                                         randomizer_scale * sigma_)
+                conv = lasso.gaussian(X,
+                                      y,
+                                      W,
+                                      randomizer_scale=np.sqrt(n) *
+                                      randomizer_scale * sigma_)
                 signs = conv.fit()
                 nonzero = signs != 0
                 if tuning == "selective_MLE":
@@ -377,10 +377,10 @@ def comparison_risk_inference_full(n=200, p=500, nval=200, rho=0.35, s=5, beta_t
         sys.stderr.write("tuned randomized scale " + str(randomizer_scale) + "\n")
         #print(lam_tuned_lasso * n, lam, lam_seq)
 
-        randomized_lasso = highdim.gaussian(X,
-                                            y,
-                                            lam * np.ones(p),
-                                            randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
+        randomized_lasso = lasso.gaussian(X,
+                                          y,
+                                          lam * np.ones(p),
+                                          randomizer_scale=np.sqrt(n) * randomizer_scale * sigma_)
 
         signs = randomized_lasso.fit()
         nonzero = signs != 0
