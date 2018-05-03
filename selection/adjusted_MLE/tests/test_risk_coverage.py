@@ -4,7 +4,6 @@ from rpy2 import robjects
 import rpy2.robjects.numpy2ri
 rpy2.robjects.numpy2ri.activate()
 
-import selection.randomized.lasso as L; reload(L)
 from selection.adjusted_MLE.tests.test_inferential_metrics import (BHfilter,
                                                                    selInf_R,
                                                                    glmnet_lasso,
