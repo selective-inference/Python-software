@@ -239,7 +239,7 @@ def l2norm_glm(X,
                   initial=initial,
                   offset=offset)
 
-def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_args={}):
+def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_args={}, force_fat=False):
     """
 
     Solve the square-root LASSO optimization problem:
@@ -273,7 +273,7 @@ def solve_sqrt_lasso(X, Y, weights=None, initial=None, quadratic=None, solve_arg
         A quadratic term added to objective function.
     """
     n, p = X.shape
-    if n > p:
+    if n > p and not force_fat:
         return solve_sqrt_lasso_skinny(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)
     else:
         return solve_sqrt_lasso_fat(X, Y, weights=weights, initial=initial, quadratic=quadratic, solve_args=solve_args)

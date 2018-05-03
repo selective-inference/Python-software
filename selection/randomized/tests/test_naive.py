@@ -8,9 +8,8 @@ from statsmodels.sandbox.stats.multicomp import multipletests
 
 from ...tests.instance import gaussian_instance
 from ...algorithms.lasso import lasso
-import selection.tests.reports as reports
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
-from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue, register_report
+from ...tests.decorators import wait_for_return_value, set_seed_iftrue, set_sampling_params_iftrue
 from ..cv_view import CV_view, have_glmnet
 from ..query import (naive_pvalues, naive_confidence_intervals)
 
@@ -29,7 +28,6 @@ def compute_projection_parameters(n, p, s, signal, rho, sigma, active):
     return proj_param
 
 
-@register_report(['naive_pvalues', 'covered_naive', 'ci_length_naive', 'active_var'])
 @set_seed_iftrue(SET_SEED)
 @wait_for_return_value()
 def test_naive(n=300,
@@ -144,32 +142,5 @@ def test_naive(n=300,
 
         return  naive_pvalues, naive_covered, naive_length, active_var
 
-
-def report(niter=50, design="random", **kwargs):
-
-    if design=="fixed":
-        X, _, _, _, _ = gaussian_instance(**kwargs)
-        kwargs.update({'X':X})
-
-    kwargs.update({'cross_validation':True, 'condition_on_CVR':False})
-    intervals_report = reports.reports['test_naive']
-    screened_results = reports.collect_multiple_runs(intervals_report['test'],
-                                             intervals_report['columns'],
-                                             niter,
-                                             reports.summarize_all,
-                                             **kwargs)
-
-    screened_results.to_pickle("naive.pkl")
-    results = pd.read_pickle("naive.pkl")
-
-    fig = reports.naive_pvalue_plot(results)
-    #fig = reports.pvalue_plot(results, label="Naive p-values")
-    fig.suptitle("Naive p-values", fontsize=20)
-    fig.savefig('naive_pvalues.pdf')
-
-def main():
-    np.random.seed(500)
-    kwargs = {'s': 0, 'n': 100, 'p': 50, 'signal': 3.5, 'sigma': 1, 'rho': 0., 'intervals':True}
-    report(niter=100, **kwargs)
 
 
