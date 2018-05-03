@@ -182,7 +182,6 @@ class marginal_screening(object):
                       observed_target,
                       cov_target,
                       cov_target_score,
-                      alternatives,
                       level=0.9,
                       solve_args={'tol':1.e-12}):
         """

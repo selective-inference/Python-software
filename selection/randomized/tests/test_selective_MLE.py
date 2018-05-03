@@ -13,7 +13,6 @@ def test_C_solver():
     precision = X.T.dot(X) / 10
     conjugate_arg = np.random.standard_normal(5)
 
-
     soln1, val1, hess1 = solve_barrier_nonneg(conjugate_arg,
                                               precision,
                                               tol=1.e-12)

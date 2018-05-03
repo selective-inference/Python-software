@@ -3,6 +3,7 @@ import numpy as np
 import nose.tools as nt
 
 from ..convenience import lasso, step, threshold
+from ..lasso import selected_targets
 from ...tests.instance import (gaussian_instance,
                                logistic_instance,
                                poisson_instance)
@@ -60,7 +61,17 @@ def test_lasso_constructors(ndraw=1000, burnin=200):
         conv.decompose_subgradient(marginalizing_groups=marginalizing_groups,
                                    conditioning_groups=conditioning_groups)
 
-        conv.summary(selected_features,
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = selected_targets(conv.loglike, 
+                                          conv._W, # should be weights of GLM
+                                          selected_features)
+
+        conv.summary(observed_target, 
+                     cov_target, 
+                     cov_target_score, 
+                     alternatives,
                      ndraw=ndraw,
                      burnin=burnin)
 
@@ -104,10 +115,19 @@ def test_step_constructors(ndraw=1000, burnin=200):
         selected_features = np.zeros(p, np.bool)
         selected_features[:3] = True
 
-        conv3.summary(selected_features,
-                      ndraw=ndraw,
-                      burnin=burnin,
-                      compute_intervals=True)
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = selected_targets(conv3.loglike, 
+                                          np.ones(Y.shape[0]), # should be weights of GLM
+                                          selected_features)
+
+        conv3.summary(observed_target, 
+                     cov_target, 
+                     cov_target_score, 
+                     alternatives,
+                     ndraw=ndraw,
+                     burnin=burnin)
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_threshold_constructors(ndraw=1000, burnin=200):
@@ -147,8 +167,18 @@ def test_threshold_constructors(ndraw=1000, burnin=200):
         selected_features = np.zeros(p, np.bool)
         selected_features[:3] = True
 
-        conv3.summary(selected_features,
-                      ndraw=ndraw,
-                      burnin=burnin)
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = selected_targets(conv3.loglike, 
+                                          np.ones(Y.shape[0]), # should be weights of GLM
+                                          selected_features)
+
+        conv3.summary(observed_target, 
+                     cov_target, 
+                     cov_target_score, 
+                     alternatives,
+                     ndraw=ndraw,
+                     burnin=burnin)
 
 

@@ -2,7 +2,6 @@ import numpy as np
 
 import regreg.api as rr
 from ..api import (randomization,
-                   glm_group_lasso,
                    multiple_queries)
 
 from ...tests.instance import (gaussian_instance,
