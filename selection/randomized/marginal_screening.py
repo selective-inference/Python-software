@@ -91,7 +91,7 @@ class marginal_screening(object):
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
-        opt_linear[self._selected,:] = np.diag(active_signs)
+        opt_linear[self._selected,:] = np.identity(self.num_opt_var)
         opt_offset = np.zeros(p)
         opt_offset[self._selected] = active_signs * self.threshold[self._selected]
         opt_offset[self._not_selected] = randomized_score[self._not_selected]
@@ -275,7 +275,7 @@ class BH(marginal_screening):
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
-        opt_linear[self._selected, :] = np.diag(active_signs)
+        opt_linear[self._selected,:] = np.identity(self.num_opt_var)
         opt_offset = np.zeros(p)
         opt_offset[self._selected] = active_signs * self.threshold[self._selected]
         opt_offset[self._not_selected] = randomized_score[self._not_selected]
