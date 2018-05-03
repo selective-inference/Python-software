@@ -487,6 +487,9 @@ class affine_gaussian_sampler(optimization_sampler):
         CGF.
 
         """
+        if np.asarray(observed_target).shape in [(), (0,)]:
+            raise ValueError('no target specified')
+
         prec_target = np.linalg.inv(cov_target)
         logdens_lin, logdens_off = self.logdens_transform
         target_lin = - logdens_lin.dot(cov_target_score.T.dot(prec_target)) # this determines how the conditional mean of optimization variables
