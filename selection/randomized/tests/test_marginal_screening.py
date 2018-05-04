@@ -43,8 +43,7 @@ def test_BH(n=500,
             observed_target, cov_target, crosscov_target_score, alternatives = BH_select.form_targets(nonzero)
             estimate, _, _, pval, intervals, _ = BH_select.selective_MLE(observed_target,
                                                                          cov_target,
-                                                                         crosscov_target_score,
-                                                                         alternatives)
+                                                                         crosscov_target_score)
 
             # run summary
 
@@ -102,8 +101,7 @@ def test_marginal(n=500,
             observed_target, cov_target, crosscov_target_score, alternatives = marginal_select.form_targets(nonzero)
             estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
                                                                          cov_target,
-                                                                         crosscov_target_score,
-                                                                         alternatives)
+                                                                         crosscov_target_score)
 
             # run summary
 

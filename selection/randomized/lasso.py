@@ -261,14 +261,15 @@ class lasso(object):
         return active_signs
 
     def summary(self,
-                target="selected",
-                features=None,
+                observed_target, 
+                cov_target, 
+                cov_target_score, 
+                alternatives,
                 parameter=None,
                 level=0.9,
                 ndraw=10000,
                 burnin=2000,
-                compute_intervals=False,
-                dispersion=None):
+                compute_intervals=False):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -293,231 +294,52 @@ class lasso(object):
         """
 
         if parameter is None:
-            parameter = np.zeros(self.loglike.shape[0])
+            parameter = np.zeros_like(observed_target)
 
-        if target == 'selected':
-            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
-                                                                                                dispersion=dispersion)
+        opt_sample = self.sampler.sample(ndraw, burnin)
+
+        pivots = self.sampler.coefficient_pvalues(observed_target,
+                                                  cov_target,
+                                                  cov_target_score,
+                                                  parameter=parameter,
+                                                  sample=opt_sample,
+                                                  alternatives=alternatives)
+        if not np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(observed_target,
+                                                       cov_target,
+                                                       cov_target_score,
+                                                       parameter=np.zeros_like(parameter),
+                                                       sample=opt_sample,
+                                                       alternatives=alternatives)
         else:
-            X, y = self.loglike.data
-            n, p = X.shape
-            if n > p and target == 'full':
-                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
-                                                                                                dispersion=dispersion)
-            else:
-                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
-                                                                                                    dispersion=dispersion)
+            pvalues = pivots
 
-        if self._overall.sum() > 0:
-            opt_sample = self.sampler.sample(ndraw, burnin)
+        intervals = None
+        if compute_intervals:
+            intervals = self.sampler.confidence_intervals(observed_target,
+                                                          cov_target,
+                                                          cov_target_score,
+                                                          sample=opt_sample)
 
-            pivots = self.sampler.coefficient_pvalues(observed_target,
-                                                      cov_target,
-                                                      cov_target_score,
-                                                      parameter=parameter,
-                                                      sample=opt_sample,
-                                                      alternatives=alternatives)
-            if not np.all(parameter == 0):
-                pvalues = self.sampler.coefficient_pvalues(observed_target,
-                                                           cov_target,
-                                                           cov_target_score,
-                                                           parameter=np.zeros_like(parameter),
-                                                           sample=opt_sample,
-                                                           alternatives=alternatives)
-            else:
-                pvalues = pivots
-
-            intervals = None
-            if compute_intervals:
-                intervals = self.sampler.confidence_intervals(observed_target,
-                                                              cov_target,
-                                                              cov_target_score,
-                                                              sample=opt_sample)
-
-            return pivots, pvalues, intervals
-        else:
-            return [], [], []
+        return pivots, pvalues, intervals
 
     def selective_MLE(self,
-                      target="selected",
-                      features=None,
-                      parameter=None,
+                      observed_target, 
+                      cov_target, 
+                      cov_target_score, 
                       level=0.9,
-                      compute_intervals=False,
-                      dispersion=None,
                       solve_args={'tol':1.e-12}):
         """
         Parameters
         ----------
-        target : one of ['selected', 'full']
-        features : np.bool
-            Binary encoding of which features to use in final
-            model and targets.
-        parameter : np.array
-            Hypothesized value for parameter -- defaults to 0.
-        level : float
-            Confidence level.
-        ndraw : int (optional)
-            Defaults to 1000.
-        burnin : int (optional)
-            Defaults to 1000.
-        compute_intervals : bool
-            Compute confidence intervals?
-        dispersion : float (optional)
-            Use a known value for dispersion, or Pearson's X^2?
+
         """
-
-        if parameter is None:
-            parameter = np.zeros(self.loglike.shape[0])
-
-        if target == 'selected':
-            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features,
-                                                                                                dispersion=dispersion)
-        elif target == 'full':
-            X, y = self.loglike.data
-            n, p = X.shape
-            if n > p:
-                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features,
-                                                                                                dispersion=dispersion)
-            else:
-                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features,
-                                                                                                    dispersion=dispersion)
-
-        # working out conditional law of opt variables given
-        # target after decomposing score wrt target
 
         return self.sampler.selective_MLE(observed_target,
                                           cov_target,
                                           cov_target_score,
                                           self.observed_opt_state,
                                           solve_args=solve_args)
-
-    # Targets of inference
-    # and covariance with score representation
-
-    def selected_targets(self, features=None, dispersion=None):
-
-        X, y = self.loglike.data
-        n, p = X.shape
-
-        if features is None:
-            active = self._active
-            unpenalized = self._unpenalized
-            noverall = active.sum() + unpenalized.sum()
-            overall = active + unpenalized
-
-            score_linear = self.score_transform[0]
-            Q = -score_linear[overall]
-            cov_target = np.linalg.inv(Q)
-            observed_target = self._beta_full[overall]
-            crosscov_target_score = score_linear.dot(cov_target)
-            Xfeat = X[:, overall]
-            alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in self.selection_variable['sign'][active]] + 
-                            ['twosided'] * unpenalized.sum())
-
-        else:
-
-            features_b = np.zeros_like(self._overall)
-            features_b[features] = True
-            features = features_b
-
-            Xfeat = X[:, features]
-            Qfeat = Xfeat.T.dot(self._W[:, None] * Xfeat)
-            Gfeat = self.loglike.smooth_objective(self.initial_soln, 'grad')[features]
-            Qfeat_inv = np.linalg.inv(Qfeat)
-            one_step = self.initial_soln[features] - Qfeat_inv.dot(Gfeat)
-            cov_target = Qfeat_inv
-            _score_linear = -Xfeat.T.dot(self._W[:, None] * X).T
-            crosscov_target_score = _score_linear.dot(cov_target)
-            observed_target = one_step
-            alternatives = ['twosided'] * features.sum()
-
-        if dispersion is None:  # use Pearson's X^2
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(
-                Xfeat.dot(observed_target))) ** 2 / self._W).sum() / (n - Xfeat.shape[1])
-
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
-
-    def full_targets(self, features=None, dispersion=None):
-
-        if features is None:
-            features = self._overall
-        features_bool = np.zeros(self._overall.shape, np.bool)
-        features_bool[features] = True
-        features = features_bool
-
-        X, y = self.loglike.data
-        n, p = X.shape
-
-        # target is one-step estimator
-
-        Qfull = X.T.dot(self._W[:, None] * X)
-        G = self.loglike.smooth_objective(self.initial_soln, 'grad')
-        Qfull_inv = np.linalg.inv(Qfull)
-        one_step = self.initial_soln - Qfull_inv.dot(G)
-        cov_target = Qfull_inv[features][:, features]
-        observed_target = one_step[features]
-        crosscov_target_score = np.zeros((p, cov_target.shape[0]))
-        crosscov_target_score[features] = -np.identity(cov_target.shape[0])
-
-        if dispersion is None:  # use Pearson's X^2
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(X.dot(one_step))) ** 2 / self._W).sum() / (
-            n - p)
-
-        alternatives = ['twosided'] * features.sum()
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
-
-    def debiased_targets(self,
-                         features=None,
-                         dispersion=None,
-                         debiasing_args={}):
-
-        if features is None:
-            features = self._overall
-        features_bool = np.zeros(self._overall.shape, np.bool)
-        features_bool[features] = True
-        features = features_bool
-
-        X, y = self.loglike.data
-        n, p = X.shape
-
-        # relevant rows of approximate inverse
-
-        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(self._W)[:, None], 
-                                                  np.nonzero(features)[0],
-                                                  **debiasing_args)) / n
-
-        # target is one-step estimator
-        # this one starts at our randomized solution
-
-        G_rand = self.loglike.smooth_objective(self.initial_soln, 'grad')
-        observed_target_rand = self.initial_soln[features] - Qinv_hat.dot(G_rand)
-
-        # this one step starts at the unrandomized solution
-
-        problem = rr.simple_problem(self.loglike, self.penalty)
-        nonrand_soln = problem.solve()
-        G_nonrand = self.loglike.smooth_objective(nonrand_soln, 'grad')
-
-        observed_target = nonrand_soln[features] - Qinv_hat.dot(G_nonrand)
-
-        if p > n:
-            M1 = Qinv_hat.dot(X.T)
-            cov_target = (M1 * self._W[None, :]).dot(M1.T)
-            crosscov_target_score = -(M1 * self._W[None, :]).dot(X).T
-        else:
-            Qfull = X.T.dot(self._W[:, None] * X)
-            cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
-            crosscov_target_score = -Qinv_hat.dot(Qfull).T
-
-        if dispersion is None:  # use Pearson's X^2
-            Xfeat = X[:, features]
-            Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
-            relaxed_soln = nonrand_soln[features] - np.linalg.inv(Qrelax).dot(G_nonrand[features])
-            dispersion = ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - features.sum()) 
-
-        alternatives = ['twosided'] * features.sum()
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     @staticmethod
     def gaussian(X,
@@ -869,3 +691,109 @@ class lasso(object):
         obj._sqrt_soln = soln
 
         return obj
+
+# Targets of inference
+# and covariance with score representation
+
+def selected_targets(loglike, 
+                     W, 
+                     features, 
+                     sign_info={}, 
+                     dispersion=None,
+                     solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+    X, y = loglike.data
+    n, p = X.shape
+
+    Xfeat = X[:, features]
+    Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
+    observed_target = restricted_estimator(loglike, features, solve_args=solve_args)
+    cov_target = np.linalg.inv(Qfeat)
+    _score_linear = -Xfeat.T.dot(W[:, None] * X).T
+    crosscov_target_score = _score_linear.dot(cov_target)
+    alternatives = ['twosided'] * features.sum()
+    features_idx = np.arange(p)[features]
+
+    for i in range(len(alternatives)):
+        if features_idx[i] in sign_info.keys():
+            alternatives[i] = sign_info[features_idx[i]]
+
+    if dispersion is None:  # use Pearson's X^2
+        dispersion = ((y - loglike.saturated_loss.mean_function(
+            Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
+
+    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+def full_targets(loglike, 
+                 W, 
+                 features, 
+                 dispersion=None,
+                 solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+    X, y = loglike.data
+    n, p = X.shape
+    features_bool = np.zeros(p, np.bool)
+    features_bool[features] = True
+    features = features_bool
+
+    # target is one-step estimator
+
+    Qfull = X.T.dot(W[:, None] * X)
+    Qfull_inv = np.linalg.inv(Qfull)
+    full_estimator = loglike.solve(**solve_args)
+    cov_target = Qfull_inv[features][:, features]
+    observed_target = full_estimator[features]
+    crosscov_target_score = np.zeros((p, cov_target.shape[0]))
+    crosscov_target_score[features] = -np.identity(cov_target.shape[0])
+
+    if dispersion is None:  # use Pearson's X^2
+        dispersion = (((y - loglike.saturated_loss.mean_function(X.dot(full_estimator))) ** 2 / W).sum() / 
+                      (n - p))
+
+    alternatives = ['twosided'] * features.sum()
+    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+def debiased_targets(loglike, 
+                     penalty,
+                     W, 
+                     features, 
+                     sign_info={}, 
+                     dispersion=None,
+                     debiasing_args={}):
+
+    X, y = loglike.data
+    n, p = X.shape
+    features_bool = np.zeros(p, np.bool)
+    features_bool[features] = True
+    features = features_bool
+
+    # relevant rows of approximate inverse
+
+    Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(W)[:, None], 
+                                              np.nonzero(features)[0],
+                                              **debiasing_args)) / n
+
+    problem = rr.simple_problem(loglike, penalty)
+    nonrand_soln = problem.solve()
+    G_nonrand = loglike.smooth_objective(nonrand_soln, 'grad')
+
+    observed_target = nonrand_soln[features] - Qinv_hat.dot(G_nonrand)
+
+    if p > n:
+        M1 = Qinv_hat.dot(X.T)
+        cov_target = (M1 * W[None, :]).dot(M1.T)
+        crosscov_target_score = -(M1 * W[None, :]).dot(X).T
+    else:
+        Qfull = X.T.dot(W[:, None] * X)
+        cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
+        crosscov_target_score = -Qinv_hat.dot(Qfull).T
+
+    if dispersion is None:  # use Pearson's X^2
+        Xfeat = X[:, features]
+        Qrelax = Xfeat.T.dot(W[:, None] * Xfeat)
+        relaxed_soln = nonrand_soln[features] - np.linalg.inv(Qrelax).dot(G_nonrand[features])
+        dispersion = (((y - loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / W).sum() / 
+                      (n - features.sum()))
+
+    alternatives = ['twosided'] * features.sum()
+    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives

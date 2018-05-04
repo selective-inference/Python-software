@@ -2,22 +2,20 @@ import numpy as np, sys, os
 import pandas as pd
 from rpy2 import robjects
 import rpy2.robjects.numpy2ri
-rpy2.robjects.numpy2ri.activate()
 
-import selection.randomized.lasso as L; reload(L)
-from selection.adjusted_MLE.tests.test_inferential_metrics import (BHfilter,
-                                                                   selInf_R,
-                                                                   glmnet_lasso,
-                                                                   sim_xy,
-                                                                   tuned_lasso,
-                                                                   relative_risk,
-                                                                   coverage,
-                                                                   comparison_risk_inference_selected,
-                                                                   comparison_risk_inference_full)
+from .test_inferential_metrics import (BHfilter,
+                                       selInf_R,
+                                       glmnet_lasso,
+                                       sim_xy,
+                                       tuned_lasso,
+                                       relative_risk,
+                                       coverage,
+                                       comparison_risk_inference_selected,
+                                       comparison_risk_inference_full)
 
 
 def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selected", tuning = "selective_MLE",
-                randomizing_scale= np.sqrt(0.25), ndraw = 50):
+                randomizing_scale=np.sqrt(0.25), ndraw = 50):
 
     df_master = pd.DataFrame()
     df_risk = pd.DataFrame()
@@ -139,5 +137,6 @@ def write_ouput(outpath, n=500, p=100, rho=0.35, s=5, beta_type=1, target="selec
     df_master.to_csv(outfile_metrics, index=False)
     df_risk.to_csv(outfile_risk, index=False)
 
-write_ouput("/Users/snigdhapanigrahi/adjusted_MLE/results", n=200, p=1000, rho=0, s=10, beta_type=1,
-            target="full", tuning = "selective_MLE", randomizing_scale= np.sqrt(0.25), ndraw = 50)
+if __name__ == "__main__":
+    write_ouput("/Users/snigdhapanigrahi/adjusted_MLE/results", n=200, p=1000, rho=0, s=10, beta_type=1,
+                target="full", tuning = "selective_MLE", randomizing_scale= np.sqrt(0.25), ndraw = 50)
