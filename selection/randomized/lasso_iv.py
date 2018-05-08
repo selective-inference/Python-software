@@ -7,15 +7,306 @@ import functools
 
 import numpy as np
 import regreg.api as rr
-from .lasso import highdim
-#from .randomization import randomization
+from .lasso import lasso
+from .randomization import randomization
 from .query import multiple_queries, optimization_intervals, affine_gaussian_sampler
 #from .M_estimator import restricted_Mest
 from .base import restricted_estimator
 from ..constraints.affine import constraints
 from scipy.optimize import bisect
+from scipy.linalg import sqrtm
+from scipy import matrix, compress, transpose
+from scipy.stats import norm
 
-class lasso_iv(highdim):
+
+class group_lasso_iv(lasso):
+
+    def __init__(self,
+                 Y,
+                 D,
+                 Z,
+                 penalty=None,
+                 ridge_term=None,
+                 randomizer_scale=None,
+                 perturb=None):
+
+        n, p = Z.shape
+        ZTZ_inv = np.linalg.inv(Z.T.dot(Z))
+        sqrtQ = sqrtm(ZTZ_inv)
+        data_part = sqrtQ.dot(Z.T.dot(D))
+        loglike = rr.glm.gaussian(np.identity(p), data_part)
+        self.loglike = loglike
+        self.nfeature = p = self.loglike.shape[0]
+
+        if penalty is None:
+            # C_0 is taken to be 10 for now
+            C_0 = 10.
+            P_Z = Z.dot(np.linalg.pinv(Z))
+            penalty = np.sqrt(D.T.dot(np.identity(n)-P_Z).dot(D)*p*C_0/(n-p))
+        penalty = rr.group_lasso(np.zeros(p), weights=dict({0: penalty}), lagrange=1.)
+        self.penalty = penalty
+
+        if ridge_term is None:
+            ridge_term = 0.
+        self.ridge_term = ridge_term
+
+        mean_diag = 1. # X is identity matrix here
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(data_part) * np.sqrt(n / (n - 1.))
+        self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        self._initial_omega = perturb
+
+        self.Z = Z
+        self.D = D
+        self.Y = Y
+
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
+            perturb=None):
+
+        p = self.nfeature
+            
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
+
+        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
+        problem = rr.simple_problem(self.loglike, self.penalty)
+        self.initial_soln = problem.solve(quad, **solve_args)
+
+        if np.linalg.norm(self.initial_soln) < 1e-10:
+            #print 'no active set, initial_soln: ', self.initial_soln
+            return False
+
+        ## initial state for opt variables
+        initial_subgrad = -(self.loglike.smooth_objective(self.initial_soln, 'grad') + 
+                            quad.objective(self.initial_soln, 'grad'))
+        self.initial_subgrad = initial_subgrad
+
+        initial_scalings = np.linalg.norm(self.initial_soln)
+        self.observed_opt_state = np.atleast_1d(initial_scalings)
+
+        # form linear part
+        self.num_opt_var = self.observed_opt_state.shape[0]
+
+        _opt_linear_term = np.zeros((p, self.num_opt_var))
+        #_score_linear_term = None
+
+        X, y = self.loglike.data
+        # note the minus sign of the score
+        self.observed_score_state = -y
+
+        self._lagrange = self.penalty.weights[0]
+        self.active_directions = initial_subgrad / self._lagrange
+
+        _opt_linear_term = self.active_directions.reshape((-1,1))
+
+        self.opt_transform = (_opt_linear_term, self.initial_subgrad)
+        #self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
+
+        # compute implied mean and covariance
+
+        cov, prec = self.randomizer.cov_prec
+        opt_linear, opt_offset = self.opt_transform
+
+        cond_precision = opt_linear.T.dot(opt_linear) * prec
+        cond_cov = np.linalg.inv(cond_precision)
+        logdens_linear = cond_cov.dot(opt_linear.T) * prec
+
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        # log_density should include Jacobian term
+        # it is not used in truncated gaussian sampling but in importance weighting
+        def log_density(logdens_linear, offset, cond_prec, score, opt):
+            if score.ndim == 1:
+                mean_term = logdens_linear.dot(score.T + offset).T
+            else:
+                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
+            arg = opt + mean_term
+            jacobian_part = self.log_jacobian(opt)
+            return (-0.5*np.sum(arg*cond_prec.dot(arg.T).T, 1)+jacobian_part)
+
+        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+
+        # now make the constraints
+        A_scaling = -np.identity(self.num_opt_var)
+        b_scaling = np.zeros(self.num_opt_var)
+
+        affine_con = constraints(A_scaling,
+                                 b_scaling,
+                                 mean=cond_mean,
+                                 covariance=cond_cov)
+        logdens_transform = (logdens_linear, opt_offset)
+        self.sampler = affine_gaussian_sampler(affine_con,
+                                               self.observed_opt_state,
+                                               self.observed_score_state,
+                                               log_density,
+                                               logdens_transform)
+
+        return True
+
+
+    def log_jacobian(self, opt):
+        n, p = self.Z.shape
+        V = np.zeros((p, p-1))
+
+        def null(A, eps=1e-12):
+            u,s,vh = np.linalg.svd(A)
+            padding = max(0, np.shape(A)[1] - np.shape(s)[0])
+            null_mask = np.concatenate(((s <= eps), np.ones((padding,), dtype=bool)), axis=0)
+            null_space = compress(null_mask, vh, axis=0)
+            return transpose(null_space)
+
+        V = null(matrix(self.active_directions))
+        component = self._lagrange*V.T.dot(V)
+        jacobs = np.array([np.linalg.det(item*np.identity(p-1)+component) for item in opt])
+
+        return np.log(jacobs)
+
+
+    def summary(self,
+                parameter=None,
+                Sigma_11 = 1.,
+                Sigma_12 = .8,
+                level=0.95,
+                ndraw=1000,
+                burnin=1000,
+                compute_intervals=True):
+
+        if parameter is None:
+            parameter = np.zeros(1)
+        parameter = np.atleast_1d(parameter)
+
+        # compute tsls, i.e. the observed target
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        denom = self.D.T.dot(P_Z).dot(self.D)
+        two_stage_ls = (self.D.T.dot(P_Z).dot(self.Y)) / denom
+        two_stage_ls = np.atleast_1d(two_stage_ls)
+        observed_target = two_stage_ls
+
+        # compute cov_target, cov_target_score
+        X, y = self.loglike.data
+        cov_target = np.atleast_2d(Sigma_11/denom)
+        cov_target_score = -1.*(Sigma_12/denom)*y
+        cov_target_score = np.atleast_2d(cov_target_score)
+
+        alternatives = ['twosided']
+
+        opt_sample = self.sampler.sample(ndraw, burnin)
+
+        pivots = self.sampler.coefficient_pvalues(observed_target,
+                                                  cov_target,
+                                                  cov_target_score,
+                                                  parameter=parameter,
+                                                  sample=opt_sample,
+                                                  alternatives=alternatives)
+        if not np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(observed_target, 
+                                                       cov_target, 
+                                                       cov_target_score, 
+                                                       parameter=np.zeros_like(parameter), 
+                                                       sample=opt_sample,
+                                                       alternatives=alternatives)
+        else:
+            pvalues = pivots
+
+        intervals = None
+        if compute_intervals:
+            intervals = self.sampler.confidence_intervals(observed_target, 
+                                                          cov_target, 
+                                                          cov_target_score, 
+                                                          sample=opt_sample,
+                                                          level=level)
+
+        return pivots, pvalues, intervals
+
+
+    # here we will return the 2 by 2 matrix
+    def estimate_covariance(self):
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        beta_estim = (self.D.T.dot(P_Z).dot(self.Y)) / (self.D.T.dot(P_Z).dot(self.D))
+
+        n = self.Z.shape[0]
+        X = np.vstack([self.Y-self.D*beta_estim, self.D])
+        cov_estim = X.dot(np.identity(n)-P_Z).dot(X.T) / n
+        #cov_estim = (self.Y-self.D*beta_estim).dot(np.identity(n)-P_Z).dot(self.Y-self.D*beta_estim) / n
+        return cov_estim
+
+    # there is no invalid IV
+    @staticmethod
+    def bigaussian_instance(n=1000,p=10,
+                            s=3,snr=7.,random_signs=False,
+                            gsnr = 1., #true gamma parameter
+                            beta = 1., #true beta parameter
+                            Sigma = np.array([[1., 0.8], [0.8, 1.]]), #noise variance matrix
+                            rho=0,scale=False,center=True): #Z matrix structure, note that scale=TRUE will simulate weak IV case!
+
+        # Generate parameters
+        # --> gamma coefficient
+        gamma = np.repeat([gsnr],p)
+
+        # Generate samples
+        # Generate Z matrix 
+        Z = (np.sqrt(1-rho) * np.random.standard_normal((n,p)) + 
+            np.sqrt(rho) * np.random.standard_normal(n)[:,None])
+        if center:
+            Z -= Z.mean(0)[None,:]
+        if scale:
+            Z /= (Z.std(0)[None,:] * np.sqrt(n))
+        #    Z /= np.sqrt(n)
+        # Generate error term
+        mean = [0, 0]
+        errorTerm = np.random.multivariate_normal(mean,Sigma,n)
+        # Generate D and Y
+        D = Z.dot(gamma) + errorTerm[:,1]
+        Y = D * beta + errorTerm[:,0]
+
+        D = D - D.mean(0)
+        Y = Y - Y.mean(0)
+    
+        return Z, D, Y, beta, gamma
+
+    def naive_inference(self, 
+                        parameter=None,
+                        Sigma_11 = 1.,
+                        compute_intervals=False,
+                        level=0.95):
+        if parameter is None:
+            parameter = 0.
+        if self.pre_test():
+            P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+            denom = self.D.dot(P_Z).dot(self.D)
+            tsls = (self.D.dot(P_Z).dot(self.Y)) / denom
+            std = np.sqrt(Sigma_11 / denom)
+            pval = norm.cdf(tsls, loc=parameter, scale=std)
+            pval = 2. * min(pval, 1-pval)
+            interval = None
+            if compute_intervals:
+                interval = [tsls - std * norm.ppf(q=level), tsls + std * norm.ppf(q=level)]
+            return pval, interval
+        else:
+            #print 'did not pass pre test'
+            return None, None
+
+    def pre_test(self):
+        n, p = self.Z.shape
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        denom = self.D.dot(np.identity(n) - P_Z).dot(self.D) / (n-p)
+        num = self.D.dot(P_Z).dot(self.D) / p
+        f = num / denom
+        # C_0 is taken to be 10 for now
+        C_0 = 10.
+        if f >= C_0:
+            return True
+        else:
+            return False
+
+
+
+
+class lasso_iv(lasso):
 
     r"""
     A class for the LASSO with invalid instrumental variables for post-selection inference.
@@ -65,7 +356,7 @@ class lasso_iv(highdim):
             #randomizer_scale = 0.5*np.sqrt(n)
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(P_ZY) * np.sqrt(n / (n - 1.))
 
-        highdim.__init__(self, loglike, penalty, ridge_term, randomizer_scale)
+        lasso.__init__(self, loglike, penalty, ridge_term, randomizer_scale)
         self.Z = Z
         self.D = D
         self.Y = Y
@@ -425,7 +716,7 @@ class lasso_iv(highdim):
 
 
 
-class lasso_iv_ar(highdim):
+class lasso_iv_ar(lasso):
 
     r"""
     A class for the LASSO with invalid instrumental variables for post-selection inference.
@@ -475,7 +766,7 @@ class lasso_iv_ar(highdim):
             #randomizer_scale = 0.5*np.sqrt(n)
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(P_ZY) * np.sqrt(n / (n - 1.))
 
-        highdim.__init__(self, loglike, penalty, ridge_term, randomizer_scale)
+        lasso.__init__(self, loglike, penalty, ridge_term, randomizer_scale)
         self.Z = Z
         self.D = D
         self.Y = Y
@@ -1177,7 +1468,7 @@ def lasso_iv_selected(gsnr=1., beta=1., sigma_12=0.8, ndraw=5000, burnin=1000):
     penalty = np.ones(p + 1) * penalty
     penalty[-1] = 0.
 
-    L = highdim.gaussian(PZ.dot(np.hstack([Z, D.reshape((-1,1))])), PZ.dot(Y), penalty)
+    L = lasso.gaussian(PZ.dot(np.hstack([Z, D.reshape((-1,1))])), PZ.dot(Y), penalty)
     signs = L.fit()
     nonzero = np.nonzero(signs != 0)[0]
 
