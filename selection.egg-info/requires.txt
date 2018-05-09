@@ -1,0 +1,7 @@
+Cython>=0.21
+
+[doc]
+Sphinx>=1.0
+
+[test]
+nose>=0.10.1
