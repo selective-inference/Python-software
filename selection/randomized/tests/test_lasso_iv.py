@@ -95,6 +95,41 @@ def test_pivots_naive_pre_test(nsim=500, n=1000, p=10, s=3, true_model=True, Sig
     return P0
 
 
+def plain_tsls_instance(n=1000, p=10, s=3, true_model=True, Sigma_12=0.8, gsnr=1., beta_star=1.):
+
+    Z, D, Y, beta, gamma = group_lasso_iv.bigaussian_instance(beta=beta_star, gsnr=gsnr,Sigma = np.array([[1., Sigma_12], [Sigma_12, 1.]]))
+    conv = group_lasso_iv(Y,D,Z)
+
+    if true_model is True:
+        sigma_11 = 1.
+    else:
+        Sigma_matrix = conv.estimate_covariance()
+        sigma_11 = Sigma_matrix[0,0]
+
+    pval, interval = conv.plain_inference(parameter=beta_star, Sigma_11 = sigma_11, compute_intervals=True)
+    
+    return pval, interval
+
+
+def test_pivots_plain_tsls(nsim=500, n=1000, p=10, s=3, true_model=True, Sigma_12=0.8, gsnr=1., beta_star=1.):
+    P0 = []
+    #intervals = []
+    coverages = []
+    lengths = []
+    for i in range(nsim):
+        p0, interval= plain_tsls_instance(n=n, p=p, s=s, true_model=true_model, Sigma_12=Sigma_12, gsnr=gsnr, beta_star=beta_star)
+        if p0 is not None:
+            P0.extend([p0])
+            #intervals.extend(interval)
+            coverages.extend([(interval[0] < beta_star) * (interval[1] > beta_star)])
+            lengths.extend([interval[1] - interval[0]])
+
+    print('pivots', np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.05))
+    print('confidence intervals', np.mean(coverages), np.mean(lengths))
+
+    return P0
+
+
 
 # if true_model is True, Sigma_12 is the true Sigma_{12}
 # otherwise Sigma_12 will be the consistent estimator
@@ -136,7 +171,7 @@ def test_pivots(nsim=500, n=1000, p=10, s=3, ndraw=10000, burnin=2000, true_mode
             powers.append(power)
 
     print('pivots', np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.05))
-    print('confidence intervals', np.mean(coverages), np.mean(lengths))
+    print('confidence intervals', np.mean(coverages), np.mean(lengths), np.std(lengths))
     print('powers', np.mean(np.array(powers), axis=0))
 
     #U = np.linspace(0, 1, 101)

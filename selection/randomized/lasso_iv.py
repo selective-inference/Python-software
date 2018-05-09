@@ -303,6 +303,26 @@ class group_lasso_iv(lasso):
         else:
             return False
 
+    # no pre-test, just to see how the normality theory breaks down
+    def plain_inference(self, 
+                        parameter=None,
+                        Sigma_11 = 1.,
+                        compute_intervals=False,
+                        level=0.95):
+        if parameter is None:
+            parameter = 0.
+            
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        denom = self.D.dot(P_Z).dot(self.D)
+        tsls = (self.D.dot(P_Z).dot(self.Y)) / denom
+        std = np.sqrt(Sigma_11 / denom)
+        pval = norm.cdf(tsls, loc=parameter, scale=std)
+        pval = 2. * min(pval, 1-pval)
+        interval = None
+        if compute_intervals:
+            interval = [tsls - std * norm.ppf(q=level), tsls + std * norm.ppf(q=level)]
+        return pval, interval
+
 
 
 
