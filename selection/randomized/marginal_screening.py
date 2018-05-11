@@ -200,10 +200,10 @@ class marginal_screening(object):
 
     def form_targets(self, features):
 
-        score_linear = -self.covariance[:,features]
-        Q = -score_linear[features]
+        score_linear = self.covariance[:, features]
+        Q = score_linear[features]
         cov_target = np.linalg.inv(Q)
-        observed_target = np.linalg.inv(Q).dot(-self.observed_score[features])
+        observed_target = np.linalg.inv(Q).dot(self.observed_score[features])
         crosscov_target_score = score_linear.dot(cov_target)
         alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
                          self.selection_variable['sign'][features]])

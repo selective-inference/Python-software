@@ -63,7 +63,7 @@ def test_BH(n=500,
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
 def test_marginal(n=500, 
-                  p=20, 
+                  p=100, 
                   signal_fac=2., 
                   s=5, 
                   sigma=3, 
@@ -72,16 +72,20 @@ def test_marginal(n=500,
                   use_MLE=False):
 
     while True:
-        signal = np.sqrt(signal_fac * 2 * np.log(p))
-        X, Y, beta = gaussian_instance(n=n,
-                                       p=p,
-                                       signal=signal,
-                                       s=s,
-                                       equicorrelated=False,
-                                       rho=rho,
-                                       sigma=sigma,
-                                       random_signs=True)[:3]
+        X = gaussian_instance(n=n,
+                              p=p,
+                              equicorrelated=False,
+                              rho=rho)[0]
+        W = X.T.dot(X) / n
+        sqrtW = np.linalg.cholesky(W)
+        print(np.linalg.norm(sqrtW.dot(sqrtW.T) - W))
+        sigma = 1.5
+        Z = np.random.standard_normal(p).dot(sqrtW.T) * sigma
+        beta = np.ones(p) * 5 * sigma
+        beta[s:] = 0
+        np.random.shuffle(beta)
 
+        score = Z + W.dot(beta)
         idx = np.arange(p)
         sigmaX = rho ** np.abs(np.subtract.outer(idx, idx))
         print("snr", beta.T.dot(sigmaX).dot(beta) / ((sigma ** 2.) * n))
@@ -89,8 +93,8 @@ def test_marginal(n=500,
         n, p = X.shape
 
         q = 0.1
-        marginal_select = marginal_screening(X.T.dot(Y),
-                                             sigma**2 * X.T.dot(X),
+        marginal_select = marginal_screening(score,
+                                             W * sigma**2,
                                              randomizer_scale * sigma,
                                              q)
 
@@ -112,7 +116,7 @@ def test_marginal(n=500,
                                                              alternatives,
                                                              compute_intervals=True)
 
-            beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
+            beta_target = np.linalg.inv(sigma**2 * W[:, nonzero][nonzero]).dot(Z[nonzero])
             print("beta_target and intervals", beta_target, intervals)
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
