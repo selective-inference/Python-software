@@ -17,14 +17,9 @@ def marginal_screening_selection(p_values, level):
     p_sorted = np.sort(p_values)
     indices = np.arange(m)
     indices_order = np.argsort(p_values)
-    E_sel = (p_values <= level)
-    nselect = E_sel.sum()
-    not_sel = ~E_sel
+    active = (p_values <= level)
 
-    active = np.zeros(m, np.bool)
-    active[E_sel] = 1
-
-    return nselect, active, np.argsort(p_values[np.sort(not_sel)])
+    return active
 
 def BH_selection(p_values, level):
 
@@ -54,13 +49,14 @@ class marginal_screening(object):
                  marginal_level,
                  perturb=None):
 
-        self.observed_score = observed_score  # - Z if Z \sim N(\mu,\Sigma)
+        self.observed_score = observed_score  # Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting
         self.nfeature = p = observed_score.shape[0]
         self.covariance = covariance
         self.randomized_stdev = np.sqrt(np.diag(covariance) + randomizer_scale**2)
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         self._initial_omega = perturb
         self.marginal_level = marginal_level
+        self.threshold = self.randomized_stdev * ndist.ppf(1. - self.marginal_level / 2.)
 
     def fit(self, perturb=None):
 
@@ -72,11 +68,10 @@ class marginal_screening(object):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        randomized_score = -self.observed_score + self._initial_omega
-        p_values = 2. * (1. - ndist.cdf(np.abs(randomized_score) / self.randomized_stdev))
-        K, active, sort_notsel_pvals = marginal_screening_selection(p_values, self.marginal_level)
+        randomized_score = Z = self.observed_score + self._initial_omega
+        soft_thresh = np.sign(Z) * (np.fabs(Z) - self.threshold) * (np.fabs(Z) >= self.threshold)
+        active = soft_thresh != 0
 
-        self.threshold = self.randomized_stdev * ndist.ppf(1. - self.marginal_level / 2.)
         self._selected = active
         self._not_selected = ~self._selected
         sign = np.sign(randomized_score)
@@ -85,9 +80,7 @@ class marginal_screening(object):
         self.selection_variable = {'sign': sign,
                                    'variables': self._selected.copy()}
 
-        self.observed_opt_state = (self._initial_omega[self._selected] - 
-                                   self.observed_score[self._selected] - 
-                                   np.diag(active_signs).dot(self.threshold[self._selected]))
+        self.observed_opt_state = soft_thresh[self._selected]
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
@@ -99,10 +92,15 @@ class marginal_screening(object):
         self.opt_transform = (opt_linear, opt_offset)
 
         cov, prec = self.randomizer.cov_prec
-        cond_precision = opt_linear.T.dot(opt_linear) * prec
-        cond_cov = np.linalg.inv(cond_precision)
-        logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        cond_mean = -logdens_linear.dot(self.observed_score + opt_offset)
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec  ## XXX implicitly assuming prec is 
+                                                                  ## scalar multiple of identity
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec    ## here also
+        else:
+            raise NotImplementedError
+
+        cond_mean = logdens_linear.dot(self.observed_score - opt_offset)
 
         logdens_transform = (logdens_linear, opt_offset)
         A_scaling = -np.diag(active_signs)

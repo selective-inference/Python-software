@@ -223,9 +223,12 @@ class lasso(object):
         cov, prec = self.randomizer.cov_prec
         opt_linear, opt_offset = self.opt_transform
 
-        cond_precision = opt_linear.T.dot(opt_linear) * prec
-        cond_cov = np.linalg.inv(cond_precision)
-        logdens_linear = cond_cov.dot(opt_linear.T) * prec
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+        else:
+            raise NotImplementedError
 
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
