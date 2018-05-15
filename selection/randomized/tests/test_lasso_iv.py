@@ -179,7 +179,8 @@ def test_pivots(nsim=500, n=1000, p=10, s=3, ndraw=10000, burnin=2000, true_mode
     #plt.plot(U, U, 'k--')
     #plt.show()
 
-    return P0
+    #return P0
+    return lengths
 
 
 # if true_model is True, Sigma_12 is the true Sigma_{12}
