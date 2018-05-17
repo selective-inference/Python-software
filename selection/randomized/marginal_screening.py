@@ -98,6 +98,8 @@ class marginal_screening(object):
 
         self.opt_transform = (opt_linear, opt_offset)
 
+        self._setup = True
+
         cov, prec = self.randomizer.cov_prec
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
@@ -174,7 +176,8 @@ class marginal_screening(object):
             intervals = self.sampler.confidence_intervals(observed_target,
                                                           cov_target,
                                                           cov_target_score,
-                                                          sample=opt_sample)
+                                                          sample=opt_sample,
+                                                          level=level)
 
         return pivots, pvalues, intervals
 
@@ -200,17 +203,21 @@ class marginal_screening(object):
                                           self.observed_opt_state,
                                           solve_args=solve_args)
 
-    def form_targets(self, features):
+    def form_targets(self, features, dispersion=None):
 
-        score_linear = -self.covariance[:,features]
+        if dispersion is None:
+            raise ValueError('user need to input the (estimated) dispersion')
+
+        score_linear = -self.covariance[:,features] / dispersion
         Q = -score_linear[features]
         cov_target = np.linalg.inv(Q)
         observed_target = np.linalg.inv(Q).dot(-self.observed_score[features])
         crosscov_target_score = score_linear.dot(cov_target)
-        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-                         self.selection_variable['sign'][features]])
+        #alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
+        #                 self.selection_variable['sign'][features]])
+        alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target, crosscov_target_score.T, alternatives
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
 class BH(marginal_screening):
 

@@ -319,7 +319,8 @@ class lasso(object):
             intervals = self.sampler.confidence_intervals(observed_target,
                                                           cov_target,
                                                           cov_target_score,
-                                                          sample=opt_sample)
+                                                          sample=opt_sample,
+                                                          level=level)
 
         return pivots, pvalues, intervals
 
