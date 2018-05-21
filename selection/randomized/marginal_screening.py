@@ -68,13 +68,13 @@ class marginal_screening(object):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        randomized_score = Z = self.observed_score + self._initial_omega
+        self._randomized_score = Z = self.observed_score + self._initial_omega
         soft_thresh = np.sign(Z) * (np.fabs(Z) - self.threshold) * (np.fabs(Z) >= self.threshold)
         active = soft_thresh != 0
 
         self._selected = active
         self._not_selected = ~self._selected
-        sign = np.sign(randomized_score)
+        sign = np.sign(self._randomized_score)
         active_signs = sign[self._selected]
         sign[self._not_selected] = 0
         self.selection_variable = {'sign': sign,
@@ -87,7 +87,7 @@ class marginal_screening(object):
         opt_linear[self._selected,:] = np.identity(self.num_opt_var)
         opt_offset = np.zeros(p)
         opt_offset[self._selected] = active_signs * self.threshold[self._selected]
-        opt_offset[self._not_selected] = randomized_score[self._not_selected]
+        opt_offset[self._not_selected] = self._randomized_score[self._not_selected]
 
         self.opt_transform = (opt_linear, opt_offset)
 
@@ -238,8 +238,8 @@ class BH(marginal_screening):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        randomized_score = -self.observed_score + self._initial_omega
-        p_values = 2. * (1. - ndist.cdf(np.abs(randomized_score) / self.randomized_stdev))
+        self._randomized_score = -self.observed_score + self._initial_omega
+        p_values = 2. * (1. - ndist.cdf(np.abs(self._randomized_score) / self.randomized_stdev))
         K, active, sort_notsel_pvals = BH_selection(p_values, self.BH_level)
         BH_cutoff = self.randomized_stdev * ndist.ppf(1. - (K * self.BH_level) /(2.*p))
 
@@ -247,9 +247,9 @@ class BH(marginal_screening):
             BH_cutoff = np.ones(p) * BH_cutoff
         self.BH_cutoff = BH_cutoff
 
-        self._selected = np.fabs(randomized_score) > self.BH_cutoff
+        self._selected = np.fabs(self._randomized_score) > self.BH_cutoff
         self._not_selected = ~self._selected
-        sign = np.sign(randomized_score)
+        sign = np.sign(self._randomized_score)
         active_signs = sign[self._selected]
         sign[self._not_selected] = 0
         self.selection_variable = {'sign': sign.copy(),
@@ -275,7 +275,7 @@ class BH(marginal_screening):
         opt_linear[self._selected,:] = np.identity(self.num_opt_var)
         opt_offset = np.zeros(p)
         opt_offset[self._selected] = active_signs * self.threshold[self._selected]
-        opt_offset[self._not_selected] = randomized_score[self._not_selected]
+        opt_offset[self._not_selected] = self._randomized_score[self._not_selected]
 
         self.opt_transform = (opt_linear, opt_offset)
 

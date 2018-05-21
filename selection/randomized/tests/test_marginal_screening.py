@@ -118,14 +118,61 @@ def test_marginal(n=500,
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
-def main(nsim=5000, BH=True, use_MLE=False):
+def test_simple(n=100,
+                p=5,
+                s=3,
+                use_MLE=False):
+
+    while True:
+        Z = np.random.standard_normal(p)
+        beta = np.ones(p) * 5
+        beta[s:] = 0
+        np.random.shuffle(beta)
+
+        true_mean = beta
+        score = Z + true_mean
+
+        idx = np.arange(p)
+
+        q = 0.1
+        marginal_select = marginal_screening(score,
+                                             np.identity(p),
+                                             1.,
+                                             q)
+
+        boundary = marginal_select.fit()
+        nonzero = boundary != 0
+
+        if nonzero.sum() > 0:
+
+            observed_target, cov_target, crosscov_target_score, alternatives = marginal_select.form_targets(nonzero)
+            stop
+
+            if use_MLE:
+                estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
+                                                                                   cov_target,
+                                                                                   crosscov_target_score)
+            # run summary
+            else:
+                _, pval, intervals = marginal_select.summary(observed_target, 
+                                                             cov_target, 
+                                                             crosscov_target_score, 
+                                                             alternatives,
+                                                             compute_intervals=True)
+
+            print(pval)
+            beta_target = cov_target.dot(true_mean[nonzero])
+            print("beta_target and intervals", beta_target, intervals)
+            coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+            print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
+            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
+
+
+def main(nsim=5000, test_fn=test_BH, use_MLE=False):
 
     P0, PA, cover, length_int = [], [], [], []
     for i in range(nsim):
-        if BH:
-            p0, pA, cover_, intervals = test_BH(use_MLE=use_MLE)
-        else:
-            p0, pA, cover_, intervals = test_marginal(use_MLE=use_MLE)
+        p0, pA, cover_, intervals = test_fn(use_MLE=use_MLE)
 
         cover.extend(cover_)
         P0.extend(p0)
