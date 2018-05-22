@@ -43,14 +43,14 @@ def BH_selection(p_values, level):
 class marginal_screening(object):
 
     def __init__(self,
-                 observed_score,
+                 observed_data,
                  covariance, 
                  randomizer_scale,
                  marginal_level,
                  perturb=None):
 
-        self.observed_score = observed_score  # Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting
-        self.nfeature = p = observed_score.shape[0]
+        self.observed_score_state = -observed_data  # -Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting
+        self.nfeature = p = self.observed_score_state.shape[0]
         self.covariance = covariance
         self.randomized_stdev = np.sqrt(np.diag(covariance) + randomizer_scale**2)
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
@@ -68,13 +68,15 @@ class marginal_screening(object):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        self._randomized_score = Z = self.observed_score + self._initial_omega
+        self._randomized_score = self.observed_score_state - self._initial_omega
+        Z = -self._randomized_score
         soft_thresh = np.sign(Z) * (np.fabs(Z) - self.threshold) * (np.fabs(Z) >= self.threshold)
         active = soft_thresh != 0
+        self.initial_soln = soft_thresh
 
         self._selected = active
         self._not_selected = ~self._selected
-        sign = np.sign(self._randomized_score)
+        sign = np.sign(Z)
         active_signs = sign[self._selected]
         sign[self._not_selected] = 0
         self.selection_variable = {'sign': sign,
@@ -84,7 +86,7 @@ class marginal_screening(object):
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
-        opt_linear[self._selected,:] = np.identity(self.num_opt_var)
+        opt_linear[self._selected,:] = np.diag(active_signs)
         opt_offset = np.zeros(p)
         opt_offset[self._selected] = active_signs * self.threshold[self._selected]
         opt_offset[self._not_selected] = self._randomized_score[self._not_selected]
@@ -100,10 +102,10 @@ class marginal_screening(object):
         else:
             raise NotImplementedError
 
-        cond_mean = logdens_linear.dot(self.observed_score - opt_offset)
+        cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
 
         logdens_transform = (logdens_linear, opt_offset)
-        A_scaling = -np.diag(active_signs)
+        A_scaling = -np.identity(len(active_signs))
         b_scaling = np.zeros(self.num_opt_var)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
@@ -123,7 +125,7 @@ class marginal_screening(object):
 
         self.sampler = affine_gaussian_sampler(affine_con,
                                                self.observed_opt_state,
-                                               self.observed_score,
+                                               self.observed_score_state,
                                                log_density,
                                                logdens_transform,
                                                selection_info=self.selection_variable)
@@ -198,13 +200,29 @@ class marginal_screening(object):
                                           self.observed_opt_state,
                                           solve_args=solve_args)
 
-    def form_targets(self, features):
-
+    def multivariate_targets(self, features):
+        """
+        Entries of the mean of \Sigma[E,E]^{-1}Z_E
+        """
         score_linear = self.covariance[:, features]
         Q = score_linear[features]
         cov_target = np.linalg.inv(Q)
-        observed_target = np.linalg.inv(Q).dot(self.observed_score[features])
-        crosscov_target_score = score_linear.dot(cov_target)
+        observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
+        crosscov_target_score = -score_linear.dot(cov_target)
+        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
+                         self.selection_variable['sign'][features]])
+
+        return observed_target, cov_target, crosscov_target_score.T, alternatives
+
+    def marginal_targets(self, features):
+        """
+        Entries of the mean of Z_E
+        """
+        score_linear = self.covariance[:, features]
+        Q = score_linear[features]
+        cov_target = Q
+        observed_target = -self.observed_score_state[features]
+        crosscov_target_score = -score_linear
         alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
                          self.selection_variable['sign'][features]])
 
@@ -219,7 +237,7 @@ class BH(marginal_screening):
                  BH_level,
                  perturb=None):
 
-        self.observed_score = observed_score
+        self.observed_score_state = observed_score
         self.nfeature = p = observed_score.shape[0]
         self.covariance = covariance
         self.randomized_stdev = np.sqrt(np.diag(covariance) + randomizer_scale**2)
@@ -238,7 +256,7 @@ class BH(marginal_screening):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        self._randomized_score = -self.observed_score + self._initial_omega
+        self._randomized_score = -self.observed_score_state + self._initial_omega
         p_values = 2. * (1. - ndist.cdf(np.abs(self._randomized_score) / self.randomized_stdev))
         K, active, sort_notsel_pvals = BH_selection(p_values, self.BH_level)
         BH_cutoff = self.randomized_stdev * ndist.ppf(1. - (K * self.BH_level) /(2.*p))
@@ -267,7 +285,7 @@ class BH(marginal_screening):
         self.threshold = threshold
 
         self.observed_opt_state = (self._initial_omega[self._selected] - 
-                                   self.observed_score[self._selected] - 
+                                   self.observed_score_state[self._selected] - 
                                   np.diag(active_signs).dot(self.threshold[self._selected]))
         self.num_opt_var = self.observed_opt_state.shape[0]
 
@@ -283,7 +301,7 @@ class BH(marginal_screening):
         cond_precision = opt_linear.T.dot(opt_linear) * prec
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        cond_mean = -logdens_linear.dot(self.observed_score + opt_offset)
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         logdens_transform = (logdens_linear, opt_offset)
         print(active_signs)
@@ -308,7 +326,7 @@ class BH(marginal_screening):
 
         self.sampler = affine_gaussian_sampler(affine_con,
                                                self.observed_opt_state,
-                                               self.observed_score,
+                                               self.observed_score_state,
                                                log_density,
                                                logdens_transform,
                                                selection_info=self.selection_variable)

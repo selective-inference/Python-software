@@ -1,9 +1,11 @@
 import numpy as np
+from scipy.stats import norm as ndist
 
 from selection.randomized.marginal_screening import BH, marginal_screening
+from selection.tests.instance import gaussian_instance
+from selection.randomized.lasso import lasso
 import selection.randomized.marginal_screening
 from importlib import reload; reload(selection.randomized.marginal_screening)
-from selection.tests.instance import gaussian_instance
 
 def test_BH(n=500, 
             p=100, 
@@ -32,7 +34,7 @@ def test_BH(n=500,
         n, p = X.shape
 
         q = 0.1
-        BH_select = BH(-X.T.dot(Y),
+        BH_select = BH(X.T.dot(Y),
                        sigma**2 * X.T.dot(X),
                        randomizer_scale * sigma,
                        q)
@@ -41,7 +43,10 @@ def test_BH(n=500,
         nonzero = boundary != 0
 
         if nonzero.sum() > 0:
-            observed_target, cov_target, crosscov_target_score, alternatives = BH_select.form_targets(nonzero)
+            (observed_target, 
+             cov_target, 
+             crosscov_target_score, 
+             alternatives) = BH_select.marginal_targets(nonzero)
             if use_MLE:
                 estimate, _, _, pval, intervals, _ = BH_select.selective_MLE(observed_target,
                                                                              cov_target,
@@ -75,15 +80,14 @@ def test_marginal(n=500,
                               rho=rho)[0]
         W = rho**(np.fabs(np.subtract.outer(np.arange(p), np.arange(p))))
         sqrtW = np.linalg.cholesky(W)
-        sigma = 1.5
+        sigma = 0.15
         Z = np.random.standard_normal(p).dot(sqrtW.T) * sigma
-        beta = np.ones(p) * 5 * sigma
+        beta = (2 * np.random.binomial(1, 0.5, size=(p,)) - 1) * 5 * sigma
         beta[s:] = 0
         np.random.shuffle(beta)
 
         true_mean = W.dot(beta)
         score = Z + true_mean
-
         idx = np.arange(p)
 
         n, p = X.shape
@@ -98,7 +102,70 @@ def test_marginal(n=500,
         nonzero = boundary != 0
 
         if nonzero.sum() > 0:
-            observed_target, cov_target, crosscov_target_score, alternatives = marginal_select.form_targets(nonzero)
+            (observed_target, 
+             cov_target, 
+             crosscov_target_score, 
+             alternatives) = marginal_select.marginal_targets(nonzero)
+            if use_MLE:
+                estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
+                                                                                   cov_target,
+                                                                                   crosscov_target_score)
+            # run summary
+            else:
+                _, pval, intervals = marginal_select.summary(observed_target, 
+                                                             cov_target, 
+                                                             crosscov_target_score, 
+                                                             alternatives,
+                                                             compute_intervals=True)
+
+            print(pval)
+            beta_target = true_mean[nonzero]
+            print("beta_target and intervals", beta_target, intervals)
+            coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
+            print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
+            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
+
+def test_multivariate(n=500, 
+                      p=50, 
+                      s=5, 
+                      sigma=3, 
+                      rho=0.4, 
+                      randomizer_scale=0.25,
+                      use_MLE=True):
+
+    while True:
+        X = gaussian_instance(n=n,
+                              p=p,
+                              equicorrelated=False,
+                              rho=rho)[0]
+        W = rho**(np.fabs(np.subtract.outer(np.arange(p), np.arange(p))))
+        sqrtW = np.linalg.cholesky(W)
+        sigma = 0.15
+        Z = np.random.standard_normal(p).dot(sqrtW.T) * sigma
+        beta = (2 * np.random.binomial(1, 0.5, size=(p,)) - 1) * 5 * sigma
+        beta[s:] = 0
+        np.random.shuffle(beta)
+
+        true_mean = W.dot(beta)
+        score = Z + true_mean
+        idx = np.arange(p)
+
+        n, p = X.shape
+
+        q = 0.1
+        marginal_select = marginal_screening(score,
+                                             W * sigma**2,
+                                             randomizer_scale * sigma,
+                                             q)
+
+        boundary = marginal_select.fit()
+        nonzero = boundary != 0
+
+        if nonzero.sum() > 0:
+            (observed_target, 
+             cov_target, 
+             crosscov_target_score, 
+             alternatives) = marginal_select.multivariate_targets(nonzero)
             if use_MLE:
                 estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
                                                                                    cov_target,
@@ -119,13 +186,13 @@ def test_marginal(n=500,
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
 def test_simple(n=100,
-                p=5,
+                p=20,
                 s=3,
                 use_MLE=False):
 
     while True:
         Z = np.random.standard_normal(p)
-        beta = np.ones(p) * 5
+        beta = (2 * np.random.binomial(1, 0.5, size=(p,)) - 1) * 5
         beta[s:] = 0
         np.random.shuffle(beta)
 
@@ -135,6 +202,7 @@ def test_simple(n=100,
         idx = np.arange(p)
 
         q = 0.1
+
         marginal_select = marginal_screening(score,
                                              np.identity(p),
                                              1.,
@@ -143,10 +211,37 @@ def test_simple(n=100,
         boundary = marginal_select.fit()
         nonzero = boundary != 0
 
+        # compare to LASSO
+        # should have same affine constraints
+
+        perturb = marginal_select._initial_omega # randomization used
+
+        randomized_lasso = lasso.gaussian(np.identity(p),
+                                          score,
+                                          marginal_select.threshold,
+                                          randomizer_scale=1.,
+                                          ridge_term=0.)
+        
+        randomized_lasso.fit(perturb = perturb)
+
+        np.testing.assert_allclose(randomized_lasso.sampler.affine_con.mean, 
+                                   marginal_select.sampler.affine_con.mean)
+
+        np.testing.assert_allclose(randomized_lasso.sampler.affine_con.covariance, 
+                                   marginal_select.sampler.affine_con.covariance)
+
+        np.testing.assert_allclose(randomized_lasso.sampler.affine_con.linear_part, 
+                                   marginal_select.sampler.affine_con.linear_part)
+
+        np.testing.assert_allclose(randomized_lasso.sampler.affine_con.offset, 
+                                   marginal_select.sampler.affine_con.offset)
+
         if nonzero.sum() > 0:
 
-            observed_target, cov_target, crosscov_target_score, alternatives = marginal_select.form_targets(nonzero)
-            stop
+            (observed_target, 
+             cov_target, 
+             crosscov_target_score, 
+             alternatives) = marginal_select.marginal_targets(nonzero)
 
             if use_MLE:
                 estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
@@ -159,6 +254,12 @@ def test_simple(n=100,
                                                              crosscov_target_score, 
                                                              alternatives,
                                                              compute_intervals=True)
+
+#                 _, pval, intervals = randomized_lasso.summary(observed_target, 
+#                                                               cov_target, 
+#                                                               crosscov_target_score, 
+#                                                               alternatives,
+#                                                               compute_intervals=True)
 
             print(pval)
             beta_target = cov_target.dot(true_mean[nonzero])
