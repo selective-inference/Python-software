@@ -65,9 +65,9 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full'
          cov_target, 
          cov_target_score, 
          alternatives) = debiased_targets(conv.loglike, 
-                                          conv.penalty,
                                           conv._W, 
-                                          nonzero)
+                                          nonzero,
+                                          penalty=conv.penalty)
 
     _, pval, intervals = conv.summary(observed_target, 
                                       cov_target, 

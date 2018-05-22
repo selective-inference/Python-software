@@ -757,12 +757,15 @@ def full_targets(loglike,
     return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
 def debiased_targets(loglike, 
-                     penalty,
                      W, 
                      features, 
                      sign_info={}, 
+                     penalty=None, #required kwarg
                      dispersion=None,
                      debiasing_args={}):
+
+    if penalty is None:
+        raise ValueError('require penalty for consistent estimator')
 
     X, y = loglike.data
     n, p = X.shape
@@ -800,3 +803,16 @@ def debiased_targets(loglike,
 
     alternatives = ['twosided'] * features.sum()
     return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+def form_targets(target, 
+                 loglike, 
+                 W, 
+                 features, 
+                 **kwargs):
+    _target = {'full':full_targets,
+               'selected':selected_targets,
+               'debiased':debiased_targets}[target]
+    return _target(loglike,
+                   W,
+                   features,
+                   **kwargs)
