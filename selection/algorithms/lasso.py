@@ -59,10 +59,6 @@ class lasso(object):
 
     """
 
-    # level for coverage is 1-alpha
-    alpha = 0.05
-    UMAU = False
-
     def __init__(self, 
                  loglike, 
                  feature_weights,
@@ -264,7 +260,7 @@ class lasso(object):
             self._inactive_constraints = None
         return self.lasso_solution
 
-    def summary(self, alternative='twosided', alpha=0.05,
+    def summary(self, alternative='twosided', level=0.95,
                 compute_intervals=False):
         """
         Summary table for inference adjusted for selection.
@@ -275,8 +271,8 @@ class lasso(object):
         alternative : str
             One of ["twosided","onesided"]
 
-        alpha : float
-            Form (1-alpha)*100% selective confidence intervals.
+        level : float
+            Form level*100% selective confidence intervals.
 
         compute_intervals : bool
             Should we compute confidence intervals?
@@ -310,6 +306,7 @@ class lasso(object):
                     Z = obs / sd
                     _pval = 2 * ndist.sf(np.fabs(Z))
 
+                alpha = 1 - level
                 if compute_intervals:
                     if C.linear_part.shape[0] > 0: # there were some constraints
                         _interval = C.interval(eta, one_step,
@@ -813,20 +810,20 @@ class lasso(object):
 
 
 
-def nominal_intervals(lasso_obj):
+def nominal_intervals(lasso_obj, level=0.95):
     """
     Intervals for OLS parameters of active variables
     that have not been adjusted for selection.
     """
     unadjusted_intervals = []
-
+    alpha = 1 - level
     if lasso_obj.active is not []:
         SigmaE = lasso_obj.constraints.covariance
         for i in range(lasso_obj.active.shape[0]):
             eta = np.ones_like(lasso_obj.onestep_estimator)
             eta[i] = 1.
             center = lasso_obj.onestep_estimator[i]
-            width = ndist.ppf(1-lasso_obj.alpha/2.) * np.sqrt(SigmaE[i,i])
+            width = ndist.ppf(1-alpha/2.) * np.sqrt(SigmaE[i,i])
             _interval = [center-width, center+width]
             unadjusted_intervals.append((lasso_obj.active[i], eta, center,
                                          _interval))
@@ -1844,7 +1841,6 @@ def additive_noise(X,
 ## conditioning only on the event j \in E for each active j
 
 # Liu, Markovic, Tibs selection
-# put this into library!
 
 def _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange, initial=None,
                               wide=True,
@@ -1924,9 +1920,6 @@ class lasso_full(lasso):
     from a population that does not depend on n.
 
     """
-
-    # level for coverage is 1-alpha
-    alpha = 0.05
 
     def __init__(self, 
                  loglike, 
@@ -2065,7 +2058,7 @@ class lasso_full(lasso):
             self.inactive = np.arange(lasso_solution.shape[0])
         return self.lasso_solution
 
-    def summary(self, alpha=0.05,
+    def summary(self, level=0.95,
                 compute_intervals=False,
                 dispersion=None):
         """
@@ -2074,8 +2067,8 @@ class lasso_full(lasso):
         Parameters
         ----------
 
-        alpha : float
-            Form (1-alpha)*100% selective confidence intervals.
+        level : float
+            Form level*100% selective confidence intervals.
 
         compute_intervals : bool
             Should we compute confidence intervals?
@@ -2101,8 +2094,11 @@ class lasso_full(lasso):
             else:
                 sqrt_dispersion = np.sqrt(dispersion)
 
-
             result = [] 
+
+            # note that QiE is the dispersion free covariance
+            # matrix!
+            # dispersion comes into truncated Gaussian below
 
             for j in range(len(active_set)):
                 idx = self.active[j]
@@ -2114,7 +2110,7 @@ class lasso_full(lasso):
                 pvalue = float(2 * min(pvalue, 1 - pvalue))
 
                 if compute_intervals:
-                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=1-level)
                 else:
                     l, u = np.nan, np.nan
 
@@ -2367,8 +2363,6 @@ class lasso_full_modelQ(lasso):
 
     """
 
-    # level for coverage is 1-alpha
-    alpha = 0.05
 
     def __init__(self, 
                  Q,               # population or semi-supervised version of X.T.dot(X)
@@ -2476,7 +2470,7 @@ class lasso_full_modelQ(lasso):
             self.inactive = np.arange(lasso_solution.shape[0])
         return self.lasso_solution
 
-    def summary(self, alpha=0.05,
+    def summary(self, level=0.05,
                 compute_intervals=False,
                 dispersion=None):
         """
@@ -2485,8 +2479,8 @@ class lasso_full_modelQ(lasso):
         Parameters
         ----------
 
-        alpha : float
-            Form (1-alpha)*100% selective confidence intervals.
+        level : float
+            Form level*100% selective confidence intervals.
 
         compute_intervals : bool
             Should we compute confidence intervals?
@@ -2524,7 +2518,7 @@ class lasso_full_modelQ(lasso):
                 pvalue = float(2 * min(pvalue, 1 - pvalue))
 
                 if compute_intervals:
-                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=alpha)
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=1-level)
                 else:
                     l, u = np.nan, np.nan
 
