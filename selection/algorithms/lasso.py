@@ -11,7 +11,6 @@ as described in `post selection LASSO`_.
 .. _sample carving: http://arxiv.org/abs/1410.2597
 
 """
-
 from __future__ import division
 
 import warnings, functools
@@ -309,8 +308,11 @@ class lasso(object):
                 alpha = 1 - level
                 if compute_intervals:
                     if C.linear_part.shape[0] > 0: # there were some constraints
-                        _interval = C.interval(eta, one_step,
-                                               alpha=alpha)
+                        try:
+                            _interval = C.interval(eta, one_step,
+                                                   alpha=alpha)
+                        except OverflowError:
+                            _interval = (-np.inf, np.inf)
                         _interval = sorted([_interval[0] * self.active_signs[i],
                                             _interval[1] * self.active_signs[i]])
                     else:
@@ -2020,6 +2022,7 @@ class lasso_full(lasso):
             self._W = W
 
             if n > p and not self.sparse_inverse:
+
                 Q = self.loglike.hessian(lasso_solution)
                 E = self.active
                 Qi = np.linalg.inv(Q)
@@ -2027,7 +2030,9 @@ class lasso_full(lasso):
                 _beta_bar = Qi.dot(self._Qbeta_bar)
                 self._beta_barE = _beta_bar[E]
                 one_step = self._beta_barE
+
                 # Pearson's X^2 to estimate sigma
+
                 self._pearson_sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
                 
             else:
