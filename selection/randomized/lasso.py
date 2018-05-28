@@ -307,6 +307,11 @@ class lasso(object):
                                                   parameter=parameter,
                                                   sample=opt_sample,
                                                   alternatives=alternatives)
+
+        MLE_intervals = self.selective_MLE(observed_target,
+                                           cov_target,
+                                           cov_target_score)[5]
+
         if not np.all(parameter == 0):
             pvalues = self.sampler.coefficient_pvalues(observed_target,
                                                        cov_target,
@@ -319,10 +324,17 @@ class lasso(object):
 
         intervals = None
         if compute_intervals:
+
+            MLE_intervals = self.selective_MLE(observed_target,
+                                               cov_target,
+                                               cov_target_score)[4]
+
             intervals = self.sampler.confidence_intervals(observed_target,
                                                           cov_target,
                                                           cov_target_score,
-                                                          sample=opt_sample)
+                                                          sample=opt_sample,
+                                                          initial_guess=MLE_intervals,
+                                                          level=level)
 
         return pivots, pvalues, intervals
 

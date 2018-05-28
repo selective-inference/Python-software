@@ -2,7 +2,7 @@ from itertools import product
 import numpy as np
 
 from scipy.stats import norm as ndist
-from scipy.optimize import bisect
+from scipy.optimize import bisect; use_scipy_bisect = False 
 
 from regreg.affine import power_L
 
@@ -205,7 +205,8 @@ class optimization_sampler(object):
                              score_cov,
                              sample_args=(),
                              sample=None,
-                             level=0.9):
+                             level=0.9,
+                             initial_guess=None):
         '''
 
         Parameters
@@ -227,6 +228,9 @@ class optimization_sampler(object):
         level : float (optional)
             Specify the
             confidence level.
+
+        initial_guess : np.float
+            Initial guesses at upper and lower limits, optional.
 
         Notes
         -----
@@ -254,7 +258,13 @@ class optimization_sampler(object):
         for i in range(observed_target.shape[0]):
             keep = np.zeros_like(observed_target)
             keep[i] = 1.
-            limits.append(_intervals.confidence_interval(keep, level=level))
+            print('interval %d of %d, level %f' % (i+1, observed_target.shape[0], level))
+            if initial_guess is None:
+                l, u = _intervals.confidence_interval(keep, level=level)
+            else:
+                l, u = _intervals.confidence_interval(keep, level=level,
+                                                      guess=initial_guess[i])
+            limits.append((l, u))
 
         return np.array(limits)
 
@@ -559,8 +569,13 @@ class affine_gaussian_sampler(optimization_sampler):
 class optimization_intervals(object):
 
     def __init__(self,
-                 opt_sampling_info, # a sequence of (opt_sampler, opt_sample, target_cov, score_cov) objects
-                                    # in theory all target_cov should be about the same...
+                 opt_sampling_info, # a sequence of 
+                                    # (opt_sampler, 
+                                    #  opt_sample, 
+                                    #  target_cov, 
+                                    #  score_cov) objects
+                                    #  in theory all target_cov 
+                                    #  should be about the same...
                  observed,
                  nsample, # how large a normal sample
                  target_cov=None):
@@ -569,7 +584,10 @@ class optimization_intervals(object):
         # let's repeat them as necessary
         
         tiled_sampling_info = []
-        for opt_sampler, opt_sample, t_cov, score_cov in opt_sampling_info: 
+        for (opt_sampler, 
+             opt_sample, 
+             t_cov, 
+             score_cov) in opt_sampling_info: 
             if opt_sample is not None:
                 if opt_sample.shape[0] < nsample:
                     if opt_sample.ndim == 1:
@@ -588,6 +606,8 @@ class optimization_intervals(object):
             self._logden += opt_sampler.log_density(opt_sampler.observed_score_state, opt_sample)
 
         self.observed = observed.copy() # this is our observed unpenalized estimator
+
+        # average covariances in case they might be different
 
         if target_cov is None:
             self.target_cov = 0
@@ -621,7 +641,12 @@ class optimization_intervals(object):
 
         nuisance = []
         translate_dirs = []
-        for opt_sampler, opt_sample, _, score_cov in self.opt_sampling_info:
+
+        for (opt_sampler, 
+             opt_sample, 
+             _, 
+             score_cov) in self.opt_sampling_info:
+
             cur_score_cov = linear_func.dot(score_cov)
 
             # cur_nuisance is in the view's score coordinates
@@ -630,8 +655,8 @@ class optimization_intervals(object):
             translate_dirs.append(cur_score_cov / target_cov)
 
         weights = self._weights(sample_stat + candidate,  # normal sample under candidate
-                                nuisance,                 # nuisance sufficient stats for each view
-                                translate_dirs)               # points will be moved like sample * score_cov
+                                nuisance,       # nuisance sufficient stats for each view
+                                translate_dirs) # points will be moved like sample * score_cov
         
         pivot = np.mean((sample_stat + candidate <= observed_stat) * weights) / np.mean(weights)
 
@@ -642,14 +667,14 @@ class optimization_intervals(object):
         else:
             return 1 - pivot
 
-    def confidence_interval(self, linear_func, level=0.90, how_many_sd=20):
+    def confidence_interval(self, linear_func, 
+                            level=0.90, 
+                            how_many_sd=20,
+                            guess=None):
 
         sample_stat = self._normal_sample.dot(linear_func)
         observed_stat = self.observed.dot(linear_func)
         
-        _norm = np.linalg.norm(linear_func)
-        grid_min, grid_max = -how_many_sd * np.std(sample_stat), how_many_sd * np.std(sample_stat)
-
         def _rootU(gamma):
             return self.pivot(linear_func,
                               observed_stat + gamma,
@@ -659,9 +684,50 @@ class optimization_intervals(object):
                               observed_stat + gamma,
                               alternative='less') - (1 + level) / 2.
 
-        upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
-        lower = bisect(_rootL, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+        if guess is None:
+            grid_min, grid_max = -how_many_sd * np.std(sample_stat), how_many_sd * np.std(sample_stat)
+            if use_scipy_bisect:
+                upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
+                lower = bisect(_rootL, grid_min, upper, xtol=1.e-5*(grid_max - grid_min))
+            else:
+                # simpler bisect
+                upper = _basic_bisect(_rootU, grid_min, grid_max, 20)[1]
+                lower = _basic_bisect(_rootL, grid_min, grid_max, 20)[1]
+                
+        else:
+            delta = 0.5 * (guess[1] - guess[0])
+            
+            # find interval bracketing upper solution
+            count = 0
+            while True:
+                L, U = guess[1] - delta, guess[1] + delta
+                valU = _rootU(U)
+                valL = _rootU(L)
+                if valU * valL < 0:
+                    break
+                delta *= 2
+                count += 1
+            if use_scipy_bisect:
+                upper = bisect(_rootU, L, U, xtol=1.e-3*(guess[1] - guess[0]))
+            else:
+                upper = _basic_bisect(_rootU, L, U, 20 + count)[1]
+            print(_rootU(upper), _rootU(L), _rootU(U), 'val')
 
+            # find interval bracketing lower solution
+            count = 0
+            while True:
+                L, U = guess[0] - delta, guess[0] + delta
+                valU = _rootL(U)
+                valL = _rootL(L)
+                if valU * valL < 0:
+                    break
+                delta *= 2
+                count += 1
+            if use_scipy_bisect:
+                lower = bisect(_rootL, L, U, xtol=1.e-3*(guess[1] - guess[0]))
+            else:
+                lower = _basic_bisect(_rootL, L, U, 20 + count)[1]
+            print(_rootL(lower), _rootL(L), _rootL(U), 'lower val')
         return lower + observed_stat, upper + observed_stat
 
     # Private methods
@@ -805,4 +871,16 @@ def _solve_barrier_affine(conjugate_arg,
     hess = np.linalg.inv(precision + barrier_hessian(current))
     return current_value, current, hess
 
-
+def _basic_bisect(f, lower, upper, niter):
+    sign_lower, sign_upper = np.sign([f(lower), f(upper)])
+    idx = 0
+    while True:
+        midpoint = 0.5 * (lower + upper)
+        if f(midpoint) * sign_lower > 0:
+            lower = midpoint
+        else:
+            upper = midpoint
+        idx += 1
+        if idx == niter:
+            break
+    return lower, 0.5 * (lower + upper), upper
