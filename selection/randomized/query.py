@@ -501,7 +501,7 @@ class affine_gaussian_sampler(optimization_sampler):
             raise ValueError('no target specified')
 
         prec_target = np.linalg.inv(cov_target)
-        logdens_lin, logdens_off = self.logdens_transform
+        logdens_lin, _ = self.logdens_transform
         target_lin = - logdens_lin.dot(cov_target_score.T.dot(prec_target)) # this determines how the conditional mean of optimization variables
                                                                             # vary with target
                                                                             # logdens_lin determines how the argument of the optimization density
@@ -541,7 +541,7 @@ class affine_gaussian_sampler(optimization_sampler):
 
         prec_target = np.linalg.inv(cov_target)
         ndim = prec_target.shape[0]
-        logdens_lin, logdens_off = self.logdens_transform
+        logdens_lin, _ = self.logdens_transform
         target_lin = - logdens_lin.dot(cov_target_score.T.dot(prec_target))
         target_offset = self.affine_con.mean - target_lin.dot(observed_target)
 
