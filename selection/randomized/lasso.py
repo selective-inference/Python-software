@@ -232,6 +232,8 @@ class lasso(object):
 
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
+        # density as a function of score and optimization variables
+
         def log_density(logdens_linear, offset, cond_prec, score, opt):
             if score.ndim == 1:
                 mean_term = logdens_linear.dot(score.T + offset).T

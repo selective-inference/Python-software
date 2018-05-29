@@ -2,7 +2,7 @@ from itertools import product
 import numpy as np
 
 from scipy.stats import norm as ndist
-from scipy.optimize import bisect; use_scipy_bisect = False 
+from scipy.optimize import bisect; use_scipy_bisect = True
 
 from regreg.affine import power_L
 
@@ -246,7 +246,7 @@ class optimization_sampler(object):
         '''
 
         if sample is None:
-            sample = self.sample(*sample_args)
+            sample = self.sample(*sample_args)[::10]
         else:
             ndraw = sample.shape[0]
 
@@ -258,7 +258,6 @@ class optimization_sampler(object):
         for i in range(observed_target.shape[0]):
             keep = np.zeros_like(observed_target)
             keep[i] = 1.
-            print('interval %d of %d, level %f' % (i+1, observed_target.shape[0], level))
             if initial_guess is None:
                 l, u = _intervals.confidence_interval(keep, level=level)
             else:
@@ -708,11 +707,9 @@ class optimization_intervals(object):
                 delta *= 2
                 count += 1
             if use_scipy_bisect:
-                upper = bisect(_rootU, L, U, xtol=1.e-3*(guess[1] - guess[0]))
+                upper = bisect(_rootU, L, U)#, xtol=1.e-5*(guess[1] - guess[0]))
             else:
                 upper = _basic_bisect(_rootU, L, U, 20 + count)[1]
-            print(_rootU(upper), _rootU(L), _rootU(U), 'val')
-
             # find interval bracketing lower solution
             count = 0
             while True:
@@ -724,10 +721,9 @@ class optimization_intervals(object):
                 delta *= 2
                 count += 1
             if use_scipy_bisect:
-                lower = bisect(_rootL, L, U, xtol=1.e-3*(guess[1] - guess[0]))
+                lower = bisect(_rootL, L, U)#, xtol=1.e-5*(guess[1] - guess[0]))
             else:
                 lower = _basic_bisect(_rootL, L, U, 20 + count)[1]
-            print(_rootL(lower), _rootL(L), _rootL(U), 'lower val')
         return lower + observed_stat, upper + observed_stat
 
     # Private methods
