@@ -259,7 +259,6 @@ class optimization_sampler(object):
         for i in range(observed_target.shape[0]):
             keep = np.zeros_like(observed_target)
             keep[i] = 1.
-            print('interval %d of %d' % (i+1, observed_target.shape[0]))
             if initial_guess is None:
                 l, u = _intervals.confidence_interval(keep, level=level)
             else:
@@ -609,29 +608,23 @@ class affine_gaussian_sampler(optimization_sampler):
                 # then it is of the form (arg1 + arg2 + theta * A gamma)
 
                 logdens_lin, logdens_offset = self.logdens_transform
-                if 1 in opt_sample.shape:
-                    print(logdens_lin.shape, logdens_offset.shape, 'hape')
                 cov = self.affine_con.covariance
                 prec = np.linalg.inv(cov)
                 linear_part = logdens_lin.dot(direction) # A gamma
 
-                print(linear_part.shape, 'hapeasdasdasdsad')
                 if 1 in opt_sample.shape:
                     pass # stop3
                 cov = self.affine_con.covariance
 
                 quadratic_term = linear_part.T.dot(prec).dot(linear_part)
-                print(quadratic_term.shape, 'quad hapeasdasdasdsad')
+
                 arg1 = opt_sample.T
                 arg2 = logdens_lin.dot(np.multiply.outer(direction, gaussian_sample) + 
                                        (nuisance + logdens_offset)[:,None])
-                if 1 in opt_sample.shape:
-                    print(arg1.shape, arg2.shape)
                 arg = arg1 + arg2
                 linear_term = linear_part.T.dot(prec).dot(arg)
                 constant_term = np.sum(prec.dot(arg) * arg, 0)
-                print(logdens_lin.shape, 'loglinshape')
-                print(logdens_offset, 'huh?')
+
                 self._cache = {'linear_term':linear_term,
                                'quadratic_term':quadratic_term,
                                'constant_term':constant_term}
@@ -777,37 +770,43 @@ class optimization_intervals(object):
             # find interval bracketing upper solution
             count = 0
             while True:
-                L, U = guess[1] - delta, guess[1] + delta
-                valU = _rootU(U)
-                valL = _rootU(L)
+                Lu, Uu = guess[1] - delta, guess[1] + delta
+                valU = _rootU(Uu)
+                valL = _rootU(Lu)
                 if valU * valL < 0:
                     break
                 delta *= 2
                 count += 1
-            upper = bisect(_rootU, L, U)
+            upper = bisect(_rootU, Lu, Uu)
 
             # find interval bracketing lower solution
             count = 0
             while True:
-                L, U = guess[0] - delta, guess[0] + delta
-                valU = _rootL(U)
-                valL = _rootL(L)
+                Ll, Ul = guess[0] - delta, guess[0] + delta
+                valU = _rootL(Ul)
+                valL = _rootL(Ll)
                 if valU * valL < 0:
                     break
                 delta *= 2
                 count += 1
-            lower = bisect(_rootL, L, U)
-        print(_rootL(lower), _rootU(upper))
-        print(_rootL(lower-0.01*(upper-lower)), _rootU(upper+0.01*(upper-lower)), 'perturb')
-        import matplotlib.pyplot as plt
-        plt.clf()
-        X = np.linspace(lower, upper, 101)
-        plt.plot(X, [_rootL(x) + (1 + level) / 2. for x in X])
-        plt.plot([lower, lower], [0, 1], 'k--')
-        plt.plot([upper, upper], [0, 1], 'k--')
-        plt.plot([guess[0], guess[0]], [0, 1], 'r--')
-        plt.plot([guess[1], guess[1]], [0, 1], 'r--')
-        plt.savefig('pivot.pdf')
+            lower = bisect(_rootL, Ll, Ul)
+        DEBUG = False
+        if DEBUG:
+            print(_rootL(lower), _rootU(upper))
+            print(_rootL(lower-0.01*(upper-lower)), _rootU(upper+0.01*(upper-lower)), 'perturb')
+            import matplotlib.pyplot as plt
+            plt.clf()
+            X = np.linspace(lower, upper, 101)
+            plt.plot(X, [_rootL(x) + (1 + level) / 2. for x in X])
+            plt.plot([lower, lower], [0, 1], 'k--')
+            plt.plot([upper, upper], [0, 1], 'k--')
+            plt.plot([guess[0], guess[0]], [0, 1], 'r--')
+            plt.plot([guess[1], guess[1]], [0, 1], 'r--')
+            plt.plot([Ll, Ll], [0, 1], 'g--')
+            plt.plot([Ul, Ul], [0, 1], 'g--')
+            plt.plot([Lu, Lu], [0, 1], 'g--')
+            plt.plot([Uu, Uu], [0, 1], 'g--')
+            plt.savefig('pivot.pdf')
 
         return lower + observed_stat, upper + observed_stat
 
@@ -839,39 +838,9 @@ class optimization_intervals(object):
         _lognum = 0
         for i, opt_info in enumerate(self.opt_sampling_info):
             opt_sampler, opt_sample = opt_info[:2]
-            if True: # not isinstance(opt_sampler, affine_gaussian_sampler):
+            if not isinstance(opt_sampler, affine_gaussian_sampler):
                 score_sample = np.multiply.outer(sample_stat + candidate, translate_dirs[i]) + nuisance[i][None, :] # these are now score coordinates
-                if True: 
-                    if opt_sample.shape[1] == 1:
-                        increment = opt_sampler.log_density(score_sample, opt_sample)
-                        blah = opt_sampler.log_density_ray(candidate,
-                                                           translate_dirs[i],
-                                                           nuisance[i],
-                                                           sample_stat, 
-                                                           opt_sample)
-                        _lognum += increment
-                        print(np.fabs(blah - increment).max(), 'diff')
-                    else:
-                        _lognum += opt_sampler.log_density_ray(candidate,
-                                                               translate_dirs[i],
-                                                               nuisance[i],
-                                                               sample_stat, 
-                                                               opt_sample)
-
-#                     print(blah10[100]-blah20[100], 'zero')
-#                     print(np.linalg.norm(blah1-blah2) / np.linalg.norm(blah1), candidate, 'blah')
-#                     print(opt_sample.shape, 'opt')
-#                     if np.fabs(blah1 - blah2).max()>0.01 and opt_sample.shape[1] > 1:
-#                         self.blahvals.append((candidate, blah1[100]-blah2[100]))
-#                     if len(self.blahvals) > 30:
-#                         blahvals = np.array(self.blahvals)
-#                         import matplotlib.pyplot as plt
-#                         plt.clf()
-#                         plt.plot(blahvals[:,0], blahvals[:,1])
-#                         if np.max(np.fabs(blahvals[:,1]) > 0.01):
-#                             plt.savefig('blah.pdf')
-#                         stop
-
+                _lognum += opt_sampler.log_density(score_sample, opt_sample)
             else:
                 _lognum += opt_sampler.log_density_ray(candidate,
                                                        translate_dirs[i],
