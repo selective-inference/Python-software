@@ -2,7 +2,7 @@ from itertools import product
 import numpy as np
 
 from scipy.stats import norm as ndist
-from scipy.optimize import bisect; use_scipy_bisect = True
+from scipy.optimize import bisect
 
 from regreg.affine import power_L
 
@@ -179,6 +179,7 @@ class optimization_sampler(object):
 
         if sample is None:
             sample = self.sample(*sample_args)
+            sample = np.atleast_2d(sample)
 
         if parameter is None:
             parameter = self.reference
@@ -246,9 +247,9 @@ class optimization_sampler(object):
         '''
 
         if sample is None:
-            sample = self.sample(*sample_args)[::10]
-        else:
-            ndraw = sample.shape[0]
+            sample = self.sample(*sample_args)
+            sample = np.vstack([sample]*5)
+        ndraw = sample.shape[0]
 
         _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
                                             observed_target, ndraw)
@@ -258,6 +259,7 @@ class optimization_sampler(object):
         for i in range(observed_target.shape[0]):
             keep = np.zeros_like(observed_target)
             keep[i] = 1.
+            print('interval %d of %d' % (i+1, observed_target.shape[0]))
             if initial_guess is None:
                 l, u = _intervals.confidence_interval(keep, level=level)
             else:
@@ -565,6 +567,82 @@ class affine_gaussian_sampler(optimization_sampler):
 
         return param_map, log_normalizer_map, jacobian_map
 
+    def log_density_ray(self,
+                        candidate,
+                        direction,
+                        nuisance,
+                        gaussian_sample,
+                        opt_sample):
+                        # implicitly caching (opt_sample, gaussian_sample) !!!
+
+        if not hasattr(self, "_direction") or not np.all(self._direction == direction):
+
+            logdens_lin, logdens_offset = self.logdens_transform
+
+            if opt_sample.shape[1] == 1:
+
+                prec = 1. / self.affine_con.covariance[0,0]
+                quadratic_term = logdens_lin.dot(direction)**2 * prec
+                arg = (logdens_lin.dot(nuisance + logdens_offset) + 
+                       logdens_lin.dot(direction) * gaussian_sample +
+                       opt_sample[:,0])
+                linear_term = logdens_lin.dot(direction) * prec * arg
+                constant_term = arg**2 * prec
+
+                self._cache = {'linear_term':linear_term,
+                               'quadratic_term':quadratic_term,
+                               'constant_term':constant_term}
+            else:
+                self._direction = direction.copy()
+
+                # density is a Gaussian evaluated at
+                # O_i + A(N + (Z_i + theta) * gamma + b)
+
+                # b is logdens_offset
+                # A is logdens_linear
+                # Z_i is gaussian_sample[i] (real-valued)
+                # gamma is direction
+                # O_i is opt_sample[i]
+
+                # let arg1 = O_i
+                # let arg2 = A(N+b + Z_i \cdot gamma)
+                # then it is of the form (arg1 + arg2 + theta * A gamma)
+
+                logdens_lin, logdens_offset = self.logdens_transform
+                if 1 in opt_sample.shape:
+                    print(logdens_lin.shape, logdens_offset.shape, 'hape')
+                cov = self.affine_con.covariance
+                prec = np.linalg.inv(cov)
+                linear_part = logdens_lin.dot(direction) # A gamma
+
+                print(linear_part.shape, 'hapeasdasdasdsad')
+                if 1 in opt_sample.shape:
+                    pass # stop3
+                cov = self.affine_con.covariance
+
+                quadratic_term = linear_part.T.dot(prec).dot(linear_part)
+                print(quadratic_term.shape, 'quad hapeasdasdasdsad')
+                arg1 = opt_sample.T
+                arg2 = logdens_lin.dot(np.multiply.outer(direction, gaussian_sample) + 
+                                       (nuisance + logdens_offset)[:,None])
+                if 1 in opt_sample.shape:
+                    print(arg1.shape, arg2.shape)
+                arg = arg1 + arg2
+                linear_term = linear_part.T.dot(prec).dot(arg)
+                constant_term = np.sum(prec.dot(arg) * arg, 0)
+                print(logdens_lin.shape, 'loglinshape')
+                print(logdens_offset, 'huh?')
+                self._cache = {'linear_term':linear_term,
+                               'quadratic_term':quadratic_term,
+                               'constant_term':constant_term}
+        (linear_term, 
+         quadratic_term,
+         constant_term) = (self._cache['linear_term'], 
+                           self._cache['quadratic_term'],
+                           self._cache['constant_term'])
+        return (-0.5 * candidate**2 * quadratic_term - 
+                 candidate * linear_term - 0.5 * constant_term)
+
 class optimization_intervals(object):
 
     def __init__(self,
@@ -579,6 +657,7 @@ class optimization_intervals(object):
                  nsample, # how large a normal sample
                  target_cov=None):
 
+        self.blahvals = []
         # not all opt_samples will be of the same size as nsample 
         # let's repeat them as necessary
         
@@ -590,9 +669,9 @@ class optimization_intervals(object):
             if opt_sample is not None:
                 if opt_sample.shape[0] < nsample:
                     if opt_sample.ndim == 1:
-                        tiled_opt_sample = np.tile(opt_sample, np.ceil(nsample / opt_sample.shape[0]))[:nsample]
+                        tiled_opt_sample = np.tile(opt_sample, int(np.ceil(nsample / opt_sample.shape[0])))[:nsample]
                     else:
-                        tiled_opt_sample = np.tile(opt_sample, (np.ceil(nsample / opt_sample.shape[0]), 1))[:nsample]
+                        tiled_opt_sample = np.tile(opt_sample, (int(np.ceil(nsample / opt_sample.shape[0])), 1))[:nsample]
                 else:
                     tiled_opt_sample = opt_sample[:nsample]
             else:
@@ -602,7 +681,10 @@ class optimization_intervals(object):
         self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
         for opt_sampler, opt_sample, _, _ in opt_sampling_info:
-            self._logden += opt_sampler.log_density(opt_sampler.observed_score_state, opt_sample)
+            self._logden += opt_sampler.log_density(opt_sampler.observed_score_state, 
+                                                    opt_sample)
+            if opt_sample.shape[0] < nsample:
+                self._logden = np.tile(self._logden, int(np.ceil(nsample / opt_sample.shape[0])))[:nsample]
 
         self.observed = observed.copy() # this is our observed unpenalized estimator
 
@@ -616,7 +698,7 @@ class optimization_intervals(object):
 
         self._normal_sample = np.random.multivariate_normal(mean=np.zeros(self.target_cov.shape[0]), 
                                                             cov=self.target_cov, 
-                                                            size=(nsample,))
+                                                            size=(nsample,)) 
 
     def pivot(self,
               linear_func,
@@ -653,7 +735,8 @@ class optimization_intervals(object):
             nuisance.append(cur_nuisance)
             translate_dirs.append(cur_score_cov / target_cov)
 
-        weights = self._weights(sample_stat + candidate,  # normal sample under candidate
+        weights = self._weights(sample_stat,  # normal sample 
+                                candidate,    # candidate value
                                 nuisance,       # nuisance sufficient stats for each view
                                 translate_dirs) # points will be moved like sample * score_cov
         
@@ -685,14 +768,9 @@ class optimization_intervals(object):
 
         if guess is None:
             grid_min, grid_max = -how_many_sd * np.std(sample_stat), how_many_sd * np.std(sample_stat)
-            if use_scipy_bisect:
-                upper = bisect(_rootU, grid_min, grid_max, xtol=1.e-5*(grid_max - grid_min))
-                lower = bisect(_rootL, grid_min, upper, xtol=1.e-5*(grid_max - grid_min))
-            else:
-                # simpler bisect
-                upper = _basic_bisect(_rootU, grid_min, grid_max, 20)[1]
-                lower = _basic_bisect(_rootL, grid_min, grid_max, 20)[1]
-                
+            upper = bisect(_rootU, grid_min, grid_max)
+            lower = bisect(_rootL, grid_min, upper)
+            
         else:
             delta = 0.5 * (guess[1] - guess[0])
             
@@ -706,10 +784,8 @@ class optimization_intervals(object):
                     break
                 delta *= 2
                 count += 1
-            if use_scipy_bisect:
-                upper = bisect(_rootU, L, U)#, xtol=1.e-5*(guess[1] - guess[0]))
-            else:
-                upper = _basic_bisect(_rootU, L, U, 20 + count)[1]
+            upper = bisect(_rootU, L, U)
+
             # find interval bracketing lower solution
             count = 0
             while True:
@@ -720,16 +796,26 @@ class optimization_intervals(object):
                     break
                 delta *= 2
                 count += 1
-            if use_scipy_bisect:
-                lower = bisect(_rootL, L, U)#, xtol=1.e-5*(guess[1] - guess[0]))
-            else:
-                lower = _basic_bisect(_rootL, L, U, 20 + count)[1]
+            lower = bisect(_rootL, L, U)
+        print(_rootL(lower), _rootU(upper))
+        print(_rootL(lower-0.01*(upper-lower)), _rootU(upper+0.01*(upper-lower)), 'perturb')
+        import matplotlib.pyplot as plt
+        plt.clf()
+        X = np.linspace(lower, upper, 101)
+        plt.plot(X, [_rootL(x) + (1 + level) / 2. for x in X])
+        plt.plot([lower, lower], [0, 1], 'k--')
+        plt.plot([upper, upper], [0, 1], 'k--')
+        plt.plot([guess[0], guess[0]], [0, 1], 'r--')
+        plt.plot([guess[1], guess[1]], [0, 1], 'r--')
+        plt.savefig('pivot.pdf')
+
         return lower + observed_stat, upper + observed_stat
 
     # Private methods
 
     def _weights(self, 
                  sample_stat,
+                 candidate,
                  nuisance,
                  translate_dirs):
 
@@ -753,9 +839,45 @@ class optimization_intervals(object):
         _lognum = 0
         for i, opt_info in enumerate(self.opt_sampling_info):
             opt_sampler, opt_sample = opt_info[:2]
-            score_sample = np.multiply.outer(sample_stat, translate_dirs[i]) + nuisance[i][None, :] # these are now score coordinates
-            _lognum += opt_sampler.log_density(score_sample, opt_sample)
+            if True: # not isinstance(opt_sampler, affine_gaussian_sampler):
+                score_sample = np.multiply.outer(sample_stat + candidate, translate_dirs[i]) + nuisance[i][None, :] # these are now score coordinates
+                if True: 
+                    if opt_sample.shape[1] == 1:
+                        increment = opt_sampler.log_density(score_sample, opt_sample)
+                        blah = opt_sampler.log_density_ray(candidate,
+                                                           translate_dirs[i],
+                                                           nuisance[i],
+                                                           sample_stat, 
+                                                           opt_sample)
+                        _lognum += increment
+                        print(np.fabs(blah - increment).max(), 'diff')
+                    else:
+                        _lognum += opt_sampler.log_density_ray(candidate,
+                                                               translate_dirs[i],
+                                                               nuisance[i],
+                                                               sample_stat, 
+                                                               opt_sample)
 
+#                     print(blah10[100]-blah20[100], 'zero')
+#                     print(np.linalg.norm(blah1-blah2) / np.linalg.norm(blah1), candidate, 'blah')
+#                     print(opt_sample.shape, 'opt')
+#                     if np.fabs(blah1 - blah2).max()>0.01 and opt_sample.shape[1] > 1:
+#                         self.blahvals.append((candidate, blah1[100]-blah2[100]))
+#                     if len(self.blahvals) > 30:
+#                         blahvals = np.array(self.blahvals)
+#                         import matplotlib.pyplot as plt
+#                         plt.clf()
+#                         plt.plot(blahvals[:,0], blahvals[:,1])
+#                         if np.max(np.fabs(blahvals[:,1]) > 0.01):
+#                             plt.savefig('blah.pdf')
+#                         stop
+
+            else:
+                _lognum += opt_sampler.log_density_ray(candidate,
+                                                       translate_dirs[i],
+                                                       nuisance[i],
+                                                       sample_stat, 
+                                                       opt_sample)
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
 
@@ -867,16 +989,3 @@ def _solve_barrier_affine(conjugate_arg,
     hess = np.linalg.inv(precision + barrier_hessian(current))
     return current_value, current, hess
 
-def _basic_bisect(f, lower, upper, niter):
-    sign_lower, sign_upper = np.sign([f(lower), f(upper)])
-    idx = 0
-    while True:
-        midpoint = 0.5 * (lower + upper)
-        if f(midpoint) * sign_lower > 0:
-            lower = midpoint
-        else:
-            upper = midpoint
-        idx += 1
-        if idx == niter:
-            break
-    return lower, 0.5 * (lower + upper), upper
