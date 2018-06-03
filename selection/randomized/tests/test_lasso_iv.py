@@ -1,6 +1,7 @@
 import numpy as np
 
 import selection.randomized.lasso as L; reload(L)
+<<<<<<< HEAD
 from selection.randomized.lasso_iv import lasso_iv, lasso_iv_ar, group_lasso_iv
 import matplotlib.pyplot as plt
 from statsmodels.distributions import ECDF
@@ -237,6 +238,76 @@ def test_pivots_ar(nsim=500, n=1000, p=10, s=3, ndraw=10000, burnin=2000, true_m
 
 # Sigma_12 is the true Sigma_{12}
 def test_stat_lasso_iv_instance(n=1000, p=10, s=3, ndraw=10000, burnin=2000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+=======
+from selection.randomized.lasso_iv import lasso_iv, rescaled_lasso_iv, stat_lasso_iv
+import matplotlib.pyplot as plt
+from statsmodels.distributions import ECDF
+
+# Sigma_12 is the true Sigma_{12}
+def test_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+
+    #inst, const = bigaussian_instance, lasso_iv
+    Z, D, Y, alpha, beta_star, gamma = lasso_iv.bigaussian_instance(n=n,p=p,s=s, gsnr=gsnr,beta=beta_star,Sigma=np.array([[1., Sigma_12],[Sigma_12, 1.]]))
+
+    #n, p = Z.shape
+
+    conv = lasso_iv(Y, D, Z)
+    conv.fit()
+
+    pivot, _, _ = conv.summary(parameter=beta_star)
+
+    return pivot
+
+def test_pivots(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+    P0 = []
+    for i in range(nsim):
+        try:
+            p0 = test_lasso_iv_instance(n=n, p=p, s=s, Sigma_12=Sigma_12, gsnr=gsnr, beta_star=beta_star)
+        except:
+            p0 = []
+        P0.extend(p0)
+
+    print(np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.05))
+
+    U = np.linspace(0, 1, 101)
+    plt.plot(U, ECDF(P0)(U))
+    plt.plot(U, U, 'r--')
+    plt.show()
+
+# Sigma_12 is the true Sigma_{12}
+def test_rescaled_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+
+    #inst, const = bigaussian_instance, lasso_iv
+    Z, D, Y, alpha, beta_star, gamma = lasso_iv.bigaussian_instance(n=n,p=p,s=s, gsnr=gsnr,beta=beta_star,Sigma=np.array([[1., Sigma_12],[Sigma_12, 1.]]))
+
+    #n, p = Z.shape
+
+    conv = rescaled_lasso_iv(Y, D, Z)
+    conv.fit()
+
+    pivot, _, _ = conv.summary(parameter=beta_star)
+
+    return pivot
+
+def test_pivots_rescaled(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+    P0 = []
+    for i in range(nsim):
+        try:
+            p0 = test_rescaled_lasso_iv_instance(n=n, p=p, s=s, Sigma_12=Sigma_12, gsnr=gsnr, beta_star=beta_star)
+        except:
+            p0 = []
+        P0.extend(p0)
+
+    print(np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.05))
+
+    U = np.linspace(0, 1, 101)
+    plt.plot(U, ECDF(P0)(U))
+    plt.plot(U, U, 'r--')
+    plt.show()
+
+# Sigma_12 is the true Sigma_{12}
+def test_stat_lasso_iv_instance(n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
     #inst, const = bigaussian_instance, lasso_iv
     Z, D, Y, alpha, beta_star, gamma = lasso_iv.bigaussian_instance(n=n,p=p,s=s, gsnr=gsnr,beta=beta_star,Sigma=np.array([[1., Sigma_12],[Sigma_12, 1.]]))
@@ -246,11 +317,19 @@ def test_stat_lasso_iv_instance(n=1000, p=10, s=3, ndraw=10000, burnin=2000, Sig
     conv = stat_lasso_iv(Y, D, Z)
     conv.fit()
 
+<<<<<<< HEAD
     if set(np.nonzero(alpha)[0]).issubset(np.nonzero(conv._overall)[0]) and conv._inactive.sum()>0:
         pivot, _, _ = conv.summary(parameter=beta_star)
     return pivot
 
 def test_pivots_stat(nsim=500, n=1000, p=10, s=3, ndraw=10000, burnin=2000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+=======
+    pivot, _, _ = conv.summary(parameter=beta_star)
+
+    return pivot
+
+def test_pivots_stat(nsim=500, n=1000, p=10, s=3, ndraw=5000, burnin=5000, Sigma_12=0.8, gsnr=1., beta_star=1.):
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
     P0 = []
     for i in range(nsim):
         try:

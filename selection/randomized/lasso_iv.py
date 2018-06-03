@@ -7,6 +7,7 @@ import functools
 
 import numpy as np
 import regreg.api as rr
+<<<<<<< HEAD
 from .lasso import lasso
 from .randomization import randomization
 from .query import multiple_queries, optimization_intervals, affine_gaussian_sampler
@@ -327,6 +328,14 @@ class group_lasso_iv(lasso):
 
 
 class lasso_iv(lasso):
+=======
+from .lasso import highdim
+#from .randomization import randomization
+#from .query import multiple_queries, optimization_sampler
+#from .M_estimator import restricted_Mest
+
+class lasso_iv(highdim):
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
     r"""
     A class for the LASSO with invalid instrumental variables for post-selection inference.
@@ -365,6 +374,7 @@ class lasso_iv(lasso):
         if penalty is None:
             penalty = 2.01 * np.sqrt(n * np.log(n))
         penalty = np.ones(loglike.shape[0]) * penalty
+<<<<<<< HEAD
         penalty[-1] = 0.
 
         mean_diag = np.mean((P_ZX**2).sum(0))
@@ -574,6 +584,19 @@ class lasso_iv(lasso):
                                                selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
         
         return active_signs
+=======
+        #penalty[-1] = 0.
+        penalty[-1] /= 1000.
+
+        if ridge_term is None:
+            ridge_term = 1. * np.sqrt(n)
+
+        if randomizer_scale is None:
+            randomizer_scale = 0.5*np.sqrt(n)
+
+        highdim.__init__(self, loglike, penalty, ridge_term, randomizer_scale)
+        self.Z = Z
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
 
     def summary(self,
@@ -582,9 +605,13 @@ class lasso_iv(lasso):
                 level=0.95,
                 ndraw=10000, 
                 burnin=2000,
+<<<<<<< HEAD
                 compute_intervals=True,
                 compute_power=False,
                 beta_alternative=None):
+=======
+                compute_intervals=False):
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -621,6 +648,7 @@ class lasso_iv(lasso):
 
         P_Z = self.Z.dot(np.linalg.pinv(self.Z))
         P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
+<<<<<<< HEAD
         #P_ZX, P_ZY = self.loglike.data
         #P_ZD = P_ZX[:,-1]
         #two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma_11*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
@@ -630,6 +658,13 @@ class lasso_iv(lasso):
         denom = self.D.dot(P_Z - P_ZE).dot(self.D)
         two_stage_ls = self.D.dot(P_Z - P_ZE).dot(self.Y) / denom
 
+=======
+        P_ZX, P_ZY = self.loglike.data
+        P_ZD = P_ZX[:,-1]
+        #two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma_11*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
+        denom = P_ZD.dot(P_Z - P_ZE).dot(P_ZD)
+        two_stage_ls = (P_ZD.dot(P_Z - P_ZE).dot(P_ZY)) / denom
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
         two_stage_ls = np.atleast_1d(two_stage_ls)
         observed_target = two_stage_ls
 
@@ -638,8 +673,12 @@ class lasso_iv(lasso):
 
         cov_target = np.atleast_2d(Sigma_11/denom)
         #score_cov = -1.*np.sqrt(Sigma_11/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+<<<<<<< HEAD
         #cov_target_score = -1.*(Sigma_11/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
         cov_target_score = -1.*(Sigma_11/denom)*np.hstack([self.Z.T.dot(P_Z - P_ZE).dot(self.D), self.D.dot(P_Z - P_ZE).dot(self.D)])
+=======
+        cov_target_score = -1.*(Sigma_11/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
         cov_target_score = np.atleast_2d(cov_target_score)
 
         alternatives = ['twosided']
@@ -668,6 +707,7 @@ class lasso_iv(lasso):
             intervals = self.sampler.confidence_intervals(observed_target, 
                                                           cov_target, 
                                                           cov_target_score, 
+<<<<<<< HEAD
                                                           sample=opt_sample,
                                                           level=level)
 
@@ -698,6 +738,16 @@ class lasso_iv(lasso):
                             s=3,snr=7.,random_signs=False, #true alpha parameter
                             gsnr_invalid = 1., #true gamma parameter
                             gsnr_valid = 1.,
+=======
+                                                          sample=opt_sample)
+
+        return pivots, pvalues, intervals
+
+    @staticmethod
+    def bigaussian_instance(n=1000,p=10,
+                            s=3,snr=7.,random_signs=False, #true alpha parameter
+                            gsnr = 1., #true gamma parameter
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
                             beta = 1., #true beta parameter
                             Sigma = np.array([[1., 0.8], [0.8, 1.]]), #noise variance matrix
                             rho=0,scale=False,center=True): #Z matrix structure, note that scale=TRUE will simulate weak IV case!
@@ -711,10 +761,14 @@ class lasso_iv(lasso):
         active = np.zeros(p, np.bool)
         active[:s] = True
         # --> gamma coefficient
+<<<<<<< HEAD
         #gamma = np.repeat([gsnr],p)
         gamma = np.ones(p)
         gamma[:s] *= gsnr_invalid
         gamma[s:] *= gsnr_valid
+=======
+        gamma = np.repeat([gsnr],p)
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
         # Generate samples
         # Generate Z matrix 
@@ -735,6 +789,7 @@ class lasso_iv(lasso):
         return Z, D, Y, alpha, beta, gamma
 
 
+<<<<<<< HEAD
 
 class lasso_iv_ar(lasso):
 
@@ -962,6 +1017,11 @@ class lasso_iv_ar(lasso):
         
         return active_signs
 
+=======
+# rescaled version of lasso_iv which uses the scaled \sqrt{n} beta_hat as target
+# only need to change observed_target, cov_target, cov_target_score and also parameter input
+class rescaled_lasso_iv(lasso_iv):
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
     def summary(self,
                 parameter=None,
@@ -969,9 +1029,13 @@ class lasso_iv_ar(lasso):
                 level=0.95,
                 ndraw=10000, 
                 burnin=2000,
+<<<<<<< HEAD
                 compute_intervals=False,
                 compute_power=False,
                 beta_alternative=None):
+=======
+                compute_intervals=False):
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
@@ -1002,6 +1066,7 @@ class lasso_iv_ar(lasso):
         if parameter is None: # this is for pivot -- could use true beta^*
             parameter = np.zeros(1)
 
+<<<<<<< HEAD
         parameter = np.atleast_1d(parameter)
 
         # compute the observed_target for AR statistic
@@ -1017,10 +1082,29 @@ class lasso_iv_ar(lasso):
         self.K2 = self.Z.T.dot(R_ZE).dot(self.D)
         #observed_target = self.Z.T.dot(R_ZE).dot(self.Y - self.D * parameter)
         observed_target = self.K1 - self.K2 * parameter
+=======
+        n, _ = self.Z.shape
+        parameter *= np.sqrt(n)
+        parameter = np.atleast_1d(parameter)
+
+        # compute tsls, i.e. the observed_target
+
+        P_Z = self.Z.dot(np.linalg.pinv(self.Z))
+        P_ZE = self.Z[:,self._overall[:-1]].dot(np.linalg.pinv(self.Z[:,self._overall[:-1]]))
+        P_ZX, P_ZY = self.loglike.data
+        P_ZD = P_ZX[:,-1]
+        #two_stage_ls = (P_ZD.dot(P_Z-P_ZE).dot(self.P_ZY-P_ZD*parameter))/np.sqrt(Sigma_11*P_ZD.dot(P_Z-P_ZE).dot(P_ZD))
+        denom = P_ZD.dot(P_Z - P_ZE).dot(P_ZD)
+        two_stage_ls = (P_ZD.dot(P_Z - P_ZE).dot(P_ZY)) / denom
+        two_stage_ls = np.atleast_1d(two_stage_ls)
+        observed_target = two_stage_ls
+        observed_target *= np.sqrt(n)
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
         # only has the parametric version right now
         # compute cov_target, cov_target_score
 
+<<<<<<< HEAD
         cov_target = self.Z.T.dot(R_ZE).dot(self.Z) * Sigma_11
         cov_target_score = np.hstack([self.Z, self.D.reshape((-1,1))]).T.dot(R_ZE).dot(self.Z)
         cov_target_score *= - Sigma_11
@@ -1040,6 +1124,22 @@ class lasso_iv_ar(lasso):
                                                   cov_target_score,
                                                   self.K2,
                                                   self.test_stat,
+=======
+        cov_target = np.atleast_2d(Sigma_11/denom)
+        cov_target *= n
+        #score_cov = -1.*np.sqrt(Sigma_11/P_ZD.dot(P_Z-P_ZE).dot(P_ZD))*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target_score = -1.*(Sigma_11/denom)*np.hstack([self.Z.T.dot(P_Z-P_ZE).dot(P_ZD),P_ZD.dot(P_Z-P_ZE).dot(P_ZD)])
+        cov_target_score = np.atleast_2d(cov_target_score)
+        cov_target_score *= np.sqrt(n)
+
+        alternatives = ['twosided']
+
+        opt_sample = self.sampler.sample(ndraw, burnin)
+
+        pivots = self.sampler.coefficient_pvalues(observed_target, 
+                                                  cov_target, 
+                                                  cov_target_score, 
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
                                                   parameter=parameter, 
                                                   sample=opt_sample,
                                                   alternatives=alternatives)
@@ -1048,8 +1148,11 @@ class lasso_iv_ar(lasso):
             pvalues = self.sampler.coefficient_pvalues(observed_target, 
                                                        cov_target, 
                                                        cov_target_score, 
+<<<<<<< HEAD
                                                        self.K2,
                                                        self.test_stat,
+=======
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
                                                        parameter=np.zeros_like(parameter), 
                                                        sample=opt_sample,
                                                        alternatives=alternatives)
@@ -1058,6 +1161,7 @@ class lasso_iv_ar(lasso):
 
         intervals = None
         if compute_intervals:
+<<<<<<< HEAD
             intervals = self.sampler.confidence_intervals(observed_target_tsls, 
                                                           cov_target, 
                                                           cov_target_score, 
@@ -1508,6 +1612,14 @@ def lasso_iv_selected(gsnr=1., beta=1., sigma_12=0.8, ndraw=5000, burnin=1000):
         return pivots[-1:], (intervals[-1][0] < beta) * (intervals[-1][1] > beta)
 
     return [], np.nan
+=======
+            intervals = self.sampler.confidence_intervals(observed_target, 
+                                                          cov_target, 
+                                                          cov_target_score, 
+                                                          sample=opt_sample)
+
+        return pivots, pvalues, intervals
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
 
 # use the tsls statistic instead of tsls beta as target
@@ -1601,7 +1713,41 @@ class stat_lasso_iv(lasso_iv):
 
         return pivots, pvalues, intervals
 
+<<<<<<< HEAD
 
+=======
+        
+def test_lasso_iv(ndraw=5000, burnin=1000):
+
+    Z, D, Y, alpha, beta, gamma = lasso_iv.bigaussian_instance()
+    PZ = Z.dot(np.linalg.pinv(Z))
+
+    n, p = Z.shape
+
+    penalty = 2.01 * np.sqrt(n * np.log(n))
+    penalty = np.ones(p + 1) * penalty
+    penalty[-1] = 0.
+
+    L = highdim.gaussian(PZ.dot(np.hstack([Z, D.reshape((-1,1))])), PZ.dot(Y), penalty)
+    signs = L.fit()
+    nonzero = np.nonzero(signs != 0)[0]
+
+    if p not in set(nonzero):
+        raise ValueError('last should always be selected!')
+
+    if set(nonzero).issuperset(np.nonzero(alpha)[0]) and len(nonzero) <= p :
+        parameter = np.hstack([alpha[nonzero[:-1]], beta])
+
+        pivots, pval, intervals = L.summary(target="selected",
+                                            parameter=parameter,
+                                            ndraw=ndraw,
+                                            burnin=burnin, 
+                                            compute_intervals=True,
+                                            dispersion=1.)
+        return pivots[-1:], (intervals[-1][0] < beta) * (intervals[-1][1] > beta)
+
+    return [], np.nan
+>>>>>>> f125cdb72d4da3c41710cf85fa9c797c5b9c0678
 
 
 
