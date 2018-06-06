@@ -131,7 +131,7 @@ def debiasing_matrix(X,
 
             if warn_kkt and not result['kkt_check']:
                 warn("Solution for row of M does not seem to be feasible")
-
+                
         M[idx] = result['soln'] * 1.
 
     return np.squeeze(M)

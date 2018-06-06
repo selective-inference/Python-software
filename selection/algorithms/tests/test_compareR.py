@@ -495,18 +495,18 @@ def test_solve_QP():
 
     
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_full_lasso_tall():
-    n, p, s = 200, 100, 10
+def test_liu_gaussian():
+    n, p, s = 200, 100, 20
 
     while True:
 
-        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=5, sigma=1.)
+        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=10, sigma=1.)
 
         lam = 4. * np.sqrt(n)
         X *= np.sqrt(n)
         L = lasso_full.gaussian(X, y, lam)
         L.fit()
-        if len(L.active) > 2:
+        if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
             numpy2ri.activate()
 
@@ -541,8 +541,8 @@ def test_full_lasso_tall():
             break
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_full_lasso_tall_logistic():
-    n, p, s = 200, 100, 10
+def test_liu_logistic():
+    n, p, s = 200, 100, 20
     
     while True:
 
@@ -552,8 +552,8 @@ def test_full_lasso_tall_logistic():
         X *= np.sqrt(n)
         L = lasso_full.logistic(X, y, lam)
         L.fit()
-        if len(L.active) > 2:
-            S = L.summary(compute_intervals=False)
+        if len(L.active) > 4:
+            S = L.summary(compute_intervals=False, dispersion=1)
             numpy2ri.activate()
 
             rpy.r.assign("X", X)
@@ -563,16 +563,24 @@ def test_full_lasso_tall_logistic():
             y = as.numeric(y)
             n = nrow(X)
             p = ncol(X)
-            sigma_est = sigma(lm(y ~ X - 1))
+            sigma_est = 1
             print(sigma_est)
             penalty_factor = rep(1, p);
             lam = lam / n;
-            soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="logit")
-            PVS = selectiveInference:::inference_debiased_full(X, y, 
-                                                             soln, 
-                                                             lambda=lam, penalty_factor=penalty_factor, 
-                                                             sigma_est, loss="logit", algo="Q", 
-                                                             construct_ci=FALSE)
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam, 
+                                                             penalty_factor=penalty_factor, 
+                                                             loss="logit")
+            PVS = selectiveInference:::inference_debiased_full(X, 
+                                                               y, 
+                                                               soln, 
+                                                               lambda=lam, 
+                                                               penalty_factor=penalty_factor, 
+                                                               sigma_est, 
+                                                               loss="logit", 
+                                                               algo="Q", 
+                                                               construct_ci=FALSE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
@@ -586,8 +594,8 @@ def test_full_lasso_tall_logistic():
             break 
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_full_lasso_wide():
-    n, p, s = 100, 200, 15
+def test_ROSI_gaussian():
+    n, p, s = 100, 30, 15
 
     while True:
         X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
@@ -595,11 +603,13 @@ def test_full_lasso_wide():
         lam = 7. * np.sqrt(n)
         X *= np.sqrt(n)
         L = lasso_full.gaussian(X, y, lam)
+        L.sparse_inverse = True
         L.fit()
 
         print('here', len(L.active))
-        if len(L.active) > 2:
-            S = L.summary(compute_intervals=False, dispersion=sigma**2)
+        if len(L.active) > 4:
+            S = L.summary(compute_intervals=False, 
+                          dispersion=sigma**2)
             numpy2ri.activate()
 
             rpy.r.assign("X", X)
@@ -614,12 +624,21 @@ def test_full_lasso_wide():
 
             penalty_factor = rep(1, p);
             lam = lam / n;
-            soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="ls")
-            PVS = selectiveInference:::inference_debiased_full(X, y, 
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam, 
+                                                             penalty_factor=penalty_factor, 
+                                                             loss="ls")
+            PVS = selectiveInference:::inference_debiased_full(X, 
+                                                               y, 
                                                                soln, 
-                                                               lambda=lam, penalty_factor=penalty_factor, 
-                                                               sigma_est, loss="ls", algo="Q", 
-                                                               construct_ci=FALSE)
+                                                               lambda=lam, 
+                                                               penalty_factor=penalty_factor, 
+                                                               sigma_est, 
+                                                               loss="ls", 
+                                                               algo="Q", 
+                                                               construct_ci=FALSE,  
+                                                               use_debiased=TRUE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
@@ -634,8 +653,8 @@ def test_full_lasso_wide():
             break
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_full_lasso_wide_logistic():
-    n, p, s = 100, 200, 15
+def test_ROSI_logistic():
+    n, p, s = 100, 30, 15
 
     while True:
         X, y, _, _ = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)
@@ -643,9 +662,10 @@ def test_full_lasso_wide_logistic():
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
         L = lasso_full.logistic(X, y, lam)
+        L.sparse_inverse = True
         L.fit()
 
-        if len(L.active) > 2:
+        if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=1.)
             numpy2ri.activate()
 
@@ -660,12 +680,21 @@ def test_full_lasso_wide_logistic():
 
             penalty_factor = rep(1, p);
             lam = lam / n;
-            soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="logit")
-            PVS = selectiveInference:::inference_debiased_full(X, y, 
-                                                             soln, 
-                                                             lambda=lam, penalty_factor=penalty_factor, 
-                                                             sigma_est=1., loss="logit", algo="Q", 
-                                                             construct_ci=FALSE)
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam, 
+                                                             penalty_factor=penalty_factor, 
+                                                             loss="logit")
+            PVS = selectiveInference:::inference_debiased_full(X, 
+                                                               y, 
+                                                               soln, 
+                                                               lambda=lam, 
+                                                               penalty_factor=penalty_factor, 
+                                                               sigma_est=1., 
+                                                               loss="logit", 
+                                                               algo="Q", 
+                                                               construct_ci=FALSE,
+                                                               use_debiased=TRUE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
