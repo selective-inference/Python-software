@@ -259,7 +259,9 @@ class lasso(object):
             self._inactive_constraints = None
         return self.lasso_solution
 
-    def summary(self, alternative='twosided', level=0.95,
+    def summary(self, 
+                alternative='twosided', 
+                level=0.95,
                 compute_intervals=False):
         """
         Summary table for inference adjusted for selection.

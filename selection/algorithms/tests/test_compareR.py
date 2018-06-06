@@ -76,6 +76,7 @@ def test_fixed_lambda():
         L.fit(solve_args={'min_its':200})
 
         S = L.summary('onesided')
+
         yield np.testing.assert_allclose, L.fit()[1:], beta_hat, 1.e-2, 1.e-2, False, 'fixed lambda, sigma=%f coef' % s
         yield np.testing.assert_equal, L.active, selected_vars
         yield np.testing.assert_allclose, S['pval'], R_pvals, tol, tol, False, 'fixed lambda, sigma=%f pval' % s
@@ -493,13 +494,13 @@ def test_solve_QP():
     yield nt.assert_true, np.fabs(G).max() < lam * (1. + 1.e-6), 'testing linfinity norm'
 
     
-@np.testing.dec.skipif(not rpy2_available or True, msg="rpy2 not available, skipping test, need updated R repo with Jelena full code")
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
 def test_full_lasso_tall():
     n, p, s = 200, 100, 10
 
     while True:
 
-        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4, sigma=1.)
+        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=5, sigma=1.)
 
         lam = 4. * np.sqrt(n)
         X *= np.sqrt(n)
@@ -539,7 +540,7 @@ def test_full_lasso_tall():
             numpy2ri.deactivate()
             break
 
-@np.testing.dec.skipif(not rpy2_available or True, msg="rpy2 not available, skipping test, need updated R repo with Jelena full code")
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
 def test_full_lasso_tall_logistic():
     n, p, s = 200, 100, 10
     
@@ -570,31 +571,33 @@ def test_full_lasso_tall_logistic():
             PVS = selectiveInference:::inference_debiased_full(X, y, 
                                                              soln, 
                                                              lambda=lam, penalty_factor=penalty_factor, 
-                                                             sigma_est, loss="logit", algo="glmnet", 
+                                                             sigma_est, loss="logit", algo="Q", 
                                                              construct_ci=FALSE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
             pvalues = rpy.r('pvalues')
             active_set = rpy.r('active_vars')
-
+            print(pvalues)
+            print(S['pval'])
             nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
 
             numpy2ri.deactivate()
             break 
 
-@np.testing.dec.skipif(not rpy2_available or True, msg="rpy2 not available, skipping test, need updated R repo with Jelena full code")
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
 def test_full_lasso_wide():
     n, p, s = 100, 200, 15
 
     while True:
         X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
 
-        lam = 1. * np.sqrt(n)
+        lam = 7. * np.sqrt(n)
         X *= np.sqrt(n)
         L = lasso_full.gaussian(X, y, lam)
         L.fit()
 
+        print('here', len(L.active))
         if len(L.active) > 2:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
             numpy2ri.activate()
@@ -613,10 +616,10 @@ def test_full_lasso_wide():
             lam = lam / n;
             soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="ls")
             PVS = selectiveInference:::inference_debiased_full(X, y, 
-                                                             soln, 
-                                                             lambda=lam, penalty_factor=penalty_factor, 
-                                                             sigma_est, loss="ls", algo="glmnet", 
-                                                             construct_ci=FALSE)
+                                                               soln, 
+                                                               lambda=lam, penalty_factor=penalty_factor, 
+                                                               sigma_est, loss="ls", algo="Q", 
+                                                               construct_ci=FALSE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
@@ -630,7 +633,7 @@ def test_full_lasso_wide():
             numpy2ri.deactivate()
             break
 
-@np.testing.dec.skipif(not rpy2_available or True, msg="rpy2 not available, skipping test, need updated R repo with Jelena full code")
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
 def test_full_lasso_wide_logistic():
     n, p, s = 100, 200, 15
 
@@ -661,7 +664,7 @@ def test_full_lasso_wide_logistic():
             PVS = selectiveInference:::inference_debiased_full(X, y, 
                                                              soln, 
                                                              lambda=lam, penalty_factor=penalty_factor, 
-                                                             sigma_est=1., loss="logit", algo="glmnet", 
+                                                             sigma_est=1., loss="logit", algo="Q", 
                                                              construct_ci=FALSE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues

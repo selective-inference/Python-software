@@ -351,7 +351,7 @@ class lasso(object):
         ----------
 
         """
-
+        
         return self.sampler.selective_MLE(observed_target,
                                           cov_target,
                                           cov_target_score,
