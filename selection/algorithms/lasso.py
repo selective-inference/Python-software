@@ -259,7 +259,9 @@ class lasso(object):
             self._inactive_constraints = None
         return self.lasso_solution
 
-    def summary(self, alternative='twosided', level=0.95,
+    def summary(self, 
+                alternative='twosided', 
+                level=0.95,
                 compute_intervals=False):
         """
         Summary table for inference adjusted for selection.
@@ -1877,7 +1879,8 @@ def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=T
     else:
         return -np.inf, np.inf
     lagrange_cp[j] = np.inf
-    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide) # TODO: use initial solution for speed
+    # TODO: use initial solution for speed
+    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide) 
 
     p = Qbeta_bar.shape[0]
     Ij = np.zeros(p)
@@ -2042,11 +2045,14 @@ class lasso_full(lasso):
                 # target is one-step estimator
 
                 G = self.loglike.smooth_objective(lasso_solution, 'grad')
-                M = debiasing_matrix(X * np.sqrt(W)[:, None], 
-                                     self.active,
-                                     **debiasing_args)
+                M = self._M = debiasing_matrix(X * np.sqrt(W)[:, None], 
+                                               self.active,
+                                               **debiasing_args)
 
-                Qinv_hat = np.atleast_2d(M) / n # the n is to make sure we get rows of the inverse of (X^TWX) instead of (X^TWX/n).
+                # the n is to make sure we get rows of the inverse 
+                # of (X^TWX) instead of (X^TWX/n).
+
+                Qinv_hat = np.atleast_2d(M) / n 
                 observed_target = lasso_solution[self.active] - Qinv_hat.dot(G)
                 M1 = Qinv_hat.dot(X.T)
                 self._QiE = (M1 * self._W[None,:]).dot(M1.T)
@@ -2108,7 +2114,6 @@ class lasso_full(lasso):
             for j in range(len(active_set)):
                 idx = self.active[j]
                 lower, upper = _truncation_interval(Qbeta_bar, (X, W), QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=True)
-
                 sd = sqrt_dispersion * np.sqrt(QiE[j,j])
                 tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
                 pvalue = tg.cdf(beta_barE[j])

@@ -85,7 +85,7 @@ def test_approx_inverse_nondegen(n=100, p=20):
     M = debiasing_matrix(X, np.arange(p))
 
 
-def test_compareR(n=50, p=100):
+def test_compareR(n=100, p=30):
     X = np.random.standard_normal((n, p))
     j = 5
     delta = 0.30
@@ -102,10 +102,8 @@ def test_compareR(n=50, p=100):
 
     soln_py = debiasing_matrix(X, j)
 
-    np.testing.assert_allclose(soln_R, soln_py)
-
-    numpy2ri.activate()
-
+    yield np.testing.assert_allclose, soln_R, soln_py
+    
     j = np.array([3,5])
     numpy2ri.activate()
     rpy.r.assign('X', X)
@@ -115,10 +113,8 @@ def test_compareR(n=50, p=100):
 
     soln_py = debiasing_matrix(X, j)
 
-    np.testing.assert_allclose(soln_R, soln_py)
-
-    numpy2ri.activate()
-
+    yield np.testing.assert_allclose, soln_R, soln_py
+    
     j = np.array([3, 5])
     numpy2ri.activate()
     rpy.r.assign('X', X)
@@ -128,9 +124,9 @@ def test_compareR(n=50, p=100):
 
     soln_py = debiasing_matrix(X, j)
 
-    np.testing.assert_allclose(soln_R, soln_py)
-
-    numpy2ri.activate()
+    yield np.testing.assert_allclose, soln_R, soln_py
+    
+    numpy2ri.deactivate()
 
 
 ## regreg implementation

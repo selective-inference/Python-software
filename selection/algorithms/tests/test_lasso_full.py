@@ -73,9 +73,14 @@ def test_smaller():
     for i, j in enumerate(LF.active):
         l, u = (np.array(S['lower_truncation'])[i], 
                 np.array(S['upper_truncation'])[i]) 
-        lower, upper =  truncation_interval(Qbeta_bar, Q, QiE[i,i], j, beta_barE[i], lagrange)
-        np.testing.assert_allclose(l, lower)
-        np.testing.assert_allclose(u, upper)
+        lower, upper =  truncation_interval(Qbeta_bar, 
+                                            Q, 
+                                            QiE[i,i], 
+                                            j, 
+                                            beta_barE[i], 
+                                            lagrange)
+        yield np.testing.assert_allclose, l, lower
+        yield np.testing.assert_allclose, u, upper
 
 def test_modelQ():
 
