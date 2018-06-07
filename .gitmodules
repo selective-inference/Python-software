@@ -1,9 +1,6 @@
 [submodule "travis-tools"]
 	path = travis-tools
 	url = https://github.com/matthew-brett/travis-tools.git
-[submodule "R-software"]
-	path = R-software
-	url = https://github.com/selective-inference/R-software
 [submodule "C-software"]
 	path = C-software
-	url = https://github.com/selective-inference/C-software
+	url = https://github.com/selective-inference/C-software.git
