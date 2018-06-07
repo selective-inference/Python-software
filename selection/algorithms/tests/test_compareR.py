@@ -521,12 +521,17 @@ def test_liu_gaussian():
             #sigma_est = sigma(lm(y ~ X - 1))
             penalty_factor = rep(1, p);
             lam = lam / n;
-            soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, loss="ls")
-            PVS = selectiveInference:::inference_debiased_full(X, y, 
-                                                             soln, 
-                                                             lambda=lam, penalty_factor=penalty_factor, 
-                                                             sigma_est=sigma_est, loss="ls", algo="Q", 
-                                                             construct_ci=FALSE)
+            soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, family="gaussian")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=sigma_est^2, 
+                       family="gaussian",
+                       solver="QP", 
+                       construct_ci=FALSE,
+                       use_debiased=FALSE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
@@ -548,7 +553,7 @@ def test_liu_logistic():
 
         X, y, _, _ = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)
 
-        lam = 2. * np.sqrt(n)
+        lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
         L = lasso_full.logistic(X, y, lam)
         L.fit()
@@ -571,16 +576,17 @@ def test_liu_logistic():
                                                              y, 
                                                              lam, 
                                                              penalty_factor=penalty_factor, 
-                                                             loss="logit")
-            PVS = selectiveInference:::inference_debiased_full(X, 
-                                                               y, 
-                                                               soln, 
-                                                               lambda=lam, 
-                                                               penalty_factor=penalty_factor, 
-                                                               sigma_est, 
-                                                               loss="logit", 
-                                                               algo="Q", 
-                                                               construct_ci=FALSE)
+                                                             family="binomial")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=1,
+                       family="binomial",
+                       solver="Q", 
+                       construct_ci=FALSE,
+                       use_debiased=FALSE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
@@ -628,17 +634,17 @@ def test_ROSI_gaussian():
                                                              y, 
                                                              lam, 
                                                              penalty_factor=penalty_factor, 
-                                                             loss="ls")
-            PVS = selectiveInference:::inference_debiased_full(X, 
-                                                               y, 
-                                                               soln, 
-                                                               lambda=lam, 
-                                                               penalty_factor=penalty_factor, 
-                                                               sigma_est, 
-                                                               loss="ls", 
-                                                               algo="Q", 
-                                                               construct_ci=FALSE,  
-                                                               use_debiased=TRUE)
+                                                             family="gaussian")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=sigma_est^2, 
+                       family="gaussian",
+                       solver="QP", 
+                       construct_ci=FALSE,  
+                       use_debiased=TRUE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
@@ -684,17 +690,17 @@ def test_ROSI_logistic():
                                                              y, 
                                                              lam, 
                                                              penalty_factor=penalty_factor, 
-                                                             loss="logit")
-            PVS = selectiveInference:::inference_debiased_full(X, 
-                                                               y, 
-                                                               soln, 
-                                                               lambda=lam, 
-                                                               penalty_factor=penalty_factor, 
-                                                               sigma_est=1., 
-                                                               loss="logit", 
-                                                               algo="Q", 
-                                                               construct_ci=FALSE,
-                                                               use_debiased=TRUE)
+                                                             family="binomial")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=1., 
+                       family="binomial", 
+                       solver="QP", 
+                       construct_ci=FALSE,
+                       use_debiased=TRUE)
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
