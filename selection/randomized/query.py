@@ -6,7 +6,7 @@ from scipy.optimize import bisect
 
 from regreg.affine import power_L
 
-#from .selective_MLE_utils import solve_barrier_nonneg
+from .selective_MLE_utils import solve_barrier_nonneg
 
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
@@ -111,14 +111,6 @@ class multiple_queries(object):
         '''
 
         self.objectives = objectives
-
-    def solve(self):
-        '''
-        Ensure that each objective has been solved.
-        '''
-        for objective in self.objectives:
-            if not objective._solved:
-                objective.solve()
 
     def fit(self):
         for objective in self.objectives:
