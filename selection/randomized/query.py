@@ -898,6 +898,7 @@ def _solve_barrier_affine(conjugate_arg,
                           feasible_point=None,
                           step=1,
                           nstep=1000,
+                          min_its=100,
                           tol=1.e-8):
 
     con_linear = constraints.linear_part
@@ -944,7 +945,7 @@ def _solve_barrier_affine(conjugate_arg,
 
         # stop if relative decrease is small
 
-        if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value):
+        if np.fabs(current_value - proposed_value) < tol * np.fabs(current_value) and itercount >= min_its:
             current = proposal
             current_value = proposed_value
             break
