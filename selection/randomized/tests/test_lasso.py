@@ -12,7 +12,7 @@ rpy.r('library(selectiveInference)')
 from ..lasso import lasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
-import matplotlib.pyplot as plt
+from ..randomization import randomization
 
 def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full', rho=0.4, randomizer_scale=1, ndraw=5000, burnin=1000):
     """
@@ -43,6 +43,85 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full'
                  W, 
                  randomizer_scale=randomizer_scale * sigma_)
     
+    signs = conv.fit()
+    nonzero = signs != 0
+
+    if target == 'full':
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = full_targets(conv.loglike, 
+                                      conv._W, 
+                                      nonzero)
+    elif target == 'selected':
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = selected_targets(conv.loglike, 
+                                          conv._W, 
+                                          nonzero)
+    elif target == 'debiased':
+        (observed_target, 
+         cov_target, 
+         cov_target_score, 
+         alternatives) = debiased_targets(conv.loglike, 
+                                          conv._W, 
+                                          nonzero,
+                                          penalty=conv.penalty)
+
+    _, pval, intervals = conv.summary(observed_target, 
+                                      cov_target, 
+                                      cov_target_score, 
+                                      alternatives,
+                                      ndraw=ndraw,
+                                      burnin=burnin, 
+                                      compute_intervals=True)
+        
+    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
+
+def test_ARrandom(n=500, 
+                  p=200, 
+                  signal_fac=1.5, 
+                  s=5, 
+                  sigma=3, 
+                  target='full', 
+                  rho=0.4, 
+                  randomizer_scale=1, 
+                  ndraw=5000, 
+                  burnin=1000):
+    """
+    Test using general Gaussian randomizer
+    """
+
+    signal = np.sqrt(signal_fac * np.log(p))
+    X, Y, beta = gaussian_instance(n=n,
+                                   p=p, 
+                                   signal=signal, 
+                                   s=s, 
+                                   equicorrelated=False, 
+                                   rho=rho, 
+                                   sigma=sigma, 
+                                   random_signs=True)[:3]
+
+    n, p = X.shape
+
+    sigma_ = np.std(Y)
+    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
+
+    loglike = rr.glm.gaussian(X, Y, coef=1. / sigma ** 2)
+
+    mean_diag = np.mean((X ** 2).sum(0))
+    ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+    randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+
+    ARcov = rho**(np.abs(np.subtract.outer(np.arange(p), np.arange(p)))) * randomizer_scale**2 * mean_diag
+    randomizer = randomization.gaussian(ARcov)
+
+    conv =  lasso(loglike, 
+                  W / sigma ** 2,
+                  ridge_term, 
+                  randomizer)
+
     signs = conv.fit()
     nonzero = signs != 0
 
@@ -211,6 +290,7 @@ def test_compareR(n=200, p=10, signal=np.sqrt(4) * np.sqrt(2 * np.log(10)), s=5,
 
 def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3):
 
+    import matplotlib.pyplot as plt
     P0, PA = [], []
     from statsmodels.distributions import ECDF
 

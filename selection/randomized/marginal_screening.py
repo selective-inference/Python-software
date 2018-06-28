@@ -93,14 +93,15 @@ class marginal_screening(object):
 
         self.opt_transform = (opt_linear, opt_offset)
 
-        cov, prec = self.randomizer.cov_prec
+        _, prec = self.randomizer.cov_prec
         if np.asarray(prec).shape in [(), (0,)]:
-            cond_precision = opt_linear.T.dot(opt_linear) * prec  ## XXX implicitly assuming prec is 
-                                                                  ## scalar multiple of identity
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
             cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T) * prec    ## here also
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec  
         else:
-            raise NotImplementedError
+            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
 
         cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
 

@@ -33,7 +33,7 @@ class slope(lasso):
                  loglike,
                  slope_weights,
                  ridge_term,
-                 randomizer_scale,
+                 randomizer,
                  perturb=None):
         r"""
         Create a new post-selection object for the SLOPE problem
@@ -51,8 +51,8 @@ class slope(lasso):
         ridge_term : float
             How big a ridge term to add?
 
-        randomizer_scale : float
-            Scale for IID components of randomization.
+        randomizer : object
+            Randomizer -- contains representation of randomization density.
 
         perturb : np.ndarray
             Random perturbation subtracted as a linear
@@ -66,7 +66,7 @@ class slope(lasso):
             slope_weights = np.ones(loglike.shape) * slope_weights
         self.slope_weights = np.asarray(slope_weights)
 
-        self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+        self.randomizer = randomizer 
         self.ridge_term = ridge_term
         self.penalty = rr.slope(slope_weights, lagrange=1.)
         self._initial_omega = perturb  # random perturbation
@@ -152,12 +152,18 @@ class slope(lasso):
             _opt_linear_term = X.T.dot(X_clustered)
             self.opt_transform = (_opt_linear_term, self.initial_subgrad)
 
-            cov, prec = self.randomizer.cov_prec
+            _, prec = self.randomizer.cov_prec
             opt_linear, opt_offset = self.opt_transform
 
-            cond_precision = opt_linear.T.dot(opt_linear) * prec
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+            if np.asarray(prec).shape in [(), (0,)]:
+                cond_precision = opt_linear.T.dot(opt_linear) * prec
+                cond_cov = np.linalg.inv(cond_precision)
+                logdens_linear = cond_cov.dot(opt_linear.T) * prec
+            else:
+                cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+                cond_cov = np.linalg.inv(cond_precision)
+                logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+
             cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
             logdens_transform = (logdens_linear, opt_offset)
@@ -217,7 +223,12 @@ class slope(lasso):
         if randomizer_scale is None:
             randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
 
-        return slope(loglike, np.asarray(slope_weights) / sigma ** 2, ridge_term, randomizer_scale)
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        return slope(loglike, 
+                     np.asarray(slope_weights) / sigma ** 2, 
+                     ridge_term, 
+                     randomizer)
 
 # Projection onto selected subgradients of SLOPE
 
