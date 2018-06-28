@@ -143,7 +143,7 @@ class randomization(rr.smooth_atom):
             will raise an error.
         """
         precision = np.linalg.inv(covariance)
-        sqrt_precision = np.linalg.cholesky(precision).T
+        sqrt_precision = np.linalg.cholesky(precision)
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
         _const = np.sqrt((2*np.pi)**p * _det)
@@ -152,7 +152,7 @@ class randomization(rr.smooth_atom):
         pdf = lambda x: None
         derivative_log_density = lambda x: None
         grad_negative_log_density = lambda x: precision.dot(x)
-        sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+        sampler = lambda size: covariance.dot(sqrt_precision.dot(np.random.standard_normal((p,) + size)))
 
         return randomization((p,),
                              density,

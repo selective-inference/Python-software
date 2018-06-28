@@ -937,11 +937,14 @@ def _solve_barrier_affine(conjugate_arg,
 
         count = 0
         while True:
+            count += 1
             proposal = current - step * newton_step
             proposed_value = objective(proposal)
             if proposed_value <= current_value:
                 break
             step *= 0.5
+            if count >= 40:
+                break
 
         # stop if relative decrease is small
 

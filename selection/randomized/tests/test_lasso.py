@@ -86,6 +86,7 @@ def test_ARrandom(n=500,
                   sigma=3, 
                   target='full', 
                   rho=0.4, 
+                  ARrho=0.,
                   randomizer_scale=1, 
                   ndraw=5000, 
                   burnin=1000):
@@ -112,9 +113,9 @@ def test_ARrandom(n=500,
 
     mean_diag = np.mean((X ** 2).sum(0))
     ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
-    randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+    randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) 
 
-    ARcov = rho**(np.abs(np.subtract.outer(np.arange(p), np.arange(p)))) * randomizer_scale**2 * mean_diag
+    ARcov = ARrho**(np.abs(np.subtract.outer(np.arange(p), np.arange(p)))) * randomizer_scale**2 
     randomizer = randomization.gaussian(ARcov)
 
     conv =  lasso(loglike, 
@@ -297,6 +298,7 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3):
     for i in range(nsim):
         if True: 
             if not sqrt:
+                #p0, pA = test_ARrandom(n=n, p=p, target=target, sigma=sigma)
                 p0, pA = test_highdim_lasso(n=n, p=p, target=target, sigma=sigma)
             else:
                 p0, pA = test_sqrt_highdim_lasso(n=n, p=p, target=target, compare_to_lasso=False)
