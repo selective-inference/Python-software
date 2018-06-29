@@ -79,22 +79,20 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full'
         
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
-def test_ARrandom(n=500, 
-                  p=200, 
-                  signal_fac=1.5, 
-                  s=5, 
-                  sigma=3, 
-                  target='full', 
-                  rho=0.4, 
-                  ARrho=0.,
-                  randomizer_scale=1, 
-                  ndraw=5000, 
-                  burnin=1000):
+def test_AR_randomization(n=3000, 
+                          p=1000, 
+                          signal=3.5,
+                          s=30, 
+                          sigma=3, 
+                          target='selected', 
+                          rho=0.75, 
+                          randomizer_scale=1, 
+                          ndraw=5000, 
+                          burnin=1000):
     """
     Test using general Gaussian randomizer
     """
 
-    signal = np.sqrt(signal_fac * np.log(p))
     X, Y, beta = gaussian_instance(n=n,
                                    p=p, 
                                    signal=signal, 
@@ -104,22 +102,29 @@ def test_ARrandom(n=500,
                                    sigma=sigma, 
                                    random_signs=True)[:3]
 
+    ARrho = []
+    for s in np.random.sample(100):
+        Xr = X[int(s*n)]
+        ARrho.append(np.corrcoef(Xr[1:], Xr[:-1])[0,1])
+    ARrho = np.mean(ARrho) 
+    print("AR parameter", ARrho)
+
     n, p = X.shape
 
     sigma_ = np.std(Y)
-    W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
-
-    loglike = rr.glm.gaussian(X, Y, coef=1. / sigma ** 2)
+    W = np.ones(X.shape[1]) * np.sqrt(np.log(p)) * sigma * 0.7
+    loglike = rr.glm.gaussian(X, Y)
 
     mean_diag = np.mean((X ** 2).sum(0))
+
     ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
-    randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) 
+    randomizer_scale = np.sqrt(mean_diag) * np.std(Y) * 0.5
 
     ARcov = ARrho**(np.abs(np.subtract.outer(np.arange(p), np.arange(p)))) * randomizer_scale**2 
     randomizer = randomization.gaussian(ARcov)
 
     conv =  lasso(loglike, 
-                  W / sigma ** 2,
+                  W,
                   ridge_term, 
                   randomizer)
 
@@ -298,19 +303,20 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3):
     for i in range(nsim):
         if True: 
             if not sqrt:
-                #p0, pA = test_ARrandom(n=n, p=p, target=target, sigma=sigma)
-                p0, pA = test_highdim_lasso(n=n, p=p, target=target, sigma=sigma)
+                p0, pA = test_AR_randomization(n=n, p=p, target=target, sigma=sigma)
+                #p0, pA = test_highdim_lasso(n=n, p=p, target=target, sigma=sigma)
             else:
                 p0, pA = test_sqrt_highdim_lasso(n=n, p=p, target=target, compare_to_lasso=False)
         else: 
             p0, pA = [], []
+        print(len(p0), len(pA))
         P0.extend(p0)
         PA.extend(pA)
 
         P0_clean = np.array(P0)
         
         P0_clean = P0_clean[P0_clean > 1.e-5] # 
-        print(np.mean(P0_clean), np.std(P0_clean), np.mean(np.array(PA) < 0.05), np.mean(np.array(P0) < 0.05), np.mean(P0_clean < 0.05), np.mean(np.array(P0) < 1e-5), 'null pvalue + power + failure')
+        print(np.mean(P0_clean), np.std(P0_clean), np.mean(np.array(PA) < 0.05), np.sum(np.array(PA) < 0.05) / i, np.mean(np.array(P0) < 0.05), np.mean(P0_clean < 0.05), np.mean(np.array(P0) < 1e-5), 'null pvalue + power + failure')
     
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)
