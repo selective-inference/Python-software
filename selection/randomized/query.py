@@ -919,14 +919,14 @@ def _solve_barrier_affine(conjugate_arg,
     current_value = np.inf
 
     for itercount in range(nstep):
-        newton_step = grad(current)
+        cur_grad = grad(current)
 
         # make sure proposal is feasible
 
         count = 0
         while True:
             count += 1
-            proposal = current - step * newton_step
+            proposal = current - step * cur_grad
             if np.all(con_offset-con_linear.dot(proposal) > 0):
                 break
             step *= 0.5
@@ -938,13 +938,16 @@ def _solve_barrier_affine(conjugate_arg,
         count = 0
         while True:
             count += 1
-            proposal = current - step * newton_step
+            proposal = current - step * cur_grad
             proposed_value = objective(proposal)
             if proposed_value <= current_value:
                 break
             step *= 0.5
-            if count >= 40:
-                break
+            if count >= 20:
+                if not (np.isnan(proposed_value) or np.isnan(current_value)):
+                    break
+                else:
+                    raise ValueError('value is NaN: %f, %f' % (proposed_value, current_value))
 
         # stop if relative decrease is small
 
@@ -982,14 +985,14 @@ def _solve_barrier_nonneg(conjugate_arg,
     current_value = np.inf
 
     for itercount in range(nstep):
-        newton_step = grad(current)
+        cur_grad = grad(current)
 
         # make sure proposal is feasible
 
         count = 0
         while True:
             count += 1
-            proposal = current - step * newton_step
+            proposal = current - step * cur_grad
             if np.all(proposal > 0):
                 break
             step *= 0.5
@@ -1000,11 +1003,16 @@ def _solve_barrier_nonneg(conjugate_arg,
 
         count = 0
         while True:
-            proposal = current - step * newton_step
+            proposal = current - step * cur_grad
             proposed_value = objective(proposal)
             if proposed_value <= current_value:
                 break
             step *= 0.5
+            if count >= 20:
+                if not (np.isnan(proposed_value) or np.isnan(current_value)):
+                    break
+                else:
+                    raise ValueError('value is NaN: %f, %f' % (proposed_value, current_value))
 
         # stop if relative decrease is small
 
