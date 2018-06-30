@@ -92,8 +92,10 @@ class marginal_screening(object):
         opt_offset[self._not_selected] = self._randomized_score[self._not_selected]
 
         self.opt_transform = (opt_linear, opt_offset)
+        self._setup = True
 
         _, prec = self.randomizer.cov_prec
+
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
             cond_cov = np.linalg.inv(cond_precision)
@@ -175,7 +177,8 @@ class marginal_screening(object):
             intervals = self.sampler.confidence_intervals(observed_target,
                                                           cov_target,
                                                           cov_target_score,
-                                                          sample=opt_sample)
+                                                          sample=opt_sample,
+                                                          level=level)
 
         return pivots, pvalues, intervals
 
@@ -201,19 +204,20 @@ class marginal_screening(object):
                                           self.observed_opt_state,
                                           solve_args=solve_args)
 
-    def multivariate_targets(self, features):
+    def multivariate_targets(self, features, dispersion=1.):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
         """
-        score_linear = self.covariance[:, features]
+        score_linear = self.covariance[:, features] / dispersion
         Q = score_linear[features]
         cov_target = np.linalg.inv(Q)
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
         crosscov_target_score = -score_linear.dot(cov_target)
-        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-                         self.selection_variable['sign'][features]])
+        #alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
+        #                 self.selection_variable['sign'][features]])
+        alternatives = ['twosided'] * features.sum()
 
-        return observed_target, cov_target, crosscov_target_score.T, alternatives
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
     def marginal_targets(self, features):
         """
@@ -224,8 +228,9 @@ class marginal_screening(object):
         cov_target = Q
         observed_target = -self.observed_score_state[features]
         crosscov_target_score = -score_linear
-        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-                         self.selection_variable['sign'][features]])
+        #alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
+        #                 self.selection_variable['sign'][features]])
+        alternatives = ['twosided'] * features.sum()
 
         return observed_target, cov_target, crosscov_target_score.T, alternatives
 

@@ -112,13 +112,104 @@ class multiple_queries(object):
 
         self.objectives = objectives
 
-    def solve(self):
-        '''
-        Ensure that each objective has been solved.
-        '''
+    def fit(self):
         for objective in self.objectives:
-            if not objective._solved:
-                objective.solve()
+            if not objective._setup:
+                objective.fit()
+
+    def summary(self,
+                observed_target,
+                opt_sampling_info,  # a sequence of (target_cov, score_cov) objects
+                                    # in theory all target_cov should be about the same...
+                alternatives=None,
+                parameter=None,
+                level=0.9,
+                ndraw=5000,
+                burnin=2000,
+                compute_intervals=False):
+
+        if parameter is None:
+            parameter = np.zeros_like(observed_target)
+
+        if alternatives is None:
+            alternatives = ['twosided'] * observed_target.shape[0]
+
+        if len(self.objectives) != len(opt_sampling_info):
+            raise ValueError("number of objectives and sampling cov infos do not match")
+
+        self.opt_sampling_info = []
+        for i in range(len(self.objectives)):
+            if opt_sampling_info[i][0] is None or opt_sampling_info[i][1] is None:
+                raise ValueError("did not input target and score covariance info")
+            opt_sample = self.objectives[i].sampler.sample(ndraw, burnin)
+            self.opt_sampling_info.append((self.objectives[i].sampler, opt_sample, opt_sampling_info[i][0], opt_sampling_info[i][1]))
+
+        pivots = self.coefficient_pvalues(observed_target,
+                                          parameter=parameter,
+                                          alternatives=alternatives)
+
+        if not np.all(parameter == 0):
+            pvalues = self.coefficient_pvalues(observed_target,
+                                               parameter=parameter,
+                                               alternatives=alternatives)
+        else:
+            pvalues = pivots
+
+        intervals = None
+        if compute_intervals:
+            intervals = self.confidence_intervals(observed_target,
+                                                  level)
+
+        return pivots, pvalues, intervals
+        
+
+    def coefficient_pvalues(self,
+                            observed_target,
+                            parameter=None,
+                            sample_args=(),
+                            alternatives=None):
+
+        for i in range(len(self.objectives)):
+            if self.opt_sampling_info[i][1] is None:
+                self.opt_sampling_info[i][1] = self.objectives[i].sampler.sample(*sample_args)
+
+        ndraw = self.opt_sampling_info[0][1].shape[0] # nsample for normal samples taken from the 1st objective
+
+        _intervals = optimization_intervals(self.opt_sampling_info, observed_target, ndraw)
+
+        pvals = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternatives[i]))
+
+        return np.array(pvals)
+
+
+    def confidence_intervals(self,
+                             observed_target,
+                             sample_args=(),
+                             level=0.9):
+
+        for i in range(len(self.objectives)):
+            if self.opt_sampling_info[i][1] is None:
+                self.opt_sampling_info[i][1] = self.objectives[i].sampler.sample(*sample_args)
+
+        ndraw = self.opt_sampling_info[0][1].shape[0] # nsample for normal samples taken from the 1st objective
+
+        _intervals = optimization_intervals(self.opt_sampling_info, observed_target, ndraw)
+
+        limits = []
+
+        for i in range(observed_target.shape[0]):
+            keep = np.zeros_like(observed_target)
+            keep[i] = 1.
+            limits.append(_intervals.confidence_interval(keep, level=level))
+
+        return np.array(limits)       
+
+
 
 class optimization_sampler(object):
 
