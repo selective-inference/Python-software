@@ -520,8 +520,7 @@ def test_liu_gaussian():
             p = ncol(X)
             #sigma_est = sigma(lm(y ~ X - 1))
             penalty_factor = rep(1, p);
-            lam = lam / n;
-            soln = selectiveInference:::solve_problem_glmnet(X, y, lam, penalty_factor=penalty_factor, family="gaussian")
+            soln = selectiveInference:::solve_problem_glmnet(X, y, lam/n, penalty_factor=penalty_factor, family="gaussian")
             PVS = ROSI(X, 
                        y, 
                        soln, 
@@ -536,6 +535,7 @@ def test_liu_gaussian():
             pvalues = PVS$pvalues
             """)
             pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
             print(pvalues)
@@ -571,10 +571,9 @@ def test_liu_logistic():
             sigma_est = 1
             print(sigma_est)
             penalty_factor = rep(1, p);
-            lam = lam / n;
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
-                                                             lam, 
+                                                             lam/n, 
                                                              penalty_factor=penalty_factor, 
                                                              family="binomial")
             PVS = ROSI(X, 
@@ -591,6 +590,7 @@ def test_liu_logistic():
             pvalues = PVS$pvalues
             """)
             pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
             print(pvalues)
             print(S['pval'])
@@ -629,10 +629,9 @@ def test_ROSI_gaussian():
             p = ncol(X)
 
             penalty_factor = rep(1, p);
-            lam = lam / n;
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
-                                                             lam, 
+                                                             lam/n, 
                                                              penalty_factor=penalty_factor, 
                                                              family="gaussian")
             PVS = ROSI(X, 
@@ -649,6 +648,7 @@ def test_ROSI_gaussian():
             pvalues = PVS$pvalues
             """)
             pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
             print(pvalues)
@@ -685,10 +685,9 @@ def test_ROSI_logistic():
             p = ncol(X)
 
             penalty_factor = rep(1, p);
-            lam = lam / n;
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
-                                                             lam, 
+                                                             lam/n, 
                                                              penalty_factor=penalty_factor, 
                                                              family="binomial")
             PVS = ROSI(X, 
@@ -705,6 +704,7 @@ def test_ROSI_logistic():
             pvalues = PVS$pvalues
             """)
             pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
             print(pvalues)

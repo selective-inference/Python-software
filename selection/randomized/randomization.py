@@ -143,16 +143,16 @@ class randomization(rr.smooth_atom):
             will raise an error.
         """
         precision = np.linalg.inv(covariance)
-        sqrt_precision = np.linalg.cholesky(precision).T
+        sqrt_precision = np.linalg.cholesky(precision)
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
-        _const = np.sqrt((2*np.pi)**p * _det)
+        _const = 1. # np.sqrt((2*np.pi)**p * _det)
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         cdf = lambda x: None
         pdf = lambda x: None
         derivative_log_density = lambda x: None
         grad_negative_log_density = lambda x: precision.dot(x)
-        sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+        sampler = lambda size: covariance.dot(sqrt_precision.dot(np.random.standard_normal((p,) + size)))
 
         return randomization((p,),
                              density,
@@ -261,7 +261,7 @@ class split(randomization):
         sqrt_precision = np.linalg.cholesky(precision).T
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
-        _const = np.sqrt((2*np.pi)**p * _det)
+        _const = 1. # np.sqrt((2*np.pi)**p * _det)
         self._density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         self._grad_negative_log_density = lambda x: precision.dot(x)
         self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
