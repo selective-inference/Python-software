@@ -146,7 +146,7 @@ class randomization(rr.smooth_atom):
         sqrt_precision = np.linalg.cholesky(precision)
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
-        _const = np.sqrt((2*np.pi)**p * _det)
+        _const = 1. # np.sqrt((2*np.pi)**p * _det)
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         cdf = lambda x: None
         pdf = lambda x: None
@@ -261,7 +261,7 @@ class split(randomization):
         sqrt_precision = np.linalg.cholesky(precision).T
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
-        _const = np.sqrt((2*np.pi)**p * _det)
+        _const = 1. # np.sqrt((2*np.pi)**p * _det)
         self._density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         self._grad_negative_log_density = lambda x: precision.dot(x)
         self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
