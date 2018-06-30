@@ -3,12 +3,14 @@ import functools # for bootstrap partial mapping
 import numpy as np
 from scipy.stats import norm as ndist
 
-from regreg.api import glm
+from regreg.api import glm, identity_quadratic
 
-from .M_estimator import restricted_Mest, M_estimator, M_estimator_split
+from .base import restricted_estimator
 from .greedy_step import greedy_score_step
 from .threshold_score import threshold_score
 
+import regreg.api as rr
+import regreg.affine as ra
 
 def pairs_bootstrap_glm(glm_loss,
                         active, 
@@ -45,7 +47,7 @@ def pairs_bootstrap_glm(glm_loss,
         by sqrt(scaling).
 
     solve_args : dict
-        Arguments passed to solver of restricted problem (`restricted_Mest`) if 
+        Arguments passed to solver of restricted problem (`restricted_estimator`) if 
         beta_full is None.
 
     Returns
@@ -59,7 +61,7 @@ def pairs_bootstrap_glm(glm_loss,
     X, Y = glm_loss.data
 
     if beta_full is None:
-        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        beta_active = restricted_estimator(glm_loss, active, solve_args=solve_args)
         beta_full = np.zeros(glm_loss.shape)
         beta_full[active] = beta_active
     else:
@@ -154,7 +156,7 @@ def pairs_inactive_score_glm(glm_loss,
         to ~active.
 
     solve_args : dict
-        Arguments passed to solver of restricted problem (`restricted_Mest`) if 
+        Arguments passed to solver of restricted problem (`restricted_estimator`) if 
         beta_full is None.
 
     Returns
@@ -211,7 +213,7 @@ def pairs_bootstrap_score(glm_loss,
         Solution to the restricted problem. 
 
     solve_args : dict
-        Arguments passed to solver of restricted problem (`restricted_Mest`) if 
+        Arguments passed to solver of restricted problem (`restricted_estimator`) if 
         beta_full is None.
 
     Returns
@@ -226,7 +228,7 @@ def pairs_bootstrap_score(glm_loss,
     X, Y = glm_loss.data
 
     if beta_active is None:
-        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        beta_active = restricted_estimator(glm_loss, active, solve_args=solve_args)
     X_active = X[:,active]
 
     _bootW = np.diag(glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
@@ -271,7 +273,7 @@ def set_alpha_matrix(glm_loss,
         by sqrt(scaling).
 
     solve_args : dict
-        Arguments passed to solver of restricted problem (`restricted_Mest`) if 
+        Arguments passed to solver of restricted problem (`restricted_estimator`) if 
         beta_full is None.
 
     Returns
@@ -283,7 +285,7 @@ def set_alpha_matrix(glm_loss,
     X, Y = glm_loss.data
 
     if beta_full is None:
-        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        beta_active = restricted_estimator(glm_loss, active, solve_args=solve_args)
         beta_full = np.zeros(glm_loss.shape)
         beta_full[active] = beta_active
     else:
@@ -314,238 +316,13 @@ def set_alpha_matrix(glm_loss,
 
     return np.dot(np.dot(_Qinv, X_active.T), np.diag(obs_residuals))
 
-
-def _parametric_cov_glm(glm_loss,
-                        active,
-                        beta_full=None,
-                        inactive=None,
-                        solve_args={'min_its': 50, 'tol': 1.e-10}):
-    """
-    Compute parametric covariance of
-    the estimates ($\bar{\beta}_E^*$) of a generalized 
-    linear model (GLM) restricted to `active`
-    as well as, optionally, the inactive coordinates of the score of the 
-    GLM evaluated at the estimates ($\nabla \ell(\bar{\beta}_E)[-E]$) where
-    $\bar{\beta}_E$ is padded with zeros where necessary.
-
-    Parameters
-    ----------
-
-    glm_loss : regreg.smooth.glm.glm
-        The loss of the generalized linear model.
-
-    active : np.bool
-        Boolean indexing array
-
-    beta_full : np.float (optional)
-        Solution to the restricted problem, zero except where active is nonzero.
-
-    inactive : np.bool (optional)
-        Boolean indexing array
-
-    solve_args : dict
-        Arguments passed to solver of restricted problem (`restricted_Mest`) if 
-        beta_full is None.
-
-    Returns
-    -------
-
-    Sigma : np.float
-        Covariance matrix.
-
-    """
-    X, Y = glm_loss.data
-    n, p = X.shape
-
-    if beta_full is None:
-        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
-        beta_full = np.zeros(glm_loss.shape)
-        beta_full[active] = beta_active
-    else:
-        beta_active = beta_full[active]
-
-    X_active = X[:, active]
-
-    nactive = active.sum()
-    ntotal = nactive
-
-    if inactive is not None:
-        X_inactive = X[:, inactive]
-        ntotal += inactive.sum()
-
-    _W = np.diag(glm_loss.saturated_loss.hessian(X_active.dot(beta_active)))
-    _Q = X_active.T.dot(_W.dot(X_active))
-    _Qinv = np.linalg.inv(_Q)
-    if inactive is not None:
-        _C = X_inactive.T.dot(_W.dot(X_active))
-        _I = _C.dot(_Qinv)
-
-    nactive = active.sum()
-
-    mat = np.zeros((p, n))
-    mat[:nactive, :] = _Qinv.dot(X_active.T)
-    if ntotal > nactive:
-        mat1 = np.dot(np.dot(_W, X_active), np.dot(_Qinv, X_active.T))
-        mat[nactive:, :] = X[:, inactive].T.dot(np.identity(n) - mat1)
-
-    Sigma_full = np.dot(mat, np.dot(_W, mat.T))
-    return Sigma_full
-
-def target(loss, 
-           active, 
-           queries,
-           subset=None, 
-           bootstrap=False,
-           solve_args={'min_its':50, 'tol':1.e-10},
-           reference=None,
-           parametric=False):
-    """
-    Form target from self.loss
-    restricting to active variables.
-
-    If subset is not None, then target returns
-    only those coordinates of the active
-    variables. 
-
-    Parameters
-    ----------
-
-    query : `query`
-       A query with a glm loss.
-
-    active : np.bool
-       Indicators of active variables.
-
-    queries : `multiple_queries`
-       Sampler returned for this queries.
-
-    subset : np.bool
-       Indicator of subset of variables
-       to be returned. Includes both
-       active and inactive variables.
-
-    bootstrap : bool
-       If True, sampler returned uses bootstrap
-       otherwise uses a plugin CLT.
-
-    reference : np.float (optional)
-       Optional reference parameter. Defaults
-       to the observed reference parameter. 
-       Must have shape `active.sum()`.
-
-    solve_args : dict
-       Args used to solve restricted M estimator.
-
-    Returns
-    -------
-
-    target_sampler : `targeted_sampler`
-
-    """
-
-    unpenalized_mle = restricted_Mest(loss, active, solve_args=solve_args)
-    X, Y = loss.data
-    n, _ = X.shape
-
-    # workout which inactive ones to return
-
-    if subset is None:
-        subset = active
-
-    active_subset = (active * subset)[active]
-    nactive = active.sum()
-    nactive_subset = active_subset.sum()
-    inactive = ~active * subset
-
-    boot_target, boot_target_observed = pairs_bootstrap_glm(loss, active, inactive=inactive)
-
-    def _subsetter(value):
-        if nactive_subset > 0:        
-            return np.hstack([value[active_subset], value[nactive:]])
-        else:
-            return value[nactive:]
-
-    def _target(indices):
-        return _subsetter(boot_target(indices))
-    target_observed = _subsetter(boot_target_observed)
-
-    if parametric==False:
-        form_covariances = glm_nonparametric_bootstrap(n, n)
-    else:
-        form_covariances = glm_parametric_covariance(loss)
-
-    queries.setup_sampler(form_covariances)
-    queries.setup_opt_state()
-
-    if reference is None:
-        reference = target_observed
-
-    if parametric:
-        linear_func = np.identity(target_observed.shape[0])
-        _target = (active,linear_func)
-
-    if bootstrap:
-        alpha_mat = set_alpha_matrix(loss, active, inactive=inactive)
-        alpha_subset = np.ones(alpha_mat.shape[0], np.bool)
-        alpha_subset[:nactive] = active_subset
-        alpha_mat = alpha_mat[alpha_subset]
-
-        target_sampler = queries.setup_bootstrapped_target(_target,
-                                                           target_observed,
-                                                           alpha_mat,
-                                                           reference=reference)
-    else:
-
-        target_sampler = queries.setup_target(_target,
-                                              target_observed,
-                                              reference=reference,
-                                              parametric=parametric)
-
-    return target_sampler, target_observed
-
-#### Subclasses of different randomized views
-
-class glm_group_lasso(M_estimator):
-
-    def setup_sampler(self, scaling=1., solve_args={'min_its':50, 'tol':1.e-10}):
-        M_estimator.setup_sampler(self, scaling=scaling, solve_args=solve_args)
-
-        bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.selection_variable['variables'],
-                                              beta_full=self._beta_full,
-                                              inactive=~self.selection_variable['variables'])[0]
-
-        return bootstrap_score
-
-class split_glm_group_lasso(M_estimator_split):
-
-    def setup_sampler(self, scaling=1., solve_args={'min_its': 50, 'tol': 1.e-10}):
-        M_estimator_split.setup_sampler(self, scaling=scaling, solve_args=solve_args)
-
-        bootstrap_score = pairs_bootstrap_glm(self.loss,
-                                              self.selection_variable['variables'],
-                                              beta_full=self._beta_full,
-                                              inactive=~self.selection_variable['variables'])[0]
-
-        return bootstrap_score
-
-
-class glm_group_lasso_parametric(M_estimator):
-
-    # this setup_sampler returns only the active set
-
-    def setup_sampler(self):
-        M_estimator.setup_sampler(self)
-        return self.selection_variable['variables']
-
-
 class glm_greedy_step(greedy_score_step, glm):
 
     # XXX this makes the assumption that our
     # greedy_score_step maximized over ~active
 
     def setup_sampler(self):
-        greedy_score_step.setup_sampler(self)
+
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
                                                    self.beta_active,
@@ -555,7 +332,7 @@ class glm_greedy_step(greedy_score_step, glm):
 class glm_threshold_score(threshold_score):
 
     def setup_sampler(self):
-        threshold_score.setup_sampler(self)
+
         bootstrap_score = pairs_inactive_score_glm(self.loss, 
                                                    self.active,
                                                    self.beta_active,
@@ -563,25 +340,6 @@ class glm_threshold_score(threshold_score):
         return bootstrap_score
 
 
-class fixedX_group_lasso(M_estimator):
-
-    def __init__(self, X, Y, epsilon, penalty, randomization, solve_args={'min_its':50, 'tol':1.e-10}):
-        loss = glm.gaussian(X, Y)
-        M_estimator.__init__(self,
-                             loss, 
-                             epsilon, 
-                             penalty, 
-                             randomization, solve_args=solve_args)
-
-    def setup_sampler(self):
-        M_estimator.setup_sampler(self)
-
-        X, Y = self.loss.data
-
-        bootstrap_score = resid_bootstrap(self.loss,
-                                          self.selection_variable['variables'],
-                                          ~self.selection_variable['variables'])[0]
-        return bootstrap_score
 
 # Methods to form appropriate covariances
 
@@ -631,7 +389,7 @@ def glm_nonparametric_bootstrap(m, n):
     return functools.partial(bootstrap_cov, lambda: np.random.choice(n, size=(m,), replace=True))
 
 def resid_bootstrap(gaussian_loss,
-                    active,
+                    active, # boolean
                     inactive=None,
                     scaling=1.):
 
@@ -676,31 +434,50 @@ def resid_bootstrap(gaussian_loss,
 def parametric_cov(glm_loss, 
                    target_with_linear_func, 
                    cross_terms=(),
+                   dispersion=None,
                    solve_args={'min_its':50, 'tol':1.e-10}):
 
     # cross_terms are different active sets
 
     target, linear_func = target_with_linear_func
+
+    target_bool = np.zeros(glm_loss.shape, np.bool)
+    target_bool[target] = True
+    target = target_bool
+
     linear_funcT = linear_func.T
 
     X, Y = glm_loss.data
     n, p = X.shape
 
     def _WQ(active):
-        beta_active = restricted_Mest(glm_loss, active, solve_args=solve_args)
+        beta_active = restricted_estimator(glm_loss, active, solve_args=solve_args)
         W = glm_loss.saturated_loss.hessian(X[:,active].dot(beta_active))
         return W
 
     # weights and Q at the target
     W_T = _WQ(target)
+
     X_T = X[:,target]
     XW_T = W_T[:, None] * X_T
     Q_T_inv = np.linalg.inv(X_T.T.dot(XW_T))
 
-    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT)]
+    beta_T = restricted_estimator(glm_loss, target, solve_args=solve_args)
+
+    # this is Pearson's X^2 dispersion estimator
+    if dispersion is None:
+        sigma_T = np.sqrt(np.sum((Y-glm_loss.saturated_loss.mean_function(X_T.dot(beta_T)))**2 / W_T)/(n-np.sum(target)))
+    else:
+        sigma_T = dispersion
+
+    covariances = [linear_func.dot(Q_T_inv).dot(linear_funcT) * (sigma_T**2)]
 
     for cross in cross_terms:
         # the covariances are for (\bar{\beta}_{C}, N_C) -- C for cross
+
+        cross_bool = np.zeros(X.shape[1], np.bool)
+        cross_bool[cross] = True; cross = cross_bool
+
         X_C = X[:, cross]
         X_IT = X[:, ~cross].T
         Q_C_inv = np.linalg.inv(X_C.T.dot(W_T[:, None] * X_C))
@@ -708,9 +485,17 @@ def parametric_cov(glm_loss,
         null_block = X_IT.dot(XW_T) - X_IT.dot(W_T[:, None] * X_C).dot(Q_C_inv).dot(X[:, cross].T.dot(XW_T))
         null_block = null_block.dot(Q_T_inv)
 
-        covariances.append(np.vstack([beta_block, null_block]).dot(linear_funcT).T)
+        beta_C = restricted_estimator(glm_loss, cross, solve_args=solve_args)
+        if dispersion is None:
+            sigma_C = sigma_T # Hmm... not sure here 
+            # sigma_C = np.sqrt(np.sum((Y - glm_loss.saturated_loss.mean_function(X_C.dot(beta_C)) / W_C) ** 2) / (n - np.sum(cross)))
+        else:
+            sigma_C = dispersion
+
+        covariances.append(np.vstack([beta_block, null_block]).dot(linear_funcT).T * sigma_T * sigma_C)
 
     return covariances
+
 
 def glm_parametric_covariance(glm_loss, solve_args={'min_its':50, 'tol':1.e-10}):
     """

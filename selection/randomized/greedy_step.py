@@ -1,8 +1,9 @@
+import functools
 import numpy as np
 import regreg.api as rr
 
-from .query import query
-from .M_estimator import restricted_Mest
+from .query import query, optimization_sampler
+from .base import restricted_estimator
 
 class greedy_score_step(query):
 
@@ -67,14 +68,14 @@ class greedy_score_step(query):
                          self.beta_active)
 
         if beta_active is None:
-            beta_active = self.beta_active = restricted_Mest(self.loss, active, solve_args=solve_args)
+            beta_active = self.beta_active = restricted_estimator(self.loss, active, solve_args=solve_args)
             
         beta_full = np.zeros(loss.shape)
         beta_full[active] = beta_active
             
         # score at unpenalized M-estimator
 
-        self.observed_score_state = - self.loss.smooth_objective(beta_full, 'grad')[candidate]
+        self.observed_internal_state = self.observed_score_state = - self.loss.smooth_objective(beta_full, 'grad')[candidate]
         self._randomZ = self.randomization.sample()
 
         self.num_opt_var = self._randomZ.shape[0]
@@ -122,7 +123,7 @@ class greedy_score_step(query):
         self.nboot = nboot
         self.ndim = self.loss.shape[0]
 
-    def setup_sampler(self):
+        # setup opt state and transforms
 
         self.observed_opt_state = np.hstack([self.observed_subgradients,
                                              self.observed_scaling])
@@ -140,11 +141,48 @@ class greedy_score_step(query):
         self._solved = True
         self._setup = True
 
-    def projection(self, opt_state):
-        """
-        Full projection for Langevin.
 
-        The state here will be only the state of the optimization variables.
-        """
-        return self.group_lasso_dual_epigraph.cone_prox(opt_state)
+    def setup_sampler(self):
+        pass
 
+    def get_sampler(self):
+        # now setup optimization sampler
+
+        if not hasattr(self, "_sampler"):
+            def projection(epigraph, opt_state):
+                """
+                Full projection for Langevin.
+
+                The state here will be only the state of the optimization variables.
+                """
+                return epigraph.cone_prox(opt_state)
+            projection = functools.partial(projection, self.group_lasso_dual_epigraph)
+
+            def grad_log_density(query,
+                                 rand_gradient,
+                                 score_state,
+                                 opt_state):
+                full_state = score_state + reconstruct_opt(query.opt_transform, opt_state)
+                return opt_linear.T.dot(rand_gradient(full_state))
+
+            grad_log_density = functools.partial(grad_log_density, self, self.randomization.gradient)
+
+            def log_density(query,
+                            opt_linear,
+                            rand_log_density,
+                            score_state,
+                            opt_state):
+                full_state = score_state + reconstruct_opt(query.opt_transform, opt_state)
+                return rand_log_density(full_state)
+            log_density = functools.partial(log_density, self, self.randomization.log_density)
+
+            self._sampler = optimization_sampler(self.observed_opt_state,
+                                                 self.observed_score_state,
+                                                 self.score_transform,
+                                                 self.opt_transform,
+                                                 projection,
+                                                 grad_log_density,
+                                                 log_density)
+        return self._sampler
+
+    sampler = property(get_sampler, query.set_sampler)

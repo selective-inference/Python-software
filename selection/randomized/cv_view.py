@@ -52,7 +52,7 @@ class CV_view(query):
 
         if (self.scale1 is not None) and (self.scale2 is not None):
             self.SD = self.SD+self.scale1**2+self.scale2**2
-        (self.observed_opt_state, self.observed_score_state) = (CVR_val, CV1_val)
+        (self.observed_opt_state, self.observed_internal_state) = (CVR_val, CV1_val)
         self.num_opt_var = self.lam_seq.shape[0]
         self.lam_idx = list(self.lam_seq).index(self.lam_CVR)  # index of the minimizer
 

@@ -23,6 +23,7 @@ class randomization(rr.smooth_atom):
                  log_density=None,
                  CGF=None,  # cumulant generating function and gradient
                  CGF_conjugate=None,  # convex conjugate of CGF and gradient
+                 cov_prec=None      # will have a covariance matrix if Gaussian
                  ):
 
         rr.smooth_atom.__init__(self,
@@ -41,6 +42,8 @@ class randomization(rr.smooth_atom):
         self._log_density = log_density
         self.CGF = CGF
         self.CGF_conjugate = CGF_conjugate
+        if cov_prec is not None:
+            self.cov_prec = cov_prec
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
         """
@@ -82,14 +85,15 @@ class randomization(rr.smooth_atom):
         """
         return np.squeeze(self._log_density(perturbation))
 
-    def randomize(self, loss, epsilon=0):
+    def randomize(self, loss, epsilon=0, perturb=None):
         """
         Randomize the loss.
         """
         randomized_loss = rr.smooth_sum([loss])
-        _randomZ = self.sample()
-        randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -_randomZ, 0)
-        return randomized_loss, _randomZ
+        if perturb is None:
+            perturb = self.sample()
+        randomized_loss.quadratic = rr.identity_quadratic(epsilon, 0, -perturb, 0)
+        return randomized_loss, perturb
 
     @staticmethod
     def isotropic_gaussian(shape, scale):
@@ -125,6 +129,7 @@ class randomization(rr.smooth_atom):
                              log_density = lambda x: -0.5 * (np.atleast_2d(x)**2).sum(1) / scale**2 + constant,
                              CGF=CGF,
                              CGF_conjugate=CGF_conjugate,
+                             cov_prec=(scale**2, 1. / scale**2)
                              )
 
     @staticmethod
@@ -138,16 +143,16 @@ class randomization(rr.smooth_atom):
             will raise an error.
         """
         precision = np.linalg.inv(covariance)
-        sqrt_precision = np.linalg.cholesky(precision).T
+        sqrt_precision = np.linalg.cholesky(precision)
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
-        _const = np.sqrt((2*np.pi)**p * _det)
+        _const = 1. # np.sqrt((2*np.pi)**p * _det)
         density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         cdf = lambda x: None
         pdf = lambda x: None
         derivative_log_density = lambda x: None
         grad_negative_log_density = lambda x: precision.dot(x)
-        sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
+        sampler = lambda size: covariance.dot(sqrt_precision.dot(np.random.standard_normal((p,) + size)))
 
         return randomization((p,),
                              density,
@@ -157,7 +162,8 @@ class randomization(rr.smooth_atom):
                              grad_negative_log_density,
                              sampler,
                              lipschitz=np.linalg.svd(precision)[1].max(),
-                             log_density = lambda x: -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const))
+                             log_density = lambda x: -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const),
+                             cov_prec=(covariance, precision))
 
     @staticmethod
     def laplace(shape, scale):
@@ -240,6 +246,10 @@ class split(randomization):
         rr.smooth_atom.__init__(self,
                                 shape)
 
+    def get_covariance(self):
+        if hasattr(self, "_covariance"):
+            return self._covariance
+
     def set_covariance(self, covariance):
         """
         Once covariance has been set, then
@@ -247,10 +257,11 @@ class split(randomization):
         """
         self._covariance = covariance
         precision = np.linalg.inv(covariance)
+        self._cov_prec = (covariance, precision)
         sqrt_precision = np.linalg.cholesky(precision).T
         _det = np.linalg.det(covariance)
         p = covariance.shape[0]
-        _const = np.sqrt((2*np.pi)**p * _det)
+        _const = 1. # np.sqrt((2*np.pi)**p * _det)
         self._density = lambda x: np.exp(-(x * precision.dot(x)).sum() / 2) / _const
         self._grad_negative_log_density = lambda x: precision.dot(x)
         self._sampler = lambda size: sqrt_precision.dot(np.random.standard_normal((p,) + size))
@@ -258,6 +269,13 @@ class split(randomization):
         def _log_density(x):
             return -np.sum(sqrt_precision.dot(np.atleast_2d(x).T)**2, 0) * 0.5 - np.log(_const)
         self._log_density = _log_density
+
+    covariance = property(get_covariance, set_covariance)
+
+    @property
+    def cov_prec(self):
+        if hasattr(self, "_covariance"):
+            return self._cov_prec
 
     def smooth_objective(self, perturbation, mode='both', check_feasibility=False):
         if not hasattr(self, "_covariance"):
