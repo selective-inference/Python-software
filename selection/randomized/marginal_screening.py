@@ -124,8 +124,6 @@ class marginal_screening(query):
         cov_target = np.linalg.inv(Q)
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
         crosscov_target_score = -score_linear.dot(cov_target)
-        #alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-        #                 self.selection_variable['sign'][features]])
         alternatives = ['twosided'] * features.sum()
 
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
@@ -139,8 +137,6 @@ class marginal_screening(query):
         cov_target = Q
         observed_target = -self.observed_score_state[features]
         crosscov_target_score = -score_linear
-        #alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-        #                 self.selection_variable['sign'][features]])
         alternatives = ['twosided'] * features.sum()
 
         return observed_target, cov_target, crosscov_target_score.T, alternatives
