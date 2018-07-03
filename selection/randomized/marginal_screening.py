@@ -63,7 +63,7 @@ class marginal_screening(object):
         self.selection_variable = {'sign': sign,
                                    'variables': self._selected.copy()}
 
-        self.observed_opt_state = soft_thresh[self._selected]
+        self.observed_opt_state = np.fabs(soft_thresh[self._selected])
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
