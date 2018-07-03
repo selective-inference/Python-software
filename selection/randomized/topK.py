@@ -9,7 +9,7 @@ from .base import restricted_estimator
 from ..constraints.affine import constraints
 from .query import affine_gaussian_sampler
 from .randomization import randomization
-from .marginal_screeing import marginal_screening
+from .marginal_screening import marginal_screening
 from ..algorithms.debiased_lasso import debiasing_matrix
 
 class topK(marginal_screening):
@@ -51,7 +51,7 @@ class topK(marginal_screening):
         if self._abs:
 
             Z = np.fabs(-_randomized_score)
-            topK = np.argsort(Z)[-K:]
+            topK = np.argsort(Z)[-self.K:]
 
             selected = np.zeros(self.nfeature, np.bool)
             selected[topK] = 1
@@ -76,7 +76,7 @@ class topK(marginal_screening):
         else:
 
             Z = -_randomized_score
-            topK = np.argsort(Z)[-K:]
+            topK = np.argsort(Z)[-self.K:]
 
             selected = np.zeros(self.nfeature, np.bool)
             selected[topK] = 1
@@ -110,7 +110,7 @@ class topK(marginal_screening):
         cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
 
         logdens_transform = (logdens_linear, opt_offset)
-        A_scaling = -np.identity(len(active_signs))
+        A_scaling = -np.identity(self.num_opt_var)
         b_scaling = -np.ones(self.num_opt_var) * lower_bound
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
@@ -136,33 +136,6 @@ class topK(marginal_screening):
                                                selection_info=self.selection_variable)
         return self._selected
 
-    def multivariate_targets(self, features):
-        """
-        Entries of the mean of \Sigma[E,E]^{-1}Z_E
-        """
-        score_linear = self.covariance[:, features]
-        Q = score_linear[features]
-        cov_target = np.linalg.inv(Q)
-        observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
-        crosscov_target_score = -score_linear.dot(cov_target)
-        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-                         self.selection_variable['sign'][features]])
-
-        return observed_target, cov_target, crosscov_target_score.T, alternatives
-
-    def marginal_targets(self, features):
-        """
-        Entries of the mean of Z_E
-        """
-        score_linear = self.covariance[:, features]
-        Q = score_linear[features]
-        cov_target = Q
-        observed_target = -self.observed_score_state[features]
-        crosscov_target_score = -score_linear
-        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-                         self.selection_variable['sign'][features]])
-
-        return observed_target, cov_target, crosscov_target_score.T, alternatives
 
 
 
