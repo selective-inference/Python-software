@@ -9,9 +9,10 @@ from .base import restricted_estimator
 from ..constraints.affine import constraints
 from .query import affine_gaussian_sampler
 from .randomization import randomization
+from .marginal_screeing import marginal_screening
 from ..algorithms.debiased_lasso import debiasing_matrix
 
-class topK(object):
+class topK(marginal_screening):
 
     def __init__(self,
                  observed_data,
