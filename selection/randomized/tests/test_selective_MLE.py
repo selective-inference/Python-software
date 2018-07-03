@@ -53,6 +53,9 @@ def test_affine_solver():
                                         1.,
                                         value_tol=1.e-12)
 
+    grad, opt_val, opt_proposed = np.ones((3, 5))
+    scaling = np.sqrt(np.diag(precision))
+
     val2, soln2, hess2 = barrier_solve_affine_(grad,
                                                opt_val,
                                                opt_proposed,
@@ -60,7 +63,7 @@ def test_affine_solver():
                                                precision,
                                                scaling,
                                                -np.identity(5),
-                                               np.zeros(5),
+                                               np.ones(5),
                                                opt_val,
                                                1.,
                                                value_tol=1.e-12)
@@ -69,6 +72,12 @@ def test_affine_solver():
     print(soln1)
     print(soln2)
     
-    np.testing.assert_allclose(hess1, hess2, atol=1.e-4, rtol=1.e-4)
+    print(val1)
+    print(val2)
     assert (np.fabs(val1 - val2) < 1.e-4 * np.fabs(val1))
+
+    print(hess1, hess1.shape)
+    print(hess2, hess2.shape)
+    np.testing.assert_allclose(hess1, hess2, atol=1.e-4, rtol=1.e-4)
+
 

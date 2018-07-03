@@ -64,7 +64,7 @@ def test_smaller():
     Qi = np.linalg.inv(Q)
     beta_bar = np.linalg.pinv(X).dot(y)
 
-    yield np.testing.assert_allclose, beta_hat, beta_hat2
+    yield np.testing.assert_allclose, beta_hat, beta_hat2, 1.e-4, 1.e-4
     np.testing.assert_allclose(beta_hat, beta_hat2)
 
     E = LF.active
@@ -82,8 +82,8 @@ def test_smaller():
                                             j, 
                                             beta_barE[i], 
                                             lagrange)
-        yield np.testing.assert_allclose, l, lower
-        yield np.testing.assert_allclose, u, upper
+        yield np.testing.assert_allclose, l, lower, 1.e-4, 1.e-4
+        yield np.testing.assert_allclose, u, upper, 1.e-4, 1.e-4
 
 def test_modelQ():
 
