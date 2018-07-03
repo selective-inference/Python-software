@@ -79,10 +79,10 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full'
         
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
-def test_AR_randomization(n=3000, 
-                          p=1000, 
+def test_AR_randomization(n=300, 
+                          p=100, 
                           signal=4.5,
-                          s=30, 
+                          s=5, 
                           sigma=1, 
                           target='selected', 
                           rho=0.75, 
@@ -90,7 +90,7 @@ def test_AR_randomization(n=3000,
                           ndraw=5000, 
                           burnin=1000):
     """
-    Test using general Gaussian randomizer
+    Test using AR randomization
     """
     
     X, Y, beta = gaussian_instance(n=n,

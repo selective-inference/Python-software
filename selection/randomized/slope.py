@@ -20,7 +20,7 @@ import regreg.api as rr
 from ..constraints.affine import constraints
 
 from .randomization import randomization
-from .base import restricted_estimator
+from ..base import restricted_estimator
 from .query import (query, 
                     affine_gaussian_sampler)
 from .lasso import lasso

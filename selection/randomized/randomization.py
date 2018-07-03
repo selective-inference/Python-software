@@ -107,9 +107,10 @@ class randomization(rr.smooth_atom):
             SD of noise.
         """
         rv = ndist(scale=scale, loc=0.)
+        p = np.product(shape)
         density = lambda x: np.product(rv.pdf(x))
-        cdf = lambda x: ndist.cdf(x, loc=0., scale=scale)
-        pdf = lambda x: ndist.pdf(x, loc=0., scale=scale)
+        cdf = lambda x: rv.cdf(x)
+        pdf = lambda x: rv.pdf(x)
         derivative_log_density = lambda x: -x/(scale**2)
         grad_negative_log_density = lambda x: x / scale**2
         sampler = lambda size: rv.rvs(size=shape + size)
@@ -117,7 +118,7 @@ class randomization(rr.smooth_atom):
         CGF_conjugate = isotropic_gaussian_CGF_conjugate(shape, scale)
 
         p = np.product(shape)
-        constant = -0.5 * p * np.log(2 * np.pi * scale**2)
+        constant = 0 # -0.5 * p * np.log(2 * np.pi * scale**2)
         return randomization(shape,
                              density,
                              cdf,

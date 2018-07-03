@@ -41,7 +41,7 @@ from ..constraints.affine import (constraints, selection_interval,
 
 from ..distributions.discrete_family import discrete_family
 from ..truncated.gaussian import truncated_gaussian_old as TG
-from ..randomized.glm import pairs_bootstrap_glm
+from ..glm import pairs_bootstrap_glm
 
 class lasso(object):
 

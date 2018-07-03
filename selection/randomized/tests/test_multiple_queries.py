@@ -57,7 +57,7 @@ def test_multiple_queries(n=500, p=100, signal_fac=1.5, s=5, sigma=3, rho=0.4, r
     if nonzero.sum() == 0:
       return [], []
 
-    observed_target1, cov_target1, cov_target_score1, alternatives1 = conv1.form_targets(nonzero, sigma**2)
+    observed_target1, cov_target1, cov_target_score1, alternatives1 = conv1.multivariate_targets(nonzero, sigma**2)
 
     (observed_target2, 
      cov_target2, 

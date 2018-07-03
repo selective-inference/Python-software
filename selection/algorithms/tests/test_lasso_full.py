@@ -14,6 +14,7 @@ from ..lasso import (lasso_full,
 def solve_problem(Qbeta_bar, Q, lagrange, initial=None):
     p = Qbeta_bar.shape[0]
     loss = rr.quadratic_loss((p,), Q=Q, quadratic=rr.identity_quadratic(0, 
+                                                                        0,
                                                                         -Qbeta_bar, 
                                                                         0))
     lagrange = np.asarray(lagrange)
@@ -23,7 +24,7 @@ def solve_problem(Qbeta_bar, Q, lagrange, initial=None):
     problem = rr.simple_problem(loss, pen)
     if initial is not None:
         problem.coefs[:] = initial
-    soln = problem.solve(tol=1.e12, min_its=100)
+    soln = problem.solve(tol=1.e12, min_its=500)
 
     return soln
 
@@ -58,11 +59,13 @@ def test_smaller():
     Qbeta_bar = X.T.dot(y)
     beta_hat = solve_problem(Qbeta_bar, Q, lagrange)
     beta_hat2 = _solve_restricted_problem(Qbeta_bar, (X, np.ones(X.shape[0])), 
-                                          lagrange, min_its=100)
+                                          lagrange, min_its=500)
 
     Qi = np.linalg.inv(Q)
     beta_bar = np.linalg.pinv(X).dot(y)
-    sigma = np.linalg.norm(y - X.dot(beta_bar)) / np.sqrt(n - p)
+
+    yield np.testing.assert_allclose, beta_hat, beta_hat2
+    np.testing.assert_allclose(beta_hat, beta_hat2)
 
     E = LF.active
     QiE = Qi[E][:,E]

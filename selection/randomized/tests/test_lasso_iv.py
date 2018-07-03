@@ -1,6 +1,5 @@
 import numpy as np
 
-import selection.randomized.lasso as L; reload(L)
 from selection.randomized.lasso_iv import lasso_iv, lasso_iv_ar, group_lasso_iv
 import matplotlib.pyplot as plt
 from statsmodels.distributions import ECDF

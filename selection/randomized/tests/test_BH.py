@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import norm as ndist
 
-from selection.randomized.marginal_screening import BH
+from selection.randomized.BH import BH
 from selection.tests.instance import gaussian_instance
 from selection.randomized.lasso import lasso
 

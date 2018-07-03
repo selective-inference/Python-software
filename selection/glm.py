@@ -6,8 +6,6 @@ from scipy.stats import norm as ndist
 from regreg.api import glm, identity_quadratic
 
 from .base import restricted_estimator
-from .greedy_step import greedy_score_step
-from .threshold_score import threshold_score
 
 import regreg.api as rr
 import regreg.affine as ra
@@ -315,31 +313,6 @@ def set_alpha_matrix(glm_loss,
     obs_residuals = Y - glm_loss.saturated_loss.mean_function(X_full.dot(beta_overall))
 
     return np.dot(np.dot(_Qinv, X_active.T), np.diag(obs_residuals))
-
-class glm_greedy_step(greedy_score_step, glm):
-
-    # XXX this makes the assumption that our
-    # greedy_score_step maximized over ~active
-
-    def setup_sampler(self):
-
-        bootstrap_score = pairs_inactive_score_glm(self.loss, 
-                                                   self.active,
-                                                   self.beta_active,
-                                                   inactive=self.candidate)
-        return bootstrap_score
-
-class glm_threshold_score(threshold_score):
-
-    def setup_sampler(self):
-
-        bootstrap_score = pairs_inactive_score_glm(self.loss, 
-                                                   self.active,
-                                                   self.beta_active,
-                                                   inactive=self.candidate)
-        return bootstrap_score
-
-
 
 # Methods to form appropriate covariances
 

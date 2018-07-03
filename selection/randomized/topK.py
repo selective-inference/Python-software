@@ -5,7 +5,6 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from .base import restricted_estimator
 from ..constraints.affine import constraints
 from .query import affine_gaussian_sampler
 from .randomization import randomization

@@ -6,8 +6,10 @@ from ..algorithms.cv import CV
 from ..algorithms.cv_glmnet import CV_glmnet, have_glmnet
 
 from .query import query
-from .glm import bootstrap_cov
+from ..glm import bootstrap_cov
 from .randomization import randomization
+
+### TODO: this is just a topK view now, modify it
 
 class CV_view(query):
 
