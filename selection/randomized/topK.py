@@ -7,28 +7,18 @@ import regreg.api as rr
 
 from .base import restricted_estimator
 from ..constraints.affine import constraints
-from .query import (query, 
-                    affine_gaussian_sampler)
+from .query import affine_gaussian_sampler
 from .randomization import randomization
 from ..algorithms.debiased_lasso import debiasing_matrix
 
-def marginal_screening_selection(p_values, level):
-
-    m = p_values.shape[0]
-    p_sorted = np.sort(p_values)
-    indices = np.arange(m)
-    indices_order = np.argsort(p_values)
-    active = (p_values <= level)
-
-    return active
-
-class marginal_screening(query):
+class topK(object):
 
     def __init__(self,
                  observed_data,
                  covariance, 
                  randomizer_scale,
-                 marginal_level,
+                 K,
+                 abs=False, # absolute value of scores or not?
                  perturb=None):
 
         self.observed_score_state = -observed_data  # -Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting
@@ -37,8 +27,8 @@ class marginal_screening(query):
         randomized_stdev = np.sqrt(np.diag(covariance) + randomizer_scale**2)
         self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
         self._initial_omega = perturb
-        self.marginal_level = marginal_level
-        self.threshold = randomized_stdev * ndist.ppf(1. - self.marginal_level / 2.)
+        self.K = K
+        self._abs = abs
 
     def fit(self, perturb=None):
 
@@ -51,32 +41,62 @@ class marginal_screening(query):
             self._initial_omega = self.randomizer.sample()
 
         _randomized_score = self.observed_score_state - self._initial_omega
-        Z = -_randomized_score
-        soft_thresh = np.sign(Z) * (np.fabs(Z) - self.threshold) * (np.fabs(Z) >= self.threshold)
-        active = soft_thresh != 0
 
-        self._selected = active
-        self._not_selected = ~self._selected
-        sign = np.sign(Z)
-        active_signs = sign[self._selected]
-        sign[self._not_selected] = 0
-        self.selection_variable = {'sign': sign,
-                                   'variables': self._selected.copy()}
+        # fixing the topK
+        # gives us that u=\omega - Z is in a particular cone
+        # like: s_i u_i \geq |u_j|  1 \leq i \leq K, K+1 \leq j \leq p (when abs is True and s_i are topK signs) or
+        # u_i \geq u_j  1 \leq i \leq K, K+1 \leq j \leq p (when abs is False)
 
-        self.observed_opt_state = np.fabs(soft_thresh[self._selected])
-        self.num_opt_var = self.observed_opt_state.shape[0]
+        if self._abs:
 
-        opt_linear = np.zeros((p, self.num_opt_var))
-        opt_linear[self._selected,:] = np.diag(active_signs)
-        opt_offset = np.zeros(p)
-        opt_offset[self._selected] = active_signs * self.threshold[self._selected]
-        opt_offset[self._not_selected] = _randomized_score[self._not_selected]
+            Z = np.fabs(-_randomized_score)
+            topK = np.argsort(Z)[-K:]
 
-        self.opt_transform = (opt_linear, opt_offset)
-        self._setup = True
+            selected = np.zeros(self.nfeature, np.bool)
+            selected[topK] = 1
+            self._selected = selected
+            self._not_selected = ~self._selected
+
+            sign = np.sign(Z)
+            topK_signs = sign[self._selected]
+            sign[self._not_selected] = 0
+
+            self.selection_variable = {'sign': sign,
+                                       'variables': self._selected.copy()}
+
+            self.observed_opt_state = np.fabs(Z[self._selected])
+            self.num_opt_var = self.observed_opt_state.shape[0]
+
+            opt_linear = np.zeros((p, self.num_opt_var))
+            opt_linear[self._selected,:] = np.diag(topK_signs)
+            opt_offset = np.zeros(p)  
+            self.opt_transform = (opt_linear, opt_offset)
+
+        else:
+
+            Z = -_randomized_score
+            topK = np.argsort(Z)[-K:]
+
+            selected = np.zeros(self.nfeature, np.bool)
+            selected[topK] = 1
+            self._selected = selected
+            self._not_selected = ~self._selected
+            self.selection_variable = {'variables': self._selected.copy()}
+
+            self.observed_opt_state = Z[self._selected]
+            self.num_opt_var = self.observed_opt_state.shape[0]
+
+            opt_linear = np.zeros((p, self.num_opt_var))
+            opt_linear[self._selected,:] = np.identity(self.num_opt_var)
+            opt_offset = np.zeros(p)  
+            self.opt_transform = (opt_linear, opt_offset)
+
+        # in both cases, this conditioning means we just need to compute
+        # the observed lower bound
+
+        lower_bound = np.max(Z[self._not_selected])
 
         _, prec = self.randomizer.cov_prec
-
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
             cond_cov = np.linalg.inv(cond_precision)
@@ -90,7 +110,7 @@ class marginal_screening(query):
 
         logdens_transform = (logdens_linear, opt_offset)
         A_scaling = -np.identity(len(active_signs))
-        b_scaling = np.zeros(self.num_opt_var)
+        b_scaling = -np.ones(self.num_opt_var) * lower_bound
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
             if score.ndim == 1:
@@ -115,20 +135,19 @@ class marginal_screening(query):
                                                selection_info=self.selection_variable)
         return self._selected
 
-    def multivariate_targets(self, features, dispersion=1.):
+    def multivariate_targets(self, features):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
         """
-        score_linear = self.covariance[:, features] / dispersion
+        score_linear = self.covariance[:, features]
         Q = score_linear[features]
         cov_target = np.linalg.inv(Q)
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
         crosscov_target_score = -score_linear.dot(cov_target)
-        #alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-        #                 self.selection_variable['sign'][features]])
-        alternatives = ['twosided'] * features.sum()
+        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
+                         self.selection_variable['sign'][features]])
 
-        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+        return observed_target, cov_target, crosscov_target_score.T, alternatives
 
     def marginal_targets(self, features):
         """
@@ -139,9 +158,8 @@ class marginal_screening(query):
         cov_target = Q
         observed_target = -self.observed_score_state[features]
         crosscov_target_score = -score_linear
-        #alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
-        #                 self.selection_variable['sign'][features]])
-        alternatives = ['twosided'] * features.sum()
+        alternatives = ([{1: 'greater', -1: 'less'}[int(s)] for s in 
+                         self.selection_variable['sign'][features]])
 
         return observed_target, cov_target, crosscov_target_score.T, alternatives
 

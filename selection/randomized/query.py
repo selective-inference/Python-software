@@ -80,6 +80,100 @@ class query(object):
         """
         raise NotImplementedError('abstract method -- only keyword arguments')
 
+    def summary(self,
+                observed_target, 
+                cov_target, 
+                cov_target_score, 
+                alternatives,
+                parameter=None,
+                level=0.9,
+                ndraw=10000,
+                burnin=2000,
+                compute_intervals=False):
+        """
+        Produce p-values and confidence intervals for targets
+        of model including selected features
+        Parameters
+        ----------
+        target : one of ['selected', 'full']
+        features : np.bool
+            Binary encoding of which features to use in final
+            model and targets.
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+        level : float
+            Confidence level.
+        ndraw : int (optional)
+            Defaults to 1000.
+        burnin : int (optional)
+            Defaults to 1000.
+        compute_intervals : bool
+            Compute confidence intervals?
+        dispersion : float (optional)
+            Use a known value for dispersion, or Pearson's X^2?
+        """
+
+        if parameter is None:
+            parameter = np.zeros_like(observed_target)
+
+        opt_sample = self.sampler.sample(ndraw, burnin)
+
+        pivots = self.sampler.coefficient_pvalues(observed_target,
+                                                  cov_target,
+                                                  cov_target_score,
+                                                  parameter=parameter,
+                                                  sample=opt_sample,
+                                                  alternatives=alternatives)
+
+        MLE_intervals = self.selective_MLE(observed_target,
+                                           cov_target,
+                                           cov_target_score)[5]
+
+        if not np.all(parameter == 0):
+            pvalues = self.sampler.coefficient_pvalues(observed_target,
+                                                       cov_target,
+                                                       cov_target_score,
+                                                       parameter=np.zeros_like(parameter),
+                                                       sample=opt_sample,
+                                                       alternatives=alternatives)
+        else:
+            pvalues = pivots
+
+        intervals = None
+        if compute_intervals:
+
+            MLE_intervals = self.selective_MLE(observed_target,
+                                               cov_target,
+                                               cov_target_score)[4]
+
+            intervals = self.sampler.confidence_intervals(observed_target,
+                                                          cov_target,
+                                                          cov_target_score,
+                                                          sample=opt_sample,
+                                                          initial_guess=MLE_intervals,
+                                                          level=level)
+
+        return pivots, pvalues, intervals
+
+    def selective_MLE(self,
+                      observed_target, 
+                      cov_target, 
+                      cov_target_score, 
+                      level=0.9,
+                      solve_args={'tol':1.e-12}):
+        """
+        Parameters
+        ----------
+
+        """
+        
+        return self.sampler.selective_MLE(observed_target,
+                                          cov_target,
+                                          cov_target_score,
+                                          self.observed_opt_state,
+                                          solve_args=solve_args)
+
+
 class multiple_queries(object):
 
     '''

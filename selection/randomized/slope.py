@@ -21,13 +21,11 @@ from ..constraints.affine import constraints
 
 from .randomization import randomization
 from .base import restricted_estimator
-from .lasso import lasso
-from .query import (query,
-                    multiple_queries,
-                    langevin_sampler,
+from .query import (query, 
                     affine_gaussian_sampler)
+from .lasso import lasso
 
-class slope(lasso):
+class slope(query):
 
     def __init__(self,
                  loglike,
