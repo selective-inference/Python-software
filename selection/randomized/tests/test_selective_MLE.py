@@ -56,15 +56,17 @@ def test_affine_solver():
     grad, opt_val, opt_proposed = np.ones((3, 5))
     scaling = np.sqrt(np.diag(precision))
 
+    A = -np.identity(5)
+    b = np.zeros(5),
     val2, soln2, hess2 = barrier_solve_affine_(grad,
                                                opt_val,
                                                opt_proposed,
                                                conjugate_arg,
                                                precision,
                                                scaling,
-                                               -np.identity(5),
-                                               np.ones(5),
-                                               opt_val,
+                                               A,
+                                               np.zeros(5),
+                                               -1 * opt_val,
                                                1.,
                                                value_tol=1.e-12)
 

@@ -144,13 +144,15 @@ def solve_barrier_affine(conjugate_arg,
     A = linear_term
     scaling = np.sqrt(np.diag(A.dot(precision).dot(A.T)))
     
+    linear_term_fortran = np.asfortranarray(linear_term)
+
     return barrier_solve_affine_(gradient,
                                  opt_variable,
                                  opt_proposed,
                                  conjugate_arg,
                                  precision,
                                  scaling,
-                                 linear_term,
+                                 linear_term_fortran,
                                  offset,
                                  step,
                                  max_iter=max_iter,
