@@ -81,9 +81,9 @@ def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full'
 
 def test_AR_randomization(n=3000, 
                           p=1000, 
-                          signal=3.5,
+                          signal=4.5,
                           s=30, 
-                          sigma=3, 
+                          sigma=1, 
                           target='selected', 
                           rho=0.75, 
                           randomizer_scale=1, 
@@ -92,7 +92,7 @@ def test_AR_randomization(n=3000,
     """
     Test using general Gaussian randomizer
     """
-
+    
     X, Y, beta = gaussian_instance(n=n,
                                    p=p, 
                                    signal=signal, 
@@ -112,13 +112,15 @@ def test_AR_randomization(n=3000,
     n, p = X.shape
 
     sigma_ = np.std(Y)
-    W = np.ones(X.shape[1]) * np.sqrt(np.log(p)) * sigma * 0.7
+    l_theory = np.fabs(X.T.dot(np.random.standard_normal((n, 500)))).max(1).mean()  
+    W = np.ones(X.shape[1]) * l_theory * sigma * 0.5
+    print(l_theory, np.sqrt(np.log(p)))
     loglike = rr.glm.gaussian(X, Y)
 
     mean_diag = np.mean((X ** 2).sum(0))
 
     ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
-    randomizer_scale = np.sqrt(mean_diag) * np.std(Y) * 0.5
+    randomizer_scale = np.sqrt(mean_diag) * np.std(Y) * 1.
 
     ARcov = ARrho**(np.abs(np.subtract.outer(np.arange(p), np.arange(p)))) * randomizer_scale**2 
     randomizer = randomization.gaussian(ARcov)
@@ -294,7 +296,7 @@ def test_compareR(n=200, p=10, signal=np.sqrt(4) * np.sqrt(2 * np.log(10)), s=5,
     assert np.linalg.norm(conv.sampler.affine_con.mean - cond_mean[:,0]) / np.linalg.norm(cond_mean[:,0]) < 1.e-3
 
 
-def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3):
+def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3, AR=True):
 
     import matplotlib.pyplot as plt
     P0, PA = [], []
@@ -303,8 +305,10 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3):
     for i in range(nsim):
         if True: 
             if not sqrt:
-                p0, pA = test_AR_randomization(n=n, p=p, target=target, sigma=sigma)
-                #p0, pA = test_highdim_lasso(n=n, p=p, target=target, sigma=sigma)
+                if AR:
+                    p0, pA = test_AR_randomization(n=n, p=p, target=target, sigma=sigma)
+                else:
+                    p0, pA = test_highdim_lasso(n=n, p=p, target=target, sigma=sigma)
             else:
                 p0, pA = test_sqrt_highdim_lasso(n=n, p=p, target=target, compare_to_lasso=False)
         else: 
@@ -316,7 +320,7 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3):
         P0_clean = np.array(P0)
         
         P0_clean = P0_clean[P0_clean > 1.e-5] # 
-        print(np.mean(P0_clean), np.std(P0_clean), np.mean(np.array(PA) < 0.05), np.sum(np.array(PA) < 0.05) / i, np.mean(np.array(P0) < 0.05), np.mean(P0_clean < 0.05), np.mean(np.array(P0) < 1e-5), 'null pvalue + power + failure')
+        print(np.mean(P0_clean), np.std(P0_clean), np.mean(np.array(PA) < 0.05), np.sum(np.array(PA) < 0.05) / (i+1), np.mean(np.array(P0) < 0.05), np.mean(P0_clean < 0.05), np.mean(np.array(P0) < 1e-5), 'null pvalue + power + failure')
     
         if i % 3 == 0 and i > 0:
             U = np.linspace(0, 1, 101)

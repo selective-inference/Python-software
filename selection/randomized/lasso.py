@@ -25,9 +25,6 @@ from .query import (query,
 from .reconstruction import reconstruct_opt
 from .randomization import randomization
 from .base import restricted_estimator
-from .glm import (pairs_bootstrap_glm,
-                  glm_nonparametric_bootstrap,
-                  glm_parametric_covariance)
 from ..algorithms.debiased_lasso import debiasing_matrix
 
 #### High dimensional version
