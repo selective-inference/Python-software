@@ -76,9 +76,11 @@ install:
   - git submodule update
   - git clone https://github.com/jonathan-taylor/R-selective.git
   - cd R-selective
+  - git submodule init
+  - git submodule update
   - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
   - sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC'), repos='http://cloud.r-project.org')"
-  - sudo R CMD INSTALL selectiveInference
+  - make install
   - cd ..
   - python -c "from statsmodels.api import PHReg"
   - travis_install $INSTALL_TYPE
