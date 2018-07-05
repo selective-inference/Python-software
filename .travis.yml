@@ -80,7 +80,7 @@ install:
   - git submodule update
   - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
   - sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC'), repos='http://cloud.r-project.org')"
-  - make install
+  - sudo make install
   - cd ..
   - python -c "from statsmodels.api import PHReg"
   - travis_install $INSTALL_TYPE
