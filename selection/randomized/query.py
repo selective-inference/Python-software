@@ -947,7 +947,7 @@ class optimization_intervals(object):
         if guess is None:
             grid_min, grid_max = -how_many_sd * np.std(sample_stat), how_many_sd * np.std(sample_stat)
             upper = bisect(_rootU, grid_min, grid_max)
-            lower = bisect(_rootL, grid_min, upper)
+            lower = bisect(_rootL, grid_min, grid_max)
             
         else:
             delta = 0.5 * (guess[1] - guess[0])
@@ -1037,7 +1037,7 @@ class optimization_intervals(object):
 
         return np.exp(_logratio)
 
-def naive_confidence_intervals(diag_cov, observed, alpha=0.1):
+def naive_confidence_intervals(diag_cov, observed, level=0.9):
     """
     Compute naive Gaussian based confidence
     intervals for target.
@@ -1057,6 +1057,7 @@ def naive_confidence_intervals(diag_cov, observed, alpha=0.1):
     intervals : np.float
         Gaussian based confidence intervals.
     """
+    alpha = 1 - level
     diag_cov = np.asarray(diag_cov)
     p = diag_cov.shape[0]
     quantile = - ndist.ppf(alpha/2)
