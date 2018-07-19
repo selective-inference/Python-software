@@ -8,3 +8,4 @@ include cythexts.py
 recursive-include fake_pyrex *
 include versioneer.py
 include selection/_version.py
+include C-software/src/*.h
