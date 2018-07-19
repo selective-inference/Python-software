@@ -210,19 +210,8 @@ class lasso(query):
 
         # compute implied mean and covariance
 
-        _, prec = self.randomizer.cov_prec
+        cond_mean, cond_cov, cond_precision, logdens_linear = self._setup_implied_gaussian()
         opt_linear, opt_offset = self.opt_transform
-
-        if np.asarray(prec).shape in [(), (0,)]:
-            cond_precision = opt_linear.T.dot(opt_linear) * prec
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        else:
-            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
-
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         # density as a function of score and optimization variables
 
@@ -256,6 +245,24 @@ class lasso(query):
                                                selection_info=self.selection_variable)  # should be signs and the subgradients we've conditioned on
 
         return active_signs
+
+    def _setup_implied_gaussian(self):
+
+        _, prec = self.randomizer.cov_prec
+        opt_linear, opt_offset = self.opt_transform
+
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+        else:
+            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        return cond_mean, cond_cov, cond_precision, logdens_linear
 
     def _solve_randomized_problem(self, 
                                   perturb=None, 
