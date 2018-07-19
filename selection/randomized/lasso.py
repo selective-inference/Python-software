@@ -107,15 +107,7 @@ class lasso(query):
 
         p = self.nfeature
 
-        # take a new perturbation if supplied
-        if perturb is not None:
-            self._initial_omega = perturb
-        if self._initial_omega is None:
-            self._initial_omega = self.randomizer.sample()
-
-        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
-        problem = rr.simple_problem(self.loglike, self.penalty)
-        self.initial_soln = problem.solve(quad, **solve_args)
+        self.initial_soln, self.initial_subgrad = self._solve_randomized_problem(perturb=perturb, solve_args=solve_args)
 
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
@@ -135,10 +127,6 @@ class lasso(query):
                                    'variables': self._overall}
 
         # initial state for opt variables
-
-        initial_subgrad = -(self.loglike.smooth_objective(self.initial_soln, 'grad') +
-                            quad.objective(self.initial_soln, 'grad'))
-        self.initial_subgrad = initial_subgrad
 
         initial_scalings = np.fabs(self.initial_soln[active])
         initial_unpenalized = self.initial_soln[self._unpenalized]
@@ -268,6 +256,26 @@ class lasso(query):
                                                selection_info=self.selection_variable)  # should be signs and the subgradients we've conditioned on
 
         return active_signs
+
+    def _solve_randomized_problem(self, 
+                                  perturb=None, 
+                                  solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
+
+        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
+        problem = rr.simple_problem(self.loglike, self.penalty)
+
+        initial_soln = problem.solve(quad, **solve_args) 
+        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 'grad') +
+                            quad.objective(initial_soln, 'grad'))
+
+        initial_soln = problem.solve(quad, **solve_args)         
+        return initial_soln, initial_subgrad
 
     @staticmethod
     def gaussian(X,
