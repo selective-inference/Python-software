@@ -2,7 +2,6 @@ language: python
 dist: trusty
 python:
   - 2.7
-  - 3.4
   - 3.5
 notifications:
   email: false
@@ -46,6 +45,32 @@ matrix:
         - INSTALL_TYPE=wheel
         - DEPENDS="cython numpy scipy"
     - python: 2.7
+      env:
+        - INSTALL_TYPE=requirements
+        - DEPENDS=
+    # Testing without matplotlib
+    - python: 3.5
+      env:
+        - DEPENDS="cython numpy scipy"
+    # Documentation doctests
+    - python: 3.5
+      env:
+        - DOC_DOC_TEST=1
+    # Setup.py install
+    - python: 3.5
+      env:
+        - INSTALL_TYPE=setup
+    - python: 3.5
+      env:
+        # Sdist install should collect all dependencies
+        - INSTALL_TYPE=sdist
+        - DEPENDS="cython numpy scipy"
+    - python: 3.5
+      env:
+        # Wheel install should collect all dependencies
+        - INSTALL_TYPE=wheel
+        - DEPENDS="cython numpy scipy"
+    - python: 3.5
       env:
         - INSTALL_TYPE=requirements
         - DEPENDS=
