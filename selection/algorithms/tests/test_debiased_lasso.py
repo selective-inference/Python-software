@@ -71,7 +71,7 @@ def test_approx_inverse(n=50, p=100):
     yield nt.assert_true, np.fabs(U).max() < delta * 1.001
     yield nt.assert_equal, np.sign(U[j]), -np.sign(soln[j])
     yield nt.assert_raises, ValueError, _find_row_approx_inverse, S, j, 1.e-7 * delta
-    yield np.testing.assert_allclose, soln, soln_C, 1.e-3
+    yield np.testing.assert_allclose, soln, soln_C, 1.e-3, 1.e-3
 
 
 def test_approx_inverse_nondegen(n=100, p=20):

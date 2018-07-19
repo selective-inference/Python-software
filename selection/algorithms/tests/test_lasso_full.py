@@ -103,7 +103,7 @@ def test_modelQ():
     LX.fit()
     SX = LX.summary(dispersion=1)
 
-    np.testing.assert_allclose(S['pval'], SX['pval'])
+    np.testing.assert_allclose(S['pval'], SX['pval'], rtol=1.e-5, atol=1.e-4)
 
 
 
