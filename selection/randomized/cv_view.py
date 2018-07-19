@@ -6,8 +6,10 @@ from ..algorithms.cv import CV
 from ..algorithms.cv_glmnet import CV_glmnet, have_glmnet
 
 from .query import query
-from .glm import bootstrap_cov
+from ..glm import bootstrap_cov
 from .randomization import randomization
+
+### TODO: this is just a topK view now, modify it
 
 class CV_view(query):
 
@@ -52,7 +54,7 @@ class CV_view(query):
 
         if (self.scale1 is not None) and (self.scale2 is not None):
             self.SD = self.SD+self.scale1**2+self.scale2**2
-        (self.observed_opt_state, self.observed_score_state) = (CVR_val, CV1_val)
+        (self.observed_opt_state, self.observed_internal_state) = (CVR_val, CV1_val)
         self.num_opt_var = self.lam_seq.shape[0]
         self.lam_idx = list(self.lam_seq).index(self.lam_CVR)  # index of the minimizer
 

@@ -129,7 +129,7 @@ def one_jump_instance(delta, p=60, sigma=1):
 
     """
     signal = np.zeros(p)
-    signal[(p/2):] += delta * sigma
+    signal[(p//2):] += delta * sigma
     y = np.random.standard_normal(p) * sigma + signal
     return y, signal
 
