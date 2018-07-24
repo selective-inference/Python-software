@@ -141,6 +141,7 @@ class lasso(query):
         self._beta_full = beta_bar
 
         # observed state for score in internal coordinates
+        # XXX is this used anywhere?
 
         self.observed_internal_state = np.hstack([_beta_unpenalized,
                                                   -self.loglike.smooth_objective(beta_bar, 'grad')[inactive]])
@@ -769,3 +770,74 @@ def form_targets(target,
                    W,
                    features,
                    **kwargs)
+
+class split_lasso(lasso):
+
+    """
+    Data split, then LASSO (i.e. data carving)
+    """
+
+    def __init__(self,
+                 loglike,
+                 feature_weights,
+                 proportion):
+
+        (self.loglike,
+         self.feature_weights,
+         self.proportion) = (loglike,
+                             feature_weights,
+                             proportion)
+
+    def _setup_implied_gaussian(self):
+
+        _, prec = self.randomizer.cov_prec
+        opt_linear, opt_offset = self.opt_transform
+
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+        else:
+            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        return cond_mean, cond_cov, cond_precision, logdens_linear
+
+    def _solve_randomized_problem(self, 
+                                  perturb=None, # optional binary vector indicating selection data 
+                                  solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._selection_idx = perturb
+        if self._selection_idx is None:
+            X, y = self.loglike.data
+            total_size = n = X.shape[0]
+            subsample = np.random.binomial(1, self.proportion, size=(n,))
+        n, m = self.total_size, self.subsample_size
+        inv_frac = n / m
+        quadratic = rr.identity_quadratic(epsilon, 0, 0, 0)
+        m, n = self.subsample_size, self.total_size # shorthand
+        idx = np.zeros(n, np.bool)
+        idx[:m] = 1
+        np.random.shuffle(idx)
+
+        randomized_loss = loss.subsample(idx)
+        randomized_loss.coef *= inv_frac
+
+        randomized_loss.quadratic = quadratic
+
+
+
+        problem = rr.simple_problem(self.loglike, self.penalty)
+
+        initial_soln = problem.solve(quad, **solve_args) 
+        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 'grad') +
+                            quad.objective(initial_soln, 'grad'))
+
+        initial_soln = problem.solve(quad, **solve_args)         
+        return initial_soln, initial_subgrad
+
