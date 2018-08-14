@@ -1,7 +1,5 @@
 import numpy as np
 import nose.tools as nt
-import rpy2.robjects as rpy
-from rpy2.robjects import numpy2ri
 
 from ..lasso import lasso, full_targets, selected_targets, debiased_targets
 from ...tests.instance import gaussian_instance

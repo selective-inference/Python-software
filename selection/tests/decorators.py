@@ -5,7 +5,6 @@ import numpy as np
 import nose
 import nose.tools
 
-
 def set_seed_iftrue(condition, seed=10):
     """
     Fix the seed for random test.
@@ -34,8 +33,8 @@ def set_seed_iftrue(condition, seed=10):
             set_val = lambda : condition
 
         @wraps(f)
-        def skipper_func(*args, **kwargs):
-            """Skipper for normal test functions."""
+        def set_seed_func(*args, **kwargs):
+            """Set_Seed for normal test functions."""
             if set_val():
                 old_state = np.random.get_state()
                 np.random.seed(seed)
@@ -45,8 +44,8 @@ def set_seed_iftrue(condition, seed=10):
             return value
 
         @wraps(f)
-        def skipper_gen(*args, **kwargs):
-            """Skipper for test generators."""
+        def set_seed_gen(*args, **kwargs):
+            """Set_Seed for test generators."""
             if set_val():
                 old_state = np.random.get_state()
                 np.random.seed(seed)
@@ -55,13 +54,13 @@ def set_seed_iftrue(condition, seed=10):
             if set_val():
                 np.random.set_state(old_state)
 
-        # Choose the right skipper to use when building the actual decorator.
+        # Choose the right set_seed to use when building the actual decorator.
         if nose.util.isgenerator(f):
-            skipper = skipper_gen
+            set_seed = set_seed_gen
         else:
-            skipper = skipper_func
+            set_seed = set_seed_func
 
-        return nose.tools.make_decorator(f)(skipper)
+        return nose.tools.make_decorator(f)(set_seed)
 
     return set_seed_decorator
 
@@ -146,3 +145,73 @@ def wait_for_return_value(max_tries=50, strict=True):
 
     return wait_for_decorator
 
+def rpy_test_safe(libraries=[], msg=None):
+    """
+    Loads rpy2 for a test if available, otherwise skips it.
+
+    Parameters
+    ----------
+    libraries : libraries to load in R
+
+    Returns
+    -------
+    decorator : function
+        Decorator which  when applied to a function, sets the
+        random seed before running the test and then
+        restores numpy's random state after running the test.
+    Notes
+    -----
+    The decorator itself is decorated with the ``nose.tools.make_decorator``
+    function in order to transmit function name, and various other metadata.
+    """
+
+    def rpy_safe_decorator(f):
+
+        try:
+            import rpy2.robjects as rpy
+            from rpy2.robjects import numpy2ri
+            
+            if libraries:
+                for library in libraries:
+                    rpy.r('library(%s)' % library)
+            rpy_loaded = True    
+        except ImportError:
+            rpy_loaded = False
+
+        def get_msg(func,msg=None):
+            """Skip message with information about function being skipped."""
+            if msg is None:
+                out = 'Test skipped due to test condition'
+            else:
+                out = msg
+
+            return "Skipping test: %s: %s" % (func.__name__, out)
+
+        @wraps(f)
+        def modified_func(*args, **kwargs):
+            """Modified for normal test functions."""
+            if not rpy_loaded:
+                raise np.testing.decorators.SkipTest(get_msg(f, msg))
+            else:
+                return f(*args, **kwargs)
+
+        @wraps(f)
+        def modified_gen(*args, **kwargs):
+            """Modified for test generators."""
+            if rpy_loaded:
+                kwargs_cp = copy(kwargs)
+                kwargs_cp.update(sampling_params)
+                for x in f(*args, **kwargs_cp):
+                    yield x
+            else:
+                raise np.testing.decorators.SkipTest(get_msg(f, msg))
+
+        # Choose the right modified to use when building the actual decorator.
+        if nose.util.isgenerator(f):
+            modified = modified_gen
+        else:
+            modified = modified_func
+
+        return nose.tools.make_decorator(f)(modified)
+
+    return rpy_safe_decorator

@@ -5,14 +5,11 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-import rpy2.robjects as rpy
-from rpy2.robjects import numpy2ri
-rpy.r('library(selectiveInference)')
-
 from ..lasso import lasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 from ..randomization import randomization
+from ...tests.decorators import rpy_test_safe
 
 def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full', rho=0.4, randomizer_scale=1, ndraw=5000, burnin=1000):
     """
@@ -263,10 +260,51 @@ def test_sqrt_highdim_lasso(n=500,
 
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
-def test_compareR(n=200, p=10, signal=np.sqrt(4) * np.sqrt(2 * np.log(10)), s=5, ndraw=5000, burnin=1000, param=True, sigma=3):
+@rpy_test_safe(libraries=['selectiveInference'])
+def test_compareR(n=200, 
+                  p=10, 
+                  signal=np.sqrt(4)*np.sqrt(2 * np.log(10)), 
+                  s=5, 
+                  ndraw=5000, 
+                  burnin=1000, 
+                  param=True, 
+                  sigma=3):
     """
     Compare to R randomized lasso
     """
+
+    # if test is running rpy will be imported
+
+    import rpy2.robjects as rpy
+    from rpy2.robjects import numpy2ri
+
+    def Rpval(X, Y, W, noise_scale=None):
+        numpy2ri.activate()
+        rpy.r.assign('X', X)
+        rpy.r.assign('Y', Y)
+        rpy.r.assign('lam', W)
+
+        if noise_scale is not None:
+            rpy.r.assign('noise_scale', noise_scale)
+            rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam, noise_scale=noise_scale, kkt_tol=1.e-8, parameter_tol=1.e-8)')
+        else:
+            rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam)')
+        rpy.r('targets=selectiveInference:::compute_target(soln, type="full")')
+        rpy.r('rand_inf = selectiveInference:::randomizedLassoInf(soln, sampler="adaptMCMC", targets=targets, nsample=5000, burnin=2000)')
+
+        pval = np.asarray(rpy.r('rand_inf$pvalues'))
+        vars = np.asarray(rpy.r('soln$active_set')) - 1 
+        cond_cov = np.asarray(rpy.r('soln$law$cond_cov'))
+        cond_mean = np.asarray(rpy.r('soln$law$cond_mean'))
+        rand = np.asarray(rpy.r('soln$perturb'))
+        active =  np.asarray(rpy.r('soln$active')) - 1
+        soln = np.asarray(rpy.r('soln$soln'))
+        ridge = rpy.r('soln$ridge_term')
+
+        numpy2ri.deactivate()
+        return pval, vars, rand, active, soln, ridge, cond_cov, cond_mean
+
+    # here is the python construction
 
     inst, const = gaussian_instance, lasso.gaussian
     X, Y, beta = inst(n=n, p=p, signal=signal, s=s, equicorrelated=False, rho=0.2, sigma=sigma, random_signs=True)[:3]
@@ -288,7 +326,6 @@ def test_compareR(n=200, p=10, signal=np.sqrt(4) * np.sqrt(2 * np.log(10)), s=5,
     assert np.fabs(conv.ridge_term - ridge_term) / ridge_term < 1.e-4
 
     assert np.fabs(soln - conv.initial_soln).max() / np.fabs(soln).max() < 1.e-3
-
 
     nonzero = signs != 0
 
@@ -333,29 +370,4 @@ def main(nsim=500, n=500, p=200, sqrt=False, target='full', sigma=3, AR=True):
             plt.savefig("plot.pdf")
     plt.show()
 
-def Rpval(X, Y, W, noise_scale=None):
-    numpy2ri.activate()
-    rpy.r.assign('X', X)
-    rpy.r.assign('Y', Y)
-    rpy.r.assign('lam', W)
-
-    if noise_scale is not None:
-        rpy.r.assign('noise_scale', noise_scale)
-        rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam, noise_scale=noise_scale, kkt_tol=1.e-8, parameter_tol=1.e-8)')
-    else:
-        rpy.r('soln = selectiveInference:::randomizedLasso(X, Y, lam)')
-    rpy.r('targets=selectiveInference:::compute_target(soln, type="full")')
-    rpy.r('rand_inf = selectiveInference:::randomizedLassoInf(soln, sampler="adaptMCMC", targets=targets, nsample=5000, burnin=2000)')
-
-    pval = np.asarray(rpy.r('rand_inf$pvalues'))
-    vars = np.asarray(rpy.r('soln$active_set')) - 1 
-    cond_cov = np.asarray(rpy.r('soln$law$cond_cov'))
-    cond_mean = np.asarray(rpy.r('soln$law$cond_mean'))
-    rand = np.asarray(rpy.r('soln$perturb'))
-    active =  np.asarray(rpy.r('soln$active')) - 1
-    soln = np.asarray(rpy.r('soln$soln'))
-    ridge = rpy.r('soln$ridge_term')
-
-    numpy2ri.deactivate()
-    return pval, vars, rand, active, soln, ridge, cond_cov, cond_mean
 
