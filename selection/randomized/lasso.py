@@ -213,6 +213,8 @@ class lasso(query):
 
         cond_mean, cond_cov, cond_precision, logdens_linear = self._setup_implied_gaussian()
         opt_linear, opt_offset = self.opt_transform
+        
+        self.cond_mean, self.cond_cov = cond_mean, cond_cov
 
         # density as a function of score and optimization variables
 

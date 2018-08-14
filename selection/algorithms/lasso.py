@@ -291,7 +291,7 @@ class lasso(object):
             raise ValueError("alternative must be one of ['twosided', 'onesided']")
 
         result = []
-        C = self.constraints
+        C = self._constraints
         if C is not None:
             one_step = self.onestep_estimator
             for i in range(one_step.shape[0]):
