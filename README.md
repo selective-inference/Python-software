@@ -11,5 +11,13 @@ Some key references:
 * `Exact post-selection inference with the lasso`:  http://arxiv.org/abs/1311.6238
 * `Exact Post Model Selection Inference for Marginal Screening`: http://arxiv.org/abs/1402.5596
 
-To install, read INSTALL.
+Install
+-------
 
+
+```
+git submodule init # travis_tools and C-software
+git submodule update
+pip install -r requirements.txt
+python setup.py install
+```
