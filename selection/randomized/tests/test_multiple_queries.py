@@ -5,10 +5,6 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-#import rpy2.robjects as rpy
-#from rpy2.robjects import numpy2ri
-#rpy.r('library(selectiveInference)')
-
 from ..lasso import lasso, selected_targets, full_targets, debiased_targets
 from ..marginal_screening import marginal_screening
 from ..query import multiple_queries

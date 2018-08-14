@@ -1,80 +1,85 @@
-from rpy2.robjects.packages import importr
-from rpy2 import robjects
-
-SLOPE = importr('SLOPE')
-
-import rpy2.robjects.numpy2ri
 
 from selection.tests.instance import gaussian_instance
 
 import numpy as np
-from regreg.atoms.slope import slope
+from regreg.atoms.slope import slope as slope_atom
 import regreg.api as rr
 
 from ..slope import slope
 from ..lasso import full_targets
+from ...tests.decorators import rpy_test_safe
 from statsmodels.distributions import ECDF
 
 import matplotlib.pyplot as plt
 
-def slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", sigma = None):
-    rpy2.robjects.numpy2ri.activate()
-    robjects.r('''
-    slope = function(X, Y, W , normalize, choice_weights, sigma, fdr = NA){
-      if(is.na(sigma)){
-      sigma=NULL} else{
-      sigma = as.matrix(sigma)[1,1]}
-      if(is.na(fdr)){
-      fdr = 0.1 }
-      if(normalize=="TRUE"){
-       normalize = TRUE} else{
-       normalize = FALSE}
-      if(is.na(W))
-      {
-        if(choice_weights == "gaussian"){
-        lambda = "gaussian"} else{
-        lambda = "bhq"}
-        result = SLOPE(X, Y, fdr = fdr, lambda = lambda, normalize = normalize, sigma = sigma)
-       } else{
-        result = SLOPE(X, Y, fdr = fdr, lambda = W, normalize = normalize, sigma = sigma)
-      }
-      return(list(beta = result$beta, E = result$selected, lambda_seq = result$lambda, sigma = result$sigma))
-    }''')
+try:
+    from rpy2.robjects.packages import importr
+    from rpy2 import robjects
+    import rpy2.robjects.numpy2ri
+    rpy_loaded = True
+except ImportError:
+    rpy_loaded = False
 
-    r_slope = robjects.globalenv['slope']
+if rpy_loaded:
+    def slope_R(X, Y, W = None, normalize = True, choice_weights = "gaussian", sigma = None):
+        rpy2.robjects.numpy2ri.activate()
+        robjects.r('''
+        slope = function(X, Y, W , normalize, choice_weights, sigma, fdr = NA){
+          if(is.na(sigma)){
+          sigma=NULL} else{
+          sigma = as.matrix(sigma)[1,1]}
+          if(is.na(fdr)){
+          fdr = 0.1 }
+          if(normalize=="TRUE"){
+           normalize = TRUE} else{
+           normalize = FALSE}
+          if(is.na(W))
+          {
+            if(choice_weights == "gaussian"){
+            lambda = "gaussian"} else{
+            lambda = "bhq"}
+            result = SLOPE(X, Y, fdr = fdr, lambda = lambda, normalize = normalize, sigma = sigma)
+           } else{
+            result = SLOPE(X, Y, fdr = fdr, lambda = W, normalize = normalize, sigma = sigma)
+          }
+          return(list(beta = result$beta, E = result$selected, lambda_seq = result$lambda, sigma = result$sigma))
+        }''')
 
-    n, p = X.shape
-    r_X = robjects.r.matrix(X, nrow=n, ncol=p)
-    r_Y = robjects.r.matrix(Y, nrow=n, ncol=1)
+        r_slope = robjects.globalenv['slope']
 
-    if normalize is True:
-        r_normalize = robjects.StrVector('True')
-    else:
-        r_normalize = robjects.StrVector('False')
+        n, p = X.shape
+        r_X = robjects.r.matrix(X, nrow=n, ncol=p)
+        r_Y = robjects.r.matrix(Y, nrow=n, ncol=1)
 
-    if W is None:
-        r_W = robjects.NA_Logical
-        if choice_weights is "gaussian":
-            r_choice_weights  = robjects.StrVector('gaussian')
-        elif choice_weights is "bhq":
-            r_choice_weights = robjects.StrVector('bhq')
-    else:
-        r_W = robjects.r.matrix(W, nrow=p, ncol=1)
+        if normalize is True:
+            r_normalize = robjects.StrVector('True')
+        else:
+            r_normalize = robjects.StrVector('False')
 
-    if sigma is None:
-        r_sigma = robjects.NA_Logical
-    else:
-        r_sigma = robjects.r.matrix(sigma, nrow=1, ncol=1)
+        if W is None:
+            r_W = robjects.NA_Logical
+            if choice_weights is "gaussian":
+                r_choice_weights  = robjects.StrVector('gaussian')
+            elif choice_weights is "bhq":
+                r_choice_weights = robjects.StrVector('bhq')
+        else:
+            r_W = robjects.r.matrix(W, nrow=p, ncol=1)
 
-    result = r_slope(r_X, r_Y, r_W, r_normalize, r_choice_weights, r_sigma)
+        if sigma is None:
+            r_sigma = robjects.NA_Logical
+        else:
+            r_sigma = robjects.r.matrix(sigma, nrow=1, ncol=1)
 
-    result = np.asarray(result.rx2('beta')), np.asarray(result.rx2('E')), \
-        np.asarray(result.rx2('lambda_seq')), np.asscalar(np.array(result.rx2('sigma')))
-    rpy2.robjects.numpy2ri.deactivate()
+        result = r_slope(r_X, r_Y, r_W, r_normalize, r_choice_weights, r_sigma)
 
-    return result
+        result = np.asarray(result.rx2('beta')), np.asarray(result.rx2('E')), \
+            np.asarray(result.rx2('lambda_seq')), np.asscalar(np.array(result.rx2('sigma')))
+        rpy2.robjects.numpy2ri.deactivate()
 
-def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35):
+        return result
+
+#@rpy_test_safe(libraries=['SLOPE'])
+def test_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35):
 
     inst = gaussian_instance
     signal = np.sqrt(signal_fac * 2. * np.log(p))
@@ -88,6 +93,7 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
                       random_signs=True)[:3]
 
     sigma_ = np.sqrt(np.linalg.norm(Y - X.dot(np.linalg.pinv(X).dot(Y))) ** 2 / (n - p))
+
     r_beta, r_E, r_lambda_seq, r_sigma = slope_R(X,
                                                  Y,
                                                  W = None,
@@ -98,7 +104,7 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
     print("weights output by R", r_lambda_seq)
     print("output of est coefs R", r_beta)
 
-    pen = slope(r_sigma * r_lambda_seq, lagrange=1.)
+    pen = slope_atom(r_sigma * r_lambda_seq, lagrange=1.)
 
     loss = rr.squared_error(X, Y)
     problem = rr.simple_problem(loss, pen)
@@ -107,6 +113,7 @@ def compare_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rh
 
     print("relative difference in solns", np.linalg.norm(soln-r_beta)/np.linalg.norm(r_beta))
 
+@rpy_test_safe(libraries=['SLOPE'])
 def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35, randomizer_scale= np.sqrt(0.25),
                           target = "full", use_MLE=True):
 
@@ -175,7 +182,6 @@ def test_randomized_slope(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0.35,
             break
 
     if True:
-        #print(beta_target)
         return pval[beta_target == 0], pval[beta_target != 0], coverage, intervals
 
 def main(nsim=100):
@@ -190,15 +196,6 @@ def main(nsim=100):
         PA.extend(pA)
         print('coverage', np.mean(cover))
 
-        # if i % 3 == 0 and i > 0:
-        #     U = np.linspace(0, 1, 101)
-        #     plt.clf()
-        #     if len(P0) > 0:
-        #         plt.plot(U, ECDF(P0)(U))
-        #     if len(PA) > 0:
-        #         plt.plot(U, ECDF(PA)(U), 'r')
-        #     plt.plot([0, 1], [0, 1], 'k--')
-        #     plt.draw()
 
 
 
