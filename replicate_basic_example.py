@@ -131,13 +131,12 @@ def simulate():
         return fitfn
 
     def learn_weights(algorithm, 
-                      sufficient_stat,
                       observed_sampler, 
                       learning_proposal, 
                       fit_probability, 
                       B=15000):
 
-        S = sufficient_stat
+        S = selection_stat = observed_sampler.center
         new_sampler = copy(observed_sampler)
 
         learning_sample = []
@@ -152,7 +151,7 @@ def simulate():
         conditional_law = fit_probability(T, Y)
         return conditional_law
 
-    weight_fn = learn_weights(algo_instance, S, observed_sampler, learning_proposal, logit_fit)
+    weight_fn = learn_weights(algo_instance, observed_sampler, learning_proposal, logit_fit)
 
     # let's form the pivot
 

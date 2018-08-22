@@ -128,13 +128,12 @@ def probit_fit(T, Y):
     return fitfn
 
 def learn_weights(algorithm, 
-                  sufficient_stat,
                   observed_sampler, 
                   learning_proposal, 
                   fit_probability, 
                   B=15000):
 
-    S = sufficient_stat
+    S = selection_stat = observed_sampler.center
     new_sampler = copy(observed_sampler)
 
     learning_sample = []
@@ -149,7 +148,7 @@ def learn_weights(algorithm,
     conditional_law = fit_probability(T, Y)
     return conditional_law
 
-weight_fn = learn_weights(algo_instance, S, observed_sampler, learning_proposal, logit_fit)
+weight_fn = learn_weights(algo_instance, observed_sampler, learning_proposal, logit_fit)
 
 # let's form the pivot
 
@@ -170,5 +169,3 @@ print('(true, observed):', true_target, observed_target)
 exp_family = discrete_family(target_val, weight_val)  
 pivot = exp_family.cdf(true_target / target_cov[0, 0], x=observed_target)
 interval = exp_family.equal_tailed_interval(observed_target, alpha=0.1)
-
-return pivot, (interval[0] * target_cov[0, 0] < true_target) * (interval[1] * target_cov[0, 0] > true_target)
