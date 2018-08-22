@@ -7,9 +7,11 @@ import rpy2.robjects.numpy2ri
 
 # description of statistical problem
 
-truth = np.array([1,2.])
+n = 100
 
-data = np.random.standard_normal((100, 2)) + np.multiply.outer((100,), truth) / np.sqrt(100)
+truth = np.array([1. , -1.]) / np.sqrt(n)
+
+data = np.random.standard_normal((n, 2)) + np.multiply.outer(np.ones(n), truth) 
 
 def sufficient_stat(data):
     return np.mean(data, 0)
@@ -24,7 +26,7 @@ class normal_sampler(object):
         (self.center,
          self.covariance) = (np.asarray(center),
                              np.asarray(covariance))
-        self.cholT = np.linalg.cholesky(self.covariance)
+        self.cholT = np.linalg.cholesky(self.covariance).T
         self.shape = self.center.shape
 
     def __call__(self, scale=1., size=None):
@@ -36,22 +38,24 @@ class normal_sampler(object):
             _shape = (1,)
         else:
             _shape = self.shape
-        return np.sqrt(scale) * np.squeeze(np.random.standard_normal(size + _shape).dot(self.cholT))
+        return scale * np.squeeze(np.random.standard_normal(size + _shape).dot(self.cholT)) + self.center
 
     def __copy__(self):
         return normal_sampler(self.center.copy(),
                               self.covariance.copy())
 
-observed_sampler = normal_sampler(S, 1/100. * np.identity(2))   
-
-assert(observed_sampler(size=(200,)).shape == (200, 2)) # 200 iid draws N(S, sigma) (given S)
+observed_sampler = normal_sampler(S, 1/n * np.identity(2))   
 
 def algo_constructor():
 
     def myalgo(sampler):
-        noisyS = sampler(scale=0.25)
-        return np.fabs(noisyS.sum()) > 2
-
+        min_success = 1
+        ntries = 3
+        success = 0
+        for _ in range(ntries):
+            noisyS = sampler(scale=0.5)
+            success += noisyS.sum() > 0.2 / np.sqrt(n)
+        return success >= min_success
     return myalgo
 
 # run selection algorithm
@@ -63,17 +67,22 @@ observed_outcome = algo_instance(observed_sampler)
 
 def compute_target(observed_outcome, data):
     if observed_outcome: # target is truth[0]
-        observed_target, target_cov, cross_cov = sufficient_stat(data)[0]/100, 1/100. * np.identity(1), np.array([1., 0.]).reshape((2,1))
+        observed_target, target_cov, cross_cov = sufficient_stat(data)[0], 1/n * np.identity(1), np.array([1., 0.]).reshape((2,1)) / n
     else:
-        observed_target, target_cov, cross_cov = sufficient_stat(data)[1]/100, 1/100. * np.identity(1), np.array([0., 1.]).reshape((2,1))
+        observed_target, target_cov, cross_cov = sufficient_stat(data)[1], 1/n * np.identity(1), np.array([0., 1.]).reshape((2,1)) / n
     return observed_target, target_cov, cross_cov
 
 observed_target, target_cov, cross_cov = compute_target(observed_outcome, data)
 direction = cross_cov.dot(np.linalg.inv(target_cov))
 
-def learning_proposal():
-    scale = np.random.choice([0.5, 1, 2, 3], 1)
-    return np.random.standard_normal() * scale
+if observed_outcome:
+    true_target = truth[0] / target_cov[0, 0] # natural parameter
+else:
+    true_target = truth[1] / target_cov[0, 0] # natural parameter
+
+def learning_proposal(n=100):
+    scale = np.random.choice([0.5, 1, 1.5, 2], 1)
+    return np.random.standard_normal() * scale / np.sqrt(n) + observed_target
 
 def logit_fit(T, Y):
     rpy2.robjects.numpy2ri.activate()
@@ -82,9 +91,8 @@ def logit_fit(T, Y):
     rpy.r('''
     Y = as.numeric(Y)
     T = as.numeric(T)
-    M = glm(Y ~ T, family=binomial(link='logit'))
-    coefM = coef(M)
-    fitfn = function(t) { linpred = coefM[1] + t * coefM[2]; return(linpred) }
+    M = glm(Y ~ ns(T, 10), family=binomial(link='logit'))
+    fitfn = function(t) { predict(M, newdata=data.frame(T=t), type='link') } 
     ''')
     rpy2.robjects.numpy2ri.deactivate()
 
@@ -104,9 +112,8 @@ def probit_fit(T, Y):
     rpy.r('''
     Y = as.numeric(Y)
     T = as.numeric(T)
-    M = glm(Y ~ T, family=binomial(link='probit'))
-    coefM = coef(M)
-    fitfn = function(t) { linpred = coefM[1] + t * coefM[2]; return(linpred) }
+    M = glm(Y ~ ns(T, 10), family=binomial(link='probit'))
+    fitfn = function(t) { predict(M, newdata=data.frame(T=t), type='link') } 
     ''')
     rpy2.robjects.numpy2ri.deactivate()
 
@@ -119,14 +126,21 @@ def probit_fit(T, Y):
 
     return fitfn
 
-def learn_weights(algorithm, observed_sampler, learning_proposal, fit_probability, B=15000):
+def learn_weights(algorithm, 
+                  sufficient_stat,
+                  observed_sampler, 
+                  learning_proposal, 
+                  fit_probability, 
+                  B=15000):
 
+    S = sufficient_stat
     new_sampler = copy(observed_sampler)
 
     learning_sample = []
-    for _ in range(1000):
+    for _ in range(B):
          T = learning_proposal()      # a guess at informative distribution for learning what we want
-         new_sampler.center = S + direction * (T - observed_target)
+         new_sampler = copy(observed_sampler)
+         new_sampler.center = S + direction.dot(T - observed_target)
          Y = algorithm(new_sampler) == observed_outcome
          learning_sample.append((T, Y))
     learning_sample = np.array(learning_sample)
@@ -134,20 +148,24 @@ def learn_weights(algorithm, observed_sampler, learning_proposal, fit_probabilit
     conditional_law = fit_probability(T, Y)
     return conditional_law
 
-weight_fn = learn_weights(algo_instance, observed_sampler, learning_proposal, logit_fit)
+weight_fn = learn_weights(algo_instance, S, observed_sampler, learning_proposal, probit_fit)
 
 # let's form the pivot
 
+target_val = np.linspace(-1, 1, 1001)
+weight_val = weight_fn(target_val) 
+
+weight_val *= ndist.pdf(target_val / np.sqrt(target_cov[0,0]))
+
 if observed_outcome:
-    true_target = truth[0]
+    plt.plot(target_val, np.log(weight_val), 'k')
 else:
-    true_target = truth[1]
+    plt.plot(target_val, np.log(weight_val), 'r')
 
-target_val =  np.linspace(-1,1,2001)
-weight_val = weight_fn(target_val) * ndist.pdf(target_val / np.sqrt(target_cov[0,0]))
+    # for p == 1 targets this is what we do -- have some code for multidimensional too
 
-# for p == 1 targets this is what we do -- have some code for multidimensional too
-
-exp_family = discrete_family(target_val, weight_val)  
-pivot = exp_family.cdf(true_target, observed_target)
-interval = exp_family.equal_tailed_interval(observed_target) 
+    weight_val = ndist.pdf(target_val / np.sqrt(target_cov[0, 0]))
+    print('(true, observed):', true_target, observed_target)
+    exp_family = discrete_family(target_val, weight_val)  
+    pivot = exp_family.cdf(true_target, x=observed_target)
+    interval = exp_family.equal_tailed_interval(observed_target, alpha=0.1)
