@@ -7,13 +7,11 @@ import rpy2.robjects.numpy2ri
 import matplotlib.pyplot as plt
 rpy.r('library(splines)')
 
-def simulate():
+def simulate(n=100):
 
     # description of statistical problem
 
-    n = 100
-
-    truth = np.array([2. , -2.]) / np.sqrt(n)
+    truth = np.array([3. , -2.5]) / np.sqrt(n)
 
     data = np.random.standard_normal((n, 2)) + np.multiply.outer(np.ones(n), truth) 
 
@@ -172,17 +170,19 @@ def simulate():
     pivot = exp_family.cdf(true_target / target_cov[0, 0], x=observed_target)
     interval = exp_family.equal_tailed_interval(observed_target, alpha=0.1)
 
-    return pivot, (interval[0] * target_cov[0, 0] < true_target) * (interval[1] * target_cov[0, 0] > true_target)
+    return (pivot, 
+            (interval[0] * target_cov[0, 0] < true_target) * (interval[1] * target_cov[0, 0] > true_target), 
+            (interval[1] - interval[0]) * target_cov[0, 0])
 
 if __name__ == "__main__":
     import statsmodels.api as sm
-    
+    n = 100
     U = np.linspace(0, 1, 101)
     P = []
     plt.clf()
     coverage = 0
     for i in range(10):
-        p, cover = simulate()
+        p, cover, _ = simulate(n=n)
         coverage += cover
         P.append(p)
         print(np.mean(P), np.std(P), coverage / (i+1))
@@ -191,11 +191,13 @@ if __name__ == "__main__":
     plt.show()
 
     coverage = 0
+    L = []
     for i in range(100):
-        p, cover = simulate()
+        p, cover, l = simulate()
+        L.append(l)
         coverage += cover
         P.append(p)
-        print(np.mean(P), np.std(P), coverage / (i+1))
+        print(np.mean(P), np.std(P), np.mean(L) / (2 * 1.65 / np.sqrt(n)), coverage / (i+1))
 
     plt.clf()
     plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
