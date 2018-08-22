@@ -1,6 +1,6 @@
-import numpy as np
 from copy import copy
 from selection.distributions.discrete_family import discrete_family
+import numpy as np
 from scipy.stats import norm as ndist
 import rpy2.robjects as rpy
 import rpy2.robjects.numpy2ri
@@ -151,7 +151,7 @@ def simulate():
         conditional_law = fit_probability(T, Y)
         return conditional_law
 
-    weight_fn = learn_weights(algo_instance, observed_sampler, learning_proposal, logit_fit)
+    weight_fn = learn_weights(algo_instance, observed_sampler, learning_proposal, probit_fit)
 
     # let's form the pivot
 
@@ -167,7 +167,6 @@ def simulate():
 
     # for p == 1 targets this is what we do -- have some code for multidimensional too
 
-    weight_val = ndist.pdf(target_val / np.sqrt(target_cov[0, 0]))
     print('(true, observed):', true_target, observed_target)
     exp_family = discrete_family(target_val, weight_val)  
     pivot = exp_family.cdf(true_target / target_cov[0, 0], x=observed_target)
