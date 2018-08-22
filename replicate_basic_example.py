@@ -80,9 +80,9 @@ def simulate():
     direction = cross_cov.dot(np.linalg.inv(target_cov))
 
     if observed_outcome:
-        true_target = truth[0] / target_cov[0, 0] # natural parameter
+        true_target = truth[0] # natural parameter
     else:
-        true_target = truth[1] / target_cov[0, 0] # natural parameter
+        true_target = truth[1] # natural parameter
 
     def learning_proposal(n=100):
         scale = np.random.choice([0.5, 1, 1.5, 2], 1)
@@ -169,12 +169,12 @@ def simulate():
     # for p == 1 targets this is what we do -- have some code for multidimensional too
 
     weight_val = ndist.pdf(target_val / np.sqrt(target_cov[0, 0]))
-    print('(true, observed):', true_target, observed_target / target_cov[0, 0])
+    print('(true, observed):', true_target, observed_target)
     exp_family = discrete_family(target_val, weight_val)  
-    pivot = exp_family.cdf(true_target, x=observed_target)
+    pivot = exp_family.cdf(true_target / target_cov[0, 0], x=observed_target)
     interval = exp_family.equal_tailed_interval(observed_target, alpha=0.1)
 
-    return pivot, (interval[0] < true_target) * (interval[1] > true_target)
+    return pivot, (interval[0] * target_cov[0, 0] < true_target) * (interval[1] * target_cov[0, 0] > true_target)
 
 if __name__ == "__main__":
     import statsmodels.api as sm
@@ -199,5 +199,7 @@ if __name__ == "__main__":
         P.append(p)
         print(np.mean(P), np.std(P), coverage / (i+1))
 
+    plt.clf()
     plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
     plt.plot([0,1], [0,1], 'k--', linewidth=2)
+    plt.show()
