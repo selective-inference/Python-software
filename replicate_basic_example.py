@@ -152,7 +152,7 @@ def simulate():
         conditional_law = fit_probability(T, Y)
         return conditional_law
 
-    weight_fn = learn_weights(algo_instance, S, observed_sampler, learning_proposal, probit_fit)
+    weight_fn = learn_weights(algo_instance, S, observed_sampler, learning_proposal, logit_fit)
 
     # let's form the pivot
 
