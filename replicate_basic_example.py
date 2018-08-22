@@ -13,7 +13,7 @@ def simulate():
 
     n = 100
 
-    truth = np.array([1. , -1.]) / np.sqrt(n)
+    truth = np.array([2. , -2.]) / np.sqrt(n)
 
     data = np.random.standard_normal((n, 2)) + np.multiply.outer(np.ones(n), truth) 
 
@@ -193,11 +193,11 @@ if __name__ == "__main__":
     plt.show()
 
     coverage = 0
-    for i in range(500):
+    for i in range(100):
         p, cover = simulate()
         coverage += cover
         P.append(p)
         print(np.mean(P), np.std(P), coverage / (i+1))
 
-
-    # plt.plot(U, sm.distributions.ECDF(P)(U))
+    plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
+    plt.plot([0,1], [0,1], 'k--', linewidth=2)
