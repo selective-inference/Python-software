@@ -169,7 +169,7 @@ def simulate():
     # for p == 1 targets this is what we do -- have some code for multidimensional too
 
     weight_val = ndist.pdf(target_val / np.sqrt(target_cov[0, 0]))
-    print('(true, observed):', true_target, observed_target)
+    print('(true, observed):', true_target, observed_target / target_cov[0, 0])
     exp_family = discrete_family(target_val, weight_val)  
     pivot = exp_family.cdf(true_target, x=observed_target)
     interval = exp_family.equal_tailed_interval(observed_target, alpha=0.1)
