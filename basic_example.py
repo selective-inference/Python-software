@@ -10,7 +10,7 @@ rpy.r('library(splines)')
 
 n = 100
 
-truth = np.array([1. , -1.]) / np.sqrt(n)
+truth = np.array([2. , -2.]) / np.sqrt(n)
 
 data = np.random.standard_normal((n, 2)) + np.multiply.outer(np.ones(n), truth) 
 
@@ -77,9 +77,9 @@ observed_target, target_cov, cross_cov = compute_target(observed_outcome, data)
 direction = cross_cov.dot(np.linalg.inv(target_cov))
 
 if observed_outcome:
-    true_target = truth[0] / target_cov[0, 0] # natural parameter
+    true_target = truth[0] # natural parameter
 else:
-    true_target = truth[1] / target_cov[0, 0] # natural parameter
+    true_target = truth[1] # natural parameter
 
 def learning_proposal(n=100):
     scale = np.random.choice([0.5, 1, 1.5, 2], 1)
@@ -149,7 +149,7 @@ def learn_weights(algorithm,
     conditional_law = fit_probability(T, Y)
     return conditional_law
 
-weight_fn = learn_weights(algo_instance, S, observed_sampler, learning_proposal, probit_fit)
+weight_fn = learn_weights(algo_instance, S, observed_sampler, learning_proposal, logit_fit)
 
 # let's form the pivot
 
@@ -163,10 +163,12 @@ if observed_outcome:
 else:
     plt.plot(target_val, np.log(weight_val), 'r')
 
-    # for p == 1 targets this is what we do -- have some code for multidimensional too
+# for p == 1 targets this is what we do -- have some code for multidimensional too
 
-    weight_val = ndist.pdf(target_val / np.sqrt(target_cov[0, 0]))
-    print('(true, observed):', true_target, observed_target / target_cov[0, 0])
-    exp_family = discrete_family(target_val, weight_val)  
-    pivot = exp_family.cdf(true_target, x=observed_target)
-    interval = exp_family.equal_tailed_interval(observed_target, alpha=0.1)
+weight_val = ndist.pdf(target_val / np.sqrt(target_cov[0, 0]))
+print('(true, observed):', true_target, observed_target)
+exp_family = discrete_family(target_val, weight_val)  
+pivot = exp_family.cdf(true_target / target_cov[0, 0], x=observed_target)
+interval = exp_family.equal_tailed_interval(observed_target, alpha=0.1)
+
+return pivot, (interval[0] * target_cov[0, 0] < true_target) * (interval[1] * target_cov[0, 0] > true_target)
