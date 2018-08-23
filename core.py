@@ -40,35 +40,31 @@ def learn_weights(algorithm,
                   learning_proposal, 
                   fit_probability, 
                   B=15000,
-                  set_mode=False):
+                  test = None):
     """
     The algorithm to learn P(Y=1|T)
     """
     S = selection_stat = observed_sampler.center
     new_sampler = copy(observed_sampler)
 
-    if set_mode:
-        observed_set = set(observed_outcome)
+    if test is None:
+        test = lambda result: result == observed_outcome
 
-    direction = cross_cov.dot(np.linalg.inv(target_cov)) # move along a ray through S with this direction
+    direction = cross_cov.dot(np.linalg.inv(target_cov).reshape((1,1))) # move along a ray through S with this direction
 
     learning_Y, learning_T = [], []
     for _ in range(B):
          T = learning_proposal()      # a guess at informative distribution for learning what we want
          new_sampler.center = S + direction.dot(T - observed_target)
          new_result = algorithm(new_sampler)
-         if not set_mode:
-             Y = new_result == observed_outcome
-         else:
-             Y = new_result in observed_set
+
+         Y = test(new_result)
+
          learning_Y.append(Y)
          learning_T.append(T)
 
-    print(new_sampler.center.shape)
     learning_Y = np.array(learning_Y, np.float)
     learning_T = np.squeeze(np.array(learning_T, np.float))
-
-    print(np.mean(learning_Y), np.mean(learning_T))
 
     conditional_law = fit_probability(learning_T, learning_Y)
     return conditional_law
@@ -83,7 +79,7 @@ def infer_general_target(algorithm,
                          hypothesis=0,
                          alpha=0.1):
 
-    target_sd = np.sqrt(target_cov[0,0])
+    target_sd = np.sqrt(target_cov[0, 0])
 
     def learning_proposal(sd=target_sd, center=observed_target):
         scale = np.random.choice([0.5, 1, 1.5, 2], 1)
@@ -96,8 +92,7 @@ def infer_general_target(algorithm,
                               target_cov,
                               cross_cov,
                               learning_proposal, 
-                              fitter,
-                              set_mode=False)
+                              fitter)
 
     return _inference(observed_target,
                       target_cov,
@@ -109,6 +104,7 @@ def infer_full_target(algorithm,
                       observed_set,
                       feature,
                       observed_sampler,
+                      dispersion, # sigma^2
                       fitter=logit_fit,
                       hypothesis=0,
                       alpha=0.1):
@@ -120,20 +116,20 @@ def infer_full_target(algorithm,
 
     # seems to be missing dispersion
 
-    info_inv = np.linalg.inv(observed_sampler.covariance)
-    target_cov = info_inv.dot(observed_sampler.covariance.dot(info_inv))[feature, feature]
-    observed_target = info_inv[feature].dot(observed_sampler.center)
-    cross_cov = observed_sampler.covariance.dot(info_inv[feature])
+    info_inv = np.linalg.inv(observed_sampler.covariance / dispersion) # scale free, i.e. X.T.dot(X) without sigma^2
+    target_cov = (info_inv[feature, feature] * dispersion).reshape((1, 1))
+    observed_target = np.squeeze(info_inv[feature].dot(observed_sampler.center))
+    cross_cov = observed_sampler.covariance.dot(info_inv[feature]).reshape((-1,1))
 
     observed_set = set(observed_set)
     if feature not in observed_set:
         raise ValueError('for full target, we can only do inference for features observed in the outcome')
 
-    target_sd = np.sqrt(target_cov)
+    target_sd = np.sqrt(target_cov[0, 0])
 
-    def learning_proposal(sd=target_sd, center=0):
+    def learning_proposal(sd=target_sd, center=observed_target):
         scale = np.random.choice([0.5, 1, 1.5, 2], 1)
-        return np.random.standard_normal() * sd + center
+        return np.random.standard_normal() * sd * scale + center
 
     weight_fn = learn_weights(algorithm, 
                               observed_set,
@@ -143,7 +139,7 @@ def infer_full_target(algorithm,
                               cross_cov,
                               learning_proposal, 
                               fitter,
-                              set_mode=True)
+                              test = lambda result: feature in set(result))
 
     return _inference(observed_target,
                       target_cov,
