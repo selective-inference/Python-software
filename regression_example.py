@@ -28,7 +28,8 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
-    observed_sampler = normal_sampler(S, covS)
+    smooth_sampler = normal_sampler(S, covS)
+    splitting_sampler = split_sampler(X * y[:, None], covS / n)
 
     def meta_algorithm(XTX, XTXi, dispersion, sampler):
 
@@ -38,9 +39,10 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
         success = np.zeros(p)
         for _ in range(ntries):
             scale = 0.5
+            frac = 1. / (scale**2 + 1.)
             noisy_S = sampler(scale=scale)
             noisy_beta = XTXi.dot(noisy_S)
-            noisy_Z = noisy_beta / np.sqrt(dispersion * np.diag(XTXi) * (1 + scale**2))
+            noisy_Z = noisy_beta / np.sqrt(dispersion * np.diag(XTXi) * frac)
             success += np.fabs(noisy_Z) > 2
         return set(np.nonzero(success >= min_success)[0])
 
@@ -53,7 +55,7 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
 
     # run selection algorithm
 
-    observed_set = selection_algorithm(observed_sampler)
+    observed_set = selection_algorithm(splitting_sampler)
 
     # find the target, based on the observed outcome
 
@@ -68,7 +70,7 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
          interval) = infer_full_target(selection_algorithm,
                                        observed_set,
                                        idx,
-                                       observed_sampler,
+                                       splitting_sampler,
                                        dispersion,
                                        hypothesis=true_target,
                                        fitter=probit_fit,
