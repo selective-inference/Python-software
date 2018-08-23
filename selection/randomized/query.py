@@ -86,7 +86,6 @@ class query(object):
                 cov_target_score, 
                 alternatives,
                 opt_sample=None,
-                R_opt_sample=None,
                 target_sample=None,
                 parameter=None,
                 level=0.9,
