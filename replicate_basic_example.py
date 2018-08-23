@@ -11,7 +11,7 @@ def simulate(n=100):
 
     # description of statistical problem
 
-    truth = np.array([3. , -2.5]) / np.sqrt(n)
+    truth = np.array([4. , -4]) / np.sqrt(n)
 
     data = np.random.standard_normal((n, 2)) + np.multiply.outer(np.ones(n), truth) 
 
@@ -143,7 +143,7 @@ def simulate(n=100):
              new_sampler = copy(observed_sampler)
              new_sampler.center = S + direction.dot(T - observed_target)
              Y = algorithm(new_sampler) == observed_outcome
-             learning_sample.append((T, Y))
+             learning_sample.append((T[0], Y))
         learning_sample = np.array(learning_sample)
         T, Y = learning_sample.T
         conditional_law = fit_probability(T, Y)
