@@ -28,3 +28,5 @@ Potential speedups
 - We can condition on "parts" of each draw of the sampler, in particular if we condition on the
 projection of the rejection `sample - center` onto direction then resampling on the ray can be sped up for
 some things like LASSO. Could be some cost in power.
+
+- Learning a higher dimensional function can perhaps save some time -- proper conditioning has to be checked.
