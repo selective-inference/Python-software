@@ -16,7 +16,7 @@ class normal_sampler(object):
         self.cholT = np.linalg.cholesky(self.covariance).T
         self.shape = self.center.shape
 
-    def __call__(self, scale=1., size=None):
+    def __call__(self, size=None, scale=1.):
 
         if type(size) == type(1):
             size = (size,)
@@ -31,6 +31,42 @@ class normal_sampler(object):
         return normal_sampler(self.center.copy(),
                               self.covariance.copy())
 
+class split_sampler(object):
+
+    def __init__(self, sample_stat, row_covariance): # covariance of one row
+        self.sample_stat = np.asarray(sample_stat)
+        self.nsample = self.sample_stat.shape[0]
+        self.center = np.sum(self.sample_stat, 0)
+        self.covariance = row_covariance * self.nsample
+        self.cholT = np.linalg.cholesky(self.covariance).T
+        self.shape = self.center.shape
+
+    def __call__(self, size=None, scale=0.5):
+
+        # (1 - frac) / frac = scale**2
+
+        frac = 1 / (scale**2 + 1)
+
+        if type(size) == type(1):
+            size = (size,)
+        size = size or (1,)
+        if self.shape == ():
+            _shape = (1,)
+        else:
+            _shape = self.shape
+
+        final_sample = []
+        idx = np.arange(self.nsample)
+        for _ in range(np.product(size)):
+            sample_ = self.sample_stat[np.random.choice(idx, int(frac * self.nsample), replace=False)]
+            final_sample.append(np.sum(sample_, 0) / frac) # rescale to the scale of a sum of nsample rows
+        val = np.squeeze(np.array(final_sample).reshape(size + _shape))
+        return val
+
+    def __copy__(self):
+        return split_sampler(self.stat_sample.copy(),
+                             self.covariance.copy() / self.nsample)
+
 def learn_weights(algorithm, 
                   observed_outcome,
                   observed_sampler, 
@@ -40,15 +76,16 @@ def learn_weights(algorithm,
                   learning_proposal, 
                   fit_probability, 
                   B=15000,
-                  test = None):
+                  check_selection=None):
     """
     The algorithm to learn P(Y=1|T)
     """
     S = selection_stat = observed_sampler.center
-    new_sampler = copy(observed_sampler)
+    new_sampler = normal_sampler(observed_sampler.center.copy(),
+                                 observed_sampler.covariance.copy())
 
-    if test is None:
-        test = lambda result: result == observed_outcome
+    if check_selection is None:
+        check_selection = lambda result: result == observed_outcome
 
     direction = cross_cov.dot(np.linalg.inv(target_cov).reshape((1,1))) # move along a ray through S with this direction
 
@@ -58,7 +95,7 @@ def learn_weights(algorithm,
          new_sampler.center = S + direction.dot(T - observed_target)
          new_result = algorithm(new_sampler)
 
-         Y = test(new_result)
+         Y = check_selection(new_result)
 
          learning_Y.append(Y)
          learning_T.append(T)
@@ -77,7 +114,8 @@ def infer_general_target(algorithm,
                          target_cov,
                          fitter=logit_fit,
                          hypothesis=0,
-                         alpha=0.1):
+                         alpha=0.1,
+                         B=15000):
 
     target_sd = np.sqrt(target_cov[0, 0])
 
@@ -92,7 +130,8 @@ def infer_general_target(algorithm,
                               target_cov,
                               cross_cov,
                               learning_proposal, 
-                              fitter)
+                              fitter,
+                              B=B)
 
     return _inference(observed_target,
                       target_cov,
@@ -107,7 +146,8 @@ def infer_full_target(algorithm,
                       dispersion, # sigma^2
                       fitter=logit_fit,
                       hypothesis=0,
-                      alpha=0.1):
+                      alpha=0.1,
+                      B=15000):
 
     # this makes assumption that covariance in observed sampler is the 
     # true covariance of S
@@ -139,7 +179,8 @@ def infer_full_target(algorithm,
                               cross_cov,
                               learning_proposal, 
                               fitter,
-                              test = lambda result: feature in set(result))
+                              check_selection=lambda result: feature in set(result),
+                              B=B)
 
     return _inference(observed_target,
                       target_cov,

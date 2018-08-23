@@ -3,6 +3,8 @@ import functools
 import numpy as np
 from scipy.stats import norm as ndist
 
+import regreg.api as rr
+
 from selection.tests.instance import gaussian_instance
 
 from core import (infer_full_target,
@@ -31,19 +33,23 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
     smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS / n)
 
-    def meta_algorithm(XTX, XTXi, dispersion, sampler):
+    def meta_algorithm(XTX, XTXi, dispersion, lam, sampler):
 
         min_success = 2
         ntries = 5
         p = XTX.shape[0]
         success = np.zeros(p)
+
+        loss = rr.quadratic_loss((p,), Q=XTX)
+        pen = rr.l1norm(p, lagrange=lam)
+
         for _ in range(ntries):
             scale = 0.5
-            frac = 1. / (scale**2 + 1.)
             noisy_S = sampler(scale=scale)
-            noisy_beta = XTXi.dot(noisy_S)
-            noisy_Z = noisy_beta / np.sqrt(dispersion * np.diag(XTXi) * frac)
-            success += np.fabs(noisy_Z) > 2
+            loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
+            problem = rr.simple_problem(loss, pen)
+            soln = problem.solve(max_its=50, tol=1.e-6)
+            success += soln != 0
         return set(np.nonzero(success >= min_success)[0])
 
     XTX = X.T.dot(X)
@@ -51,7 +57,7 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
     dispersion = np.linalg.norm(resid)**2 / (n-p)
                          
-    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, dispersion)
+    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, 2 * np.sqrt(n), dispersion)
 
     # run selection algorithm
 
@@ -93,7 +99,7 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     P, L, N, coverage = [], [], [], []
     plt.clf()
-    for i in range(100):
+    for i in range(30):
         p, cover, l, n = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -104,4 +110,4 @@ if __name__ == "__main__":
     plt.clf()
     plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
     plt.plot([0,1], [0,1], 'k--', linewidth=2)
-    plt.savefig('regression_example.pdf')
+    plt.savefig('lasso_example.pdf')
