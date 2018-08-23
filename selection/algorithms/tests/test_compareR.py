@@ -13,6 +13,7 @@ except ImportError:
 
 from ..lasso import lasso, lasso_full
 from ..forward_step import forward_step
+from ...randomized.lasso import lasso as rlasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance, logistic_instance
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
@@ -298,6 +299,7 @@ def test_logistic():
     x = np.asarray(rpy.r('x'))
     x = np.hstack([np.ones((x.shape[0],1)), x])
     L = lasso.logistic(x, y, [0] + [0.8] * (x.shape[1]-1))
+
     beta2 = L.fit()[L.active]
 
     yield np.testing.assert_equal, L.active[1:], selected_vars
@@ -520,7 +522,11 @@ def test_liu_gaussian():
             p = ncol(X)
             #sigma_est = sigma(lm(y ~ X - 1))
             penalty_factor = rep(1, p);
-            soln = selectiveInference:::solve_problem_glmnet(X, y, lam/n, penalty_factor=penalty_factor, family="gaussian")
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam/n, 
+                                                             penalty_factor=penalty_factor,
+                                                             family="gaussian")
             PVS = ROSI(X, 
                        y, 
                        soln, 
@@ -574,7 +580,7 @@ def test_liu_logistic():
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
                                                              lam/n, 
-                                                             penalty_factor=penalty_factor, 
+                                                             penalty_factor=penalty_factor,
                                                              family="binomial")
             PVS = ROSI(X, 
                        y, 
@@ -632,7 +638,7 @@ def test_ROSI_gaussian():
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
                                                              lam/n, 
-                                                             penalty_factor=penalty_factor, 
+                                                             penalty_factor=penalty_factor,
                                                              family="gaussian")
             PVS = ROSI(X, 
                        y, 
@@ -688,7 +694,7 @@ def test_ROSI_logistic():
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
                                                              lam/n, 
-                                                             penalty_factor=penalty_factor, 
+                                                             penalty_factor=penalty_factor,
                                                              family="binomial")
             PVS = ROSI(X, 
                        y, 
@@ -713,3 +719,146 @@ def test_ROSI_logistic():
             nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
+def test_rlasso_gaussian():
+    """
+    Check that the randomized results agree with 
+    R given same inputs, randomization & samples
+    """
+    n, p, s, sigma, signal_fac, rho = 100, 30, 15, 3, 1.5, 0.4
+    randomizer_scale, ndraw, burnin = 1, 5000, 1000
+    target = 'selected'
+    R_target = 'selected'
+
+    while True:
+        signal = np.sqrt(signal_fac * np.log(p))
+        X, y, beta, active, sigma = gaussian_instance(n=n,
+                                                      p=p, 
+                                                      signal=signal, 
+                                                      s=s, 
+                                                      equicorrelated=False, 
+                                                      rho=rho, 
+                                                      sigma=sigma, 
+                                                      random_signs=True)
+
+        sigma_ = np.std(y)
+        if target is not 'debiased':
+            lam = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
+        else:
+            lam = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
+        L = rlasso.gaussian(X,y,lam)
+        ridge_term = L.ridge_term
+        _,prec = L.randomizer.cov_prec
+        noise_scale = np.sqrt(1./prec)
+
+        numpy2ri.activate()
+
+        rpy.r.assign("X", X)
+        rpy.r.assign("y", y)
+        rpy.r.assign("lam", lam)
+        rpy.r.assign("ridge_term", ridge_term)
+        rpy.r.assign("type", R_target)
+        rpy.r.assign("noise_scale",noise_scale)
+        rpy.r("""
+
+        library(selectiveInference)
+
+        y = as.numeric(y)
+        n = nrow(X)
+        p = ncol(X)
+
+        penalty_factor = rep(1, p);
+        soln = randomizedLasso(X, 
+                               y, 
+                               lam, 
+                               family="gaussian",
+                               noise_scale=noise_scale,
+                               ridge_term=ridge_term,
+                               for_test=TRUE)
+        perturb = soln$perturb
+        obs_soln = soln$soln
+        cond_mean = soln$law$cond_mean
+        cond_cov = soln$law$cond_cov
+
+        if (type != 'selected') {
+            targets = selectiveInference:::compute_target(soln, type)
+        } else {
+            targets = NULL
+        }
+
+        PVS = randomizedLassoInf(soln,
+                                 targets=targets,
+                                 sampler="norejection",
+                                 for_test=TRUE)
+        opt_samples = PVS$opt_samples
+        target_samples = PVS$target_samples
+        pvalues = PVS$pvalues
+        """)
+        R_perturb = rpy.r('perturb')
+
+        R_soln = rpy.r('obs_soln')
+        R_cond_mean = rpy.r('cond_mean')
+        R_cond_mean = np.squeeze(R_cond_mean)
+        R_cond_cov = rpy.r('cond_cov')
+
+        R_pvalues = rpy.r('pvalues')
+        R_pvalues = R_pvalues[~np.isnan(R_pvalues)]
+
+        R_opt_samples = rpy.r('opt_samples')
+        R_target_samples = rpy.r('target_samples')
+
+        numpy2ri.deactivate()
+
+        signs = L.fit(perturb=R_perturb)
+        active_set = np.where(signs != 0)[0]
+        nonzero = signs != 0
+
+        initial_soln = L.initial_soln
+        cond_mean = L.cond_mean
+        cond_cov = L.cond_cov
+
+        if nonzero.sum() > 4:
+            if target == 'full':
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = full_targets(L.loglike, 
+                                              L._W, 
+                                              nonzero)
+            elif target == 'selected':
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = selected_targets(L.loglike, 
+                                                  L._W, 
+                                                  nonzero)
+            elif target == 'debiased':
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = debiased_targets(L.loglike, 
+                                                  L._W, 
+                                                  nonzero,
+                                                  penalty=L.penalty)
+
+            _, pval, intervals = L.summary(observed_target, 
+                                           cov_target, 
+                                           cov_target_score, 
+                                           alternatives,
+                                           opt_sample=R_opt_samples,
+                                           target_sample=R_target_samples,
+                                           ndraw=8000,#ndraw,
+                                           burnin=burnin, 
+                                           compute_intervals=True)
+
+            tol = 1.e-5
+            yield np.testing.assert_allclose, initial_soln, R_soln, tol, tol, False, 'checking initial rlasso solution'
+            yield np.testing.assert_allclose, cond_mean, R_cond_mean, tol, tol, False, 'checking conditional mean'
+            yield np.testing.assert_allclose, cond_cov, R_cond_cov, tol, tol, False, 'checking conditional covariance'
+            yield np.testing.assert_allclose, pval, R_pvalues, tol, tol, False, 'checking pvalues'
+
+            break
+
+
+        

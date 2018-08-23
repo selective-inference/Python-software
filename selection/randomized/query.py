@@ -85,6 +85,8 @@ class query(object):
                 cov_target, 
                 cov_target_score, 
                 alternatives,
+                opt_sample=None,
+                target_sample=None,
                 parameter=None,
                 level=0.9,
                 ndraw=10000,
@@ -116,13 +118,17 @@ class query(object):
         if parameter is None:
             parameter = np.zeros_like(observed_target)
 
-        opt_sample = self.sampler.sample(ndraw, burnin)
+        if opt_sample is None:
+            opt_sample = self.sampler.sample(ndraw, burnin)
+        else:
+            ndraw = opt_sample.shape[0]
 
         pivots = self.sampler.coefficient_pvalues(observed_target,
                                                   cov_target,
                                                   cov_target_score,
                                                   parameter=parameter,
                                                   sample=opt_sample,
+                                                  normal_sample=target_sample,
                                                   alternatives=alternatives)
 
         MLE_intervals = self.selective_MLE(observed_target,
@@ -135,6 +141,7 @@ class query(object):
                                                        cov_target_score,
                                                        parameter=np.zeros_like(parameter),
                                                        sample=opt_sample,
+                                                       normal_sample=target_sample,
                                                        alternatives=alternatives)
         else:
             pvalues = pivots
@@ -150,6 +157,7 @@ class query(object):
                                                           cov_target,
                                                           cov_target_score,
                                                           sample=opt_sample,
+                                                          normal_sample=target_sample,
                                                           initial_guess=MLE_intervals,
                                                           level=level)
 
@@ -391,6 +399,7 @@ class optimization_sampler(object):
                              score_cov,
                              sample_args=(),
                              sample=None,
+                             normal_sample=None,
                              level=0.9,
                              initial_guess=None):
         '''
@@ -437,7 +446,7 @@ class optimization_sampler(object):
         ndraw = sample.shape[0]
 
         _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target, ndraw)
+                                            observed_target, ndraw, normal_sample=normal_sample)
 
         limits = []
 
@@ -460,6 +469,7 @@ class optimization_sampler(object):
                             parameter=None,
                             sample_args=(),
                             sample=None,
+                            normal_sample=None,
                             alternatives=None):
         '''
         Construct selective p-values
@@ -507,7 +517,7 @@ class optimization_sampler(object):
             parameter = np.zeros(observed_target.shape[0])
 
         _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target, ndraw)
+                                            observed_target, ndraw, normal_sample=normal_sample)
         pvals = []
 
         for i in range(observed_target.shape[0]):
@@ -833,7 +843,8 @@ class optimization_intervals(object):
                                     #  should be about the same...
                  observed,
                  nsample, # how large a normal sample
-                 target_cov=None):
+                 target_cov=None,
+                 normal_sample=None):
 
         self.blahvals = []
         # not all opt_samples will be of the same size as nsample 
@@ -874,9 +885,12 @@ class optimization_intervals(object):
                 self.target_cov += target_cov
             self.target_cov /= len(opt_sampling_info)
 
-        self._normal_sample = np.random.multivariate_normal(mean=np.zeros(self.target_cov.shape[0]), 
-                                                            cov=self.target_cov, 
-                                                            size=(nsample,)) 
+        if normal_sample is None:
+            self._normal_sample = np.random.multivariate_normal(mean=np.zeros(self.target_cov.shape[0]), 
+                                                                cov=self.target_cov, 
+                                                                size=(nsample,))
+        else:
+            self._normal_sample = normal_sample
 
     def pivot(self,
               linear_func,
@@ -917,7 +931,7 @@ class optimization_intervals(object):
                                 candidate,    # candidate value
                                 nuisance,       # nuisance sufficient stats for each view
                                 translate_dirs) # points will be moved like sample * score_cov
-        
+
         pivot = np.mean((sample_stat + candidate <= observed_stat) * weights) / np.mean(weights)
 
         if alternative == 'twosided':
