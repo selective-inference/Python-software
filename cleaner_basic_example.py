@@ -8,7 +8,7 @@ def simulate(n=100):
 
     # description of statistical problem
 
-    truth = 0 * np.array([2. , -2.]) / np.sqrt(n)
+    truth = np.array([2. , -2.]) / np.sqrt(n)
 
     data = np.random.standard_normal((n, 2)) + np.multiply.outer(np.ones(n), truth) 
     S = np.mean(data, 0)
@@ -66,7 +66,7 @@ if __name__ == "__main__":
     P, L = [], []
     plt.clf()
     coverage = 0
-    for i in range(100):
+    for i in range(300):
         p, cover, l = simulate(n=n)
         coverage += cover
         P.append(p)
