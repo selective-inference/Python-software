@@ -16,9 +16,6 @@ from ..forward_step import forward_step
 from ...randomized.lasso import lasso as rlasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance, logistic_instance
 
-import os
-os.environ['KMP_DUPLICATE_LIB_OK']="TRUE"
-
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_fixed_lambda():
     """
@@ -724,7 +721,7 @@ def test_ROSI_logistic():
             break
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def unit_test_rlasso_gaussian():
+def test_rlasso_gaussian():
     """
     Check that the randomized results agree with 
     R given same inputs, randomization & samples
