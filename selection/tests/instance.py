@@ -94,8 +94,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
 
     if center:
         X -= X.mean(0)[None, :]
-    if scale:
-        X /= (X.std(0)[None,:] * np.sqrt(n))
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -105,6 +104,10 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+
+    if scale:
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        beta /= np.sqrt(n)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -175,9 +178,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
 
     if center:
         X -= X.mean(0)[None,:]
-    if scale:
-        X /= X.std(0)[None,:]
-    X /= np.sqrt(n)
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -187,6 +188,10 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+
+    if scale:
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        beta /= np.sqrt(n)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -251,9 +256,7 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
 
     if center:
         X -= X.mean(0)[None,:]
-    if scale:
-        X /= X.std(0)[None,:]
-    X /= np.sqrt(n)
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -263,6 +266,10 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+
+    if scale:
+        X /= (X.std(0)[None,:] * np.sqrt(n))
+        beta /= np.sqrt(n)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
