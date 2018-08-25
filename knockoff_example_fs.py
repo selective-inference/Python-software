@@ -19,19 +19,19 @@ from core import (infer_full_target,
 
 from knockoffs import knockoffs_sigma
 
-def simulate(n=1000, p=30, signal=3.2, sigma=2, alpha=0.1, s=10):
+def simulate(n=1000, p=40, signal=(3.2, 4), sigma=2, alpha=0.1, s=10):
 
     # description of statistical problem
 
-    X, y, truth = gaussian_instance(n=n,
-                                    p=p, 
-                                    s=s,
-                                    equicorrelated=False,
-                                    rho=0., 
-                                    sigma=sigma,
-                                    signal=signal,
-                                    random_signs=True,
-                                    scale=False)[:3]
+    X, y, truth, _, _, sigmaX = gaussian_instance(n=n,
+                                                  p=p, 
+                                                  s=s,
+                                                  equicorrelated=False,
+                                                  rho=0., 
+                                                  sigma=sigma,
+                                                  signal=signal,
+                                                  random_signs=True,
+                                                  scale=False)
 
     dispersion = sigma**2
     S = X.T.dot(y)
@@ -53,7 +53,7 @@ def simulate(n=1000, p=30, signal=3.2, sigma=2, alpha=0.1, s=10):
             S = sampler(scale=0.5) # deterministic with scale=0
             ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
             K = knockoffs_sigma(X, ynew, *[None]*4)
-            K.setup(np.identity(p))
+            K.setup(sigmaX)
             K.forward_step = True
             select = K.select()[0]
             numpy2ri.deactivate()
@@ -84,7 +84,7 @@ def simulate(n=1000, p=30, signal=3.2, sigma=2, alpha=0.1, s=10):
                                        sampler,
                                        dispersion,
                                        hypothesis=true_target,
-                                       fitter=probit_fit,
+                                       fit_probability=probit_fit,
                                        alpha=alpha,
                                        B=100)
 

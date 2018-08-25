@@ -44,7 +44,7 @@ def simulate(n=100):
                                             observed_sampler,
                                             dispersion,
                                             hypothesis=true_target,
-                                            fitter=probit_fit)
+                                            fit_probability=probit_fit)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))

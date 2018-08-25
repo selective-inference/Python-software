@@ -53,7 +53,7 @@ def simulate(n=100):
                                            cross_cov,
                                            target_cov,
                                            hypothesis=true_target,
-                                           fitter=probit_fit)
+                                           fit_probability=probit_fit)
 
     return pivot, (interval[0] < true_target) * (interval[1] > true_target), interval[1] - interval[0]
 
