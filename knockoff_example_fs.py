@@ -19,7 +19,7 @@ from core import (infer_full_target,
 
 from knockoffs import knockoffs_sigma
 
-def simulate(n=1000, p=100, signal=3.2, sigma=2, alpha=0.1, s=10):
+def simulate(n=1000, p=30, signal=3.2, sigma=2, alpha=0.1, s=10):
 
     # description of statistical problem
 
@@ -31,7 +31,7 @@ def simulate(n=1000, p=100, signal=3.2, sigma=2, alpha=0.1, s=10):
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=True)[:3]
+                                    scale=False)[:3]
 
     dispersion = sigma**2
     S = X.T.dot(y)
@@ -45,7 +45,7 @@ def simulate(n=1000, p=100, signal=3.2, sigma=2, alpha=0.1, s=10):
     def meta_algorithm(XTXi, X, resid, sampler):
 
         min_success = 1
-        ntries = 2
+        ntries = 3
         p = XTXi.shape[0]
         success = np.zeros(p)
 
@@ -53,7 +53,7 @@ def simulate(n=1000, p=100, signal=3.2, sigma=2, alpha=0.1, s=10):
             S = sampler(scale=0.5) # deterministic with scale=0
             ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
             K = knockoffs_sigma(X, ynew, *[None]*4)
-            K.setup(np.identity(p) / n)
+            K.setup(np.identity(p))
             K.forward_step = True
             select = K.select()[0]
             numpy2ri.deactivate()
@@ -92,7 +92,7 @@ def simulate(n=1000, p=100, signal=3.2, sigma=2, alpha=0.1, s=10):
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
         lengths.append(interval[1] - interval[0])
 
-        target_sd = np.sqrt(dispersion) * XTXi[idx, idx]
+        target_sd = np.sqrt(dispersion * XTXi[idx, idx])
         naive_lengths.append(2 * ndist.ppf(1 - 0.5 * alpha) * target_sd)
 
     return pivots, covered, lengths, naive_lengths
