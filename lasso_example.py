@@ -36,8 +36,8 @@ def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
 
     def meta_algorithm(XTX, XTXi, lam, sampler):
 
-        min_success = 3
-        ntries = 7
+        min_success = 1
+        ntries = 1
         p = XTX.shape[0]
         success = np.zeros(p)
 
@@ -58,7 +58,7 @@ def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
     dispersion = np.linalg.norm(resid)**2 / (n-p)
                          
-    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, 3.) # * np.sqrt(n))
+    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, 4. * np.sqrt(n))
 
     # run selection algorithm
 

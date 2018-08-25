@@ -201,9 +201,8 @@ def _inference(observed_target,
     weight_val *= ndist.pdf(target_val / target_sd)
     exp_family = discrete_family(target_val, weight_val)  
 
-    print(exp_family.theta)
     pivot = exp_family.cdf(hypothesis / target_cov[0, 0], x=observed_target)
-    print(exp_family.theta)
+
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])
 
