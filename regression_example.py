@@ -11,13 +11,13 @@ from core import (infer_full_target,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
+def simulate(n=1000, p=60, s=15, signal=3, sigma=2, alpha=0.1):
 
     # description of statistical problem
 
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
-                                    s=5,
+                                    s=s,
                                     equicorrelated=False,
                                     rho=0.5, 
                                     sigma=sigma,
@@ -33,8 +33,8 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
 
     def meta_algorithm(XTX, XTXi, dispersion, sampler):
 
-        min_success = 2
-        ntries = 5
+        min_success = 3
+        ntries = 7
         p = XTX.shape[0]
         success = np.zeros(p)
         for _ in range(ntries):
@@ -75,7 +75,7 @@ def simulate(n=1000, p=20, signal=3, sigma=2, alpha=0.1):
                                        hypothesis=true_target,
                                        fitter=probit_fit,
                                        alpha=alpha,
-                                       B=1000)
+                                       B=100)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))

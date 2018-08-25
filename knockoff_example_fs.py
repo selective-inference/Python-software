@@ -7,13 +7,19 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
+import rpy2.robjects as rpy
+from rpy2.robjects import numpy2ri
+rpy.r('library(knockoff)')
+
 from core import (infer_full_target,
-                  split_sampler, # split_sampler not working yet
+                  split_sampler,
                   normal_sampler,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
+from knockoffs import knockoffs_sigma
+
+def simulate(n=1000, p=100, signal=3.2, sigma=2, alpha=0.1, s=10):
 
     # description of statistical problem
 
@@ -21,44 +27,42 @@ def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
                                     p=p, 
                                     s=s,
                                     equicorrelated=False,
-                                    rho=0.5, 
+                                    rho=0., 
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=False)[:3]
+                                    scale=True)[:3]
 
     dispersion = sigma**2
-
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
-    smooth_sampler = normal_sampler(S, covS)
-    splitting_sampler = split_sampler(X * y[:, None], covS)
-
-    def meta_algorithm(XTX, XTXi, lam, sampler):
-
-        min_success = 3
-        ntries = 7
-        p = XTX.shape[0]
-        success = np.zeros(p)
-
-        loss = rr.quadratic_loss((p,), Q=XTX)
-        pen = rr.l1norm(p, lagrange=lam)
-
-        for _ in range(ntries):
-            scale = 0.5
-            noisy_S = sampler(scale=scale)
-            loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
-            problem = rr.simple_problem(loss, pen)
-            soln = problem.solve(max_its=50, tol=1.e-6)
-            success += soln != 0
-        return set(np.nonzero(success >= min_success)[0])
-
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
-    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
-    dispersion = np.linalg.norm(resid)**2 / (n-p)
-                         
-    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, 3.) # * np.sqrt(n))
+
+    sampler = normal_sampler(X.T.dot(y), covS)
+    splitting_sampler = split_sampler(X * y[:, None], covS / n)
+
+    def meta_algorithm(XTXi, X, resid, sampler):
+
+        min_success = 1
+        ntries = 2
+        p = XTXi.shape[0]
+        success = np.zeros(p)
+
+        for _ in range(ntries):
+            S = sampler(scale=0.5) # deterministic with scale=0
+            ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
+            K = knockoffs_sigma(X, ynew, *[None]*4)
+            K.setup(np.identity(p) / n)
+            K.forward_step = True
+            select = K.select()[0]
+            numpy2ri.deactivate()
+            success[select] += 1
+        value = set(np.nonzero(success >= min_success)[0])
+        print(value)
+        return value
+
+    selection_algorithm = functools.partial(meta_algorithm, XTXi, X, y - X.dot(XTXi.dot(S)))
 
     # run selection algorithm
 
@@ -69,7 +73,7 @@ def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
     # we just take the first target  
 
     pivots, covered, lengths, naive_lengths = [], [], [], []
-    for idx in observed_set:
+    for idx in list(observed_set)[:1]:
         print(idx, len(observed_set))
         true_target = truth[idx]
 
@@ -77,7 +81,7 @@ def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
          interval) = infer_full_target(selection_algorithm,
                                        observed_set,
                                        idx,
-                                       splitting_sampler,
+                                       sampler,
                                        dispersion,
                                        hypothesis=true_target,
                                        fitter=probit_fit,
@@ -100,7 +104,7 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     P, L, N, coverage = [], [], [], []
     plt.clf()
-    for i in range(30):
+    for i in range(200):
         p, cover, l, n = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -108,7 +112,8 @@ if __name__ == "__main__":
         N.extend(n)
         print(np.mean(P), np.std(P), np.mean(np.array(L) / np.array(N)), np.mean(coverage))
 
-    plt.clf()
-    plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
-    plt.plot([0,1], [0,1], 'k--', linewidth=2)
-    plt.savefig('lasso_example2.pdf')
+        if i % 5 == 0 and i > 0:
+            plt.clf()
+            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
+            plt.plot([0,1], [0,1], 'k--', linewidth=2)
+            plt.savefig('knockoff_example_fs.pdf')

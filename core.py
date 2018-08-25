@@ -28,17 +28,16 @@ class normal_sampler(object):
         return scale * np.squeeze(np.random.standard_normal(size + _shape).dot(self.cholT)) + self.center
 
     def __copy__(self):
-        return normal_sampler(self.center.copy(),
+        return self.__class__(self.center.copy(),
                               self.covariance.copy())
 
 class split_sampler(object):
 
-    def __init__(self, sample_stat, row_covariance): # covariance of one row
+    def __init__(self, sample_stat, covariance): # covariance of sum of rows
         self.sample_stat = np.asarray(sample_stat)
         self.nsample = self.sample_stat.shape[0]
         self.center = np.sum(self.sample_stat, 0)
-        self.covariance = row_covariance * self.nsample
-        self.cholT = np.linalg.cholesky(self.covariance).T
+        self.covariance = covariance
         self.shape = self.center.shape
 
     def __call__(self, size=None, scale=0.5):
@@ -65,7 +64,7 @@ class split_sampler(object):
 
     def __copy__(self):
         return split_sampler(self.stat_sample.copy(),
-                             self.covariance.copy() / self.nsample)
+                             self.covariance.copy())
 
 def learn_weights(algorithm, 
                   observed_outcome,
@@ -81,6 +80,7 @@ def learn_weights(algorithm,
     The algorithm to learn P(Y=1|T)
     """
     S = selection_stat = observed_sampler.center
+
     new_sampler = normal_sampler(observed_sampler.center.copy(),
                                  observed_sampler.covariance.copy())
 
@@ -201,7 +201,9 @@ def _inference(observed_target,
     weight_val *= ndist.pdf(target_val / target_sd)
     exp_family = discrete_family(target_val, weight_val)  
 
+    print(exp_family.theta)
     pivot = exp_family.cdf(hypothesis / target_cov[0, 0], x=observed_target)
+    print(exp_family.theta)
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])
 
