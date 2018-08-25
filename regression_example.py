@@ -81,7 +81,7 @@ def simulate(n=1000, p=60, s=15, signal=3, sigma=2, alpha=0.1):
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
         lengths.append(interval[1] - interval[0])
 
-        target_sd = np.sqrt(dispersion) * XTXi[idx, idx]
+        target_sd = np.sqrt(dispersion * XTXi[idx, idx])
         naive_lengths.append(2 * ndist.ppf(1 - 0.5 * alpha) * target_sd)
 
     return pivots, covered, lengths, naive_lengths
