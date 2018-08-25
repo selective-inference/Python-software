@@ -13,7 +13,7 @@ from core import (infer_full_target,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
+def simulate(n=1000, p=100, s=10, signal=(3, 5), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -36,8 +36,8 @@ def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
 
     def meta_algorithm(XTX, XTXi, lam, sampler):
 
-        min_success = 1
-        ntries = 1
+        min_success = 3
+        ntries = 6
         p = XTX.shape[0]
         success = np.zeros(p)
 
@@ -80,7 +80,7 @@ def simulate(n=1000, p=30, s=10, signal=3, sigma=2, alpha=0.1):
                                        splitting_sampler,
                                        dispersion,
                                        hypothesis=true_target,
-                                       fitter=probit_fit,
+                                       fit_probability=probit_fit,
                                        alpha=alpha,
                                        B=100)
 
@@ -108,7 +108,8 @@ if __name__ == "__main__":
         N.extend(n)
         print(np.mean(P), np.std(P), np.mean(np.array(L) / np.array(N)), np.mean(coverage))
 
-    plt.clf()
-    plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
-    plt.plot([0,1], [0,1], 'k--', linewidth=2)
-    plt.savefig('lasso_example2.pdf')
+        if i % 5 == 0 and i > 0:
+            plt.clf()
+            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
+            plt.plot([0,1], [0,1], 'k--', linewidth=2)
+            plt.savefig('lasso_example2.pdf')

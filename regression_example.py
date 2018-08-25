@@ -73,7 +73,7 @@ def simulate(n=1000, p=60, s=15, signal=3, sigma=2, alpha=0.1):
                                        splitting_sampler,
                                        dispersion,
                                        hypothesis=true_target,
-                                       fitter=probit_fit,
+                                       fit_probability=probit_fit,
                                        alpha=alpha,
                                        B=100)
 
