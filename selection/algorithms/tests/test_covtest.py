@@ -43,7 +43,7 @@ def test_tilting(nsim=100, ndraw=50000, burnin=10000):
     screen = 0
 
     for i in range(nsim):
-        X, Y, beta, active, sigma = gaussian_instance(n=20, p=30)
+        X, Y, beta, active, sigma, _ = gaussian_instance(n=20, p=30)
 
         Y0 = np.random.standard_normal(X.shape[0]) * sigma
 
