@@ -26,18 +26,16 @@ class marginal_screening(query):
     def __init__(self,
                  observed_data,
                  covariance, 
-                 randomizer_scale,
-                 marginal_level,
+                 randomizer,
+                 threshold,
                  perturb=None):
 
         self.observed_score_state = -observed_data  # -Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting
         self.nfeature = p = self.observed_score_state.shape[0]
         self.covariance = covariance
-        randomized_stdev = np.sqrt(np.diag(covariance) + randomizer_scale**2)
-        self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+        self.randomizer = randomizer
         self._initial_omega = perturb
-        self.marginal_level = marginal_level
-        self.threshold = randomized_stdev * ndist.ppf(1. - self.marginal_level / 2.)
+        self.threshold = threshold 
 
     def fit(self, perturb=None):
 
@@ -140,5 +138,23 @@ class marginal_screening(query):
 
         return observed_target, cov_target, crosscov_target_score.T, alternatives
 
+    @staticmethod
+    def at_level(observed_data,
+                 covariance, 
+                 randomizer_scale,
+                 marginal_level,
+                 perturb=None):
+        '''
+        Threshold
+        '''
+        randomized_stdev = np.sqrt(np.diag(covariance) + randomizer_scale**2)
+        p = covariance.shape[0]
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+        threshold = randomized_stdev * ndist.ppf(1. - marginal_level / 2.)
 
+        return marginal_screening(observed_data,
+                                  covariance, 
+                                  randomizer,
+                                  threshold,
+                                  perturb=perturb)
 

@@ -33,10 +33,10 @@ def test_marginal(n=500,
         n, p = X.shape
 
         q = 0.1
-        marginal_select = marginal_screening(score,
-                                             W * sigma**2,
-                                             randomizer_scale * sigma,
-                                             q)
+        marginal_select = marginal_screening.at_level(score,
+                                                      W * sigma**2,
+                                                      randomizer_scale * sigma,
+                                                      q)
 
         boundary = marginal_select.fit()
         nonzero = boundary != 0
@@ -93,10 +93,10 @@ def test_multivariate(n=500,
         n, p = X.shape
 
         q = 0.1
-        marginal_select = marginal_screening(score,
-                                             W * sigma**2,
-                                             randomizer_scale * sigma,
-                                             q)
+        marginal_select = marginal_screening.at_level(score,
+                                                      W * sigma**2,
+                                                      randomizer_scale * sigma,
+                                                      q)
 
         boundary = marginal_select.fit()
         nonzero = boundary != 0
@@ -143,10 +143,10 @@ def test_simple(n=100,
 
         q = 0.1
 
-        marginal_select = marginal_screening(score,
-                                             np.identity(p),
-                                             1.,
-                                             q)
+        marginal_select = marginal_screening.at_level(score,
+                                                      np.identity(p),
+                                                      1.,
+                                                      q)
 
         boundary = marginal_select.fit()
         nonzero = boundary != 0
