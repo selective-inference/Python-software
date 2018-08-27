@@ -502,7 +502,7 @@ def test_liu_gaussian():
 
     while True:
 
-        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=10, sigma=1.)
+        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=10, sigma=1.)
 
         lam = 4. * np.sqrt(n)
         X *= np.sqrt(n)
@@ -557,7 +557,7 @@ def test_liu_logistic():
     
     while True:
 
-        X, y, _, _ = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)
+        X, y = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)[:2]
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
@@ -610,7 +610,7 @@ def test_ROSI_gaussian():
     n, p, s = 100, 30, 15
 
     while True:
-        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
+        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
 
         lam = 7. * np.sqrt(n)
         X *= np.sqrt(n)
@@ -669,7 +669,7 @@ def test_ROSI_logistic():
     n, p, s = 100, 30, 15
 
     while True:
-        X, y, _, _ = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)
+        X, y = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)[:2]
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
@@ -733,14 +733,14 @@ def test_rlasso_gaussian():
 
     while True:
         signal = np.sqrt(signal_fac * np.log(p))
-        X, y, beta, active, sigma = gaussian_instance(n=n,
-                                                      p=p, 
-                                                      signal=signal, 
-                                                      s=s, 
-                                                      equicorrelated=False, 
-                                                      rho=rho, 
-                                                      sigma=sigma, 
-                                                      random_signs=True)
+        X, y, beta, active, sigma, _ = gaussian_instance(n=n,
+                                                         p=p, 
+                                                         signal=signal, 
+                                                         s=s, 
+                                                         equicorrelated=False, 
+                                                         rho=rho, 
+                                                         sigma=sigma, 
+                                                         random_signs=True)
 
         sigma_ = np.std(y)
         if target is not 'debiased':

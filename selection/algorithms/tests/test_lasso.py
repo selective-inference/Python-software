@@ -178,13 +178,13 @@ def test_data_carving_gaussian(n=200,
                                use_full_cov=True,
                                return_only_screening=True):
 
-    X, y, beta, true_active, sigma = instance(n=n, 
-                                              p=p, 
-                                              s=s, 
-                                              sigma=sigma, 
-                                              rho=rho, 
-                                              signal=signal, 
-                                              df=df)
+    X, y, beta, true_active, sigma, _ = instance(n=n, 
+                                                 p=p, 
+                                                 s=s, 
+                                                 sigma=sigma, 
+                                                 rho=rho, 
+                                                 signal=signal, 
+                                                 df=df)
     mu = np.dot(X, beta)
 
     idx = np.arange(n)
@@ -244,13 +244,13 @@ def test_data_carving_sqrt_lasso(n=200,
                                  compute_intervals=True,
                                  return_only_screening=True):
     
-    X, y, beta, true_active, sigma = instance(n=n, 
-                                              p=p, 
-                                              s=s, 
-                                              sigma=sigma, 
-                                              rho=rho, 
-                                              signal=signal, 
-                                              df=df)
+    X, y, beta, true_active, sigma, _ = instance(n=n, 
+                                                 p=p, 
+                                                 s=s, 
+                                                 sigma=sigma, 
+                                                 rho=rho, 
+                                                 signal=signal, 
+                                                 df=df)
     mu = np.dot(X, beta)
 
     idx = np.arange(n)
@@ -309,12 +309,12 @@ def test_data_carving_logistic(n=700,
                                use_full_cov=False,
                                return_only_screening=True):
     
-    X, y, beta, true_active = logistic_instance(n=n, 
-                                                p=p, 
-                                                s=s, 
-                                                rho=rho, 
-                                                signal=signal,
-                                                equicorrelated=False)
+    X, y, beta, true_active, _ = logistic_instance(n=n, 
+                                                   p=p, 
+                                                   s=s, 
+                                                   rho=rho, 
+                                                   signal=signal,
+                                                   equicorrelated=False)
 
     mu = X.dot(beta)
     prob = np.exp(mu) / (1 + np.exp(mu))
@@ -384,13 +384,13 @@ def test_data_carving_poisson(n=500,
                               use_full_cov=True,
                               return_only_screening=True):
     
-    X, y, beta, true_active, sigma = instance(n=n, 
-                                              p=p, 
-                                              s=s, 
-                                              sigma=sigma, 
-                                              rho=rho, 
-                                              signal=signal, 
-                                              df=df)
+    X, y, beta, true_active, sigma, _ = instance(n=n, 
+                                                 p=p, 
+                                                 s=s, 
+                                                 sigma=sigma, 
+                                                 rho=rho, 
+                                                 signal=signal, 
+                                                 df=df)
     X = np.hstack([np.ones((n,1)), X])
     y = np.random.poisson(10, size=y.shape)
     s = 1
@@ -499,7 +499,7 @@ def test_data_carving_coxph(n=400,
 
 def test_intervals(n=100, p=20, s=5):
     t = []
-    X, y, beta, true_active, sigma = instance(n=n, p=p, s=s)
+    X, y, beta, true_active, sigma, _ = instance(n=n, p=p, s=s)
     las = lasso.gaussian(X, y, 4., sigma=sigma)
     las.fit()
 
@@ -518,12 +518,12 @@ def test_gaussian_pvals(n=100,
                         rho=0.3,
                         signal=8.):
 
-    X, y, beta, true_active, sigma = instance(n=n, 
-                                         p=p, 
-                                         s=s, 
-                                         sigma=sigma, 
-                                         rho=rho, 
-                                         signal=signal)
+    X, y, beta, true_active, sigma, _ = instance(n=n, 
+                                                 p=p, 
+                                                 s=s, 
+                                                 sigma=sigma, 
+                                                 rho=rho, 
+                                                 signal=signal)
     L = lasso.gaussian(X, y, 20., sigma=sigma)
     L.fit()
     L.fit(L.lasso_solution)
@@ -540,12 +540,12 @@ def test_sqrt_lasso_pvals(n=100,
                           rho=0.3,
                           signal=7.):
 
-    X, y, beta, true_active, sigma = instance(n=n, 
-                                         p=p, 
-                                         s=s, 
-                                         sigma=sigma, 
-                                         rho=rho, 
-                                         signal=signal)
+    X, y, beta, true_active, sigma, _ = instance(n=n, 
+                                                 p=p, 
+                                                 s=s, 
+                                                 sigma=sigma, 
+                                                 rho=rho, 
+                                                 signal=signal)
 
     lam_theor = np.mean(np.fabs(np.dot(X.T, np.random.standard_normal((n, 1000)))).max(0)) / np.sqrt(n)
     Q = rr.identity_quadratic(0.01, 0, np.ones(p), 0)
@@ -571,12 +571,12 @@ def test_sqrt_lasso_sandwich_pvals(n=200,
                                    signal=6.,
                                    use_lasso_sd=False):
 
-    X, y, beta, true_active, sigma = instance(n=n, 
-                                         p=p, 
-                                         s=s, 
-                                         sigma=sigma, 
-                                         rho=rho, 
-                                         signal=signal)
+    X, y, beta, true_active, sigma, _ = instance(n=n, 
+                                                 p=p, 
+                                                 s=s, 
+                                                 sigma=sigma, 
+                                                 rho=rho, 
+                                                 signal=signal)
 
     heteroscedastic_error = sigma * np.random.standard_normal(n) * (np.fabs(X[:,-1]) + 0.5)**2
     heteroscedastic_error += sigma * np.random.standard_normal(n) * (np.fabs(X[:,-2]) + 0.2)**2
@@ -602,12 +602,12 @@ def test_gaussian_sandwich_pvals(n=200,
                                  signal=6.,
                                  use_lasso_sd=False):
 
-    X, y, beta, true_active, sigma = instance(n=n, 
-                                         p=p, 
-                                         s=s, 
-                                         sigma=sigma, 
-                                         rho=rho, 
-                                         signal=signal)
+    X, y, beta, true_active, sigma, _ = instance(n=n, 
+                                                 p=p, 
+                                                 s=s, 
+                                                 sigma=sigma, 
+                                                 rho=rho, 
+                                                 signal=signal)
 
     heteroscedastic_error = sigma * np.random.standard_normal(n) * (np.fabs(X[:,-1]) + 0.5)**2
     heteroscedastic_error += sigma * np.random.standard_normal(n) * (np.fabs(X[:,-2]) + 0.2)**2
@@ -659,13 +659,13 @@ def test_logistic_pvals(n=500,
                         rho=0.3,
                         signal=15.):
 
-    X, y, beta, true_active = logistic_instance(n=n, 
-                                                p=p, 
-                                                s=s, 
-                                                rho=rho, 
-                                                signal=signal,
-                                                equicorrelated=False)
-
+    X, y, beta, true_active, _ = logistic_instance(n=n, 
+                                                   p=p, 
+                                                   s=s, 
+                                                   rho=rho, 
+                                                   signal=signal,
+                                                   equicorrelated=False)
+    
     X = np.hstack([np.ones((n,1)), X])
 
     print(true_active, 'true')
@@ -684,7 +684,7 @@ def test_logistic_pvals(n=500,
 
 def test_adding_quadratic_lasso():
 
-    X, y, beta, true_active, sigma = instance(n=300, p=200)
+    X, y, beta, true_active, sigma, _ = instance(n=300, p=200)
     Q = rr.identity_quadratic(0.01, 0, np.random.standard_normal(X.shape[1]), 0)
 
     L1 = lasso.gaussian(X, y, 20, quadratic=Q)
