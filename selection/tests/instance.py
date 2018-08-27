@@ -12,6 +12,8 @@ def _design(n, p, rho, equicorrelated):
     if equicorrelated:
         X = (np.sqrt(1 - rho) * np.random.standard_normal((n, p)) +
              np.sqrt(rho) * np.random.standard_normal(n)[:, None])
+        sigmaX = (1 - rho) * np.identity(p) + rho * np.ones((p, p))
+        cholX = np.linalg.cholesky(sigmaX)
     else:
         def AR1(rho, p):
             idx = np.arange(p)
@@ -21,7 +23,7 @@ def _design(n, p, rho, equicorrelated):
             return _cov_cache[('AR1', p, rho)]
         sigmaX, cholX = AR1(rho=rho, p=p)
         X = np.random.standard_normal((n, p)).dot(cholX.T)
-    return X
+    return X, sigmaX, cholX
 
 def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
                       random_signs=False, df=np.inf,
@@ -90,9 +92,12 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
 
     sigma : float
         Noise level.
+
+    sigmaX : np.ndarray((p,p))
+        Row covariance.
     """
 
-    X = _design(n, p, rho, equicorrelated)
+    X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
 
     if center:
         X -= X.mean(0)[None, :]
@@ -109,8 +114,10 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     beta /= np.sqrt(n)
 
     if scale:
-        X /= (X.std(0)[None,:] * np.sqrt(n))
+        scaling = X.std(0) * np.sqrt(n)
+        X /= scaling[None, :]
         beta *= np.sqrt(n)
+        sigmaX /= np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -124,7 +131,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
         return tdist.rvs(df, size=n) / sd_t
 
     Y = (X.dot(beta) + _noise(n, df)) * sigma
-    return X, Y, beta * sigma, np.nonzero(active)[0], sigma
+    return X, Y, beta * sigma, np.nonzero(active)[0], sigma, sigmaX
 
 
 def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
@@ -177,9 +184,12 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     active : np.int(s)
         Non-zero pattern.
 
+    sigmaX : np.ndarray((p,p))
+        Row covariance.
+
     """
 
-    X = _design(n, p, rho, equicorrelated)
+    X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
 
     if center:
         X -= X.mean(0)[None,:]
@@ -196,8 +206,10 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     beta /= np.sqrt(n)
 
     if scale:
-        X /= (X.std(0)[None,:] * np.sqrt(n))
-        beta /= np.sqrt(n)
+        scaling = X.std(0) * np.sqrt(n)
+        X /= scaling[None, :]
+        beta *= np.sqrt(n)
+        sigmaX /= np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -206,7 +218,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     pi = np.exp(eta) / (1 + np.exp(eta))
 
     Y = np.random.binomial(1, pi)
-    return X, Y, beta, np.nonzero(active)[0]
+    return X, Y, beta, np.nonzero(active)[0], sigmaX
 
 def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
                      random_signs=False, 
@@ -258,9 +270,12 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     active : np.int(s)
         Non-zero pattern.
 
+    sigmaX : np.ndarray((p,p))
+        Row covariance.
+
     """
 
-    X = _design(n, p, rho, equicorrelated)
+    X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
 
     if center:
         X -= X.mean(0)[None,:]
@@ -277,8 +292,10 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     beta /= np.sqrt(n)
 
     if scale:
-        X /= (X.std(0)[None,:] * np.sqrt(n))
-        beta /= np.sqrt(n)
+        scaling = X.std(0) * np.sqrt(n)
+        X /= scaling[None, :]
+        beta *= np.sqrt(n)
+        sigmaX /= np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -287,7 +304,7 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     mu = np.exp(eta)
 
     Y = np.random.poisson(mu)
-    return X, Y, beta, np.nonzero(active)[0]
+    return X, Y, beta, np.nonzero(active)[0], sigmaX
 
 def HIV_NRTI(drug='3TC', 
              standardize=True, 
