@@ -15,12 +15,10 @@ from ..algorithms.debiased_lasso import debiasing_matrix
 def stepup_selection(Z_values, stepup_Z):
 
     m = Z_values.shape[0]
-    Z_sorted = np.sort(Z_values)
-    indices = np.arange(m)
-    indices_order = np.argsort(Z_values)
-    survivors = Z_sorted - stepup_Z >= 0
+    absZ_sorted = np.sort(np.fabs(Z_values))[::-1]
+    survivors = absZ_sorted - stepup_Z >= 0
     if np.any(survivors):
-        last_survivor = np.max(indices[survivors])
+        last_survivor = np.max(np.nonzero(survivors)[0])
         return last_survivor + 1
     else:
         return 0
@@ -59,41 +57,50 @@ class stepup(marginal_screening):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        self._randomized_score = -self.observed_score_state + self._initial_omega
+        _randomized_score = -self.observed_score_state + self._initial_omega
 
-        K = stepup_selection(self._randomized_score, self.step_Z)
-        Z_cutoff = self.step_Z[K-1] # or K \pm 1? check!
+        K = stepup_selection(_randomized_score, self.step_Z)
+        if K < p:
+            Z_cutoff = self.step_Z[K] # or K \pm 1? check!
+        else:
+            Z_cutoff = 0
 
-        self._selected = np.fabs(self._randomized_score) > Z_cutoff
+        self._selected = np.fabs(_randomized_score) > Z_cutoff
         self._not_selected = ~self._selected
-        sign = np.sign(self._randomized_score)
+        sign = np.sign(_randomized_score)
         active_signs = sign[self._selected]
         sign[self._not_selected] = 0
         self.selection_variable = {'sign': sign.copy(),
-                                   'variables': self._selected.copy()}
+                                   'variables': self._selected.copy(),
+                                   # also conditioning on values of randomized unselected coefficients
+                                   }
 
-        self.observed_opt_state = (self._initial_omega[self._selected] - 
-                                   self.observed_score_state[self._selected] - 
-                                   np.diag(active_signs * Z_cutoff))
+        self.observed_opt_state = np.fabs(_randomized_score[self._selected]) - Z_cutoff 
 
         self.num_opt_var = self.observed_opt_state.shape[0]
         opt_linear = np.zeros((p, self.num_opt_var))
         opt_linear[self._selected,:] = np.identity(self.num_opt_var)
         opt_offset = np.zeros(p)
         opt_offset[self._selected] = active_signs * Z_cutoff
-        opt_offset[self._not_selected] = self._randomized_score[self._not_selected]
+        opt_offset[self._not_selected] = _randomized_score[self._not_selected]
 
         self.opt_transform = (opt_linear, opt_offset)
+        self._setup = True
 
-        cov, prec = self.randomizer.cov_prec
-        cond_precision = opt_linear.T.dot(opt_linear) * prec
-        cond_cov = np.linalg.inv(cond_precision)
-        logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+        _, prec = self.randomizer.cov_prec
 
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec  
+        else:
+            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+
+        cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
         logdens_transform = (logdens_linear, opt_offset)
-
-        A_scaling = -np.diag(active_signs)
+        A_scaling = -np.identity(len(active_signs))
         b_scaling = np.zeros(self.num_opt_var)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
