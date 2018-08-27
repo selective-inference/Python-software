@@ -20,8 +20,8 @@ def compute_projection_parameters(n, p, s, signal, rho, sigma, active):
     y_large = np.zeros(n_large)
 
     for i in range(multiple):
-        X_large[(i*n):((i+1)*n), :], y_large[(i*n):((i+1)*n)], _, _, _ = \
-            gaussian_instance(n=n, p=p, s=s, signal=signal, rho=rho, sigma=sigma, scale=True, center=True)
+        X_large[(i*n):((i+1)*n), :], y_large[(i*n):((i+1)*n)] = \
+            gaussian_instance(n=n, p=p, s=s, signal=signal, rho=rho, sigma=sigma, scale=True, center=True)[:2]
 
     proj_param = np.linalg.lstsq(X_large[:, active], y_large)[0]
     print(proj_param)
@@ -49,8 +49,14 @@ def test_naive(n=300,
     print(n, p, s)
 
     if X is None:
-        X, y, beta, truth, sigma = gaussian_instance(n=n, p=p, s=s, signal=signal, rho=rho, \
-                                                     sigma=sigma, scale=True, center=True)
+        X, y, beta, truth, sigma, _ = gaussian_instance(n=n, 
+                                                        p=p, 
+                                                        s=s, 
+                                                        signal=signal, 
+                                                        rho=rho, 
+                                                        sigma=sigma, 
+                                                        scale=True, 
+                                                        center=True)
     else:
         beta = np.zeros(p)
         beta[:s] = signal

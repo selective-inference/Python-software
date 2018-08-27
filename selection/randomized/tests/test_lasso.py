@@ -7,6 +7,8 @@ import regreg.api as rr
 
 from ..lasso import lasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance
+from ...tests.flags import SET_SEED
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
@@ -260,6 +262,7 @@ def test_sqrt_highdim_lasso(n=500,
 
     return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
 
+@set_seed_iftrue(SET_SEED)
 @rpy_test_safe(libraries=['selectiveInference'])
 def test_compareR(n=200, 
                   p=10, 
@@ -307,7 +310,14 @@ def test_compareR(n=200,
     # here is the python construction
 
     inst, const = gaussian_instance, lasso.gaussian
-    X, Y, beta = inst(n=n, p=p, signal=signal, s=s, equicorrelated=False, rho=0.2, sigma=sigma, random_signs=True)[:3]
+    X, Y, beta = inst(n=n, 
+                      p=p, 
+                      signal=signal, 
+                      s=s, 
+                      equicorrelated=False, 
+                      rho=0.2, 
+                      sigma=sigma, 
+                      random_signs=True)[:3]
 
     n, p = X.shape
 
@@ -321,7 +331,7 @@ def test_compareR(n=200,
                  W, 
                  randomizer_scale=randomizer_scale)
     
-    signs = conv.fit(perturb=rand, solve_args={'min_its':500, 'tol':1.e-12})
+    signs = conv.fit(perturb=np.asarray(rand), solve_args={'min_its':500, 'tol':1.e-12})
 
     assert np.fabs(conv.ridge_term - ridge_term) / ridge_term < 1.e-4
 

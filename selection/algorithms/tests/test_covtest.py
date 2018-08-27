@@ -3,12 +3,12 @@ import itertools
 import numpy as np
 import numpy.testing.decorators as dec
 
-from selection.tests.instance import gaussian_instance
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
-from selection.algorithms.lasso import lasso
-from selection.algorithms.covtest import covtest, selected_covtest
-from selection.constraints.affine import gibbs_test
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from ...tests.instance import gaussian_instance
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ..lasso import lasso
+from ..covtest import covtest, selected_covtest
+from ...constraints.affine import gibbs_test
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
