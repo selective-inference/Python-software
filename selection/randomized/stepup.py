@@ -1,5 +1,6 @@
 from __future__ import print_function
 import functools
+
 import numpy as np
 from scipy.stats import norm as ndist
 
@@ -11,44 +12,44 @@ from .randomization import randomization
 from .marginal_screening import marginal_screening
 from ..algorithms.debiased_lasso import debiasing_matrix
 
-def BH_selection(p_values, level):
+def stepup_selection(Z_values, stepup_Z):
 
-    m = p_values.shape[0]
-    p_sorted = np.sort(p_values)
+    m = Z_values.shape[0]
+    Z_sorted = np.sort(Z_values)
     indices = np.arange(m)
-    indices_order = np.argsort(p_values)
-    first_step = p_sorted - level * (np.arange(m) + 1.) / m <= 0
-    if np.any(first_step):
-        order_sig = np.max(indices[first_step])
-        E_sel = indices_order[:(order_sig+1)]
-        not_sel = indices_order[(order_sig+1):]
-
-        active = np.zeros(m, np.bool)
-        active[E_sel] = 1
-
-        return order_sig + 1, active, np.argsort(p_values[np.sort(not_sel)])
+    indices_order = np.argsort(Z_values)
+    survivors = Z_sorted - stepup_Z >= 0
+    if np.any(survivors):
+        last_survivor = np.max(indices[survivors])
+        return last_survivor + 1
     else:
-        return 0, np.zeros(m, np.bool), np.argsort(p_values)
+        return 0
 
-class BH(marginal_screening):
+class stepup(marginal_screening):
 
     def __init__(self,
                  observed_score,
                  covariance, 
-                 randomizer_scale,
-                 BH_level,
+                 step_Z,
+                 randomizer,
                  perturb=None):
 
         self.observed_score_state = observed_score
         self.nfeature = p = observed_score.shape[0]
         self.covariance = covariance
-        self.randomized_stdev = np.sqrt(np.diag(covariance) + randomizer_scale**2)
-        self.randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+        self.step_Z = step_Z
+        
+        if not (np.all(sorted(self.step_Z)[::-1] == self.step_Z) and
+                np.all(np.greater_equal(self.step_Z, 0))):
+            raise ValueError('stepup Z values should be non-negative and non-increasing')
+
+        self.randomizer = randomizer
         self._initial_omega = perturb
 
-        self.BH_level = BH_level
-
     def fit(self, perturb=None):
+
+        # condition on all those that survive
+        # and the observed (randomized) Z values of those that don't
 
         p = self.nfeature
 
@@ -59,15 +60,11 @@ class BH(marginal_screening):
             self._initial_omega = self.randomizer.sample()
 
         self._randomized_score = -self.observed_score_state + self._initial_omega
-        p_values = 2. * (1. - ndist.cdf(np.abs(self._randomized_score) / self.randomized_stdev))
-        K, active, sort_notsel_pvals = BH_selection(p_values, self.BH_level)
-        BH_cutoff = self.randomized_stdev * ndist.ppf(1. - (K * self.BH_level) /(2.*p))
 
-        if np.array(BH_cutoff).shape in [(), (1,)]:
-            BH_cutoff = np.ones(p) * BH_cutoff
-        self.BH_cutoff = BH_cutoff
+        K = stepup_selection(self._randomized_score, self.step_Z)
+        Z_cutoff = self.step_Z[K-1] # or K \pm 1? check!
 
-        self._selected = np.fabs(self._randomized_score) > self.BH_cutoff
+        self._selected = np.fabs(self._randomized_score) > Z_cutoff
         self._not_selected = ~self._selected
         sign = np.sign(self._randomized_score)
         active_signs = sign[self._selected]
@@ -75,26 +72,15 @@ class BH(marginal_screening):
         self.selection_variable = {'sign': sign.copy(),
                                    'variables': self._selected.copy()}
 
-        threshold = np.zeros(p)
-        threshold[self._selected] = self.BH_cutoff[self._selected]
-        cut_off_vector = ndist.ppf(1. - ((K + np.arange(self._not_selected.sum()) + 1)
-                                         * self.BH_level) / float(2.* p))
-
-        indices_interior = np.asarray([u for u in range(p) if self._not_selected[u]])
-        threshold[indices_interior[sort_notsel_pvals]] = \
-            (self.randomized_stdev[self._not_selected])[sort_notsel_pvals] * cut_off_vector
-
-        self.threshold = threshold
-
         self.observed_opt_state = (self._initial_omega[self._selected] - 
                                    self.observed_score_state[self._selected] - 
-                                  np.diag(active_signs).dot(self.threshold[self._selected]))
-        self.num_opt_var = self.observed_opt_state.shape[0]
+                                   np.diag(active_signs * Z_cutoff))
 
+        self.num_opt_var = self.observed_opt_state.shape[0]
         opt_linear = np.zeros((p, self.num_opt_var))
         opt_linear[self._selected,:] = np.identity(self.num_opt_var)
         opt_offset = np.zeros(p)
-        opt_offset[self._selected] = active_signs * self.threshold[self._selected]
+        opt_offset[self._selected] = active_signs * Z_cutoff
         opt_offset[self._not_selected] = self._randomized_score[self._not_selected]
 
         self.opt_transform = (opt_linear, opt_offset)
@@ -106,7 +92,6 @@ class BH(marginal_screening):
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         logdens_transform = (logdens_linear, opt_offset)
-        print(active_signs)
 
         A_scaling = -np.diag(active_signs)
         b_scaling = np.zeros(self.num_opt_var)
@@ -134,4 +119,24 @@ class BH(marginal_screening):
                                                selection_info=self.selection_variable)
         return self._selected
 
+    @staticmethod
+    def BH(observed_score,
+           covariance, 
+           randomizer_scale,
+           q=0.2,
+           perturb=None):
+        
+        # XXXX implicitly making assumption diagonal is constant -- seems reasonable for BH
 
+        p = observed_score.shape[0]
+
+        randomized_stdev = np.sqrt(np.diag(covariance).mean() + randomizer_scale**2)
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        stepup_Z = randomized_stdev * ndist.ppf(1 - q * np.arange(1, p + 1) / (2 * p))
+
+        return stepup(observed_score,
+                      covariance,
+                      stepup_Z,
+                      randomizer,
+                      perturb=perturb)
