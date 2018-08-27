@@ -29,10 +29,10 @@ def test_multiple_queries(n=500, p=100, signal_fac=1.5, s=5, sigma=3, rho=0.4, r
     n, p = X.shape
 
     q = 0.1
-    conv1 = const1(-X.T.dot(Y),
-                   sigma**2 * X.T.dot(X),
-                   randomizer_scale * sigma,
-                   q)
+    conv1 = const1.at_level(-X.T.dot(Y),
+                             sigma**2 * X.T.dot(X),
+                             randomizer_scale * sigma,
+                             q)
 
     boundary1 = conv1.fit()
     nonzero1 = boundary1 != 0
