@@ -106,6 +106,7 @@ def test_multivariate(n=500,
              cov_target, 
              crosscov_target_score, 
              alternatives) = marginal_select.multivariate_targets(nonzero)
+
             if use_MLE:
                 estimate, _, _, pval, intervals, _ = marginal_select.selective_MLE(observed_target,
                                                                                    cov_target,

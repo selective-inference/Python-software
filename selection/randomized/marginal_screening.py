@@ -11,16 +11,6 @@ from .query import (query,
 from .randomization import randomization
 from ..algorithms.debiased_lasso import debiasing_matrix
 
-def marginal_screening_selection(p_values, level):
-
-    m = p_values.shape[0]
-    p_sorted = np.sort(p_values)
-    indices = np.arange(m)
-    indices_order = np.argsort(p_values)
-    active = (p_values <= level)
-
-    return active
-
 class marginal_screening(query):
 
     def __init__(self,
@@ -114,7 +104,7 @@ class marginal_screening(query):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
         """
-        score_linear = self.covariance[:, features] / dispersion
+        score_linear = self.covariance[:, features].copy() / dispersion
         Q = score_linear[features]
         cov_target = np.linalg.inv(Q)
         observed_target = -np.linalg.inv(Q).dot(self.observed_score_state[features])
