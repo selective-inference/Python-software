@@ -1,7 +1,10 @@
-import numpy as np
 from copy import copy
-from selection.distributions.discrete_family import discrete_family
+import functools
+
+import numpy as np
 from scipy.stats import norm as ndist
+
+from selection.distributions.discrete_family import discrete_family
 
 # local imports
 
@@ -382,18 +385,28 @@ def learn_weights(algorithm,
     direction = cross_cov.dot(np.linalg.inv(target_cov).reshape((1,1))) # move along a ray through S with this direction
 
     learning_Y, learning_T = [], []
-    for _ in range(B):
-         T = learning_proposal()      # a guess at informative distribution for learning what we want
+
+    def random_meta_algorithm(new_sampler, algorithm, check_selection, T):
          new_sampler.center = S + direction.dot(T - observed_target)
          new_result = algorithm(new_sampler)
+         return check_selection(new_result)
 
-         Y = check_selection(new_result)
+    random_algorithm = functools.partial(random_meta_algorithm, new_sampler, algorithm, check_selection)
+
+    # this is the "active learning bit"
+    # START
+
+    for _ in range(B):
+         T = learning_proposal()      # a guess at informative distribution for learning what we want
+         Y = random_algorithm(T)
 
          learning_Y.append(Y)
          learning_T.append(T)
 
     learning_Y = np.array(learning_Y, np.float)
     learning_T = np.squeeze(np.array(learning_T, np.float))
+
+    # STOP
 
     conditional_law = fit_probability(learning_T, learning_Y)
     return conditional_law
