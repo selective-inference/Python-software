@@ -30,14 +30,14 @@ def stepup_selection(Z_values, stepup_Z):
 class stepup(marginal_screening):
 
     def __init__(self,
-                 observed_score,
+                 observed_data,
                  covariance, 
                  step_Z,
                  randomizer,
                  perturb=None):
 
-        self.observed_score_state = observed_score
-        self.nfeature = p = observed_score.shape[0]
+        self.observed_score_state = -observed_data  # -Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting
+        self.nfeature = p = observed_data.shape[0]
         self.covariance = covariance
         self.step_Z = step_Z
         
@@ -62,7 +62,7 @@ class stepup(marginal_screening):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        _randomized_score = -self.observed_score_state + self._initial_omega
+        _randomized_score = self.observed_score_state - self._initial_omega
 
         K, selected_idx, last_cutoff = stepup_selection(_randomized_score, self.step_Z)
 
@@ -77,7 +77,7 @@ class stepup(marginal_screening):
             self._selected[selected_idx] = 1
             self._not_selected = ~self._selected
 
-            sign = np.sign(_randomized_score)
+            sign = np.sign(-_randomized_score)
             active_signs_first = sign[_selected_first]
             active_sign_last = sign[_selected_last]
             active_signs = sign[self._selected]
@@ -169,13 +169,15 @@ class stepup(marginal_screening):
            q=0.2,
            perturb=None):
         
-        # XXXX implicitly making assumption diagonal is constant -- seems reasonable for BH
+        if not np.allclose(np.diag(covariance), covariance[0, 0]):
+            raise ValueError('Benjamin-Hochberg expecting Z scores with identical variance, standardize your Z')
 
         p = observed_score.shape[0]
 
-        randomized_stdev = np.sqrt(np.diag(covariance).mean() + randomizer_scale**2)
+        randomized_stdev = np.sqrt(covariance[0, 0] + randomizer_scale**2)
         randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
 
+        # Benjamini-Hochberg cutoffs
         stepup_Z = randomized_stdev * ndist.ppf(1 - q * np.arange(1, p + 1) / (2 * p))
 
         return stepup(observed_score,

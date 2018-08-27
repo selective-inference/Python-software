@@ -38,18 +38,17 @@ class marginal_screening(query):
             self._initial_omega = self.randomizer.sample()
 
         _randomized_score = self.observed_score_state - self._initial_omega
-        Z = -_randomized_score
-        active = np.fabs(Z) >= self.threshold
+        active = np.fabs(_randomized_score) >= self.threshold
 
         self._selected = active
         self._not_selected = ~self._selected
-        sign = np.sign(Z)
+        sign = np.sign(-_randomized_score)
         active_signs = sign[self._selected]
         sign[self._not_selected] = 0
         self.selection_variable = {'sign': sign,
                                    'variables': self._selected.copy()}
 
-        self.observed_opt_state = (np.fabs(Z) - self.threshold)[self._selected]
+        self.observed_opt_state = (np.fabs(_randomized_score) - self.threshold)[self._selected]
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
