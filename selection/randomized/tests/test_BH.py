@@ -24,14 +24,15 @@ def test_BH(n=500,
                                             rho=rho,
                                             sigma=sigma,
                                             random_signs=True,
-                                            scale=True)
+                                            scale=False)
 
         idx = np.arange(p)
 
         n, p = X.shape
 
         q = 0.1
-        BH_select = stepup.BH(X.T.dot(Y),
+
+        BH_select = stepup.BH(X.T.dot(Y) / np.sqrt(n),
                               sigma**2 * sigmaX,
                               randomizer_scale * sigma,
                               q)

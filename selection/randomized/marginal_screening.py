@@ -49,8 +49,7 @@ class marginal_screening(query):
 
         _randomized_score = self.observed_score_state - self._initial_omega
         Z = -_randomized_score
-        soft_thresh = np.sign(Z) * (np.fabs(Z) - self.threshold) * (np.fabs(Z) >= self.threshold)
-        active = soft_thresh != 0
+        active = np.fabs(Z) >= self.threshold
 
         self._selected = active
         self._not_selected = ~self._selected
@@ -60,7 +59,7 @@ class marginal_screening(query):
         self.selection_variable = {'sign': sign,
                                    'variables': self._selected.copy()}
 
-        self.observed_opt_state = np.fabs(soft_thresh[self._selected])
+        self.observed_opt_state = (np.fabs(Z) - self.threshold)[self._selected]
         self.num_opt_var = self.observed_opt_state.shape[0]
 
         opt_linear = np.zeros((p, self.num_opt_var))
@@ -84,7 +83,6 @@ class marginal_screening(query):
             logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
 
         cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
-
         logdens_transform = (logdens_linear, opt_offset)
         A_scaling = -np.identity(len(active_signs))
         b_scaling = np.zeros(self.num_opt_var)
@@ -139,11 +137,11 @@ class marginal_screening(query):
         return observed_target, cov_target, crosscov_target_score.T, alternatives
 
     @staticmethod
-    def at_level(observed_data,
-                 covariance, 
-                 marginal_level,
-                 randomizer_scale,
-                 perturb=None):
+    def type1(observed_data,
+              covariance, 
+              marginal_level,
+              randomizer_scale,
+              perturb=None):
         '''
         Threshold
         '''
