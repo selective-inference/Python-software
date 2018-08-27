@@ -26,8 +26,8 @@ class marginal_screening(query):
     def __init__(self,
                  observed_data,
                  covariance, 
-                 randomizer,
                  threshold,
+                 randomizer,
                  perturb=None):
 
         self.observed_score_state = -observed_data  # -Z if Z \sim N(\mu,\Sigma), X^Ty in regression setting
@@ -141,8 +141,8 @@ class marginal_screening(query):
     @staticmethod
     def at_level(observed_data,
                  covariance, 
-                 randomizer_scale,
                  marginal_level,
+                 randomizer_scale,
                  perturb=None):
         '''
         Threshold
@@ -154,7 +154,7 @@ class marginal_screening(query):
 
         return marginal_screening(observed_data,
                                   covariance, 
-                                  randomizer,
                                   threshold,
+                                  randomizer,
                                   perturb=perturb)
 

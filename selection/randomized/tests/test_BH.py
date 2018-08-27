@@ -1,9 +1,8 @@
 import numpy as np
 from scipy.stats import norm as ndist
 
-from selection.randomized.BH import BH
-from selection.tests.instance import gaussian_instance
-from selection.randomized.lasso import lasso
+from ..stepup import stepup
+from ...tests.instance import gaussian_instance
 
 def test_BH(n=500, 
             p=100, 
@@ -17,25 +16,25 @@ def test_BH(n=500,
     while True:
         inst = gaussian_instance
         signal = np.sqrt(signal_fac * 2 * np.log(p))
-        X, Y, beta = inst(n=n,
-                          p=p,
-                          signal=signal,
-                          s=s,
-                          equicorrelated=False,
-                          rho=rho,
-                          sigma=sigma,
-                          random_signs=True)[:3]
+        X, Y, beta, _, sigma, sigmaX = inst(n=n,
+                                            p=p,
+                                            signal=signal,
+                                            s=s,
+                                            equicorrelated=False,
+                                            rho=rho,
+                                            sigma=sigma,
+                                            random_signs=True,
+                                            scale=True)
 
         idx = np.arange(p)
-        sigmaX = rho ** np.abs(np.subtract.outer(idx, idx))
 
         n, p = X.shape
 
         q = 0.1
-        BH_select = BH(X.T.dot(Y),
-                       sigma**2 * X.T.dot(X),
-                       randomizer_scale * sigma,
-                       q)
+        BH_select = stepup.BH(X.T.dot(Y),
+                              sigma**2 * sigmaX,
+                              randomizer_scale * sigma,
+                              q)
 
         boundary = BH_select.fit()
         nonzero = boundary != 0
