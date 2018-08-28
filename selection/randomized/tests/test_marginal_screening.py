@@ -2,7 +2,7 @@ import numpy as np
 from scipy.stats import norm as ndist
 
 from ...tests.instance import gaussian_instance
-from ..marginal_screening import marginal_screening
+from ..screening import marginal_screening
 from ..lasso import lasso
 
 def test_marginal(n=500, 
