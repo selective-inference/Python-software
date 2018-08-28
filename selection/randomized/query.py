@@ -210,19 +210,7 @@ class gaussian_query(query):
         if not np.all(A_scaling.dot(self.observed_opt_state) - b_scaling <= 0):
             raise ValueError('constraints not satisfied')
 
-        _, prec = self.randomizer.cov_prec
-
-        if np.asarray(prec).shape in [(), (0,)]:
-            cond_precision = opt_linear.T.dot(opt_linear) * prec
-            cond_covariance = np.linalg.inv(cond_precision)
-            logdens_linear = cond_covariance.dot(opt_linear.T) * prec  
-        else:
-            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
-            cond_covariance = np.linalg.inv(cond_precision)
-            logdens_linear = cond_covariance.dot(opt_linear.T).dot(prec)
-
-        cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
-        logdens_transform = (logdens_linear, opt_offset)
+        cond_mean, cond_cov, cond_precision, logdens_linear = self._setup_implied_gaussian(opt_linear, opt_offset)
 
         def log_density(logdens_linear, offset, cond_prec, score, opt):
             if score.ndim == 1:
@@ -234,17 +222,36 @@ class gaussian_query(query):
 
         log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
 
+        self.cond_mean, self.cond_cov = cond_mean, cond_cov
+
         affine_con = constraints(A_scaling,
                                  b_scaling,
                                  mean=cond_mean,
-                                 covariance=cond_covariance)
+                                 covariance=cond_cov)
 
         self.sampler = affine_gaussian_sampler(affine_con,
                                                self.observed_opt_state,
                                                self.observed_score_state,
                                                log_density,
-                                               logdens_transform,
+                                               (logdens_linear, opt_offset),
                                                selection_info=self.selection_variable)
+
+    def _setup_implied_gaussian(self, opt_linear, opt_offset):
+
+        _, prec = self.randomizer.cov_prec
+
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T) * prec
+        else:
+            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+            cond_cov = np.linalg.inv(cond_precision)
+            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        return cond_mean, cond_cov, cond_precision, logdens_linear
 
 class multiple_queries(object):
 

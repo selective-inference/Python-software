@@ -17,7 +17,7 @@ import regreg.affine as ra
 from ..constraints.affine import constraints
 from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 
-from .query import (query,
+from .query import (gaussian_query,
                     affine_gaussian_sampler)
 
 from .randomization import randomization
@@ -28,7 +28,7 @@ from ..algorithms.debiased_lasso import debiasing_matrix
 #### - parametric covariance
 #### - Gaussian randomization
 
-class lasso(query):
+class lasso(gaussian_query):
     r"""
     A class for the randomized LASSO for post-selection inference.
     The problem solved is
@@ -154,7 +154,7 @@ class lasso(query):
         # U for unpenalized
         # -E for inactive
 
-        _opt_linear_term = np.zeros((p, self.num_opt_var))
+        opt_linear = np.zeros((p, self.num_opt_var))
         _score_linear_term = np.zeros((p, self.num_opt_var))
 
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
@@ -183,88 +183,30 @@ class lasso(query):
             _opt_hessian = 0
         else:
             _opt_hessian = _hessian_active * active_signs[None, active] + self.ridge_term * active_directions
-        _opt_linear_term[:, scaling_slice] = _opt_hessian
+        opt_linear[:, scaling_slice] = _opt_hessian
 
         # beta_U piece
 
         unpenalized_slice = slice(active.sum(), self.num_opt_var)
         unpenalized_directions = np.array([signed_basis_vector(p, j, 1) for j in np.nonzero(unpenalized)[0]]).T
         if unpenalized.sum():
-            _opt_linear_term[:, unpenalized_slice] = (_hessian_unpen
+            opt_linear[:, unpenalized_slice] = (_hessian_unpen
                                                       + self.ridge_term * unpenalized_directions)
 
-        # two transforms that encode score and optimization
-        # variable roles
+        opt_offset = self.initial_subgrad
 
-        self.opt_transform = (_opt_linear_term, self.initial_subgrad)
-        self.score_transform = (_score_linear_term, np.zeros(_score_linear_term.shape[0]))
-
-        # now store everything needed for the projections
-        # the projection acts only on the optimization
-        # variables
+        # now make the constraints and implied gaussian
 
         self._setup = True
-        self.scaling_slice = scaling_slice
-        self.unpenalized_slice = unpenalized_slice
-        self.ndim = self.loglike.shape[0]
-
-        # compute implied mean and covariance
-
-        cond_mean, cond_cov, cond_precision, logdens_linear = self._setup_implied_gaussian()
-        opt_linear, opt_offset = self.opt_transform
-        
-        self.cond_mean, self.cond_cov = cond_mean, cond_cov
-
-        # density as a function of score and optimization variables
-
-        def log_density(logdens_linear, offset, cond_prec, score, opt):
-            if score.ndim == 1:
-                mean_term = logdens_linear.dot(score.T + offset).T
-            else:
-                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
-            arg = opt + mean_term
-            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
-
-        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
-
-        # now make the constraints
-
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = np.zeros(self.num_opt_var)
 
-        affine_con = constraints(A_scaling,
-                                 b_scaling,
-                                 mean=cond_mean,
-                                 covariance=cond_cov)
-
-        logdens_transform = (logdens_linear, opt_offset)
-
-        self.sampler = affine_gaussian_sampler(affine_con,
-                                               self.observed_opt_state,
-                                               self.observed_score_state,
-                                               log_density,
-                                               logdens_transform,
-                                               selection_info=self.selection_variable)  # should be signs and the subgradients we've conditioned on
+        self._set_sampler(A_scaling,
+                          b_scaling,
+                          opt_linear,
+                          opt_offset)
 
         return active_signs
-
-    def _setup_implied_gaussian(self):
-
-        _, prec = self.randomizer.cov_prec
-        opt_linear, opt_offset = self.opt_transform
-
-        if np.asarray(prec).shape in [(), (0,)]:
-            cond_precision = opt_linear.T.dot(opt_linear) * prec
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        else:
-            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
-
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
-
-        return cond_mean, cond_cov, cond_precision, logdens_linear
 
     def _solve_randomized_problem(self, 
                                   perturb=None, 
