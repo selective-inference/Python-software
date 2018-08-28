@@ -1,6 +1,7 @@
+import functools
 from itertools import product
-import numpy as np
 
+import numpy as np
 from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 
@@ -10,7 +11,8 @@ from .selective_MLE_utils import solve_barrier_nonneg
 
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
-from ..constraints.affine import sample_from_constraints
+from ..constraints.affine import (sample_from_constraints,
+                                  constraints)
 
 class query(object):
 
@@ -181,6 +183,68 @@ class query(object):
                                           self.observed_opt_state,
                                           solve_args=solve_args)
 
+
+class gaussian_query(query):
+
+    def fit(self, perturb=None):
+
+        p = self.nfeature
+
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
+
+        _randomized_score = self.observed_score_state - self._initial_omega
+        return _randomized_score, p
+
+    # Private methods
+
+    def _set_sampler(self, 
+                     A_scaling,
+                     b_scaling,
+                     opt_linear,
+                     opt_offset):
+
+        if not np.all(A_scaling.dot(self.observed_opt_state) - b_scaling <= 0):
+            raise ValueError('constraints not satisfied')
+
+        _, prec = self.randomizer.cov_prec
+
+        if np.asarray(prec).shape in [(), (0,)]:
+            cond_precision = opt_linear.T.dot(opt_linear) * prec
+            cond_covariance = np.linalg.inv(cond_precision)
+            logdens_linear = cond_covariance.dot(opt_linear.T) * prec  
+        else:
+            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
+            cond_covariance = np.linalg.inv(cond_precision)
+            logdens_linear = cond_covariance.dot(opt_linear.T).dot(prec)
+
+        cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
+        logdens_transform = (logdens_linear, opt_offset)
+
+        def log_density(logdens_linear, offset, cond_prec, score, opt):
+            if score.ndim == 1:
+                mean_term = logdens_linear.dot(score.T + offset).T
+            else:
+                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
+            arg = opt + mean_term
+            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
+
+        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+
+        affine_con = constraints(A_scaling,
+                                 b_scaling,
+                                 mean=cond_mean,
+                                 covariance=cond_covariance)
+
+        self.sampler = affine_gaussian_sampler(affine_con,
+                                               self.observed_opt_state,
+                                               self.observed_score_state,
+                                               log_density,
+                                               logdens_transform,
+                                               selection_info=self.selection_variable)
 
 class multiple_queries(object):
 
