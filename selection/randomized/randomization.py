@@ -106,6 +106,8 @@ class randomization(rr.smooth_atom):
         scale : float
             SD of noise.
         """
+        if type(shape) == type(1):
+            shape = (shape,)
         rv = ndist(scale=scale, loc=0.)
         p = np.product(shape)
         density = lambda x: np.product(rv.pdf(x))
