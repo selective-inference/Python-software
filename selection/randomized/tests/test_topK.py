@@ -1,7 +1,8 @@
 import numpy as np
 from scipy.stats import norm as ndist
 
-from ..topK import topK
+from ..screening import topK
+from ..randomization import randomization
 from ...tests.instance import gaussian_instance
 
 def test_topK(n=500, 
@@ -33,9 +34,10 @@ def test_topK(n=500,
         n, p = X.shape
 
         K = 5
+        randomizer = randomization.isotropic_gaussian(p, randomizer_scale * sigma)
         topK_select = topK(score,
                            W * sigma**2,
-                           randomizer_scale * sigma,
+                           randomizer,
                            K)
 
         boundary = topK_select.fit()

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.stats import norm as ndist
 
-from ..stepup import stepup
+from ..screening import stepup
 from ...tests.instance import gaussian_instance
 
 def test_BH(n=500, 
