@@ -21,11 +21,10 @@ from ..constraints.affine import constraints
 
 from .randomization import randomization
 from ..base import restricted_estimator
-from .query import (query, 
-                    affine_gaussian_sampler)
+from .query import gaussian_query
 from .lasso import lasso
 
-class slope(query):
+class slope(gaussian_query):
 
     def __init__(self,
                  loglike,
@@ -69,10 +68,9 @@ class slope(query):
         self.penalty = rr.slope(slope_weights, lagrange=1.)
         self._initial_omega = perturb  # random perturbation
 
-    def fit(self,
-            solve_args={'tol': 1.e-12, 'min_its': 50},
-            perturb=None):
-
+    def _solve_randomized_problem(self, 
+                                  perturb=None, 
+                                  solve_args={'tol': 1.e-12, 'min_its': 50}):
         p = self.nfeature
 
         # take a new perturbation if supplied
@@ -83,7 +81,18 @@ class slope(query):
 
         quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
         problem = rr.simple_problem(self.loglike, self.penalty)
-        self.initial_soln = problem.solve(quad, **solve_args)
+        initial_soln = problem.solve(quad, **solve_args)
+        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 'grad') +
+                            quad.objective(initial_soln, 'grad'))
+
+        return initial_soln, initial_subgrad
+
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
+            perturb=None):
+
+        self.initial_soln, self.initial_subgrad = self._solve_randomized_problem(perturb=perturb, solve_args=solve_args)
+        p = self.initial_soln.shape[0]
 
         # now we have to work out SLOPE details, clusters, etc.
 
@@ -97,9 +106,6 @@ class slope(query):
         self.selection_variable = {'sign': _active_signs,
                                    'variables': self._overall}
 
-        initial_subgrad = -(self.loglike.smooth_objective(self.initial_soln, 'grad') +
-                            quad.objective(self.initial_soln, 'grad'))
-        self.initial_subgrad = initial_subgrad
 
         indices = np.argsort(-np.fabs(self.initial_soln))
         sorted_soln = self.initial_soln[indices]
@@ -142,42 +148,19 @@ class slope(query):
                     break
 
         signs_cluster = np.asarray(signs_cluster).T
+
         if signs_cluster.size == 0:
             return active_signs
-
         else:
             X_clustered = X[:, indices].dot(signs_cluster)
             _opt_linear_term = X.T.dot(X_clustered)
-            self.opt_transform = (_opt_linear_term, self.initial_subgrad)
 
             _, prec = self.randomizer.cov_prec
-            opt_linear, opt_offset = self.opt_transform
-
-            if np.asarray(prec).shape in [(), (0,)]:
-                cond_precision = opt_linear.T.dot(opt_linear) * prec
-                cond_cov = np.linalg.inv(cond_precision)
-                logdens_linear = cond_cov.dot(opt_linear.T) * prec
-            else:
-                cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
-                cond_cov = np.linalg.inv(cond_precision)
-                logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
-
-            cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
-
-            logdens_transform = (logdens_linear, opt_offset)
-
-            def log_density(logdens_linear, offset, cond_prec, score, opt):
-                if score.ndim == 1:
-                    mean_term = logdens_linear.dot(score.T + offset).T
-                else:
-                    mean_term = logdens_linear.dot(score.T + offset[:, None]).T
-                arg = opt + mean_term
-                return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
-
-            log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+            opt_linear, opt_offset = (_opt_linear_term, self.initial_subgrad)
 
             # now make the constraints
 
+            self._setup = True
             A_scaling_0 = -np.identity(self.num_opt_var)
             A_scaling_1 = -np.identity(self.num_opt_var)[:(self.num_opt_var - 1), :]
             for k in range(A_scaling_1.shape[0]):
@@ -185,17 +168,11 @@ class slope(query):
             A_scaling = np.vstack([A_scaling_0, A_scaling_1])
             b_scaling = np.zeros(2 * self.num_opt_var - 1)
 
-            affine_con = constraints(A_scaling,
-                                     b_scaling,
-                                     mean=cond_mean,
-                                     covariance=cond_cov)
+            self._set_sampler(A_scaling,
+                              b_scaling,
+                              opt_linear,
+                              opt_offset)
 
-            self.sampler = affine_gaussian_sampler(affine_con,
-                                                   self.observed_opt_state,
-                                                   self.observed_score_state,
-                                                   log_density,
-                                                   logdens_transform,
-                                                   selection_info=self.selection_variable)
             return active_signs
 
     # Targets of inference

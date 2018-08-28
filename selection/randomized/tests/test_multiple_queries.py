@@ -6,7 +6,7 @@ import nose.tools as nt
 import regreg.api as rr
 
 from ..lasso import lasso, selected_targets, full_targets, debiased_targets
-from ..marginal_screening import marginal_screening
+from ..screening import marginal_screening
 from ..query import multiple_queries
 from ...tests.instance import gaussian_instance
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
