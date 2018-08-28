@@ -20,7 +20,6 @@ from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 from .query import (query,
                     affine_gaussian_sampler)
 
-from .reconstruction import reconstruct_opt
 from .randomization import randomization
 from ..base import restricted_estimator
 from ..algorithms.debiased_lasso import debiasing_matrix
