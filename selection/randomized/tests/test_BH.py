@@ -6,11 +6,10 @@ from ...tests.instance import gaussian_instance
 
 def test_BH(n=500, 
             p=100, 
-            signal_fac=1.6, 
-            s=5, 
+            s=10, 
             sigma=3, 
-            rho=0.4, 
-            randomizer_scale=0.25,
+            rho=0.65, 
+            randomizer_scale=np.sqrt(1/9.),
             use_MLE=True,
             marginal=False):
 
@@ -24,8 +23,10 @@ def test_BH(n=500,
         sqrtW = np.linalg.cholesky(W)
         sigma = 0.5
         Z = np.random.standard_normal(p).dot(sqrtW.T) * sigma
-        beta = (2 * np.random.binomial(1, 0.5, size=(p,)) - 1) * 5 * sigma
+        beta = (2 * np.random.binomial(1, 0.5, size=(p,)) - 1) * np.linspace(4, 5, p) * sigma
+        np.random.shuffle(beta)
         beta[s:] = 0
+        print(beta)
         np.random.shuffle(beta)
 
         true_mean = W.dot(beta)
@@ -92,7 +93,10 @@ def main(nsim=500, use_MLE=False):
         PA.extend(pA)
         print(np.mean(cover),'coverage so far')
 
-        if i % 50 == 0 and i > 0:
+        period = 10
+        if use_MLE:
+            period = 50
+        if i % period == 0 and i > 0:
             plt.clf()
             plt.plot(U, sm.distributions.ECDF(P0)(U), 'b', label='null')
             plt.plot(U, sm.distributions.ECDF(PA)(U), 'r', label='alt')

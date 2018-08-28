@@ -22,8 +22,8 @@ def stepup_selection(Z_values, stepup_Z):
         num_selected = np.max(np.nonzero(survivors)[0]) + 1
         return (num_selected,                    # how many selected
                 absZ_argsort[:num_selected],     # ordered indices of those selected
-                max(stepup_Z[num_selected - 1],  # the last selected is greater than this number 
-                    absZ_sorted[num_selected]))  # conditional on the unselected ones
+                stepup_Z[num_selected - 1],      # the last selected is greater than this number 
+                absZ_sorted[num_selected])       # the rest are greater than this 
     else:
         return 0, None, None
 
@@ -64,7 +64,7 @@ class stepup(marginal_screening):
 
         _randomized_score = self.observed_score_state - self._initial_omega
 
-        K, selected_idx, last_cutoff = stepup_selection(_randomized_score, self.step_Z)
+        K, selected_idx, last_cutoff, boundary_Z = stepup_selection(_randomized_score, self.step_Z)
 
         if K > 0:
 
@@ -90,8 +90,8 @@ class stepup(marginal_screening):
 
             self.num_opt_var = self._selected.sum()
             self.observed_opt_state = np.zeros(self.num_opt_var)
-            self.observed_opt_state[:-1] = np.fabs(_randomized_score[_selected_first]) - last_cutoff
-            self.observed_opt_state[-1] = np.fabs(_randomized_score[_selected_last]) - last_cutoff
+            self.observed_opt_state[:-1] = np.fabs(_randomized_score[_selected_first]) - boundary_Z
+            self.observed_opt_state[-1] = np.fabs(_randomized_score[_selected_last]) - max(last_cutoff, boundary_Z)
 
             opt_linear = np.zeros((p, self.num_opt_var))
             for j in range(self.num_opt_var - 1):
@@ -119,19 +119,7 @@ class stepup(marginal_screening):
             cond_mean = logdens_linear.dot(-self.observed_score_state - opt_offset)
             logdens_transform = (logdens_linear, opt_offset)
 
-            # identify which is the smallest
-            # and that it is non-negative
-            A_scaling = []
-            for i in range(self.num_opt_var - 1):
-                row = np.zeros(self.num_opt_var)
-                row[-1] = 1
-                row[i] = -1.
-                A_scaling.append(row)
-            last_row = np.zeros(self.num_opt_var)
-            last_row[-1] = -1
-            A_scaling.append(last_row)
-            A_scaling = np.array(A_scaling)
-
+            A_scaling = -np.identity(self.num_opt_var)
             b_scaling = np.zeros(self.num_opt_var)
 
             if not np.all(A_scaling.dot(self.observed_opt_state) - b_scaling <= 0):
