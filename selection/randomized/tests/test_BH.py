@@ -79,6 +79,10 @@ def test_BH(n=500,
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
             return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
 
+def test_both():
+    test_BH(marginal=True)
+    test_BH(marginal=False)
+
 def main(nsim=500, use_MLE=False):
 
     import matplotlib.pyplot as plt
