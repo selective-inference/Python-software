@@ -225,7 +225,6 @@ class lasso(gaussian_query):
         initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 'grad') +
                             quad.objective(initial_soln, 'grad'))
 
-        initial_soln = problem.solve(quad, **solve_args)         
         return initial_soln, initial_subgrad
 
     @staticmethod
