@@ -218,10 +218,10 @@ class stepup(screening):
                               b_scaling,
                               opt_linear,
                               opt_offset)
-
-            return self._selected
         else:
-            return []
+            self._selected = np.zeros(p, np.bool)
+        return self._selected
+
 
     @staticmethod
     def BH(observed_score,
