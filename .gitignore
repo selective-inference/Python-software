@@ -31,3 +31,9 @@ build
 .idea/*
 */.idea/*
 */*/.idea/*
+*~
+.*sw*
+*/*~
+*pyc
+*/*pyc
+
