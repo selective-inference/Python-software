@@ -18,15 +18,15 @@ Z = np.linspace(-8, 8, 1001)
 
 # a function that is parameterized by hyperparameters
 def create_network(num_hidden,num_outputs):
-	def create(features):
-		N = features.shape[0]
-		X = features # np.reshape(features,(None,1))
-		hidA = tf.layers.Dense(activation=tf.nn.relu,units=num_hidden, name='hidA')
-		outlayer = tf.layers.Dense(activation=tf.nn.relu,units=num_outputs, name='hid')
-		#outlayer = tf.layers.Dense(activation=tf.nn.relu, name='hid')
-		output = outlayer(hidA(X))
-		return output
-	return create
+    def create(features):
+        N = features.shape[0]
+        X = features # np.reshape(features,(None,1))
+        hidA = tf.layers.Dense(activation=tf.nn.relu,units=num_hidden, name='hidA')
+        outlayer = tf.layers.Dense(activation=tf.nn.relu,units=num_outputs, name='hid')
+        #outlayer = tf.layers.Dense(activation=tf.nn.relu, name='hid')
+        output = outlayer(hidA(X))
+        return output
+    return create
 
 def fit_algorithm(algorithm, B=500, ntries=ntries, q=q, Zval=Z, link='probit'):
     
@@ -36,6 +36,8 @@ def fit_algorithm(algorithm, B=500, ntries=ntries, q=q, Zval=Z, link='probit'):
                    np.random.standard_normal(B) * 3, 
                    np.random.standard_normal(B) * 0.5])
     print('ZS=',Z.shape)
+
+    # is there no "active part" that updates the Z proposals somewhere?
     Y = np.array([algorithm(z, ntries=ntries, q=q) for z in Z])
     optimize = tensorflow_fit.create_optimizer() # a default optimizer
     predictor_f = tensorflow_fit.fit(np.reshape(Z, (Z.shape[0], 1)),
