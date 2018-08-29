@@ -104,7 +104,7 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     P, L, N, coverage = [], [], [], []
     plt.clf()
-    for i in range(200):
+    for i in range(1000):
         p, cover, l, n = simulate()
         coverage.extend(cover)
         P.extend(p)
