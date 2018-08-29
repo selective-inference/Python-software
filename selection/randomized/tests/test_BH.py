@@ -4,12 +4,14 @@ from scipy.stats import norm as ndist
 import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
 
-from ..screening import stepup
 from ...tests.instance import gaussian_instance
+from ...tests.decorators import rpy_test_safe
 
-from selection.randomized.screening import stepup, stepup_selection
-from selection.randomized.randomization import randomization
+from ..screening import stepup
+from ..screening import stepup, stepup_selection
+from ..randomization import randomization
 
+@rpy_test_safe()
 def test_BH_procedure():
 
     def BHfilter(pval, q=0.2):
