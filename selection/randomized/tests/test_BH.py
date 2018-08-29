@@ -11,18 +11,18 @@ from ..screening import stepup
 from ..screening import stepup, stepup_selection
 from ..randomization import randomization
 
+def BHfilter(pval, q=0.2):
+    numpy2ri.activate()
+    rpy.r.assign('pval', pval)
+    rpy.r.assign('q', q)
+    rpy.r('Pval = p.adjust(pval, method="BH")')
+    rpy.r('S = which((Pval < q)) - 1')
+    S = rpy.r('S')
+    numpy2ri.deactivate()
+    return np.asarray(S, np.int)
+
 @rpy_test_safe()
 def test_BH_procedure():
-
-    def BHfilter(pval, q=0.2):
-        numpy2ri.activate()
-        rpy.r.assign('pval', pval)
-        rpy.r.assign('q', q)
-        rpy.r('Pval = p.adjust(pval, method="BH")')
-        rpy.r('S = which((Pval < q)) - 1')
-        S = rpy.r('S')
-        numpy2ri.deactivate()
-        return np.asarray(S, np.int)
 
     def BH_cutoff():
         Z = np.random.standard_normal(100)
@@ -42,6 +42,43 @@ def test_BH_procedure():
 
         np.testing.assert_allclose(sorted(BHfilter(2 * ndist.sf(np.fabs(Z)), q=0.2)),
                                    sorted(stepup_selection(Z, BH_cutoffs)[1]))
+@rpy_test_safe()
+def test_independent_estimator(n=100, n1=80, q=0.2, signal=3, p=100):
+
+    Z = np.random.standard_normal((n, p))
+    Z[:, :10] += signal / np.sqrt(n)
+    Z1 = Z[:n1]
+    
+    Zbar = np.mean(Z, 0)
+    Zbar1 = np.mean(Z1, 0)
+    perturb = Zbar1 - Zbar
+    
+    frac = n1 * 1. / n
+    BH_select = stepup.BH(Zbar, np.identity(p) / n, np.sqrt((1 - frac) / (n * frac)), q=q)
+    selected = BH_select.fit(perturb=perturb)
+    
+    observed_target = Zbar[selected]
+    cov_target = np.identity(selected.sum()) / n
+    cross_cov = -np.identity(p)[selected] / n
+
+    observed_target1, cov_target1, cross_cov1, _ = BH_select.marginal_targets(selected)
+
+    assert(np.linalg.norm(observed_target - observed_target1) / np.linalg.norm(observed_target) < 1.e-7)
+    assert(np.linalg.norm(cov_target - cov_target1) / np.linalg.norm(cov_target) < 1.e-7)
+    assert(np.linalg.norm(cross_cov - cross_cov1) / np.linalg.norm(cross_cov) < 1.e-7)
+
+    (final_estimator, 
+     _, 
+     Z_scores, 
+     pvalues, 
+     intervals, 
+     ind_unbiased_estimator) = BH_select.selective_MLE(observed_target, cov_target, cross_cov)
+
+    Zbar2 = Z[n1:].mean(0)[selected]
+    assert(np.linalg.norm(ind_unbiased_estimator - Zbar2) / np.linalg.norm(Zbar2) < 1.e-6)
+    np.testing.assert_allclose(sorted(np.nonzero(selected)[0]), 
+                               sorted(BHfilter(2 * ndist.sf(np.fabs(np.sqrt(n1) * Zbar1)))))
+
 
 def test_BH(n=500, 
             p=100, 
