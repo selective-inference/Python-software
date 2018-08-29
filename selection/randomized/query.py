@@ -196,9 +196,6 @@ class gaussian_query(query):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        _randomized_score = self.observed_score_state - self._initial_omega
-        return _randomized_score, p
-
     # Private methods
 
     def _set_sampler(self, 
@@ -755,7 +752,7 @@ class affine_gaussian_sampler(optimization_sampler):
                       observed_target, 
                       cov_target, 
                       cov_target_score, 
-                      feasible_point, 
+                      init_soln, # initial value of optimization variables
                       solve_args={'tol':1.e-12}, 
                       alpha=0.1):
         """
@@ -779,7 +776,6 @@ class affine_gaussian_sampler(optimization_sampler):
 
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
-        init_soln = feasible_point
         val, soln, hess = _solve_barrier_affine(conjugate_arg,
                                                 prec_opt,
                                                 self.affine_con,
@@ -788,7 +784,7 @@ class affine_gaussian_sampler(optimization_sampler):
 
         final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean - soln)))
         ind_unbiased_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean
-                                                                                                - feasible_point)))
+                                                                                                - init_soln)))
         L = target_lin.T.dot(prec_opt)
         observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
         observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
@@ -803,7 +799,7 @@ class affine_gaussian_sampler(optimization_sampler):
 
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
-    def reparam_map(self, theta, observed_target, cov_target, cov_target_score, feasible_point, solve_args={}):
+    def reparam_map(self, theta, observed_target, cov_target, cov_target_score, init_soln, solve_args={}):
 
         prec_target = np.linalg.inv(cov_target)
         ndim = prec_target.shape[0]
@@ -816,7 +812,7 @@ class affine_gaussian_sampler(optimization_sampler):
 
         mean_param = target_lin.dot(theta)+target_offset
         conjugate_arg = prec_opt.dot(mean_param)
-        init_soln = feasible_point
+
         val, soln, hess = _solve_barrier_nonneg(conjugate_arg,
                                                 prec_opt,
                                                 init_soln,

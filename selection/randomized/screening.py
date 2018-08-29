@@ -22,6 +22,12 @@ class screening(gaussian_query):
         self.randomizer = randomizer
         self._initial_omega = perturb
 
+    def fit(self, perturb=None):
+
+        gaussian_query.fit(self, perturb=perturb)
+        self._randomized_score = self.observed_score_state - self._initial_omega
+        return self._randomized_score, self._randomized_score.shape[0]
+
     def multivariate_targets(self, features, dispersion=1.):
         """
         Entries of the mean of \Sigma[E,E]^{-1}Z_E
@@ -66,8 +72,7 @@ class marginal_screening(screening):
 
     def fit(self, perturb=None):
 
-        _randomized_score, p = gaussian_query.fit(self, perturb=perturb)
-
+        _randomized_score, p = screening.fit(self, perturb=perturb)
         active = np.fabs(_randomized_score) >= self.threshold
 
         self._selected = active
@@ -135,7 +140,7 @@ def stepup_selection(Z_values, stepup_Z):
                 stepup_Z[num_selected - 1],      # the last selected is greater than this number 
                 absZ_sorted[num_selected])       # the rest are greater than this 
     else:
-        return 0, None, None
+        return 0, None, None, None
 
 class stepup(screening):
 
@@ -163,7 +168,7 @@ class stepup(screening):
         # which was the last past the threshold
         # and the observed (randomized) Z values of those that don't
 
-        _randomized_score, p = gaussian_query.fit(self, perturb=perturb)
+        _randomized_score, p = screening.fit(self, perturb=perturb)
 
         K, selected_idx, last_cutoff, boundary_Z = stepup_selection(_randomized_score, self.stepup_Z)
 
@@ -200,7 +205,8 @@ class stepup(screening):
             opt_linear[_selected_last,-1] = active_sign_last
 
             opt_offset = np.zeros(p)
-            opt_offset[self._selected] = active_signs * last_cutoff
+            opt_offset[self._selected] = active_signs * boundary_Z
+            opt_offset[_selected_last] = active_sign_last * max(last_cutoff, boundary_Z)
             opt_offset[self._not_selected] = _randomized_score[self._not_selected]
 
             self._setup = True
@@ -262,7 +268,7 @@ class topK(screening):
 
     def fit(self, perturb=None):
 
-        _randomized_score, p = gaussian_query.fit(self, perturb=perturb)
+        _randomized_score, p = screening.fit(self, perturb=perturb)
 
         # fixing the topK
         # gives us that u=\omega - Z is in a particular cone

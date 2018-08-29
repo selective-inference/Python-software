@@ -12,15 +12,21 @@ def _design(n, p, rho, equicorrelated):
     if equicorrelated:
         X = (np.sqrt(1 - rho) * np.random.standard_normal((n, p)) +
              np.sqrt(rho) * np.random.standard_normal(n)[:, None])
-        sigmaX = (1 - rho) * np.identity(p) + rho * np.ones((p, p))
-        cholX = np.linalg.cholesky(sigmaX)
+        def equi(rho, p):
+            if ('equi', p, rho) not in _cov_cache:
+                sigmaX = (1 - rho) * np.identity(p) + rho * np.ones((p, p))
+                cholX = np.linalg.cholesky(sigmaX)
+                _cov_cache[('equi', p, rho)] = sigmaX, cholX
+            return _cov_cache[('equi', p, rho)]
+        sigmaX, cholX = equi(rho=rho, p=p)
     else:
         def AR1(rho, p):
-            idx = np.arange(p)
-            cov = rho ** np.abs(np.subtract.outer(idx, idx))
             if ('AR1', p, rho) not in _cov_cache:
+                idx = np.arange(p)
+                cov = rho ** np.abs(np.subtract.outer(idx, idx))
                 _cov_cache[('AR1', p, rho)] = cov, np.linalg.cholesky(cov)
-            return _cov_cache[('AR1', p, rho)]
+            cov, chol = _cov_cache[('AR1', p, rho)]
+            return cov, chol
         sigmaX, cholX = AR1(rho=rho, p=p)
         X = np.random.standard_normal((n, p)).dot(cholX.T)
     return X, sigmaX, cholX
@@ -117,7 +123,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
         scaling = X.std(0) * np.sqrt(n)
         X /= scaling[None, :]
         beta *= np.sqrt(n)
-        sigmaX /= np.multiply.outer(scaling, scaling)
+        sigmaX = sigmaX / np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -209,7 +215,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
         scaling = X.std(0) * np.sqrt(n)
         X /= scaling[None, :]
         beta *= np.sqrt(n)
-        sigmaX /= np.multiply.outer(scaling, scaling)
+        sigmaX = sigmaX / np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -295,7 +301,7 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
         scaling = X.std(0) * np.sqrt(n)
         X /= scaling[None, :]
         beta *= np.sqrt(n)
-        sigmaX /= np.multiply.outer(scaling, scaling)
+        sigmaX = sigmaX / np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
