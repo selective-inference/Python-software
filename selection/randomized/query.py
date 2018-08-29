@@ -181,6 +181,7 @@ class query(object):
                                           cov_target,
                                           cov_target_score,
                                           self.observed_opt_state,
+                                          level=level,
                                           solve_args=solve_args)
 
 
@@ -754,7 +755,7 @@ class affine_gaussian_sampler(optimization_sampler):
                       cov_target_score, 
                       init_soln, # initial value of optimization variables
                       solve_args={'tol':1.e-12}, 
-                      alpha=0.1):
+                      level=0.9):
         """
         Selective MLE based on approximation of
         CGF.
@@ -793,6 +794,7 @@ class affine_gaussian_sampler(optimization_sampler):
         pvalues = ndist.cdf(Z_scores)
         pvalues = 2 * np.minimum(pvalues, 1 - pvalues)
 
+        alpha = 1 - level
         quantile = ndist.ppf(1 - alpha / 2.)
         intervals = np.vstack([final_estimator - quantile * np.sqrt(np.diag(observed_info_mean)),
                                final_estimator + quantile * np.sqrt(np.diag(observed_info_mean))]).T
