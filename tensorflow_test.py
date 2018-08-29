@@ -3,6 +3,7 @@ import tensorflow as tf
 import numpy as np
 ntries, sigma, q = 21, 1, 0.3
 Z = np.linspace(-8, 8, 1001)
+
 def algorithm(Z, ntries=ntries, q=q):
     proportion = 0
     for _ in range(ntries):
@@ -27,7 +28,7 @@ def create_network(num_hidden,num_outputs):
 		return output
 	return create
 
-def fit_algorithm(algorithm, B=5000, ntries=ntries, q=q, Zval=Z, link='probit'):
+def fit_algorithm(algorithm, B=500, ntries=ntries, q=q, Zval=Z, link='probit'):
     
     Z = np.random.standard_normal(B) * 2
     Z = np.hstack([Z, 
@@ -37,7 +38,11 @@ def fit_algorithm(algorithm, B=5000, ntries=ntries, q=q, Zval=Z, link='probit'):
     print('ZS=',Z.shape)
     Y = np.array([algorithm(z, ntries=ntries, q=q) for z in Z])
     optimize = tensorflow_fit.create_optimizer() # a default optimizer
-    predictor_f = tensorflow_fit.fit(np.reshape(Z,(Z.shape[0],1)),np.reshape(Y,(Y.shape[0],1)),create_network(10,1),tensorflow_fit.create_l2_loss,optimize) 
+    predictor_f = tensorflow_fit.fit(np.reshape(Z, (Z.shape[0], 1)),
+                                     np.reshape(Y, (Y.shape[0], 1)),
+                                     create_network(10, 1),
+                                     tensorflow_fit.create_l2_loss,
+                                     optimize) 
     print('ZS2=',Zval.shape)
     return predictor_f(np.reshape(Zval,(Zval.shape[0],1)))
 
