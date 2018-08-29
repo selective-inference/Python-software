@@ -1,8 +1,45 @@
 import numpy as np
 from scipy.stats import norm as ndist
 
+import rpy2.robjects as rpy
+from rpy2.robjects import numpy2ri
+
 from ..screening import stepup
 from ...tests.instance import gaussian_instance
+
+from selection.randomized.screening import stepup, stepup_selection
+from selection.randomized.randomization import randomization
+
+def test_BH_procedure():
+
+    def BHfilter(pval, q=0.2):
+        numpy2ri.activate()
+        rpy.r.assign('pval', pval)
+        rpy.r.assign('q', q)
+        rpy.r('Pval = p.adjust(pval, method="BH")')
+        rpy.r('S = which((Pval < q)) - 1')
+        S = rpy.r('S')
+        numpy2ri.deactivate()
+        return np.asarray(S, np.int)
+
+    def BH_cutoff():
+        Z = np.random.standard_normal(100)
+
+        BH = stepup.BH(Z,
+                       np.identity(100),
+                       1.)
+
+        cutoff = BH.stepup_Z / np.sqrt(2)
+        return cutoff
+    
+    BH_cutoffs = BH_cutoff()
+
+    for _ in range(50):
+        Z = np.random.standard_normal(100)
+        Z[:20] += 3
+
+        np.testing.assert_allclose(sorted(BHfilter(2 * ndist.sf(np.fabs(Z)), q=0.2)),
+                                   sorted(stepup_selection(Z, BH_cutoffs)[1]))
 
 def test_BH(n=500, 
             p=100, 
