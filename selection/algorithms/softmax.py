@@ -100,8 +100,12 @@ class softmax_objective(smooth_atom):
         con = self.constraints # shorthand
         slack = (con.offset - con.linear_part.dot(param)) / self.scaling
 
+        BIG = 1e20
         if mode in ['both', 'func']:
-            f = 0.5 * (param * self.precision.dot(param)).sum() + np.log((slack + 1.) / slack).sum()
+            if np.any(slack < 0):
+                f = BIG
+            else:
+                f = 0.5 * (param * self.precision.dot(param)).sum() + np.log(1. + 1. / slack).sum()
             f = self.scale(f)
 
         if mode in ['both', 'grad']:

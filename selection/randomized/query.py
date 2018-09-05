@@ -1358,7 +1358,6 @@ def selective_MLE(observed_target,
     return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
 
-
 def normalizing_constant(target_parameter,
                          observed_target,
                          cov_target,
