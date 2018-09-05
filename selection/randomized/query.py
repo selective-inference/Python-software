@@ -6,6 +6,7 @@ from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 
 from regreg.affine import power_L
+import regreg.api as rr
 
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 
@@ -13,6 +14,7 @@ from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
 from ..constraints.affine import (sample_from_constraints,
                                   constraints)
+from ..algorithms.softmax import softmax_objective
 
 class query(object):
 
@@ -283,6 +285,7 @@ class gaussian_query(query):
         full_Q[ntarget:][:,:ntarget] = (-target_linear.dot(cond_precision)).T
         full_Q[ntarget:][:,ntarget:] = cond_precision
 
+        print(corrected_mean, 'correct')
         linear_term = np.hstack([-prec_target.dot(target_parameter) + 
                                   corrected_mean.dot(cond_precision).dot(target_linear), 
                                   -cond_precision.dot(corrected_mean)])
@@ -290,31 +293,51 @@ class gaussian_query(query):
         constant_term = 0.5 * (np.sum(target_parameter * prec_target.dot(target_parameter)) +
                                np.sum(corrected_mean * cond_precision.dot(corrected_mean)))
 
-        print(full_Q)
-        print(target_linear)
+        full_con_linear = np.zeros((self.sampler.affine_con.linear_part.shape[0],
+                                    ntarget + nopt))
+        full_con_linear[:,ntarget:] = self.sampler.affine_con.linear_part
+        full_feasible = np.zeros(ntarget + nopt)
+        full_feasible[ntarget:] = feasible_point
+        loss = softmax_objective((ntarget + nopt,),
+                                 full_Q,
+                                 constraints(full_con_linear,
+                                             self.sampler.affine_con.offset),
+                                 full_feasible)
+        loss.coefs[:] = full_feasible
+        print(full_con_linear)
+        print(np.max(full_con_linear.dot(full_feasible) - self.sampler.affine_con.offset))
+        linear_objective = rr.identity_quadratic(0, 0, linear_term, constant_term)
+        
+        print(linear_term, 'linear')
+        print(full_Q, 'Q')
+        soln = loss.solve(linear_objective, min_its=500, max_its=1000, tol=1.e-12)
+        value = loss.smooth_objective(soln, mode='func')
+        return soln[:ntarget], value
+#         print(full_Q)
+#         print(target_linear)
 
-        def objective2(all_variables):
-            V = all_variables
-            term1 = 0.5 * np.sum(V * full_Q.dot(V))
-            term2 = np.sum(linear_term * V)
-            return term1 + term2 + constant_term
+#         def objective2(all_variables):
+#             V = all_variables
+#             term1 = 0.5 * np.sum(V * full_Q.dot(V))
+#             term2 = np.sum(linear_term * V)
+#             return term1 + term2 + constant_term
 
-        def objective(target_variable, opt_variable):
-            # must be minimized over (target_variable, opt_variable)
-            term1 = 0.5 * np.sum((target_parameter - target_variable) * prec_target.dot(target_parameter - target_variable))
-            term2 = -np.sum(opt_variable * cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
-            term3 = 0.5 * np.sum((corrected_mean + target_linear.dot(target_variable)) * 
-                                 cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
-            term4 = 0.5 * np.sum(opt_variable * cond_precision.dot(opt_variable))
-            return term1 + term2 + term3 + term4
+#         def objective(target_variable, opt_variable):
+#             # must be minimized over (target_variable, opt_variable)
+#             term1 = 0.5 * np.sum((target_parameter - target_variable) * prec_target.dot(target_parameter - target_variable))
+#             term2 = -np.sum(opt_variable * cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
+#             term3 = 0.5 * np.sum((corrected_mean + target_linear.dot(target_variable)) * 
+#                                  cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
+#             term4 = 0.5 * np.sum(opt_variable * cond_precision.dot(opt_variable))
+#             return term1 + term2 + term3 + term4
 
-        Z = np.random.standard_normal((20, ntarget + nopt))
+#         Z = np.random.standard_normal((20, ntarget + nopt))
 
-        v = []
-        for i in range(Z.shape[0]):
-            v.append((objective(Z[i,:ntarget], Z[i,ntarget:]),
-                      objective2(Z[i])))
-        return np.array(v)
+#         v = []
+#         for i in range(Z.shape[0]):
+#             v.append((objective(Z[i,:ntarget], Z[i,ntarget:]),
+#                       objective2(Z[i])))
+#         return np.array(v)
 
 class multiple_queries(object):
 
@@ -901,7 +924,7 @@ class affine_gaussian_sampler(optimization_sampler):
             solver = solve_barrier_affine_py
 
         val, soln, hess = solver(conjugate_arg,
-                                 prec_opt,
+                                 prec_opt, # JT: I think this quadratic is wrong should involve cov_target and target_lin too?
                                  init_soln,
                                  self.affine_con.linear_part,
                                  self.affine_con.offset,
@@ -1264,9 +1287,9 @@ def solve_barrier_affine_py(conjugate_arg,
         feasible_point = 1. / scaling
 
     objective = lambda u: -u.T.dot(conjugate_arg) + u.T.dot(precision).dot(u)/2. \
-                          + np.log(1.+ 1./((con_offset-con_linear.dot(u))/ scaling)).sum()
-    grad = lambda u: -conjugate_arg + precision.dot(u) -con_linear.T.dot(1./(scaling + con_offset-con_linear.dot(u)) -
-                                                                       1./(con_offset-con_linear.dot(u)))
+                          + np.log(1.+ 1./((con_offset - con_linear.dot(u))/ scaling)).sum()
+    grad = lambda u: -conjugate_arg + precision.dot(u) - con_linear.T.dot(1./(scaling + con_offset - con_linear.dot(u)) -
+                                                                       1./(con_offset - con_linear.dot(u)))
     barrier_hessian = lambda u: con_linear.T.dot(np.diag(-1./((scaling + con_offset-con_linear.dot(u))**2.)
                                                  + 1./((con_offset-con_linear.dot(u))**2.))).dot(con_linear)
 
