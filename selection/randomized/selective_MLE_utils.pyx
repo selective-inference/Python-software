@@ -141,20 +141,24 @@ def solve_barrier_affine(conjugate_arg,
     gradient = np.zeros_like(conjugate_arg)
     opt_variable = np.asarray(feasible_point)
     opt_proposed = opt_variable.copy()
+    affine_term = np.zeros_like(offset)
     A = linear_term
-    scaling = np.sqrt(np.diag(A.dot(precision).dot(A.T)))
 
+    scaling = np.sqrt(np.diag(A.dot(precision).dot(A.T)))
     linear_term_fortran = np.asfortranarray(linear_term)
 
-    return barrier_solve_affine_(gradient,
-                                 opt_variable,
-                                 opt_proposed,
-                                 conjugate_arg,
-                                 precision,
-                                 scaling,
-                                 linear_term_fortran,
-                                 offset,
-                                 step,
-                                 max_iter=max_iter,
-                                 min_iter=min_iter,
-                                 value_tol=tol)
+    value, opt_variable, hess = barrier_solve_affine_(gradient,
+                                                      opt_variable,
+                                                      opt_proposed,
+                                                      conjugate_arg,
+                                                      precision,	
+                                                      scaling,
+                                                      linear_term_fortran,
+                                                      offset,
+                                                      affine_term,
+                                                      step,
+                                                      max_iter=max_iter,
+                                                      min_iter=min_iter,
+                                                      value_tol=tol)
+
+    return value, opt_variable, hess

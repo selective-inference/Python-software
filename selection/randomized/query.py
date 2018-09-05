@@ -7,7 +7,7 @@ from scipy.optimize import bisect
 
 from regreg.affine import power_L
 
-from .selective_MLE_utils import solve_barrier_nonneg
+from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 
 from ..distributions.api import discrete_family
 from ..sampling.langevin import projected_langevin
@@ -307,8 +307,6 @@ class gaussian_query(query):
                                  cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
             term4 = 0.5 * np.sum(opt_variable * cond_precision.dot(opt_variable))
             return term1 + term2 + term3 + term4
-
-        print('correct', corrected_mean)
 
         Z = np.random.standard_normal((20, ntarget + nopt))
 
@@ -845,12 +843,18 @@ class affine_gaussian_sampler(optimization_sampler):
 
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
-        val, soln, hess = _solve_barrier_affine(conjugate_arg,
-                                                prec_opt,
-                                                self.affine_con.linear_part,
-                                                self.affine_con.offset,
-                                                init_soln,
-                                                **solve_args)
+        useC = True
+        if useC:
+            solver = solve_barrier_affine_C
+        else:
+            solver = solve_barrier_affine_py
+
+        val, soln, hess = solver(conjugate_arg,
+                                 prec_opt,
+                                 init_soln,
+                                 self.affine_con.linear_part,
+                                 self.affine_con.offset,
+                                 **solve_args)
 
         final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean - soln)))
         ind_unbiased_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(self.affine_con.mean
@@ -870,7 +874,13 @@ class affine_gaussian_sampler(optimization_sampler):
 
         return final_estimator, observed_info_mean, Z_scores, pvalues, intervals, ind_unbiased_estimator
 
-    def reparam_map(self, theta, observed_target, cov_target, cov_target_score, init_soln, solve_args={}):
+    def reparam_map(self, 
+                    parameter_target, 
+                    observed_target, 
+                    cov_target, 
+                    cov_target_score, 
+                    init_soln, 
+                    solve_args={'tol':1.e-12}):
 
         prec_target = np.linalg.inv(cov_target)
         ndim = prec_target.shape[0]
@@ -881,21 +891,29 @@ class affine_gaussian_sampler(optimization_sampler):
         cov_opt = self.affine_con.covariance
         prec_opt = np.linalg.inv(cov_opt)
 
-        mean_param = target_lin.dot(theta)+target_offset
+        mean_param = target_lin.dot(parameter_target) + target_offset
         conjugate_arg = prec_opt.dot(mean_param)
 
-        val, soln, hess = _solve_barrier_nonneg(conjugate_arg,
-                                                prec_opt,
-                                                init_soln,
-                                                **solve_args)
+        useC = True
+        if useC:
+            solver = solve_barrier_affine_C
+        else:
+            solver = solve_barrier_affine_py
 
+        val, soln, hess = solver(conjugate_arg,
+                                 prec_opt,
+                                 init_soln,
+                                 self.affine_con.linear_part,
+                                 self.affine_con.offset,
+                                 **solve_args)
+            
         inter_map = cov_target.dot(target_lin.T.dot(prec_opt))
-        param_map = theta + inter_map.dot(mean_param - soln)
-        log_normalizer_map = (theta.T.dot(prec_target + target_lin.T.dot(prec_opt).dot(target_lin)).dot(theta))/2. \
-                             - theta.T.dot(target_lin.T).prec_opt.dot(soln) - target_offset.T.dot(prec_opt).dot(target_offset)/2. \
-                             + val - (param_map.T.dot(prec_target).param_map)/2.
+        param_map = parameter_target + inter_map.dot(mean_param - soln)
+        log_normalizer_map = ((parameter_target.T.dot(prec_target + target_lin.T.dot(prec_opt).dot(target_lin)).dot(parameter_target))/2. 
+                              - parameter_target.T.dot(target_lin.T).dot(prec_opt.dot(soln)) - target_offset.T.dot(prec_opt).dot(target_offset)/2. 
+                              + val - (param_map.T.dot(prec_target).dot(param_map))/2.)
 
-        jacobian_map = (np.identity(ndim)+ inter_map.dot(target_lin)) - inter_map.dot(hess).dot(prec_opt.dot(target_lin))
+        jacobian_map = (np.identity(ndim) + inter_map.dot(target_lin)) - inter_map.dot(hess).dot(prec_opt.dot(target_lin))
 
         return param_map, log_normalizer_map, jacobian_map
 
@@ -1230,15 +1248,15 @@ def naive_pvalues(diag_cov, observed, parameter):
         pvalues[j] = 2 * min(pval, 1-pval)
     return pvalues
 
-def _solve_barrier_affine(conjugate_arg,
-                          precision,
-                          con_linear,
-                          con_offset,
-                          feasible_point=None,
-                          step=1,
-                          nstep=1000,
-                          min_its=100,
-                          tol=1.e-8):
+def solve_barrier_affine_py(conjugate_arg,
+                            precision,
+                            feasible_point,
+                            con_linear,
+                            con_offset,
+                            step=1,
+                            nstep=1000,
+                            min_its=100,
+                            tol=1.e-8):
 
     scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
 
