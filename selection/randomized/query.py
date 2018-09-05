@@ -261,9 +261,10 @@ class gaussian_query(query):
                                           observed_target,
                                           cov_target,
                                           cov_target_score,
-                                          feasible_point):
+                                          feasible_point,
+                                          cond_mean):
 
-        cond_mean, cond_cov = self.sampler.affine_con.mean, self.sampler.affine_con.covariance
+        _, cond_cov = self.sampler.affine_con.mean, self.sampler.affine_con.covariance
         cond_precision = np.linalg.inv(cond_cov)
         logdens_linear = self.sampler.logdens_transform[0]                                                     
         prec_target = np.linalg.inv(cov_target)
@@ -285,7 +286,6 @@ class gaussian_query(query):
         full_Q[ntarget:][:,:ntarget] = (-target_linear.dot(cond_precision)).T
         full_Q[ntarget:][:,ntarget:] = cond_precision
 
-        print(corrected_mean, 'correct')
         linear_term = np.hstack([-prec_target.dot(target_parameter) + 
                                   corrected_mean.dot(cond_precision).dot(target_linear), 
                                   -cond_precision.dot(corrected_mean)])
@@ -298,46 +298,21 @@ class gaussian_query(query):
         full_con_linear[:,ntarget:] = self.sampler.affine_con.linear_part
         full_feasible = np.zeros(ntarget + nopt)
         full_feasible[ntarget:] = feasible_point
-        loss = softmax_objective((ntarget + nopt,),
-                                 full_Q,
-                                 constraints(full_con_linear,
-                                             self.sampler.affine_con.offset),
-                                 full_feasible)
-        loss.coefs[:] = full_feasible
-        print(full_con_linear)
-        print(np.max(full_con_linear.dot(full_feasible) - self.sampler.affine_con.offset))
-        linear_objective = rr.identity_quadratic(0, 0, linear_term, constant_term)
-        
-        print(linear_term, 'linear')
-        print(full_Q, 'Q')
-        soln = loss.solve(linear_objective, min_its=500, max_its=1000, tol=1.e-12)
-        value = loss.smooth_objective(soln, mode='func')
-        return soln[:ntarget], value
-#         print(full_Q)
-#         print(target_linear)
 
-#         def objective2(all_variables):
-#             V = all_variables
-#             term1 = 0.5 * np.sum(V * full_Q.dot(V))
-#             term2 = np.sum(linear_term * V)
-#             return term1 + term2 + constant_term
+        solve_args={'tol':1.e-12}
+        useC = False
+        if useC:
+            solver = solve_barrier_affine_C
+        else:
+            solver = solve_barrier_affine_py
 
-#         def objective(target_variable, opt_variable):
-#             # must be minimized over (target_variable, opt_variable)
-#             term1 = 0.5 * np.sum((target_parameter - target_variable) * prec_target.dot(target_parameter - target_variable))
-#             term2 = -np.sum(opt_variable * cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
-#             term3 = 0.5 * np.sum((corrected_mean + target_linear.dot(target_variable)) * 
-#                                  cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
-#             term4 = 0.5 * np.sum(opt_variable * cond_precision.dot(opt_variable))
-#             return term1 + term2 + term3 + term4
-
-#         Z = np.random.standard_normal((20, ntarget + nopt))
-
-#         v = []
-#         for i in range(Z.shape[0]):
-#             v.append((objective(Z[i,:ntarget], Z[i,ntarget:]),
-#                       objective2(Z[i])))
-#         return np.array(v)
+        value, soln, hess = solver(-linear_term,
+                                    full_Q,
+                                    full_feasible,
+                                    full_con_linear,
+                                    self.sampler.affine_con.offset,
+                                    **solve_args)
+        return soln[:ntarget], -value + constant_term, hess[:ntarget][:,:ntarget]
 
 class multiple_queries(object):
 
@@ -866,7 +841,7 @@ class affine_gaussian_sampler(optimization_sampler):
 
         conjugate_arg = prec_opt.dot(self.affine_con.mean)
 
-        useC = True
+        useC = False
         if useC:
             solver = solve_barrier_affine_C
         else:
@@ -917,7 +892,7 @@ class affine_gaussian_sampler(optimization_sampler):
         mean_param = target_lin.dot(parameter_target) + target_offset
         conjugate_arg = prec_opt.dot(mean_param)
 
-        useC = True
+        useC = False
         if useC:
             solver = solve_barrier_affine_C
         else:
