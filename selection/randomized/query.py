@@ -187,6 +187,9 @@ class query(object):
 
 class gaussian_query(query):
 
+    """
+    A class with Gaussian perturbation to the objective -- easy to apply CLT to such things
+    """
     def fit(self, perturb=None):
 
         p = self.nfeature
@@ -250,6 +253,70 @@ class gaussian_query(query):
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         return cond_mean, cond_cov, cond_precision, logdens_linear
+
+    def _approximate_normalizing_constant(self,
+                                          target_parameter,
+                                          observed_target,
+                                          cov_target,
+                                          cov_target_score,
+                                          feasible_point):
+
+        cond_mean, cond_cov = self.sampler.affine_con.mean, self.sampler.affine_con.covariance
+        cond_precision = np.linalg.inv(cond_cov)
+        logdens_linear = self.sampler.logdens_transform[0]                                                     
+        prec_target = np.linalg.inv(cov_target)
+        target_linear = -logdens_linear.dot(cov_target_score.dot(prec_target))
+        nuisance_correction = target_linear.dot(observed_target)
+        corrected_mean = cond_mean - nuisance_correction
+
+        # rest of the objective is the target mahalanobis distance
+        # plus the mahalanobis distance for optimization variables
+        # this includes a term linear in the target, i.e.
+        # the source of `target_linear`
+
+        ntarget = cov_target.shape[0]
+        nopt = cond_cov.shape[0]
+        full_Q = np.zeros((ntarget + nopt,
+                           ntarget + nopt))
+        full_Q[:ntarget][:,:ntarget] = (prec_target + target_linear.T.dot(cond_precision.dot(target_linear)))
+        full_Q[:ntarget][:,ntarget:] = -target_linear.dot(cond_precision)
+        full_Q[ntarget:][:,:ntarget] = (-target_linear.dot(cond_precision)).T
+        full_Q[ntarget:][:,ntarget:] = cond_precision
+
+        linear_term = np.hstack([-prec_target.dot(target_parameter) + 
+                                  corrected_mean.dot(cond_precision).dot(target_linear), 
+                                  -cond_precision.dot(corrected_mean)])
+
+        constant_term = 0.5 * (np.sum(target_parameter * prec_target.dot(target_parameter)) +
+                               np.sum(corrected_mean * cond_precision.dot(corrected_mean)))
+
+        print(full_Q)
+        print(target_linear)
+
+        def objective2(all_variables):
+            V = all_variables
+            term1 = 0.5 * np.sum(V * full_Q.dot(V))
+            term2 = np.sum(linear_term * V)
+            return term1 + term2 + constant_term
+
+        def objective(target_variable, opt_variable):
+            # must be minimized over (target_variable, opt_variable)
+            term1 = 0.5 * np.sum((target_parameter - target_variable) * prec_target.dot(target_parameter - target_variable))
+            term2 = -np.sum(opt_variable * cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
+            term3 = 0.5 * np.sum((corrected_mean + target_linear.dot(target_variable)) * 
+                                 cond_precision.dot(corrected_mean + target_linear.dot(target_variable)))
+            term4 = 0.5 * np.sum(opt_variable * cond_precision.dot(opt_variable))
+            return term1 + term2 + term3 + term4
+
+        print('correct', corrected_mean)
+
+        Z = np.random.standard_normal((20, ntarget + nopt))
+
+        v = []
+        for i in range(Z.shape[0]):
+            v.append((objective(Z[i,:ntarget], Z[i,ntarget:]),
+                      objective2(Z[i])))
+        return np.array(v)
 
 class multiple_queries(object):
 
@@ -753,7 +820,8 @@ class affine_gaussian_sampler(optimization_sampler):
                       observed_target, 
                       cov_target, 
                       cov_target_score, 
-                      init_soln, # initial value of optimization variables
+                      init_soln, # initial (observed) value of optimization variables -- used as a feasible point.
+                                 # precise value used only for independent estimator 
                       solve_args={'tol':1.e-12}, 
                       level=0.9):
         """
@@ -779,7 +847,8 @@ class affine_gaussian_sampler(optimization_sampler):
 
         val, soln, hess = _solve_barrier_affine(conjugate_arg,
                                                 prec_opt,
-                                                self.affine_con,
+                                                self.affine_con.linear_part,
+                                                self.affine_con.offset,
                                                 init_soln,
                                                 **solve_args)
 
@@ -1163,15 +1232,14 @@ def naive_pvalues(diag_cov, observed, parameter):
 
 def _solve_barrier_affine(conjugate_arg,
                           precision,
-                          constraints,
+                          con_linear,
+                          con_offset,
                           feasible_point=None,
                           step=1,
                           nstep=1000,
                           min_its=100,
                           tol=1.e-8):
 
-    con_linear = constraints.linear_part
-    con_offset = constraints.offset
     scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
 
     if feasible_point is None:
