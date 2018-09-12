@@ -189,6 +189,8 @@ class query(object):
 
 class gaussian_query(query):
 
+    useC = True
+
     """
     A class with Gaussian perturbation to the objective -- easy to apply CLT to such things
     """
@@ -237,7 +239,8 @@ class gaussian_query(query):
                                                self.observed_score_state,
                                                log_density,
                                                (logdens_linear, opt_offset),
-                                               selection_info=self.selection_variable)
+                                               selection_info=self.selection_variable,
+                                               useC=self.useC)
 
     def _setup_implied_gaussian(self, opt_linear, opt_offset):
 
@@ -711,7 +714,8 @@ class affine_gaussian_sampler(optimization_sampler):
                  observed_score_state,
                  log_density,
                  logdens_transform, # described how score enters log_density.
-                 selection_info=None):
+                 selection_info=None,
+                 useC=False):
 
         '''
         Parameters
@@ -730,6 +734,7 @@ class affine_gaussian_sampler(optimization_sampler):
         self.selection_info = selection_info
         self.log_density = log_density
         self.logdens_transform = logdens_transform
+        self.useC = useC
 
     def sample(self, ndraw, burnin):
         '''
@@ -778,7 +783,8 @@ class affine_gaussian_sampler(optimization_sampler):
                              self.affine_con.linear_part,
                              self.affine_con.offset,
                              solve_args=solve_args,
-                             level=level)
+                             level=level,
+                             useC=self.useC)
 
     def reparam_map(self, 
                     parameter_target, 
@@ -800,7 +806,6 @@ class affine_gaussian_sampler(optimization_sampler):
         mean_param = target_lin.dot(parameter_target) + target_offset
         conjugate_arg = prec_opt.dot(mean_param)
 
-        useC = False
         if useC:
             solver = solve_barrier_affine_C
         else:
@@ -1161,8 +1166,8 @@ def solve_barrier_affine_py(conjugate_arg,
                             con_offset,
                             step=1,
                             nstep=1000,
-                            min_its=100,
-                            tol=1.e-8):
+                            min_its=200,
+                            tol=1.e-10):
 
     scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
 
@@ -1302,12 +1307,14 @@ def selective_MLE(observed_target,
                   linear_part,
                   offset,
                   solve_args={'tol':1.e-12}, 
-                  level=0.9):
+                  level=0.9,
+                  useC=False):
     """
     Selective MLE based on approximation of
     CGF.
 
     """
+
     if np.asarray(observed_target).shape in [(), (0,)]:
         raise ValueError('no target specified')
 
@@ -1326,7 +1333,6 @@ def selective_MLE(observed_target,
 
     conjugate_arg = prec_opt.dot(cond_mean)
 
-    useC = False
     if useC:
         solver = solve_barrier_affine_C
     else:
@@ -1367,7 +1373,8 @@ def normalizing_constant(target_parameter,
                          cond_cov,
                          logdens_linear,
                          linear_part,
-                         offset):
+                         offset,
+                         useC=False):
 
     target_parameter = np.atleast_1d(target_parameter)
 
@@ -1405,7 +1412,7 @@ def normalizing_constant(target_parameter,
     full_feasible[ntarget:] = feasible_point
 
     solve_args={'tol':1.e-12}
-    useC = False
+
     if useC:
         solver = solve_barrier_affine_C
     else:

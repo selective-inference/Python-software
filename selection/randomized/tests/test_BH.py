@@ -42,7 +42,7 @@ def test_BH_procedure():
 
         np.testing.assert_allclose(sorted(BHfilter(2 * ndist.sf(np.fabs(Z)), q=0.2)),
                                    sorted(stepup_selection(Z, BH_cutoffs)[1]))
-@rpy_test_safe()
+
 def test_independent_estimator(n=100, n1=80, q=0.2, signal=3, p=100):
 
     Z = np.random.standard_normal((n, p))
@@ -75,26 +75,24 @@ def test_independent_estimator(n=100, n1=80, q=0.2, signal=3, p=100):
      ind_unbiased_estimator) = BH_select.selective_MLE(observed_target, cov_target, cross_cov)
 
     Zbar2 = Z[n1:].mean(0)[selected]
+
     assert(np.linalg.norm(ind_unbiased_estimator - Zbar2) / np.linalg.norm(Zbar2) < 1.e-6)
     np.testing.assert_allclose(sorted(np.nonzero(selected)[0]), 
                                sorted(BHfilter(2 * ndist.sf(np.fabs(np.sqrt(n1) * Zbar1)))))
 
 
 def test_BH(n=500, 
-            p=100, 
-            s=10, 
+            p=500, 
+            s=50, 
             sigma=3, 
             rho=0.65, 
-            randomizer_scale=np.sqrt(1/9.),
+            randomizer_scale=1.,
             use_MLE=True,
-            marginal=False):
+            marginal=False,
+            level=0.9):
 
     while True:
 
-        X = gaussian_instance(n=n,
-                              p=p,
-                              equicorrelated=False,
-                              rho=rho)[0]
         W = rho**(np.fabs(np.subtract.outer(np.arange(p), np.arange(p))))
         sqrtW = np.linalg.cholesky(W)
         sigma = 0.5
@@ -102,14 +100,11 @@ def test_BH(n=500,
         beta = (2 * np.random.binomial(1, 0.5, size=(p,)) - 1) * np.linspace(4, 5, p) * sigma
         np.random.shuffle(beta)
         beta[s:] = 0
-        print(beta)
         np.random.shuffle(beta)
+        print(beta, 'beta')
 
         true_mean = W.dot(beta)
         score = Z + true_mean
-        idx = np.arange(p)
-
-        n, p = X.shape
 
         q = 0.1
         BH_select = stepup.BH(score,
@@ -117,10 +112,9 @@ def test_BH(n=500,
                               randomizer_scale * sigma,
                               q=q)
 
-        boundary = BH_select.fit()
+        nonzero = BH_select.fit()
 
-        if boundary is not None:
-            nonzero = boundary != 0
+        if nonzero is not None:
 
             if marginal:
                 (observed_target, 
@@ -131,43 +125,54 @@ def test_BH(n=500,
                 (observed_target, 
                  cov_target, 
                  crosscov_target_score, 
-                 alternatives) = BH_select.multivariate_targets(nonzero, dispersion=sigma**2)
+                 alternatives) = BH_select.full_targets(nonzero, dispersion=sigma**2)
                
-            if use_MLE:
-                estimate, _, _, pval, intervals, _ = BH_select.selective_MLE(observed_target,
-                                                                             cov_target,
-                                                                             crosscov_target_score)
-                # run summary
-            else:
-                _, pval, intervals = BH_select.summary(observed_target, 
-                                                       cov_target, 
-                                                       crosscov_target_score, 
-                                                       alternatives,
-                                                       compute_intervals=True)
-
-            print(pval)
             if marginal:
                 beta_target = true_mean[nonzero]
             else:
                 beta_target = beta[nonzero]
+
+            if use_MLE:
+                print('huh')
+                estimate, info, _, pval, intervals, _ = BH_select.selective_MLE(observed_target,
+                                                                                cov_target,
+                                                                                crosscov_target_score,
+                                                                                level=level)
+                pivots = ndist.cdf((estimate - beta_target) / np.sqrt(np.diag(info)))
+                pivots = 2 * np.minimum(pivots, 1 - pivots)
+                # run summary
+            else:
+                pivots, pval, intervals = BH_select.summary(observed_target, 
+                                                            cov_target, 
+                                                            crosscov_target_score, 
+                                                            alternatives,
+                                                            compute_intervals=True,
+                                                            level=level,
+                                                            ndraw=20000,
+                                                            burnin=2000,
+                                                            parameter=beta_target)
+            print(pval)
             print("beta_target and intervals", beta_target, intervals)
             coverage = (beta_target > intervals[:, 0]) * (beta_target < intervals[:, 1])
             print("coverage for selected target", coverage.sum()/float(nonzero.sum()))
-            return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0], coverage, intervals
+            return pivots[beta_target == 0], pivots[beta_target != 0], coverage, intervals, pivots
+        else:
+            return [], [], [], [], []
 
 def test_both():
     test_BH(marginal=True)
     test_BH(marginal=False)
 
-def main(nsim=500, use_MLE=False):
+def main(nsim=500, use_MLE=True, marginal=False):
 
     import matplotlib.pyplot as plt
     import statsmodels.api as sm
     U = np.linspace(0, 1, 101)
     P0, PA, cover, length_int = [], [], [], []
+    Ps = []
     for i in range(nsim):
-        p0, pA, cover_, intervals = test_BH(use_MLE=use_MLE)
-
+        p0, pA, cover_, intervals, pivots = test_BH(use_MLE=use_MLE, marginal=marginal)
+        Ps.extend(pivots)
         cover.extend(cover_)
         P0.extend(p0)
         PA.extend(pA)
@@ -178,8 +183,10 @@ def main(nsim=500, use_MLE=False):
             period = 50
         if i % period == 0 and i > 0:
             plt.clf()
-            plt.plot(U, sm.distributions.ECDF(P0)(U), 'b', label='null')
+            if len(P0) > 0:
+                plt.plot(U, sm.distributions.ECDF(P0)(U), 'b', label='null')
             plt.plot(U, sm.distributions.ECDF(PA)(U), 'r', label='alt')
+            plt.plot(U, sm.distributions.ECDF(Ps)(U), 'tab:orange', label='pivot')
             plt.plot([0, 1], [0, 1], 'k--')
             plt.legend()
             plt.savefig('BH_pvals.pdf')

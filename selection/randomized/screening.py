@@ -41,6 +41,19 @@ class screening(gaussian_query):
 
         return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
+    def full_targets(self, features, dispersion=1.):
+        """
+        Entries of the mean of \Sigma[E,E]^{-1}Z_E
+        """
+        score_linear = self.covariance[:, features].copy() / dispersion
+        Q = self.covariance / dispersion
+        cov_target = (np.linalg.inv(Q)[features])[:, features]
+        observed_target = -np.linalg.inv(Q).dot(self.observed_score_state)[features]
+        crosscov_target_score = -np.identity(Q.shape[0])[:, features]
+        alternatives = ['twosided'] * features.sum()
+
+        return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
     def marginal_targets(self, features):
         """
         Entries of the mean of Z_E
@@ -55,6 +68,8 @@ class screening(gaussian_query):
         return observed_target, cov_target, crosscov_target_score.T, alternatives
 
 class marginal_screening(screening):
+
+    useC = True
 
     def __init__(self,
                  observed_data,
@@ -129,18 +144,16 @@ class marginal_screening(screening):
 
 def stepup_selection(Z_values, stepup_Z):
 
-    m = Z_values.shape[0]
     absZ_argsort = np.argsort(np.fabs(Z_values))[::-1]
     absZ_sorted = np.fabs(Z_values)[absZ_argsort]
     survivors = absZ_sorted - stepup_Z >= 0
     if np.any(survivors):
-        num_selected = np.max(np.nonzero(survivors)[0]) + 1
+        num_selected = max(np.nonzero(survivors)[0]) + 1
         return (num_selected,                    # how many selected
                 absZ_argsort[:num_selected],     # ordered indices of those selected
-                stepup_Z[num_selected - 1],      # the last selected is greater than this number 
-                absZ_sorted[num_selected])       # the rest are greater than this 
+                stepup_Z[num_selected - 1])      # the selected are greater than this number 
     else:
-        return 0, None, None, None
+        return 0, None, None
 
 class stepup(screening):
 
@@ -170,43 +183,31 @@ class stepup(screening):
 
         _randomized_score, p = screening.fit(self, perturb=perturb)
 
-        K, selected_idx, last_cutoff, boundary_Z = stepup_selection(_randomized_score, self.stepup_Z)
+        K, selected_idx, last_cutoff = stepup_selection(_randomized_score, self.stepup_Z)
 
         if K > 0:
-
-            _selected_first = np.zeros(p, np.bool)
-            _selected_first[selected_idx[:-1]] = 1
-            _selected_first = np.nonzero(_selected_first)[0]
-            _selected_last = selected_idx[-1]
 
             self._selected = np.zeros(p, np.bool)
             self._selected[selected_idx] = 1
             self._not_selected = ~self._selected
 
             sign = np.sign(-_randomized_score)
-            active_signs_first = sign[_selected_first]
-            active_sign_last = sign[_selected_last]
-            active_signs = sign[self._selected]
+            active_signs = sign[selected_idx]
             sign[self._not_selected] = 0
             self.selection_variable = {'sign': sign.copy(),
                                        'variables': self._selected.copy(),
-                                       'last':_selected_last,
-                                       # also conditioning on values of randomized unselected coefficients
                                        }
 
             self.num_opt_var = self._selected.sum()
             self.observed_opt_state = np.zeros(self.num_opt_var)
-            self.observed_opt_state[:-1] = np.fabs(_randomized_score[_selected_first]) - boundary_Z
-            self.observed_opt_state[-1] = np.fabs(_randomized_score[_selected_last]) - max(last_cutoff, boundary_Z)
+            self.observed_opt_state[:] = np.fabs(_randomized_score[selected_idx]) - last_cutoff
 
             opt_linear = np.zeros((p, self.num_opt_var))
-            for j in range(self.num_opt_var - 1):
-                opt_linear[_selected_first[j], j] = active_signs_first[j]
-            opt_linear[_selected_last,-1] = active_sign_last
+            for j in range(self.num_opt_var):
+                opt_linear[selected_idx[j], j] = active_signs[j]
 
             opt_offset = np.zeros(p)
-            opt_offset[self._selected] = active_signs * boundary_Z
-            opt_offset[_selected_last] = active_sign_last * max(last_cutoff, boundary_Z)
+            opt_offset[self._selected] = active_signs * last_cutoff
             opt_offset[self._not_selected] = _randomized_score[self._not_selected]
 
             self._setup = True
@@ -237,6 +238,31 @@ class stepup(screening):
 
         randomized_stdev = np.sqrt(covariance[0, 0] + randomizer_scale**2)
         randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        # Benjamini-Hochberg cutoffs
+        stepup_Z = randomized_stdev * ndist.ppf(1 - q * np.arange(1, p + 1) / (2 * p))
+
+        return stepup(observed_score,
+                      covariance,
+                      randomizer,
+                      stepup_Z,
+                      perturb=perturb)
+
+    def BH_general(observed_score,
+                   covariance, 
+                   randomizer_cov,
+                   q=0.2,
+                   perturb=None):
+        
+        if not np.allclose(np.diag(covariance), covariance[0, 0]):
+            raise ValueError('Benjamin-Hochberg expecting Z scores with identical variance, standardize your Z')
+        if not np.allclose(np.diag(randomizer_cov), randomizer_cov[0, 0]):
+            raise ValueError('Benjamin-Hochberg expecting Z scores with identical variance, standardize your randomization')
+
+        p = observed_score.shape[0]
+
+        randomizer = randomization.gaussian(randomizer_cov)
+        randomized_stdev = np.sqrt(covariance[0, 0] + randomizer_cov[0, 0])
 
         # Benjamini-Hochberg cutoffs
         stepup_Z = randomized_stdev * ndist.ppf(1 - q * np.arange(1, p + 1) / (2 * p))

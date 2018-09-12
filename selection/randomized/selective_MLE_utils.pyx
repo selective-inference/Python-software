@@ -109,7 +109,7 @@ def solve_barrier_nonneg(conjugate_arg,
                          feasible_point,
                          step=1,
                          max_iter=2000,
-                         min_iter=100,
+                         min_iter=200,
                          tol=1.e-12):
 
     gradient = np.zeros_like(conjugate_arg)
@@ -135,7 +135,7 @@ def solve_barrier_affine(conjugate_arg,
                          offset,
                          step=1,
                          max_iter=1000,
-                         min_iter=50,
+                         min_iter=200,
                          tol=1.e-12):
 
     gradient = np.zeros_like(conjugate_arg)
