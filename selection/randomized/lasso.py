@@ -29,6 +29,8 @@ from ..algorithms.debiased_lasso import debiasing_matrix
 #### - Gaussian randomization
 
 class lasso(gaussian_query):
+    useC = True
+
     r"""
     A class for the randomized LASSO for post-selection inference.
     The problem solved is
