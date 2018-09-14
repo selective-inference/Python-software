@@ -13,60 +13,72 @@ from core import (infer_full_target,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=1000, p=100, s=10, signal=(3, 5), sigma=2, alpha=0.1):
+from sklearn.linear_model import lasso_path
+
+def _alpha_grid(X, y, XTX):
+    n, p=X.shape
+    alphas, coefs, _ = lasso_path(X, y, precompute=XTX)
+    nselected = np.count_nonzero(coefs, axis=0)
+    return alphas[nselected<np.sqrt(0.8*p)]
+
+
+def simulate(n=1000, p=100, s=10, signal=(3, 3), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
     X, y, truth = gaussian_instance(n=n,
-                                    p=p, 
+                                    p=p,
                                     s=s,
                                     equicorrelated=False,
-                                    rho=0.5, 
+                                    rho=0.5,
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=False)[:3]
+                                    scale=True)[:3]
 
     dispersion = sigma**2
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
-    smooth_sampler = normal_sampler(S, covS)
+    #smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    def meta_algorithm(XTX, XTXi, lam, sampler):
+    def meta_algorithm(XTX, XTXi, alpha_grid, sampler):
 
-        min_success = 3
-        ntries = 6
-        p = XTX.shape[0]
-        success = np.zeros(p)
-
-        loss = rr.quadratic_loss((p,), Q=XTX)
-        pen = rr.l1norm(p, lagrange=lam)
+        min_success = 30
+        ntries = 50
+        success = np.zeros((p, alpha_grid.shape[0]))
 
         for _ in range(ntries):
-            scale = 0.5
+            scale = 1.  # corresponds to sub-samples of 50%
             noisy_S = sampler(scale=scale)
-            loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
-            problem = rr.simple_problem(loss, pen)
-            soln = problem.solve(max_its=50, tol=1.e-6)
-            success += soln != 0
-        return set(np.nonzero(success >= min_success)[0])
+            _, coefs, _ = lasso_path(X, y, Xy = noisy_S, precompute=XTX, alphas=alpha_grid)
+            #print(np.count_nonzero(coefs, 0))
+            success += np.abs(np.sign(coefs))
+
+        selected = np.apply_along_axis(lambda row: any(x>min_success for x in row), 1, success)
+        vars = set(np.nonzero(selected)[0])
+        return vars
 
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
     dispersion = np.linalg.norm(resid)**2 / (n-p)
-                         
-    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, 4. * np.sqrt(n))
+
+    alpha_grid = _alpha_grid(X, y, XTX) # decreasing
+    print("alpha grid length:", alpha_grid.shape)
+    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, alpha_grid)
 
     # run selection algorithm
 
     observed_set = selection_algorithm(splitting_sampler)
 
+    print("observed set",observed_set)
+    print("observed and true", observed_set.intersection(set(np.nonzero(truth!=0)[0])))
+    print("observed and false", observed_set.intersection(set(np.nonzero(truth==0)[0])))
     # find the target, based on the observed outcome
 
-    # we just take the first target  
+    # we just take the first target
 
     pivots, covered, lengths = [], [], []
     naive_pivots, naive_covered, naive_lengths =  [], [], []
@@ -75,7 +87,7 @@ def simulate(n=1000, p=100, s=10, signal=(3, 5), sigma=2, alpha=0.1):
         print("variable: ", idx, "total selected: ", len(observed_set))
         true_target = truth[idx]
 
-        (pivot, 
+        (pivot,
          interval) = infer_full_target(selection_algorithm,
                                        observed_set,
                                        idx,
@@ -128,5 +140,7 @@ if __name__ == "__main__":
         if i % 5 == 0 and i > 0:
             plt.clf()
             plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3)
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
+            plt.legend()
             plt.savefig('lasso_example2.pdf')
