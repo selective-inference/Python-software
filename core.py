@@ -460,6 +460,7 @@ def _inference(observed_target,
     exp_family = discrete_family(target_val, weight_val)  
 
     pivot = exp_family.cdf(hypothesis / target_cov[0, 0], x=observed_target)
+    pivot = 2*min(pivot, 1-pivot)
 
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])
