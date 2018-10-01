@@ -152,7 +152,11 @@ if __name__ == "__main__":
             plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3, label='Naive')
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
             plt.legend()
+<<<<<<< HEAD
             plt.savefig('ss_example.pdf')
+=======
+            plt.savefig('lasso_example7_split.pdf')
+>>>>>>> added fit_args argument
 
     with open(outfile, "wb") as f:
         pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)
