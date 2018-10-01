@@ -48,10 +48,6 @@ def simulate(n=1000, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
             return alphas[nselected < np.sqrt(0.8 * p)]
 
         alpha_grid = _alpha_grid(X, y, sampler(scale=0.), XTX)
-<<<<<<< HEAD
-
-=======
->>>>>>> added fit_args argument
         success = np.zeros((p, alpha_grid.shape[0]))
 
         for _ in range(ntries):
@@ -136,6 +132,7 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(30):
+
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
