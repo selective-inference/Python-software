@@ -15,8 +15,7 @@ from core import (infer_full_target,
 
 from sklearn.linear_model import lasso_path
 
-
-def simulate(n=1000, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
+def simulate(n=200, p=40, s=5, signal=(2, 2), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -39,8 +38,8 @@ def simulate(n=1000, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
 
     def meta_algorithm(XTX, XTXi, sampler):
 
-        min_success = 30
-        ntries = 50
+        min_success = 3
+        ntries = 5
 
         def _alpha_grid(X, y, center, XTX):
             n, p = X.shape
@@ -48,7 +47,7 @@ def simulate(n=1000, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
             nselected = np.count_nonzero(coefs, axis=0)
             return alphas[nselected < np.sqrt(0.8 * p)]
 
-        alpha_grid = _alpha_grid(X,y,sampler.center, XTX)
+        alpha_grid = _alpha_grid(X, y, sampler(scale=0), XTX)
         success = np.zeros((p, alpha_grid.shape[0]))
 
         for _ in range(ntries):
@@ -131,7 +130,7 @@ if __name__ == "__main__":
     P, L, coverage = [], [], []
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
-    for i in range(50):
+    for i in range(100):
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -146,8 +145,8 @@ if __name__ == "__main__":
 
         if i % 5 == 0 and i > 0:
             plt.clf()
-            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
-            plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3, label='Selective')
+            plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3, label='Naive')
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
             plt.legend()
             plt.savefig('lasso_example3.pdf')
