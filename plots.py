@@ -5,7 +5,6 @@ import numpy as np
 
 U = np.linspace(0, 1, 101)
 file_labels = ['ss_probit1.pkl', 'ss_logit1.pkl']
-#file_labels = ['kk_probit2.pkl', 'kk_logit2.pkl']
 
 for label in file_labels:
     print(label)
@@ -27,4 +26,4 @@ plt.xlabel("Observed pivot", fontsize=18)
 plt.ylabel("Proportion (empirical CDF)", fontsize=18)
 plt.title("Pivots", fontsize=20)
 plt.legend(fontsize=18, loc="lower right")
-plt.savefig('ss_pivots.pdf')
+plt.savefig('kk_pivots.pdf')

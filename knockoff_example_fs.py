@@ -44,6 +44,8 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
 
     def meta_algorithm(XTXi, X, resid, sampler, min_success=1, ntries=1):
 
+        min_success = 5
+        ntries = 10
         p = XTXi.shape[0]
         success = np.zeros(p)
 
@@ -75,7 +77,8 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
     pivots, covered, lengths = [], [], []
     naive_pivots, naive_covered, naive_lengths = [], [], []
 
-    for idx in list(observed_set):
+    for idx in list(observed_set)[:1]:
+
         print("variable: ", idx, "total selected: ", len(observed_set))
         true_target = truth[idx]
 
@@ -126,7 +129,6 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(50):
-        print("sim", i)
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
