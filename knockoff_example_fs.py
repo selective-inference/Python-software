@@ -19,7 +19,7 @@ from core import (infer_full_target,
 
 from knockoffs import knockoffs_sigma
 
-def simulate(n=1000, p=40, signal=(3.2, 4), sigma=2, alpha=0.1, s=10):
+def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
 
     # description of statistical problem
 
@@ -40,7 +40,7 @@ def simulate(n=1000, p=40, signal=(3.2, 4), sigma=2, alpha=0.1, s=10):
     XTXi = np.linalg.inv(XTX)
 
     sampler = normal_sampler(X.T.dot(y), covS)
-    splitting_sampler = split_sampler(X * y[:, None], covS / n)
+    splitting_sampler = split_sampler(X * y[:, None], covS)
 
     def meta_algorithm(XTXi, X, resid, sampler):
 
@@ -88,7 +88,7 @@ def simulate(n=1000, p=40, signal=(3.2, 4), sigma=2, alpha=0.1, s=10):
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
-                                       B=100)
+                                       B=500)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))

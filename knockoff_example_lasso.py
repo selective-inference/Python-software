@@ -40,7 +40,7 @@ def simulate(n=1000, p=50, signal=3.2, sigma=2, alpha=0.1, s=10):
     XTXi = np.linalg.inv(XTX)
 
     sampler = normal_sampler(X.T.dot(y), covS)
-    splitting_sampler = split_sampler(X * y[:, None], covS / n)
+    splitting_sampler = split_sampler(X * y[:, None], covS)
 
     def meta_algorithm(XTXi, X, resid, sampler):
 
