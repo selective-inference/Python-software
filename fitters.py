@@ -4,14 +4,15 @@ import rpy2.robjects as rpy
 import rpy2.robjects.numpy2ri
 rpy.r('library(splines)')
 
-def logit_fit(T, Y):
+def logit_fit(T, Y, df=20):
     rpy2.robjects.numpy2ri.activate()
     rpy.r.assign('T', T)
+    rpy.r.assign('df', df)
     rpy.r.assign('Y', Y.astype(np.int))
     rpy.r('''
     Y = as.numeric(Y)
     T = as.numeric(T)
-    M = glm(Y ~ ns(T, 10), family=binomial(link='logit'))
+    M = glm(Y ~ ns(T, df), family=binomial(link='logit'))
     fitfn = function(t) { predict(M, newdata=data.frame(T=t), type='link') } 
     ''')
     rpy2.robjects.numpy2ri.deactivate()
@@ -31,14 +32,15 @@ def logit_fit(T, Y):
 
     return fitfn
 
-def probit_fit(T, Y):
+def probit_fit(T, Y, df=20):
     rpy2.robjects.numpy2ri.activate()
     rpy.r.assign('T', T)
+    rpy.r.assign('df', df)
     rpy.r.assign('Y', Y.astype(np.int))
     rpy.r('''
     Y = as.numeric(Y)
     T = as.numeric(T)
-    M = glm(Y ~ ns(T, 10), family=binomial(link='probit'))
+    M = glm(Y ~ ns(T, df), family=binomial(link='probit'))
     fitfn = function(t) { predict(M, newdata=data.frame(T=t), type='link') } 
     ''')
     rpy2.robjects.numpy2ri.deactivate()

@@ -168,6 +168,7 @@ def infer_general_target(algorithm,
                          cross_cov,
                          target_cov,
                          fit_probability=probit_fit,
+                         fit_args={'df':20},
                          hypothesis=0,
                          alpha=0.1,
                          B=15000):
@@ -225,6 +226,7 @@ def infer_general_target(algorithm,
                               cross_cov,
                               learning_proposal, 
                               fit_probability,
+                              fit_args=fit_args,
                               B=B)
 
     return _inference(observed_target,
@@ -239,6 +241,7 @@ def infer_full_target(algorithm,
                       observed_sampler,
                       dispersion, # sigma^2
                       fit_probability=probit_fit,
+                      fit_args={'df':20},
                       hypothesis=0,
                       alpha=0.1,
                       B=15000):
@@ -312,6 +315,7 @@ def infer_full_target(algorithm,
                               cross_cov,
                               learning_proposal, 
                               fit_probability,
+                              fit_args=fit_args,
                               check_selection=lambda result: feature in set(result),
                               B=B)
 
@@ -330,6 +334,7 @@ def learn_weights(algorithm,
                   cross_cov,
                   learning_proposal, 
                   fit_probability, 
+                  fit_args={},
                   B=500,
                   check_selection=None):
     """
@@ -409,7 +414,7 @@ def learn_weights(algorithm,
     print(np.mean(learning_Y), 'prob')
     # STOP
 
-    conditional_law = fit_probability(learning_T, learning_Y)
+    conditional_law = fit_probability(learning_T, learning_Y, **fit_args)
     return conditional_law
 
 # Private functions

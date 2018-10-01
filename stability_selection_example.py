@@ -15,7 +15,7 @@ from core import (infer_full_target,
 
 from sklearn.linear_model import lasso_path
 
-def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
+def simulate(n=1000, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -38,8 +38,8 @@ def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
 
     def meta_algorithm(XTX, XTXi, sampler):
 
-        min_success = 3
-        ntries = 5
+        min_success = 6
+        ntries = 10
 
         def _alpha_grid(X, y, center, XTX):
             n, p = X.shape
@@ -48,7 +48,10 @@ def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
             return alphas[nselected < np.sqrt(0.8 * p)]
 
         alpha_grid = _alpha_grid(X, y, sampler(scale=0.), XTX)
+<<<<<<< HEAD
 
+=======
+>>>>>>> added fit_args argument
         success = np.zeros((p, alpha_grid.shape[0]))
 
         for _ in range(ntries):
@@ -72,7 +75,7 @@ def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
 
     # run selection algorithm
 
-    observed_set = selection_algorithm(smooth_sampler)
+    observed_set = selection_algorithm(splitting_sampler)
 
     print("observed set",observed_set)
     print("observed and true", observed_set.intersection(set(np.nonzero(truth!=0)[0])))
@@ -97,7 +100,7 @@ def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
                                        hypothesis=true_target,
                                        fit_probability=logit_fit,
                                        alpha=alpha,
-                                       B=1000)
+                                       B=500)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
@@ -151,7 +154,7 @@ if __name__ == "__main__":
             plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3, label='Naive')
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
             plt.legend()
-            plt.savefig('lasso_example4.pdf')
+            plt.savefig('lasso_example7_split.pdf')
 
     with open(outfile, "wb") as f:
         pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)
