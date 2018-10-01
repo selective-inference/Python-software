@@ -167,7 +167,7 @@ def infer_general_target(algorithm,
                          observed_target,
                          cross_cov,
                          target_cov,
-                         fit_probability=logit_fit,
+                         fit_probability=probit_fit,
                          hypothesis=0,
                          alpha=0.1,
                          B=15000):
@@ -238,7 +238,7 @@ def infer_full_target(algorithm,
                       feature,
                       observed_sampler,
                       dispersion, # sigma^2
-                      fit_probability=logit_fit,
+                      fit_probability=probit_fit,
                       hypothesis=0,
                       alpha=0.1,
                       B=15000):
@@ -406,6 +406,7 @@ def learn_weights(algorithm,
     learning_Y = np.array(learning_Y, np.float)
     learning_T = np.squeeze(np.array(learning_T, np.float))
 
+    print(np.mean(learning_Y), 'prob')
     # STOP
 
     conditional_law = fit_probability(learning_T, learning_Y)
