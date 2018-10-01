@@ -15,7 +15,7 @@ from core import (infer_full_target,
 
 from sklearn.linear_model import lasso_path
 
-def simulate(n=200, p=40, s=5, signal=(2, 2), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -33,7 +33,7 @@ def simulate(n=200, p=40, s=5, signal=(2, 2), sigma=2, alpha=0.1):
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
-    #smooth_sampler = normal_sampler(S, covS)
+    smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
     def meta_algorithm(XTX, XTXi, sampler):
@@ -47,7 +47,7 @@ def simulate(n=200, p=40, s=5, signal=(2, 2), sigma=2, alpha=0.1):
             nselected = np.count_nonzero(coefs, axis=0)
             return alphas[nselected < np.sqrt(0.8 * p)]
 
-        alpha_grid = _alpha_grid(X, y, sampler(scale=0), XTX)
+        alpha_grid = _alpha_grid(X, y, sampler(scale=0.25), XTX)
         success = np.zeros((p, alpha_grid.shape[0]))
 
         for _ in range(ntries):
@@ -71,7 +71,7 @@ def simulate(n=200, p=40, s=5, signal=(2, 2), sigma=2, alpha=0.1):
 
     # run selection algorithm
 
-    observed_set = selection_algorithm(splitting_sampler)
+    observed_set = selection_algorithm(smooth_sampler)
 
     print("observed set",observed_set)
     print("observed and true", observed_set.intersection(set(np.nonzero(truth!=0)[0])))
