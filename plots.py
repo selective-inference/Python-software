@@ -4,7 +4,8 @@ import pickle
 import numpy as np
 
 U = np.linspace(0, 1, 101)
-file_labels = ['ss.pickle', 'ss_logit.pickle']
+#file_labels = ['ss_probit2.pkl', 'ss_logit2.pkl']
+file_labels = ['kk_probit2.pkl', 'kk_logit2.pkl']
 
 for label in file_labels:
     print(label)
@@ -18,12 +19,12 @@ _, probit_P, _, _, naive_P, _ = pickle.load( open(file_labels[0], "rb" ) )
 _, logit_P, _, _, _, _ = pickle.load( open(file_labels[1], "rb" ) )
 
 plt.clf()
-plt.plot(U, sm.distributions.ECDF(probit_P)(U), 'c', linewidth=2, label = "fit probit")
-plt.plot(U, sm.distributions.ECDF(logit_P)(U), 'b', linewidth=2, label="fit logit")
-plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'y', linewidth=2, label="naive")
+plt.plot(U, sm.distributions.ECDF(probit_P)(U), 'c', linewidth=3, label = "fit probit")
+plt.plot(U, sm.distributions.ECDF(logit_P)(U), 'b', linewidth=3, label="fit logit")
+plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'y', linewidth=3, label="naive")
 plt.plot([0, 1], [0, 1], 'k--', linewidth=2)
 plt.xlabel("Observed pivot", fontsize=18)
 plt.ylabel("Proportion (empirical CDF)", fontsize=18)
-plt.title("Pivots", fontsize=18)
+plt.title("Pivots", fontsize=20)
 plt.legend(fontsize=18, loc="lower right")
-plt.savefig('ss_pivots.pdf')
+plt.savefig('kk_pivots.pdf')

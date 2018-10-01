@@ -47,7 +47,8 @@ def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
             nselected = np.count_nonzero(coefs, axis=0)
             return alphas[nselected < np.sqrt(0.8 * p)]
 
-        alpha_grid = _alpha_grid(X, y, sampler(scale=0.25), XTX)
+        alpha_grid = _alpha_grid(X, y, sampler(scale=0.), XTX)
+
         success = np.zeros((p, alpha_grid.shape[0]))
 
         for _ in range(ntries):
@@ -94,9 +95,9 @@ def simulate(n=200, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
                                        splitting_sampler,
                                        dispersion,
                                        hypothesis=true_target,
-                                       fit_probability=probit_fit,
+                                       fit_probability=logit_fit,
                                        alpha=alpha,
-                                       B=100)
+                                       B=1000)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
@@ -121,7 +122,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pickle
 
-    fit_label = "probit"
+    fit_label = "logit"
     seedn = 2
     outfile = "".join([fit_label, str(seedn), ".pkl"])
     np.random.seed(seedn)
@@ -130,7 +131,8 @@ if __name__ == "__main__":
     P, L, coverage = [], [], []
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
-    for i in range(100):
+
+    for i in range(30):
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -149,7 +151,7 @@ if __name__ == "__main__":
             plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3, label='Naive')
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
             plt.legend()
-            plt.savefig('lasso_example3.pdf')
+            plt.savefig('lasso_example4.pdf')
 
     with open(outfile, "wb") as f:
         pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)

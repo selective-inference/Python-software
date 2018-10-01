@@ -102,7 +102,7 @@ class knockoffs_sigma(generic_method):
                 cls.knockoff_chol = factor['knockoff_chol']
 
         if not have_factorization:
-            print('doing factorization')
+            #print('doing factorization')
             cls.knockoff_chol = factor_knockoffs(feature_cov, cls.factor_method)
 
         numpy2ri.deactivate()
@@ -143,7 +143,7 @@ knockoffs_sigma.register()
 def factor_knockoffs(feature_cov, method='asdp'):
 
     numpy2ri.activate()
-    print(feature_cov, 'blah')
+    #print(feature_cov, 'blah')
     rpy.r.assign('Sigma', feature_cov)
     rpy.r.assign('method', method)
     rpy.r('''
@@ -151,7 +151,7 @@ def factor_knockoffs(feature_cov, method='asdp'):
     # Compute the Cholesky -- from create.gaussian
 
     Sigma = as.matrix(Sigma)
-    print(dim(Sigma))
+    #print(dim(Sigma))
     diag_s = diag(switch(method, equi = create.solve_equi(Sigma), 
                   sdp = create.solve_sdp(Sigma), asdp = create.solve_asdp(Sigma)))
     if (is.null(dim(diag_s))) {
