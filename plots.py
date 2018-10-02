@@ -7,9 +7,10 @@ import numpy as np
 U = np.linspace(0, 1, 101)
 file_labels = ['kk_probit2.csv', 'kk_logit2.csv']
 
-for label in file_labels:
+dfs = {}
+for label in zip(file_labels, ['logit', 'probit']):
     print(label)
-    df = pd.read_csv(label)
+    dfs[label[1]] = pd.read_csv(label[0])
     (coverage, 
      P, 
      L, 
@@ -27,8 +28,9 @@ for label in file_labels:
     print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))
 
 
-_, probit_P, _, _, naive_P, _ = pickle.load( open(file_labels[0], "rb" ))
-_, logit_P, _, _, _, _ = pickle.load( open(file_labels[1], "rb" ))
+probit_P naive_P = dfs['probit']['pval'], dfs['probit']['naive_pval']
+logit_P = dfs['logit']['pval']
+
 
 plt.clf()
 plt.plot(U, sm.distributions.ECDF(probit_P)(U), 'c', linewidth=3, label = "fit probit")
