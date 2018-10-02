@@ -11,9 +11,10 @@ from core import (infer_full_target,
                   split_sampler, # split_sampler not working yet
                   normal_sampler,
                   logit_fit,
+                  repeat_selection,
                   probit_fit)
 
-def simulate(n=1000, p=100, s=10, signal=(3, 5), sigma=2, alpha=0.1):
+def simulate(n=1000, p=50, s=5, signal=(3, 5), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -36,22 +37,19 @@ def simulate(n=1000, p=100, s=10, signal=(3, 5), sigma=2, alpha=0.1):
 
     def meta_algorithm(XTX, XTXi, lam, sampler):
 
-        min_success = 3
-        ntries = 6
         p = XTX.shape[0]
         success = np.zeros(p)
 
         loss = rr.quadratic_loss((p,), Q=XTX)
         pen = rr.l1norm(p, lagrange=lam)
 
-        for _ in range(ntries):
-            scale = 0.5
-            noisy_S = sampler(scale=scale)
-            loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
-            problem = rr.simple_problem(loss, pen)
-            soln = problem.solve(max_its=50, tol=1.e-6)
-            success += soln != 0
-        return set(np.nonzero(success >= min_success)[0])
+        scale = 0.5
+        noisy_S = sampler(scale=scale)
+        loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
+        problem = rr.simple_problem(loss, pen)
+        soln = problem.solve(max_its=50, tol=1.e-6)
+        success += soln != 0
+        return set(np.nonzero(success)[0])
 
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
@@ -62,7 +60,9 @@ def simulate(n=1000, p=100, s=10, signal=(3, 5), sigma=2, alpha=0.1):
 
     # run selection algorithm
 
-    observed_set = selection_algorithm(splitting_sampler)
+    success_params = (6, 10)
+
+    observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
 
     # find the target, based on the observed outcome
 
@@ -84,7 +84,7 @@ def simulate(n=1000, p=100, s=10, signal=(3, 5), sigma=2, alpha=0.1):
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
-                                       B=1000)
+                                       B=500)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
