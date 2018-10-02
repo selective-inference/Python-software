@@ -42,10 +42,8 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
     sampler = normal_sampler(X.T.dot(y), covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    def meta_algorithm(XTXi, X, resid, sampler):
+    def meta_algorithm(XTXi, X, resid, sampler, min_success=1, ntries=1):
 
-        min_success = 5
-        ntries = 10
         p = XTXi.shape[0]
         success = np.zeros(p)
 
@@ -62,20 +60,22 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
         #print(value)
         return value
 
+    # run selection algorithm
+    ntries=6
+    min_success=3
+    observed_set = meta_algorithm(XTXi, X, y - X.dot(XTXi.dot(S)), splitting_sampler, ntries=ntries, min_success=min_success)
+
+    print("observed set", observed_set)
+    print("observed and true", observed_set.intersection(set(np.nonzero(truth != 0)[0])))
+    print("observed and false", observed_set.intersection(set(np.nonzero(truth == 0)[0])))
+
     selection_algorithm = functools.partial(meta_algorithm, XTXi, X, y - X.dot(XTXi.dot(S)))
 
-    # run selection algorithm
-
-    observed_set = selection_algorithm(splitting_sampler)
-
-    # find the target, based on the observed outcome
-
-    # we just take the first target  
 
     pivots, covered, lengths = [], [], []
     naive_pivots, naive_covered, naive_lengths = [], [], []
 
-    for idx in list(observed_set)[:1]:
+    for idx in list(observed_set):
         print("variable: ", idx, "total selected: ", len(observed_set))
         true_target = truth[idx]
 
@@ -85,6 +85,8 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
                                        idx,
                                        sampler,
                                        dispersion,
+                                       min_success=min_success,
+                                       ntries=ntries,
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
@@ -124,6 +126,7 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(50):
+        print("sim", i)
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
