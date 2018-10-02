@@ -4,8 +4,8 @@ import pickle
 import numpy as np
 
 U = np.linspace(0, 1, 101)
-#file_labels = ['ss_probit2.pkl', 'ss_logit2.pkl']
-file_labels = ['kk_probit2.pkl', 'kk_logit2.pkl']
+file_labels = ['ss_probit1.pkl', 'ss_logit1.pkl']
+#file_labels = ['kk_probit2.pkl', 'kk_logit2.pkl']
 
 for label in file_labels:
     print(label)
@@ -15,8 +15,8 @@ for label in file_labels:
     print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))
 
 
-_, probit_P, _, _, naive_P, _ = pickle.load( open(file_labels[0], "rb" ) )
-_, logit_P, _, _, _, _ = pickle.load( open(file_labels[1], "rb" ) )
+_, probit_P, _, _, naive_P, _ = pickle.load( open(file_labels[0], "rb" ))
+_, logit_P, _, _, _, _ = pickle.load( open(file_labels[1], "rb" ))
 
 plt.clf()
 plt.plot(U, sm.distributions.ECDF(probit_P)(U), 'c', linewidth=3, label = "fit probit")
@@ -27,4 +27,4 @@ plt.xlabel("Observed pivot", fontsize=18)
 plt.ylabel("Proportion (empirical CDF)", fontsize=18)
 plt.title("Pivots", fontsize=20)
 plt.legend(fontsize=18, loc="lower right")
-plt.savefig('kk_pivots.pdf')
+plt.savefig('ss_pivots.pdf')

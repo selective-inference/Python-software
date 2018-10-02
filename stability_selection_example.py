@@ -121,8 +121,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pickle
 
-    fit_label = "logit"
-    seedn = 2
+    fit_label = "ss_logit"
+    seedn = 1
     outfile = "".join([fit_label, str(seedn), ".pkl"])
     np.random.seed(seedn)
 
@@ -131,7 +131,8 @@ if __name__ == "__main__":
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
 
-    for i in range(30):
+    for i in range(50):
+        print("sim", i)
 
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
@@ -151,7 +152,7 @@ if __name__ == "__main__":
             plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3, label='Naive')
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
             plt.legend()
-            plt.savefig('lasso_example7_split.pdf')
+            plt.savefig('ss_example.pdf')
 
     with open(outfile, "wb") as f:
         pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)

@@ -140,7 +140,7 @@ if __name__ == "__main__":
             plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', linewidth=3)
             plt.plot([0, 1], [0, 1], 'k--', linewidth=2)
             plt.legend()
-            plt.savefig('lasso_example5.pdf')
+            plt.savefig('kk_lasso_example.pdf')
 
     with open(outfile, "wb") as f:
         pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)

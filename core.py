@@ -3,6 +3,7 @@ import functools
 
 import numpy as np
 from scipy.stats import norm as ndist
+from scipy.stats import binom
 
 from selection.distributions.discrete_family import discrete_family
 
@@ -240,6 +241,8 @@ def infer_full_target(algorithm,
                       feature,
                       observed_sampler,
                       dispersion, # sigma^2
+                      min_success=None,
+                      ntries=None,
                       fit_probability=probit_fit,
                       fit_args={'df':20},
                       hypothesis=0,
@@ -322,6 +325,8 @@ def infer_full_target(algorithm,
     return _inference(observed_target,
                       target_cov,
                       weight_fn,
+                      min_success=min_success,
+                      ntries=ntries,
                       hypothesis=hypothesis,
                       alpha=alpha)
 
@@ -411,7 +416,7 @@ def learn_weights(algorithm,
     learning_Y = np.array(learning_Y, np.float)
     learning_T = np.squeeze(np.array(learning_T, np.float))
 
-    print(np.mean(learning_Y), 'prob')
+    #print(np.mean(learning_Y), 'prob')
     # STOP
 
     conditional_law = fit_probability(learning_T, learning_Y, **fit_args)
@@ -422,6 +427,8 @@ def learn_weights(algorithm,
 def _inference(observed_target,
                target_cov,
                weight_fn, # our fitted function
+               min_success=None,
+               ntries=None,
                hypothesis=0,
                alpha=0.1):
 
@@ -461,9 +468,17 @@ def _inference(observed_target,
     target_sd = np.sqrt(target_cov[0, 0])
               
     target_val = np.linspace(-20 * target_sd, 20 * target_sd, 5001) + observed_target
-    weight_val = weight_fn(target_val) 
+    weight_val = weight_fn(target_val)
+
+    if min_success is not None:
+        weight_val /= float(np.sum(weight_val))
+        print("sum", np.sum(weight_val))
+        print("bin", binom.cdf(min_success, ntries, weight_val[0]))
+        weight_val = [1-binom.cdf(min_success, ntries, weight_val[i]) for i in range(weight_val.shape[0])]
+
+
     weight_val *= ndist.pdf(target_val / target_sd)
-    exp_family = discrete_family(target_val, weight_val)  
+    exp_family = discrete_family(target_val, weight_val)
 
     pivot = exp_family.cdf(hypothesis / target_cov[0, 0], x=observed_target)
     pivot = 2*min(pivot, 1-pivot)
