@@ -1,14 +1,27 @@
 import statsmodels.api as sm
 import matplotlib.pyplot as plt
-import pickle
+import pandas as pd
 import numpy as np
 
+
 U = np.linspace(0, 1, 101)
-file_labels = ['ss_probit1.pkl', 'ss_logit1.pkl']
+file_labels = ['kk_probit2.csv', 'kk_logit2.csv']
 
 for label in file_labels:
     print(label)
-    coverage, P, L, naive_coverage, naive_P, naive_L = pickle.load( open(label, "rb" ) )
+    df = pd.read_csv(label)
+    (coverage, 
+     P, 
+     L, 
+     naive_coverage, 
+     naive_P, 
+     naive_L) = (df['coverage'],
+                 df['pval'],
+                 df['length'],
+                 df['naive_coverage'],
+                 df['naive_pval'],
+                 df['naive_L'])
+    
     print("selective:", np.mean(P), np.std(P), np.mean(L), np.mean(coverage))
     print("naive:", np.mean(naive_P), np.std(naive_P), np.mean(naive_L), np.mean(naive_coverage))
     print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))

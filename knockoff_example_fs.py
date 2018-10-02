@@ -1,6 +1,6 @@
 import functools
 
-import numpy as np
+import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
@@ -50,7 +50,7 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
         success = np.zeros(p)
 
         for _ in range(ntries):
-            S = sampler(scale=0.) # deterministic with scale=0
+            S = sampler(scale=0.5) # deterministic with scale=0
             ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
             K = knockoffs_sigma(X, ynew, *[None]*4)
             K.setup(sigmaX)
@@ -93,7 +93,7 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
-                                       B=500)
+                                       B=200)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
@@ -116,11 +116,10 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
-    import pickle
 
     fit_label = "kk_probit"
     seedn = 2
-    outfile = "".join([fit_label, str(seedn), ".pkl"])
+    outfile = "%s%d.csv" % (fit_label, seedn)
     np.random.seed(seedn)
 
     U = np.linspace(0, 1, 101)
@@ -149,5 +148,11 @@ if __name__ == "__main__":
             plt.legend()
             plt.savefig('knockoff_example_fs.pdf')
 
-    with open(outfile, "wb") as f:
-        pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)
+            df = pd.DataFrame({'coverage':coverage,
+                               'pval':P,
+                               'length':L,
+                               'naive_pval':naive_P,
+                               'naive_length':naive_L,
+                               'naive_coverage':naive_coverage})
+            df.to_csv(outfile)
+

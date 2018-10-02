@@ -14,7 +14,7 @@ from core import (infer_full_target,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=200, p=100, s=10, signal=(2, 2), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -119,4 +119,4 @@ if __name__ == "__main__":
             plt.clf()
             plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
-            plt.savefig('lasso_example_CV_big.pdf')
+            plt.savefig('lasso_example_CV_big_null.pdf')
