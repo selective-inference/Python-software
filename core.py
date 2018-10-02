@@ -215,7 +215,7 @@ def infer_general_target(algorithm,
     # could use an improvement here...
 
     def learning_proposal(sd=target_sd, center=observed_target):
-        scale = np.random.choice([0.5, 1, 1.5, 2], 1)
+        scale = np.random.choice([0.25, 0.5, 1, 1.5, 2, 3], 1)
         return np.random.standard_normal() * sd * scale + center
 
     weight_fn = learn_weights(algorithm, 

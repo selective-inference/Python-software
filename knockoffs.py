@@ -14,7 +14,7 @@ from traitlets import (HasTraits,
 
 import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
-rpy.r('library(knockoff)')
+rpy.r('library(knockoff); library(glmnet)')
 
 # Knockoff selection
 
@@ -138,7 +138,28 @@ class knockoffs_sigma(generic_method):
         except:
             return [], []
 
-knockoffs_sigma.register()
+class lasso_glmnet(generic_method):
+
+    def select(self):
+
+        numpy2ri.activate()
+        rpy.r.assign('X', self.X)
+        rpy.r.assign('Y', self.Y)
+        rpy.r('X = as.matrix(X)')
+        rpy.r('Y = as.numeric(Y)')
+        rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
+        rpy.r("L = cvG[['lambda.min']]")
+        rpy.r("G = glmnet(X, Y, intercept=FALSE, standardize=FALSE)")
+        rpy.r('B = as.numeric(coef(G, s=L, exact=TRUE, x=X, y=Y))[-1]')
+        B = np.asarray(rpy.r('B'))
+        selected = (B != 0)
+        if selected.sum():
+            V = np.nonzero(selected)[0]
+            return V, V
+        else:
+            return [], []
+
+knockoffs_sigma.register(); lasso_glmnet.register()
 
 def factor_knockoffs(feature_cov, method='asdp'):
 
