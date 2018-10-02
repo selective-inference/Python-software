@@ -1,6 +1,6 @@
 import functools
 
-import numpy as np
+import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
@@ -119,7 +119,6 @@ def simulate(n=1000, p=100, s=20, signal=(2, 2), sigma=2, alpha=0.1):
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
-    import pickle
 
     fit_label = "ss_logit"
     seedn = 1
@@ -158,5 +157,10 @@ if __name__ == "__main__":
             plt.savefig('lasso_example7_split.pdf')
 >>>>>>> added fit_args argument
 
-    with open(outfile, "wb") as f:
-        pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)
+            df = pd.DataFrame({'coverage':coverage,
+                               'pval':P,
+                               'length':L,
+                               'naive_pval':naive_P,
+                               'naive_length':naive_L,
+                               'naive_coverage':naive_coverage})
+            df.to_csv(outfile)

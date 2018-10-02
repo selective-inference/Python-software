@@ -1,6 +1,6 @@
 import functools
 
-import numpy as np
+import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
@@ -109,11 +109,10 @@ def simulate(n=1000, p=50, signal=3.2, sigma=2, alpha=0.1, s=10):
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
-    import pickle
 
     fit_label = "kk_probit"
     seedn = 2
-    outfile = "".join([fit_label, str(seedn), ".pkl"])
+    outfile = "%s%d.csv" % (fit_label, seedn)
     np.random.seed(seedn)
 
     U = np.linspace(0, 1, 101)
@@ -142,5 +141,10 @@ if __name__ == "__main__":
             plt.legend()
             plt.savefig('kk_lasso_example.pdf')
 
-    with open(outfile, "wb") as f:
-        pickle.dump((coverage, P, L, naive_coverage, naive_P, naive_L), f)
+            df = pd.DataFrame({'coverage':coverage,
+                               'pval':P,
+                               'length':L,
+                               'naive_pval':naive_P,
+                               'naive_length':naive_L,
+                               'naive_coverage':naive_coverage})
+            df.to_csv(outfile)
