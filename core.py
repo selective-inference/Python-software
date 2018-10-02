@@ -172,7 +172,8 @@ def infer_general_target(algorithm,
                          fit_args={'df':20},
                          hypothesis=0,
                          alpha=0.1,
-                         B=15000):
+                         success_params=(1, 1),
+                         B=500):
     '''
 
     Compute a p-value (or pivot) for a target having observed `outcome` of `algorithm(observed_sampler)`.
@@ -234,7 +235,8 @@ def infer_general_target(algorithm,
                       target_cov,
                       weight_fn,
                       hypothesis=hypothesis,
-                      alpha=alpha)
+                      alpha=alpha,
+                      success_params=success_params)
 
 def infer_full_target(algorithm,
                       observed_set,
@@ -247,7 +249,8 @@ def infer_full_target(algorithm,
                       fit_args={'df':20},
                       hypothesis=0,
                       alpha=0.1,
-                      B=15000):
+                      success_params=(1, 1),
+                      B=500):
 
     '''
 
@@ -292,7 +295,6 @@ def infer_full_target(algorithm,
 
     '''
 
-
     info_inv = np.linalg.inv(observed_sampler.covariance / dispersion) # scale free, i.e. X.T.dot(X) without sigma^2
     target_cov = (info_inv[feature, feature] * dispersion).reshape((1, 1))
     observed_target = np.squeeze(info_inv[feature].dot(observed_sampler.center))
@@ -328,7 +330,8 @@ def infer_full_target(algorithm,
                       min_success=min_success,
                       ntries=ntries,
                       hypothesis=hypothesis,
-                      alpha=alpha)
+                      alpha=alpha,
+                      success_params=success_params)
 
 
 def learn_weights(algorithm, 
@@ -416,9 +419,6 @@ def learn_weights(algorithm,
     learning_Y = np.array(learning_Y, np.float)
     learning_T = np.squeeze(np.array(learning_T, np.float))
 
-    #print(np.mean(learning_Y), 'prob')
-    # STOP
-
     conditional_law = fit_probability(learning_T, learning_Y, **fit_args)
     return conditional_law
 
@@ -427,8 +427,7 @@ def learn_weights(algorithm,
 def _inference(observed_target,
                target_cov,
                weight_fn, # our fitted function
-               min_success=None,
-               ntries=None,
+               success_params=(1, 1),
                hypothesis=0,
                alpha=0.1):
 
@@ -465,17 +464,16 @@ def _inference(observed_target,
 
     '''
 
+    k, m = success_params # need at least k of m successes
+
     target_sd = np.sqrt(target_cov[0, 0])
               
     target_val = np.linspace(-20 * target_sd, 20 * target_sd, 5001) + observed_target
-    weight_val = weight_fn(target_val)
 
-    if min_success is not None:
-        weight_val /= float(np.sum(weight_val))
-        print("sum", np.sum(weight_val))
-        print("bin", binom.cdf(min_success, ntries, weight_val[0]))
-        weight_val = [1-binom.cdf(min_success, ntries, weight_val[i]) for i in range(weight_val.shape[0])]
-
+    if (k, m) != (1, 1):
+        weight_val = np.array([binom(m, p).sf(k-1) for p in weight_fn(target_val)])
+    else:
+        weight_val = weight_fn(target_val)
 
     weight_val *= ndist.pdf(target_val / target_sd)
     exp_family = discrete_family(target_val, weight_val)
@@ -487,3 +485,24 @@ def _inference(observed_target,
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])
 
     return pivot, rescaled_interval   # TODO: should do MLE as well does discrete_family do this?
+
+def repeat_selection(base_algorithm, sampler, min_success, num_tries):
+    """
+    Repeat a set-returning selection algorithm `num_tries` times,
+    returning all elements that appear at least `min_success` times.
+    """
+
+    results = {}
+
+    for _ in range(num_tries):
+        current = base_algorithm(sampler)
+        for item in current:
+            results.setdefault(item, 0)
+            results[item] += 1
+            
+    final_value = []
+    for key in results:
+        if results[key] >= min_success:
+            final_value.append(key)
+
+    return set(final_value)

@@ -15,7 +15,8 @@ from core import (infer_full_target,
                   split_sampler,
                   normal_sampler,
                   logit_fit,
-                  probit_fit)
+                  probit_fit,
+                  repeat_selection)
 
 from knockoffs import knockoffs_sigma
 
@@ -44,35 +45,25 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
 
     def meta_algorithm(XTXi, X, resid, sampler, min_success=1, ntries=1):
 
-        min_success = 5
-        ntries = 10
         p = XTXi.shape[0]
         success = np.zeros(p)
 
-        for _ in range(ntries):
-            S = sampler(scale=0.5) # deterministic with scale=0
-            ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
-            K = knockoffs_sigma(X, ynew, *[None]*4)
-            K.setup(sigmaX)
-            K.forward_step = True
-            select = K.select()[0]
-            numpy2ri.deactivate()
-            success[select] += 1
-        value = set(np.nonzero(success >= min_success)[0])
-        #print(value)
-        return value
+        S = sampler(scale=0.5) # deterministic with scale=0
+        ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
+        K = knockoffs_sigma(X, ynew, *[None]*4)
+        K.setup(sigmaX)
+        K.forward_step = True
+        select = K.select()[0]
+        numpy2ri.deactivate()
+        success[select] += 1
 
-    # run selection algorithm
-    ntries=6
-    min_success=3
-    observed_set = meta_algorithm(XTXi, X, y - X.dot(XTXi.dot(S)), splitting_sampler, ntries=ntries, min_success=min_success)
-
-    print("observed set", observed_set)
-    print("observed and true", observed_set.intersection(set(np.nonzero(truth != 0)[0])))
-    print("observed and false", observed_set.intersection(set(np.nonzero(truth == 0)[0])))
+        return set(np.nonzero(success)[0])
 
     selection_algorithm = functools.partial(meta_algorithm, XTXi, X, y - X.dot(XTXi.dot(S)))
+    success_params = (2, 10)  # needs at least 5 of 10 successes
 
+    observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
+    # find the target, based on the observed outcome
 
     pivots, covered, lengths = [], [], []
     naive_pivots, naive_covered, naive_lengths = [], [], []
@@ -93,7 +84,8 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
-                                       B=200)
+                                       success_params=success_params,
+                                       B=500)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
