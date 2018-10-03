@@ -43,7 +43,7 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
     sampler = normal_sampler(X.T.dot(y), covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    def meta_algorithm(XTXi, X, resid, sampler, min_success=1, ntries=1):
+    def meta_algorithm(XTXi, X, resid, sampler):
 
         p = XTXi.shape[0]
         success = np.zeros(p)
@@ -54,6 +54,7 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
         K.setup(sigmaX)
         K.forward_step = True
         select = K.select()[0]
+        print(select, 'select')
         numpy2ri.deactivate()
         success[select] += 1
 
@@ -79,8 +80,6 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
                                        idx,
                                        sampler,
                                        dispersion,
-                                       min_success=min_success,
-                                       ntries=ntries,
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
