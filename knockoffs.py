@@ -15,6 +15,10 @@ from traitlets import (HasTraits,
 import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
 rpy.r('library(knockoff); library(glmnet)')
+from rpy2 import rinterface
+
+def null_print(x):
+    pass
 
 # Knockoff selection
 
@@ -79,6 +83,7 @@ class knockoffs_sigma(generic_method):
     model_target = Unicode("full")
     selectiveR_method = True
     forward_step = False
+    sqrt_lasso = False
 
     @classmethod
     def setup(cls, feature_cov):
@@ -115,27 +120,30 @@ class knockoffs_sigma(generic_method):
         knockoffs = function(X) {
            mu = rep(0, ncol(X))
            mu_k = X # sweep(X, 2, mu, "-") %*% SigmaInv_s
-           X_k = mu_k + matrix(rnorm(ncol(X) * nrow(X)), nrow(X)) %*% 
-            chol_k
+           X_k = mu_k + matrix(rnorm(ncol(X) * nrow(X)), nrow(X)) %*% chol_k
            return(X_k)
         }
             ''')
         numpy2ri.deactivate()
 
-        try:
+        if True:
             numpy2ri.activate()
             rpy.r.assign('X', self.X)
             rpy.r.assign('Y', self.Y)
             rpy.r.assign('q', self.q)
             if self.forward_step:
-                rpy.r('V=knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs, stat=stat.forward_selection)$selected')
+                rpy.r('V = knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs, stat=stat.forward_selection)$selected')
+            elif self.sqrt_lasso:
+                rinterface.set_writeconsole_regular(null_print)
+                rpy.r('V = knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs, stat=stat.sqrt_lasso)$selected')
+                rinterface.set_writeconsole_regular(rinterface.consolePrint)
             else:
-                rpy.r('V=knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs)$selected')
+                rpy.r('V = knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs)$selected')
             rpy.r('if (length(V) > 0) {V = V-1}')
             V = rpy.r('V')
             numpy2ri.deactivate()
             return np.asarray(V, np.int), np.asarray(V, np.int)
-        except:
+        else: # except:
             return [], []
 
 class lasso_glmnet(generic_method):

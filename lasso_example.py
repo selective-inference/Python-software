@@ -94,8 +94,8 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
         target_sd = np.sqrt(dispersion * XTXi[idx, idx])
         observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
         quantile = ndist.ppf(1 - 0.5 * alpha)
-        naive_interval = (observed_target-quantile * target_sd, observed_target+quantile * target_sd)
-        naive_pivot = (1-ndist.cdf((observed_target-true_target)/target_sd))
+        naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
+        naive_pivot = (1 - ndist.cdf((observed_target - true_target) / target_sd))
         naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
         naive_pivots.append(naive_pivot)
 

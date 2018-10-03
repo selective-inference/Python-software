@@ -20,7 +20,7 @@ from core import (infer_full_target,
 
 from knockoffs import knockoffs_sigma
 
-def simulate(n=200, p=100, signal=(3, 4), sigma=2, alpha=0.1, s=5):
+def simulate(n=200, p=40, signal=(2, 4), sigma=2, alpha=0.1, s=10):
 
     # description of statistical problem
 
@@ -52,16 +52,16 @@ def simulate(n=200, p=100, signal=(3, 4), sigma=2, alpha=0.1, s=5):
         ynew = X.dot(XTXi).dot(S) + resid_matrix.dot(np.random.standard_normal(n)) * sigma # will be ok for n>p and non-degen X
         K = knockoffs_sigma(X, ynew, *[None]*4)
         K.setup(sigmaX)
-        K.forward_step = True
+        K.sqrt_lasso = True
         select = K.select()[0]
-
+        print(select)
         numpy2ri.deactivate()
         success[select] += 1
 
         return set(np.nonzero(success)[0])
 
     selection_algorithm = functools.partial(meta_algorithm, XTXi, X, np.identity(n) - X.dot(XTXi.dot(X.T)), sigma, sigmaX)
-    success_params = (5, 10)  # needs at least 5 of 10 successes
+    success_params = (3, 5)  # needs at least 3 of 5 successes
 
     observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
     # find the target, based on the observed outcome
@@ -78,13 +78,13 @@ def simulate(n=200, p=100, signal=(3, 4), sigma=2, alpha=0.1, s=5):
          interval) = infer_full_target(selection_algorithm,
                                        observed_set,
                                        idx,
-                                       sampler,
+                                       splitting_sampler,
                                        dispersion,
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
                                        success_params=success_params,
-                                       B=500)
+                                       B=100)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
@@ -100,7 +100,6 @@ def simulate(n=200, p=100, signal=(3, 4), sigma=2, alpha=0.1, s=5):
 
         naive_covered.append((naive_interval[0] < true_target) * (naive_interval[1] > true_target))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
-
 
     return pivots, covered, lengths, naive_pivots, naive_covered, naive_lengths
 
@@ -119,8 +118,7 @@ if __name__ == "__main__":
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
 
-    count = 0
-    while True:
+    for i in range(500):
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -133,13 +131,13 @@ if __name__ == "__main__":
         print("naive:", np.mean(naive_P), np.std(naive_P), np.mean(naive_L), np.mean(naive_coverage))
         print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))
 
-        if count % 2 == 0 and count > 0 and len(P) > 0:
+        if i % 2 == 0 and i > 0 and len(P) > 0:
             plt.clf()
             plt.plot(U, sm.distributions.ECDF(P)(U), 'r', label='Selective', linewidth=3)
             plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', label='Naive', linewidth=3)
             plt.plot([0, 1], [0, 1], 'k--', linewidth=2)
             plt.legend()
-            plt.savefig('knockoff_example_fs_100.pdf')
+            plt.savefig('knockoff_example_sqrtlasso.pdf')
 
             df = pd.DataFrame({'coverage':coverage,
                                'pval':P,
@@ -149,6 +147,3 @@ if __name__ == "__main__":
                                'naive_coverage':naive_coverage})
             df.to_csv(outfile)
 
-        if len(P) >= 500:
-            break
-        count += 1
