@@ -14,7 +14,7 @@ from core import (infer_full_target,
                   repeat_selection,
                   probit_fit)
 
-def simulate(n=1000, p=50, s=5, signal=(3, 5), sigma=2, alpha=0.1):
+def simulate(n=200, p=50, s=5, signal=(3, 5), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -83,6 +83,7 @@ def simulate(n=1000, p=50, s=5, signal=(3, 5), sigma=2, alpha=0.1):
                                        dispersion,
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
+                                       success_params=success_params,
                                        alpha=alpha,
                                        B=500)
 
@@ -94,7 +95,9 @@ def simulate(n=1000, p=50, s=5, signal=(3, 5), sigma=2, alpha=0.1):
         observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
         quantile = ndist.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target-quantile * target_sd, observed_target+quantile * target_sd)
-        naive_pivots.append((1-ndist.cdf((observed_target-true_target)/target_sd))) # one-sided
+        naive_pivot = (1-ndist.cdf((observed_target-true_target)/target_sd))
+        naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
+        naive_pivots.append(naive_pivot)
 
         naive_covered.append((naive_interval[0]<true_target)*(naive_interval[1]>true_target))
         naive_lengths.append(naive_interval[1]-naive_interval[0])
@@ -112,7 +115,8 @@ if __name__ == "__main__":
     P, L, coverage = [], [], []
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
-    for i in range(30):
+
+    for i in range(100):
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -125,8 +129,10 @@ if __name__ == "__main__":
         print("naive:", np.mean(naive_P), np.std(naive_P), np.mean(naive_L), np.mean(naive_coverage))
         print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))
 
-        if i % 5 == 0 and i > 0:
+        if i % 2 == 1 and i > 0:
             plt.clf()
-            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', label='Selective', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', label='Naive', linewidth=3)
+            plt.legend()
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
             plt.savefig('lasso_example2.pdf')
