@@ -243,8 +243,6 @@ def infer_full_target(algorithm,
                       feature,
                       observed_sampler,
                       dispersion, # sigma^2
-                      min_success=None,
-                      ntries=None,
                       fit_probability=probit_fit,
                       fit_args={'df':20},
                       hypothesis=0,
@@ -327,8 +325,6 @@ def infer_full_target(algorithm,
     return _inference(observed_target,
                       target_cov,
                       weight_fn,
-                      min_success=min_success,
-                      ntries=ntries,
                       hypothesis=hypothesis,
                       alpha=alpha,
                       success_params=success_params)
@@ -419,6 +415,7 @@ def learn_weights(algorithm,
     learning_Y = np.array(learning_Y, np.float)
     learning_T = np.squeeze(np.array(learning_T, np.float))
 
+    print('prob(select): ', np.mean(learning_Y))
     conditional_law = fit_probability(learning_T, learning_Y, **fit_args)
     return conditional_law
 
@@ -479,7 +476,7 @@ def _inference(observed_target,
     exp_family = discrete_family(target_val, weight_val)
 
     pivot = exp_family.cdf(hypothesis / target_cov[0, 0], x=observed_target)
-    pivot = 2*min(pivot, 1-pivot)
+    pivot = 2 * min(pivot, 1-pivot)
 
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])
