@@ -60,7 +60,7 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     # run selection algorithm
 
-    success_params = (6, 10)
+    success_params = (5, 10)
 
     observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
 
