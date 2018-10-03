@@ -20,7 +20,7 @@ from core import (infer_full_target,
 
 from knockoffs import knockoffs_sigma
 
-def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
+def simulate(n=200, p=100, signal=(3, 4), sigma=2, alpha=0.1, s=10):
 
     # description of statistical problem
 
@@ -43,25 +43,25 @@ def simulate(n=200, p=50, signal=(2, 3), sigma=2, alpha=0.1, s=10):
     sampler = normal_sampler(X.T.dot(y), covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    def meta_algorithm(XTXi, X, resid, sampler):
+    def meta_algorithm(XTXi, X, resid, sigmaX, sampler):
 
         p = XTXi.shape[0]
         success = np.zeros(p)
 
-        S = sampler(scale=0.5) # deterministic with scale=0
+        S = sampler(scale=0) # deterministic with scale=0
         ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
         K = knockoffs_sigma(X, ynew, *[None]*4)
         K.setup(sigmaX)
         K.forward_step = True
         select = K.select()[0]
-        print(select, 'select')
+
         numpy2ri.deactivate()
         success[select] += 1
 
         return set(np.nonzero(success)[0])
 
-    selection_algorithm = functools.partial(meta_algorithm, XTXi, X, y - X.dot(XTXi.dot(S)))
-    success_params = (2, 10)  # needs at least 5 of 10 successes
+    selection_algorithm = functools.partial(meta_algorithm, XTXi, X, y - X.dot(XTXi.dot(S)), sigmaX)
+    success_params = (5, 10)  # needs at least 5 of 10 successes
 
     observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
     # find the target, based on the observed outcome
