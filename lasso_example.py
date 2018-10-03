@@ -14,7 +14,7 @@ from core import (infer_full_target,
                   repeat_selection,
                   probit_fit)
 
-def simulate(n=200, p=50, s=5, signal=(3, 5), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
 
-    for i in range(100):
+    for i in range(500):
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)

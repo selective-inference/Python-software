@@ -12,7 +12,8 @@ from core import (infer_full_target,
                   split_sampler, # split_sampler not working yet
                   normal_sampler,
                   logit_fit,
-                  probit_fit)
+                  probit_fit,
+                  repeat_selection)
 
 def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
@@ -37,7 +38,7 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     def meta_algorithm(X, XTXi, resid, sampler):
 
-        S = sampler(scale=0.5) # deterministic with scale=0
+        S = sampler(scale=0.) # deterministic with scale=0
         ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
         G = lasso_glmnet(X, ynew, *[None]*4)
         select = G.select()
@@ -52,7 +53,9 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     # run selection algorithm
 
-    observed_set = selection_algorithm(splitting_sampler)
+    success_params = (5, 10)
+
+    observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
 
     # find the target, based on the observed outcome
 
@@ -73,6 +76,7 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
                                        dispersion,
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
+                                       success_params=success_params,
                                        alpha=alpha,
                                        B=500)
 
@@ -84,7 +88,9 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
         observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
         quantile = ndist.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target-quantile * target_sd, observed_target+quantile * target_sd)
-        naive_pivots.append((1-ndist.cdf((observed_target-true_target)/target_sd))) # one-sided
+        naive_pivot = (1-ndist.cdf((observed_target-true_target)/target_sd))
+        naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
+        naive_pivots.append(naive_pivot)
 
         naive_covered.append((naive_interval[0]<true_target)*(naive_interval[1]>true_target))
         naive_lengths.append(naive_interval[1]-naive_interval[0])
@@ -102,7 +108,7 @@ if __name__ == "__main__":
     P, L, coverage = [], [], []
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
-    for i in range(100):
+    for i in range(500):
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -115,8 +121,10 @@ if __name__ == "__main__":
         print("naive:", np.mean(naive_P), np.std(naive_P), np.mean(naive_L), np.mean(naive_coverage))
         print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))
 
-        if i % 5 == 0 and i > 0:
+        if i % 2 == 0 and i > 0:
             plt.clf()
-            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', label='Selective', linewidth=3)
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
-            plt.savefig('lasso_example_CV_split_big.pdf')
+            plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', label='Naive', linewidth=3)
+            plt.legend()
+            plt.savefig('lasso_example_CV_random.pdf')

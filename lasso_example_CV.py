@@ -14,7 +14,7 @@ from core import (infer_full_target,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     P, L, coverage = [], [], []
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
-    for i in range(100):
+    for i in range(500):
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -115,8 +115,10 @@ if __name__ == "__main__":
         print("naive:", np.mean(naive_P), np.std(naive_P), np.mean(naive_L), np.mean(naive_coverage))
         print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))
 
-        if i % 5 == 0 and i > 0:
+        if i % 2 == 0 and i > 0:
             plt.clf()
-            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', linewidth=3)
+            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', label='Selective', linewidth=3)
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
-            plt.savefig('lasso_example_CV_big_null.pdf')
+            plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', label='Naive', linewidth=3)
+            plt.legend()
+            plt.savefig('lasso_example_CV.pdf')
