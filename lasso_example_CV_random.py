@@ -38,7 +38,7 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     def meta_algorithm(X, XTXi, resid, sampler):
 
-        S = sampler(scale=0.) # deterministic with scale=0
+        S = sampler(scale=0.5) # deterministic with scale=0
         ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
         G = lasso_glmnet(X, ynew, *[None]*4)
         select = G.select()
