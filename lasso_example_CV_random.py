@@ -15,7 +15,7 @@ from core import (infer_full_target,
                   probit_fit,
                   repeat_selection)
 
-def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
+def simulate(n=200, p=50, s=10, signal=(2, 2), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -23,7 +23,7 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
                                     p=p, 
                                     s=s,
                                     equicorrelated=False,
-                                    rho=0.5, 
+                                    rho=0.,
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
@@ -53,7 +53,7 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     # run selection algorithm
 
-    success_params = (5, 10)
+    success_params = (2, 3)
 
     observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
 
@@ -75,10 +75,10 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
                                        splitting_sampler,
                                        dispersion,
                                        hypothesis=true_target,
-                                       fit_probability=probit_fit,
+                                       fit_probability=logit_fit,
                                        success_params=success_params,
                                        alpha=alpha,
-                                       B=500)
+                                       B=100)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
@@ -101,14 +101,21 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
+    import pickle
+    import pandas as pd
 
-    np.random.seed(1)
+    fit_label = "cv_logit"
+    seedn = 3
+    outfile = "".join([fit_label, str(seedn), ".csv"])
+    np.random.seed(seedn)
 
     U = np.linspace(0, 1, 101)
     P, L, coverage = [], [], []
     naive_P, naive_L, naive_coverage = [], [], []
+
     plt.clf()
-    for i in range(500):
+    for i in range(100):
+        print("sim", i)
         p, cover, l, naive_p, naive_covered, naive_l = simulate()
         coverage.extend(cover)
         P.extend(p)
@@ -127,4 +134,13 @@ if __name__ == "__main__":
             plt.plot([0,1], [0,1], 'k--', linewidth=2)
             plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', label='Naive', linewidth=3)
             plt.legend()
-            plt.savefig('lasso_example_CV_random.pdf')
+            plt.savefig('lasso_example_CV_random_logit.pdf')
+
+    df = pd.DataFrame({'coverage': coverage,
+                        'pval': P,
+                        'length': L,
+                        'naive_pval': naive_P,
+                        'naive_length': naive_L,
+                        'naive_coverage': naive_coverage})
+
+    df.to_csv(outfile)
