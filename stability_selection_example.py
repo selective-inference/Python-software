@@ -153,10 +153,11 @@ if __name__ == "__main__":
             plt.legend()
             plt.savefig('ss_example.pdf')
 
-            df = pd.DataFrame({'coverage':coverage,
+        df = pd.DataFrame({'coverage':coverage,
                                'pval':P,
                                'length':L,
                                'naive_pval':naive_P,
                                'naive_length':naive_L,
                                'naive_coverage':naive_coverage})
-            df.to_csv(outfile)
+
+        df.to_csv(outfile)
