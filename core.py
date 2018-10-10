@@ -13,6 +13,7 @@ from fitters import (logit_fit,
                      probit_fit)
 from samplers import (normal_sampler,
                       split_sampler)
+from learners import mixture_learner
 
 def infer_general_target(algorithm,
                          observed_outcome,
@@ -25,7 +26,8 @@ def infer_general_target(algorithm,
                          hypothesis=0,
                          alpha=0.1,
                          success_params=(1, 1),
-                         B=500):
+                         B=500,
+                         learner_klass=mixture_learner):
     '''
 
     Compute a p-value (or pivot) for a target having observed `outcome` of `algorithm(observed_sampler)`.
@@ -64,23 +66,16 @@ def infer_general_target(algorithm,
         How many queries?
     '''
 
-    target_sd = np.sqrt(target_cov[0, 0])
-
-    # could use an improvement here...
-
-    def learning_proposal(sd=target_sd, center=observed_target):
-        scale = np.random.choice([0.25, 0.5, 1, 1.5, 2, 3], 1)
-        return np.random.standard_normal() * sd * scale + center
-
-    weight_fn = learn_weights(algorithm, 
-                              observed_outcome,
-                              observed_sampler, 
-                              observed_target,
-                              target_cov,
-                              cross_cov,
-                              learning_proposal, 
-                              fit_probability,
+    learner = learner_klass(algorithm, 
+                            observed_set,
+                            observed_sampler, 
+                            observed_target,
+                            target_cov,
+                            cross_cov)
+                              
+    weight_fn = learner.learn(fit_probability,
                               fit_args=fit_args,
+                              check_selection=None,
                               B=B)
 
     return _inference(observed_target,
@@ -100,7 +95,8 @@ def infer_full_target(algorithm,
                       hypothesis=0,
                       alpha=0.1,
                       success_params=(1, 1),
-                      B=500):
+                      B=500,
+                      learner_klass=mixture_learner):
 
     '''
 
@@ -154,22 +150,14 @@ def infer_full_target(algorithm,
     if feature not in observed_set:
         raise ValueError('for full target, we can only do inference for features observed in the outcome')
 
-    target_sd = np.sqrt(target_cov[0, 0])
-
-    # could use an improvement here...
-
-    def learning_proposal(sd=target_sd, center=observed_target):
-        scale = np.random.choice([0.5, 1, 1.5, 2], 1)
-        return np.random.standard_normal() * sd * scale + center
-
-    weight_fn = learn_weights(algorithm, 
-                              observed_set,
-                              observed_sampler, 
-                              observed_target,
-                              target_cov,
-                              cross_cov,
-                              learning_proposal, 
-                              fit_probability,
+    learner = learner_klass(algorithm, 
+                            observed_set,
+                            observed_sampler, 
+                            observed_target,
+                            target_cov,
+                            cross_cov)
+                              
+    weight_fn = learner.learn(fit_probability,
                               fit_args=fit_args,
                               check_selection=lambda result: feature in set(result),
                               B=B)
