@@ -66,7 +66,7 @@ class mixture_learner(object):
                             cross_cov)
 
     def learning_proposal(self):
-        sd = np.sqrt(self.target_cov)
+        sd = np.sqrt(self.target_cov[0, 0])
         center = self.observed_target
         scale = np.random.choice([0.5, 1, 1.5, 2], 1)
         return np.random.standard_normal() * sd * scale + center                    
