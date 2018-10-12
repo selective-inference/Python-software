@@ -774,8 +774,7 @@ def test_rlasso_gaussian():
                                lam, 
                                family="gaussian",
                                noise_scale=noise_scale,
-                               ridge_term=ridge_term,
-                               for_test=TRUE)
+                               ridge_term=ridge_term)
         perturb = soln$perturb
         obs_soln = soln$soln
         cond_mean = soln$law$cond_mean
@@ -789,8 +788,7 @@ def test_rlasso_gaussian():
 
         PVS = randomizedLassoInf(soln,
                                  targets=targets,
-                                 sampler="norejection",
-                                 for_test=TRUE)
+                                 sampler="norejection")
         opt_samples = PVS$opt_samples
         target_samples = PVS$target_samples
         pvalues = PVS$pvalues
