@@ -1725,6 +1725,7 @@ def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=T
     else:
         return -np.inf, np.inf
     lagrange_cp[j] = np.inf
+
     # TODO: use initial solution for speed
     restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide)
 
@@ -1862,8 +1863,8 @@ class ROSI(lasso):
 
                 # Pearson's X^2 to estimate sigma
 
-                self._pearson_sigma = np.sqrt(
-                    ((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar))) ** 2 / self._W).sum() / (n - p))
+                y_hat = self.loglike.saturated_loss.mean_function(X.dot(_beta_bar))
+                self._pearson_sigma = np.sqrt(((y - y_hat) ** 2 / self._W).sum() / (n - p))
 
             else:
 
@@ -1889,9 +1890,8 @@ class ROSI(lasso):
                 self._beta_barE = observed_target
 
                 # relaxed Pearson's X^2 to estimate sigma
-                self._pearson_sigma = np.sqrt(
-                    ((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln))) ** 2 / self._W).sum() / (
-                                n - len(self.active)))
+                y_hat = self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)) 
+                self._pearson_sigma = np.sqrt(((y - y_hat) ** 2 / self._W).sum() / (n - len(self.active)))
 
         else:
             self.active = []
