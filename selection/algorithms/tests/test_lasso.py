@@ -9,7 +9,7 @@ from selection.tests.instance import (gaussian_instance as instance,
 from selection.tests.decorators import set_sampling_params_iftrue, wait_for_return_value
 
 from selection.algorithms.lasso import (lasso, 
-                                        lasso_full,
+                                        ROSI,
                                         data_carving, 
                                         data_splitting,
                                         split_model, 
@@ -753,7 +753,7 @@ def test_gaussian_full(n=100, p=20):
     weights_with_zeros = 0.5*lam_theor * np.ones(p)
     weights_with_zeros[:3] = 0.
 
-    L = lasso_full.gaussian(X, y, weights_with_zeros, 1., quadratic=Q)
+    L = ROSI.gaussian(X, y, weights_with_zeros, 1., quadratic=Q)
     L.fit()
     print(L.summary(compute_intervals=True))
 
@@ -767,7 +767,7 @@ def test_logistic_full():
                   3*np.ones(10))]:
         X = np.random.standard_normal((10,5))
 
-        L = lasso_full.logistic(X, Y, 0.1, trials=T)
+        L = ROSI.logistic(X, Y, 0.1, trials=T)
         L.fit()
         L.summary(compute_intervals=True)
 
@@ -776,7 +776,7 @@ def test_poisson_full():
     X = np.random.standard_normal((10,5))
     Y = np.random.poisson(10, size=(10,))
 
-    L = lasso_full.poisson(X, Y, 0.1)
+    L = ROSI.poisson(X, Y, 0.1)
     L.fit()
     L.summary(compute_intervals=True)
 
