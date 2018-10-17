@@ -507,6 +507,7 @@ def test_liu_gaussian():
         lam = 4. * np.sqrt(n)
         X *= np.sqrt(n)
         L = ROSI.gaussian(X, y, lam)
+        L.sparse_inverse = False
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
@@ -562,6 +563,7 @@ def test_liu_logistic():
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
         L = ROSI.logistic(X, y, lam)
+        L.sparse_inverse = False
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=1)
