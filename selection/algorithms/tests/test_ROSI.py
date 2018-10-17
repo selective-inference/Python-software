@@ -4,8 +4,8 @@ import numpy as np, regreg.api as rr
 
 from ...tests.instance import gaussian_instance
 
-from ..lasso import (lasso_full,
-                     lasso_full_modelQ,
+from ..lasso import (ROSI,
+                     ROSI_modelQ,
                      _truncation_interval,
                      _solve_restricted_problem)
 
@@ -52,7 +52,7 @@ def test_smaller():
 
     lagrange = 10. * np.ones(p)
 
-    LF = lasso_full.gaussian(X, y, lagrange)
+    LF = ROSI.gaussian(X, y, lagrange)
     LF.fit()
 
     Q = X.T.dot(X)
@@ -95,11 +95,11 @@ def test_modelQ():
 
     lagrange = 1. * np.ones(p)
 
-    LF = lasso_full.gaussian(X, y, lagrange)
+    LF = ROSI.gaussian(X, y, lagrange)
     LF.fit()
     S = LF.summary(dispersion=1)
 
-    LX = lasso_full_modelQ(X.T.dot(X), X, y, lagrange)
+    LX = ROSI_modelQ(X.T.dot(X), X, y, lagrange)
     LX.fit()
     SX = LX.summary(dispersion=1)
 

@@ -6,7 +6,7 @@ rpy2.robjects.numpy2ri.activate()
 
 from scipy.stats import norm as ndist
 from selection.randomized.lasso import lasso, full_targets, selected_targets, debiased_targets
-from selection.algorithms.lasso import lasso_full
+from selection.algorithms.lasso import ROSI
 
 
 def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
@@ -401,7 +401,7 @@ def comparison_cvmetrics_full(n=500, p=100, nval=500, rho=0.35, s=5, beta_type=1
         Lee_discoveries = np.zeros(1)
         partial_Lasso_risk, partial_relLasso_risk = [0., 0.]
 
-    lasso_Liu = lasso_full.gaussian(X, y, n * lam_LASSO)
+    lasso_Liu = ROSI.gaussian(X, y, n * lam_LASSO)
     Lasso_soln_Liu = lasso_Liu.fit()
     active_set_Liu = np.nonzero(Lasso_soln_Liu != 0)[0]
     nactive_Liu = active_set_Liu.shape[0]

@@ -6,7 +6,7 @@ rpy2.robjects.numpy2ri.activate()
 
 from scipy.stats import norm as ndist
 from selection.randomized.lasso import lasso, full_targets, selected_targets, debiased_targets
-from selection.algorithms.lasso import lasso_full
+from selection.algorithms.lasso import ROSI
 
 def relative_risk(est, truth, Sigma):
     if (truth != 0).sum > 0:
