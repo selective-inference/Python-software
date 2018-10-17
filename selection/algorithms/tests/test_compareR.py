@@ -11,7 +11,7 @@ try:
 except ImportError:
     rpy2_available = False
 
-from ..lasso import lasso, lasso_full
+from ..lasso import lasso, ROSI
 from ..forward_step import forward_step
 from ...randomized.lasso import lasso as rlasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance, logistic_instance
@@ -506,7 +506,7 @@ def test_liu_gaussian():
 
         lam = 4. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.gaussian(X, y, lam)
+        L = ROSI.gaussian(X, y, lam)
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
@@ -561,7 +561,7 @@ def test_liu_logistic():
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.logistic(X, y, lam)
+        L = ROSI.logistic(X, y, lam)
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=1)
@@ -614,7 +614,7 @@ def test_ROSI_gaussian():
 
         lam = 7. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.gaussian(X, y, lam)
+        L = ROSI.gaussian(X, y, lam)
         L.sparse_inverse = True
         L.fit()
 
@@ -673,7 +673,7 @@ def test_ROSI_logistic():
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.logistic(X, y, lam)
+        L = ROSI.logistic(X, y, lam)
         L.sparse_inverse = True
         L.fit()
 

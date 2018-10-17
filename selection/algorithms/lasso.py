@@ -1749,7 +1749,7 @@ def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=T
     return lower, upper
 
 
-class lasso_full(lasso):
+class ROSI(lasso):
     r"""
     A class for the LASSO for post-selection inference.
     The problem solved is
@@ -1898,7 +1898,8 @@ class lasso_full(lasso):
             self.inactive = np.arange(lasso_solution.shape[0])
         return self.lasso_solution
 
-    def summary(self, level=0.95,
+    def summary(self, 
+                level=0.95,
                 compute_intervals=False,
                 dispersion=None):
         """
@@ -1948,7 +1949,7 @@ class lasso_full(lasso):
                 pvalue = float(2 * min(pvalue, 1 - pvalue))
 
                 if compute_intervals:
-                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=1 - level)
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=1-level)
                 else:
                     l, u = np.nan, np.nan
 
@@ -2030,7 +2031,7 @@ class lasso_full(lasso):
         if covariance_estimator is not None:
             sigma = 1.
         loglike = glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
-        return lasso_full(loglike, np.asarray(feature_weights) / sigma ** 2)
+        return ROSI(loglike, np.asarray(feature_weights) / sigma ** 2)
 
     @staticmethod
     def logistic(X,
@@ -2086,7 +2087,7 @@ class lasso_full(lasso):
         the unpenalized estimator.
         """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
-        return lasso_full(loglike, feature_weights)
+        return ROSI(loglike, feature_weights)
 
     @staticmethod
     def poisson(X,
@@ -2136,9 +2137,9 @@ class lasso_full(lasso):
         the unpenalized estimator.
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
-        return lasso_full(loglike, feature_weights)
+        return ROSI(loglike, feature_weights)
 
-class lasso_full_modelQ(lasso):
+class ROSI_modelQ(lasso):
     r"""
     A class for the LASSO for post-selection inference
     in which
