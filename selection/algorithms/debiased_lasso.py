@@ -6,7 +6,6 @@ from scipy.stats import norm as ndist
 from ..constraints.affine import constraints
 from .debiased_lasso_utils import solve_wide_
 
-
 def debiasing_matrix(X,
                      rows,
                      bound=None,
@@ -191,6 +190,44 @@ def _find_row_approx_inverse_X(X,
                 parameter_stop)
 
     return theta
+
+def pseudoinverse_debiasing_matrix(X,
+                                   rows,
+                                   tol=1.e-9 # tolerance for rank computaion
+                                   ):
+    """
+    Find a row of debiasing matrix using algorithm of
+    Boot and Niedderling from https://arxiv.org/pdf/1703.03282.pdf
+    """
+
+    n, p = X.shape
+    nactive = len(rows)
+
+    if n < p:
+
+        U, D, V = np.linalg.svd(X, full_matrices=0)
+        rank = sum(D > max(D) * tol)
+
+        inv_D = 1. / D
+        inv_D[rank:] = 0.
+
+        inv = U.dot(D**2).dot(U.T)
+
+        scaling = np.zeros(nactive)
+
+        pseudo_XTX = V[active_set].dot(inv_D**2).dot(V.T)
+
+        for i in range(nactive):
+            var = rows[i]
+            scaling[i] = 1. / (X[:,var] * inv.dot(X[:,var]).T).sum()
+
+    else:
+        pseudo_XTX = np.linalg.inv(X.T.dot(X))[rows]
+        scaling = np.ones(nactive)
+
+    M_active = scaling[:, None] * pseudo_XTX
+
+    return M_active
 
 
 def debiased_lasso_inference(lasso_obj, variables, delta):
