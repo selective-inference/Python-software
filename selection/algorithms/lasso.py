@@ -28,7 +28,8 @@ from regreg.api import (glm,
                         quadratic_loss)
 
 from .sqrt_lasso import solve_sqrt_lasso, estimate_sigma
-from .debiased_lasso import debiasing_matrix
+from .debiased_lasso import (debiasing_matrix,
+                             pseudoinverse_debiasing_matrix)
 
 from ..constraints.affine import (constraints, selection_interval,
                                   interval_constraints,
@@ -1749,7 +1750,6 @@ def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=T
 
     return lower, upper
 
-
 class ROSI(lasso):
     r"""
     A class for the LASSO for post-selection inference.
@@ -1770,7 +1770,7 @@ class ROSI(lasso):
     def __init__(self,
                  loglike,
                  feature_weights,
-                 sparse_inverse=False):
+                 approximate_inverse='BN'):
         r"""
         Create a new post-selection for the LASSO problem
         Parameters
@@ -1780,16 +1780,17 @@ class ROSI(lasso):
         feature_weights : np.ndarray
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
-        sparse_inverse : bool
-             If True, use the sparse LASSO estimate of the
-             inverse of X.T.dot(X).
+        approximate_inverse : str (optional)
+             One of "JM" (Javanmard, Montanari) or "BN" (Boot, Niedderling) or None.
+             A form of approximate inverse when p is close to (or larger) than n.
+
         """
 
         self.loglike = loglike
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
-        self.sparse_inverse = sparse_inverse
+        self.approximate_inverse = approximate_inverse
 
     def fit(self,
             lasso_solution=None,
@@ -1810,7 +1811,9 @@ class ROSI(lasso):
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
         debiasing_args : dict
-             Arguments passed to `.debiased_lasso.debiasing_matrix`.
+             Arguments passed to `.debiased_lasso.debiasing_matrix`
+             or `.debiased_lasso.pseudoinverse_debiasing_matrix` depending
+             on `self.approximate_inverse`.
         Returns
         -------
         soln : np.float
@@ -1851,7 +1854,7 @@ class ROSI(lasso):
             self._Qbeta_bar = X.T.dot(W * X.dot(lasso_solution)) - self.loglike.smooth_objective(lasso_solution, 'grad')
             self._W = W
 
-            if n > p and not self.sparse_inverse:
+            if n > p and self.approximate_inverse is None:
 
                 Q = self.loglike.hessian(lasso_solution)
                 E = self.active
@@ -1866,6 +1869,8 @@ class ROSI(lasso):
                 y_hat = self.loglike.saturated_loss.mean_function(X.dot(_beta_bar))
                 self._pearson_sigma = np.sqrt(((y - y_hat) ** 2 / self._W).sum() / (n - p))
 
+            elif self.approximate_inverse is None:
+                raise ValueError('n is less than or equal to p, an approximate inverse is needed.')
             else:
 
                 X, y = self.loglike.data
@@ -1873,10 +1878,16 @@ class ROSI(lasso):
                 # target is one-step estimator
 
                 G = self.loglike.smooth_objective(lasso_solution, 'grad')
-                M = self._M = debiasing_matrix(X * np.sqrt(W)[:, None],
-                                               self.active,
-                                               **debiasing_args)
-
+                if self.approximate_inverse == 'JM':
+                    M = self._M = debiasing_matrix(X * np.sqrt(W)[:, None],
+                                                   self.active,
+                                                   **debiasing_args)
+                elif self.approximate_inverse == 'BN':
+                    M = self._M = pseudoinverse_debiasing_matrix(X * np.sqrt(W)[:, None],
+                                                                 self.active,
+                                                                 **debiasing_args)
+                else:
+                    raise ValueError('approximate inverse should be one of ["JM", "BN"]')
                 # the n is to make sure we get rows of the inverse
                 # of (X^TWX) instead of (X^TWX/n).
 
@@ -1984,7 +1995,8 @@ class ROSI(lasso):
                  feature_weights,
                  sigma=1.,
                  covariance_estimator=None,
-                 quadratic=None):
+                 quadratic=None,
+                 approximate_inverse=None):
         r"""
         Squared-error LASSO with feature weights.
         Objective function is
@@ -2031,7 +2043,8 @@ class ROSI(lasso):
         if covariance_estimator is not None:
             sigma = 1.
         loglike = glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
-        return ROSI(loglike, np.asarray(feature_weights) / sigma ** 2)
+        return ROSI(loglike, np.asarray(feature_weights) / sigma ** 2,
+                    approximate_inverse=approximate_inverse)
 
     @staticmethod
     def logistic(X,
@@ -2039,7 +2052,8 @@ class ROSI(lasso):
                  feature_weights,
                  trials=None,
                  covariance_estimator=None,
-                 quadratic=None):
+                 quadratic=None,
+                 approximate_inverse=None):
         r"""
         Logistic LASSO with feature weights.
         Objective function is
@@ -2087,14 +2101,16 @@ class ROSI(lasso):
         the unpenalized estimator.
         """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
-        return ROSI(loglike, feature_weights)
+        return ROSI(loglike, feature_weights,
+                    approximate_inverse=approximate_inverse)
 
     @staticmethod
     def poisson(X,
                 counts,
                 feature_weights,
                 covariance_estimator=None,
-                quadratic=None):
+                quadratic=None,
+                approximate_inverse=None):
         r"""
         Poisson log-linear LASSO with feature weights.
         Objective function is
@@ -2137,7 +2153,8 @@ class ROSI(lasso):
         the unpenalized estimator.
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
-        return ROSI(loglike, feature_weights)
+        return ROSI(loglike, feature_weights,
+                    approximate_inverse=approximate_inverse)
 
 class ROSI_modelQ(lasso):
     r"""
