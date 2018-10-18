@@ -52,7 +52,7 @@ def test_smaller():
 
     lagrange = 10. * np.ones(p)
 
-    LF = ROSI.gaussian(X, y, lagrange)
+    LF = ROSI.gaussian(X, y, lagrange, approximate_inverse='JM')
     LF.fit()
 
     Q = X.T.dot(X)
@@ -95,7 +95,7 @@ def test_modelQ():
 
     lagrange = 1. * np.ones(p)
 
-    LF = ROSI.gaussian(X, y, lagrange)
+    LF = ROSI.gaussian(X, y, lagrange, approximate_inverse=None)
     LF.fit()
     S = LF.summary(dispersion=1)
 
