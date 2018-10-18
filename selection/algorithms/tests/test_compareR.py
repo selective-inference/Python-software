@@ -725,7 +725,7 @@ def test_ROSI_logistic_JM():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
 def test_ROSI_gaussian_BN():
-    n, p, s = 100, 30, 15
+    n, p, s = 100, 120, 15
 
     while True:
         X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
@@ -785,7 +785,7 @@ def test_ROSI_gaussian_BN():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
 def test_ROSI_logistic_BN():
-    n, p, s = 100, 30, 15
+    n, p, s = 100, 120, 15
 
     while True:
         X, y = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)[:2]
