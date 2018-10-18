@@ -506,8 +506,8 @@ def test_liu_gaussian():
 
         lam = 4. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = ROSI.gaussian(X, y, lam)
-        L.sparse_inverse = False
+        L = ROSI.gaussian(X, y, lam, approximate_inverse=None)
+
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
@@ -535,6 +535,7 @@ def test_liu_gaussian():
                        penalty_factor=penalty_factor, 
                        dispersion=sigma_est^2, 
                        family="gaussian",
+                       debiasing_method="JM",
                        solver="QP", 
                        construct_ci=FALSE,
                        use_debiased=FALSE)
@@ -562,8 +563,8 @@ def test_liu_logistic():
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = ROSI.logistic(X, y, lam)
-        L.sparse_inverse = False
+        L = ROSI.logistic(X, y, lam, approximate_inverse=None)
+
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=1)
@@ -591,6 +592,7 @@ def test_liu_logistic():
                        penalty_factor=penalty_factor, 
                        dispersion=1,
                        family="binomial",
+                       debiasing_method="JM",
                        solver="Q", 
                        construct_ci=FALSE,
                        use_debiased=FALSE)
@@ -608,7 +610,7 @@ def test_liu_logistic():
             break 
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_ROSI_gaussian():
+def test_ROSI_gaussian_JM():
     n, p, s = 100, 30, 15
 
     while True:
@@ -616,7 +618,7 @@ def test_ROSI_gaussian():
 
         lam = 7. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = ROSI.gaussian(X, y, lam)
+        L = ROSI.gaussian(X, y, lam, approximate_inverse='JM')
         L.sparse_inverse = True
         L.fit()
 
@@ -667,7 +669,7 @@ def test_ROSI_gaussian():
             break
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_ROSI_logistic():
+def test_ROSI_logistic_JM():
     n, p, s = 100, 30, 15
 
     while True:
@@ -675,8 +677,7 @@ def test_ROSI_logistic():
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = ROSI.logistic(X, y, lam)
-        L.sparse_inverse = True
+        L = ROSI.logistic(X, y, lam, approximate_inverse='JM')
         L.fit()
 
         if len(L.active) > 4:
@@ -705,6 +706,122 @@ def test_ROSI_logistic():
                        penalty_factor=penalty_factor, 
                        dispersion=1., 
                        family="binomial", 
+                       solver="QP", 
+                       construct_ci=FALSE,
+                       use_debiased=TRUE)
+            active_vars=PVS$active_vars - 1 # for 0-based
+            pvalues = PVS$pvalues
+            """)
+            pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
+            active_set = rpy.r('active_vars')
+
+            print(pvalues)
+            print(np.asarray(S['pval']))
+
+            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            numpy2ri.deactivate()
+            break
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
+def test_ROSI_gaussian_BN():
+    n, p, s = 100, 30, 15
+
+    while True:
+        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
+
+        lam = 7. * np.sqrt(n)
+        X *= np.sqrt(n)
+        L = ROSI.gaussian(X, y, lam, approximate_inverse='JM')
+        L.sparse_inverse = True
+        L.fit()
+
+        print('here', len(L.active))
+        if len(L.active) > 4:
+            S = L.summary(compute_intervals=False, 
+                          dispersion=sigma**2)
+            numpy2ri.activate()
+
+            rpy.r.assign("X", X)
+            rpy.r.assign("y", y)
+            rpy.r.assign("sigma_est", sigma)
+            rpy.r.assign("lam", lam)
+            rpy.r("""
+
+            y = as.numeric(y)
+            n = nrow(X)
+            p = ncol(X)
+
+            penalty_factor = rep(1, p);
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam/n, 
+                                                             penalty_factor=penalty_factor,
+                                                             family="gaussian")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=sigma_est^2, 
+                       family="gaussian",
+                       debiasing_method="BN",
+                       solver="QP", 
+                       construct_ci=FALSE,  
+                       use_debiased=TRUE)
+            active_vars=PVS$active_vars - 1 # for 0-based
+            pvalues = PVS$pvalues
+            """)
+            pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
+            active_set = rpy.r('active_vars')
+
+            print(pvalues)
+            print(np.asarray(S['pval']))
+
+            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            numpy2ri.deactivate()
+            break
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
+def test_ROSI_logistic_BN():
+    n, p, s = 100, 30, 15
+
+    while True:
+        X, y = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)[:2]
+
+        lam = 1. * np.sqrt(n)
+        X *= np.sqrt(n)
+        L = ROSI.logistic(X, y, lam, approximate_inverse='JM')
+        L.fit()
+
+        if len(L.active) > 4:
+            S = L.summary(compute_intervals=False, dispersion=1.)
+            numpy2ri.activate()
+
+            rpy.r.assign("X", X)
+            rpy.r.assign("y", y)
+            rpy.r.assign("lam", lam)
+            rpy.r("""
+
+            y = as.numeric(y)
+            n = nrow(X)
+            p = ncol(X)
+
+            penalty_factor = rep(1, p);
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam/n, 
+                                                             penalty_factor=penalty_factor,
+                                                             family="binomial")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=1., 
+                       family="binomial", 
+                       debiasing_method="BN",
                        solver="QP", 
                        construct_ci=FALSE,
                        use_debiased=TRUE)
