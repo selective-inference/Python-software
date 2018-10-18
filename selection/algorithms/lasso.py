@@ -1878,6 +1878,7 @@ class ROSI(lasso):
                 # target is one-step estimator
 
                 G = self.loglike.smooth_objective(lasso_solution, 'grad')
+                
                 if self.approximate_inverse == 'JM':
                     M = self._M = debiasing_matrix(X * np.sqrt(W)[:, None],
                                                    self.active,
