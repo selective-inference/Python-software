@@ -206,16 +206,15 @@ def pseudoinverse_debiasing_matrix(X,
     if n < p:
 
         U, D, V = np.linalg.svd(X, full_matrices=0)
-        rank = sum(D > max(D) * tol)
+        rank = np.sum(D > max(D) * tol)
 
         inv_D = 1. / D
         inv_D[rank:] = 0.
-
-        inv = U.dot(D**2).dot(U.T)
-
+        inv_D2 = np.diag(inv_D**2)
+        inv = U.dot(inv_D2).dot(U.T)
         scaling = np.zeros(nactive)
 
-        pseudo_XTX = V[active_set].dot(inv_D**2).dot(V.T)
+        pseudo_XTX = V.T[rows].dot(inv_D2).dot(V)
 
         for i in range(nactive):
             var = rows[i]
