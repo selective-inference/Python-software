@@ -210,11 +210,11 @@ def pseudoinverse_debiasing_matrix(X,
 
         inv_D = 1. / D
         inv_D[rank:] = 0.
-        inv_D2 = np.diag(inv_D**2)
-        inv = U.dot(inv_D2).dot(U.T)
+        inv_D2 = inv_D**2
+        inv = (U * inv_D2[None, :]).dot(U.T)
         scaling = np.zeros(nactive)
 
-        pseudo_XTX = V.T[rows].dot(inv_D2).dot(V)
+        pseudo_XTX = (V.T[rows] * inv_D2[None, :]).dot(V)
 
         for i in range(nactive):
             var = rows[i]
