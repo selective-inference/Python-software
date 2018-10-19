@@ -1882,17 +1882,18 @@ class ROSI(lasso):
                 if self.approximate_inverse == 'JM':
                     M = self._M = debiasing_matrix(X * np.sqrt(W)[:, None],
                                                    self.active,
-                                                   **debiasing_args)
+                                                   **debiasing_args) / n
+                    # the n is to make sure we get rows of the inverse
+                    # of (X^TWX) instead of (X^TWX/n).
+
                 elif self.approximate_inverse == 'BN':
                     M = self._M = pseudoinverse_debiasing_matrix(X * np.sqrt(W)[:, None],
                                                                  self.active,
                                                                  **debiasing_args)
                 else:
                     raise ValueError('approximate inverse should be one of ["JM", "BN"]')
-                # the n is to make sure we get rows of the inverse
-                # of (X^TWX) instead of (X^TWX/n).
 
-                Qinv_hat = np.atleast_2d(M) / n
+                Qinv_hat = np.atleast_2d(M) 
                 observed_target = lasso_solution[self.active] - Qinv_hat.dot(G)
                 M1 = Qinv_hat.dot(X.T)
                 self._QiE = (M1 * self._W[None, :]).dot(M1.T)
@@ -1955,6 +1956,7 @@ class ROSI(lasso):
                                                     beta_barE[j],
                                                     self.feature_weights, 
                                                     wide=True)
+
                 sd = sqrt_dispersion * np.sqrt(QiE[j, j])
                 tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
                 pvalue = tg.cdf(beta_barE[j])
