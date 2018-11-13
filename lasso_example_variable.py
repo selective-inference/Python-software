@@ -100,24 +100,36 @@ def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 
         # 1se for ROSI
 
-        numpy2ri.activate()
-        rpy.r.assign('X', X)
-        rpy.r.assign('Y', y)
-        rpy.r('X = as.matrix(X)')
-        rpy.r('Y = as.numeric(Y)')
-        rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
-        lam = rpy.r('cvG$lambda.1se')[0]
-        numpy2ri.deactivate()
+        while True:
 
-        R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
-        R.fit()
-        S = R.summary()
-        if S is not None:
-            pv = np.array(S['pval'])[0]
-            pv = 2 * min(pv, 1 - pv)
-            liu_pvalues = [pv]
-        else:
-            liu_pvalues = [np.nan]
+            X, y, truth = gaussian_instance(n=n,
+                                            p=p, 
+                                            s=s,
+                                            equicorrelated=False,
+                                            rho=0.5, 
+                                            sigma=sigma,
+                                            signal=signal,
+                                            random_signs=True,
+                                            scale=False)[:3]
+
+
+            numpy2ri.activate()
+            rpy.r.assign('X', X)
+            rpy.r.assign('Y', y)
+            rpy.r('X = as.matrix(X)')
+            rpy.r('Y = as.numeric(Y)')
+            rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
+            lam = rpy.r('cvG$lambda.1se')[0]
+            numpy2ri.deactivate()
+
+            R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
+            R.fit()
+            S = R.summary()
+            if S is not None:
+                pv = np.array(S['pval'])[0]
+                pv = 2 * min(pv, 1 - pv)
+                liu_pvalues = [pv]
+                break
 
     return pivots, covered, lengths, naive_pivots, naive_covered, naive_lengths, liu_pvalues
 
@@ -138,7 +150,7 @@ if __name__ == "__main__":
 
         csvfile = 'lasso_CV.csv'
 
-        if i % 2 == 1 and i > 0:
+        if i > 0:
 
             df = pd.DataFrame({'pivot':p,
                                'naive_pivot':naive_p,
