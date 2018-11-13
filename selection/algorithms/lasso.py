@@ -31,7 +31,8 @@ from .sqrt_lasso import solve_sqrt_lasso, estimate_sigma
 from .debiased_lasso import (debiasing_matrix,
                              pseudoinverse_debiasing_matrix)
 
-from ..constraints.affine import (constraints, selection_interval,
+from ..constraints.affine import (constraints, 
+                                  selection_interval,
                                   interval_constraints,
                                   sample_from_constraints,
                                   gibbs_test,
