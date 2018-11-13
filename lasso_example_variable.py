@@ -91,18 +91,32 @@ def simulate(n=120, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
         observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
         quantile = ndist.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target-quantile * target_sd, observed_target+quantile * target_sd)
-        naive_pivots.append((1-ndist.cdf((observed_target-true_target)/target_sd))) # one-sided
+        naive_pivot = (1-ndist.cdf((observed_target-true_target)/target_sd))
+        naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
+        naive_pivots.append(naive_pivot) # one-sided
 
         naive_covered.append((naive_interval[0]<true_target)*(naive_interval[1]>true_target))
         naive_lengths.append(naive_interval[1]-naive_interval[0])
 
-        try:
-            R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
-            R.fit()
-            pv = np.array(R.summary()['pval'])[0]
+        # lee and rosi
+
+        numpy2ri.activate()
+        rpy.r.assign('X', X)
+        rpy.r.assign('Y', y)
+        rpy.r('X = as.matrix(X)')
+        rpy.r('Y = as.numeric(Y)')
+        rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
+        lam = rpy.r('cvG$lambda.min')[0]
+        numpy2ri.deactivate()
+
+        R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
+        R.fit()
+        S = R.summary()
+        if S is not None:
+            pv = np.array(S['pval'])[0]
             pv = 2 * min(pv, 1 - pv)
             liu_pvalues = [pv]
-        except:
+        else:
             liu_pvalues = [np.nan]
 
     return pivots, covered, lengths, naive_pivots, naive_covered, naive_lengths, liu_pvalues
@@ -149,7 +163,8 @@ if __name__ == "__main__":
                 U = np.linspace(0, 1, 101)
                 plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'r', label='Selective', linewidth=3)
                 plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
-                plt.plot(U, sm.distributions.ECDF(df['liu_pivots'][~np.isnan(df['liu_pivots'])])(U), 'g', label='Lee', linewidth=3)
+                if (~np.isnan(df['liu_pivots'])).sum() > 0:
+                    plt.plot(U, sm.distributions.ECDF(df['liu_pivots'][~np.isnan(df['liu_pivots'])])(U), 'g', label='Liu', linewidth=3)
                 plt.legend()
                 plt.plot([0,1], [0,1], 'k--', linewidth=2)
                 plt.savefig('lasso_example_CV.pdf')
