@@ -67,7 +67,7 @@ def infer_general_target(algorithm,
     '''
 
     learner = learner_klass(algorithm, 
-                            observed_set,
+                            observed_outcome,
                             observed_sampler, 
                             observed_target,
                             target_cov,

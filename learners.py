@@ -110,7 +110,8 @@ class mixture_learner(object):
                                      observed_sampler.covariance.copy())
 
         if check_selection is None:
-            check_selection = lambda result: result == observed_outcome
+            def check_selection(result):
+                return result == observed_outcome
 
         direction = cross_cov.dot(np.linalg.inv(target_cov).reshape((1,1))) # move along a ray through S with this direction
 

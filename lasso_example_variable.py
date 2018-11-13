@@ -6,7 +6,13 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
+from selection.algorithms.lasso import lasso, ROSI
 from knockoffs import lasso_glmnet
+
+import rpy2.robjects as rpy
+from rpy2.robjects import numpy2ri
+rpy.r('library(knockoff); library(glmnet)')
+from rpy2 import rinterface
 
 from core import (infer_full_target,
                   split_sampler, # split_sampler not working yet
@@ -14,7 +20,7 @@ from core import (infer_full_target,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
+def simulate(n=120, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -60,6 +66,7 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
 
     pivots, covered, lengths = [], [], []
     naive_pivots, naive_covered, naive_lengths =  [], [], []
+    liu_pvalues = []
 
     for idx in list(observed_set)[:1]:
         print("variable: ", idx, "total selected: ", len(observed_set))
@@ -89,7 +96,16 @@ def simulate(n=200, p=100, s=10, signal=(2, 3), sigma=2, alpha=0.1):
         naive_covered.append((naive_interval[0]<true_target)*(naive_interval[1]>true_target))
         naive_lengths.append(naive_interval[1]-naive_interval[0])
 
-    return pivots, covered, lengths, naive_pivots, naive_covered, naive_lengths
+        try:
+            R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
+            R.fit()
+            pv = np.array(R.summary()['pval'])[0]
+            pv = 2 * min(pv, 1 - pv)
+            liu_pvalues = [pv]
+        except:
+            liu_pvalues = [np.nan]
+
+    return pivots, covered, lengths, naive_pivots, naive_covered, naive_lengths, liu_pvalues
 
 
 if __name__ == "__main__":
@@ -103,22 +119,39 @@ if __name__ == "__main__":
     naive_P, naive_L, naive_coverage = [], [], []
     plt.clf()
     for i in range(500):
-        p, cover, l, naive_p, naive_covered, naive_l = simulate()
-        coverage.extend(cover)
-        P.extend(p)
-        L.extend(l)
-        naive_P.extend(naive_p)
-        naive_coverage.extend(naive_covered)
-        naive_L.extend(naive_l)
+        p, cover, l, naive_p, naive_covered, naive_l, liu = simulate()
 
-        print("selective:", np.mean(P), np.std(P), np.mean(L) , np.mean(coverage))
-        print("naive:", np.mean(naive_P), np.std(naive_P), np.mean(naive_L), np.mean(naive_coverage))
-        print("len ratio selective divided by naive:", np.mean(np.array(L) / np.array(naive_L)))
+        csvfile = 'lasso_CV.csv'
 
-        if i % 2 == 0 and i > 0:
-            plt.clf()
-            plt.plot(U, sm.distributions.ECDF(P)(U), 'r', label='Selective', linewidth=3)
-            plt.plot([0,1], [0,1], 'k--', linewidth=2)
-            plt.plot(U, sm.distributions.ECDF(naive_P)(U), 'b', label='Naive', linewidth=3)
-            plt.legend()
-            plt.savefig('lasso_example_CV.pdf')
+        if i % 2 == 1 and i > 0:
+
+            df = pd.DataFrame({'pivot':p,
+                               'naive_pivot':naive_p,
+                               'coverage':cover,
+                               'naive_coverage':naive_covered,
+                               'length':l,
+                               'naive_length':naive_l,
+                               'liu_pivots':liu})
+            try:
+                df = pd.concat([df, pd.read_csv(csvfile)])
+            except FileNotFoundError:
+                pass
+
+            if len(df['pivot']) > 0:
+
+                print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
+                print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
+                print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
+
+
+                plt.clf()
+                U = np.linspace(0, 1, 101)
+                plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'r', label='Selective', linewidth=3)
+                plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
+                plt.plot(U, sm.distributions.ECDF(df['liu_pivots'][~np.isnan(df['liu_pivots'])])(U), 'g', label='Lee', linewidth=3)
+                plt.legend()
+                plt.plot([0,1], [0,1], 'k--', linewidth=2)
+                plt.savefig('lasso_example_CV.pdf')
+
+            df.to_csv(csvfile, index=False)
+
