@@ -20,7 +20,7 @@ from core import (infer_full_target,
                   logit_fit,
                   probit_fit)
 
-def simulate(n=120, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -81,7 +81,7 @@ def simulate(n=120, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
                                        hypothesis=true_target,
                                        fit_probability=probit_fit,
                                        alpha=alpha,
-                                       B=500)
+                                       B=1000)
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))
@@ -98,7 +98,7 @@ def simulate(n=120, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
         naive_covered.append((naive_interval[0]<true_target)*(naive_interval[1]>true_target))
         naive_lengths.append(naive_interval[1]-naive_interval[0])
 
-        # lee and rosi
+        # 1se for ROSI
 
         numpy2ri.activate()
         rpy.r.assign('X', X)
@@ -106,7 +106,7 @@ def simulate(n=120, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
         rpy.r('X = as.matrix(X)')
         rpy.r('Y = as.numeric(Y)')
         rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
-        lam = rpy.r('cvG$lambda.min')[0]
+        lam = rpy.r('cvG$lambda.1se')[0]
         numpy2ri.deactivate()
 
         R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
