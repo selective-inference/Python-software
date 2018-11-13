@@ -111,6 +111,7 @@ def simulate(n=120, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
+    import pandas as pd
 
     np.random.seed(1)
 
