@@ -37,4 +37,6 @@ build
 */*~
 *pyc
 */*pyc
+*.pdf
+*.csv
 

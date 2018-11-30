@@ -24,112 +24,116 @@ def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
-    X, y, truth = gaussian_instance(n=n,
-                                    p=p, 
-                                    s=s,
-                                    equicorrelated=False,
-                                    rho=0.5, 
-                                    sigma=sigma,
-                                    signal=signal,
-                                    random_signs=True,
-                                    scale=False)[:3]
+    while True:
 
-    dispersion = sigma**2
+        X, y, truth = gaussian_instance(n=n,
+                                        p=p, 
+                                        s=s,
+                                        equicorrelated=False,
+                                        rho=0.5, 
+                                        sigma=sigma,
+                                        signal=signal,
+                                        random_signs=True,
+                                        scale=False)[:3]
 
-    S = X.T.dot(y)
-    covS = dispersion * X.T.dot(X)
-    smooth_sampler = normal_sampler(S, covS)
-    splitting_sampler = split_sampler(X * y[:, None], covS)
+        dispersion = sigma**2
 
-    def meta_algorithm(X, XTXi, resid, sampler):
+        S = X.T.dot(y)
+        covS = dispersion * X.T.dot(X)
+        smooth_sampler = normal_sampler(S, covS)
+        splitting_sampler = split_sampler(X * y[:, None], covS)
 
-        S = sampler(scale=0.) # deterministic with scale=0
-        ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
-        G = lasso_glmnet(X, ynew, *[None]*4)
-        select = G.select()
-        return set(list(select[0]))
+        def meta_algorithm(X, XTXi, resid, sampler):
 
-    XTX = X.T.dot(X)
-    XTXi = np.linalg.inv(XTX)
-    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
-    dispersion = np.linalg.norm(resid)**2 / (n-p)
-                         
-    selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
+            S = sampler(scale=0.) # deterministic with scale=0
+            ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
+            G = lasso_glmnet(X, ynew, *[None]*4)
+            select = G.select(CV=False)
+            return set(list(select[0]))
 
-    # run selection algorithm
+        XTX = X.T.dot(X)
+        XTXi = np.linalg.inv(XTX)
+        resid = y - X.dot(XTXi.dot(X.T.dot(y)))
+        dispersion = np.linalg.norm(resid)**2 / (n-p)
 
-    observed_set = selection_algorithm(splitting_sampler)
+        selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
 
-    # find the target, based on the observed outcome
+        # run selection algorithm
 
-    # we just take the first target  
+        observed_set = selection_algorithm(smooth_sampler)
 
-    pivots, covered, lengths = [], [], []
-    naive_pivots, naive_covered, naive_lengths =  [], [], []
-    liu_pvalues = []
+        # find the target, based on the observed outcome
 
-    for idx in list(observed_set)[:1]:
-        print("variable: ", idx, "total selected: ", len(observed_set))
-        true_target = truth[idx]
+        # we just take the first target  
 
-        (pivot, 
-         interval) = infer_full_target(selection_algorithm,
-                                       observed_set,
-                                       idx,
-                                       splitting_sampler,
-                                       dispersion,
-                                       hypothesis=true_target,
-                                       fit_probability=probit_fit,
-                                       alpha=alpha,
-                                       B=1000)
+        pivots, covered, lengths = [], [], []
+        naive_pivots, naive_covered, naive_lengths =  [], [], []
 
-        pivots.append(pivot)
-        covered.append((interval[0] < true_target) * (interval[1] > true_target))
-        lengths.append(interval[1] - interval[0])
+        for idx in list(observed_set)[:1]:
+            print("variable: ", idx, "total selected: ", len(observed_set))
+            true_target = truth[idx]
 
-        target_sd = np.sqrt(dispersion * XTXi[idx, idx])
-        observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
-        quantile = ndist.ppf(1 - 0.5 * alpha)
-        naive_interval = (observed_target-quantile * target_sd, observed_target+quantile * target_sd)
-        naive_pivot = (1-ndist.cdf((observed_target-true_target)/target_sd))
-        naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
-        naive_pivots.append(naive_pivot) # one-sided
+            (pivot, 
+             interval) = infer_full_target(selection_algorithm,
+                                           observed_set,
+                                           idx,
+                                           splitting_sampler,
+                                           dispersion,
+                                           hypothesis=true_target,
+                                           fit_probability=probit_fit,
+                                           alpha=alpha,
+                                           B=2000)
 
-        naive_covered.append((naive_interval[0]<true_target)*(naive_interval[1]>true_target))
-        naive_lengths.append(naive_interval[1]-naive_interval[0])
+            pivots.append(pivot)
+            covered.append((interval[0] < true_target) * (interval[1] > true_target))
+            lengths.append(interval[1] - interval[0])
 
-        # 1se for ROSI
+            target_sd = np.sqrt(dispersion * XTXi[idx, idx])
+            observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
+            quantile = ndist.ppf(1 - 0.5 * alpha)
+            naive_interval = (observed_target-quantile * target_sd, observed_target+quantile * target_sd)
+            naive_pivot = (1-ndist.cdf((observed_target-true_target)/target_sd))
+            naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
+            naive_pivots.append(naive_pivot) # one-sided
 
-        while True:
+            naive_covered.append((naive_interval[0]<true_target)*(naive_interval[1]>true_target))
+            naive_lengths.append(naive_interval[1]-naive_interval[0])
 
-            X, y, truth = gaussian_instance(n=n,
-                                            p=p, 
-                                            s=s,
-                                            equicorrelated=False,
-                                            rho=0.5, 
-                                            sigma=sigma,
-                                            signal=signal,
-                                            random_signs=True,
-                                            scale=False)[:3]
+        if len(observed_set) > 0: # we've found one
+            break
+
+    while True:
+
+        X, y, truth = gaussian_instance(n=n,
+                                        p=p, 
+                                        s=s,
+                                        equicorrelated=False,
+                                        rho=0.5, 
+                                        sigma=sigma,
+                                        signal=signal,
+                                        random_signs=True,
+                                        scale=False)[:3]
 
 
-            numpy2ri.activate()
-            rpy.r.assign('X', X)
-            rpy.r.assign('Y', y)
-            rpy.r('X = as.matrix(X)')
-            rpy.r('Y = as.numeric(Y)')
-            rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
-            lam = rpy.r('cvG$lambda.1se')[0]
-            numpy2ri.deactivate()
+        numpy2ri.activate()
+        rpy.r.assign('X', X)
+        rpy.r.assign('Y', y)
+        rpy.r('X = as.matrix(X)')
+        rpy.r('Y = as.numeric(Y)')
+        rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
+        lam = rpy.r("0.99 * cvG[['lambda.1se']]")[0]
+        numpy2ri.deactivate()
 
-            R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
-            R.fit()
-            S = R.summary()
-            if S is not None:
-                pv = np.array(S['pval'])[0]
-                pv = 2 * min(pv, 1 - pv)
-                liu_pvalues = [pv]
-                break
+        print(n * lam, np.fabs(X.T.dot(y)).max(), 'duh')
+        R = ROSI.gaussian(X, y, n * lam, sigma=np.sqrt(dispersion), approximate_inverse=None)
+        R.fit()
+        S = R.summary()
+        if S is not None:
+            print('blah')
+            pv = np.array(S['pval'])[0]
+            pv = 2 * min(pv, 1 - pv)
+            liu_pvalues = [pv]
+            break
 
     return pivots, covered, lengths, naive_pivots, naive_covered, naive_lengths, liu_pvalues
 
@@ -139,8 +143,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    np.random.seed(1)
-
     U = np.linspace(0, 1, 101)
     P, L, coverage = [], [], []
     naive_P, naive_L, naive_coverage = [], [], []
@@ -148,7 +150,7 @@ if __name__ == "__main__":
     for i in range(500):
         p, cover, l, naive_p, naive_covered, naive_l, liu = simulate()
 
-        csvfile = 'lasso_CV.csv'
+        csvfile = 'lasso_1se.csv'
 
         if i > 0:
 
@@ -179,7 +181,7 @@ if __name__ == "__main__":
                     plt.plot(U, sm.distributions.ECDF(df['liu_pivots'][~np.isnan(df['liu_pivots'])])(U), 'g', label='Liu', linewidth=3)
                 plt.legend()
                 plt.plot([0,1], [0,1], 'k--', linewidth=2)
-                plt.savefig('lasso_example_CV.pdf')
+                plt.savefig('lasso_example_1se.pdf')
 
             df.to_csv(csvfile, index=False)
 
