@@ -107,7 +107,6 @@ class knockoffs_sigma(generic_method):
                 cls.knockoff_chol = factor['knockoff_chol']
 
         if not have_factorization:
-            #print('doing factorization')
             cls.knockoff_chol = factor_knockoffs(feature_cov, cls.factor_method)
 
         numpy2ri.deactivate()
@@ -148,7 +147,7 @@ class knockoffs_sigma(generic_method):
 
 class lasso_glmnet(generic_method):
 
-    def select(self):
+    def select(self, CV=True):
 
         numpy2ri.activate()
         rpy.r.assign('X', self.X)
@@ -156,7 +155,12 @@ class lasso_glmnet(generic_method):
         rpy.r('X = as.matrix(X)')
         rpy.r('Y = as.numeric(Y)')
         rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
-        rpy.r("L = cvG[['lambda.min']]")
+        rpy.r("L1 = cvG[['lambda.min']]")
+        rpy.r("L2 = cvG[['lambda.1se']]")
+        if CV:
+            rpy.r("L = L1")
+        else:
+            rpy.r("L = 0.99 * L2")
         rpy.r("G = glmnet(X, Y, intercept=FALSE, standardize=FALSE)")
         rpy.r('B = as.numeric(coef(G, s=L, exact=TRUE, x=X, y=Y))[-1]')
         B = np.asarray(rpy.r('B'))
@@ -172,7 +176,6 @@ knockoffs_sigma.register(); lasso_glmnet.register()
 def factor_knockoffs(feature_cov, method='asdp'):
 
     numpy2ri.activate()
-    #print(feature_cov, 'blah')
     rpy.r.assign('Sigma', feature_cov)
     rpy.r.assign('method', method)
     rpy.r('''
@@ -180,7 +183,6 @@ def factor_knockoffs(feature_cov, method='asdp'):
     # Compute the Cholesky -- from create.gaussian
 
     Sigma = as.matrix(Sigma)
-    #print(dim(Sigma))
     diag_s = diag(switch(method, equi = create.solve_equi(Sigma), 
                   sdp = create.solve_sdp(Sigma), asdp = create.solve_asdp(Sigma)))
     if (is.null(dim(diag_s))) {
