@@ -10,7 +10,8 @@ from selection.distributions.discrete_family import discrete_family
 # local imports
 
 from fitters import (logit_fit,
-                     probit_fit)
+                     probit_fit,
+                     gbm_fit)
 from samplers import (normal_sampler,
                       split_sampler)
 from learners import mixture_learner
@@ -92,7 +93,7 @@ def infer_full_target(algorithm,
                       dispersion, # sigma^2
                       fit_probability=probit_fit,
                       fit_args={'df':20},
-                      hypothesis=0,
+                      hypothesis=[0],
                       alpha=0.1,
                       success_params=(1, 1),
                       B=500,
