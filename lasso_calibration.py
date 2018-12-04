@@ -15,7 +15,7 @@ from core import (infer_full_target,
                   repeat_selection,
                   probit_fit)
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 
@@ -81,13 +81,15 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
     print(summaryR)
     print(R.active, 'huh')
 
+    targets = []
     for idx in sorted(observed_set):
         print("variable: ", idx, "total selected: ", len(observed_set))
         true_target = truth[idx]
+        targets.append(true_target)
 
         (pivot, 
          interval,
-         pvalue,
+         pvalue, 
          _) = infer_full_target(selection_algorithm,
                                 observed_set,
                                 idx,
@@ -97,7 +99,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
                                 fit_probability=probit_fit,
                                 success_params=success_params,
                                 alpha=alpha,
-                                B=2000)
+                                B=B)
 
         pvalues.append(pvalue)
         pivots.append(pivot)
@@ -147,7 +149,9 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
                              'liu_lower':liu_lower,
                              'upper':upper,
                              'lower':lower,
-                             'liu_coverage':liu_covered})
+                             'liu_coverage':liu_covered,
+                             'targets':targets,
+                             'batch_size':B})
 
 
 if __name__ == "__main__":
@@ -159,38 +163,29 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate()
-        csvfile = 'lasso_exact.csv'
+        for B in np.random.choice([50, 100, 500, 1000, 1500, 2000], 2, replace=True):
+            print(B)
+            df = simulate(B=B)
+            csvfile = 'lasso_calibration.csv'
 
-        if df is not None and i % 2 == 1 and i > 0:
+            if df is not None and i % 2 == 1 and i > 0:
 
-            try:
-                df = pd.concat([df, pd.read_csv(csvfile)])
-            except FileNotFoundError:
-                pass
+                try:
+                    df = pd.concat([df, pd.read_csv(csvfile)])
+                except FileNotFoundError:
+                    pass
 
-            if len(df['pivot']) > 0:
+                if len(df['pivot']) > 0:
 
-                print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
-                print("liu:", np.mean(df['liu_pivot']), np.std(df['liu_pivot']), np.mean(df['liu_length']), np.std(df['liu_length']), np.mean(df['liu_coverage']))
-                print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
+                    plt.clf()
+                    U = np.linspace(0, 1, 101)
+                    plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
+                    for b in np.unique(df['batch_size']):
+                        plt.plot(U, sm.distributions.ECDF(np.array(df['pivot'])[np.array(df['batch_size']) == b])(U), label='B=%d' % b, linewidth=3)
 
-                print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
-                print("len ratio selective divided by liu:", np.mean(np.array(df['length']) / np.array(df['liu_length'])))
+                    plt.legend()
+                    plt.plot([0,1], [0,1], 'k--', linewidth=2)
+                    plt.savefig(csvfile[:-4] + '.pdf')
 
-                plt.clf()
-                U = np.linspace(0, 1, 101)
-                plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'r', label='Selective', linewidth=3)
-                plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
-                plt.plot(U, sm.distributions.ECDF(df['liu_pivot'][~np.isnan(df['liu_pivot'])])(U), 'g', label='Liu', linewidth=3)
-                plt.legend()
-                plt.plot([0,1], [0,1], 'k--', linewidth=2)
-                plt.savefig(csvfile[:-4] + '.pdf')
-
-                plt.clf()
-                plt.scatter(df['naive_length'], df['length'])
-                plt.scatter(df['naive_length'], df['liu_length'])
-                plt.savefig(csvfile[:-4] + '_lengths.pdf')
-
-            df.to_csv(csvfile, index=False)
+                df.to_csv(csvfile, index=False)
 
