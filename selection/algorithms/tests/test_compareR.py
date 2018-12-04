@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import numpy as np
+import numpy as np, pandas as pd
 import regreg.api as rr
 import nose.tools as nt
 
@@ -725,19 +725,25 @@ def test_ROSI_logistic_JM():
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
 def test_ROSI_gaussian_BN():
-    n, p, s = 100, 120, 15
+    n, p, s = 200, 500, 20
 
     while True:
-        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
+        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=3.5, sigma=1)
 
-        lam = 7. * np.sqrt(n)
+        lam = np.sqrt(n * 2 * np.log(p))
         X *= np.sqrt(n)
-        L = ROSI.gaussian(X, y, lam, approximate_inverse='JM')
+        L = ROSI.gaussian(X, y, lam, approximate_inverse='BN')
         L.sparse_inverse = True
         L.fit()
 
         print('here', len(L.active))
         if len(L.active) > 4:
+
+            df = pd.DataFrame(X, 
+                              columns=['X%d' % i for i in range(1, X.shape[1]+1)])
+            df['y'] = y
+            df.to_csv('data.csv', index=False)
+
             S = L.summary(compute_intervals=False, 
                           dispersion=sigma**2)
             numpy2ri.activate()
@@ -792,7 +798,7 @@ def test_ROSI_logistic_BN():
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = ROSI.logistic(X, y, lam, approximate_inverse='JM')
+        L = ROSI.logistic(X, y, lam, approximate_inverse='BN')
         L.fit()
 
         if len(L.active) > 4:

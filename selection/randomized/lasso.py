@@ -22,7 +22,8 @@ from .query import (gaussian_query,
 
 from .randomization import randomization
 from ..base import restricted_estimator
-from ..algorithms.debiased_lasso import debiasing_matrix
+from ..algorithms.debiased_lasso import (debiasing_matrix,
+                                         pseudoinverse_debiasing_matrix)
 
 #### High dimensional version
 #### - parametric covariance
@@ -659,6 +660,7 @@ def debiased_targets(loglike,
                      sign_info={}, 
                      penalty=None, #required kwarg
                      dispersion=None,
+                     approximate_inverse='JM',
                      debiasing_args={}):
 
     if penalty is None:
@@ -672,9 +674,15 @@ def debiased_targets(loglike,
 
     # relevant rows of approximate inverse
 
-    Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(W)[:, None], 
-                                              np.nonzero(features)[0],
-                                              **debiasing_args)) / n
+
+    if approximate_inverse == 'JM':
+        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(W)[:, None], 
+                                                  np.nonzero(features)[0],
+                                                  **debiasing_args)) / n
+    else:
+        Qinv_hat = np.atleast_2d(pseudoinverse_debiasing_matrix(X * np.sqrt(W)[:, None],
+                                                                np.nonzero(features)[0],
+                                                                **debiasing_args))
 
     problem = rr.simple_problem(loglike, penalty)
     nonrand_soln = problem.solve()
