@@ -9,12 +9,21 @@ def logit_fit(T, Y, df=20):
     rpy.r.assign('T', T)
     rpy.r.assign('df', df)
     rpy.r.assign('Y', Y.astype(np.int))
-    rpy.r('''
+    cmd = '''
     Y = as.numeric(Y)
-    T = as.numeric(T)
-    M = glm(Y ~ ns(T, df), family=binomial(link='logit'))
-    fitfn = function(t) { predict(M, newdata=data.frame(T=t), type='link') } 
-    ''')
+    T = as.matrix(T)
+    colnames(T) = c(%s)
+    cur_data = data.frame(Y, T)
+    M = glm(Y ~ %s, family=binomial(link='logit'), data=cur_data)
+    fitfn = function(t) {
+        t = data.frame(t)
+        colnames(t) = c(%s)
+        predict(M, newdata=t, type='link') 
+    } 
+    ''' % (', '.join(['"T%d"' % i for i in range(1, T.shape[1]+1)]),
+           ' + '.join(['ns(T%d, df)' % i for i in range(1, T.shape[1]+1)]),
+           ', '.join(['"T%d"' % i for i in range(1, T.shape[1]+1)]))
+    rpy.r(cmd)
     rpy2.robjects.numpy2ri.deactivate()
 
     # this is a little fragile obviously as someone might overwrite fitfn
@@ -37,12 +46,21 @@ def probit_fit(T, Y, df=20):
     rpy.r.assign('T', T)
     rpy.r.assign('df', df)
     rpy.r.assign('Y', Y.astype(np.int))
-    rpy.r('''
+    cmd = '''
     Y = as.numeric(Y)
-    T = as.numeric(T)
-    M = glm(Y ~ ns(T, df), family=binomial(link='probit'))
-    fitfn = function(t) { predict(M, newdata=data.frame(T=t), type='link') } 
-    ''')
+    T = as.matrix(T)
+    colnames(T) = c(%s)
+    cur_data = data.frame(Y, T)
+    M = glm(Y ~ %s, family=binomial(link='probit'), data=cur_data)
+    fitfn = function(t) {
+        t = data.frame(t)
+        colnames(t) = c(%s)
+        predict(M, newdata=t, type='link') 
+    } 
+    ''' % (', '.join(['"T%d"' % i for i in range(1, T.shape[1]+1)]),
+           ' + '.join(['ns(T%d, df)' % i for i in range(1, T.shape[1]+1)]),
+           ', '.join(['"T%d"' % i for i in range(1, T.shape[1]+1)]))
+    rpy.r(cmd)
     rpy2.robjects.numpy2ri.deactivate()
 
     # this is a little fragile obviously as someone might overwrite fitfn

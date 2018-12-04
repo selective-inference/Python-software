@@ -154,6 +154,7 @@ class lasso_glmnet(generic_method):
         rpy.r.assign('Y', self.Y)
         rpy.r('X = as.matrix(X)')
         rpy.r('Y = as.numeric(Y)')
+        rpy.r('set.seed(1)')
         rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
         rpy.r("L1 = cvG[['lambda.min']]")
         rpy.r("L2 = cvG[['lambda.1se']]")
@@ -162,6 +163,8 @@ class lasso_glmnet(generic_method):
         else:
             rpy.r("L = 0.99 * L2")
         rpy.r("G = glmnet(X, Y, intercept=FALSE, standardize=FALSE)")
+        n, p = self.X.shape
+        L = rpy.r('L')
         rpy.r('B = as.numeric(coef(G, s=L, exact=TRUE, x=X, y=Y))[-1]')
         B = np.asarray(rpy.r('B'))
         selected = (B != 0)
@@ -201,3 +204,25 @@ def factor_knockoffs(feature_cov, method='asdp'):
              knockoff_chol=knockoff_chol)
 
     return knockoff_chol
+
+def cv_glmnet_lam(X, Y):
+    """
+
+    Some calculations that can be reused by methods:
+    
+    lambda.min, lambda.1se, lambda.theory and Reid et al. estimate of noise
+
+    """
+    numpy2ri.activate()
+    rpy.r.assign('X', X)
+    rpy.r.assign('Y', Y)
+    rpy.r('X=as.matrix(X)')
+    rpy.r('Y=as.numeric(Y)')
+    rpy.r('set.seed(1)')
+    rpy.r('G = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
+    rpy.r("L = G[['lambda.min']]")
+    rpy.r("L1 = G[['lambda.1se']]")
+    L = rpy.r('L')
+    L1 = rpy.r('L1')
+    numpy2ri.deactivate()
+    return float(1.00001 * L[0]), float(1.00001 * L1[0]),
