@@ -78,6 +78,10 @@ class marginal_screening(screening):
                  threshold,
                  perturb=None):
 
+        threshold = np.asarray(threshold)
+        if threshold.shape == ():
+            threshold = np.ones_like(observed_data) * threshold
+
         self.threshold = threshold
         screening.__init__(self,
                            observed_data,
