@@ -76,11 +76,11 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
     summaryR0 = R.summary(dispersion=dispersion, compute_intervals=False)
     targets = []
 
-    if len(observed_set) > 0:
+    for idx in sorted(observed_set)[:1]:
         idx = sorted(observed_set)[0]
         print("variable: ", idx, "total selected: ", len(observed_set))
         true_target = [truth[idx]]
-        targets.append(true_target)
+        targets.extend(true_target)
 
         (pivot, 
          interval,
@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'lasso_exact_CV.csv'
+        csvfile = 'lasso_exact_CV2.csv'
 
         if df is not None and i % 2 == 1 and i > 0:
 

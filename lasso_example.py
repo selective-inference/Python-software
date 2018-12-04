@@ -81,6 +81,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
     print(summaryR)
     print(R.active, 'huh')
 
+    targets = []
     for idx in sorted(observed_set):
         print("variable: ", idx, "total selected: ", len(observed_set))
         true_target = [truth[idx]]
@@ -147,7 +148,8 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
                              'liu_lower':liu_lower,
                              'upper':upper,
                              'lower':lower,
-                             'liu_coverage':liu_covered})
+                             'liu_coverage':liu_covered,
+                             'target':truth[sorted(observed_set)]})
 
 
 if __name__ == "__main__":
