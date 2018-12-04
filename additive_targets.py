@@ -15,7 +15,7 @@ from core import (infer_full_target,
                   repeat_selection,
                   probit_fit)
 
-def simulate(n=100, p=30, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 

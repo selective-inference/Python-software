@@ -14,7 +14,7 @@ from core import (infer_full_target,
                   gbm_fit,
                   repeat_selection)
 
-def simulate(n=100, p=30, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 
