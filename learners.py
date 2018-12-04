@@ -68,8 +68,8 @@ class mixture_learner(object):
     def learning_proposal(self):
         sd = np.sqrt(self.target_cov[0, 0])
         center = self.observed_target
-        scale = np.random.choice([0.5, 1, 1.5, 2], 1)
-        return np.random.standard_normal() * sd * scale + center                    
+        scale = np.random.choice([0.5, 1, 1.5, 2, 5, 10], 1)
+        return np.random.standard_normal(center.shape) * sd * scale + center                    
 
     def learn(self,
               fit_probability,
@@ -113,7 +113,7 @@ class mixture_learner(object):
             def check_selection(result):
                 return result == observed_outcome
 
-        direction = cross_cov.dot(np.linalg.inv(target_cov).reshape((1,1))) # move along a ray through S with this direction
+        direction = cross_cov.dot(np.linalg.inv(target_cov)) # move along a ray through S with this direction
 
         learning_Y, learning_T = [], []
 
@@ -135,9 +135,13 @@ class mixture_learner(object):
              learning_T.append(T)
 
         learning_Y = np.array(learning_Y, np.float)
-        learning_T = np.squeeze(np.array(learning_T, np.float))
+        learning_T = np.array(learning_T, np.float)
+        if observed_target.shape == ():
+            learning_Y.reshape((-1, 1))
+            learning_T.reshape((-1, 1))
 
-        print('prob(select): ', np.mean(learning_Y))
-        conditional_law = fit_probability(learning_T, learning_Y, **fit_args)
-        return conditional_law
+        print(learning_Y.shape, 'shape')
+        print('prob(select): ', np.mean(learning_Y, 0))
+        conditional_laws = [fit_probability(learning_T, learning_Y[:,i], **fit_args) for i in range(learning_Y.shape[1])]
+        return conditional_laws
 
