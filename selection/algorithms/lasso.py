@@ -1915,17 +1915,25 @@ class ROSI(lasso):
     def summary(self, 
                 level=0.95,
                 compute_intervals=False,
-                dispersion=None):
+                dispersion=None,
+                truth=None):
         """
         Summary table for inference adjusted for selection.
         Parameters
         ----------
         level : float
             Form level*100% selective confidence intervals.
+
         compute_intervals : bool
             Should we compute confidence intervals?
+
         dispersion : float
             Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
+
+        truth : np.array
+            True values of each beta for selected variables. If not None, a column 'pval' are p-values
+            computed under these corresponding null hypotheses.
+
         Returns
         -------
         pval_summary : np.recarray
@@ -1948,6 +1956,9 @@ class ROSI(lasso):
             # matrix!
             # dispersion comes into truncated Gaussian below
 
+            if truth is None:
+                truth = np.zeros(len(active_set))
+
             for j in range(len(active_set)):
                 idx = self.active[j]
                 lower, upper = _truncation_interval(Qbeta_bar, 
@@ -1959,7 +1970,7 @@ class ROSI(lasso):
                                                     wide=True)
 
                 sd = sqrt_dispersion * np.sqrt(QiE[j, j])
-                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
+                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd, mu=truth[j])
                 pvalue = tg.cdf(beta_barE[j])
                 pvalue = float(2 * min(pvalue, 1 - pvalue))
 
