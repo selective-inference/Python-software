@@ -66,7 +66,7 @@ class mixture_learner(object):
                             cross_cov)
 
     def learning_proposal(self):
-        sd = np.sqrt(self.target_cov[0, 0])
+        sd = np.sqrt(np.diag(self.target_cov))
         center = self.observed_target
         scale = np.random.choice([0.5, 1, 1.5, 2, 5, 10], 1)
         return np.random.standard_normal(center.shape) * sd * scale + center                    
@@ -143,5 +143,18 @@ class mixture_learner(object):
         print(learning_Y.shape, 'shape')
         print('prob(select): ', np.mean(learning_Y, 0))
         conditional_laws = [fit_probability(learning_T, learning_Y[:,i], **fit_args) for i in range(learning_Y.shape[1])]
-        return conditional_laws
+        return conditional_laws, (learning_T, learning_Y)
+
+class bootstrap_learner(object):
+
+    """
+    Called the bootstrap because this is the 
+    distribution we'd get if we bootstrap our target
+    and keep the nuisance parameter fixed.
+    """
+
+    def learning_proposal(self):
+        sd = np.sqrt(self.target_cov[0, 0])
+        center = self.observed_target
+        return np.random.standard_normal(center.shape) * sd + center                    
 
