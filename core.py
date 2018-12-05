@@ -162,10 +162,11 @@ def infer_full_target(algorithm,
                             target_cov,
                             cross_cov)
                               
-    weight_fns = learner.learn(fit_probability,
-                               fit_args=fit_args,
-                               check_selection=lambda result: np.array([f in set(result) for f in features]),
-                               B=B)
+    weight_fns, learning_data = learner.learn(fit_probability,
+                                              fit_args=fit_args,
+                                              check_selection=lambda result: np.array([f in set(result) for f in features]),
+                                              B=B)
+
 
     results = []
     for i in range(len(features)):
@@ -243,6 +244,7 @@ def _inference(observed_target,
     pivot = 2 * min(pivot, 1-pivot)
 
     pvalue = exp_family.cdf(0, x=observed_target)
+    pvalue = 2 * min(pvalue, 1-pvalue)
 
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])

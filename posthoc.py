@@ -78,8 +78,8 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
     for idx in sorted(observed_set)[:1]:
         print("variable: ", idx, "total selected: ", len(observed_set))
-        true_target = truth[idx]
-        targets.append(true_target)
+        true_target = [truth[idx]]
+        targets.extend(true_target)
 
         np.random.seed(seed)
         X2, _, _ = gaussian_instance(n=n,
@@ -107,7 +107,7 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
         quantile = ndist.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
 
-        naive_pivot = (1 - ndist.cdf((observed_target - true_target) / target_sd))
+        naive_pivot = (1 - ndist.cdf((observed_target - true_target[0]) / target_sd))
         naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
         naive_pivots.append(naive_pivot)
 
@@ -115,7 +115,7 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
         naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
         naive_pvalues.append(naive_pvalue)
 
-        naive_covered.append((naive_interval[0] < true_target) * (naive_interval[1] > true_target))
+        naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
 
         (pivot, 
@@ -123,18 +123,19 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
          pvalue,
          _) = infer_full_target(selection_algorithm,
                                 observed_set,
-                                idx,
+                                [idx],
                                 smooth_sampler,
                                 dispersion,
                                 hypothesis=true_target,
                                 fit_probability=probit_fit,
                                 success_params=success_params,
                                 alpha=alpha,
-                                B=1000)
+                                B=1000)[0]
 
         pvalues.append(pvalue)
         pivots.append(pivot)
-        covered.append((interval[0] < true_target) * (interval[1] > true_target))
+        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
+        print(interval, 'interval')
         lengths.append(interval[1] - interval[0])
         lower.append(interval[0])
         upper.append(interval[1])
@@ -160,8 +161,9 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     plt.clf()
 
+    iseed = int(np.fabs(np.random.standard_normal() * 1000))
     for i in range(500):
-        df = simulate(seed=i)
+        df = simulate(seed=i + iseed)
         csvfile = 'posthoc.csv'
 
         if df is not None and i % 2 == 1 and i > 0:
