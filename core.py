@@ -15,7 +15,7 @@ from fitters import (logit_fit,
 from samplers import (normal_sampler,
                       split_sampler)
 from learners import mixture_learner
-
+                     
 def infer_general_target(algorithm,
                          observed_outcome,
                          observed_sampler,
@@ -97,7 +97,8 @@ def infer_full_target(algorithm,
                       alpha=0.1,
                       success_params=(1, 1),
                       B=500,
-                      learner_klass=mixture_learner):
+                      learner_klass=mixture_learner,
+                      single=False):
 
     '''
 
@@ -168,23 +169,32 @@ def infer_full_target(algorithm,
                                               B=B)
 
 
-    results = []
-    for i in range(len(features)):
-        cur_nuisance = observed_target - target_cov[i] / target_cov[i, i] * observed_target[i]
-        cur_nuisance.shape = (len(features),)
-        direction = target_cov[i] / target_cov[i, i]
+    if len(features) == 1 and success_params == (1, 1) and single:
+        single_inference = _single_parameter_inference(observed_target,
+                                                       target_cov,
+                                                       learning_data,
+                                                       learner.proposal_density, 
+                                                       hypothesis=hypothesis[0],
+                                                       alpha=alpha)
+        return [single_inference + (None,)]
+    else:
+        results = []
+        for i in range(len(features)):
+            cur_nuisance = observed_target - target_cov[i] / target_cov[i, i] * observed_target[i]
+            cur_nuisance.shape = (len(features),)
+            direction = target_cov[i] / target_cov[i, i]
 
-        def new_weight_fn(cur_nuisance, direction, weight_fn, target_val):
-            return weight_fn(np.multiply.outer(target_val, direction) + cur_nuisance[None, :])
+            def new_weight_fn(cur_nuisance, direction, weight_fn, target_val):
+                return weight_fn(np.multiply.outer(target_val, direction) + cur_nuisance[None, :])
 
-        new_weight_fn = functools.partial(new_weight_fn, cur_nuisance, direction, weight_fns[i])
-        results.append(_inference(observed_target[i],
-                                  target_cov[i, i].reshape((1, 1)),
-                                  new_weight_fn,
-                                  hypothesis=hypothesis[i],
-                                  alpha=alpha,
-                                  success_params=success_params))
-    return results
+            new_weight_fn = functools.partial(new_weight_fn, cur_nuisance, direction, weight_fns[i])
+            results.append(_inference(observed_target[i],
+                                      target_cov[i, i].reshape((1, 1)),
+                                      new_weight_fn,
+                                      hypothesis=hypothesis[i],
+                                      alpha=alpha,
+                                      success_params=success_params))
+        return results
 
 def _inference(observed_target,
                target_cov,
@@ -235,7 +245,7 @@ def _inference(observed_target,
     if (k, m) != (1, 1):
         weight_val = np.array([binom(m, p).sf(k-1) for p in weight_fn(target_val)])
     else:
-        weight_val = weight_fn(target_val)
+        weight_val = np.squeeze(weight_fn(target_val))
 
     weight_val *= ndist.pdf(target_val / target_sd)
     exp_family = discrete_family(target_val, weight_val)
@@ -250,6 +260,62 @@ def _inference(observed_target,
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])
 
     return pivot, rescaled_interval, pvalue, weight_fn  # TODO: should do MLE as well does discrete_family do this?
+
+def _single_parameter_inference(observed_target,
+                                target_cov,
+                                learning_data,
+                                proposal_density, 
+                                hypothesis=0,
+                                alpha=0.1):
+
+    '''
+
+
+    lambda t: scipy.stats.norm.pdf(t / np.sqrt(target_cov)) * weight_fn(t)
+
+    Parameters
+    ----------
+
+    observed_target : float
+
+    target_cov : np.float((1, 1))
+
+    hypothesis : float
+        Hypothesised true mean of target.
+
+    alpha : np.float
+        Level for 1 - confidence.
+
+    Returns
+    -------
+
+    pivot : float
+        Probability integral transform of the observed_target at mean parameter "hypothesis"
+
+    confidence_interval : (float, float)
+        (1 - alpha) * 100% confidence interval.
+
+    '''
+
+    T, Y = learning_data
+    target_val = T[Y == 1]
+    print(target_val.shape, 'shape')
+
+    target_var = target_cov[0, 0]
+    target_sd = np.sqrt(target_var)
+    weight_val = ndist.pdf((target_val - observed_target) / target_sd) / proposal_density(target_val.reshape((-1,1)))
+    exp_family = discrete_family(target_val, weight_val)
+
+    pivot = exp_family.cdf((hypothesis - observed_target) / target_var, x=observed_target)
+    pivot = 2 * min(pivot, 1-pivot)
+
+    pvalue = exp_family.cdf(-observed_target / target_var, x=observed_target)
+    pvalue = 2 * min(pvalue, 1-pvalue)
+
+    interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
+    rescaled_interval = (interval[0] * target_var, interval[1] * target_var)
+
+    return pivot, rescaled_interval, pvalue  # TODO: should do MLE as well does discrete_family do this?
 
 def repeat_selection(base_algorithm, sampler, min_success, num_tries):
     """
