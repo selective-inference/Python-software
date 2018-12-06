@@ -14,6 +14,7 @@ from core import (infer_full_target,
                   logit_fit,
                   repeat_selection,
                   probit_fit)
+from keras_fit import keras_fit
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
@@ -95,10 +96,11 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
                                 splitting_sampler,
                                 dispersion,
                                 hypothesis=true_target,
-                                fit_probability=probit_fit,
+                                fit_probability=keras_fit,
+                                fit_args={'epochs':200},
                                 success_params=success_params,
                                 alpha=alpha,
-                                B=2000)[0]
+                                B=1000)[0]
 
         pvalues.append(pvalue)
         pivots.append(pivot)
@@ -162,7 +164,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'lasso_exact2.csv'
+        csvfile = 'keras.csv'
 
         if df is not None and i % 2 == 1 and i > 0:
 

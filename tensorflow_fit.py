@@ -1,19 +1,32 @@
 import tensorflow as tf
 import numpy as np
 
-def extract_weights(keys,sess):
-    weights_map = {}
-    for var in tf.trainable_variables():
-        if var.name in keys:
-            weights_map[var.name] = sess.run(var)
-    return weights_map
+def create_l2_loss(output,
+                   labels):
 
-def create_l2_loss(output,labels):
-    loss = tf.losses.mean_squared_error(labels=labels, predictions=output)
+    loss = tf.losses.mean_squared_error(labels=labels, 
+                                        predictions=output)
+
     return loss
 
-def create_optimizer(nsteps=1000,batch_size=20,opt=tf.train.GradientDescentOptimizer(0.01)):	
-    def optimize(create_predictor,create_loss,X,Y,weights=None):
+def create_logit_loss(output,
+                      labels):
+
+    loss = tf.losses.mean_squared_error(labels=labels, 
+                                        predictions=output)
+
+    return loss
+
+def create_optimizer(nsteps=1000,
+                     batch_size=20,
+                     opt=tf.train.GradientDescentOptimizer(0.01)):	
+
+    def optimize(create_predictor,
+                 create_loss,
+                 X,
+                 Y,
+                 weights=None):
+
         tf.reset_default_graph()
         session = tf.Session()
         x,y = tf.data.Dataset.from_tensor_slices((X,Y)).shuffle(1000).repeat().batch(batch_size).make_one_shot_iterator().get_next()
@@ -37,9 +50,22 @@ def create_optimizer(nsteps=1000,batch_size=20,opt=tf.train.GradientDescentOptim
             _, loss_val = session.run((train,loss))
             print('optimizing=',i,loss_val)
         return extract_weights(keys,session)
+
     return optimize
 
-def predict(weights,create_predictor,X):
+def extract_weights(keys,
+                    sess):
+
+    weights_map = {}
+    for var in tf.trainable_variables():
+        if var.name in keys:
+            weights_map[var.name] = sess.run(var)
+    return weights_map
+
+def predict(weights,
+            create_predictor,
+            X):
+
     # predict on all the data...
     tf.reset_default_graph()
     session = tf.Session()
@@ -51,12 +77,22 @@ def predict(weights,create_predictor,X):
     print('predictions on a all data -- might crash if it is big',pred)
     return pred
 
+def fit(Xtrain,
+        Y,
+        create_predictor,
+        create_loss,
+        optimize):
 
-def fit(Xtrain,Y,create_predictor,create_loss,optimize):
     print('x0=',Xtrain.shape)
     print('x1=',Y.shape)
-    weights = optimize(create_predictor,create_loss,Xtrain,Y)
+
+    weights = optimize(create_predictor,
+                       create_loss,
+                       Xtrain,
+                       Y)
+
     def create_pr(Xtest):
         return predict(weights,create_predictor,Xtest)
+
     return create_pr
 

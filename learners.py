@@ -9,6 +9,8 @@ from samplers import normal_sampler
 
 class mixture_learner(object):
 
+    scales = [0.5, 1, 1.5, 2, 5, 10] # for drawing noise
+
     def __init__(self,
                  algorithm, 
                  observed_outcome,
@@ -53,6 +55,7 @@ class mixture_learner(object):
             Proposed position of new T to add to evaluate algorithm at.
         """
 
+        print(self.scales, 'scales')
         (self.algorithm,
          self.observed_outcome,
          self.observed_sampler,
@@ -65,11 +68,32 @@ class mixture_learner(object):
                             target_cov,
                             cross_cov)
 
+        self._chol = np.linalg.cholesky(self.target_cov)
+        self._cholinv = np.linalg.inv(self._chol)
+
     def learning_proposal(self):
-        sd = np.sqrt(np.diag(self.target_cov))
         center = self.observed_target
-        scale = np.random.choice([0.5, 1, 1.5, 2, 5, 10], 1)
-        return np.random.standard_normal(center.shape) * sd * scale + center                    
+        scale = np.random.choice(self.scales, 1)
+        return self._chol.dot(np.random.standard_normal(center.shape)) * scale + center                    
+
+    def proposal_density(self, target_val):
+        '''
+        The (conditional, given self.center) density of our draws.
+
+        Parameters
+        ----------
+
+        target_val : np.ndarray((-1, self.center.shape))
+
+        '''
+
+        target_val = np.asarray(target_val)
+        if target_val.ndim != 2:
+            raise ValueError('target_val should be 2-dimensional -- otherwise possibly ambiguous')
+        center = self.observed_target
+        Z = (target_val - center[None, :]).dot(self._cholinv.T)
+        arg = (Z**2).sum(1) / 2.
+        return np.array([np.exp(-arg/scale**2) for scale in self.scales]).mean(0)
 
     def learn(self,
               fit_probability,
@@ -142,19 +166,6 @@ class mixture_learner(object):
 
         print(learning_Y.shape, 'shape')
         print('prob(select): ', np.mean(learning_Y, 0))
-        conditional_laws = [fit_probability(learning_T, learning_Y[:,i], **fit_args) for i in range(learning_Y.shape[1])]
+        conditional_laws = fit_probability(learning_T, learning_Y, **fit_args)
         return conditional_laws, (learning_T, learning_Y)
-
-class bootstrap_learner(object):
-
-    """
-    Called the bootstrap because this is the 
-    distribution we'd get if we bootstrap our target
-    and keep the nuisance parameter fixed.
-    """
-
-    def learning_proposal(self):
-        sd = np.sqrt(self.target_cov[0, 0])
-        center = self.observed_target
-        return np.random.standard_normal(center.shape) * sd + center                    
 

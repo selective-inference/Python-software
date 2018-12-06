@@ -98,7 +98,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
         pvalues.append(pvalue)
         pivots.append(pivot)
-        covered.append((interval[0] < true_target) * (interval[1] > true_target))
+        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
         lengths.append(interval[1] - interval[0])
 
         target_sd = np.sqrt(dispersion * XTXi[idx, idx])
@@ -106,7 +106,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
         quantile = ndist.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
 
-        naive_pivot = (1 - ndist.cdf((observed_target - true_target) / target_sd))
+        naive_pivot = (1 - ndist.cdf((observed_target - true_target[0]) / target_sd))
         naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
         naive_pivots.append(naive_pivot)
 
@@ -114,7 +114,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
         naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
         naive_pvalues.append(naive_pvalue)
 
-        naive_covered.append((naive_interval[0] < true_target) * (naive_interval[1] > true_target))
+        naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
         lower.append(interval[0])
         upper.append(interval[1])
@@ -159,7 +159,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'lasso_exact_CV2.csv'
+        csvfile = 'lasso_exact_CV.csv'
 
         if df is not None and i % 2 == 1 and i > 0:
 

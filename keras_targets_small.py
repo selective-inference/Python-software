@@ -15,8 +15,11 @@ from core import (infer_full_target,
                   gbm_fit,
                   repeat_selection,
                   probit_fit)
+from keras_fit import keras_fit, keras_fit_unlinked
+from learners import mixture_learner
+mixture_learner.scales = [0.5, 0.75, 1, 1.5]
 
-def simulate(n=100, p=30, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
+def simulate(n=100, p=10, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 
@@ -45,11 +48,11 @@ def simulate(n=100, p=30, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
         loss = rr.quadratic_loss((p,), Q=XTX)
         pen = rr.l1norm(p, lagrange=lam)
 
-        scale = 0.5
+        scale = 0.
         noisy_S = sampler(scale=scale)
         loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
         problem = rr.simple_problem(loss, pen)
-        soln = problem.solve(max_its=50, tol=1.e-6)
+        soln = problem.solve()
         success += soln != 0
         return set(np.nonzero(success)[0])
 
@@ -83,7 +86,7 @@ def simulate(n=100, p=30, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     splitting_sampler,
                                     dispersion,
                                     hypothesis=true_target,
-                                    fit_probability=gbm_fit,
+                                    fit_probability=keras_fit_unlinked,
                                     fit_args={},
                                     success_params=success_params,
                                     alpha=alpha,
@@ -133,26 +136,25 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate(B=2000)
-        csvfile = 'gbm_targets_small.csv'
+        csvfile = 'keras_targets_small.csv'
 
-        if i % 2 == 1 and i > 0:
+        try:
+            df = pd.concat([df, pd.read_csv(csvfile)])
+        except FileNotFoundError:
+            pass
 
-            try:
-                df = pd.concat([df, pd.read_csv(csvfile)])
-            except FileNotFoundError:
-                pass
+        if df is not None and len(df['pivot']) > 0:
 
-            if len(df['pivot']) > 0:
+            print(df['pivot'], 'pivot')
+            plt.clf()
+            U = np.linspace(0, 1, 101)
+            plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
+            for b in np.unique(df['batch_size']):
+                plt.plot(U, sm.distributions.ECDF(np.array(df['pivot'])[np.array(df['batch_size']) == b])(U), label='B=%d' % b, linewidth=3)
 
-                plt.clf()
-                U = np.linspace(0, 1, 101)
-                plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
-                for b in np.unique(df['batch_size']):
-                    plt.plot(U, sm.distributions.ECDF(np.array(df['pivot'])[np.array(df['batch_size']) == b])(U), label='B=%d' % b, linewidth=3)
-
-                plt.legend()
-                plt.plot([0,1], [0,1], 'k--', linewidth=2)
-                plt.savefig(csvfile[:-4] + '.pdf')
+            plt.legend()
+            plt.plot([0,1], [0,1], 'k--', linewidth=2)
+            plt.savefig(csvfile[:-4] + '.pdf')
 
             df.to_csv(csvfile, index=False)
 
