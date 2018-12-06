@@ -6,7 +6,7 @@ from keras.models import Sequential
 from keras.layers import Dense, Dropout
 from keras.optimizers import SGD
 
-def keras_fit_unlinked(T, Y, **kwargs):
+def keras_fit(T, Y, **kwargs):
 
     if Y.ndim == 1:
         Y.shape = (-1, 1)
@@ -16,11 +16,11 @@ def keras_fit_unlinked(T, Y, **kwargs):
     for j in range(Y.shape[1]):
         y = Y[:,j]
 
-        fit_fn = keras_fit(T, y, **kwargs)[0]
+        fit_fn = keras_fit_multilabel(T, y, **kwargs)[0]
         fitfns.append(fit_fn)
     return fitfns
 
-def keras_fit(T, Y, sizes=[500, 500], epochs=50, activation='relu', dropout=0, **ignored):
+def keras_fit_multilabel(T, Y, sizes=[500, 500], epochs=50, activation='relu', dropout=0, **ignored):
 
     if Y.ndim == 1:
         Y.shape = (-1, 1)
