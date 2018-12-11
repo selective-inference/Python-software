@@ -9,13 +9,13 @@ from selection.distributions.discrete_family import discrete_family
 
 # local imports
 
-from fitters import (logit_fit,
-                     probit_fit,
-                     gbm_fit,
-                     random_forest_fit)
-from samplers import (normal_sampler,
-                      split_sampler)
-from learners import mixture_learner
+from .fitters import (logit_fit,
+                      probit_fit,
+                      gbm_fit,
+                      random_forest_fit)
+from .samplers import (normal_sampler,
+                       split_sampler)
+from .learners import mixture_learner
                      
 def infer_general_target(algorithm,
                          observed_outcome,

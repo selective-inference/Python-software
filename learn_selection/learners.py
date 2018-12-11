@@ -5,7 +5,7 @@ from scipy.stats import norm as ndist
 
 from selection.distributions.discrete_family import discrete_family
 
-from samplers import normal_sampler
+from .samplers import normal_sampler
 
 class mixture_learner(object):
 
