@@ -75,14 +75,14 @@ def infer_general_target(algorithm,
                             target_cov,
                             cross_cov)
                               
-    weight_fn = learner.learn(fit_probability,
-                              fit_args=fit_args,
-                              check_selection=None,
-                              B=B)[0]
+    weight_fns, learning_data = learner.learn(fit_probability,
+                                              fit_args=fit_args,
+                                              check_selection=None,
+                                              B=B)
 
     return _inference(observed_target,
                       target_cov,
-                      weight_fn,
+                      weight_fns[0],
                       hypothesis=hypothesis,
                       alpha=alpha,
                       success_params=success_params)

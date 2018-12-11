@@ -4,6 +4,7 @@ from selection.distributions.discrete_family import discrete_family
 from scipy.stats import norm as ndist
 import rpy2.robjects as rpy
 import rpy2.robjects.numpy2ri
+import matplotlib.pyplot as plt
 rpy.r('library(splines)')
 
 # description of statistical problem

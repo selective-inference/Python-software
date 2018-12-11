@@ -16,19 +16,19 @@ from learn_selection.keras_fit import keras_fit
 
 from sklearn.linear_model import lasso_path
 
-def simulate(n=1000, p=100, s=20, signal=(2, 4), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
     X, y, truth = gaussian_instance(n=n,
-                                    p=p,
+                                    p=p, 
                                     s=s,
                                     equicorrelated=False,
-                                    rho=0.1,
+                                    rho=0.5, 
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=True)[:3]
+                                    scale=False)[:3]
 
     dispersion = sigma**2
 
@@ -94,7 +94,7 @@ def simulate(n=1000, p=100, s=20, signal=(2, 4), sigma=2, alpha=0.1):
                                     fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
                                     success_params=success_params,
                                     alpha=alpha,
-                                    B=3000)
+                                    B=2000)
         for i, result in enumerate(results):
 
             (pivot, 
@@ -151,7 +151,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'stability_selection.csv'
+        csvfile = 'stability_selection_harder.csv'
 
         if df is not None and i > 0:
 

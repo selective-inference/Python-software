@@ -7,19 +7,19 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import lasso, ROSI
-from knockoffs import lasso_glmnet
+from learn_selection.knockoffs import lasso_glmnet
 
 import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
 rpy.r('library(knockoff); library(glmnet)')
 from rpy2 import rinterface
 
-from core import (infer_general_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  repeat_selection,
-                  probit_fit)
+from learn_selection.core import (infer_general_target,
+                                  split_sampler,
+                                  normal_sampler,
+                                  logit_fit,
+                                  repeat_selection,
+                                  probit_fit)
 
 def simulate(n=100, p=50, s=5, signal=(0, 0), sigma=2, alpha=0.1, glmnet=True):
 
@@ -105,7 +105,7 @@ def simulate(n=100, p=50, s=5, signal=(0, 0), sigma=2, alpha=0.1, glmnet=True):
 
         linfunc = np.linalg.pinv(X[:,observed_list])[0]
         true_target = linfunc.dot(X.dot(truth))
-        observed_target = linfunc.dot(y)
+        observed_target = np.array([linfunc.dot(y)])
         cov_target = np.array([[np.linalg.norm(linfunc)**2 * dispersion]])
         cross_cov = X.T.dot(linfunc).reshape((-1,1)) * dispersion
 
@@ -116,10 +116,10 @@ def simulate(n=100, p=50, s=5, signal=(0, 0), sigma=2, alpha=0.1, glmnet=True):
                                           observed_target,
                                           cross_cov,
                                           cov_target,
-                                          hypothesis=true_target,
+                                          hypothesis=[true_target],
                                           fit_probability=probit_fit,
                                           alpha=alpha,
-                                          B=2000)
+                                          B=2000)[:2]
 
         pvalues.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))

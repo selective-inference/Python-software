@@ -7,16 +7,15 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import ROSI
-from knockoffs import cv_glmnet_lam, lasso_glmnet
 
-from core import (infer_full_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  repeat_selection,
-                  probit_fit)
+from learn_selection.core import (infer_full_target,
+                                  split_sampler, 
+                                  normal_sampler,
+                                  logit_fit,
+                                  repeat_selection,
+                                  probit_fit)
 
-def simulate(n=1000, p=50, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
+def simulate(n=1000, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
     # description of statistical problem
 

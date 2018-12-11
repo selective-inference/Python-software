@@ -5,11 +5,11 @@ from scipy.stats import norm as ndist
 
 from selection.tests.instance import gaussian_instance
 
-from core import (infer_full_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  probit_fit)
+from learn_selection.core import (infer_full_target,
+                                  split_sampler,
+                                  normal_sampler,
+                                  logit_fit,
+                                  probit_fit)
 
 def simulate(n=1000, p=60, s=15, signal=3, sigma=2, alpha=0.1):
 
@@ -69,13 +69,14 @@ def simulate(n=1000, p=60, s=15, signal=3, sigma=2, alpha=0.1):
         (pivot, 
          interval) = infer_full_target(selection_algorithm,
                                        observed_set,
-                                       idx,
+                                       [idx],
                                        splitting_sampler,
                                        dispersion,
-                                       hypothesis=true_target,
+                                       hypothesis=[true_target],
                                        fit_probability=probit_fit,
+                                       success_params=(1, 1),
                                        alpha=alpha,
-                                       B=100)
+                                       B=1000)[0][:2]
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))

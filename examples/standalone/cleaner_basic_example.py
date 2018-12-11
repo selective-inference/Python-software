@@ -1,8 +1,9 @@
 import numpy as np
-from core import (infer_general_target,
-                  normal_sampler,
-                  logit_fit,
-                  probit_fit)
+
+from learn_selection.core import (infer_general_target,
+                                  normal_sampler,
+                                  logit_fit,
+                                  probit_fit)
 
 def simulate(n=100):
 
@@ -53,7 +54,7 @@ def simulate(n=100):
                                            cross_cov,
                                            target_cov,
                                            hypothesis=true_target,
-                                           fit_probability=probit_fit)
+                                           fit_probability=probit_fit)[:2]
 
     return pivot, (interval[0] < true_target) * (interval[1] > true_target), interval[1] - interval[0]
 
