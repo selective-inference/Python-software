@@ -44,7 +44,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
         loss = rr.quadratic_loss((p,), Q=XTX)
         pen = rr.l1norm(p, lagrange=lam)
 
-        scale = 0.5
+        scale = 0.
         noisy_S = sampler(scale=scale)
         loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
         problem = rr.simple_problem(loss, pen)
@@ -64,7 +64,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     success_params = (1, 1)
 
-    observed_set = repeat_selection(selection_algorithm, smooth_sampler, *success_params)
+    observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
 
     # find the target, based on the observed outcome
 
@@ -72,7 +72,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     targets = []
     idx = sorted(observed_set)
-    if len(idx) > 0:
+    if True:
         print("variable: ", idx, "total selected: ", len(observed_set))
         true_target = truth[idx]
 
@@ -108,6 +108,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
         upper = [r[1][1] for r in results]
         lengths = np.array(upper) - np.array(lower)
 
+    if len(pvalues) > 0:
         return pd.DataFrame({'pivot':pivots,
                              'pvalue':pvalues,
                              'coverage':covered,
@@ -133,9 +134,9 @@ if __name__ == "__main__":
         for B in [5000]:
             print(B)
             df = simulate(B=B)
-            csvfile = 'additive_targets.csv'
+            csvfile = 'multiple_targets.csv'
 
-            if i % 2 == 1 and i > 0:
+            if df is not None and i % 2 == 1 and i > 0:
 
                 try:
                     df = pd.concat([df, pd.read_csv(csvfile)])

@@ -36,7 +36,7 @@ for _ in range(20):
 
 from keras_fit import keras_fit
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
+def simulate(n=200, p=30, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 
@@ -69,7 +69,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
         loss = rr.quadratic_loss((p,), Q=XTX)
         pen = rr.l1norm(p, lagrange=lam)
 
-        scale = 0.
+        scale = 0.5
         noisy_S = sampler(scale=scale)
         soln = XTXi.dot(noisy_S)
         solnZ = soln / (np.sqrt(np.diag(XTXi)) * np.sqrt(dispersion))
@@ -103,7 +103,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     dispersion,
                                     hypothesis=true_target,
                                     fit_probability=keras_fit,
-                                    fit_args={'epochs':30, 'sizes':[100, 100], 'activation':'relu'},
+                                    fit_args={'epochs':5, 'sizes':[200]*10, 'dropout':0., 'activation':'relu'},
                                     success_params=success_params,
                                     alpha=alpha,
                                     B=B)
@@ -152,7 +152,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate(B=20000)
-        csvfile = 'keras_targets_BH.csv'
+        csvfile = 'keras_targets_BH2.csv'
 
         try:
             df = pd.concat([df, pd.read_csv(csvfile)])
