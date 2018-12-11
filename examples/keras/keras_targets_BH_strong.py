@@ -7,18 +7,18 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from core import (infer_full_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  gbm_fit,
-                  repeat_selection,
-                  probit_fit)
-from keras_fit import keras_fit
-from learners import mixture_learner
+from learn_selection.core import (infer_full_target,
+                                  split_sampler, 
+                                  normal_sampler,
+                                  logit_fit,
+                                  gbm_fit,
+                                  repeat_selection,
+                                  probit_fit)
+from learn_selection.keras_fit import keras_fit
+from learn_selection.learners import mixture_learner
 mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
 
-def BHfilter_(pval, q=0.2):
+def BHfilter(pval, q=0.2):
     pval = np.asarray(pval)
     pval_sort = np.sort(pval)
     comparison = q * np.arange(1, pval.shape[0] + 1.) / pval.shape[0]
@@ -28,7 +28,7 @@ def BHfilter_(pval, q=0.2):
         return np.nonzero(pval <= thresh)[0]
     return []
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
+def simulate(n=200, p=100, s=10, signal=(2.5, 3), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 
@@ -61,7 +61,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
         solnZ = soln / (np.sqrt(np.diag(XTXi)) * np.sqrt(dispersion * (1 + scale**2)))
         pval = ndist.cdf(solnZ)
         pval = 2 * np.minimum(pval, 1 - pval)
-        return set(BHfilter_(pval, q=0.2))
+        return set(BHfilter(pval, q=0.2))
 
     selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, dispersion)
 
@@ -88,7 +88,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     dispersion,
                                     hypothesis=true_target,
                                     fit_probability=keras_fit,
-                                    fit_args={'epochs':6, 'sizes':[200]*10, 'activation':'relu'},
+                                    fit_args={'epochs':5, 'sizes':[200]*10, 'activation':'relu'},
                                     success_params=success_params,
                                     alpha=alpha,
                                     B=B)
@@ -136,8 +136,8 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate(B=40000)
-        csvfile = 'keras_targets_BH_weak.csv'
+        df = simulate(B=20000)
+        csvfile = 'keras_targets_BH_strong.csv'
 
         try:
             df = pd.concat([df, pd.read_csv(csvfile)])

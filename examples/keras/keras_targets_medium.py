@@ -8,20 +8,19 @@ import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import ROSI
 
-from core import (infer_full_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  gbm_fit,
-                  repeat_selection,
-                  probit_fit)
+from learn_selection.core import (infer_full_target,
+                                  split_sampler,
+                                  normal_sampler,
+                                  logit_fit,
+                                  gbm_fit,
+                                  repeat_selection,
+                                  probit_fit)
 
-from learners import mixture_learner
+from learn_selection.keras_fit import keras_fit
+from learn_selection.learners import mixture_learner
 mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
 
-from keras_fit import keras_fit
-
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
+def simulate(n=200, p=50, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 
@@ -64,7 +63,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # run selection algorithm
 
-    success_params = (5, 7)
+    success_params = (1, 1)
 
     observed_set = repeat_selection(selection_algorithm, smooth_sampler, *success_params)
 
@@ -134,7 +133,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate(B=10000)
-        csvfile = 'keras_targets.csv'
+        csvfile = 'keras_targets_medium.csv'
 
         try:
             df = pd.concat([df, pd.read_csv(csvfile)])
