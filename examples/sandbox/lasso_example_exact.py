@@ -104,7 +104,7 @@ def simulate(n=100, p=50, s=5, signal=(0, 0), sigma=2, alpha=0.1, glmnet=True):
         print("variable: ", idx, "total selected: ", len(observed_set))
 
         linfunc = np.linalg.pinv(X[:,observed_list])[0]
-        true_target = linfunc.dot(X.dot(truth))
+        true_target = np.array([linfunc.dot(X.dot(truth))])
         observed_target = np.array([linfunc.dot(y)])
         cov_target = np.array([[np.linalg.norm(linfunc)**2 * dispersion]])
         cross_cov = X.T.dot(linfunc).reshape((-1,1)) * dispersion
@@ -116,23 +116,23 @@ def simulate(n=100, p=50, s=5, signal=(0, 0), sigma=2, alpha=0.1, glmnet=True):
                                           observed_target,
                                           cross_cov,
                                           cov_target,
-                                          hypothesis=[true_target],
+                                          hypothesis=true_target,
                                           fit_probability=probit_fit,
                                           alpha=alpha,
                                           B=2000)[:2]
 
         pvalues.append(pivot)
-        covered.append((interval[0] < true_target) * (interval[1] > true_target))
+        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
         lengths.append(interval[1] - interval[0])
 
         target_sd = np.sqrt(cov_target[0, 0])
         quantile = ndist.ppf(1 - 0.5 * alpha)
-        naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
-        naive_pivot = (1 - ndist.cdf((observed_target - true_target) / target_sd))
+        naive_interval = (observed_target[0] - quantile * target_sd, observed_target[0] + quantile * target_sd)
+        naive_pivot = (1 - ndist.cdf((observed_target[0] - true_target[0]) / target_sd))
         naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
         naive_pvalues.append(naive_pivot)
 
-        naive_covered.append((naive_interval[0] < true_target) * (naive_interval[1] > true_target))
+        naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
 
         # lee and rosi
