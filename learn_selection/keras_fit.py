@@ -34,7 +34,7 @@ def keras_fit_multilabel(T, Y, sizes=[500, 500], epochs=50, activation='relu', d
     # the final layer
     model.add(Dense(Y.shape[1], activation='sigmoid'))
 
-    sgd = SGD(lr=0.01, decay=1e-6, momentum=0.6, nesterov=True)
+    sgd = SGD(lr=0.03, decay=1e-3, momentum=0.6, nesterov=True)
     model.compile(loss='binary_crossentropy',
                   optimizer=sgd)
 

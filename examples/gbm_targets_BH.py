@@ -6,7 +6,6 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
-from selection.algorithms.lasso import ROSI
 
 from core import (infer_full_target,
                   split_sampler, # split_sampler not working yet
@@ -15,11 +14,29 @@ from core import (infer_full_target,
                   gbm_fit,
                   repeat_selection,
                   probit_fit)
-from keras_fit import keras_fit, keras_fit_unlinked
-from learners import mixture_learner
-mixture_learner.scales = [0.5, 0.75, 1, 1.5]
+from knockoffs import BHfilter
 
-def simulate(n=100, p=10, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
+def BHfilter_(pval, q=0.2):
+    pval = np.asarray(pval)
+    pval_sort = np.sort(pval)
+    comparison = q * np.arange(1, pval.shape[0] + 1.) / pval.shape[0]
+    passing = pval_sort < comparison
+    if passing.sum():
+        thresh = comparison[np.nonzero(passing)[0].max()]
+        return np.nonzero(pval <= thresh)[0]
+    return []
+
+from learners import mixture_learner
+mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
+
+for _ in range(20):
+    pv = np.random.sample(100) * 0.3
+    print(sorted(BHfilter_(pv, 0.2)), sorted(BHfilter(pv, 0.2)))
+    assert(sorted(BHfilter_(pv, 0.2)) == sorted(BHfilter(pv, 0.2)))
+
+from keras_fit import keras_fit
+
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # description of statistical problem
 
@@ -33,15 +50,19 @@ def simulate(n=100, p=10, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     random_signs=True,
                                     scale=False)[:3]
 
-    dispersion = sigma**2
-
+    XTX = X.T.dot(X)
+    XTXi = np.linalg.inv(XTX)
+    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
+    dispersion = np.linalg.norm(resid)**2 / (n-p)
+                         
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    def meta_algorithm(XTX, XTXi, lam, sampler):
-
+    counter = 0
+    def meta_algorithm(XTX, XTXi, dispersion, lam, sampler):
+        global counter
         p = XTX.shape[0]
         success = np.zeros(p)
 
@@ -50,19 +71,14 @@ def simulate(n=100, p=10, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
         scale = 0.
         noisy_S = sampler(scale=scale)
-        loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
-        problem = rr.simple_problem(loss, pen)
-        soln = problem.solve()
-        success += soln != 0
-        return set(np.nonzero(success)[0])
+        soln = XTXi.dot(noisy_S)
+        solnZ = soln / (np.sqrt(np.diag(XTXi)) * np.sqrt(dispersion))
+        pval = ndist.cdf(solnZ)
+        pval = 2 * np.minimum(pval, 1 - pval)
+        return set(BHfilter_(pval, q=0.2))
 
-    XTX = X.T.dot(X)
-    XTXi = np.linalg.inv(XTX)
-    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
-    dispersion = np.linalg.norm(resid)**2 / (n-p)
-                         
     lam = 4. * np.sqrt(n)
-    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, lam)
+    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, dispersion, lam)
 
     # run selection algorithm
 
@@ -86,7 +102,7 @@ def simulate(n=100, p=10, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     splitting_sampler,
                                     dispersion,
                                     hypothesis=true_target,
-                                    fit_probability=keras_fit_unlinked,
+                                    fit_probability=gbm_fit,
                                     fit_args={},
                                     success_params=success_params,
                                     alpha=alpha,
@@ -135,8 +151,8 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate(B=2000)
-        csvfile = 'keras_targets_small.csv'
+        df = simulate(B=20000)
+        csvfile = 'gbm_targets_BH.csv'
 
         try:
             df = pd.concat([df, pd.read_csv(csvfile)])

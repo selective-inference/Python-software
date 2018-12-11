@@ -6,6 +6,7 @@ import rpy2.robjects as rpy
 import rpy2.robjects.numpy2ri
 rpy.r('library(splines)')
 rpy.r('library(gbm)')
+rpy.r('library(randomForest)')
 
 def logit_fit(T, Y, df=20):
     rpy2.robjects.numpy2ri.activate()
@@ -94,7 +95,7 @@ def probit_fit(T, Y, df=20):
 
     return fitfns
 
-def gbm_fit(T, Y, ntrees=2000):
+def gbm_fit(T, Y, ntrees=5000):
     rpy2.robjects.numpy2ri.activate()
     rpy.r.assign('T', T)
     rpy.r.assign('n.trees', ntrees)
@@ -136,6 +137,49 @@ def gbm_fit(T, Y, ntrees=2000):
             result[test] = np.exp(val[test]) / (1 + np.exp(val[test]))
             result[~test] = 1 / (1 + np.exp(-val[~test]))
             return result
+        fitfns.append(fitfn)
+
+    return fitfns
+
+def random_forest_fit(T, Y, ntrees=5000):
+    rpy2.robjects.numpy2ri.activate()
+    rpy.r.assign('T', T)
+    rpy.r.assign('ntree', ntrees)
+    rpy2.robjects.numpy2ri.deactivate()
+
+    fitfns = []
+    for j in range(Y.shape[1]):
+        y = Y[:,j].astype(np.int)
+        rpy2.robjects.numpy2ri.activate()
+        rpy.r.assign('Y', y)
+        uuid_label = str(uuid.uuid1())[:8]
+        cmd = '''
+        Y = as.numeric(Y)
+        Y = as.factor(Y)
+        T = as.matrix(T)
+        colnames(T) = c(%s)
+        cur_data = data.frame(Y, T)
+        M = randomForest(Y ~ %s, data=cur_data, ntree=ntree)
+        fitfn_%s = function(t) {
+            t = data.frame(t)
+            colnames(t) = colnames(T)
+            val = predict(M, newdata=t, type='prob')[,2]
+            return(val)
+        } 
+        ''' % (', '.join(['"T%d"' % i for i in range(1, T.shape[1]+1)]),
+               ' + '.join(['T%d' % i for i in range(1, T.shape[1]+1)]),
+               uuid_label)
+        rpy.r(cmd)
+        rpy2.robjects.numpy2ri.deactivate()
+
+        # this is a little fragile obviously as someone might overwrite fitfn
+
+        def fitfn(t):
+            rpy2.robjects.numpy2ri.activate()
+            fitfn_r = rpy.r('fitfn_%s' % uuid_label)
+            val = np.asarray(fitfn_r(t))
+            rpy2.robjects.numpy2ri.deactivate()
+            return val
         fitfns.append(fitfn)
 
     return fitfns

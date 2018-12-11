@@ -19,7 +19,7 @@ from core import (infer_full_target,
 from learners import mixture_learner
 mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
 
-from keras_fit import keras_fit, keras_fit_unlinked
+from keras_fit import keras_fit
 
 def simulate(n=200, p=50, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
@@ -84,7 +84,7 @@ def simulate(n=200, p=50, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     splitting_sampler,
                                     dispersion,
                                     hypothesis=true_target,
-                                    fit_probability=keras_fit_unlinked,
+                                    fit_probability=keras_fit,
                                     fit_args={'epochs':30, 'sizes':[100, 100], 'activation':'relu'},
                                     success_params=success_params,
                                     alpha=alpha,

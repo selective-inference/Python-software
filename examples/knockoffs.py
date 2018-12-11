@@ -205,6 +205,16 @@ def factor_knockoffs(feature_cov, method='asdp'):
 
     return knockoff_chol
 
+def BHfilter(pval, q=0.2):
+    numpy2ri.activate()
+    rpy.r.assign('pval', pval)
+    rpy.r.assign('q', q)
+    rpy.r('Pval = p.adjust(pval, method="BH")')
+    rpy.r('S = which((Pval < q)) - 1')
+    S = rpy.r('S')
+    numpy2ri.deactivate()
+    return np.asarray(S, np.int)
+
 def cv_glmnet_lam(X, Y):
     """
 
