@@ -6,13 +6,13 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
-from knockoffs import lasso_glmnet
+from learn_selection.knockoffs import lasso_glmnet
 
-from core import (infer_general_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  probit_fit)
+from learn_selection.core import (infer_general_target,
+                                  split_sampler,
+                                  normal_sampler,
+                                  logit_fit,
+                                  probit_fit)
 
 def simulate(n=200, p=50, s=5, signal=(2, 3), sigma=2, alpha=0.1):
 
@@ -67,9 +67,10 @@ def simulate(n=200, p=50, s=5, signal=(2, 3), sigma=2, alpha=0.1):
         true_target = truth[idx]
 
         linfunc = np.linalg.pinv(X[:,observed_list])[idx]
-        observed_target = linfunc.dot(y)
+        observed_target = np.array([linfunc.dot(y)])
         cov_target = np.array([[np.linalg.norm(linfunc)**2 * dispersion]])
         cross_cov = X.T.dot(linfunc).reshape((-1,1)) * dispersion
+
         (pivot, 
          interval) = infer_general_target(selection_algorithm,
                                           observed_set,
@@ -77,10 +78,10 @@ def simulate(n=200, p=50, s=5, signal=(2, 3), sigma=2, alpha=0.1):
                                           observed_target,
                                           cross_cov,
                                           cov_target,
-                                          hypothesis=true_target,
+                                          hypothesis=[true_target],
                                           fit_probability=probit_fit,
                                           alpha=alpha,
-                                          B=1000)
+                                          B=1000)[:2]
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))

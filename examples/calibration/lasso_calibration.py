@@ -8,12 +8,12 @@ import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import ROSI
 
-from core import (infer_full_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  repeat_selection,
-                  probit_fit)
+from learn_selection.core import (infer_full_target,
+                                  split_sampler, 
+                                  normal_sampler,
+                                  logit_fit,
+                                  repeat_selection,
+                                  probit_fit)
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
@@ -113,7 +113,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
         naive_pivot = (1 - ndist.cdf((observed_target - true_target[0]) / target_sd))
         naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
-        naive_pivots.append(naive_pivot)
+        naive_pivots.append(naive_pivot.reshape(()))
 
         naive_pvalue = (1 - ndist.cdf(observed_target / target_sd))
         naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)

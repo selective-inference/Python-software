@@ -1,8 +1,8 @@
 import numpy as np
-from core import (infer_full_target,
-                  normal_sampler,
-                  logit_fit,
-                  probit_fit)
+from learn_selection.core import (infer_full_target,
+                                  normal_sampler,
+                                  logit_fit,
+                                  probit_fit)
 
 def simulate(n=100):
 
@@ -40,11 +40,11 @@ def simulate(n=100):
 
         pivot, interval = infer_full_target(selection_algorithm,
                                             observed_set,
-                                            idx,
+                                            [idx],
                                             observed_sampler,
                                             dispersion,
-                                            hypothesis=true_target,
-                                            fit_probability=probit_fit)
+                                            hypothesis=[true_target],
+                                            fit_probability=probit_fit)[0][:2]
 
         pivots.append(pivot)
         covered.append((interval[0] < true_target) * (interval[1] > true_target))

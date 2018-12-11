@@ -1,79 +1,73 @@
-import functools, uuid
+import functools
 
-import numpy as np, pandas as pd
+import numpy as np
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
+from selection.algorithms.lasso import ROSI
 
 from learn_selection.core import (infer_full_target,
-                                  split_sampler, # split_sampler not working yet
+                                  split_sampler, 
                                   normal_sampler,
                                   logit_fit,
+                                  repeat_selection,
                                   probit_fit)
 from learn_selection.keras_fit import keras_fit
 
-from sklearn.linear_model import lasso_path
-
-def simulate(n=1000, p=100, s=20, signal=(2, 4), sigma=2, alpha=0.1):
+def simulate(n=1000, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
     # description of statistical problem
 
+    np.random.seed(seed)
     X, y, truth = gaussian_instance(n=n,
-                                    p=p,
+                                    p=p, 
                                     s=s,
                                     equicorrelated=False,
-                                    rho=0.1,
+                                    rho=0.5, 
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=True)[:3]
+                                    scale=False,
+                                    center=False)[:3]
 
     dispersion = sigma**2
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
-    splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    def meta_algorithm(XTX, XTXi, sampler):
+    def meta_algorithm(X, XTXi, resid, sampler):
 
-        min_success = 6
-        ntries = 10
+        n, p = X.shape
 
-        def _alpha_grid(X, y, center, XTX):
-            n, p = X.shape
-            alphas, coefs, _ = lasso_path(X, y, Xy=center, precompute=XTX)
-            nselected = np.count_nonzero(coefs, axis=0)
-            return alphas[nselected < np.sqrt(0.8 * p)]
+        rho = 0.8
+        S = sampler(scale=0.) # deterministic with scale=0
+        ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
+        Xnew = rho * X + np.sqrt(1 - rho**2) * np.random.standard_normal(X.shape)
 
-        alpha_grid = _alpha_grid(X, y, sampler(scale=0.), XTX)
-        success = np.zeros((p, alpha_grid.shape[0]))
-
-        for _ in range(ntries):
-            scale = 1.  # corresponds to sub-samples of 50%
-            noisy_S = sampler(scale=scale)
-            _, coefs, _ = lasso_path(X, y, Xy = noisy_S, precompute=XTX, alphas=alpha_grid)
-            success += np.abs(np.sign(coefs))
-
-        selected = np.apply_along_axis(lambda row: any(x>min_success for x in row), 1, success)
-        vars = set(np.nonzero(selected)[0])
-        return vars
+        X_full = np.hstack([X, Xnew])
+        beta_full = np.linalg.pinv(X_full).dot(ynew)
+        winners = np.fabs(beta_full)[:p] > np.fabs(beta_full)[p:]
+        return set(np.nonzero(winners)[0])
 
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
     dispersion = np.linalg.norm(resid)**2 / (n-p)
-
-    #alpha_grid = _alpha_grid(X, y, XTX) # decreasing
-    #print("alpha grid length:", alpha_grid.shape)
-    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi)
+                         
+    selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
 
     # run selection algorithm
 
-    observed_set = selection_algorithm(splitting_sampler)
-    success_params = (1, 1)
+    success_params = (8, 10)
+
+    observed_set = repeat_selection(selection_algorithm, smooth_sampler, *success_params)
+
+    # find the target, based on the observed outcome
+
+    # find the target, based on the observed outcome
 
     pivots, covered, lengths, pvalues = [], [], [], []
     lower, upper = [], []
@@ -82,12 +76,11 @@ def simulate(n=1000, p=100, s=20, signal=(2, 4), sigma=2, alpha=0.1):
     targets = []
     true_target = truth[sorted(observed_set)]
 
-    print('num observed:', len(observed_set))
     if len(observed_set) > 0:
         results = infer_full_target(selection_algorithm,
                                     observed_set,
                                     sorted(observed_set),
-                                    splitting_sampler,
+                                    smooth_sampler,
                                     dispersion,
                                     hypothesis=true_target,
                                     fit_probability=keras_fit,
@@ -95,6 +88,7 @@ def simulate(n=1000, p=100, s=20, signal=(2, 4), sigma=2, alpha=0.1):
                                     success_params=success_params,
                                     alpha=alpha,
                                     B=3000)
+
         for i, result in enumerate(results):
 
             (pivot, 
@@ -129,15 +123,14 @@ def simulate(n=1000, p=100, s=20, signal=(2, 4), sigma=2, alpha=0.1):
     if len(pvalues) > 0:
         return pd.DataFrame({'pivot':pivots,
                              'pvalue':pvalues,
-                             'coverage':covered,
+                             'coverage':(np.array(lower) < true_target) * (np.array(upper) > true_target),
                              'length':lengths,
                              'naive_pivot':naive_pivots,
                              'naive_coverage':naive_covered,
                              'naive_length':naive_lengths,
                              'upper':upper,
                              'lower':lower,
-                             'target':truth[sorted(observed_set)],
-                             'id':str(uuid.uuid1())[:8]
+                             'target':true_target
                              })
 
 
@@ -151,7 +144,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'stability_selection.csv'
+        csvfile = 'knockoff_kernel_multi.csv'
 
         if df is not None and i > 0:
 
@@ -160,6 +153,7 @@ if __name__ == "__main__":
             except FileNotFoundError:
                 pass
 
+            df['coverage'] = (df['lower'] < df['target']) * (df['upper'] > df['target'])  
             if len(df['pivot']) > 0:
 
                 print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))

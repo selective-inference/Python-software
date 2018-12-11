@@ -61,92 +61,69 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
     # find the target, based on the observed outcome
 
-    # we just take the first target  
-
     pivots, covered, lengths, pvalues = [], [], [], []
     lower, upper = [], []
     naive_pvalues, naive_pivots, naive_covered, naive_lengths =  [], [], [], []
 
-    R = ROSI.gaussian(X, y, lam, approximate_inverse=None)
-    R.fit()
-    summaryR = None
-    #summaryR = R.summary(truth=truth[R.active], dispersion=dispersion, compute_intervals=True, level=1-alpha)
-    #summaryR0 = R.summary(dispersion=dispersion, compute_intervals=False)
-    #print(summaryR)
-    #print(R.active, 'huh')
-
     targets = []
     true_target = truth[sorted(observed_set)]
 
-    results = infer_full_target(selection_algorithm,
-                                observed_set,
-                                sorted(observed_set),
-                                splitting_sampler,
-                                dispersion,
-                                hypothesis=true_target,
-                                fit_probability=keras_fit,
-                                fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
-                                success_params=success_params,
-                                alpha=alpha,
-                                B=3000)
-    for result in results:
-        print(result)
-        (pivot, 
-         interval,
-         pvalue,
-         _) = result
+    if len(observed_set) > 0:
+        results = infer_full_target(selection_algorithm,
+                                    observed_set,
+                                    sorted(observed_set),
+                                    splitting_sampler,
+                                    dispersion,
+                                    hypothesis=true_target,
+                                    fit_probability=keras_fit,
+                                    fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                                    success_params=success_params,
+                                    alpha=alpha,
+                                    B=3000)
 
-        pvalues.append(pvalue)
-        pivots.append(pivot)
-        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
-        lengths.append(interval[1] - interval[0])
+        for i, result in enumerate(results):
 
-    for idx in sorted(observed_set):
-        target_sd = np.sqrt(dispersion * XTXi[idx, idx])
-        observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
-        quantile = ndist.ppf(1 - 0.5 * alpha)
-        naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
+            (pivot, 
+             interval,
+             pvalue,
+             _) = result
 
-        naive_pivot = (1 - ndist.cdf((observed_target - true_target[0]) / target_sd))
-        naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
-        naive_pivots.append(naive_pivot)
+            pvalues.append(pvalue)
+            pivots.append(pivot)
+            covered.append((interval[0] < true_target[i]) * (interval[1] > true_target[i]))
+            lengths.append(interval[1] - interval[0])
 
-        naive_pvalue = (1 - ndist.cdf(observed_target / target_sd))
-        naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
-        naive_pvalues.append(naive_pvalue)
+        for i, idx in enumerate(sorted(observed_set)):
+            target_sd = np.sqrt(dispersion * XTXi[idx, idx])
+            observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
+            quantile = ndist.ppf(1 - 0.5 * alpha)
+            naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
 
-        naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
-        naive_lengths.append(naive_interval[1] - naive_interval[0])
-        lower.append(interval[0])
-        upper.append(interval[1])
+            naive_pivot = (1 - ndist.cdf((observed_target - true_target[i]) / target_sd))
+            naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
+            naive_pivots.append(naive_pivot)
 
-    if summaryR is not None:
-        liu_pivots = summaryR['pval']
-        liu_pvalues = summaryR['pval']
-        liu_lower = summaryR['lower_confidence']
-        liu_upper = summaryR['upper_confidence']
-        liu_lengths = liu_upper - liu_lower
-        liu_covered = [(l < t) * (t < u) for l, u, t in zip(liu_lower, liu_upper, truth[R.active])]
-    else:
-        liu_pivots = liu_pvalues = liu_lower = liu_upper = liu_lengths = liu_covered = []
+            naive_pvalue = (1 - ndist.cdf(observed_target / target_sd))
+            naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
+            naive_pvalues.append(naive_pvalue)
+
+            naive_covered.append((naive_interval[0] < true_target[i]) * (naive_interval[1] > true_target[i]))
+            naive_lengths.append(naive_interval[1] - naive_interval[0])
+            lower.append(interval[0])
+            upper.append(interval[1])
 
     if len(pvalues) > 0:
         return pd.DataFrame({'pivot':pivots,
                              'pvalue':pvalues,
-                             'coverage':covered,
+                             'coverage':(np.array(lower) < true_target) * (np.array(upper) > true_target),
                              'length':lengths,
                              'naive_pivot':naive_pivots,
                              'naive_coverage':naive_covered,
                              'naive_length':naive_lengths,
-                             #'liu_pivot':liu_pivots,
-                             #'liu_pvalue':liu_pvalues,
-                             #'liu_length':liu_lengths,
-                             #'liu_upper':liu_upper,
-                             #'liu_lower':liu_lower,
                              'upper':upper,
                              'lower':lower,
-                             #'liu_coverage':liu_covered,
-                             'target':truth[sorted(observed_set)]})
+                             'target':true_target
+                             })
 
 
 if __name__ == "__main__":
@@ -168,6 +145,7 @@ if __name__ == "__main__":
             except FileNotFoundError:
                 pass
 
+            df['coverage'] = (df['lower'] < df['target']) & (df['upper'] > df['target'])  
             if len(df['pivot']) > 0:
 
                 print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
@@ -179,14 +157,12 @@ if __name__ == "__main__":
                 U = np.linspace(0, 1, 101)
                 plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'r', label='Selective', linewidth=3)
                 plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
-                #plt.plot(U, sm.distributions.ECDF(df['liu_pivot'][~np.isnan(df['liu_pivot'])])(U), 'g', label='Liu', linewidth=3)
                 plt.legend()
                 plt.plot([0,1], [0,1], 'k--', linewidth=2)
                 plt.savefig(csvfile[:-4] + '.pdf')
 
                 plt.clf()
                 plt.scatter(df['naive_length'], df['length'])
-                #plt.scatter(df['naive_length'], df['liu_length'])
                 plt.savefig(csvfile[:-4] + '_lengths.pdf')
 
             df.to_csv(csvfile, index=False)
