@@ -8,13 +8,12 @@ import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 
 from learn_selection.core import (infer_full_target,
-                                  split_sampler, 
+                                  split_sampler,
                                   normal_sampler,
+                                  logit_fit,
+                                  gbm_fit_sk,
                                   repeat_selection,
-                                  random_forest_fit_sk)
-from learn_selection.learners import mixture_learner
-mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
-
+                                  probit_fit)
 
 def BHfilter(pval, q=0.2):
     pval = np.asarray(pval)
@@ -25,6 +24,9 @@ def BHfilter(pval, q=0.2):
         thresh = comparison[np.nonzero(passing)[0].max()]
         return np.nonzero(pval <= thresh)[0]
     return []
+
+from learn_selection.learners import mixture_learner
+mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
 
 def simulate(n=1800, p=100, s=10, signal=(0.5/3., 1/3.), sigma=2, alpha=0.1, B=1000):
 
@@ -50,11 +52,14 @@ def simulate(n=1800, p=100, s=10, signal=(0.5/3., 1/3.), sigma=2, alpha=0.1, B=1
     smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-
-    def meta_algorithm(XTX, XTXi, dispersion, sampler):
-
+    counter = 0
+    def meta_algorithm(XTX, XTXi, dispersion, lam, sampler):
+        global counter
         p = XTX.shape[0]
         success = np.zeros(p)
+
+        loss = rr.quadratic_loss((p,), Q=XTX)
+        pen = rr.l1norm(p, lagrange=lam)
 
         scale = 0.
         noisy_S = sampler(scale=scale)
@@ -65,7 +70,7 @@ def simulate(n=1800, p=100, s=10, signal=(0.5/3., 1/3.), sigma=2, alpha=0.1, B=1
         return set(BHfilter(pval, q=0.2))
 
     lam = 4. * np.sqrt(n)
-    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, dispersion)
+    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, dispersion, lam)
 
     # run selection algorithm
 
@@ -89,8 +94,8 @@ def simulate(n=1800, p=100, s=10, signal=(0.5/3., 1/3.), sigma=2, alpha=0.1, B=1
                                     splitting_sampler,
                                     dispersion,
                                     hypothesis=true_target,
-                                    fit_probability=random_forest_fit_sk,
-                                    fit_args={'n_estimators':5000},
+                                    fit_probability=gbm_fit_sk,
+                                    fit_args={'n_estimators':2000},
                                     success_params=success_params,
                                     alpha=alpha,
                                     B=B)
@@ -139,7 +144,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate(B=10000)
-        csvfile = 'random_forest_targets_BH.csv'
+        csvfile = 'gbm_targets_BH_larger.csv'
 
         try:
             df = pd.concat([df, pd.read_csv(csvfile)])
@@ -148,7 +153,6 @@ if __name__ == "__main__":
 
         if df is not None and len(df['pivot']) > 0:
 
-            print(df['pivot'], 'pivot')
             plt.clf()
             U = np.linspace(0, 1, 101)
             plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)

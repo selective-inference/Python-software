@@ -7,16 +7,15 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from core import (infer_full_target,
-                  split_sampler, # split_sampler not working yet
-                  normal_sampler,
-                  logit_fit,
-                  gbm_fit,
-                  repeat_selection,
-                  probit_fit)
-from knockoffs import BHfilter
+from learn_selection.core import (infer_full_target,
+                                  split_sampler,
+                                  normal_sampler,
+                                  logit_fit,
+                                  gbm_fit_sk,
+                                  repeat_selection,
+                                  probit_fit)
 
-def BHfilter_(pval, q=0.2):
+def BHfilter(pval, q=0.2):
     pval = np.asarray(pval)
     pval_sort = np.sort(pval)
     comparison = q * np.arange(1, pval.shape[0] + 1.) / pval.shape[0]
@@ -26,15 +25,8 @@ def BHfilter_(pval, q=0.2):
         return np.nonzero(pval <= thresh)[0]
     return []
 
-from learners import mixture_learner
+from learn_selection.learners import mixture_learner
 mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
-
-for _ in range(20):
-    pv = np.random.sample(100) * 0.3
-    print(sorted(BHfilter_(pv, 0.2)), sorted(BHfilter(pv, 0.2)))
-    assert(sorted(BHfilter_(pv, 0.2)) == sorted(BHfilter(pv, 0.2)))
-
-from keras_fit import keras_fit
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
@@ -75,7 +67,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
         solnZ = soln / (np.sqrt(np.diag(XTXi)) * np.sqrt(dispersion))
         pval = ndist.cdf(solnZ)
         pval = 2 * np.minimum(pval, 1 - pval)
-        return set(BHfilter_(pval, q=0.2))
+        return set(BHfilter(pval, q=0.2))
 
     lam = 4. * np.sqrt(n)
     selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, dispersion, lam)
@@ -102,8 +94,8 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     splitting_sampler,
                                     dispersion,
                                     hypothesis=true_target,
-                                    fit_probability=gbm_fit,
-                                    fit_args={},
+                                    fit_probability=gbm_fit_sk,
+                                    fit_args={'n_estimators':2000},
                                     success_params=success_params,
                                     alpha=alpha,
                                     B=B)
@@ -151,7 +143,7 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate(B=20000)
+        df = simulate(B=10000)
         csvfile = 'gbm_targets_BH.csv'
 
         try:
@@ -161,7 +153,6 @@ if __name__ == "__main__":
 
         if df is not None and len(df['pivot']) > 0:
 
-            print(df['pivot'], 'pivot')
             plt.clf()
             U = np.linspace(0, 1, 101)
             plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
