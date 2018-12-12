@@ -12,7 +12,9 @@ from selection.distributions.discrete_family import discrete_family
 from .fitters import (logit_fit,
                       probit_fit,
                       gbm_fit,
-                      random_forest_fit)
+                      gbm_fit_sk,
+                      random_forest_fit,
+                      random_forest_fit_sk)
 from .samplers import (normal_sampler,
                        split_sampler)
 from .learners import mixture_learner
@@ -85,7 +87,7 @@ def infer_general_target(algorithm,
                       weight_fns[0],
                       hypothesis=hypothesis,
                       alpha=alpha,
-                      success_params=success_params)
+                      success_params=success_params)[:4]
 
 def infer_full_target(algorithm,
                       observed_set,
@@ -194,7 +196,7 @@ def infer_full_target(algorithm,
                                       new_weight_fn,
                                       hypothesis=hypothesis[i],
                                       alpha=alpha,
-                                      success_params=success_params))
+                                      success_params=success_params)[:4])
         return results
 
 def _inference(observed_target,
@@ -260,7 +262,7 @@ def _inference(observed_target,
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
     rescaled_interval = (interval[0] * target_cov[0, 0], interval[1] * target_cov[0, 0])
 
-    return pivot, rescaled_interval, pvalue, weight_fn  # TODO: should do MLE as well does discrete_family do this?
+    return pivot, rescaled_interval, pvalue, weight_fn, exp_family  # TODO: should do MLE as well does discrete_family do this?
 
 def _single_parameter_inference(observed_target,
                                 target_cov,
@@ -316,7 +318,7 @@ def _single_parameter_inference(observed_target,
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
     rescaled_interval = (interval[0] * target_var, interval[1] * target_var)
 
-    return pivot, rescaled_interval, pvalue  # TODO: should do MLE as well does discrete_family do this?
+    return pivot, rescaled_interval, pvalue, exp_family  # TODO: should do MLE as well does discrete_family do this?
 
 def repeat_selection(base_algorithm, sampler, min_success, num_tries):
     """
