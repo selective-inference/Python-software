@@ -95,24 +95,35 @@ class mixture_learner(object):
         arg = (Z**2).sum(1) / 2.
         return np.array([np.exp(-arg/scale**2) for scale in self.scales]).mean(0)
 
-    def learn(self,
-              fit_probability,
-              fit_args = {},
-              B=500,
-              check_selection=None):
-                  
-        """
-        fit_probability : callable
-            Function to learn a probability model P(Y=1|T) based on [T, Y].
+    def generate_data(self,
+                      B=500,
+                      check_selection=None):
 
-        fit_args : dict
-            Keyword arguments to `fit_probability`.
+        """
+
+        Parameters
+        ----------
 
         B : int
             How many queries?
 
         check_selection : callable (optional)
             Callable that determines selection variable.
+
+        Returns
+        -------
+
+        Y : np.array((B, -1))
+            Binary responses for learning selection.
+
+        T : np.array((B, -1))
+            Points of targets where reponse evaluated -
+            features in learning algorithm. Successive
+            draws from `self.learning_proposal`.
+        
+        algorithm : callable
+            Algorithm taking arguments of shape (T.shape[1],) --
+            returns something of shape (Y.shape[1],).
 
         """
 
@@ -164,6 +175,31 @@ class mixture_learner(object):
             learning_Y.reshape((-1, 1))
             learning_T.reshape((-1, 1))
 
+        return learning_Y, learning_T, random_algorithm
+
+    def learn(self,
+              fit_probability,
+              fit_args = {},
+              B=500,
+              check_selection=None):
+                  
+        """
+        fit_probability : callable
+            Function to learn a probability model P(Y=1|T) based on [T, Y].
+
+        fit_args : dict
+            Keyword arguments to `fit_probability`.
+
+        B : int
+            How many queries?
+
+        check_selection : callable (optional)
+            Callable that determines selection variable.
+
+        """
+
+        learning_Y, learning_T, random_algorithm = self.generate_data(B=B,
+                                                                      check_selection=check_selection)
         print(learning_Y.shape, 'shape')
         print('prob(select): ', np.mean(learning_Y, 0))
         conditional_laws = fit_probability(learning_T, learning_Y, **fit_args)
