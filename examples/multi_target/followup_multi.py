@@ -125,10 +125,10 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
                                     dispersion,
                                     hypothesis=true_target,
                                     fit_probability=keras_fit,
-                                    fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                                    fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
                                     success_params=success_params,
                                     alpha=alpha,
-                                    B=3000)
+                                    B=4000)
 
         for i, result in enumerate(results):
 
@@ -168,7 +168,7 @@ if __name__ == "__main__":
     iseed = int(np.fabs(np.random.standard_normal() * 1000))
     for i in range(500):
         df = simulate(seed=i + iseed)
-        csvfile = 'posthoc_multi.csv'
+        csvfile = 'followup_multi.csv'
 
         if df is not None and i % 2 == 1 and i > 0:
 
