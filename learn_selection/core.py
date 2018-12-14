@@ -2,6 +2,7 @@ from copy import copy
 import functools
 
 import numpy as np
+import pandas as pd
 from scipy.stats import norm as ndist
 from scipy.stats import binom
 
@@ -101,6 +102,7 @@ def infer_full_target(algorithm,
                       success_params=(1, 1),
                       B=500,
                       learner_klass=mixture_learner,
+                      learning_npz=None,
                       single=False):
 
     '''
@@ -171,7 +173,6 @@ def infer_full_target(algorithm,
                                               check_selection=lambda result: np.array([f in set(result) for f in features]),
                                               B=B)
 
-
     if len(features) == 1 and success_params == (1, 1) and single:
         single_inference = _single_parameter_inference(observed_target,
                                                        target_cov,
@@ -181,11 +182,22 @@ def infer_full_target(algorithm,
                                                        alpha=alpha)
         return [single_inference + (None,)]
     else:
+
+        if learning_npz is not None:
+            T, Y = learning_data
+            npz_results = {'T':T, 'Y':Y}
+            npz_results['nuisance'] = []
+            npz_results['direction'] = []
+
         results = []
         for i in range(len(features)):
             cur_nuisance = observed_target - target_cov[i] / target_cov[i, i] * observed_target[i]
             cur_nuisance.shape = (len(features),)
             direction = target_cov[i] / target_cov[i, i]
+
+            if learning_npz is not None:
+                npz_results['nuisance'].append(cur_nuisance)
+                npz_results['direction'].append(direction)
 
             def new_weight_fn(cur_nuisance, direction, weight_fn, target_val):
                 return weight_fn(np.multiply.outer(target_val, direction) + cur_nuisance[None, :])
@@ -197,6 +209,10 @@ def infer_full_target(algorithm,
                                       hypothesis=hypothesis[i],
                                       alpha=alpha,
                                       success_params=success_params)[:4])
+
+        if learning_npz is not None:
+            np.savez(learning_npz, **npz_results)
+
         return results
 
 def _inference(observed_target,

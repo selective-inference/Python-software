@@ -116,7 +116,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
         naive_pivots.append(naive_pivot)
 
         naive_pvalue = (1 - ndist.cdf(observed_target / target_sd))
-        naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
+        naive_pvalue = 2 * min(naive_pvalue, 1 - naive_pvalue)
         naive_pvalues.append(naive_pvalue)
 
         naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))

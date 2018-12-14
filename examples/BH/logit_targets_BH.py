@@ -142,7 +142,7 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     plt.clf()
 
-    for i in range(500):
+    for i in range(1000):
         df = simulate(B=5000)
         csvfile = 'logit_targets_BH.csv'
 
@@ -153,7 +153,6 @@ if __name__ == "__main__":
 
         if df is not None and len(df['pivot']) > 0:
 
-            print(df['pivot'], 'pivot')
             plt.clf()
             U = np.linspace(0, 1, 101)
             plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)

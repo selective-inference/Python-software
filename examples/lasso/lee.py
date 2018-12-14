@@ -6,16 +6,16 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
+from selection.algorithms.lasso import lasso
 
-from learn_selection.core import (infer_full_target,
-                                  split_sampler, # split_sampler not working yet
+from learn_selection.core import (infer_general_target,
+                                  split_sampler, 
                                   normal_sampler,
                                   logit_fit,
                                   repeat_selection,
                                   probit_fit)
-from learn_selection.keras_fit import keras_fit
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
@@ -74,36 +74,36 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
     lower, upper = [], []
     naive_pvalues, naive_pivots, naive_covered, naive_lengths =  [], [], [], []
 
+    L = lasso.gaussian(X, y, lam)
+    L.fit()
+    summaryL = None
+    summaryL = L.summary(truth=truth[L.active], compute_intervals=True, level=1-alpha)
+    summaryL0 = L.summary(compute_intervals=False)
+
     targets = []
-    true_target = truth[sorted(observed_set)]
-
-    results = infer_full_target(selection_algorithm,
-                                observed_set,
-                                sorted(observed_set),
-                                splitting_sampler,
-                                dispersion,
-                                hypothesis=true_target,
-                                fit_probability=keras_fit,
-                                fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
-                                success_params=success_params,
-                                alpha=alpha,
-                                B=B)
-
-    stop
-
-    for result in results:
+    for idx in sorted(observed_set):
+        print("variable: ", idx, "total selected: ", len(observed_set))
+        true_target = [truth[idx]]
 
         (pivot, 
          interval,
          pvalue,
-         _) = result
+         _) = infer_general_target(selection_algorithm,
+                                   observed_set,
+                                   [idx],
+                                   splitting_sampler,
+                                   dispersion,
+                                   hypothesis=true_target,
+                                   fit_probability=logit_fit,
+                                   success_params=success_params,
+                                   alpha=alpha,
+                                   B=4000)[0]
 
         pvalues.append(pvalue)
         pivots.append(pivot)
         covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
         lengths.append(interval[1] - interval[0])
 
-    for idx in sorted(observed_set):
         target_sd = np.sqrt(dispersion * XTXi[idx, idx])
         observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
         quantile = ndist.ppf(1 - 0.5 * alpha)
@@ -114,13 +114,23 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
         naive_pivots.append(naive_pivot)
 
         naive_pvalue = (1 - ndist.cdf(observed_target / target_sd))
-        naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
+        naive_pvalue = 2 * min(naive_pvalue, 1 - naive_pvalue)
         naive_pvalues.append(naive_pvalue)
 
         naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
         lower.append(interval[0])
         upper.append(interval[1])
+
+    if summaryL is not None:
+        lee_pivots = summaryL['pval']
+        lee_pvalues = summaryL0['pval']
+        lee_lower = summaryL['lower_confidence']
+        lee_upper = summaryL['upper_confidence']
+        lee_lengths = lee_upper - lee_lower
+        lee_covered = [(l < t) * (t < u) for l, u, t in zip(lee_lower, lee_upper, truth[R.active])]
+    else:
+        lee_pivots = lee_pvalues = lee_lower = lee_upper = lee_lengths = lee_covered = []
 
     if len(pvalues) > 0:
         return pd.DataFrame({'pivot':pivots,
@@ -130,8 +140,14 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
                              'naive_pivot':naive_pivots,
                              'naive_coverage':naive_covered,
                              'naive_length':naive_lengths,
+                             'lee_pivot':lee_pivots,
+                             'lee_pvalue':lee_pvalues,
+                             'lee_length':lee_lengths,
+                             'lee_upper':lee_upper,
+                             'lee_lower':lee_lower,
                              'upper':upper,
                              'lower':lower,
+                             'lee_coverage':lee_covered,
                              'target':truth[sorted(observed_set)]})
 
 
@@ -145,9 +161,9 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'lasso_multi.csv'
+        csvfile = 'lee.csv'
 
-        if df is not None and i > 0:
+        if df is not None and i % 2 == 1 and i > 0:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
@@ -157,20 +173,24 @@ if __name__ == "__main__":
             if len(df['pivot']) > 0:
 
                 print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
+                print("lee:", np.mean(df['lee_pivot']), np.std(df['lee_pivot']), np.mean(df['lee_length']), np.std(df['lee_length']), np.mean(df['lee_coverage']))
                 print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
 
                 print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
+                print("len ratio selective divided by lee:", np.mean(np.array(df['length']) / np.array(df['lee_length'])))
 
                 plt.clf()
                 U = np.linspace(0, 1, 101)
                 plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'r', label='Selective', linewidth=3)
                 plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
+                plt.plot(U, sm.distributions.ECDF(df['lee_pivot'][~np.isnan(df['lee_pivot'])])(U), 'g', label='Lee', linewidth=3)
                 plt.legend()
                 plt.plot([0,1], [0,1], 'k--', linewidth=2)
                 plt.savefig(csvfile[:-4] + '.pdf')
 
                 plt.clf()
                 plt.scatter(df['naive_length'], df['length'])
+                plt.scatter(df['naive_length'], df['lee_length'])
                 plt.savefig(csvfile[:-4] + '_lengths.pdf')
 
             df.to_csv(csvfile, index=False)

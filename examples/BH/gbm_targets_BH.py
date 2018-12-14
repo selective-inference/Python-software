@@ -143,7 +143,7 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate(B=10000)
+        df = simulate(B=40000)
         csvfile = 'gbm_targets_BH.csv'
 
         try:
