@@ -7,20 +7,19 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import ROSI
-from learn_selection.knockoffs import cv_glmnet_lam, lasso_glmnet
 
 from learn_selection.core import (infer_full_target,
-                                  split_sampler,
+                                  split_sampler, # split_sampler not working yet
                                   normal_sampler,
-                                  logit_fit,
+                                  gbm_fit_sk as gbm_fit,
                                   repeat_selection,
                                   probit_fit)
+from learn_selection.keras_fit import keras_fit
 
-def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
+def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
     # description of statistical problem
 
-    np.random.seed(seed)
     X, y, truth = gaussian_instance(n=n,
                                     p=p, 
                                     s=s,
@@ -29,42 +28,44 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=False,
-                                    center=False)[:3]
+                                    scale=False)[:3]
 
     dispersion = sigma**2
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
+    splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    lam_min, lam_1se = cv_glmnet_lam(X, y)
-    lam_min, lam_1se = n * lam_min, n * lam_1se
+    def meta_algorithm(XTX, XTXi, lam, sampler):
 
-    def meta_algorithm(X, XTXi, resid, sampler):
+        p = XTX.shape[0]
+        success = np.zeros(p)
 
-        n, p = X.shape
-        idx = np.random.choice(np.arange(n), 200, replace=False)
+        loss = rr.quadratic_loss((p,), Q=XTX)
+        pen = rr.l1norm(p, lagrange=lam)
 
-        S = sampler(scale=0.) # deterministic with scale=0
-        ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
-
-        G = lasso_glmnet(X[idx], ynew[idx], *[None]*4)
-        select = G.select()
-        return set(list(select[0]))
+        scale = 0.
+        noisy_S = sampler(scale=scale)
+        loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
+        problem = rr.simple_problem(loss, pen)
+        soln = problem.solve(max_its=100, tol=1.e-10)
+        success += soln != 0
+        return set(np.nonzero(success)[0])
 
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
     dispersion = np.linalg.norm(resid)**2 / (n-p)
                          
-    selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
+    lam = 4. * np.sqrt(n)
+    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi, lam)
 
     # run selection algorithm
 
     success_params = (1, 1)
 
-    observed_set = repeat_selection(selection_algorithm, smooth_sampler, *success_params)
+    observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
 
     # find the target, based on the observed outcome
 
@@ -74,36 +75,39 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
     lower, upper = [], []
     naive_pvalues, naive_pivots, naive_covered, naive_lengths =  [], [], [], []
 
+    R = ROSI.gaussian(X, y, lam, approximate_inverse=None)
+    R.fit()
+    summaryR = None
+
     targets = []
+    true_target = truth[sorted(observed_set)]
 
-    for idx in sorted(observed_set)[:1]:
-        print("variable: ", idx, "total selected: ", len(observed_set))
-        true_target = [truth[idx]]
-        targets.extend(true_target)
+    results = infer_full_target(selection_algorithm,
+                                observed_set,
+                                sorted(observed_set),
+                                splitting_sampler,
+                                dispersion,
+                                hypothesis=true_target,
+                                fit_probability=gbm_fit,
+                                fit_args={'n_estimators':1000},
+                                success_params=success_params,
+                                alpha=alpha,
+                                B=3000)
+    for result in results:
 
-        np.random.seed(seed)
-        X2, _, _ = gaussian_instance(n=n,
-                                     p=p, 
-                                     s=s,
-                                     equicorrelated=False,
-                                     rho=0.5, 
-                                     sigma=sigma,
-                                     signal=signal,
-                                     random_signs=True,
-                                     center=False,
-                                     scale=False)[:3]
-        stage_1 = np.random.choice(np.arange(n), 200, replace=False)
+        (pivot, 
+         interval,
+         pvalue,
+         _) = result
 
-        stage_2 = sorted(set(range(n)).difference(stage_1))
-        X2 = X2[stage_2]
-        y2 = X2.dot(truth) + sigma * np.random.standard_normal(X2.shape[0])
+        pvalues.append(pvalue)
+        pivots.append(pivot)
+        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
+        lengths.append(interval[1] - interval[0])
 
-        XTXi_2 = np.linalg.inv(X2.T.dot(X2))
-        resid2 = y2 - X2.dot(XTXi_2.dot(X2.T.dot(y2)))
-        dispersion_2 = np.linalg.norm(resid2)**2 / (X2.shape[0] - X2.shape[1])
-
-        target_sd = np.sqrt(dispersion_2 * XTXi_2[idx, idx])
-        observed_target = np.squeeze(XTXi_2[idx].dot(X2.T.dot(y2)))
+    for idx in sorted(observed_set):
+        target_sd = np.sqrt(dispersion * XTXi[idx, idx])
+        observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
         quantile = ndist.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
 
@@ -117,32 +121,21 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
         naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
-
-        (pivot, 
-         interval,
-         pvalue,
-         _) = infer_full_target(selection_algorithm,
-                                observed_set,
-                                [idx],
-                                smooth_sampler,
-                                dispersion,
-                                hypothesis=true_target,
-                                fit_probability=probit_fit,
-                                success_params=success_params,
-                                alpha=alpha,
-                                B=1000)[0]
-
-        pvalues.append(pvalue)
-        pivots.append(pivot)
-        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
-        print(interval, 'interval')
-        lengths.append(interval[1] - interval[0])
         lower.append(interval[0])
         upper.append(interval[1])
 
+    if summaryR is not None:
+        liu_pivots = summaryR['pval']
+        liu_pvalues = summaryR['pval']
+        liu_lower = summaryR['lower_confidence']
+        liu_upper = summaryR['upper_confidence']
+        liu_lengths = liu_upper - liu_lower
+        liu_covered = [(l < t) * (t < u) for l, u, t in zip(liu_lower, liu_upper, truth[R.active])]
+    else:
+        liu_pivots = liu_pvalues = liu_lower = liu_upper = liu_lengths = liu_covered = []
+
     if len(pvalues) > 0:
         return pd.DataFrame({'pivot':pivots,
-                             'target':targets,
                              'pvalue':pvalues,
                              'coverage':covered,
                              'length':lengths,
@@ -150,7 +143,8 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
                              'naive_coverage':naive_covered,
                              'naive_length':naive_lengths,
                              'upper':upper,
-                             'lower':lower})
+                             'lower':lower,
+                             'target':truth[sorted(observed_set)]})
 
 
 if __name__ == "__main__":
@@ -161,12 +155,11 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     plt.clf()
 
-    iseed = int(np.fabs(np.random.standard_normal() * 1000))
     for i in range(500):
-        df = simulate(seed=i + iseed)
-        csvfile = 'posthoc.csv'
+        df = simulate()
+        csvfile = 'lasso_multi_gbm_sk.csv'
 
-        if df is not None and i % 2 == 1 and i > 0:
+        if df is not None and i > 0:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
@@ -184,12 +177,14 @@ if __name__ == "__main__":
                 U = np.linspace(0, 1, 101)
                 plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'r', label='Selective', linewidth=3)
                 plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
+                #plt.plot(U, sm.distributions.ECDF(df['liu_pivot'][~np.isnan(df['liu_pivot'])])(U), 'g', label='Liu', linewidth=3)
                 plt.legend()
                 plt.plot([0,1], [0,1], 'k--', linewidth=2)
                 plt.savefig(csvfile[:-4] + '.pdf')
 
                 plt.clf()
                 plt.scatter(df['naive_length'], df['length'])
+                #plt.scatter(df['naive_length'], df['liu_length'])
                 plt.savefig(csvfile[:-4] + '_lengths.pdf')
 
             df.to_csv(csvfile, index=False)
