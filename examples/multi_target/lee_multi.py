@@ -14,8 +14,9 @@ from learn_selection.core import (infer_general_target,
                                   logit_fit,
                                   repeat_selection,
                                   probit_fit)
+from learn_selection.keras_fit import keras_fit
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
+def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1, B=8000):
 
     # description of statistical problem
 
@@ -50,7 +51,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
         problem = rr.simple_problem(loss, pen)
         soln = problem.solve(max_its=100, tol=1.e-10)
         success += soln != 0
-        return set(np.nonzero(success)[0])
+        return tuple(sorted(np.nonzero(success)[0]))
 
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
@@ -64,7 +65,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
     success_params = (1, 1)
 
-    observed_set = repeat_selection(selection_algorithm, splitting_sampler, *success_params)
+    observed_tuple = selection_algorithm(splitting_sampler)
 
     # find the target, based on the observed outcome
 
@@ -80,67 +81,66 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1):
 
     targets = []
 
-    observed_list = L.active
-
-    if len(observed_set) > 0:
+    assert(observed_tuple == tuple(L.active))
+    observed_list = list(observed_tuple)
+    if len(observed_tuple) > 0:
+        print(observed_tuple)
         Xpi = np.linalg.pinv(X[:,observed_list])
         final_target = Xpi.dot(X.dot(truth))
         summaryL = L.summary(truth=final_target, compute_intervals=True, level=1-alpha)
         summaryL0 = L.summary(compute_intervals=False)
 
-    for jdx, idx in enumerate(observed_list[:1]):
-        print("variable: ", idx, "total selected: ", len(observed_set))
+        observed_target = Xpi.dot(y)
 
-        Xpi = np.linalg.pinv(X[:,observed_list])
-        linfunc = Xpi[jdx]
-        observed_target = np.array([linfunc.dot(y)])
+        sel_dispersion = dispersion # np.linalg.norm(y - X[:,observed_list].dot(Xpi.dot(y)))**2 / (n - len(observed_list))
+        print(sel_dispersion, dispersion)
+        cov_target = Xpi.dot(Xpi.T) * sel_dispersion
+        cross_cov = X.T.dot(Xpi.T) * sel_dispersion
 
-        sel_dispersion = np.linalg.norm(y - X[:,observed_list].dot(Xpi.dot(y)))**2 / (n - len(observed_list))
-        cov_target = np.array([[np.linalg.norm(linfunc)**2 * sel_dispersion]])
-        cross_cov = X.T.dot(linfunc).reshape((-1,1)) * sel_dispersion
-        true_target = final_target[jdx]
+        results = infer_general_target(selection_algorithm,
+                                       observed_tuple,
+                                       splitting_sampler,
+                                       observed_target,
+                                       cross_cov,
+                                       cov_target,
+                                       hypothesis=final_target,
+                                       fit_probability=keras_fit,
+                                       fit_args={'epochs':30, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                                       alpha=alpha,
+                                       B=B)
 
-        (pivot, 
-         interval,
-         pvalue,
-         _) = infer_general_target(selection_algorithm,
-                                   observed_set,
-                                   splitting_sampler,
-                                   observed_target,
-                                   cross_cov,
-                                   cov_target,
-                                   hypothesis=[true_target],
-                                   fit_probability=probit_fit,
-                                   alpha=alpha,
-                                   B=1000)[0]
+        for result, true_target in zip(results, final_target):
+            (pivot, 
+             interval,
+             pvalue,
+             _) = result
+            
+            pvalues.append(pvalue)
+            pivots.append(pivot)
+            covered.append((interval[0] < true_target) * (interval[1] > true_target))
+            lengths.append(interval[1] - interval[0])
+            lower.append(interval[0])
+            upper.append(interval[1])
 
-        pvalues.append(pvalue)
-        pivots.append(pivot)
-        covered.append((interval[0] < true_target) * (interval[1] > true_target))
-        lengths.append(interval[1] - interval[0])
-
-        target_sd = np.sqrt(cov_target[0, 0])
+        target_sd = np.sqrt(np.diag(cov_target))
         quantile = ndist.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
+        naive_lower, naive_upper = naive_interval
 
-        naive_pivot = np.squeeze((1 - ndist.cdf((observed_target - true_target) / target_sd)))
-        naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
-        naive_pivots.append(naive_pivot)
+        naive_pivots = (1 - ndist.cdf((observed_target - final_target) / target_sd))
+        naive_pivots = 2 * np.minimum(naive_pivots, 1 - naive_pivots)
 
-        naive_pvalue = np.squeeze((1 - ndist.cdf(observed_target / target_sd)))
-        naive_pvalue = 2 * min(naive_pvalue, 1 - naive_pvalue)
-        naive_pvalues.append(naive_pvalue)
+        naive_pvalues = (1 - ndist.cdf(observed_target / target_sd))
+        naive_pvalues = 2 * np.minimum(naive_pvalues, 1 - naive_pvalues)
 
-        naive_covered.append(np.squeeze((naive_interval[0] < true_target) * (naive_interval[1] > true_target)))
-        naive_lengths.append(np.squeeze(naive_interval[1] - naive_interval[0]))
-        lower.append(interval[0])
-        upper.append(interval[1])
+        naive_covered = (naive_interval[0] < final_target) * (naive_interval[1] > final_target)
+        naive_lengths = naive_interval[1] - naive_interval[0]
 
     if summaryL is not None:
-        lee_pivots = summaryL['pval'][:1]
-        lee_pvalues = summaryL0['pval'][:1]
-        lee_lower = summaryL['lower_confidence'][:1]
-        lee_upper = summaryL['upper_confidence'][:1]
+        lee_pivots = summaryL['pval']
+        lee_pvalues = summaryL0['pval']
+        lee_lower = summaryL['lower_confidence']
+        lee_upper = summaryL['upper_confidence']
         lee_lengths = lee_upper - lee_lower
         lee_covered = [(l < t) * (t < u) for l, u, t in zip(lee_lower, lee_upper, final_target)]
     else:
@@ -176,7 +176,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'lee.csv'
+        csvfile = 'lee_multi.csv'
 
         if df is not None and i % 2 == 1 and i > 0:
 

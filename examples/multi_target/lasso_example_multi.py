@@ -89,9 +89,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
                                 alpha=alpha,
                                 B=B)
 
-    stop
-
-    for result in results:
+    for i, result in enumerate(results):
 
         (pivot, 
          interval,
@@ -100,8 +98,10 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
 
         pvalues.append(pvalue)
         pivots.append(pivot)
-        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
+        covered.append((interval[0] < true_target[i]) * (interval[1] > true_target[i]))
         lengths.append(interval[1] - interval[0])
+        lower.append(interval[0])
+        upper.append(interval[1])
 
     for idx in sorted(observed_set):
         target_sd = np.sqrt(dispersion * XTXi[idx, idx])
@@ -119,8 +119,6 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
 
         naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
-        lower.append(interval[0])
-        upper.append(interval[1])
 
     if len(pvalues) > 0:
         return pd.DataFrame({'pivot':pivots,
@@ -144,7 +142,7 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate()
+        df = simulate(B=3000)
         csvfile = 'lasso_multi.csv'
 
         if df is not None and i > 0:
