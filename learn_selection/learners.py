@@ -55,7 +55,7 @@ class mixture_learner(object):
             Proposed position of new T to add to evaluate algorithm at.
         """
 
-        print(self.scales, 'scales')
+
         (self.algorithm,
          self.observed_outcome,
          self.observed_sampler,
@@ -200,7 +200,6 @@ class mixture_learner(object):
 
         learning_Y, learning_T, random_algorithm = self.generate_data(B=B,
                                                                       check_selection=check_selection)
-        print(learning_Y.shape, 'shape')
         print('prob(select): ', np.mean(learning_Y, 0))
         conditional_laws = fit_probability(learning_T, learning_Y, **fit_args)
         return conditional_laws, (learning_T, learning_Y)

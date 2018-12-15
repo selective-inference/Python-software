@@ -7,14 +7,16 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import ROSI
-from learn_selection.knockoffs import cv_glmnet_lam, lasso_glmnet
 
+from learn_selection.knockoffs import cv_glmnet_lam, lasso_glmnet
 from learn_selection.core import (infer_full_target,
-                                  split_sampler, 
+                                  split_sampler,
                                   normal_sampler,
                                   logit_fit,
                                   repeat_selection,
                                   probit_fit)
+from learn_selection.learners import mixture_learner
+mixture_learner.scales = [1]
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
 
@@ -78,16 +80,16 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
         (pivot, 
          interval,
          pvalue) = infer_full_target(selection_algorithm,
-                                observed_set,
-                                [idx],
-                                splitting_sampler,
-                                dispersion,
-                                hypothesis=true_target,
-                                fit_probability=probit_fit,
-                                success_params=success_params,
-                                alpha=alpha,
-                                B=B,
-                                single=True)[0][:3]
+                                     observed_set,
+                                     [idx],
+                                     splitting_sampler,
+                                     dispersion,
+                                     hypothesis=true_target,
+                                     fit_probability=probit_fit,
+                                     success_params=success_params,
+                                     alpha=alpha,
+                                     B=B,
+                                     single=True)[0][:3]
 
         pvalues.append(pvalue)
         pivots.append(pivot)
@@ -135,9 +137,9 @@ if __name__ == "__main__":
 
     for i in range(5000):
         df = simulate(B=2000)
-        csvfile = 'test_boot.csv'
+        csvfile = 'test_boot_scale1.csv'
 
-        if df is not None:# and i > 0:
+        if df is not None and i > 0:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])

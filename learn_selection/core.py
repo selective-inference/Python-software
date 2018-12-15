@@ -32,6 +32,7 @@ def infer_general_target(algorithm,
                          alpha=0.1,
                          success_params=(1, 1),
                          B=500,
+                         learning_npz=None,
                          learner_klass=mixture_learner):
     '''
 
@@ -82,13 +83,40 @@ def infer_general_target(algorithm,
                                               fit_args=fit_args,
                                               check_selection=None,
                                               B=B)
+    weight_fn = weight_fns[0]
 
-    return _inference(observed_target,
-                      target_cov,
-                      weight_fns[0],
-                      hypothesis=hypothesis,
-                      alpha=alpha,
-                      success_params=success_params)[:4]
+    if learning_npz is not None:
+        T, Y = learning_data
+        npz_results = {'T':T, 'Y':Y}
+        npz_results['nuisance'] = []
+        npz_results['direction'] = []
+
+    results = []
+    for i in range(observed_target.shape[0]):
+        cur_nuisance = observed_target - target_cov[i] / target_cov[i, i] * observed_target[i]
+        cur_nuisance.shape = observed_target.shape
+        direction = target_cov[i] / target_cov[i, i]
+
+        if learning_npz is not None:
+            npz_results['nuisance'].append(cur_nuisance)
+            npz_results['direction'].append(direction)
+
+        def new_weight_fn(cur_nuisance, direction, weight_fn, target_val):
+            return weight_fn(np.multiply.outer(target_val, direction) + cur_nuisance[None, :])
+
+        new_weight_fn = functools.partial(new_weight_fn, cur_nuisance, direction, weight_fn)
+
+        results.append(_inference(observed_target[i],
+                                  target_cov[i, i].reshape((1, 1)),
+                                  new_weight_fn,
+                                  hypothesis=hypothesis[i],
+                                  alpha=alpha,
+                                  success_params=success_params)[:4])
+
+    if learning_npz is not None:
+        np.savez(learning_npz, **npz_results)
+
+    return results
 
 def infer_full_target(algorithm,
                       observed_set,
@@ -190,9 +218,9 @@ def infer_full_target(algorithm,
             npz_results['direction'] = []
 
         results = []
-        for i in range(len(features)):
+        for i in range(observed_target.shape[0]):
             cur_nuisance = observed_target - target_cov[i] / target_cov[i, i] * observed_target[i]
-            cur_nuisance.shape = (len(features),)
+            cur_nuisance.shape = observed_target.shape
             direction = target_cov[i] / target_cov[i, i]
 
             if learning_npz is not None:
@@ -318,7 +346,6 @@ def _single_parameter_inference(observed_target,
 
     T, Y = learning_data
     target_val = T[Y == 1]
-    print(target_val.shape, 'shape')
 
     target_var = target_cov[0, 0]
     target_sd = np.sqrt(target_var)
@@ -356,3 +383,50 @@ def repeat_selection(base_algorithm, sampler, min_success, num_tries):
             final_value.append(key)
 
     return set(final_value)
+
+
+def cross_inference(learning_data, nuisance, direction, fit_probability, nref=200, fit_args={}):
+
+    T, Y = learning_data
+
+    idx = np.arange(T.shape[0])
+    np.random.shuffle(idx)
+
+    Tshuf, Yshuf = T[idx], Y[idx]
+    reference_T = Tshuf[:nref]
+    reference_Y = Yshuf[:nref]
+    nrem = T.shape[0] - nref
+    learning_T = Tshuf[nref:(nref+int(nrem/2))]
+    learning_Y = Tshuf[nref:(nref+int(nrem/2))]
+    dens_T = Tshuf[(nref+int(nrem/2)):]
+
+    pvalues = []
+
+    weight_fns = fit_probability(learning_T, learning_Y, **fit_args)
+
+    for (weight_fn, 
+         cur_nuisance, 
+         cur_direction, 
+         learn_T, 
+         ref_T, 
+         ref_Y,
+         d_T) in zip(weight_fns, 
+                     nuisance, 
+                     direction, 
+                     learning_T.T, 
+                     reference_T.T,
+                     reference_Y.T,
+                     dens_T.T):
+        
+        def new_weight_fn(nuisance, direction, weight_fn, target_val):
+                return weight_fn(np.multiply.outer(target_val, direction) + nuisance[None, :])
+
+        new_weight_fn = functools.partial(new_weight_fn, cur_nuisance, cur_direction, weight_fn)
+
+        weight_val = new_weight_fn(d_T)
+        exp_family = discrete_family(d_T, weight_val)
+        print(ref_Y)
+        pval = [exp_family.cdf(0, x=t) for t, y in zip(ref_T, ref_Y) if y == 1]
+        pvalues.append(pval)
+
+    return pvalues
