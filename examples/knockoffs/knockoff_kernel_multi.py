@@ -112,7 +112,7 @@ def simulate(n=1000, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
             naive_pivots.append(naive_pivot)
 
             naive_pvalue = (1 - ndist.cdf(observed_target / target_sd))
-            naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
+            naive_pvalue = 2 * min(naive_pvalue, 1 - naive_pvalue)
             naive_pvalues.append(naive_pvalue)
 
             naive_covered.append((naive_interval[0] < true_target[i]) * (naive_interval[1] > true_target[i]))
@@ -142,8 +142,9 @@ if __name__ == "__main__":
     U = np.linspace(0, 1, 101)
     plt.clf()
 
+    iseed = int(np.fabs(np.random.standard_normal() * 50000))
     for i in range(500):
-        df = simulate()
+        df = simulate(seed=i + iseed)
         csvfile = 'knockoff_kernel_multi.csv'
 
         if df is not None and i > 0:
