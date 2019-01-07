@@ -19,6 +19,7 @@ from .fitters import (logit_fit,
 from .samplers import (normal_sampler,
                        split_sampler)
 from .learners import mixture_learner
+from .keras_fit import keras_fit
                      
 def infer_general_target(algorithm,
                          observed_outcome,
