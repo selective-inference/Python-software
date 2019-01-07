@@ -6,15 +6,14 @@ import pandas as pd
 import statsmodels.api as sm
 from scipy.stats import norm as normal_dbn
 
-from selection.algorithms.lasso import ROSI
+from selection.algorithms.lasso import ROSI, lasso
 
 from .core import (infer_full_target,
-                   split_sampler, # split_sampler not working yet
-                   normal_sampler,
+                   infer_general_target,
                    logit_fit,
                    repeat_selection,
-                   probit_fit)
-from .keras_fit import keras_fit
+                   probit_fit, 
+                   keras_fit)
 
 def full_model_inference(X, 
                          y,
@@ -25,9 +24,8 @@ def full_model_inference(X,
                          fit_probability=keras_fit,
                          fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
                          alpha=0.1,
-                         B=2000):
-
-    # for naive inference
+                         B=2000,
+                         naive=True):
 
     n, p = X.shape
     XTX = X.T.dot(X)
@@ -45,48 +43,93 @@ def full_model_inference(X,
 
     observed_set = repeat_selection(selection_algorithm, sampler, *success_params)
 
-    # find the target, based on the observed outcome
+    if len(observed_set) > 0:
 
-    pivots, covered, lengths, pvalues = [], [], [], []
-    lower, upper = [], []
-    naive_pvalues, naive_pivots, naive_covered, naive_lengths =  [], [], [], []
+        # find the target, based on the observed outcome
 
-    targets = []
-    true_target = truth[sorted(observed_set)]
+        (pivots, 
+         covered, 
+         lengths, 
+         pvalues,
+         lower,
+         upper) = [], [], [], [], [], []
 
-    results = infer_full_target(selection_algorithm,
-                                observed_set,
-                                sorted(observed_set),
-                                sampler,
-                                dispersion,
-                                hypothesis=true_target,
-                                fit_probability=fit_probability,
-                                fit_args=fit_args,
-                                success_params=success_params,
-                                alpha=alpha,
-                                B=B)
+        targets = []
+        true_target = truth[sorted(observed_set)]
 
-    for i, result in enumerate(results):
+        results = infer_full_target(selection_algorithm,
+                                    observed_set,
+                                    sorted(observed_set),
+                                    sampler,
+                                    dispersion,
+                                    hypothesis=true_target,
+                                    fit_probability=fit_probability,
+                                    fit_args=fit_args,
+                                    success_params=success_params,
+                                    alpha=alpha,
+                                    B=B)
 
-        (pivot, 
-         interval,
-         pvalue,
-         _) = result
+        for i, result in enumerate(results):
 
-        pvalues.append(pvalue)
-        pivots.append(pivot)
-        covered.append((interval[0] < true_target[i]) * (interval[1] > true_target[i]))
-        lengths.append(interval[1] - interval[0])
-        lower.append(interval[0])
-        upper.append(interval[1])
+            (pivot, 
+             interval,
+             pvalue,
+             _) = result
+
+            pvalues.append(pvalue)
+            pivots.append(pivot)
+            covered.append((interval[0] < true_target[i]) * (interval[1] > true_target[i]))
+            lengths.append(interval[1] - interval[0])
+            lower.append(interval[0])
+            upper.append(interval[1])
+
+        if len(pvalues) > 0:
+            df = pd.DataFrame({'pivot':pivots,
+                               'pvalue':pvalues,
+                               'coverage':covered,
+                               'length':lengths,
+                               'upper':upper,
+                               'lower':lower,
+                               'id':[instance_hash]*len(pvalues),
+                               'target':truth[sorted(observed_set)],
+                               'variable':sorted(observed_set),
+                               'B':[B]*len(pvalues)})
+            if naive:
+                naive_df = naive_full_model_inference(X, 
+                                                      y,
+                                                      dispersion,
+                                                      truth,
+                                                      observed_set,
+                                                      alpha)
+                df = pd.merge(df, naive_df, on='variable')
+            return df
+
+def naive_full_model_inference(X,
+                               y,
+                               dispersion,
+                               truth,
+                               observed_set,
+                               alpha=0.1):
+    
+    XTX = X.T.dot(X)
+    XTXi = np.linalg.inv(XTX)
+
+    (naive_pvalues, 
+     naive_pivots, 
+     naive_covered, 
+     naive_lengths, 
+     naive_upper, 
+     naive_lower) =  [], [], [], [], [], []
 
     for idx in sorted(observed_set):
+        true_target = truth[idx]
         target_sd = np.sqrt(dispersion * XTXi[idx, idx])
         observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
         quantile = normal_dbn.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
-
-        naive_pivot = (1 - normal_dbn.cdf((observed_target - true_target[0]) / target_sd))
+        naive_upper.append(naive_interval[1])
+        naive_lower.append(naive_interval[0])
+        naive_pivot = (1 - normal_dbn.cdf((observed_target - true_target) / target_sd))
         naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
         naive_pivots.append(naive_pivot)
 
@@ -94,22 +137,180 @@ def full_model_inference(X,
         naive_pvalue = 2 * min(naive_pvalue, 1 - naive_pvalue)
         naive_pvalues.append(naive_pvalue)
 
-        naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
+        naive_covered.append((naive_interval[0] < true_target) * (naive_interval[1] > true_target))
         naive_lengths.append(naive_interval[1] - naive_interval[0])
 
-    if len(pvalues) > 0:
-        return pd.DataFrame({'pivot':pivots,
-                             'pvalue':pvalues,
-                             'coverage':covered,
-                             'length':lengths,
-                             'naive_pivot':naive_pivots,
-                             'naive_pvalue':naive_pvalues,
+    return pd.DataFrame({'naive_pivot':naive_pivots,
+                         'naive_pvalue':naive_pvalues,
+                         'naive_coverage':naive_covered,
+                         'naive_length':naive_lengths,
+                         'naive_upper':naive_upper,
+                         'naive_lower':naive_lower,
+                         'variable':sorted(observed_set)
+                         })
+
+def partial_model_inference(X, 
+                            y,
+                            truth,
+                            selection_algorithm,
+                            sampler,
+                            success_params=(1, 1),
+                            fit_probability=keras_fit,
+                            fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                            alpha=0.1,
+                            B=2000,
+                            naive=True):
+
+    n, p = X.shape
+    XTX = X.T.dot(X)
+    XTXi = np.linalg.inv(XTX)
+    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
+    dispersion = np.linalg.norm(resid)**2 / (n - p)
+                         
+    instance_hash = hashlib.md5()
+    instance_hash.update(X.tobytes())
+    instance_hash.update(y.tobytes())
+    instance_hash.update(truth.tobytes())
+    instance_id = instance_hash.hexdigest()
+
+    observed_tuple = selection_algorithm(sampler)
+
+    (pivots, 
+     covered, 
+     lengths, 
+     pvalues,
+     lower,
+     upper) = [], [], [], [], [], []
+
+    targets = []
+
+
+    if len(observed_tuple) > 0:
+
+        Xpi = np.linalg.pinv(X[:, list(observed_tuple)])
+        final_target = Xpi.dot(X.dot(truth))
+        observed_target = Xpi.dot(y)
+
+        cov_target = Xpi.dot(Xpi.T) * dispersion
+        cross_cov = X.T.dot(Xpi.T) * dispersion
+
+        results = infer_general_target(selection_algorithm,
+                                       observed_tuple,
+                                       sampler,
+                                       observed_target,
+                                       cross_cov,
+                                       cov_target,
+                                       hypothesis=final_target,
+                                       fit_probability=keras_fit,
+                                       fit_args={'epochs':30, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                                       alpha=alpha,
+                                       B=B)
+
+        for result, true_target in zip(results, final_target):
+            (pivot, 
+             interval,
+             pvalue,
+             _) = result
+            
+            pvalues.append(pvalue)
+            pivots.append(pivot)
+            covered.append((interval[0] < true_target) * (interval[1] > true_target))
+            lengths.append(interval[1] - interval[0])
+            lower.append(interval[0])
+            upper.append(interval[1])
+
+    if len(observed_tuple) > 0:
+
+        df = pd.DataFrame({'pivot':pivots,
+                           'pvalue':pvalues,
+                           'coverage':covered,
+                           'length':lengths,
+                           'upper':upper,
+                           'lower':lower,
+                           'target':final_target,
+                           'variable':list(observed_tuple),
+                           })
+        if naive:
+            naive_df = naive_partial_model_inference(X,
+                                                     y,
+                                                     dispersion,
+                                                     truth,
+                                                     observed_tuple,
+                                                     alpha=alpha)
+            df = pd.merge(df, naive_df, on='variable')
+
+        return df
+
+def naive_partial_model_inference(X,
+                                  y,
+                                  dispersion,
+                                  truth,
+                                  observed_set,
+                                  alpha=0.1):
+
+    if len(observed_set) > 0:
+
+        observed_list = sorted(observed_set)
+        Xpi = np.linalg.pinv(X[:,observed_list])
+        final_target = Xpi.dot(X.dot(truth))
+
+        observed_target = Xpi.dot(y)
+
+        cov_target = Xpi.dot(Xpi.T) * dispersion
+        cross_cov = X.T.dot(Xpi.T) * dispersion
+
+        target_sd = np.sqrt(np.diag(cov_target))
+        quantile = normal_dbn.ppf(1 - 0.5 * alpha)
+        naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
+        naive_lower, naive_upper = naive_interval
+
+        naive_pivots = (1 - normal_dbn.cdf((observed_target - final_target) / target_sd))
+        naive_pivots = 2 * np.minimum(naive_pivots, 1 - naive_pivots)
+
+        naive_pvalues = (1 - normal_dbn.cdf(observed_target / target_sd))
+        naive_pvalues = 2 * np.minimum(naive_pvalues, 1 - naive_pvalues)
+
+        naive_covered = (naive_interval[0] < final_target) * (naive_interval[1] > final_target)
+        naive_lengths = naive_interval[1] - naive_interval[0]
+
+        return pd.DataFrame({'naive_pivot':naive_pivots,
                              'naive_coverage':naive_covered,
                              'naive_length':naive_lengths,
-                             'upper':upper,
-                             'lower':lower,
-                             'id':[instance_hash]*len(pvalues),
-                             'target':truth[sorted(observed_set)]})
+                             'naive_upper':naive_upper,
+                             'naive_lower':naive_lower,
+                             'target':final_target,
+                             'variable':observed_list
+                             })
+
+def lee_inference(X,
+                  y,
+                  lam,
+                  dispersion,
+                  truth,
+                  alpha=0.1):
+
+    L = lasso.gaussian(X, y, lam, sigma=np.sqrt(dispersion))
+    L.fit()
+
+    Xpi = np.linalg.pinv(X[:,L.active])
+    final_target = Xpi.dot(X.dot(truth))
+
+    summaryL0 = L.summary(compute_intervals=False)
+
+    lee_pvalues = summaryL0['pval']
+    lee_lower = summaryL0['lower_confidence']
+    lee_upper = summaryL0['upper_confidence']
+    lee_lengths = lee_upper - lee_lower
+    lee_pivots = lee_pvalues * np.nan
+    lee_covered = [(l < t) * (t < u) for l, u, t in zip(lee_lower, lee_upper, final_target)]
+
+    return pd.DataFrame({'lee_pivot':lee_pivots,
+                         'lee_pvalue':lee_pvalues,
+                         'lee_length':lee_lengths,
+                         'lee_upper':lee_upper,
+                         'lee_lower':lee_lower,
+                         'lee_coverage':lee_covered,
+                         'variable':summaryL0['variable']})
 
 def pivot_plot(df, 
                outbase):
@@ -139,8 +340,9 @@ def pivot_plot(df,
 
 def liu_inference(X,
                   y,
-                  truth,
                   lam,
+                  dispersion,
+                  truth,
                   alpha=0.1):
 
     R = ROSI.gaussian(X, y, lam, approximate_inverse=None)
@@ -170,5 +372,8 @@ def liu_inference(X,
                          'liu_upper':liu_upper,
                          'liu_lower':liu_lower,
                          'liu_coverage':liu_covered,
+                         'liu_upper':liu_upper,
+                         'liu_lower':liu_lower,
                          'target':truth[R.active],
-                         'id':[instance_hash]*len(liu_pivots)})
+                         'id':[instance_hash]*len(liu_pivots),
+                         'variable':summaryR['variable']})
