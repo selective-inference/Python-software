@@ -15,8 +15,9 @@ from learn_selection.core import (infer_general_target,
                                   repeat_selection,
                                   probit_fit)
 from learn_selection.keras_fit import keras_fit
+from learn_selection.learners import sparse_mixture_learner
 
-def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
+def simulate(n=2000, p=300, s=10, signal=(3 / np.sqrt(2000), 4 / np.sqrt(2000)), sigma=2, alpha=0.1, B=10000):
 
     # description of statistical problem
 
@@ -29,13 +30,13 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
                                     signal=signal,
                                     random_signs=True,
                                     scale=False)[:3]
+    print(np.linalg.norm(truth))
 
     dispersion = sigma**2
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
-    splitting_sampler = split_sampler(X * y[:, None], covS)
 
     def meta_algorithm(XTX, XTXi, lam, sampler):
 
@@ -49,7 +50,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
         noisy_S = sampler(scale=scale)
         loss.quadratic = rr.identity_quadratic(0, 0, -noisy_S, 0)
         problem = rr.simple_problem(loss, pen)
-        soln = problem.solve(max_its=100, tol=1.e-10)
+        soln = problem.solve(max_its=300, tol=1.e-10)
         success += soln != 0
         return tuple(sorted(np.nonzero(success)[0]))
 
@@ -65,7 +66,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
 
     success_params = (1, 1)
 
-    observed_tuple = selection_algorithm(splitting_sampler)
+    observed_tuple = selection_algorithm(smooth_sampler)
 
     # find the target, based on the observed outcome
 
@@ -83,12 +84,14 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
 
     assert(observed_tuple == tuple(L.active))
     observed_list = list(observed_tuple)
+
+    howmany = len(observed_list)
     if len(observed_tuple) > 0:
         print(observed_tuple)
         Xpi = np.linalg.pinv(X[:,observed_list])
         final_target = Xpi.dot(X.dot(truth))
-        summaryL = L.summary(truth=final_target, compute_intervals=True, level=1-alpha)
         summaryL0 = L.summary(compute_intervals=False)
+        summaryL = L.summary(truth=final_target, compute_intervals=True, level=1-alpha)
 
         observed_target = Xpi.dot(y)
 
@@ -99,15 +102,16 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
 
         results = infer_general_target(selection_algorithm,
                                        observed_tuple,
-                                       splitting_sampler,
-                                       observed_target,
-                                       cross_cov,
-                                       cov_target,
-                                       hypothesis=final_target,
+                                       smooth_sampler,
+                                       observed_target[:howmany],
+                                       cross_cov[:,:howmany],
+                                       cov_target[:howmany][:,:howmany],
+                                       hypothesis=final_target[:howmany],
                                        fit_probability=keras_fit,
                                        fit_args={'epochs':30, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
                                        alpha=alpha,
-                                       B=B)
+                                       B=B,
+                                       learner_klass=sparse_mixture_learner)
 
         for result, true_target in zip(results, final_target):
             (pivot, 
@@ -151,17 +155,17 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=8000):
                              'pvalue':pvalues,
                              'coverage':covered,
                              'length':lengths,
-                             'naive_pivot':naive_pivots,
-                             'naive_coverage':naive_covered,
-                             'naive_length':naive_lengths,
-                             'lee_pivot':lee_pivots,
-                             'lee_pvalue':lee_pvalues,
-                             'lee_length':lee_lengths,
-                             'lee_upper':lee_upper,
-                             'lee_lower':lee_lower,
+                             'naive_pivot':naive_pivots[:howmany],
+                             'naive_coverage':naive_covered[:howmany],
+                             'naive_length':naive_lengths[:howmany],
+                             'lee_pivot':lee_pivots[:howmany],
+                             'lee_pvalue':lee_pvalues[:howmany],
+                             'lee_length':lee_lengths[:howmany],
+                             'lee_upper':lee_upper[:howmany],
+                             'lee_lower':lee_lower[:howmany],
                              'upper':upper,
                              'lower':lower,
-                             'lee_coverage':lee_covered,
+                             'lee_coverage':lee_covered[:howmany],
 #                             'target':final_target,
                              })
 
@@ -175,15 +179,17 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate()
-        csvfile = 'lee_multi.csv'
+        df = simulate(B=10000)
+        csvfile = 'lee_multi_bigger.csv'
 
-        if df is not None and i % 2 == 1 and i > 0:
+        if df is not None:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
             except FileNotFoundError:
                 pass
+
+            df.to_csv(csvfile)
 
             if len(df['pivot']) > 0:
 
@@ -208,5 +214,5 @@ if __name__ == "__main__":
                 plt.scatter(df['naive_length'], df['lee_length'])
                 plt.savefig(csvfile[:-4] + '_lengths.pdf')
 
-            df.to_csv(csvfile, index=False)
-
+                df.to_csv(csvfile, index=False)
+            
