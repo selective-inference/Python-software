@@ -14,6 +14,7 @@ from .core import (infer_full_target,
                    repeat_selection,
                    probit_fit, 
                    keras_fit)
+from .learners import mixture_learner
 
 def full_model_inference(X, 
                          y,
@@ -25,7 +26,8 @@ def full_model_inference(X,
                          fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
                          alpha=0.1,
                          B=2000,
-                         naive=True):
+                         naive=True,
+                         learner_klass=mixture_learner):
 
     n, p = X.shape
     XTX = X.T.dot(X)
@@ -67,7 +69,8 @@ def full_model_inference(X,
                                     fit_args=fit_args,
                                     success_params=success_params,
                                     alpha=alpha,
-                                    B=B)
+                                    B=B,
+                                    learner_klass=learner_klass)
 
         for i, result in enumerate(results):
 
@@ -159,7 +162,8 @@ def partial_model_inference(X,
                             fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
                             alpha=0.1,
                             B=2000,
-                            naive=True):
+                            naive=True,
+                            learner_klass=mixture_learner):
 
     n, p = X.shape
     XTX = X.T.dot(X)
@@ -204,7 +208,8 @@ def partial_model_inference(X,
                                        fit_probability=keras_fit,
                                        fit_args={'epochs':30, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
                                        alpha=alpha,
-                                       B=B)
+                                       B=B,
+                                       learner_klass=learner_klass)
 
         for result, true_target in zip(results, final_target):
             (pivot, 
