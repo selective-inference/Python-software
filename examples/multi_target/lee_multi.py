@@ -87,7 +87,7 @@ if __name__ == "__main__":
     plt.clf()
 
     for i in range(500):
-        df = simulate(B=20)
+        df = simulate()
         csvfile = 'lee_multi.csv'
         outbase = csvfile[:-4]
 
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
             if len(df['pivot']) > 0:
                 pivot_ax, length_ax = pivot_plot(df, outbase)
-                pivot_ax.plot(U, sm.distributions.ECDF(df['lee_pivot'][~np.isnan(df['lee_pivot'])])(U), 'g', label='Lee', linewidth=3)
+                # pivot_ax.plot(U, sm.distributions.ECDF(df['lee_pivot'][~np.isnan(df['lee_pivot'])])(U), 'g', label='Lee', linewidth=3)
                 pivot_ax.figure.savefig(outbase + '.pdf')
 
                 length_ax.scatter(df['naive_length'], df['lee_length'])
