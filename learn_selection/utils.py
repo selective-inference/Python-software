@@ -27,7 +27,8 @@ def full_model_inference(X,
                          alpha=0.1,
                          B=2000,
                          naive=True,
-                         learner_klass=mixture_learner):
+                         learner_klass=mixture_learner,
+                         how_many=None):
 
     n, p = X.shape
     XTX = X.T.dot(X)
@@ -44,8 +45,12 @@ def full_model_inference(X,
     # run selection algorithm
 
     observed_set = repeat_selection(selection_algorithm, sampler, *success_params)
+    observed_list = sorted(observed_set)
+    if len(observed_list) > 0:
 
-    if len(observed_set) > 0:
+        if how_many is None:
+            how_many = len(observed_list)
+        observed_list = observed_list[:how_many]
 
         # find the target, based on the observed outcome
 
@@ -57,11 +62,11 @@ def full_model_inference(X,
          upper) = [], [], [], [], [], []
 
         targets = []
-        true_target = truth[sorted(observed_set)]
+        true_target = truth[observed_list]
 
         results = infer_full_target(selection_algorithm,
                                     observed_set,
-                                    sorted(observed_set),
+                                    observed_list,
                                     sampler,
                                     dispersion,
                                     hypothesis=true_target,
@@ -94,8 +99,8 @@ def full_model_inference(X,
                                'upper':upper,
                                'lower':lower,
                                'id':[instance_hash]*len(pvalues),
-                               'target':truth[sorted(observed_set)],
-                               'variable':sorted(observed_set),
+                               'target':true_target,
+                               'variable':observed_list,
                                'B':[B]*len(pvalues)})
             if naive:
                 naive_df = naive_full_model_inference(X, 
@@ -103,7 +108,8 @@ def full_model_inference(X,
                                                       dispersion,
                                                       truth,
                                                       observed_set,
-                                                      alpha)
+                                                      alpha,
+                                                      how_many=how_many)
                 df = pd.merge(df, naive_df, on='variable')
             return df
 
@@ -112,7 +118,8 @@ def naive_full_model_inference(X,
                                dispersion,
                                truth,
                                observed_set,
-                               alpha=0.1):
+                               alpha=0.1,
+                               how_many=None):
     
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
@@ -124,7 +131,12 @@ def naive_full_model_inference(X,
      naive_upper, 
      naive_lower) =  [], [], [], [], [], []
 
-    for idx in sorted(observed_set):
+    observed_list = sorted(observed_set)
+    if how_many is None:
+        how_many = len(observed_list)
+    observed_list = observed_list[:how_many]
+
+    for idx in observed_list:
         true_target = truth[idx]
         target_sd = np.sqrt(dispersion * XTXi[idx, idx])
         observed_target = np.squeeze(XTXi[idx].dot(X.T.dot(y)))
@@ -149,7 +161,7 @@ def naive_full_model_inference(X,
                          'naive_length':naive_lengths,
                          'naive_upper':naive_upper,
                          'naive_lower':naive_lower,
-                         'variable':sorted(observed_set)
+                         'variable':observed_list,
                          })
 
 def partial_model_inference(X, 
