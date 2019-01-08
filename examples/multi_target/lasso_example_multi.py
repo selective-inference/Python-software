@@ -72,9 +72,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    U = np.linspace(0, 1, 101)
-    plt.clf()
-
     for i in range(2000):
         df = simulate(B=2000)
         csvfile = 'lasso_multi.csv'

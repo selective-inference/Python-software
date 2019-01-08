@@ -78,16 +78,16 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
         (pivot, 
          interval,
          pvalue) = infer_full_target(selection_algorithm,
-                                observed_set,
-                                [idx],
-                                splitting_sampler,
-                                dispersion,
-                                hypothesis=true_target,
-                                fit_probability=probit_fit,
-                                success_params=success_params,
-                                alpha=alpha,
-                                B=B,
-                                single=True)[0][:3]
+                                     observed_set,
+                                     [idx],
+                                     splitting_sampler,
+                                     dispersion,
+                                     hypothesis=true_target,
+                                     fit_probability=probit_fit,
+                                     success_params=success_params,
+                                     alpha=alpha,
+                                     B=B,
+                                     single=True)[0][:3]
 
         pvalues.append(pvalue)
         pivots.append(pivot)

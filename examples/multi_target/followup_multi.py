@@ -104,9 +104,6 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    U = np.linspace(0, 1, 101)
-    plt.clf()
-
     iseed = int(np.fabs(np.random.standard_normal() * 1000))
     for i in range(500):
         df = simulate(seed=i+iseed, B=2000)

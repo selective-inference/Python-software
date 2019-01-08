@@ -119,20 +119,22 @@ def infer_general_target(algorithm,
 
     return results
 
-def infer_full_target(algorithm,
-                      observed_set,
-                      features,
-                      observed_sampler,
-                      dispersion, # sigma^2
-                      fit_probability=probit_fit,
-                      fit_args={'df':20},
-                      hypothesis=[0],
-                      alpha=0.1,
-                      success_params=(1, 1),
-                      B=500,
-                      learner_klass=mixture_learner,
-                      learning_npz=None,
-                      single=False):
+def infer_set_target(algorithm,
+                     observed_set,
+                     features,
+                     observed_sampler,
+                     observed_target,
+                     target_cov,
+                     cross_cov,
+                     fit_probability=probit_fit,
+                     fit_args={'df':20},
+                     hypothesis=[0],
+                     alpha=0.1,
+                     success_params=(1, 1),
+                     B=500,
+                     learner_klass=mixture_learner,
+                     learning_npz=None,
+                     single=False):
 
     '''
 
@@ -152,6 +154,16 @@ def infer_full_target(algorithm,
 
     observed_sampler : `normal_source`
         Representation of the data used in the selection procedure.
+
+    observed_target : np.ndarray
+        Statistic inference is based on.
+
+    target_cov : np.ndarray
+        (Pre-selection) covariance matrix of `observed_target`.
+
+    cross_cov : np.ndarray
+        (Pre-selection) covariance matrix of `observed_target` with the data 
+        represented by `observed_sampler`.
 
     fit_probability : callable
         Function to learn a probability model P(Y=1|T) based on [T, Y].
@@ -181,14 +193,9 @@ def infer_full_target(algorithm,
     if features.shape == ():
         features = np.array([features])
 
-    info_inv = np.linalg.inv(observed_sampler.covariance / dispersion) # scale free, i.e. X.T.dot(X) without sigma^2
-    target_cov = (info_inv[features][:, features] * dispersion)
-    observed_target = info_inv[features].dot(observed_sampler.center)
-    cross_cov = observed_sampler.covariance.dot(info_inv[:, features])
-
     observed_set = set(observed_set)
     if np.any([f not in observed_set for f in features]):
-        raise ValueError('for full target, we can only do inference for features observed in the outcome')
+        raise ValueError('for a set target, we can only do inference for features observed in the outcome')
 
     learner = learner_klass(algorithm, 
                             observed_set,
@@ -243,6 +250,90 @@ def infer_full_target(algorithm,
             np.savez(learning_npz, **npz_results)
 
         return results
+
+def infer_full_target(algorithm,
+                      observed_set,
+                      features,
+                      observed_sampler,
+                      dispersion, # sigma^2
+                      fit_probability=probit_fit,
+                      fit_args={'df':20},
+                      hypothesis=[0],
+                      alpha=0.1,
+                      success_params=(1, 1),
+                      B=500,
+                      learner_klass=mixture_learner,
+                      learning_npz=None,
+                      single=False):
+
+    '''
+
+    Compute a p-value (or pivot) for a target having observed `outcome` of `algorithm(observed_sampler)`.
+
+    Parameters
+    ----------
+
+    algorithm : callable
+        Selection algorithm that takes a noise source as its only argument.
+
+    observed_set : set(int)
+        The purported value `algorithm(observed_sampler)`, i.e. run with the original seed.
+
+    features : [int]
+        List of the elements of observed_set.
+
+    observed_sampler : `normal_source`
+        Representation of the data used in the selection procedure.
+
+    dispersion : float
+        Scalar dispersion of the covariance of `observed_sampler`. In 
+        OLS problems this is $\sigma^2$.
+
+    fit_probability : callable
+        Function to learn a probability model P(Y=1|T) based on [T, Y].
+
+    hypothesis : np.float   # 1-dimensional targets for now
+        Hypothesized value of target.
+
+    alpha : np.float
+        Level for 1 - confidence.
+
+    B : int
+        How many queries?
+
+    Notes
+    -----
+
+    This function makes the assumption that covariance in observed sampler is the 
+    true covariance of S and we are looking for inference about coordinates of the mean of 
+
+    np.linalg.inv(covariance).dot(S)
+
+    this allows us to compute the required observed_target, cross_cov and target_cov.
+
+    '''
+
+    info_inv = np.linalg.inv(observed_sampler.covariance / dispersion) # scale free, i.e. X.T.dot(X) without sigma^2
+    target_cov = (info_inv[features][:, features] * dispersion)
+    observed_target = info_inv[features].dot(observed_sampler.center)
+    cross_cov = observed_sampler.covariance.dot(info_inv[:, features])
+
+    return infer_set_target(algorithm,
+                            observed_set,
+                            features,
+                            observed_sampler,
+                            observed_target,
+                            target_cov,
+                            cross_cov,
+                            fit_probability=fit_probability,
+                            fit_args=fit_args,
+                            hypothesis=hypothesis,
+                            alpha=alpha,
+                            success_params=success_params,
+                            B=B,
+                            learner_klass=learner_klass,
+                            learning_npz=learning_npz,
+                            single=single)
 
 def _inference(observed_target,
                target_cov,
