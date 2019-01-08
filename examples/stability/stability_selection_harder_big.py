@@ -1,56 +1,71 @@
-import functools
+import functools, uuid
 
-import numpy as np
+import numpy as np, pandas as pd
 from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from learn_selection.utils import full_model_inference, pivot_plot
-from learn_selection.core import split_sampler, probit_fit
 
-def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
+from learn_selection.utils import full_model_inference, pivot_plot
+from learn_selection.core import split_sampler, keras_fit
+
+from sklearn.linear_model import lasso_path
+
+def simulate(n=2000, p=1000, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
 
     # description of statistical problem
 
     X, y, truth = gaussian_instance(n=n,
-                                    p=p, 
+                                    p=p,
                                     s=s,
                                     equicorrelated=False,
-                                    rho=0.5, 
+                                    rho=0.1,
                                     sigma=sigma,
                                     signal=signal,
                                     random_signs=True,
-                                    scale=False)[:3]
+                                    scale=True)[:3]
 
     dispersion = sigma**2
 
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
-    smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    lam_min, lam_1se = cv_glmnet_lam(X, y)
-    lam_min, lam_1se = n * lam_min, n * lam_1se
+    def meta_algorithm(XTX, XTXi, sampler):
 
+        min_success = 6
+        ntries = 10
 
-    def meta_algorithm(X, XTXi, resid, sampler):
+        def _alpha_grid(X, y, center, XTX):
+            n, p = X.shape
+            alphas, coefs, _ = lasso_path(X, y, Xy=center, precompute=XTX)
+            nselected = np.count_nonzero(coefs, axis=0)
+            return alphas[nselected < np.sqrt(0.8 * p)]
 
-        S = sampler(scale=0.) # deterministic with scale=0
-        ynew = X.dot(XTXi).dot(S) + resid # will be ok for n>p and non-degen X
-        G = lasso_glmnet(X, ynew, *[None]*4)
-        select = G.select()
-        return set(list(select[0]))
+        alpha_grid = _alpha_grid(X, y, sampler(scale=0.), XTX)
+        success = np.zeros((p, alpha_grid.shape[0]))
+
+        for _ in range(ntries):
+            scale = 1.  # corresponds to sub-samples of 50%
+            noisy_S = sampler(scale=scale)
+            _, coefs, _ = lasso_path(X, y, Xy = noisy_S, precompute=XTX, alphas=alpha_grid)
+            success += np.abs(np.sign(coefs))
+
+        selected = np.apply_along_axis(lambda row: any(x>min_success for x in row), 1, success)
+        vars = set(np.nonzero(selected)[0])
+        return vars
 
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
     dispersion = np.linalg.norm(resid)**2 / (n-p)
-                         
-    selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
+
+    selection_algorithm = functools.partial(meta_algorithm, XTX, XTXi)
 
     # run selection algorithm
+
 
     return full_model_inference(X,
                                 y,
@@ -59,9 +74,9 @@ def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
                                 splitting_sampler,
                                 success_params=(1, 1),
                                 B=B,
-                                fit_probability=probit_fit,
-                                fit_args={'df':20},
-                                how_many=1)
+                                fit_probability=keras_fit,
+                                fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
+
 
 if __name__ == "__main__":
     import statsmodels.api as sm
@@ -70,7 +85,7 @@ if __name__ == "__main__":
 
     for i in range(500):
         df = simulate()
-        csvfile = 'lasso_exact_CV_null.csv'
+        csvfile = 'stability_selection_harder_big.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:
@@ -83,3 +98,5 @@ if __name__ == "__main__":
 
             if len(df['pivot']) > 0:
                 pivot_ax, length_ax = pivot_plot(df, outbase)
+
+

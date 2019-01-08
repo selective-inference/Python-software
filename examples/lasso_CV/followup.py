@@ -6,17 +6,14 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
-from selection.algorithms.lasso import ROSI
-from learn_selection.knockoffs import cv_glmnet_lam, lasso_glmnet
 
-from learn_selection.core import (infer_full_target,
-                                  split_sampler,
-                                  normal_sampler,
-                                  logit_fit,
-                                  repeat_selection,
-                                  probit_fit)
+from learn_selection.Rutils import lasso_glmnet
+from learn_selection.utils import (full_model_inference, 
+                                   pivot_plot,
+                                   naive_full_model_inference)
+from learn_selection.core import normal_sampler, probit_fit
 
-def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
+def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0, B=2000):
 
     # description of statistical problem
 
@@ -37,9 +34,6 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
-
-    lam_min, lam_1se = cv_glmnet_lam(X, y)
-    lam_min, lam_1se = n * lam_min, n * lam_1se
 
     def meta_algorithm(X, XTXi, resid, sampler):
 
@@ -62,24 +56,19 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
     # run selection algorithm
 
-    success_params = (1, 1)
+    df = full_model_inference(X,
+                              y,
+                              truth,
+                              selection_algorithm,
+                              smooth_sampler,
+                              success_params=(1, 1),
+                              B=B,
+                              fit_probability=probit_fit,
+                              fit_args={'df':20},
+                              how_many=1,
+                              naive=False)
 
-    observed_set = repeat_selection(selection_algorithm, smooth_sampler, *success_params)
-
-    # find the target, based on the observed outcome
-
-    # we just take the first target  
-
-    pivots, covered, lengths, pvalues = [], [], [], []
-    lower, upper = [], []
-    naive_pvalues, naive_pivots, naive_covered, naive_lengths =  [], [], [], []
-
-    targets = []
-
-    for idx in sorted(observed_set)[:1]:
-        print("variable: ", idx, "total selected: ", len(observed_set))
-        true_target = [truth[idx]]
-        targets.extend(true_target)
+    if df is not None:
 
         np.random.seed(seed)
         X2, _, _ = gaussian_instance(n=n,
@@ -92,8 +81,8 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
                                      random_signs=True,
                                      center=False,
                                      scale=False)[:3]
-        stage_1 = np.random.choice(np.arange(n), 200, replace=False)
 
+        stage_1 = np.random.choice(np.arange(n), 200, replace=False)
         stage_2 = sorted(set(range(n)).difference(stage_1))
         X2 = X2[stage_2]
         y2 = X2.dot(truth) + sigma * np.random.standard_normal(X2.shape[0])
@@ -102,56 +91,15 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
         resid2 = y2 - X2.dot(XTXi_2.dot(X2.T.dot(y2)))
         dispersion_2 = np.linalg.norm(resid2)**2 / (X2.shape[0] - X2.shape[1])
 
-        target_sd = np.sqrt(dispersion_2 * XTXi_2[idx, idx])
-        observed_target = np.squeeze(XTXi_2[idx].dot(X2.T.dot(y2)))
-        quantile = ndist.ppf(1 - 0.5 * alpha)
-        naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
+        naive_df = naive_full_model_inference(X2,
+                                              y2,
+                                              dispersion_2,
+                                              truth,
+                                              df['variable'],
+                                              alpha=alpha,
+                                              how_many=1)
 
-        naive_pivot = (1 - ndist.cdf((observed_target - true_target[0]) / target_sd))
-        naive_pivot = 2 * min(naive_pivot, 1 - naive_pivot)
-        naive_pivots.append(naive_pivot)
-
-        naive_pvalue = (1 - ndist.cdf(observed_target / target_sd))
-        naive_pvalue = 2 * min(naive_pivot, 1 - naive_pivot)
-        naive_pvalues.append(naive_pvalue)
-
-        naive_covered.append((naive_interval[0] < true_target[0]) * (naive_interval[1] > true_target[0]))
-        naive_lengths.append(naive_interval[1] - naive_interval[0])
-
-        (pivot, 
-         interval,
-         pvalue,
-         _) = infer_full_target(selection_algorithm,
-                                observed_set,
-                                [idx],
-                                smooth_sampler,
-                                dispersion,
-                                hypothesis=true_target,
-                                fit_probability=probit_fit,
-                                success_params=success_params,
-                                alpha=alpha,
-                                B=1000)[0]
-
-        pvalues.append(pvalue)
-        pivots.append(pivot)
-        covered.append((interval[0] < true_target[0]) * (interval[1] > true_target[0]))
-        print(interval, 'interval')
-        lengths.append(interval[1] - interval[0])
-        lower.append(interval[0])
-        upper.append(interval[1])
-
-    if len(pvalues) > 0:
-        return pd.DataFrame({'pivot':pivots,
-                             'target':targets,
-                             'pvalue':pvalues,
-                             'coverage':covered,
-                             'length':lengths,
-                             'naive_pivot':naive_pivots,
-                             'naive_coverage':naive_covered,
-                             'naive_length':naive_lengths,
-                             'upper':upper,
-                             'lower':lower})
-
+        return pd.merge(df, naive_df, on='variable')
 
 if __name__ == "__main__":
     import statsmodels.api as sm

@@ -46,7 +46,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
     smooth_sampler = normal_sampler(S, covS)
 
     def meta_algorithm(XTX, XTXi, dispersion, lam, sampler):
-        global counter
+
         p = XTX.shape[0]
         success = np.zeros(p)
 

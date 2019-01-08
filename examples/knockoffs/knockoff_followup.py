@@ -6,16 +6,12 @@ from scipy.stats import norm as ndist
 import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
-from selection.algorithms.lasso import ROSI
-from learn_selection.knockoffs import cv_glmnet_lam, lasso_glmnet
 
-from learn_selection.keras_fit import keras_fit
-from learn_selection.core import (infer_full_target,
-                                  split_sampler,
-                                  normal_sampler,
-                                  logit_fit,
-                                  repeat_selection,
-                                  probit_fit)
+from learn_selection.Rutils import lasso_glmnet
+from learn_selection.utils import (full_model_inference, 
+                                   pivot_plot,
+                                   naive_full_model_inference)
+from learn_selection.core import split_sampler, keras_fit
 
 def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
@@ -38,9 +34,6 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
     smooth_sampler = normal_sampler(S, covS)
-
-    lam_min, lam_1se = cv_glmnet_lam(X, y)
-    lam_min, lam_1se = n * lam_min, n * lam_1se
 
     def meta_algorithm(X, XTXi, resid, sampler):
 
@@ -69,25 +62,21 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
 
     # run selection algorithm
 
-    success_params = (8, 10)
+    df = full_model_inference(X,
+                              y,
+                              truth,
+                              selection_algorithm,
+                              splitting_sampler,
+                              success_params=(8, 10),
+                              B=B,
+                              fit_probability=keras_fit,
+                              fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                              fit_args={'df':20})
 
-    observed_set = repeat_selection(selection_algorithm, smooth_sampler, *success_params)
+    if df is not None:
 
-    # find the target, based on the observed outcome
-
-    # we just take the first target  
-
-    pivots, covered, lengths, pvalues = [], [], [], []
-    lower, upper = [], []
-
-    targets = []
-
-    observed_set = sorted(observed_set)
-
-    if len(observed_set) > 0:
-
+        observed_set = list(df['variable'])
         true_target = truth[observed_set]
-        targets.extend(true_target)
 
         np.random.seed(seed)
         X2, _, _ = gaussian_instance(n=n,
@@ -101,7 +90,6 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
                                      center=False,
                                      scale=False)[:3]
         stage_1 = np.random.choice(np.arange(n), 200, replace=False)
-
         stage_2 = sorted(set(range(n)).difference(stage_1))
         X2 = X2[stage_2]
         y2 = X2.dot(truth) + sigma * np.random.standard_normal(X2.shape[0])
@@ -110,97 +98,34 @@ def simulate(n=400, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, seed=0):
         resid2 = y2 - X2.dot(XTXi_2.dot(X2.T.dot(y2)))
         dispersion_2 = np.linalg.norm(resid2)**2 / (X2.shape[0] - X2.shape[1])
 
-        target_sd = np.sqrt(np.diag(dispersion_2 * XTXi_2))[observed_set]
-        observed_target = XTXi_2[observed_set].dot(X2.T.dot(y2))
-        quantile = ndist.ppf(1 - 0.5 * alpha)
-        naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
+        naive_df = naive_full_model_inference(X2,
+                                              y2,
+                                              dispersion_2,
+                                              observed_set,
+                                              alpha=alpha)
 
-        naive_pivots = (1 - ndist.cdf((observed_target - true_target) / target_sd))
-        naive_pivots = 2 * np.minimum(naive_pivots, 1 - naive_pivots)
-
-        naive_pvalues = (1 - ndist.cdf(observed_target / target_sd))
-        naive_pvalues = 2 * np.minimum(naive_pvalues, 1 - naive_pvalues)
-
-        naive_covered = (naive_interval[0] < true_target) * (naive_interval[1] > true_target)
-        naive_lengths = naive_interval[1] - naive_interval[0]
-
-        results = infer_full_target(selection_algorithm,
-                                    observed_set,
-                                    observed_set,
-                                    smooth_sampler,
-                                    dispersion,
-                                    hypothesis=true_target,
-                                    fit_probability=keras_fit,
-                                    fit_args={'epochs':20, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
-                                    success_params=success_params,
-                                    alpha=alpha,
-                                    B=4000)
-
-        for i, result in enumerate(results):
-
-            (pivot, 
-             interval,
-             pvalue,
-             _) = result
-
-            pvalues.append(pvalue)
-            pivots.append(pivot)
-            covered.append((interval[0] < true_target[i]) * (interval[1] > true_target[i]))
-            lengths.append(interval[1] - interval[0])
-            upper.append(interval[1])
-            lower.append(interval[0])
-
-    if len(pvalues) > 0:
-        return pd.DataFrame({'pivot':pivots,
-                             'target':targets,
-                             'pvalue':pvalues,
-                             'coverage':covered,
-                             'length':lengths,
-                             'naive_pivot':naive_pivots,
-                             'naive_coverage':naive_covered,
-                             'naive_length':naive_lengths,
-                             'upper':upper,
-                             'lower':lower})
-
+        df = pd.merge(df, naive_df, on='variable')
+        return df
 
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    U = np.linspace(0, 1, 101)
-    plt.clf()
-
     iseed = int(np.fabs(np.random.standard_normal() * 1000))
     for i in range(500):
         df = simulate(seed=i + iseed)
         csvfile = 'knockoff_followup.csv'
+        outbase = csvfile[:-4]
 
-        if df is not None and i % 2 == 1 and i > 0:
+        if df is not None and i > 0:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
             except FileNotFoundError:
                 pass
+            df.to_csv(csvfile, index=False)
 
             if len(df['pivot']) > 0:
-
-                print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
-                print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
-
-                print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
-
-                plt.clf()
-                U = np.linspace(0, 1, 101)
-                plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'r', label='Selective', linewidth=3)
-                plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
-                plt.legend()
-                plt.plot([0,1], [0,1], 'k--', linewidth=2)
-                plt.savefig(csvfile[:-4] + '.pdf')
-
-                plt.clf()
-                plt.scatter(df['naive_length'], df['length'])
-                plt.savefig(csvfile[:-4] + '_lengths.pdf')
-
-            df.to_csv(csvfile, index=False)
+                pivot_plot(df, outbase)
 
