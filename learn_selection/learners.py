@@ -204,3 +204,19 @@ class mixture_learner(object):
         conditional_laws = fit_probability(learning_T, learning_Y, **fit_args)
         return conditional_laws, (learning_T, learning_Y)
 
+class sparse_mixture_learner(mixture_learner):
+
+    """
+    Move only along one dimension at a time
+    """
+
+    def learning_proposal(self):
+        center = self.observed_target
+        scale = np.random.choice(self.scales, 1)
+        idx = np.random.choice(np.arange(center.shape[0]))
+        prop = center.copy()
+        prop[idx] = prop[idx] + np.sqrt(self.target_cov[idx, idx]) * np.random.standard_normal() * scale
+        return prop + self._chol.dot(np.random.standard_normal(center.shape)) * 0.
+
+    def proposal_density(self, target_val):
+        raise NotImplementedError
