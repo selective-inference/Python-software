@@ -14,11 +14,10 @@ from learn_selection.core import (infer_full_target,
                                   gbm_fit,
                                   repeat_selection,
                                   probit_fit)
+from learn_selection.utils import pivot_plot
 
 from learn_selection.learners import mixture_learner
 mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
-
-from learn_selection.keras_fit import keras_fit
 
 def BHfilter(pval, q=0.2):
     pval = np.asarray(pval)
@@ -54,9 +53,8 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
     smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
-    counter = 0
     def meta_algorithm(XTX, XTXi, dispersion, sampler):
-        global counter
+
         p = XTX.shape[0]
         success = np.zeros(p)
 
@@ -95,6 +93,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
                                     dispersion,
                                     hypothesis=true_target,
                                     fit_probability=logit_fit,
+                                    fit_args={'df':20},
                                     success_params=success_params,
                                     alpha=alpha,
                                     B=B,
@@ -139,29 +138,18 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    U = np.linspace(0, 1, 101)
-    plt.clf()
-
     for i in range(2000):
         df = simulate(B=5000)
         csvfile = 'logit_targets_BH_single.csv'
+        outbase = csvfile[:-4]
 
-        try:
-            df = pd.concat([df, pd.read_csv(csvfile)])
-        except FileNotFoundError:
-            pass
+        if df is not None and i > 0:
 
-        if df is not None and len(df['pivot']) > 0:
-
-            plt.clf()
-            U = np.linspace(0, 1, 101)
-            plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'b', label='Naive', linewidth=3)
-            for b in np.unique(df['batch_size']):
-                plt.plot(U, sm.distributions.ECDF(np.array(df['pivot'])[np.array(df['batch_size']) == b])(U), label='B=%d' % b, linewidth=3)
-
-            plt.legend()
-            plt.plot([0,1], [0,1], 'k--', linewidth=2)
-            plt.savefig(csvfile[:-4] + '.pdf')
-
+            try: # concatenate to disk
+                df = pd.concat([df, pd.read_csv(csvfile)])
+            except FileNotFoundError:
+                pass
             df.to_csv(csvfile, index=False)
 
+            if len(df['pivot']) > 0:
+                pivot_ax, length_ax = pivot_plot(df, outbase)

@@ -66,6 +66,8 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=1000):
 
     # run selection algorithm
 
+    # run selection algorithm
+
     return full_model_inference(X,
                                 y,
                                 truth,
@@ -82,8 +84,8 @@ if __name__ == "__main__":
     import pandas as pd
 
     for i in range(500):
-        df = simulate(B=40000)
-        csvfile = 'gbm_targets_BH.csv'
+        df = simulate(B=5000)
+        csvfile = 'gbm_targets_BH_smallB.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:
