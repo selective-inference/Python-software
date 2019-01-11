@@ -248,7 +248,15 @@ class discrete_family(object):
         E : np.float
 
         """
-        return (func(self.sufficient_stat) * self.pdf(theta)).sum()
+        T = np.asarray(func(self.sufficient_stat))
+        pdf_ = self.pdf(theta)
+
+        if T.ndim == 1:
+            return (T * pdf_).sum()
+        else:
+            val = (T * pdf_[:,None]).sum(0)
+            return val
+
 
     def Var(self, theta, func):
         r"""
@@ -626,6 +634,73 @@ class discrete_family(object):
         Lcutoff = np.max(self.sufficient_stat[F <= 0.5 * alpha])
         Rcutoff = np.min(self.sufficient_stat[F >= 1 - 0.5*alpha])
         return Lcutoff, Rcutoff
+
+    def MLE(self, observed, initial=0,
+            max_iter=20, tol=1.e-4):
+
+        r"""
+        Compute the maximum likelihood estimator
+        based on observed sufficient statistic `observed`.
+
+        Parameters
+        ----------
+
+        observed : float
+             Observed value of sufficient statistic
+
+        initial : float
+             Starting point for Newton-Raphson
+
+        max_iter : int (optional)
+             Maximum number of Newton-Raphson iterations
+
+        tol : float (optional)
+             Tolerance parameter for stopping, based
+             on relative change in parameter estimate.
+             Iteration stops when the change is smaller
+             than `tol * max(1, np.fabs(cur_estimate))`.
+
+        Returns
+        -------
+
+        theta_hat : float
+             Maximum likelihood estimator.
+   
+        std_err : float
+             Estimated variance of `theta_hat` based
+             on inverse of variance of sufficient
+             statistic at `theta_hat`, i.e. the
+             observed Fisher information.
+
+        """
+
+        cur_est = initial
+
+        def first_two_moments(x):
+            return np.array([x, x**2]).T
+        
+        for i in range(max_iter):
+            cur_moments = self.E(cur_est, first_two_moments) # gradient and
+                                                             # Hessian of CGF
+                                                             # (almost)
+            grad, hessian = (cur_moments[0] - observed, 
+                             cur_moments[1] - cur_moments[0]**2)
+            next_est = cur_est - grad / hessian # newton step
+
+            if np.fabs(next_est - cur_est) < tol * max(1, np.fabs(cur_est)):
+                break
+            cur_est = next_est
+
+            if i == max_iter - 1:
+                warnings.warn('Newton-Raphson failed to converge after %d iterations' % max_iter)
+
+        cur_moments = self.E(cur_est, first_two_moments) # gradient and
+                                                         # Hessian of CGF
+                                                         # (almost)
+        grad, hessian = (cur_moments[0] - observed, 
+                         cur_moments[1] - cur_moments[0]**2)
+
+        return cur_est, 1. / hessian, grad
 
     # Private methods
 
