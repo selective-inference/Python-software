@@ -402,7 +402,7 @@ def interval_plot(csvfile,
                              'Naive': 'r',
                              'Bonferroni': 'gray',
                              'Lee':'gray',
-                             'Strawman':'gray'}
+                             'Strawman':'gray'},
                   figsize=(8, 8), bonferroni=True,
                   straw=False,
                   xlim=None):
@@ -437,7 +437,7 @@ def pivot_plot_new(csvfile,
                               'Naive': 'r',
                               'Bonferroni': 'gray',
                               'Lee':'gray',
-                              'Strawman':'gray'}
+                              'Strawman':'gray'},
                    figsize=(8, 8), straw=False):
 
     df = pd.read_csv(csvfile)
