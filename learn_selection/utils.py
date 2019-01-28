@@ -394,3 +394,69 @@ def liu_inference(X,
                          'target':truth[R.active],
                          'id':[instance_hash]*len(liu_pivots),
                          'variable':summaryR['variable']})
+
+# Some plotting functions
+
+def interval_plot(csvfile, 
+                  palette = {'Learned': 'b',
+                             'Naive': 'r',
+                             'Bonferroni': 'gray',
+                             'Lee':'gray',
+                             'Strawman':'gray'}
+                  figsize=(8, 8), bonferroni=True,
+                  straw=False,
+                  xlim=None):
+
+    df = pd.read_csv(csvfile)
+    f = plt.figure(figsize=figsize)
+    new_df = pd.DataFrame({'Learned': df['length'],
+                           'Naive': df['naive_length']})
+    if bonferroni:
+        new_df['Bonferroni'] = df['naive_length']*2
+    ax = f.gca()
+    
+    if straw:
+        new_df['Strawman'] = new_df['Naive']
+        new_df = new_df.drop('Naive', axis=1)
+    for k in new_df.keys():
+        sns.distplot(new_df[k], ax=ax, color=palette[k], label=k)
+    ax.set_xlabel('Interval length', fontsize=20)
+    ax.set_yticks([])
+    ax.legend(fontsize=15)
+    if xlim is not None:
+        ax.set_xlim(xlim)
+    
+    pngfile = os.path.basename(csvfile)[:-4] + '_length.png'
+    plt.savefig(pngfile, dpi=200)
+    
+    return ax, f, pngfile, df, new_df
+    
+    
+def pivot_plot_new(csvfile, 
+                   palette = {'Learned': 'b',
+                              'Naive': 'r',
+                              'Bonferroni': 'gray',
+                              'Lee':'gray',
+                              'Strawman':'gray'}
+                   figsize=(8, 8), straw=False):
+
+    df = pd.read_csv(csvfile)
+    f = plt.figure(figsize=figsize)
+    new_df = pd.DataFrame({'Learned': df['pivot'],
+                           'Naive': df['naive_pivot']})
+    if straw:
+        new_df = pd.DataFrame({'Learned': new_df['Learned'],
+                               'Strawman': new_df['Naive']})
+    U = np.linspace(0, 1, 101)
+    ax = f.gca()
+    for k in new_df.keys():
+        plt.plot(U, sm.distributions.ECDF(new_df[k])(U), color=palette[k], label=k, linewidth=5)
+    plt.plot([0,1], [0,1], 'k--', linewidth=3)
+    ax.set_xlabel('pivot', fontsize=20)
+    ax.set_ylabel('ECDF(pivot)', fontsize=20)
+    ax.legend(fontsize=15)
+    
+    pngfile = os.path.basename(csvfile)[:-4] + '_pivot.png'
+    plt.savefig(pngfile, dpi=200)
+    
+    return ax, f, pngfile, df, new_df
