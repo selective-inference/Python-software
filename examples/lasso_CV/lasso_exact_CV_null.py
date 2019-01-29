@@ -9,6 +9,7 @@ from selection.tests.instance import gaussian_instance
 
 from learn_selection.utils import full_model_inference, pivot_plot
 from learn_selection.core import split_sampler, probit_fit
+from learn_selection.Rutils import lasso_glmnet
 
 def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 
@@ -24,16 +25,14 @@ def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
                                     random_signs=True,
                                     scale=False)[:3]
 
-    dispersion = sigma**2
-
+    XTX = X.T.dot(X)
+    XTXi = np.linalg.inv(XTX)
+    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
+    dispersion = np.linalg.norm(resid)**2 / (n-p)
+                         
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
-    smooth_sampler = normal_sampler(S, covS)
     splitting_sampler = split_sampler(X * y[:, None], covS)
-
-    lam_min, lam_1se = cv_glmnet_lam(X, y)
-    lam_min, lam_1se = n * lam_min, n * lam_1se
-
 
     def meta_algorithm(X, XTXi, resid, sampler):
 
@@ -43,11 +42,6 @@ def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
         select = G.select()
         return set(list(select[0]))
 
-    XTX = X.T.dot(X)
-    XTXi = np.linalg.inv(XTX)
-    resid = y - X.dot(XTXi.dot(X.T.dot(y)))
-    dispersion = np.linalg.norm(resid)**2 / (n-p)
-                         
     selection_algorithm = functools.partial(meta_algorithm, X, XTXi, resid)
 
     # run selection algorithm

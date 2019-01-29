@@ -148,7 +148,7 @@ class mixture_learner(object):
             def check_selection(result):
                 return [result == observed_outcome]
 
-        direction = cross_cov.dot(np.linalg.inv(target_cov)) # move along a ray through S with this direction
+        direction = cross_cov.dot(np.linalg.inv(target_cov)) # move along a plane through S with this direction
 
         learning_Y, learning_T = [], []
 

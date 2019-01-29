@@ -31,7 +31,6 @@ class normal_sampler(object):
         (self.center,
          self.covariance) = (np.asarray(center),
                              np.asarray(covariance))
-        self.cholT = np.linalg.cholesky(self.covariance).T
         self.shape = self.center.shape
 
     def __call__(self, size=None, scale=1.):
@@ -59,6 +58,9 @@ class normal_sampler(object):
         for constructing UMVU, say.
 
         '''
+
+        if not hasattr(self, 'cholT'):
+            self.cholT = np.linalg.cholesky(self.covariance).T
 
         if type(size) == type(1):
             size = (size,)
