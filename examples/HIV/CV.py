@@ -8,9 +8,7 @@ import regreg.api as rr
 # load in the X matrix
 
 from selection.tests.instance import HIV_NRTI
-X = HIV_NRTI(datafile="NRTI_DATA.txt", standardize=False)[0]
-X = X - X.mean(0)[None, :]
-X /= np.std(X, 0)[None, :]
+X_full = HIV_NRTI(datafile="NRTI_DATA.txt", standardize=False)[0]
 
 from learn_selection.utils import full_model_inference, liu_inference, pivot_plot
 from learn_selection.core import split_sampler, keras_fit
@@ -19,6 +17,13 @@ from learn_selection.Rutils import lasso_glmnet, cv_glmnet_lam
 def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
 
     # description of statistical problem
+
+    n, p = X_full.shape
+
+    idx = np.random.choice(np.arange(n), n, replace=False)
+    X = X_full[idx] # bootstrap X to make it really an IID sample, i.e. don't condition on X throughout
+    X -= np.mean(X, 0)[None, :]
+    X /= np.std(X, 0)[None, :]
 
     n, p = X.shape
     truth = np.zeros(p)
