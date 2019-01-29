@@ -29,18 +29,19 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
     else:
         X = X_full.copy()
 
-    X -= np.mean(X, 0)[None, :]
-    X /= np.std(X, 0)[None, :]
+    X = X - np.mean(X, 0)[None, :]
+    X = X / np.std(X, 0)[None, :]
 
     n, p = X.shape
     truth = np.zeros(p)
     truth[:s] = np.linspace(signal[0], signal[1], s)
     np.random.shuffle(truth)
     truth /= np.sqrt(n)
+    truth *= sigma
 
-    y = sigma * (X.dot(truth) + np.random.standard_normal(n))
+    y = X.dot(truth) + sigma * np.random.standard_normal(n)
 
-    lam_min, lam_1se = cv_glmnet_lam(X, y, seed=seed)
+    lam_min, lam_1se = cv_glmnet_lam(X.copy(), y.copy(), seed=seed)
     lam_min, lam_1se = n * lam_min, n * lam_1se
 
     XTX = X.T.dot(X)
@@ -74,7 +75,7 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
                               fit_probability=keras_fit,
                               fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
 
-    if df is not None:
+    if False: # df is not None:
         liu_df = liu_inference(X,
                                y,
                                1.00001 * lam_min,
@@ -83,7 +84,9 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
                                alpha=alpha)
 
         return pd.merge(df, liu_df, on='variable')
-    
+    else:
+        return df
+
 if __name__ == "__main__":
     import statsmodels.api as sm
     import matplotlib.pyplot as plt
@@ -108,11 +111,11 @@ if __name__ == "__main__":
 
             if len(df['pivot']) > 0:
                 pivot_ax, lengths_ax = pivot_plot(df, outbase)
-                liu_pivot = df['liu_pivot']
-                liu_pivot = liu_pivot[~np.isnan(liu_pivot)]
-                pivot_ax.plot(U, sm.distributions.ECDF(liu_pivot)(U), 'gray', label='Liu CV',
-                              linewidth=3)
-                pivot_ax.legend()
-                fig = pivot_ax.figure
-                fig.savefig(csvfile[:-4] + '.pdf')
+#                liu_pivot = df['liu_pivot']
+#                liu_pivot = liu_pivot[~np.isnan(liu_pivot)]
+#                pivot_ax.plot(U, sm.distributions.ECDF(liu_pivot)(U), 'gray', label='Liu CV',
+#                              linewidth=3)
+#                pivot_ax.legend()
+#                fig = pivot_ax.figure
+#                fig.savefig(csvfile[:-4] + '.pdf')
 

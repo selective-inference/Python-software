@@ -166,6 +166,8 @@ def highdim_model_inference(X,
                 df = pd.merge(df, naive_df, on='variable')
             return df
 
+boot_design = False
+
 def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
 
     # description of statistical problem
@@ -179,17 +181,17 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
     else:
         X = X_full.copy()
 
-    X = X - X.mean(0)[None, :]
-    X /= np.std(X, 0)[None, :]
+    X = X - np.mean(X, 0)[None, :]
+    X = X / np.std(X, 0)[None, :]
 
     truth = np.zeros(p)
     truth[:s] = np.linspace(signal[0], signal[1], s)
     np.random.shuffle(truth)
-    truth /= np.sqrt(n)
+    truth *= sigma / np.sqrt(n)
 
-    y = sigma * (X.dot(truth) + np.random.standard_normal(n))
+    y = X.dot(truth) + sigma * np.random.standard_normal(n)
 
-    lam_min, lam_1se = cv_glmnet_lam(X, y, seed=seed)
+    lam_min, lam_1se = cv_glmnet_lam(X.copy(), y.copy(), seed=seed)
     lam_min, lam_1se = n * lam_min, n * lam_1se
 
     XTX = X.T.dot(X)
