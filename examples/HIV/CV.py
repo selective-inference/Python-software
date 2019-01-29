@@ -14,6 +14,8 @@ from learn_selection.utils import full_model_inference, liu_inference, pivot_plo
 from learn_selection.core import split_sampler, keras_fit
 from learn_selection.Rutils import lasso_glmnet, cv_glmnet_lam
 
+boot_design = False
+
 def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
 
     # description of statistical problem
