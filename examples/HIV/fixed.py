@@ -41,9 +41,6 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=5000, seed=0):
 
     y = X.dot(truth) + sigma * np.random.standard_normal(n)
 
-    lam_min, lam_1se = cv_glmnet_lam(X.copy(), y.copy(), seed=seed)
-    lam_min, lam_1se = n * lam_min, n * lam_1se
-
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
@@ -110,7 +107,7 @@ if __name__ == "__main__":
         csvfile = 'HIV_fixed.csv'
         outbase = csvfile[:-4]
 
-        if df is not None and i > 0:
+        if df is not None or i > 0:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
