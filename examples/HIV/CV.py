@@ -75,7 +75,7 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
                               fit_probability=keras_fit,
                               fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
 
-    if False: # df is not None:
+    if df is not None:
         liu_df = liu_inference(X,
                                y,
                                1.00001 * lam_min,
@@ -111,11 +111,11 @@ if __name__ == "__main__":
 
             if len(df['pivot']) > 0:
                 pivot_ax, lengths_ax = pivot_plot(df, outbase)
-#                liu_pivot = df['liu_pivot']
-#                liu_pivot = liu_pivot[~np.isnan(liu_pivot)]
-#                pivot_ax.plot(U, sm.distributions.ECDF(liu_pivot)(U), 'gray', label='Liu CV',
-#                              linewidth=3)
-#                pivot_ax.legend()
-#                fig = pivot_ax.figure
-#                fig.savefig(csvfile[:-4] + '.pdf')
+                liu_pivot = df['liu_pivot']
+                liu_pivot = liu_pivot[~np.isnan(liu_pivot)]
+                pivot_ax.plot(U, sm.distributions.ECDF(liu_pivot)(U), 'gray', label='Liu CV',
+                              linewidth=3)
+                pivot_ax.legend()
+                fig = pivot_ax.figure
+                fig.savefig(csvfile[:-4] + '.pdf')
 
