@@ -16,7 +16,7 @@ from learn_selection.Rutils import lasso_glmnet, cv_glmnet_lam
 
 boot_design = False
 
-def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
+def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=6000, seed=0):
 
     # description of statistical problem
 
@@ -41,9 +41,6 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
 
     y = X.dot(truth) + sigma * np.random.standard_normal(n)
 
-    lam_min, lam_1se = cv_glmnet_lam(X.copy(), y.copy(), seed=seed)
-    lam_min, lam_1se = n * lam_min, n * lam_1se
-
     XTX = X.T.dot(X)
     XTXi = np.linalg.inv(XTX)
     resid = y - X.dot(XTXi.dot(X.T.dot(y)))
@@ -51,6 +48,7 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
                          
     S = X.T.dot(y)
     covS = dispersion * X.T.dot(X)
+    print(dispersion, sigma**2)
     splitting_sampler = split_sampler(X * y[:, None], covS)
 
     def meta_algorithm(X, XTXi, resid, sampler):
@@ -76,6 +74,10 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
                               fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
 
     if df is not None:
+
+        lam_min, lam_1se = cv_glmnet_lam(X.copy(), y.copy(), seed=seed)
+        lam_min, lam_1se = n * lam_min, n * lam_1se
+
         liu_df = liu_inference(X,
                                y,
                                1.00001 * lam_min,
@@ -101,13 +103,15 @@ if __name__ == "__main__":
         csvfile = 'HIV_CV.csv'
         outbase = csvfile[:-4]
 
-        if df is not None and i > 0:
+        if df is not None or i > 0:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])
             except FileNotFoundError:
                 pass
-            df.to_csv(csvfile, index=False)
+
+            if df is not None:
+                df.to_csv(csvfile, index=False)
 
             if len(df['pivot']) > 0:
                 pivot_ax, lengths_ax = pivot_plot(df, outbase)
