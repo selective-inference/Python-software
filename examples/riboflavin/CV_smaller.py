@@ -13,13 +13,15 @@ import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
 rpy.r('library(hdi); data(riboflavin); X = riboflavin$x')
 numpy2ri.activate()
-X_full = np.asarray(rpy.r('X')) 
+X_full = np.asarray(rpy.r('X'))[:,::40] # every 40th feature, about 100
 numpy2ri.deactivate()
 
 from learn_selection.utils import full_model_inference, liu_inference, pivot_plot
 from learn_selection.core import split_sampler, keras_fit, repeat_selection, infer_set_target
 from learn_selection.Rutils import lasso_glmnet, cv_glmnet_lam
 from learn_selection.learners import mixture_learner
+
+boot_design = True
 
 def highdim_model_inference(X, 
                             y,
@@ -172,8 +174,13 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
 
     n, p = X_full.shape
 
-    idx = np.random.choice(np.arange(n), n, replace=True)
-    X = X_full[idx] # bootstrap X to make it really an IID sample, i.e. don't condition on X throughout
+    if boot_design:
+        idx = np.random.choice(np.arange(n), n, replace=True)
+        X = X_full[idx] # bootstrap X to make it really an IID sample, i.e. don't condition on X throughout
+        X += 0.1 * np.std(X) * np.random.standard_normal(X.shape) # to make non-degenerate
+    else:
+        X = X_full.copy()
+
     X = X - X.mean(0)[None, :]
     X /= np.std(X, 0)[None, :]
 
@@ -242,7 +249,7 @@ if __name__ == "__main__":
     init_seed = np.fabs(np.random.standard_normal() * 500)
     for i in range(500):
         df = simulate(seed=init_seed+i)
-        csvfile = 'riboflavin_CV.csv'
+        csvfile = 'riboflavin_CV_smaller.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:

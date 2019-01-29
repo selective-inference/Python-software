@@ -20,8 +20,13 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
 
     n, p = X_full.shape
 
-    idx = np.random.choice(np.arange(n), n, replace=False)
-    X = X_full[idx] # bootstrap X to make it really an IID sample, i.e. don't condition on X throughout
+    if boot_design:
+        idx = np.random.choice(np.arange(n), n, replace=True)
+        X = X_full[idx] # bootstrap X to make it really an IID sample, i.e. don't condition on X throughout
+        X += 0.1 * np.std(X) * np.random.standard_normal(X.shape) # to make non-degenerate
+    else:
+        X = X_full.copy()
+
     X -= np.mean(X, 0)[None, :]
     X /= np.std(X, 0)[None, :]
 
