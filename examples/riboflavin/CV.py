@@ -65,7 +65,7 @@ def highdim_model_inference(X,
     observed_target = soln[observed_list] - M.dot(grad)
     tmp = X.dot(M.T)
     target_cov = tmp.T.dot(tmp) * dispersion
-    cross_cov = -np.identity(p)[:,observed_list] * dispersion
+    cross_cov = np.identity(p)[:,observed_list] * dispersion
 
     if len(observed_list) > 0:
 
@@ -172,8 +172,13 @@ def simulate(s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000, seed=0):
 
     n, p = X_full.shape
 
-    idx = np.random.choice(np.arange(n), n, replace=True)
-    X = X_full[idx] # bootstrap X to make it really an IID sample, i.e. don't condition on X throughout
+    if boot_design:
+        idx = np.random.choice(np.arange(n), n, replace=True)
+        X = X_full[idx] # bootstrap X to make it really an IID sample, i.e. don't condition on X throughout
+        X += 0.1 * np.std(X) * np.random.standard_normal(X.shape) # to make non-degenerate
+    else:
+        X = X_full.copy()
+
     X = X - X.mean(0)[None, :]
     X /= np.std(X, 0)[None, :]
 
