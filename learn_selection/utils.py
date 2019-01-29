@@ -98,7 +98,7 @@ def full_model_inference(X,
                                'length':lengths,
                                'upper':upper,
                                'lower':lower,
-                               'id':[instance_hash]*len(pvalues),
+                               'id':[instance_id]*len(pvalues),
                                'target':true_target,
                                'variable':observed_list,
                                'B':[B]*len(pvalues)})
@@ -360,9 +360,10 @@ def liu_inference(X,
                   lam,
                   dispersion,
                   truth,
-                  alpha=0.1):
+                  alpha=0.1,
+                  approximate_inverse=None):
 
-    R = ROSI.gaussian(X, y, lam, approximate_inverse=None)
+    R = ROSI.gaussian(X, y, lam, approximate_inverse=approximate_inverse)
     R.fit()
     summaryR = R.summary(truth=truth[R.active], dispersion=dispersion, compute_intervals=True, level=1-alpha)
     summaryR0 = R.summary(dispersion=dispersion, compute_intervals=False)
@@ -378,10 +379,11 @@ def liu_inference(X,
         liu_pvalues = summaryR0['pval']
         liu_lower = summaryR['lower_confidence']
         liu_upper = summaryR['upper_confidence']
+        variable = summaryR['variable']
         liu_lengths = liu_upper - liu_lower
         liu_covered = [(l < t) * (t < u) for l, u, t in zip(liu_lower, liu_upper, truth[R.active])]
     else:
-        liu_pivots = liu_pvalues = liu_lower = liu_upper = liu_lengths = liu_covered = []
+        variable = liu_pivots = liu_pvalues = liu_lower = liu_upper = liu_lengths = liu_covered = []
 
     return pd.DataFrame({'liu_pivot':liu_pivots,
                          'liu_pvalue':liu_pvalues,
@@ -393,7 +395,7 @@ def liu_inference(X,
                          'liu_lower':liu_lower,
                          'target':truth[R.active],
                          'id':[instance_hash]*len(liu_pivots),
-                         'variable':summaryR['variable']})
+                         'variable':variable})
 
 # Some plotting functions
 
@@ -430,7 +432,6 @@ def interval_plot(csvfile,
     plt.savefig(pngfile, dpi=200)
     
     return ax, f, pngfile, df, new_df
-    
     
 def pivot_plot_new(csvfile, 
                    palette = {'Learned': 'b',

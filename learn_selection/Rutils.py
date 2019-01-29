@@ -147,14 +147,15 @@ class knockoffs_sigma(generic_method):
 
 class lasso_glmnet(generic_method):
 
-    def select(self, CV=True):
+    def select(self, CV=True, seed=0):
 
         numpy2ri.activate()
+
         rpy.r.assign('X', self.X)
         rpy.r.assign('Y', self.Y)
         rpy.r('X = as.matrix(X)')
         rpy.r('Y = as.numeric(Y)')
-        rpy.r('set.seed(1)')
+        rpy.r('set.seed(%s)' % seed)
         rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
         rpy.r("L1 = cvG[['lambda.min']]")
         rpy.r("L2 = cvG[['lambda.1se']]")
@@ -205,7 +206,7 @@ def factor_knockoffs(feature_cov, method='asdp'):
 
     return knockoff_chol
 
-def cv_glmnet_lam(X, Y):
+def cv_glmnet_lam(X, Y, seed=0):
     """
 
     Some calculations that can be reused by methods:
@@ -214,6 +215,7 @@ def cv_glmnet_lam(X, Y):
 
     """
     numpy2ri.activate()
+    rpy.r('set.seed(%d)' % seed)
     rpy.r.assign('X', X)
     rpy.r.assign('Y', Y)
     rpy.r('X=as.matrix(X)')
