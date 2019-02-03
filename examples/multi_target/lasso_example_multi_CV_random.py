@@ -53,7 +53,7 @@ def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
                                 truth,
                                 selection_algorithm,
                                 splitting_sampler,
-                                success_params=(1, 1),
+                                success_params=(6, 10),
                                 B=B,
                                 fit_probability=keras_fit,
                                 fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'})
