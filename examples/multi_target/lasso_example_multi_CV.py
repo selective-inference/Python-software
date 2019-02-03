@@ -71,7 +71,7 @@ if __name__ == "__main__":
         csvfile = 'lasso_multi_CV.csv'
         outbase = csvfile[:-4]
 
-        if df is not None and i > 0:
+        if df is not None:
 
             try:
                 df = pd.concat([df, pd.read_csv(csvfile)])

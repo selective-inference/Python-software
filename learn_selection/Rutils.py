@@ -151,11 +151,11 @@ class lasso_glmnet(generic_method):
 
         numpy2ri.activate()
 
-        rpy.r.assign('X', self.X)
-        rpy.r.assign('Y', self.Y)
+        rpy.r.assign('X', self.X.copy())
+        rpy.r.assign('Y', self.Y.copy())
         rpy.r('X = as.matrix(X)')
         rpy.r('Y = as.numeric(Y)')
-        rpy.r('set.seed(%s)' % seed)
+        rpy.r('set.seed(%d)' % seed)
         rpy.r('cvG = cv.glmnet(X, Y, intercept=FALSE, standardize=FALSE)')
         rpy.r("L1 = cvG[['lambda.min']]")
         rpy.r("L2 = cvG[['lambda.1se']]")
@@ -216,8 +216,8 @@ def cv_glmnet_lam(X, Y, seed=0):
     """
     numpy2ri.activate()
     rpy.r('set.seed(%d)' % seed)
-    rpy.r.assign('X', X)
-    rpy.r.assign('Y', Y)
+    rpy.r.assign('X', X.copy())
+    rpy.r.assign('Y', Y.copy())
     rpy.r('X=as.matrix(X)')
     rpy.r('Y=as.numeric(Y)')
     rpy.r('set.seed(1)')

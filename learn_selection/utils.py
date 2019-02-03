@@ -246,6 +246,7 @@ def partial_model_inference(X,
                            'lower':lower,
                            'target':final_target,
                            'variable':list(observed_tuple),
+                           'id':[instance_id]*len(pivots),
                            })
         if naive:
             naive_df = naive_partial_model_inference(X,
@@ -394,7 +395,7 @@ def liu_inference(X,
                          'liu_upper':liu_upper,
                          'liu_lower':liu_lower,
                          'target':truth[R.active],
-                         'id':[instance_hash]*len(liu_pivots),
+                         'id':[instance_id]*len(liu_pivots),
                          'variable':variable})
 
 # Some plotting functions
