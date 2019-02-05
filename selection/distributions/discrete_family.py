@@ -80,10 +80,10 @@ class discrete_family(object):
 
         The weights are normalized to sum to 1.
         """
-        xw = np.array(sorted(zip(sufficient_stat, weights)))
+        xw = np.array(sorted(zip(sufficient_stat, weights)), np.float)
         self._x = xw[:,0]
         self._w = xw[:,1]
-        self._lw = np.log(xw[:,1])
+        self._lw = np.array([np.log(v) for v in xw[:,1]])
         self._w /= self._w.sum() # make sure they are a pmf
         self.n = len(xw)
         self._theta = np.nan

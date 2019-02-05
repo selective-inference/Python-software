@@ -243,17 +243,27 @@ class lasso(object):
     def summary(self,
                 alternative='twosided',
                 level=0.95,
-                compute_intervals=False):
+                compute_intervals=False,
+                truth=None):
         """
         Summary table for inference adjusted for selection.
+
         Parameters
         ----------
+
         alternative : str
             One of ["twosided","onesided"]
+
         level : float
             Form level*100% selective confidence intervals.
+
         compute_intervals : bool
             Should we compute confidence intervals?
+
+        truth : np.array
+            True values of each beta for selected variables. If not None, a column 'pval' are p-values
+            computed under these corresponding null hypotheses.
+
         Returns
         -------
         pval_summary : np.recarray
@@ -263,6 +273,9 @@ class lasso(object):
 
         if alternative not in ['twosided', 'onesided']:
             raise ValueError("alternative must be one of ['twosided', 'onesided']")
+
+        if truth is None:
+            truth = np.zeros_like(self.active_signs)
 
         result = []
         C = self._constraints
@@ -274,7 +287,7 @@ class lasso(object):
                 _alt = {"onesided": 'greater',
                         'twosided': "twosided"}[alternative]
                 if C.linear_part.shape[0] > 0:  # there were some constraints
-                    _pval = C.pivot(eta, one_step, alternative=_alt)
+                    _pval = C.pivot(eta, one_step, null_value=truth[i], alternative=_alt)
                 else:
                     obs = (eta * one_step).sum()
                     sd = np.sqrt((eta * C.covariance.dot(eta)))
