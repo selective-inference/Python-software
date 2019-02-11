@@ -71,6 +71,13 @@ class mixture_learner(object):
         self._chol = np.linalg.cholesky(self.target_cov)
         self._cholinv = np.linalg.inv(self._chol)
 
+        # move along a plane through S spanned by these columns
+
+        self._direction = cross_cov.dot(np.linalg.inv(target_cov)) 
+        self._perturbed_sampler = normal_sampler(  
+                                      observed_sampler.center.copy(),
+                                      observed_sampler.covariance.copy())
+
     def learning_proposal(self):
         """
 
@@ -82,8 +89,20 @@ class mixture_learner(object):
         """
         center = self.observed_target
         scale = np.random.choice(self.scales, 1)
-        value = self._chol.dot(np.random.standard_normal(center.shape)) * scale + center                    
-        return value, value
+        value = (self._chol.dot(np.random.standard_normal(center.shape)) * scale 
+                 + center)
+
+        (center, 
+         observed_target, 
+         direction) = (self.observed_sampler.center,
+                       self.observed_target,
+                       self._direction)
+
+        self._perturbed_sampler.center = (center + 
+                                          direction.dot(value - 
+                                                        observed_target))
+        return value, self._perturbed_sampler
+        
 
     def proposal_density(self, target_val):
         '''
@@ -150,19 +169,14 @@ class mixture_learner(object):
 
         S = selection_stat = observed_sampler.center
 
-        perturbed_sampler = normal_sampler(observed_sampler.center.copy(),
-                                           observed_sampler.covariance.copy())
-
         if check_selection is None:
             def check_selection(result):
                 return [result == observed_outcome]
 
-        direction = cross_cov.dot(np.linalg.inv(target_cov)) # move along a plane through S with this direction
+        learning_selection, learning_T = [], []
 
-        learning_Y, learning_T = [], []
-
-        def random_algorithm(algorithm, check_selection, perturbed_sampler):
-             perturbed_selection = algorithm(perturbed_sampler)
+        def random_algorithm(algorithm, check_selection, perturbed_data):
+             perturbed_selection = algorithm(perturbed_data)
              return check_selection(perturbed_selection)
 
         random_algorithm = functools.partial(random_algorithm, 
@@ -172,20 +186,19 @@ class mixture_learner(object):
         # START
 
         for _ in range(B):
-             data, target = self.learning_proposal()     
-             perturbed_sampler.center = S + direction.dot(data - observed_target)
-             Y = random_algorithm(perturbed_sampler)
+             perturbed_target, perturbed_data = self.learning_proposal()     
+             perturbed_selection = random_algorithm(perturbed_data)
 
-             learning_Y.append(Y)
-             learning_T.append(target)
+             learning_selection.append(perturbed_selection)
+             learning_T.append(perturbed_target)
 
-        learning_Y = np.array(learning_Y, np.float)
+        learning_selection = np.array(learning_selection, np.float)
         learning_T = np.array(learning_T, np.float)
         if observed_target.shape == ():
-            learning_Y.reshape((-1, 1))
+            learning_selection.reshape((-1, 1))
             learning_T.reshape((-1, 1))
 
-        return learning_Y, learning_T, random_algorithm
+        return learning_selection, learning_T, random_algorithm
 
     def learn(self,
               fit_probability,
@@ -208,11 +221,11 @@ class mixture_learner(object):
 
         """
 
-        learning_Y, learning_T, random_algorithm = self.generate_data(B=B,
+        learning_selection, learning_T, random_algorithm = self.generate_data(B=B,
                                                                       check_selection=check_selection)
-        print('prob(select): ', np.mean(learning_Y, 0))
-        conditional_laws = fit_probability(learning_T, learning_Y, **fit_args)
-        return conditional_laws, (learning_T, learning_Y)
+        print('prob(select): ', np.mean(learning_selection, 0))
+        conditional_laws = fit_probability(learning_T, learning_selection, **fit_args)
+        return conditional_laws, (learning_T, learning_selection)
 
 class sparse_mixture_learner(mixture_learner):
 
