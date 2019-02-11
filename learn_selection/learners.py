@@ -27,7 +27,7 @@ class mixture_learner(object):
         where N is the sufficient statistic corresponding to nuisance parameters and T is our target.
         The random variable Y is 
 
-        Y = check_selection(algorithm(new_sampler))
+        Y = check_selection(algorithm(perturbed_sampler))
 
         That is, we perturb the center of observed_sampler along a ray (or higher-dimensional affine
         subspace) and rerun the algorithm, checking to see if the test `check_selection` passes.
@@ -150,8 +150,8 @@ class mixture_learner(object):
 
         S = selection_stat = observed_sampler.center
 
-        new_sampler = normal_sampler(observed_sampler.center.copy(),
-                                     observed_sampler.covariance.copy())
+        perturbed_sampler = normal_sampler(observed_sampler.center.copy(),
+                                           observed_sampler.covariance.copy())
 
         if check_selection is None:
             def check_selection(result):
@@ -161,19 +161,20 @@ class mixture_learner(object):
 
         learning_Y, learning_T = [], []
 
-        def random_meta_algorithm(new_sampler, algorithm, check_selection, T):
-             new_sampler.center = S + direction.dot(T - observed_target)
-             new_result = algorithm(new_sampler)
-             return check_selection(new_result)
+        def random_algorithm(algorithm, check_selection, perturbed_sampler):
+             perturbed_selection = algorithm(perturbed_sampler)
+             return check_selection(perturbed_selection)
 
-        random_algorithm = functools.partial(random_meta_algorithm, new_sampler, algorithm, check_selection)
+        random_algorithm = functools.partial(random_algorithm, 
+                                             algorithm, check_selection)
 
         # this is the "active learning bit"
         # START
 
         for _ in range(B):
              data, target = self.learning_proposal()     
-             Y = random_algorithm(data)
+             perturbed_sampler.center = S + direction.dot(data - observed_target)
+             Y = random_algorithm(perturbed_sampler)
 
              learning_Y.append(Y)
              learning_T.append(target)
