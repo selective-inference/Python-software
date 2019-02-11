@@ -155,20 +155,6 @@ class mixture_learner(object):
 
         """
 
-        (algorithm,
-         observed_outcome,
-         observed_sampler,
-         observed_target,
-         target_cov,
-         cross_cov) = (self.algorithm,
-                       self.observed_outcome,
-                       self.observed_sampler,
-                       self.observed_target,
-                       self.target_cov,
-                       self.cross_cov) 
-
-        S = selection_stat = observed_sampler.center
-
         if check_selection is None:
             def check_selection(result):
                 return [result == observed_outcome]
@@ -180,7 +166,8 @@ class mixture_learner(object):
              return check_selection(perturbed_selection)
 
         random_algorithm = functools.partial(random_algorithm, 
-                                             algorithm, check_selection)
+                                             self.algorithm, 
+                                             check_selection)
 
         # this is the "active learning bit"
         # START
@@ -194,7 +181,7 @@ class mixture_learner(object):
 
         learning_selection = np.array(learning_selection, np.float)
         learning_T = np.array(learning_T, np.float)
-        if observed_target.shape == ():
+        if self.observed_target.shape == ():
             learning_selection.reshape((-1, 1))
             learning_T.reshape((-1, 1))
 
