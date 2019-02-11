@@ -72,9 +72,18 @@ class mixture_learner(object):
         self._cholinv = np.linalg.inv(self._chol)
 
     def learning_proposal(self):
+        """
+
+        General return value should be 
+        (data, target) where the selection algorithm takes
+        argument `data` and `target` is the (possibly conditional)
+        MLE of our parametric model.
+
+        """
         center = self.observed_target
         scale = np.random.choice(self.scales, 1)
-        return self._chol.dot(np.random.standard_normal(center.shape)) * scale + center                    
+        value = self._chol.dot(np.random.standard_normal(center.shape)) * scale + center                    
+        return value, value
 
     def proposal_density(self, target_val):
         '''
@@ -163,11 +172,11 @@ class mixture_learner(object):
         # START
 
         for _ in range(B):
-             T = self.learning_proposal()      # a guess at informative distribution for learning what we want
-             Y = random_algorithm(T)
+             data, target = self.learning_proposal()     
+             Y = random_algorithm(data)
 
              learning_Y.append(Y)
-             learning_T.append(T)
+             learning_T.append(target)
 
         learning_Y = np.array(learning_Y, np.float)
         learning_T = np.array(learning_T, np.float)
@@ -216,7 +225,8 @@ class sparse_mixture_learner(mixture_learner):
         idx = np.random.choice(np.arange(center.shape[0]))
         prop = center.copy()
         prop[idx] = prop[idx] + np.sqrt(self.target_cov[idx, idx]) * np.random.standard_normal() * scale
-        return prop + self._chol.dot(np.random.standard_normal(center.shape)) * 0.
+        value = prop + self._chol.dot(np.random.standard_normal(center.shape)) * 0.
+        return value, value
 
     def proposal_density(self, target_val):
         raise NotImplementedError
