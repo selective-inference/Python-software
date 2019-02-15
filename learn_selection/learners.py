@@ -161,20 +161,20 @@ class mixture_learner(object):
 
         learning_selection, learning_T = [], []
 
-        def random_algorithm(algorithm, check_selection, perturbed_data):
+        def selection_algorithm(algorithm, check_selection, perturbed_data):
              perturbed_selection = algorithm(perturbed_data)
              return check_selection(perturbed_selection)
 
-        random_algorithm = functools.partial(random_algorithm, 
-                                             self.algorithm, 
-                                             check_selection)
+        selection_algorithm = functools.partial(selection_algorithm, 
+                                                self.algorithm, 
+                                                check_selection)
 
         # this is the "active learning bit"
         # START
 
         for _ in range(B):
              perturbed_target, perturbed_data = self.learning_proposal()     
-             perturbed_selection = random_algorithm(perturbed_data)
+             perturbed_selection = selection_algorithm(perturbed_data)
 
              learning_selection.append(perturbed_selection)
              learning_T.append(perturbed_target)
