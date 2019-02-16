@@ -41,6 +41,7 @@ class gaussian_OLS_learner(mixture_learner):
                       np.sqrt(self._dispersion))
         n, p = X_select.shape
         self._Xinv = np.linalg.pinv(X_select)
+        self._beta_cov = self._Xinv.dot(self._Xinv.T) * self._dispersion
         self._resid = observed_Y - X_select.dot(self._Xinv.dot(observed_Y))
 
     def learning_proposal(self):
@@ -53,16 +54,17 @@ class gaussian_OLS_learner(mixture_learner):
         beta_hat = self.observed_MLE
 
         scale = np.random.choice(self.scales, 1)
-        perturbed_beta = (self._chol.dot(
-                          np.random.standard_normal(s) * scale)
-                          + beta_hat)
+        idx = np.random.choice(np.arange(s), 1)
+        perturbed_beta = beta_hat * 1.
+        perturbed_beta[idx] += (scale * np.random.standard_normal() *
+                                np.sqrt(self._beta_cov[idx, idx]))
         
         perturbed_Y = self.X_select.dot(perturbed_beta) + self._resid
         return perturbed_beta, perturbed_Y
 
 ####
 
-def simulate(n=500, p=30, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
+def simulate(n=500, p=30, s=5, signal=(0.5, 1.), sigma=2, alpha=0.1, B=2000):
 
     # description of statistical problem
 
@@ -93,7 +95,7 @@ def simulate(n=500, p=30, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
 
     # run selection algorithm
 
-    lam = 4. * np.sqrt(n)
+    lam = 2. * np.sqrt(n)
     selection_algorithm = functools.partial(algorithm, lam, X)
 
     instance_hash = hashlib.md5()
@@ -196,8 +198,8 @@ if __name__ == "__main__":
     import pandas as pd
 
     for i in range(2000):
-        df = simulate(B=5000)
-        csvfile = 'lasso_selected.csv'
+        df = simulate(B=15000)
+        csvfile = 'lasso_selected_resid.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:
