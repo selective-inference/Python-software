@@ -171,7 +171,10 @@ def partial_model_inference(X,
                             sampler,
                             success_params=(1, 1),
                             fit_probability=keras_fit,
-                            fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                            fit_args={'epochs':10, 
+                                      'sizes':[100]*5, 
+                                      'dropout':0., 
+                                      'activation':'relu'},
                             alpha=0.1,
                             B=2000,
                             naive=True,
@@ -207,21 +210,28 @@ def partial_model_inference(X,
         final_target = Xpi.dot(X.dot(truth))
         observed_target = Xpi.dot(y)
 
-        cov_target = Xpi.dot(Xpi.T) * dispersion
+        target_cov = Xpi.dot(Xpi.T) * dispersion
         cross_cov = X.T.dot(Xpi.T) * dispersion
 
-        results = infer_general_target(selection_algorithm,
-                                       observed_tuple,
-                                       sampler,
+        learner = learner_klass(selection_algorithm, 
+                                observed_tuple,
+                                sampler, 
+                                observed_target,
+                                target_cov,
+                                cross_cov)
+
+        results = infer_general_target(observed_tuple,
                                        observed_target,
-                                       cross_cov,
-                                       cov_target,
+                                       target_cov,
+                                       learner,
                                        hypothesis=final_target,
                                        fit_probability=keras_fit,
-                                       fit_args={'epochs':30, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                                       fit_args={'epochs':30, 
+                                                 'sizes':[100]*5, 
+                                                 'dropout':0., 
+                                                 'activation':'relu'},
                                        alpha=alpha,
-                                       B=B,
-                                       learner_klass=learner_klass)
+                                       B=B)
 
         for result, true_target in zip(results, final_target):
             (pivot, 
@@ -274,10 +284,10 @@ def naive_partial_model_inference(X,
 
         observed_target = Xpi.dot(y)
 
-        cov_target = Xpi.dot(Xpi.T) * dispersion
+        target_cov = Xpi.dot(Xpi.T) * dispersion
         cross_cov = X.T.dot(Xpi.T) * dispersion
 
-        target_sd = np.sqrt(np.diag(cov_target))
+        target_sd = np.sqrt(np.diag(target_cov))
         quantile = normal_dbn.ppf(1 - 0.5 * alpha)
         naive_interval = (observed_target - quantile * target_sd, observed_target + quantile * target_sd)
         naive_lower, naive_upper = naive_interval

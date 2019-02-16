@@ -21,41 +21,32 @@ from .samplers import (normal_sampler,
 from .learners import mixture_learner
 from .keras_fit import keras_fit
                      
-def infer_general_target(algorithm,
-                         observed_outcome,
-                         observed_sampler,
+def infer_general_target(observed_outcome,
                          observed_target,
-                         cross_cov,
                          target_cov,
+                         learner,
                          fit_probability=probit_fit,
                          fit_args={'df':20},
                          hypothesis=0,
                          alpha=0.1,
                          success_params=(1, 1),
                          B=500,
-                         learning_npz=None,
-                         learner_klass=mixture_learner):
+                         learning_npz=None):
     '''
 
-    Compute a p-value (or pivot) for a target having observed `outcome` of `algorithm(observed_sampler)`.
+    Compute a p-value (or pivot) for a target having observed `outcome` of from `algorithm` run on the original data.
 
     Parameters
     ----------
 
-    algorithm : callable
-        Selection algorithm that takes a noise source as its only argument.
-
     observed_outcome : object
-        The purported value `algorithm(observed_sampler)`, i.e. run with the original seed.
-
-    observed_sampler : `normal_source`
-        Representation of the data used in the selection procedure.
-
-    cross_cov : np.float((*,1)) # 1 for 1-dimensional targets for now
-        Covariance between `observed_sampler.center` and target estimator.
+        The purported value observed, i.e. run with the original seed.
 
     target_cov : np.float((1, 1)) # 1 for 1-dimensional targets for now
         Covariance of target estimator
+
+    learner : 
+        Object that generates perturbed data.
 
     observed_target : np.float   # 1-dimensional targets for now
         Observed value of target estimator.
@@ -72,13 +63,6 @@ def infer_general_target(algorithm,
     B : int
         How many queries?
     '''
-
-    learner = learner_klass(algorithm, 
-                            observed_outcome,
-                            observed_sampler, 
-                            observed_target,
-                            target_cov,
-                            cross_cov)
                               
     weight_fns, learning_data = learner.learn(fit_probability,
                                               fit_args=fit_args,
@@ -119,41 +103,32 @@ def infer_general_target(algorithm,
 
     return results
 
-def infer_set_target(algorithm,
-                     observed_set,
+def infer_set_target(observed_set,
                      features,
-                     observed_sampler,
                      observed_target,
                      target_cov,
-                     cross_cov,
+                     learner,
                      fit_probability=probit_fit,
                      fit_args={'df':20},
                      hypothesis=[0],
                      alpha=0.1,
                      success_params=(1, 1),
                      B=500,
-                     learner_klass=mixture_learner,
                      learning_npz=None,
                      single=False):
 
     '''
 
-    Compute a p-value (or pivot) for a target having observed `outcome` of `algorithm(observed_sampler)`.
+    Compute a p-value (or pivot) for a target having observed `outcome` of `algorithm` on original data.
 
     Parameters
     ----------
 
-    algorithm : callable
-        Selection algorithm that takes a noise source as its only argument.
-
     observed_set : set(int)
-        The purported value `algorithm(observed_sampler)`, i.e. run with the original seed.
+        The purported value observed when run with the original seed.
 
     features : [int]
         List of the elements of observed_set.
-
-    observed_sampler : `normal_source`
-        Representation of the data used in the selection procedure.
 
     observed_target : np.ndarray
         Statistic inference is based on.
@@ -161,9 +136,8 @@ def infer_set_target(algorithm,
     target_cov : np.ndarray
         (Pre-selection) covariance matrix of `observed_target`.
 
-    cross_cov : np.ndarray
-        (Pre-selection) covariance matrix of `observed_target` with the data 
-        represented by `observed_sampler`.
+    learner : 
+        Object that generates perturbed data.
 
     fit_probability : callable
         Function to learn a probability model P(Y=1|T) based on [T, Y].
@@ -197,13 +171,6 @@ def infer_set_target(algorithm,
     if np.any([f not in observed_set for f in features]):
         raise ValueError('for a set target, we can only do inference for features observed in the outcome')
 
-    learner = learner_klass(algorithm, 
-                            observed_set,
-                            observed_sampler, 
-                            observed_target,
-                            target_cov,
-                            cross_cov)
-                              
     weight_fns, learning_data = learner.learn(fit_probability,
                                               fit_args=fit_args,
                                               check_selection=lambda result: np.array([f in set(result) for f in features]),
@@ -318,20 +285,24 @@ def infer_full_target(algorithm,
     observed_target = info_inv[features].dot(observed_sampler.center)
     cross_cov = observed_sampler.covariance.dot(info_inv[:, features])
 
-    return infer_set_target(algorithm,
+    learner = learner_klass(algorithm, 
                             observed_set,
-                            features,
-                            observed_sampler,
+                            observed_sampler, 
                             observed_target,
                             target_cov,
-                            cross_cov,
+                            cross_cov)
+
+    return infer_set_target(observed_set,
+                            features,
+                            observed_target,
+                            target_cov,
+                            learner,
                             fit_probability=fit_probability,
                             fit_args=fit_args,
                             hypothesis=hypothesis,
                             alpha=alpha,
                             success_params=success_params,
                             B=B,
-                            learner_klass=learner_klass,
                             learning_npz=learning_npz,
                             single=single)
 
