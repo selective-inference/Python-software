@@ -9,7 +9,7 @@ from selection.tests.instance import gaussian_instance
 
 from learn_selection.learners import mixture_learner
 from learn_selection.utils import naive_partial_model_inference, pivot_plot
-from learn_selection.core import keras_fit, infer_general_target
+from learn_selection.core import gbm_fit_sk, infer_general_target
 
 #### A parametric model will need something like this
 
@@ -40,6 +40,7 @@ class gaussian_OLS_learner(mixture_learner):
                       np.sqrt(_dispersion))
         n, p = X_select.shape
         self._Xinv = np.linalg.pinv(X_select)
+        self._beta_cov = _dispersion * self._Xinv.dot(self._Xinv.T)
         self._resid = observed_Y - X_select.dot(self._Xinv.dot(observed_Y))
 
     def learning_proposal(self):
@@ -52,10 +53,12 @@ class gaussian_OLS_learner(mixture_learner):
         beta_hat = self.observed_MLE[:-1]
         dispersion = self.observed_MLE[-1]
 
-        scale = np.random.choice(self.scales, 1)
-        perturbed_beta = (self._chol.dot(
-                          np.random.standard_normal(s) * scale)
-                          + beta_hat)
+        perturbed_beta = beta_hat.copy()
+        nidx = np.random.choice(np.arange(s), min(3, s), replace=False)
+        for idx in nidx:
+            scale = np.random.choice(self.scales, 1)
+            perturbed_beta[idx] += (scale * np.random.standard_normal() *
+                                    np.sqrt(self._beta_cov[idx, idx]))
         
         resid = np.random.standard_normal(n) * np.sqrt(dispersion)
         resid -= self.X_select.dot(self._Xinv.dot(resid))
@@ -73,15 +76,15 @@ def simulate(n=500, p=30, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
 
     # description of statistical problem
 
-    X, y, truth = gaussian_instance(n=n,
-                                    p=p, 
-                                    s=s,
-                                    equicorrelated=False,
-                                    rho=0.5, 
-                                    sigma=sigma,
-                                    signal=signal,
-                                    random_signs=True,
-                                    scale=False)[:3]
+    X, y, truth, _, _, sigmaX = gaussian_instance(n=n,
+                                                  p=p, 
+                                                  s=s,
+                                                  equicorrelated=False,
+                                                  rho=0.5, 
+                                                  sigma=sigma,
+                                                  signal=signal,
+                                                  random_signs=True,
+                                                  scale=False)
 
     def algorithm(lam, X, y):
 
@@ -155,11 +158,8 @@ def simulate(n=500, p=30, s=5, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):
                                        target_cov,
                                        learner,
                                        hypothesis=final_target,
-                                       fit_probability=keras_fit,
-                                       fit_args={'epochs':30, 
-                                                 'sizes':[100]*5, 
-                                                 'dropout':0., 
-                                                 'activation':'relu'},
+                                       fit_probability=gbm_fit_sk,
+                                       fit_args={'n_estimators':5000},
                                        alpha=alpha,
                                        B=B)
 
@@ -208,8 +208,8 @@ if __name__ == "__main__":
     import pandas as pd
 
     for i in range(2000):
-        df = simulate(B=5000)
-        csvfile = 'lasso_selected2.csv'
+        df = simulate(B=10000)
+        csvfile = 'lasso_selected.csv'
         outbase = csvfile[:-4]
 
         if df is not None and i > 0:

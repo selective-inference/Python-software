@@ -9,7 +9,7 @@ numpy2ri.activate()
 
 from learn_selection.learners import mixture_learner
 from learn_selection.utils import naive_partial_model_inference, pivot_plot
-from learn_selection.core import gbm_fit_sk, infer_general_target
+from learn_selection.core import random_forest_fit_sk, infer_general_target
 
 def probit_MLE(X, y, formula_terms, truth=None, alpha=0.1):
 
@@ -146,6 +146,8 @@ selected_vars = names(coef(Mselect))
     instance_id = instance_hash.hexdigest()
 
     observed_model = selection_algorithm(y)
+    print(observed_model)
+
     proj_truth = np.zeros(len(observed_model)) # null simulation here
     MLE, target_cov, naive_df = probit_MLE(X, 
                                            y, 
@@ -176,7 +178,7 @@ selected_vars = names(coef(Mselect))
                                    target_cov,
                                    learner,
                                    hypothesis=proj_truth,
-                                   fit_probability=gbm_fit_sk,
+                                   fit_probability=random_forest_fit_sk,
                                    fit_args={'n_estimators':5000},
                                    alpha=alpha,
                                    B=B)
