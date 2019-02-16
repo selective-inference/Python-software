@@ -157,7 +157,7 @@ class mixture_learner(object):
 
         if check_selection is None:
             def check_selection(result):
-                return [result == observed_outcome]
+                return [result == self.observed_outcome]
 
         learning_selection, learning_T = [], []
 
@@ -185,7 +185,7 @@ class mixture_learner(object):
             learning_selection.reshape((-1, 1))
             learning_T.reshape((-1, 1))
 
-        return learning_selection, learning_T, random_algorithm
+        return learning_selection, learning_T, selection_algorithm
 
     def learn(self,
               fit_probability,
