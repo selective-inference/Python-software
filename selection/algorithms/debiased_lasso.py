@@ -228,7 +228,6 @@ def pseudoinverse_debiasing_matrix(X,
 
     return M_active
 
-
 def debiased_lasso_inference(lasso_obj, variables, delta):
     """
     Debiased estimate is
