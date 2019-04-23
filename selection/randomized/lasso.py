@@ -30,7 +30,7 @@ from ..algorithms.debiased_lasso import (debiasing_matrix,
 #### - Gaussian randomization
 
 class lasso(gaussian_query):
-    useC = True
+
 
     r"""
     A class for the randomized LASSO for post-selection inference.
@@ -242,40 +242,51 @@ class lasso(gaussian_query):
         Squared-error LASSO with feature weights.
         Objective function is (before randomization)
 
-        $$
-        \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
-        $$
+        .. math::
+
+            \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
 
         where $\lambda$ is `feature_weights`. The ridge term
         is determined by the Hessian and `np.std(Y)` by default,
         as is the randomizer scale.
+
         Parameters
         ----------
+
         X : ndarray
             Shape (n,p) -- the design matrix.
+
         Y : ndarray
             Shape (n,) -- the response.
+
         feature_weights: [float, sequence]
             Penalty weights. An intercept, or other unpenalized
             features are handled by setting those entries of
             `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
+
         sigma : float (optional)
             Noise variance. Set to 1 if `covariance_estimator` is not None.
             This scales the loglikelihood by `sigma**(-2)`.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic
             coefficient to 0.
+
         ridge_term : float
             How big a ridge term to add?
+
         randomizer_scale : float
             Scale for IID components of randomizer.
+
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
+
         Returns
         -------
-        L : `selection.randomized.convenience.lasso`
+
+        L : `selection.randomized.lasso.lasso`
 
         """
 
@@ -305,41 +316,54 @@ class lasso(gaussian_query):
                  randomizer_scale=None):
         r"""
         Logistic LASSO with feature weights (before randomization)
-        $$
-        \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
-        $$
+
+        .. math::
+
+             \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+
         where $\ell$ is the negative of the logistic
         log-likelihood (half the logistic deviance)
         and $\lambda$ is `feature_weights`.
+
         Parameters
         ----------
+
         X : ndarray
             Shape (n,p) -- the design matrix.
+
         successes : ndarray
             Shape (n,) -- response vector. An integer number of successes.
             For data that is proportions, multiply the proportions
             by the number of trials first.
+
         feature_weights: [float, sequence]
             Penalty weights. An intercept, or other unpenalized
             features are handled by setting those entries of
             `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
+
         trials : ndarray (optional)
             Number of trials per response, defaults to
             ones the same shape as Y.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic
             coefficient to 0.
+
         ridge_term : float
             How big a ridge term to add?
+
         randomizer_scale : float
             Scale for IID components of randomizer.
+
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
+
         Returns
         -------
-        L : `selection.randomized.convenience.lasso`
+
+        L : `selection.randomized.lasso.lasso`
 
         """
         n, p = X.shape
@@ -372,42 +396,56 @@ class lasso(gaussian_query):
         Cox proportional hazards LASSO with feature weights.
         Objective function is (before randomization)
 
-        $$
-        \beta \mapsto \ell^{\text{Cox}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
-        $$
+        .. math::
+
+            \beta \mapsto \ell^{\text{Cox}}(\beta) + 
+            \sum_{i=1}^p \lambda_i |\beta_i|
+
         where $\ell^{\text{Cox}}$ is the
         negative of the log of the Cox partial
         likelihood and $\lambda$ is `feature_weights`.
         Uses Efron's tie breaking method.
+
         Parameters
         ----------
+
         X : ndarray
             Shape (n,p) -- the design matrix.
+
         times : ndarray
             Shape (n,) -- the survival times.
+
         status : ndarray
             Shape (n,) -- the censoring status.
+
         feature_weights: [float, sequence]
             Penalty weights. An intercept, or other unpenalized
             features are handled by setting those entries of
             `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
+
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic
             coefficient to 0.
+
         ridge_term : float
             How big a ridge term to add?
+
         randomizer_scale : float
             Scale for IID components of randomizer.
+
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
+
         Returns
         -------
-        L : `selection.randomized.convenience.lasso`
+
+        L : `selection.randomized.lasso.lasso`
 
         """
         loglike = coxph_obj(X, times, status, quadratic=quadratic)
@@ -440,36 +478,47 @@ class lasso(gaussian_query):
         Poisson log-linear LASSO with feature weights.
         Objective function is (before randomization)
 
-        $$
-        \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
-        $$
+        .. math::
+
+            \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+
         where $\ell^{\text{Poisson}}$ is the negative
         of the log of the Poisson likelihood (half the deviance)
         and $\lambda$ is `feature_weights`.
+
         Parameters
         ----------
+
         X : ndarray
             Shape (n,p) -- the design matrix.
+
         counts : ndarray
             Shape (n,) -- the response.
+
         feature_weights: [float, sequence]
             Penalty weights. An intercept, or other unpenalized
             features are handled by setting those entries of
             `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic
             coefficient to 0.
+
         ridge_term : float
             How big a ridge term to add?
+
         randomizer_scale : float
             Scale for IID components of randomizer.
+
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
+
         Returns
         -------
-        L : `selection.randomized.convenience.lasso`
+
+        L : `selection.randomized.lasso.lasso`
 
         """
         n, p = X.shape
@@ -505,45 +554,59 @@ class lasso(gaussian_query):
         Use sqrt-LASSO to choose variables.
         Objective function is (before randomization)
 
-        $$
-        \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
-        $$
+        .. math::
+
+            \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
+
         where $\lambda$ is `feature_weights`. After solving the problem
         treat as if `gaussian` with implied variance and choice of
         multiplier. See arxiv.org/abs/1504.08031 for details.
+
         Parameters
         ----------
+
         X : ndarray
             Shape (n,p) -- the design matrix.
+
         Y : ndarray
             Shape (n,) -- the response.
+
         feature_weights: [float, sequence]
             Penalty weights. An intercept, or other unpenalized
             features are handled by setting those entries of
             `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
+
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
             Can also be a linear term by setting quadratic
             coefficient to 0.
+
         covariance : str
             One of 'parametric' or 'sandwich'. Method
             used to estimate covariance for inference
             in second stage.
+
         solve_args : dict
             Arguments passed to solver.
+
         ridge_term : float
             How big a ridge term to add?
+
         randomizer_scale : float
             Scale for IID components of randomizer.
+
         randomizer : str
             One of ['laplace', 'logistic', 'gaussian']
+
         Returns
         -------
-        L : `selection.randomized.convenience.lasso`
+
+        L : `selection.randomized.lasso.lasso`
 
         Notes
         -----
+
         Unlike other variants of LASSO, this
         solves the problem on construction as the active
         set is needed to find equivalent gaussian LASSO.
