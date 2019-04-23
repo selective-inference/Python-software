@@ -71,8 +71,7 @@ def test_full_targets(n=200,
 
             estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target,
                                                                     cov_target,
-                                                                    cov_target_score,
-                                                                    alternatives)
+                                                                    cov_target_score)
 
             print("estimate, intervals", estimate, intervals)
 
@@ -137,8 +136,7 @@ def test_selected_targets(n=2000,
 
             estimate, _, _, pval, intervals, _ = conv.selective_MLE(observed_target,
                                                                     cov_target,
-                                                                    cov_target_score,
-                                                                    alternatives)
+                                                                    cov_target_score)
 
             beta_target = np.linalg.pinv(X[:, nonzero]).dot(X.dot(beta))
 
