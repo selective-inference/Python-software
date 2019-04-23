@@ -11,7 +11,6 @@ import regreg.api as rr
 from .selective_MLE_utils import solve_barrier_affine as solve_barrier_affine_C
 
 from ..distributions.api import discrete_family
-from ..sampling.langevin import projected_langevin
 from ..constraints.affine import (sample_from_constraints,
                                   constraints)
 from ..algorithms.softmax import softmax_objective
@@ -575,7 +574,7 @@ class optimization_sampler(object):
 
         '''
         Sample `target` from selective density
-        using projected Langevin sampler with
+        using sampler with
         gradient map `self.gradient` and
         projection map `self.projection`.
 
@@ -774,106 +773,6 @@ class optimization_sampler(object):
             pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternatives[i]))
 
         return np.array(pvals)
-
-class langevin_sampler(optimization_sampler):
-
-    '''
-    Object to sample only optimization variables of a selective sampler
-    fixing the observed score.
-    '''
-
-    def __init__(self,
-                 observed_opt_state,
-                 observed_score_state,
-                 score_transform,
-                 opt_transform,
-                 projection,
-                 grad_log_density,
-                 log_density,
-                 selection_info=None):
-
-        '''
-        Parameters
-        ----------
-
-        multi_view : `multiple_queries`
-           Instance of `multiple_queries`. Attributes
-           `objectives`, `score_info` are key
-           attributed. (Should maybe change constructor
-           to reflect only what is needed.)
-        '''
-
-        self.observed_opt_state = observed_opt_state.copy()
-        self.observed_score_state = observed_score_state.copy()
-        self.score_linear, self.score_offset = score_transform
-        self.opt_linear, self.opt_offset = opt_transform
-        self.projection = projection
-        self.gradient = lambda opt: - grad_log_density(self.observed_score_state, opt)
-        self.log_density = log_density
-        self.selection_info = selection_info # a way to record what view and what was conditioned on -- not used in calculations
-
-    def sample(self, ndraw, burnin, stepsize=None):
-        '''
-        Sample `target` from selective density
-        using projected Langevin sampler with
-        gradient map `self.gradient` and
-        projection map `self.projection`.
-
-        Parameters
-        ----------
-
-        ndraw : int
-           How long a chain to return?
-
-        burnin : int
-           How many samples to discard?
-
-        stepsize : float
-           Stepsize for Langevin sampler. Defaults
-           to a crude estimate based on the
-           dimension of the problem.
-
-        Returns
-        -------
-
-        gradient : np.float
-        '''
-
-        if self.observed_opt_state.shape in ((), (0,)): # no opt variables to sample:
-            return None
-
-        if stepsize is None:
-            stepsize = 1./max(len(self.observed_opt_state), 1)
-
-        target_langevin = projected_langevin(self.observed_opt_state.copy(),
-                                             self.gradient,
-                                             self.projection,
-                                             stepsize)
-
-        samples = []
-
-        for i in range(ndraw + burnin):
-            target_langevin.next()
-            if (i >= burnin):
-                samples.append(target_langevin.state.copy())
-        return np.asarray(samples)
-
-    def crude_lipschitz(self):
-        """
-        A crude Lipschitz constant for the
-        gradient of the log-density.
-
-        Returns
-        -------
-
-        lipschitz : float
-
-        """
-        lipschitz = power_L(self.target_inv_cov)
-        for transform, objective in zip(self.target_transform, self.objectives):
-            lipschitz += power_L(transform[0])**2 * objective.randomization.lipschitz
-            lipschitz += power_L(objective.score_transform[0])**2 * objective.randomization.lipschitz
-        return lipschitz
 
 class affine_gaussian_sampler(optimization_sampler):
 
@@ -1224,7 +1123,8 @@ class optimization_intervals(object):
         else:
             return 1 - pivot
 
-    def confidence_interval(self, linear_func, 
+    def confidence_interval(self, 
+                            linear_func, 
                             level=0.90, 
                             how_many_sd=20,
                             guess=None):
