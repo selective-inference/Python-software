@@ -26,16 +26,16 @@ def main():
     args = parser.parse_args()
 
     for ipynb in args.notebooks:
-        print "running and stripping %s" % ipynb
+        print("running and stripping %s" % ipynb)
         with open(ipynb) as f:
             stripped_nb = strip_outputs(reads(f.read(), 'json'),
                                         run_cells=not args.norun)
         if args.clobber:
-            print 'clobbering %s' % ipynb
+            print('clobbering %s' % ipynb)
             with open(ipynb, 'w') as f:
                 f.write(writes(stripped_nb, 'json'))
         else:
-            print 'not clobbering %s' % ipynb
+            print('not clobbering %s' % ipynb)
 
 if __name__ == '__main__':
     main()
