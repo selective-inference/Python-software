@@ -5,7 +5,7 @@ from scipy.stats import norm as ndist
 
 from selection.tests.instance import gaussian_instance
 
-from learn_selection.core import (infer_full_target,
+from selection.learning.core import (infer_full_target,
                                   split_sampler,
                                   normal_sampler,
                                   logit_fit,

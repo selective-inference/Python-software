@@ -7,16 +7,16 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from learn_selection.core import (infer_full_target,
+from selection.learning.core import (infer_full_target,
                                   split_sampler,
                                   normal_sampler,
                                   logit_fit,
                                   gbm_fit,
                                   repeat_selection,
                                   probit_fit)
-from learn_selection.utils import pivot_plot
+from selection.learning.utils import pivot_plot
 
-from learn_selection.learners import mixture_learner
+from selection.learning.learners import mixture_learner
 mixture_learner.scales = [1]*10 + [1.5,2,3,4,5,10]
 
 def BHfilter(pval, q=0.2):

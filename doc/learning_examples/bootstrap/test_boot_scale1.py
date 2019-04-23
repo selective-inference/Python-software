@@ -8,14 +8,14 @@ import regreg.api as rr
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import ROSI
 
-from learn_selection.knockoffs import cv_glmnet_lam, lasso_glmnet
-from learn_selection.core import (infer_full_target,
+from selection.learning.knockoffs import cv_glmnet_lam, lasso_glmnet
+from selection.learning.core import (infer_full_target,
                                   split_sampler,
                                   normal_sampler,
                                   logit_fit,
                                   repeat_selection,
                                   probit_fit)
-from learn_selection.learners import mixture_learner
+from selection.learning.learners import mixture_learner
 mixture_learner.scales = [1]
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=2000):

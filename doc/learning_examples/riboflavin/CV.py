@@ -16,10 +16,10 @@ numpy2ri.activate()
 X_full = np.asarray(rpy.r('X')) 
 numpy2ri.deactivate()
 
-from learn_selection.utils import full_model_inference, liu_inference, pivot_plot
-from learn_selection.core import split_sampler, keras_fit, repeat_selection, infer_set_target
-from learn_selection.Rutils import lasso_glmnet, cv_glmnet_lam
-from learn_selection.learners import mixture_learner
+from selection.learning.utils import full_model_inference, liu_inference, pivot_plot
+from selection.learning.core import split_sampler, keras_fit, repeat_selection, infer_set_target
+from selection.learning.Rutils import lasso_glmnet, cv_glmnet_lam
+from selection.learning.learners import mixture_learner
 
 def highdim_model_inference(X, 
                             y,

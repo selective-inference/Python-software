@@ -7,9 +7,9 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from learn_selection.learners import mixture_learner
-from learn_selection.utils import naive_partial_model_inference, pivot_plot
-from learn_selection.core import keras_fit, infer_general_target
+from selection.learning.learners import mixture_learner
+from selection.learning.utils import naive_partial_model_inference, pivot_plot
+from selection.learning.core import keras_fit, infer_general_target
 
 #### A parametric model will need something like this
 

@@ -7,9 +7,9 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 from selection.algorithms.lasso import ROSI
-from learn_selection.knockoffs import cv_glmnet_lam, lasso_glmnet
+from selection.learning.knockoffs import cv_glmnet_lam, lasso_glmnet
 
-from learn_selection.core import (infer_full_target,
+from selection.learning.core import (infer_full_target,
                                   split_sampler, 
                                   normal_sampler,
                                   logit_fit,

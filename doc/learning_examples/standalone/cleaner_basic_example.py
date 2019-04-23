@@ -1,6 +1,6 @@
 import numpy as np
 
-from learn_selection.core import (infer_general_target,
+from selection.learning.core import (infer_general_target,
                                   normal_sampler,
                                   logit_fit,
                                   probit_fit)

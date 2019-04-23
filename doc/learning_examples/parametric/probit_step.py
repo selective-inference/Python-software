@@ -7,9 +7,9 @@ import rpy2.robjects as rpy
 from rpy2.robjects import numpy2ri
 numpy2ri.activate()
 
-from learn_selection.learners import mixture_learner
-from learn_selection.utils import naive_partial_model_inference, pivot_plot
-from learn_selection.core import random_forest_fit_sk, infer_general_target
+from selection.learning.learners import mixture_learner
+from selection.learning.utils import naive_partial_model_inference, pivot_plot
+from selection.learning.core import random_forest_fit_sk, infer_general_target
 
 def probit_MLE(X, y, formula_terms, truth=None, alpha=0.1):
 
