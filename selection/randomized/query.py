@@ -18,8 +18,41 @@ from ..algorithms.softmax import softmax_objective
 
 class query(object):
 
+    r"""
+    This class is the base of randomized selective inference
+    based on convex programs.
+
+    The main mechanism is to take an initial penalized program
+
+    .. math::
+
+        \text{minimize}_B \ell(B) + {\cal P}(B)
+
+    and add a randomization and small ridge term yielding
+
+    .. math::
+
+        \text{minimize}_B \ell(B) + {\cal P}(B) - 
+        \langle \omega, B \rangle + \frac{\epsilon}{2} \|B\|^2_2
+
+    """
+
     def __init__(self, randomization, perturb=None):
 
+        """
+
+        Parameters
+        ----------
+
+        randomization : `selection.randomized.randomization.randomization`
+            Instance of a randomization scheme. 
+            Describes the law of $\omega$.
+
+        perturb : ndarray, optional
+            Value of randomization vector, an instance of $\omega$.
+
+
+        """
         self.randomization = randomization
         self.perturb = perturb
         self._solved = False
@@ -30,16 +63,31 @@ class query(object):
 
     def randomize(self, perturb=None):
 
+        """
+
+        The actual randomization step.
+
+        Parameters
+        ----------
+
+        perturb : ndarray, optional
+            Value of randomization vector, an instance of $\omega$.
+
+        """
+
         if not self._randomized:
             self.randomized_loss, self._initial_omega = self.randomization.randomize(self.loss, self.epsilon, perturb=perturb)
         self._randomized = True
 
-    def linear_decomposition(self, target_score_cov, target_cov, observed_target_state):
+    def linear_decomposition(self, 
+                             target_score_cov, 
+                             target_cov, 
+                             observed_target_state):
         """
         Compute out the linear decomposition
         of the score based on the target. This decomposition
-        writes the (limiting CLT version) of the data in the score as linear in the
-        target and in some independent Gaussian error.
+        writes the (limiting CLT version) of the data in the score 
+        as linear in the target and in some independent Gaussian error.
 
         This second independent piece is conditioned on, resulting
         in a reconstruction of the score as an affine function of the target
@@ -63,7 +111,7 @@ class query(object):
     def set_sampler(self, sampler):
         self._sampler = sampler
 
-    sampler = property(get_sampler, set_sampler)
+    sampler = property(get_sampler, set_sampler, doc='Sampler of optimization (augmented) variables.')
 
     # implemented by subclasses
 
@@ -86,8 +134,8 @@ class query(object):
 
     def summary(self,
                 observed_target, 
-                cov_target, 
-                cov_target_score, 
+                target_cov, 
+                target_score_cov, 
                 alternatives,
                 opt_sample=None,
                 target_sample=None,
@@ -99,22 +147,31 @@ class query(object):
         """
         Produce p-values and confidence intervals for targets
         of model including selected features
+
         Parameters
         ----------
+
         target : one of ['selected', 'full']
+
         features : np.bool
             Binary encoding of which features to use in final
             model and targets.
+
         parameter : np.array
             Hypothesized value for parameter -- defaults to 0.
+
         level : float
             Confidence level.
+
         ndraw : int (optional)
             Defaults to 1000.
+
         burnin : int (optional)
             Defaults to 1000.
+
         compute_intervals : bool
             Compute confidence intervals?
+
         dispersion : float (optional)
             Use a known value for dispersion, or Pearson's X^2?
         """
@@ -128,21 +185,21 @@ class query(object):
             ndraw = opt_sample.shape[0]
 
         pivots = self.sampler.coefficient_pvalues(observed_target,
-                                                  cov_target,
-                                                  cov_target_score,
+                                                  target_cov,
+                                                  target_score_cov,
                                                   parameter=parameter,
                                                   sample=opt_sample,
                                                   normal_sample=target_sample,
                                                   alternatives=alternatives)
 
         MLE_intervals = self.selective_MLE(observed_target,
-                                           cov_target,
-                                           cov_target_score)[5]
+                                           target_cov,
+                                           target_score_cov)[5]
 
         if not np.all(parameter == 0):
             pvalues = self.sampler.coefficient_pvalues(observed_target,
-                                                       cov_target,
-                                                       cov_target_score,
+                                                       target_cov,
+                                                       target_score_cov,
                                                        parameter=np.zeros_like(parameter),
                                                        sample=opt_sample,
                                                        normal_sample=target_sample,
@@ -154,12 +211,12 @@ class query(object):
         if compute_intervals:
 
             MLE_intervals = self.selective_MLE(observed_target,
-                                               cov_target,
-                                               cov_target_score)[4]
+                                               target_cov,
+                                               target_score_cov)[4]
 
             intervals = self.sampler.confidence_intervals(observed_target,
-                                                          cov_target,
-                                                          cov_target_score,
+                                                          target_cov,
+                                                          target_score_cov,
                                                           sample=opt_sample,
                                                           normal_sample=target_sample,
                                                           initial_guess=MLE_intervals,
@@ -169,19 +226,35 @@ class query(object):
 
     def selective_MLE(self,
                       observed_target, 
-                      cov_target, 
-                      cov_target_score, 
+                      target_cov, 
+                      target_score_cov, 
                       level=0.9,
                       solve_args={'tol':1.e-12}):
         """
+
         Parameters
         ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        level : float, optional
+            Confidence level.
+
+        solve_args : dict, optional
+            Arguments passed to solver.
 
         """
         
         return self.sampler.selective_MLE(observed_target,
-                                          cov_target,
-                                          cov_target_score,
+                                          target_cov,
+                                          target_score_cov,
                                           self.observed_opt_state,
                                           level=level,
                                           solve_args=solve_args)
@@ -192,8 +265,10 @@ class gaussian_query(query):
     useC = True
 
     """
-    A class with Gaussian perturbation to the objective -- easy to apply CLT to such things
+    A class with Gaussian perturbation to the objective -- 
+    easy to apply CLT to such things
     """
+
     def fit(self, perturb=None):
 
         p = self.nfeature
@@ -268,12 +343,16 @@ class multiple_queries(object):
 
     def __init__(self, objectives):
         '''
+
         Parameters
         ----------
+
         objectives : sequence
            A sequences of randomized objective functions.
+
         Notes
         -----
+
         Each element of `objectives` must
         have a `setup_sampler` method that returns
         a description of the distribution of the
@@ -284,8 +363,10 @@ class multiple_queries(object):
         `form_covariances` to linearly decompose
         each score in terms of a target
         and an asymptotically independent piece.
+
         Returns
         -------
+
         None
         '''
 
@@ -298,14 +379,46 @@ class multiple_queries(object):
 
     def summary(self,
                 observed_target,
-                opt_sampling_info,  # a sequence of (target_cov, score_cov) objects
-                                    # in theory all target_cov should be about the same...
+                opt_sampling_info,  # a sequence of (target_cov, score_cov) 
+                                    # objects in theory all target_cov
+                                    # should be about the same...
                 alternatives=None,
                 parameter=None,
                 level=0.9,
                 ndraw=5000,
                 burnin=2000,
                 compute_intervals=False):
+
+        """
+        Produce p-values and confidence intervals for targets
+        of model including selected features
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
+
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+
+        level : float
+            Confidence level.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        compute_intervals : bool
+            Compute confidence intervals?
+
+        """
 
         if parameter is None:
             parameter = np.zeros_like(observed_target)
@@ -348,6 +461,35 @@ class multiple_queries(object):
                             sample_args=(),
                             alternatives=None):
 
+        '''
+        Construct selective p-values
+        for each parameter of the target.
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        parameter : ndarray (optional)
+            A vector of parameters with shape `self.shape`
+            at which to evaluate p-values. Defaults
+            to `np.zeros(self.shape)`.
+
+        sample_args : sequence
+           Arguments to `self.sample` if sample is not found
+           for a given objective.
+
+        alternatives : [str], optional
+            Sequence of strings describing the alternatives,
+            should be values of ['twosided', 'less', 'greater']
+
+        Returns
+        -------
+        pvalues : ndarray
+
+        '''
+
         for i in range(len(self.objectives)):
             if self.opt_sampling_info[i][1] is None:
                 self.opt_sampling_info[i][1] = self.objectives[i].sampler.sample(*sample_args)
@@ -371,6 +513,30 @@ class multiple_queries(object):
                              sample_args=(),
                              level=0.9):
 
+        '''
+        Construct selective confidence intervals
+        for each parameter of the target.
+
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        sample_args : sequence
+           Arguments to `self.sample` if sample is not found
+           for a given objective.
+
+        level : float
+            Confidence level.
+
+        Returns
+        -------
+        limits : ndarray
+            Confidence intervals for each target.
+
+        '''
+
         for i in range(len(self.objectives)):
             if self.opt_sampling_info[i][1] is None:
                 self.opt_sampling_info[i][1] = self.objectives[i].sampler.sample(*sample_args)
@@ -387,7 +553,6 @@ class multiple_queries(object):
             limits.append(_intervals.confidence_interval(keep, level=level))
 
         return np.array(limits)       
-
 
 
 class optimization_sampler(object):
@@ -439,9 +604,11 @@ class optimization_sampler(object):
 
         alternative : ['greater', 'less', 'twosided']
             What alternative to use.
+
         Returns
         -------
-        gradient : np.float
+
+        pvalue : float
         '''
 
         if alternative not in ['greater', 'less', 'twosided']:
@@ -522,8 +689,12 @@ class optimization_sampler(object):
             sample = np.vstack([sample]*5)
         ndraw = sample.shape[0]
 
-        _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target, ndraw, normal_sample=normal_sample)
+        _intervals = optimization_intervals([(self, sample, 
+                                              target_cov, 
+                                              score_cov)],
+                                            observed_target, 
+                                            ndraw, 
+                                            normal_sample=normal_sample)
 
         limits = []
 
@@ -691,8 +862,10 @@ class langevin_sampler(optimization_sampler):
         """
         A crude Lipschitz constant for the
         gradient of the log-density.
+
         Returns
         -------
+
         lipschitz : float
 
         """
@@ -721,11 +894,29 @@ class affine_gaussian_sampler(optimization_sampler):
         Parameters
         ----------
 
-        multi_view : `multiple_queries`
-           Instance of `multiple_queries`. Attributes
-           `objectives`, `score_info` are key
-           attributed. (Should maybe change constructor
-           to reflect only what is needed.)
+        affine_con : `selection.constraints.affine.constraints`
+             Affine constraints
+
+        initial_point : ndarray
+             Feasible point for affine constraints.
+
+        observed_score_state : ndarray
+             Observed score of convex loss.
+
+        log_density : callable
+             Density of optimization variables given score
+
+        logdens_transform : tuple
+             Description of how conditional mean
+             of optimization variables depends on score.
+
+        selection_info : optional
+             Function of optimization variables that
+             will be conditioned on.
+
+        useC : bool, optional
+            Use python or C solver.
+        
         '''
 
         self.affine_con = affine_con
@@ -761,9 +952,10 @@ class affine_gaussian_sampler(optimization_sampler):
 
     def selective_MLE(self, 
                       observed_target, 
-                      cov_target, 
-                      cov_target_score, 
-                      init_soln, # initial (observed) value of optimization variables -- used as a feasible point.
+                      target_cov, 
+                      target_score_cov, 
+                      init_soln, # initial (observed) value of optimization variables -- 
+                                 # used as a feasible point.
                                  # precise value used only for independent estimator 
                       solve_args={'tol':1.e-12}, 
                       level=0.9):
@@ -771,11 +963,32 @@ class affine_gaussian_sampler(optimization_sampler):
         Selective MLE based on approximation of
         CGF.
 
+        Parameters
+        ----------
+
+        observed_target : ndarray
+            Observed estimate of target.
+
+        target_cov : ndarray
+            Estimated covaraince of target.
+
+        target_score_cov : ndarray
+            Estimated covariance of target and score of randomized query.
+
+        init_soln : ndarray
+            Feasible point for optimization problem.
+
+        level : float, optional
+            Confidence level.
+
+        solve_args : dict, optional
+            Arguments passed to solver.
+
         """
 
         return selective_MLE(observed_target, 
-                             cov_target, 
-                             cov_target_score, 
+                             target_cov, 
+                             target_score_cov, 
                              init_soln, 
                              self.affine_con.mean,
                              self.affine_con.covariance,
@@ -789,15 +1002,15 @@ class affine_gaussian_sampler(optimization_sampler):
     def reparam_map(self, 
                     parameter_target, 
                     observed_target, 
-                    cov_target, 
-                    cov_target_score, 
+                    target_cov, 
+                    target_score_cov, 
                     init_soln, 
                     solve_args={'tol':1.e-12}):
 
-        prec_target = np.linalg.inv(cov_target)
+        prec_target = np.linalg.inv(target_cov)
         ndim = prec_target.shape[0]
         logdens_lin, _ = self.logdens_transform
-        target_lin = - logdens_lin.dot(cov_target_score.T.dot(prec_target))
+        target_lin = - logdens_lin.dot(target_score_cov.T.dot(prec_target))
         target_offset = self.affine_con.mean - target_lin.dot(observed_target)
 
         cov_opt = self.affine_con.covariance
@@ -812,13 +1025,13 @@ class affine_gaussian_sampler(optimization_sampler):
             solver = solve_barrier_affine_py
 
         val, soln, hess = solver(conjugate_arg,
-                                 prec_opt, # JT: I think this quadratic is wrong should involve cov_target and target_lin too?
+                                 prec_opt, # JT: I think this quadratic is wrong should involve target_cov and target_lin too?
                                  init_soln,
                                  self.affine_con.linear_part,
                                  self.affine_con.offset,
                                  **solve_args)
             
-        inter_map = cov_target.dot(target_lin.T.dot(prec_opt))
+        inter_map = target_cov.dot(target_lin.T.dot(prec_opt))
         param_map = parameter_target + inter_map.dot(mean_param - soln)
         log_normalizer_map = ((parameter_target.T.dot(prec_target + target_lin.T.dot(prec_opt).dot(target_lin)).dot(parameter_target))/2. 
                               - parameter_target.T.dot(target_lin.T).dot(prec_opt.dot(soln)) - target_offset.T.dot(prec_opt).dot(target_offset)/2. 
@@ -921,7 +1134,7 @@ class optimization_intervals(object):
         for (opt_sampler, 
              opt_sample, 
              t_cov, 
-             score_cov) in opt_sampling_info: 
+             t_score_cov) in opt_sampling_info: 
             if opt_sample is not None:
                 if opt_sample.shape[0] < nsample:
                     if opt_sample.ndim == 1:
@@ -932,7 +1145,10 @@ class optimization_intervals(object):
                     tiled_opt_sample = opt_sample[:nsample]
             else:
                 tiled_sample = None
-            tiled_sampling_info.append((opt_sampler, tiled_opt_sample, t_cov, score_cov))
+            tiled_sampling_info.append((opt_sampler, 
+                                        tiled_opt_sample, 
+                                        t_cov, 
+                                        t_score_cov))
 
         self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
@@ -985,9 +1201,9 @@ class optimization_intervals(object):
         for (opt_sampler, 
              opt_sample, 
              _, 
-             score_cov) in self.opt_sampling_info:
+             target_score_cov) in self.opt_sampling_info:
 
-            cur_score_cov = linear_func.dot(score_cov)
+            cur_score_cov = linear_func.dot(target_score_cov)
 
             # cur_nuisance is in the view's score coordinates
             cur_nuisance = opt_sampler.observed_score_state - cur_score_cov * observed_stat / target_cov
@@ -997,7 +1213,7 @@ class optimization_intervals(object):
         weights = self._weights(sample_stat,  # normal sample 
                                 candidate,    # candidate value
                                 nuisance,       # nuisance sufficient stats for each view
-                                translate_dirs) # points will be moved like sample * score_cov
+                                translate_dirs) # points will be moved like sample * target_score_cov
 
         pivot = np.mean((sample_stat + candidate <= observed_stat) * weights) / np.mean(weights)
 
@@ -1297,9 +1513,10 @@ def _solve_barrier_nonneg(conjugate_arg,
     return current_value, current, hess
 
 def selective_MLE(observed_target, 
-                  cov_target, 
-                  cov_target_score, 
-                  init_soln, # initial (observed) value of optimization variables -- used as a feasible point.
+                  target_cov, 
+                  target_score_cov, 
+                  init_soln, # initial (observed) value of optimization variables -- 
+                             # used as a feasible point.
                              # precise value used only for independent estimator 
                   cond_mean,
                   cond_cov,
@@ -1313,20 +1530,60 @@ def selective_MLE(observed_target,
     Selective MLE based on approximation of
     CGF.
 
+    Parameters
+    ----------
+
+    observed_target : ndarray
+        Observed estimate of target.
+
+    target_cov : ndarray
+        Estimated covaraince of target.
+       
+    target_score_cov : ndarray
+        Estimated covariance of target and score of randomized query.
+    
+    init_soln : ndarray
+        Feasible point for optimization problem.
+
+    cond_mean : ndarray
+        Conditional mean of optimization variables given target.
+
+    cond_cov : ndarray
+        Conditional covariance of optimization variables given target.
+    
+    logdens_linear : ndarray
+        Describes how conditional mean of optimization
+        variables varies with target.
+    
+    linear_part : ndarray
+        Linear part of affine constraints: $\{o:Ao \leq b\}$
+
+    offset : ndarray
+        Offset part of affine constraints: $\{o:Ao \leq b\}$
+
+    solve_args : dict, optional
+        Arguments passed to solver.
+
+    level : float, optional
+        Confidence level.
+
+    useC : bool, optional
+        Use python or C solver.
+        
     """
 
     if np.asarray(observed_target).shape in [(), (0,)]:
         raise ValueError('no target specified')
 
     observed_target = np.atleast_1d(observed_target)
-    prec_target = np.linalg.inv(cov_target)
+    prec_target = np.linalg.inv(target_cov)
 
     # target_lin determines how the conditional mean of optimization variables
     # vary with target
     # logdens_linear determines how the argument of the optimization density
     # depends on the score, not how the mean depends on score, hence the minus sign
 
-    target_lin = - logdens_linear.dot(cov_target_score.T.dot(prec_target)) 
+    target_lin = - logdens_linear.dot(target_score_cov.T.dot(prec_target)) 
     target_offset = cond_mean - target_lin.dot(observed_target)
 
     prec_opt = np.linalg.inv(cond_cov)
@@ -1345,12 +1602,12 @@ def selective_MLE(observed_target,
                              offset,
                              **solve_args)
 
-    final_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
-    ind_unbiased_estimator = observed_target + cov_target.dot(target_lin.T.dot(prec_opt.dot(cond_mean
+    final_estimator = observed_target + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean - soln)))
+    ind_unbiased_estimator = observed_target + target_cov.dot(target_lin.T.dot(prec_opt.dot(cond_mean
                                                                                             - init_soln)))
     L = target_lin.T.dot(prec_opt)
     observed_info_natural = prec_target + L.dot(target_lin) - L.dot(hess.dot(L.T))
-    observed_info_mean = cov_target.dot(observed_info_natural.dot(cov_target))
+    observed_info_mean = target_cov.dot(observed_info_natural.dot(target_cov))
 
     Z_scores = final_estimator / np.sqrt(np.diag(observed_info_mean))
     pvalues = ndist.cdf(Z_scores)
@@ -1366,8 +1623,8 @@ def selective_MLE(observed_target,
 
 def normalizing_constant(target_parameter,
                          observed_target,
-                         cov_target,
-                         cov_target_score,
+                         target_cov,
+                         target_score_cov,
                          feasible_point,
                          cond_mean,
                          cond_cov,
@@ -1376,11 +1633,57 @@ def normalizing_constant(target_parameter,
                          offset,
                          useC=False):
 
+    """
+
+    Approximation of normalizing constant
+    in affine constrained Gaussian.
+
+    Parameters
+    ----------
+
+    observed_target : ndarray
+        Observed estimate of target.
+
+    target_cov : ndarray
+        Estimated covaraince of target.
+       
+    target_score_cov : ndarray
+        Estimated covariance of target and score of randomized query.
+    
+    init_soln : ndarray
+        Feasible point for optimization problem.
+
+    cond_mean : ndarray
+        Conditional mean of optimization variables given target.
+
+    cond_cov : ndarray
+        Conditional covariance of optimization variables given target.
+    
+    logdens_linear : ndarray
+        Describes how conditional mean of optimization
+        variables varies with target.
+    
+    linear_part : ndarray
+        Linear part of affine constraints: $\{o:Ao \leq b\}$
+
+    offset : ndarray
+        Offset part of affine constraints: $\{o:Ao \leq b\}$
+
+    solve_args : dict, optional
+        Arguments passed to solver.
+
+    level : float, optional
+        Confidence level.
+
+    useC : bool, optional
+        Use python or C solver.
+    """
+
     target_parameter = np.atleast_1d(target_parameter)
 
     cond_precision = np.linalg.inv(cond_cov)
-    prec_target = np.linalg.inv(cov_target)
-    target_linear = -logdens_linear.dot(cov_target_score.dot(prec_target))
+    prec_target = np.linalg.inv(target_cov)
+    target_linear = -logdens_linear.dot(target_score_cov.dot(prec_target))
     nuisance_correction = target_linear.dot(observed_target)
     corrected_mean = cond_mean - nuisance_correction
 
@@ -1389,7 +1692,7 @@ def normalizing_constant(target_parameter,
     # this includes a term linear in the target, i.e.
     # the source of `target_linear`
 
-    ntarget = cov_target.shape[0]
+    ntarget = target_cov.shape[0]
     nopt = cond_cov.shape[0]
     full_Q = np.zeros((ntarget + nopt,
                        ntarget + nopt))
