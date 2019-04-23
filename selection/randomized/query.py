@@ -1275,15 +1275,17 @@ def naive_pvalues(diag_cov, observed, parameter):
         pvalues[j] = 2 * min(pval, 1-pval)
     return pvalues
 
-def solve_barrier_affine_py(conjugate_arg,
-                            precision,
-                            feasible_point,
-                            con_linear,
-                            con_offset,
-                            step=1,
-                            nstep=1000,
-                            min_its=200,
-                            tol=1.e-10):
+# private function
+
+def _solve_barrier_affine_py(conjugate_arg,
+                             precision,
+                             feasible_point,
+                             con_linear,
+                             con_offset,
+                             step=1,
+                             nstep=1000,
+                             min_its=200,
+                             tol=1.e-10):
 
     scaling = np.sqrt(np.diag(con_linear.dot(precision).dot(con_linear.T)))
 
