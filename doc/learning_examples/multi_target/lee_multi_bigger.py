@@ -7,11 +7,11 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from learn_selection.utils import (partial_model_inference, 
+from selection.learning.utils import (partial_model_inference, 
                                    pivot_plot,
                                    lee_inference)
-from learn_selection.core import normal_sampler, keras_fit
-from learn_selection.learners import sparse_mixture_learner
+from selection.learning.core import normal_sampler, keras_fit
+from selection.learning.learners import sparse_mixture_learner
 
 def simulate(n=2000, p=300, s=10, signal=(3 / np.sqrt(2000), 4 / np.sqrt(2000)), sigma=2, alpha=0.1, B=10000):
 

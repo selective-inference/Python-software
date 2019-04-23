@@ -11,8 +11,8 @@ from selection.tests.instance import HIV_NRTI
 X_full = HIV_NRTI(datafile="NRTI_DATA.txt", standardize=False)[0] * 1.
 print(X_full.dtype)
 
-from learn_selection.utils import full_model_inference, liu_inference, pivot_plot
-from learn_selection.core import split_sampler, keras_fit
+from selection.learning.utils import full_model_inference, liu_inference, pivot_plot
+from selection.learning.core import split_sampler, keras_fit
 
 boot_design = False
 

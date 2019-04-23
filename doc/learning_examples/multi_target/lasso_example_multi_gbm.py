@@ -7,8 +7,8 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from learn_selection.utils import full_model_inference, pivot_plot
-from learn_selection.core import split_sampler, gbm_fit
+from selection.learning.utils import full_model_inference, pivot_plot
+from selection.learning.core import split_sampler, gbm_fit
 
 def simulate(n=200, p=100, s=10, signal=(0.5, 1), sigma=2, alpha=0.1, B=3000):
 

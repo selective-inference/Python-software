@@ -7,9 +7,9 @@ import regreg.api as rr
 
 from selection.tests.instance import gaussian_instance
 
-from learn_selection.utils import full_model_inference, pivot_plot
-from learn_selection.core import split_sampler, probit_fit
-from learn_selection.Rutils import lasso_glmnet
+from selection.learning.utils import full_model_inference, pivot_plot
+from selection.learning.core import split_sampler, probit_fit
+from selection.learning.Rutils import lasso_glmnet
 
 def simulate(n=200, p=100, s=10, signal=(0, 0), sigma=2, alpha=0.1):
 
