@@ -95,13 +95,18 @@ class lasso(gaussian_query):
             solve_args={'tol': 1.e-12, 'min_its': 50},
             perturb=None):
         """
+
         Fit the randomized lasso using `regreg`.
+
         Parameters
         ----------
+
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
+
         Returns
         -------
+
         signs : np.float
              Support and non-zero signs of randomized lasso solution.
 
@@ -656,7 +661,9 @@ class lasso(gaussian_query):
 
         return obj
 
-# Targets of inference
+# private functions
+
+# functions construct targets of inference
 # and covariance with score representation
 
 def selected_targets(loglike, 
@@ -693,7 +700,7 @@ def full_targets(loglike,
                  features, 
                  dispersion=None,
                  solve_args={'tol': 1.e-12, 'min_its': 50}):
-
+    
     X, y = loglike.data
     n, p = X.shape
     features_bool = np.zeros(p, np.bool)

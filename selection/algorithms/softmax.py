@@ -1,27 +1,12 @@
-"""
+r"""
 
 This module implements the softmax approximation for
 a multivariate Gaussian truncated by affine constraints. The approximation
 is an approximation of the normalizing constant in the 
 likelihood.
 
-Recall Chernoff's approximation for $Z \sim N(0,I_{n \times n})$:
-$$
--\log P_{\mu}(AZ \leq b) \approx \inf_{z:Az \leq b} \frac{1}{2}\|z-\mu\|^2_2
-= \inf_{z} I_K(z) +  \frac{1}{2}\|z-\mu\|^2_2
-$$
-where $I_K$ is the constraint for the set $K=\left\{z:Az \leq b\right\}.$
-
-The softmax approximation is similar to Chernoff's approximation
-though it uses a soft max barrier function 
-$$  \sum_{i=1}^{m}\log\left(1+\frac{1}{b_i-A_i^T z}\right).$$
-
-The softmax objective is
-$$
-z \mapsto \frac{1}{2} z^TQz + \sum_{i=1}^{m}\log\left(1+\frac{1}{(b_i-A_i^T z) / s_i}\right).
-$$
-where $s_i$ are scalings and $Q$ is a precision matrix (i.e. inverse covariance).
 """
+
 
 from copy import copy
 
@@ -30,7 +15,7 @@ from regreg.api import smooth_atom
 
 class softmax_objective(smooth_atom):
 
-    """
+    r"""
     The softmax objective
 
     .. math::
@@ -38,6 +23,36 @@ class softmax_objective(smooth_atom):
          z \mapsto \frac{1}{2} z^TQz + 
          \sum_{i=1}^{m} \log \left(1 + 
          \frac{1}{(b_i-A_i^T z) / s_i} \right)
+
+    Notes
+    -----
+
+    Recall Chernoff's approximation for $Z \sim N(0,I_{n \times n})$:
+
+    .. math::
+
+        -\log P_{\mu}(AZ \leq b) \approx \inf_{z:Az \leq b} 
+        \frac{1}{2}\|z-\mu\|^2_2
+        = \inf_{z} I_K(z) +  \frac{1}{2}\|z-\mu\|^2_2
+
+    where $I_K$ is the constraint for the set $K=\left\{z:Az \leq b \right\}.$
+
+    The softmax approximation is similar to Chernoff's approximation
+    though it uses a soft max barrier function 
+
+    .. math::
+
+         \sum_{i=1}^{m}\log\left(1+\frac{1}{b_i-A_i^T z}\right).
+
+    The softmax objective is
+
+    .. math::
+
+         z \mapsto \frac{1}{2} z^TQz + 
+         \sum_{i=1}^{m}\log\left(1+\frac{1}{(b_i-A_i^T z) / s_i}\right).
+
+    where $s_i$ are scalings and $Q$ is a precision matrix (i.e. inverse covariance).
+
 
     """
 

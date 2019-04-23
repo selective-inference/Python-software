@@ -78,30 +78,30 @@ class query(object):
             self.randomized_loss, self._initial_omega = self.randomization.randomize(self.loss, self.epsilon, perturb=perturb)
         self._randomized = True
 
-    def linear_decomposition(self, 
-                             target_score_cov, 
-                             target_cov, 
-                             observed_target_state):
-        """
-        Compute out the linear decomposition
-        of the score based on the target. This decomposition
-        writes the (limiting CLT version) of the data in the score 
-        as linear in the target and in some independent Gaussian error.
+#     def linear_decomposition(self, 
+#                              target_score_cov, 
+#                              target_cov, 
+#                              observed_target_state):
+#         """
+#         Compute out the linear decomposition
+#         of the score based on the target. This decomposition
+#         writes the (limiting CLT version) of the data in the score 
+#         as linear in the target and in some independent Gaussian error.
 
-        This second independent piece is conditioned on, resulting
-        in a reconstruction of the score as an affine function of the target
-        where the offset is the part related to this independent
-        Gaussian error.
-        """
+#         This second independent piece is conditioned on, resulting
+#         in a reconstruction of the score as an affine function of the target
+#         where the offset is the part related to this independent
+#         Gaussian error.
+#         """
 
-        target_score_cov = np.atleast_2d(target_score_cov)
-        target_cov = np.atleast_2d(target_cov)
-        observed_target_state = np.atleast_1d(observed_target_state)
+#         target_score_cov = np.atleast_2d(target_score_cov)
+#         target_cov = np.atleast_2d(target_cov)
+#         observed_target_state = np.atleast_1d(observed_target_state)
 
-        linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
-        offset = self.observed_score_state - linear_part.dot(observed_target_state) + score_offset
+#         linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
+#         offset = self.observed_score_state - linear_part.dot(observed_target_state) + score_offset
 
-        return (linear_part, offset)
+#         return (linear_part, offset)
 
     def get_sampler(self):
         if hasattr(self, "_sampler"):
@@ -921,7 +921,7 @@ class affine_gaussian_sampler(optimization_sampler):
         if useC:
             solver = solve_barrier_affine_C
         else:
-            solver = solve_barrier_affine_py
+            solver = _solve_barrier_affine_py
 
         val, soln, hess = solver(conjugate_arg,
                                  prec_opt, # JT: I think this quadratic is wrong should involve target_cov and target_lin too?
