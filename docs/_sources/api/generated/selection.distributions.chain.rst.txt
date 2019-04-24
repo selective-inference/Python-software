@@ -1,0 +1,50 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+distributions.chain
+===================
+
+Module: :mod:`distributions.chain`
+----------------------------------
+Inheritance diagram for ``selection.distributions.chain``:
+
+.. inheritance-diagram:: selection.distributions.chain 
+   :parts: 3
+
+.. automodule:: selection.distributions.chain
+
+.. currentmodule:: selection.distributions.chain
+
+Classes
+-------
+
+:class:`markov_chain`
+~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: markov_chain
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`reversible_markov_chain`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: reversible_markov_chain
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.distributions.chain.parallel_test
+
+
+.. autofunction:: selection.distributions.chain.serial_test
+

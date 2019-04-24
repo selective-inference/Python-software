@@ -1,0 +1,13 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+algorithms.pca
+==============
+
+Module: :mod:`algorithms.pca`
+-----------------------------
+.. automodule:: selection.algorithms.pca
+
+.. currentmodule:: selection.algorithms.pca
+
+.. autofunction:: selection.algorithms.pca.pvalue
+

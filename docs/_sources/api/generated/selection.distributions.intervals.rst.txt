@@ -1,0 +1,26 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+distributions.intervals
+=======================
+
+Module: :mod:`distributions.intervals`
+--------------------------------------
+Inheritance diagram for ``selection.distributions.intervals``:
+
+.. inheritance-diagram:: selection.distributions.intervals 
+   :parts: 3
+
+.. automodule:: selection.distributions.intervals
+
+.. currentmodule:: selection.distributions.intervals
+
+:class:`intervals_from_sample`
+------------------------------
+
+
+.. autoclass:: intervals_from_sample
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

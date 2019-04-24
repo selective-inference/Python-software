@@ -1,0 +1,300 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="../../_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../../index.html">
+  <img src="../../_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">randomized.slope</a><ul>
+<li><a class="reference internal" href="#module-randomized-slope">Module: <code class="docutils literal"><span class="pre">randomized.slope</span></code></a></li>
+<li><a class="reference internal" href="#slope"><code class="docutils literal"><span class="pre">slope</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/selection.randomized.slope.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="randomized-slope">
+<h1>randomized.slope<a class="headerlink" href="#randomized-slope" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-randomized-slope">
+<h2>Module: <code class="xref py py-mod docutils literal"><span class="pre">randomized.slope</span></code><a class="headerlink" href="#module-randomized-slope" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal"><span class="pre">selection.randomized.slope</span></code>:</p>
+<span class="target" id="module-selection.randomized.slope"></span></div>
+<div class="section" id="slope">
+<h2><a class="reference internal" href="#selection.randomized.slope.slope" title="selection.randomized.slope.slope"><code class="xref py py-class docutils literal"><span class="pre">slope</span></code></a><a class="headerlink" href="#slope" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="selection.randomized.slope.slope">
+<em class="property">class </em><code class="descclassname">selection.randomized.slope.</code><code class="descname">slope</code><span class="sig-paren">(</span><em>loglike</em>, <em>slope_weights</em>, <em>ridge_term</em>, <em>randomizer</em>, <em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.slope.slope" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selection.randomized.query.html#selection.randomized.query.gaussian_query" title="selection.randomized.query.gaussian_query"><code class="xref py py-class docutils literal"><span class="pre">selection.randomized.query.gaussian_query</span></code></a></p>
+<dl class="method">
+<dt id="selection.randomized.slope.slope.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>loglike</em>, <em>slope_weights</em>, <em>ridge_term</em>, <em>randomizer</em>, <em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.slope.slope.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection object for the SLOPE problem</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>loglike</strong> : <cite>regreg.smooth.glm.glm</cite></p>
+<blockquote>
+<div><p>A (negative) log-likelihood as implemented in <cite>regreg</cite>.</p>
+</div></blockquote>
+<p><strong>slope_weights</strong> : np.ndarray</p>
+<blockquote>
+<div><p>SLOPE weights for L-1 penalty. If a float,
+it is broadcast to all features.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer</strong> : object</p>
+<blockquote>
+<div><p>Randomizer – contains representation of randomization density.</p>
+</div></blockquote>
+<p><strong>perturb</strong> : np.ndarray</p>
+<blockquote class="last">
+<div><p>Random perturbation subtracted as a linear
+term in the objective function.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.slope.slope.linear_decomposition">
+<code class="descname">linear_decomposition</code><span class="sig-paren">(</span><em>target_score_cov</em>, <em>target_cov</em>, <em>observed_target_state</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.slope.slope.linear_decomposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute out the linear decomposition
+of the score based on the target. This decomposition
+writes the (limiting CLT version) of the data in the score 
+as linear in the target and in some independent Gaussian error.</p>
+<p>This second independent piece is conditioned on, resulting
+in a reconstruction of the score as an affine function of the target
+where the offset is the part related to this independent
+Gaussian error.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.slope.slope.randomize">
+<code class="descname">randomize</code><span class="sig-paren">(</span><em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.slope.slope.randomize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The actual randomization step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>perturb</strong> : ndarray, optional</p>
+<blockquote class="last">
+<div><p>Value of randomization vector, an instance of <span class="math">\(\omega\)</span>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="selection.randomized.slope.slope.sampler">
+<code class="descname">sampler</code><a class="headerlink" href="#selection.randomized.slope.slope.sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sampler of optimization (augmented) variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.slope.slope.selective_MLE">
+<code class="descname">selective_MLE</code><span class="sig-paren">(</span><em>observed_target</em>, <em>target_cov</em>, <em>target_score_cov</em>, <em>level=0.9</em>, <em>solve_args={'tol': 1e-12}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.slope.slope.selective_MLE" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>target_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covaraince of target.</p>
+</div></blockquote>
+<p><strong>target_score_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covariance of target and score of randomized query.</p>
+</div></blockquote>
+<p><strong>level</strong> : float, optional</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict, optional</p>
+<blockquote class="last">
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.slope.slope.setup_sampler">
+<code class="descname">setup_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.slope.slope.setup_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup query to prepare for sampling.
+Should set a few key attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>observed_score_state</li>
+<li>num_opt_var</li>
+<li>observed_opt_state</li>
+<li>opt_transform</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.slope.slope.summary">
+<code class="descname">summary</code><span class="sig-paren">(</span><em>observed_target</em>, <em>target_cov</em>, <em>target_score_cov</em>, <em>alternatives</em>, <em>opt_sample=None</em>, <em>target_sample=None</em>, <em>parameter=None</em>, <em>level=0.9</em>, <em>ndraw=10000</em>, <em>burnin=2000</em>, <em>compute_intervals=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.slope.slope.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce p-values and confidence intervals for targets
+of model including selected features</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>target</strong> : one of [‘selected’, ‘full’]</p>
+<p><strong>features</strong> : np.bool</p>
+<blockquote>
+<div><p>Binary encoding of which features to use in final
+model and targets.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.array</p>
+<blockquote>
+<div><p>Hypothesized value for parameter – defaults to 0.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>dispersion</strong> : float (optional)</p>
+<blockquote class="last">
+<div><p>Use a known value for dispersion, or Pearson’s X^2?</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

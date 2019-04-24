@@ -1,0 +1,246 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="../../_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../../index.html">
+  <img src="../../_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">algorithms.covtest</a><ul>
+<li><a class="reference internal" href="#module-selection.algorithms.covtest">Module: <code class="docutils literal"><span class="pre">algorithms.covtest</span></code></a></li>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/selection.algorithms.covtest.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="algorithms-covtest">
+<h1>algorithms.covtest<a class="headerlink" href="#algorithms-covtest" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-selection.algorithms.covtest">
+<span id="module-algorithms-covtest"></span><h2>Module: <code class="xref py py-mod docutils literal"><span class="pre">algorithms.covtest</span></code><a class="headerlink" href="#module-selection.algorithms.covtest" title="Permalink to this headline">¶</a></h2>
+<p>This module includes <a class="reference external" href="http://arxiv.org/abs/1301.7161">covtest</a> that computes
+either the exponential approximation from <a class="reference external" href="http://arxiv.org/abs/1301.7161">covTest</a>
+the exact form of the covariance test described in 
+<a class="reference external" href="http://arxiv.org/abs/1401.3889">Spacings</a>.</p>
+<p>The covariance test itself is asymptotically exponential
+(under certain conditions) and is  described in 
+<a class="reference external" href="http://arxiv.org/abs/1301.7161">covTest</a>.</p>
+<p>Both tests mentioned above require knowledge 
+(or a good estimate) of sigma, the noise variance.</p>
+<p>This module also includes a second exact test called <a href="#id7"><span class="problematic" id="id8">`selected_covtest`_</span></a>
+that can use sigma but does not need it.</p>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selection.algorithms.covtest.covtest">
+<code class="descclassname">selection.algorithms.covtest.</code><code class="descname">covtest</code><span class="sig-paren">(</span><em>X</em>, <em>Y</em>, <em>sigma=1</em>, <em>exact=True</em>, <em>covariance=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.algorithms.covtest.covtest" title="Permalink to this definition">¶</a></dt>
+<dd><p>The exact and approximate
+form of the covariance test, described
+in the <a class="reference external" href="http://arxiv.org/abs/1301.7161">covTest</a>, <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac Rice</a> and <a class="reference external" href="http://arxiv.org/abs/1401.3889">Spacings</a> papers.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : np.float((n,p))</p>
+<p><strong>Y</strong> : np.float(n)</p>
+<p><strong>sigma</strong> : float (optional)</p>
+<blockquote>
+<div><p>Defaults to 1, but Type I error will be off if incorrect
+sigma is used.</p>
+</div></blockquote>
+<p><strong>exact</strong> : bool (optional)</p>
+<blockquote>
+<div><p>If True, use the first spacings test, else use
+the exponential approximation.</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.array (optional)</p>
+<blockquote>
+<div><p>If None, defaults to identity.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>con</strong> : <a href="#id9"><span class="problematic" id="id10">`selection.affine.constraints`_</span></a></p>
+<blockquote>
+<div><p>The constraint based on conditioning
+on the sign and location of the maximizer.</p>
+</div></blockquote>
+<p><strong>pvalue</strong> : float</p>
+<blockquote>
+<div><p>Exact or approximate covariance test p-value.</p>
+</div></blockquote>
+<p><strong>idx</strong> : int</p>
+<blockquote>
+<div><p>Variable achieving <span class="math">\(\lambda_1\)</span></p>
+</div></blockquote>
+<p><strong>sign</strong> : int</p>
+<blockquote class="last">
+<div><p>Sign of <span class="math">\(X^Ty\)</span> for variable achieving <span class="math">\(\lambda_1\)</span>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.algorithms.covtest.selected_covtest">
+<code class="descclassname">selection.algorithms.covtest.</code><code class="descname">selected_covtest</code><span class="sig-paren">(</span><em>X</em>, <em>Y</em>, <em>ndraw=5000</em>, <em>burnin=2000</em>, <em>sigma=None</em>, <em>covariance=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.algorithms.covtest.selected_covtest" title="Permalink to this definition">¶</a></dt>
+<dd><p>An exact test that is more
+powerful than <a class="reference external" href="http://arxiv.org/abs/1301.7161">covtest</a> but that requires
+sampling for the null distribution.</p>
+<p>This test does not require knowledge of sigma.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : np.float((n,p))</p>
+<p><strong>Y</strong> : np.float(n)</p>
+<p><strong>burnin</strong> : int</p>
+<blockquote>
+<div><p>How many iterations until we start
+recording samples?</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int</p>
+<blockquote>
+<div><p>How many samples should we return?</p>
+</div></blockquote>
+<p><strong>sigma</strong> : float (optional)</p>
+<blockquote>
+<div><p>If provided, this value is used for the
+Gibbs sampler.</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>Optional covariance for cone constraint.
+Will be scaled by sigma if it is not None.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>con</strong> : <a href="#id11"><span class="problematic" id="id12">`selection.affine.constraints`_</span></a></p>
+<blockquote>
+<div><p>The constraint based on conditioning
+on the sign and location of the maximizer.</p>
+</div></blockquote>
+<p><strong>pvalue</strong> : float</p>
+<blockquote>
+<div><p>Exact p-value.</p>
+</div></blockquote>
+<p><strong>idx</strong> : int</p>
+<blockquote>
+<div><p>Variable achieving <span class="math">\(\lambda_1\)</span></p>
+</div></blockquote>
+<p><strong>sign</strong> : int</p>
+<blockquote class="last">
+<div><p>Sign of <span class="math">\(X^Ty\)</span> for variable achieving <span class="math">\(\lambda_1\)</span>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,29 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+algorithms.change_point
+=======================
+
+Module: :mod:`algorithms.change_point`
+--------------------------------------
+Inheritance diagram for ``selection.algorithms.change_point``:
+
+.. inheritance-diagram:: selection.algorithms.change_point 
+   :parts: 3
+
+.. automodule:: selection.algorithms.change_point
+
+.. currentmodule:: selection.algorithms.change_point
+
+:class:`change_point`
+---------------------
+
+
+.. autoclass:: change_point
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+.. autofunction:: selection.algorithms.change_point.one_jump_instance
+

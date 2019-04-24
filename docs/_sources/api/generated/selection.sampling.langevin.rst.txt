@@ -1,0 +1,26 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+sampling.langevin
+=================
+
+Module: :mod:`sampling.langevin`
+--------------------------------
+Inheritance diagram for ``selection.sampling.langevin``:
+
+.. inheritance-diagram:: selection.sampling.langevin 
+   :parts: 3
+
+.. automodule:: selection.sampling.langevin
+
+.. currentmodule:: selection.sampling.langevin
+
+:class:`projected_langevin`
+---------------------------
+
+
+.. autoclass:: projected_langevin
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

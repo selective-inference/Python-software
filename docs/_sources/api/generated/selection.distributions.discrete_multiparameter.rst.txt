@@ -1,0 +1,26 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+distributions.discrete_multiparameter
+=====================================
+
+Module: :mod:`distributions.discrete_multiparameter`
+----------------------------------------------------
+Inheritance diagram for ``selection.distributions.discrete_multiparameter``:
+
+.. inheritance-diagram:: selection.distributions.discrete_multiparameter 
+   :parts: 3
+
+.. automodule:: selection.distributions.discrete_multiparameter
+
+.. currentmodule:: selection.distributions.discrete_multiparameter
+
+:class:`multiparameter_family`
+------------------------------
+
+
+.. autoclass:: multiparameter_family
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

@@ -1,0 +1,859 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="../../_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../../index.html">
+  <img src="../../_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">constraints.quasi_affine</a><ul>
+<li><a class="reference internal" href="#module-constraints-quasi-affine">Module: <code class="docutils literal"><span class="pre">constraints.quasi_affine</span></code></a></li>
+<li><a class="reference internal" href="#classes">Classes</a><ul>
+<li><a class="reference internal" href="#constraints"><code class="docutils literal"><span class="pre">constraints</span></code></a></li>
+<li><a class="reference internal" href="#orthogonal"><code class="docutils literal"><span class="pre">orthogonal</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/selection.constraints.quasi_affine.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="constraints-quasi-affine">
+<h1>constraints.quasi_affine<a class="headerlink" href="#constraints-quasi-affine" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-constraints-quasi-affine">
+<h2>Module: <code class="xref py py-mod docutils literal"><span class="pre">constraints.quasi_affine</span></code><a class="headerlink" href="#module-constraints-quasi-affine" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal"><span class="pre">selection.constraints.quasi_affine</span></code>:</p>
+<span class="target" id="module-selection.constraints.quasi_affine"></span><p>This module contains the core code needed for post selection
+inference based on affine selection procedures as
+described in the papers <a class="reference external" href="http://arxiv.org/abs/1308.3020">Kac Rice</a>, <a class="reference external" href="http://arxiv.org/abs/1401.3889">Spacings</a>, <a class="reference external" href="http://arxiv.org/abs/1301.7161">covTest</a>
+and <a class="reference external" href="http://arxiv.org/abs/1311.6238">post selection LASSO</a>.</p>
+</div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="constraints">
+<h3><a class="reference internal" href="#selection.constraints.quasi_affine.constraints" title="selection.constraints.quasi_affine.constraints"><code class="xref py py-class docutils literal"><span class="pre">constraints</span></code></a><a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selection.constraints.quasi_affine.constraints">
+<em class="property">class </em><code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">constraints</code><span class="sig-paren">(</span><em>linear_part</em>, <em>LHS_offset</em>, <em>RHS_offset</em>, <em>residual_projector</em>, <em>covariance=None</em>, <em>mean=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>This class is the core object for quasiaffine selection procedures.
+It is meant to describe sets of the form <span class="math">\(C\)</span>
+where</p>
+<div class="math">
+\[C = \left\{z: Az + u \leq \|Pz\|_2b \right \}\]</div>
+<p>where <span class="math">\(u\)</span> is <cite>LHS_offset</cite>, <span class="math">\(b\)</span> is <cite>RHS_offset</cite>, <span class="math">\(P\)</span>
+is a projection assumed to satisfy <span class="math">\(AP=0\)</span>,
+and <span class="math">\(A\)</span> is <cite>linear_part</cite>, some fixed matrix.</p>
+<p class="rubric">Notes</p>
+<p>In this parameterization, the parameter <cite>self.mean</cite> corresponds
+to the <em>reference measure</em> that is being truncated. It is not the
+mean of the truncated Gaussian.</p>
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.constraints.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>linear_part</em>, <em>LHS_offset</em>, <em>RHS_offset</em>, <em>residual_projector</em>, <em>covariance=None</em>, <em>mean=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.constraints.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new inequality.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>linear_part</strong> : np.float((q,p))</p>
+<blockquote>
+<div><p>The linear part, <span class="math">\(A\)</span> of the quasi-affine constraint
+<span class="math">\(C\)</span>.</p>
+</div></blockquote>
+<p><strong>LHS_offset: np.float(q)</strong></p>
+<blockquote>
+<div><p>The value of <span class="math">\(u\)</span> in the quasi-affine constraint
+C.</p>
+</div></blockquote>
+<p><strong>RHS_offset: np.float(q)</strong></p>
+<blockquote>
+<div><p>The value of <span class="math">\(b\)</span> in the quasi-affine constraint
+C.</p>
+</div></blockquote>
+<p><strong>residual_projector: np.float((p,p))</strong></p>
+<blockquote>
+<div><p>The matrix <span class="math">\(P\)</span> above.
+C. If <cite>covariance</cite> is not identity, then <span class="math">\(\|Pz\|_2\)</span>
+should be interpreted as a Mahalanobis distance.</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float((p,p))</p>
+<blockquote>
+<div><p>Covariance matrix of Gaussian distribution to be 
+truncated. Defaults to <cite>np.identity(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>mean</strong> : np.float(p)</p>
+<blockquote class="last">
+<div><p>Mean vector of Gaussian distribution to be 
+truncated. Defaults to <cite>np.zeros(self.dim)</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.constraints.conditional">
+<code class="descname">conditional</code><span class="sig-paren">(</span><em>linear_part</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.constraints.conditional" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an equivalent constraint 
+after having conditioned on a linear equality.</p>
+<p>Let the inequality constraints be specified by
+<cite>(A,b)</cite> and the equality constraints be specified
+by <cite>(C,d)</cite>. We form equivalent inequality constraints by 
+considering the residual</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>linear_part</strong> : np.float((k,q))</p>
+<blockquote>
+<div><p>Linear part of equality constraint, <cite>C</cite> above.</p>
+</div></blockquote>
+<p><strong>value</strong> : np.float(k)</p>
+<blockquote>
+<div><p>Value of equality constraint, <cite>b</cite> above.</p>
+</div></blockquote>
+<p><strong>.. math::</strong></p>
+<blockquote>
+<div><p>AZ - E(AZ|CZ=d)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>conditional_con</strong> : <cite>constraints</cite></p>
+<blockquote class="last">
+<div><p>Quasi-affine constraints having applied equality constraint.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.constraints.bounds">
+<code class="descname">bounds</code><span class="sig-paren">(</span><em>direction_of_interest</em>, <em>Y</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.constraints.bounds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>For a realization <span class="math">\(Y\)</span> of the random variable <span class="math">\(N(\mu,\Sigma)\)</span>
+truncated to <span class="math">\(C\)</span> specified by <cite>self.constraints</cite> compute
+the slice of the inequality constraints in a 
+given direction <span class="math">\(\eta\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>A direction <span class="math">\(\eta\)</span> for which we may want to form 
+selection intervals or a test.</p>
+</div></blockquote>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>A realization of <span class="math">\(N(\mu,\Sigma)\)</span> where 
+<span class="math">\(\Sigma\)</span> is <cite>self.covariance</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intervals</strong> : []</p>
+<blockquote>
+<div><p>Set of truncation intervals for the <span class="math">\(T\)</span> statistic.</p>
+</div></blockquote>
+<p><strong>Tobs</strong> : np.float</p>
+<blockquote class="last">
+<div><p>The observed <span class="math">\(T\)</span> statistic.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.constraints.pivot">
+<code class="descname">pivot</code><span class="sig-paren">(</span><em>direction_of_interest</em>, <em>Y</em>, <em>alternative='greater'</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.constraints.pivot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>For a realization <span class="math">\(Y\)</span> of the random variable <span class="math">\(N(\mu,\Sigma)\)</span>
+truncated to <span class="math">\(C\)</span> specified by <cite>self.constraints</cite> compute
+the slice of the inequality constraints in a 
+given direction <span class="math">\(\eta\)</span> and test whether 
+<span class="math">\(\eta^T\mu\)</span> is greater then 0, less than 0 or equal to 0.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>A direction <span class="math">\(\eta\)</span> for which we may want to form 
+selection intervals or a test.</p>
+</div></blockquote>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>A realization of <span class="math">\(N(0,\Sigma)\)</span> where 
+<span class="math">\(\Sigma\)</span> is <cite>self.covariance</cite>.</p>
+</div></blockquote>
+<p><strong>alternative</strong> : [‘greater’, ‘less’, ‘twosided’]</p>
+<blockquote>
+<div><p>What alternative to use.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>P</strong> : np.float</p>
+<blockquote class="last">
+<div><p><span class="math">\(p\)</span>-value of corresponding test.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>All of the tests are based on the exact pivot <span class="math">\(F\)</span> given
+by the truncated T distribution for the
+given direction <span class="math">\(\eta\)</span>. If the alternative is ‘greater’
+then we return <span class="math">\(1-F\)</span>; if it is ‘less’ we return <span class="math">\(F\)</span>
+and if it is ‘twosided’ we return <span class="math">\(2 \min(F,1-F)\)</span>.</p>
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.constraints.whiten">
+<code class="descname">whiten</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.constraints.whiten" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>Return a whitened version of constraints in a different</strong></p>
+<p><strong>basis, and a change of basis matrix.</strong></p>
+<p><strong>If `self.covariance` is rank deficient, the change-of</strong></p>
+<p class="last"><strong>basis matrix will not be square.</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="orthogonal">
+<h3><a class="reference internal" href="#selection.constraints.quasi_affine.orthogonal" title="selection.constraints.quasi_affine.orthogonal"><code class="xref py py-class docutils literal"><span class="pre">orthogonal</span></code></a><a class="headerlink" href="#orthogonal" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selection.constraints.quasi_affine.orthogonal">
+<em class="property">class </em><code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">orthogonal</code><span class="sig-paren">(</span><em>linear_part</em>, <em>LHS_offset</em>, <em>RHS_offset</em>, <em>RSS</em>, <em>RSS_df</em>, <em>covariance=None</em>, <em>mean=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.orthogonal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selection.constraints.quasi_affine.constraints" title="selection.constraints.quasi_affine.constraints"><code class="xref py py-class docutils literal"><span class="pre">selection.constraints.quasi_affine.constraints</span></code></a></p>
+<p>This class is the core object for quasiaffine selection procedures.
+It is meant to describe sets of the form <span class="math">\(C\)</span>
+where</p>
+<div class="math">
+\[C = \left\{z: Az + u \leq \|Pz\|_2b \right \}\]</div>
+<p>where <span class="math">\(u\)</span> is <cite>LHS_offset</cite>, <span class="math">\(b\)</span> is <cite>RHS_offset</cite>, <span class="math">\(P\)</span>
+is a projection assumed to satisfy <span class="math">\(AP=0\)</span>,
+and <span class="math">\(A\)</span> is <cite>linear_part</cite>, some fixed matrix.</p>
+<p>The condition <span class="math">\(AP=0\)</span> is why this class is called <cite>orthogonal</cite>.</p>
+<p class="rubric">Notes</p>
+<p>In this parameterization, the parameter <cite>self.mean</cite> corresponds
+to the <em>reference measure</em> that is being truncated. It is not the
+mean of the truncated Gaussian.</p>
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.orthogonal.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>linear_part</em>, <em>LHS_offset</em>, <em>RHS_offset</em>, <em>RSS</em>, <em>RSS_df</em>, <em>covariance=None</em>, <em>mean=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.orthogonal.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new inequality.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>linear_part</strong> : np.float((q,p))</p>
+<blockquote>
+<div><p>The linear part, <span class="math">\(A\)</span> of the quasi-affine constraint
+<span class="math">\(C\)</span>.</p>
+</div></blockquote>
+<p><strong>LHS_offset: np.float(q)</strong></p>
+<blockquote>
+<div><p>The value of <span class="math">\(u\)</span> in the quasi-affine constraint
+C.</p>
+</div></blockquote>
+<p><strong>RHS_offset: np.float(q)</strong></p>
+<blockquote>
+<div><p>The value of <span class="math">\(b\)</span> in the quasi-affine constraint
+C.</p>
+</div></blockquote>
+<p><strong>RSS</strong> : float</p>
+<blockquote>
+<div><p>The value of <span class="math">\(\|Pz\|_2\)</span> above.
+If <cite>covariance</cite> is not identity, then <span class="math">\(\|Pz\|_2\)</span>
+should be interpreted as a Mahalanobis distance
+relative to <cite>self.covariance</cite>.</p>
+</div></blockquote>
+<p><strong>RSS_df</strong> : int</p>
+<blockquote>
+<div><p>Degrees of freedom in <span class="math">\(\|Pz\|_2\)</span>,
+when <cite>covariance</cite> is a multiple of identity, then this
+should be trace(P).</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float((p,p))</p>
+<blockquote>
+<div><p>Covariance matrix of Gaussian distribution to be 
+truncated. Defaults to <cite>np.identity(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>mean</strong> : np.float(p)</p>
+<blockquote class="last">
+<div><p>Mean vector of Gaussian distribution to be 
+truncated. Defaults to <cite>np.zeros(self.dim)</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.orthogonal.conditional">
+<code class="descname">conditional</code><span class="sig-paren">(</span><em>linear_part</em>, <em>value</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.orthogonal.conditional" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Return an equivalent constraint 
+after having conditioned on a linear equality.</p>
+<p>Let the inequality constraints be specified by
+<cite>(A,b)</cite> and the equality constraints be specified
+by <cite>(C,d)</cite>. We form equivalent inequality constraints by 
+considering the residual</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>linear_part</strong> : np.float((k,q))</p>
+<blockquote>
+<div><p>Linear part of equality constraint, <cite>C</cite> above.</p>
+</div></blockquote>
+<p><strong>value</strong> : np.float(k)</p>
+<blockquote>
+<div><p>Value of equality constraint, <cite>b</cite> above.</p>
+</div></blockquote>
+<p><strong>.. math::</strong></p>
+<blockquote>
+<div><p>AZ - E(AZ|CZ=d)</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>conditional_con</strong> : <cite>orthogonal</cite></p>
+<blockquote class="last">
+<div><p>Quasi-affine constraints having applied equality constraint.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>The calculations here assume that <span class="math">\(CZ\)</span> is independent of <span class="math">\(PZ\)</span>.</p>
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.orthogonal.bounds">
+<code class="descname">bounds</code><span class="sig-paren">(</span><em>direction_of_interest</em>, <em>Y</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.orthogonal.bounds" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>For a realization <span class="math">\(Y\)</span> of the random variable <span class="math">\(N(\mu,\Sigma)\)</span>
+truncated to <span class="math">\(C\)</span> specified by <cite>self.constraints</cite> compute
+the slice of the inequality constraints in a 
+given direction <span class="math">\(\eta\)</span>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>A direction <span class="math">\(\eta\)</span> for which we may want to form 
+selection intervals or a test.</p>
+</div></blockquote>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>A realization of <span class="math">\(N(\mu,\Sigma)\)</span> where 
+<span class="math">\(\Sigma\)</span> is <cite>self.covariance</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intervals</strong> : []</p>
+<blockquote>
+<div><p>Set of truncation intervals for the <span class="math">\(T\)</span> statistic.</p>
+</div></blockquote>
+<p><strong>Tobs</strong> : np.float</p>
+<blockquote class="last">
+<div><p>The observed <span class="math">\(T\)</span> statistic.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.orthogonal.pivot">
+<code class="descname">pivot</code><span class="sig-paren">(</span><em>direction_of_interest</em>, <em>Y</em>, <em>alternative='greater'</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.orthogonal.pivot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>For a realization <span class="math">\(Y\)</span> of the random variable <span class="math">\(N(\mu,\Sigma)\)</span>
+truncated to <span class="math">\(C\)</span> specified by <cite>self.constraints</cite> compute
+the slice of the inequality constraints in a 
+given direction <span class="math">\(\eta\)</span> and test whether 
+<span class="math">\(\eta^T\mu\)</span> is greater then 0, less than 0 or equal to 0.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>A direction <span class="math">\(\eta\)</span> for which we may want to form 
+selection intervals or a test.</p>
+</div></blockquote>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>A realization of <span class="math">\(N(0,\Sigma)\)</span> where 
+<span class="math">\(\Sigma\)</span> is <cite>self.covariance</cite>.</p>
+</div></blockquote>
+<p><strong>alternative</strong> : [‘greater’, ‘less’, ‘twosided’]</p>
+<blockquote>
+<div><p>What alternative to use.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>P</strong> : np.float</p>
+<blockquote class="last">
+<div><p><span class="math">\(p\)</span>-value of corresponding test.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>All of the tests are based on the exact pivot <span class="math">\(F\)</span> given
+by the truncated T distribution for the
+given direction <span class="math">\(\eta\)</span>. If the alternative is ‘greater’
+then we return <span class="math">\(1-F\)</span>; if it is ‘less’ we return <span class="math">\(F\)</span>
+and if it is ‘twosided’ we return <span class="math">\(2 \min(F,1-F)\)</span>.</p>
+<dl class="method">
+<dt id="selection.constraints.quasi_affine.orthogonal.whiten">
+<code class="descname">whiten</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.orthogonal.whiten" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>Return a whitened version of constraints in a different</strong></p>
+<p><strong>basis, and a change of basis matrix.</strong></p>
+<p><strong>If `self.covariance` is rank deficient, the change-of</strong></p>
+<p class="last"><strong>basis matrix will not be square.</strong></p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.constraints_unknown_sigma">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">constraints_unknown_sigma</code><span class="sig-paren">(</span><em>support_directions</em>, <em>RHS_offsets</em>, <em>LHS_offsets</em>, <em>observed_data</em>, <em>direction_of_interest</em>, <em>RSS</em>, <em>RSS_df</em>, <em>value_under_null=0.0</em>, <em>tol=0.0001</em>, <em>DEBUG=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.constraints_unknown_sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a quasi-affine constraint <span class="math">\(\{z:Az+u \leq \hat{\sigma}b\}\)</span> 
+(elementwise)
+specified with <span class="math">\(A\)</span> as <cite>support_directions</cite> and <span class="math">\(b\)</span> as
+<cite>support_offset</cite>, a new direction of interest <span class="math">\(\eta\)</span>, and
+an <cite>observed_data</cite> is Gaussian vector <span class="math">\(Z \sim N(\mu,\sigma^2 I)\)</span> 
+with <span class="math">\(\sigma\)</span> unknown, this
+function returns <span class="math">\(\eta^TZ\)</span> as well as a set
+bounding this value. The value of <span class="math">\(\hat{\sigma}\)</span> is taken to be
+sqrt(RSS/RSS_df)</p>
+<p>The interval constructed is such that the endpoints are 
+independent of <span class="math">\(\eta^TZ\)</span>, hence the 
+selective <span class="math">\(T\)</span> distribution of
+of <a class="reference external" href="http://arxiv.org/abs/1410.2597">sample carving</a>
+can be used to form an exact pivot.</p>
+<p>To construct the interval, we are in effect conditioning
+on all randomness perpendicular to the direction of interest,
+i.e. <span class="math">\(P_{\eta}^{\perp}X\)</span> where <span class="math">\(X\)</span> is the Gaussian data vector.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>support_directions</strong> : np.float</p>
+<blockquote>
+<div><p>Matrix specifying constraint, <span class="math">\(A\)</span>.</p>
+</div></blockquote>
+<p><strong>RHS</strong> : np.float</p>
+<blockquote>
+<div><p>Offset in constraint, <span class="math">\(b\)</span>.</p>
+</div></blockquote>
+<p><strong>LHS_offsets</strong> : np.float</p>
+<blockquote>
+<div><p>Offset in LHS of constraint, <span class="math">\(u\)</span>.</p>
+</div></blockquote>
+<p><strong>observed_data</strong> : np.float</p>
+<blockquote>
+<div><p>Observations.</p>
+</div></blockquote>
+<p><strong>direction_of_interest</strong> : np.float</p>
+<blockquote>
+<div><p>Direction in which we’re interested for the
+contrast.</p>
+</div></blockquote>
+<p><strong>RSS</strong> : float</p>
+<blockquote>
+<div><p>Residual sum of squares.</p>
+</div></blockquote>
+<p><strong>RSS_df</strong> : int</p>
+<blockquote>
+<div><p>Degrees of freedom of RSS.</p>
+</div></blockquote>
+<p><strong>tol</strong> : float</p>
+<blockquote>
+<div><p>Relative tolerance parameter for deciding 
+sign of <span class="math">\(Az-b\)</span>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>lower_bound</strong> : float</p>
+<p><strong>observed</strong> : float</p>
+<p><strong>upper_bound</strong> : float</p>
+<p class="last"><strong>sigma</strong> : float</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Covariance is assumed to be an unknown multiple of the identity.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.gibbs_test">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">gibbs_test</code><span class="sig-paren">(</span><em>quasi_affine_con</em>, <em>Y</em>, <em>direction_of_interest</em>, <em>how_often=-1</em>, <em>ndraw=5000</em>, <em>burnin=2000</em>, <em>white=False</em>, <em>alternative='twosided'</em>, <em>UMPU=True</em>, <em>sigma_known=False</em>, <em>alpha=0.05</em>, <em>use_constraint_directions=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.gibbs_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Monte Carlo significance test for
+a given function of <cite>con.mean</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>quasi_affine_con</strong> : <cite>orthogonal</cite></p>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>Point satisfying the constraint.</p>
+</div></blockquote>
+<p><strong>direction_of_interest: np.float</strong></p>
+<blockquote>
+<div><p>Which linear function of <cite>con.mean</cite> is of interest?
+(a.k.a. <span class="math">\(\eta\)</span> in many of related papers)</p>
+</div></blockquote>
+<p><strong>how_often</strong> : int (optional)</p>
+<blockquote>
+<div><p>How often should the sampler make a move along <cite>direction_of_interest</cite>?
+If negative, defaults to ndraw+burnin (so it will never be used).</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>white</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Is con.covariance equal to identity?</p>
+</div></blockquote>
+<p><strong>alternative</strong> : str</p>
+<blockquote>
+<div><p>One of [‘greater’, ‘less’, ‘twosided’]</p>
+</div></blockquote>
+<p><strong>UMPU</strong> : bool</p>
+<blockquote>
+<div><p>Perform the UMPU test?</p>
+</div></blockquote>
+<p><strong>sigma_known</strong> : bool</p>
+<blockquote>
+<div><p>Is <span class="math">\(\sigma\)</span> assumed known?</p>
+</div></blockquote>
+<p><strong>alpha :</strong></p>
+<blockquote>
+<div><p>Level for UMPU test.</p>
+</div></blockquote>
+<p><strong>use_constraint_directions</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Use the directions formed by the constraints as in
+the Gibbs scheme?</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>pvalue</strong> : float</p>
+<blockquote>
+<div><p>P-value (using importance weights) for specified hypothesis test.</p>
+</div></blockquote>
+<p><strong>Z</strong> : np.float((ndraw, n))</p>
+<blockquote>
+<div><p>Sample from the sphere intersect the constraints.</p>
+</div></blockquote>
+<p><strong>weights</strong> : np.float(ndraw)</p>
+<blockquote class="last">
+<div><p>Importance weights for the sample.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.intersection">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">intersection</code><span class="sig-paren">(</span><em>I1</em>, <em>I2</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.intersection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.quadratic_inequality_solver">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">quadratic_inequality_solver</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c</em>, <em>direction='less than'</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.quadratic_inequality_solver" title="Permalink to this definition">¶</a></dt>
+<dd><p>solves a * x**2 + b * x + c leq 0, if direction is “less than”,
+solves a * x**2 + b * x + c geq 0, if direction is “greater than”,</p>
+<p>returns:
+the truancated interval, may include [-infty, + infty]
+the returned interval(s) is a list of disjoint intervals indicating the union.
+when the left endpoint of the interval is equal to the right, return empty list</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.sample_from_constraints">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">sample_from_constraints</code><span class="sig-paren">(</span><em>con</em>, <em>Y</em>, <em>direction_of_interest=None</em>, <em>how_often=-1</em>, <em>ndraw=1000</em>, <em>burnin=1000</em>, <em>white=False</em>, <em>use_constraint_directions=True</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.sample_from_constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use Gibbs sampler to simulate from <cite>con</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>con</strong> : <a href="#id1"><span class="problematic" id="id2">`selection.affine.constraints`_</span></a></p>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>Point satisfying the constraint.</p>
+</div></blockquote>
+<p><strong>direction_of_interest</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>Which projection is of most interest?</p>
+</div></blockquote>
+<p><strong>how_often</strong> : int (optional)</p>
+<blockquote>
+<div><p>How often should the sampler make a move along <cite>direction_of_interest</cite>?
+If negative, defaults to ndraw+burnin (so it will never be used).</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>white</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Is con.covariance equal to identity?</p>
+</div></blockquote>
+<p><strong>use_constraint_directions</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Use the directions formed by the constraints as in
+the Gibbs scheme?</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>Z</strong> : np.float((ndraw, n))</p>
+<blockquote class="last">
+<div><p>Sample from the sphere intersect the constraints.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.sample_from_sphere">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">sample_from_sphere</code><span class="sig-paren">(</span><em>con</em>, <em>Y</em>, <em>direction_of_interest=None</em>, <em>how_often=-1</em>, <em>ndraw=1000</em>, <em>burnin=1000</em>, <em>white=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.sample_from_sphere" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use Gibbs sampler to simulate from <cite>con</cite> 
+intersected with (whitened) sphere of radius <cite>np.linalg.norm(Y)</cite>.
+When <cite>con.covariance</cite> is not <span class="math">\(I\)</span>, it samples from the
+ellipse of constant Mahalanobis distance from <cite>con.mean</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>con</strong> : <a href="#id3"><span class="problematic" id="id4">`selection.affine.constraints`_</span></a></p>
+<p><strong>Y</strong> : np.float</p>
+<blockquote>
+<div><p>Point satisfying the constraint.</p>
+</div></blockquote>
+<p><strong>direction_of_interest</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>Which projection is of most interest?</p>
+</div></blockquote>
+<p><strong>how_often</strong> : int (optional)</p>
+<blockquote>
+<div><p>How often should the sampler make a move along <cite>direction_of_interest</cite>?
+If negative, defaults to ndraw+burnin (so it will never be used).</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>white</strong> : bool (optional)</p>
+<blockquote>
+<div><p>Is con.covariance equal to identity?</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>Z</strong> : np.float((ndraw, n))</p>
+<blockquote>
+<div><p>Sample from the sphere intersect the constraints.</p>
+</div></blockquote>
+<p><strong>weights</strong> : np.float(ndraw)</p>
+<blockquote class="last">
+<div><p>Importance weights for the sample.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.sqrt_inequality_solver">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">sqrt_inequality_solver</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c</em>, <em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.sqrt_inequality_solver" title="Permalink to this definition">¶</a></dt>
+<dd><p>find the intervals for t such that,
+a*t + b*sqrt(n + t**2) leq c</p>
+<p>returns:
+should return a single interval</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quasi_affine.stack">
+<code class="descclassname">selection.constraints.quasi_affine.</code><code class="descname">stack</code><span class="sig-paren">(</span><em>*cons</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quasi_affine.stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combine constraints into a large constaint
+by intersection.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>cons</strong> : [<a href="#id5"><span class="problematic" id="id6">`selection.affine.constraints`_</span></a>]</p>
+<blockquote>
+<div><p>A sequence of constraints.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>intersection</strong> : <a href="#id7"><span class="problematic" id="id8">`selection.quasi_affine.constraints`_</span></a></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Resulting constraint will have mean 0 and covariance <span class="math">\(I\)</span>.
+If each is of type <cite>constraints</cite>, then quietly assumes that all residual projectors
+are the same, so it uses the first residual projector
+in the stack. If they are of type <cite>orthogonal</cite> then quietly
+assumes that all RSS and RSS_df are the same.</p>
+<p>If they are of mixed type, raises an exception.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

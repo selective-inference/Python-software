@@ -1,0 +1,69 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+randomized.screening
+====================
+
+Module: :mod:`randomized.screening`
+-----------------------------------
+Inheritance diagram for ``selection.randomized.screening``:
+
+.. inheritance-diagram:: selection.randomized.screening 
+   :parts: 3
+
+.. automodule:: selection.randomized.screening
+
+.. currentmodule:: selection.randomized.screening
+
+Classes
+-------
+
+:class:`marginal_screening`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: marginal_screening
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`screening`
+~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: screening
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`stepup`
+~~~~~~~~~~~~~~~
+
+
+.. autoclass:: stepup
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`topK`
+~~~~~~~~~~~~~
+
+
+.. autoclass:: topK
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Function
+--------
+
+
+.. autofunction:: selection.randomized.screening.stepup_selection
+
