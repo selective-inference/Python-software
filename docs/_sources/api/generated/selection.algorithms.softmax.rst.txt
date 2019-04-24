@@ -1,0 +1,26 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+algorithms.softmax
+==================
+
+Module: :mod:`algorithms.softmax`
+---------------------------------
+Inheritance diagram for ``selection.algorithms.softmax``:
+
+.. inheritance-diagram:: selection.algorithms.softmax 
+   :parts: 3
+
+.. automodule:: selection.algorithms.softmax
+
+.. currentmodule:: selection.algorithms.softmax
+
+:class:`softmax_objective`
+--------------------------
+
+
+.. autoclass:: softmax_objective
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

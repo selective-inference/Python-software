@@ -1,0 +1,438 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Selection documentation attribution" href="docattribute.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="index.html">
+  <img src="_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="docattribute.html" title="Selection documentation attribution"
+             accesskey="P">previous</a> |</li>
+  <li><a href="index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">The spacings test</a></li>
+<li><a class="reference internal" href="#spacings-test">Spacings test</a></li>
+<li><a class="reference internal" href="#spacings-in-a-regression-setting">Spacings in a regression setting</a><ul>
+<li><a class="reference internal" href="#covariance-test-for-forward-stepwise">Covariance test for forward stepwise</a></li>
+<li><a class="reference internal" href="#null-behavior">Null behavior</a></li>
+<li><a class="reference internal" href="#sparse-model">1-sparse model</a></li>
+<li><a class="reference internal" href="#id1">2-sparse model</a></li>
+<li><a class="reference internal" href="#id2">5-sparse model</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="docattribute.html"
+                        title="previous chapter">Selection documentation attribution</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/spacings.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="the-spacings-test">
+<h1>The spacings test<a class="headerlink" href="#the-spacings-test" title="Permalink to this headline">¶</a></h1>
+<p>The <a class="reference external" href="covtest.html">covariance test</a> describes the distribution of
+spacings at points on the LARS path for the LASSO (see <a class="reference external" href="http://arxiv.org/abs/1301.7161">the
+paper</a>).</p>
+<p>It is an asymptotic distribution for the “first null step” that LARS
+takes. That is, if there are 5 strong variables in the model, the 6th
+<code class="docutils literal"><span class="pre">covtest</span></code> <span class="math">\(p\)</span>-value should be approximately uniform on [0,1].</p>
+<p>Before the 6th step, we expect (or hope) to see low p-values, but what
+about after the 6th step? In the paper, it is pointed out that in the
+orthogonal case, the subsequent steps look like Exp random variables
+with means depending on how far beyond the “first null” we are.</p>
+<p>Here is an illustration of this phenomenon in the orthogonal case, for
+which we expect</p>
+<div class="math">
+\[\begin{split}\begin{aligned}
+T_{(k+5)} &amp;= Z_{(k+5)} (Z_{(k+5)} - Z_{(k+6)}) \\
+&amp; \approx \text{Exp}(1/k).
+\end{aligned}\end{split}\]</div>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="o">%</span><span class="n">matplotlib</span> <span class="n">inline</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">from</span> <span class="nn">statsmodels.distributions</span> <span class="k">import</span> <span class="n">ECDF</span>
+<span class="kn">from</span> <span class="nn">selection.covtest</span> <span class="k">import</span> <span class="n">covtest</span>
+</pre></div>
+</div>
+<p>We will sample 2000 times from <span class="math">\(Z \sim N(\mu,I_{100 \times 100})\)</span>
+and look at the normalized spacing between the top 2 values. The mean
+vector <span class="math">\(\mu\)</span> will be sparse, with 5 large values.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">Z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="mi">2000</span><span class="p">,</span><span class="mi">100</span><span class="p">))</span>
+<span class="n">Z</span><span class="p">[:,:</span><span class="mi">5</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mf">4.5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mf">5.5</span><span class="p">,</span><span class="mi">6</span><span class="p">])[</span><span class="kc">None</span><span class="p">,:]</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2000</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2000</span><span class="p">):</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="n">T</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">-</span> <span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">covtest_fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">12</span><span class="p">))</span>
+<span class="n">Ugrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ugrid</span><span class="p">,</span> <span class="n">ECDF</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">T</span><span class="p">[:,</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">]))(</span><span class="n">Ugrid</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;steps&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;covtest&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">);</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Step </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+<img alt="_images/spacings_4_0.png" src="_images/spacings_4_0.png" />
+<p>Knowing there are 5 strong signals, we can apply the approximation about
+the exponentials of different sizes to the later steps. The last 4
+p-values now all seem roughly uniform on (0,1)</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span><span class="mi">4</span><span class="p">])</span>
+<span class="n">T</span> <span class="o">*=</span> <span class="n">factor</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ugrid</span><span class="p">,</span> <span class="n">ECDF</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">T</span><span class="p">[:,</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">]))(</span><span class="n">Ugrid</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;steps&#39;</span><span class="p">,</span>
+                <span class="n">c</span><span class="o">=</span><span class="s1">&#39;green&#39;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;covtest corrected&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">covtest_fig</span>
+</pre></div>
+</div>
+<img alt="_images/spacings_6_0.png" src="_images/spacings_6_0.png" />
+</div>
+<div class="section" id="spacings-test">
+<h1>Spacings test<a class="headerlink" href="#spacings-test" title="Permalink to this headline">¶</a></h1>
+<p>The <a href="#id3"><span class="problematic" id="id4">`spacings test &lt;&gt;`__</span></a> does not show this same behaviour at later
+stages of the path, as it keeps track of the order of the variables that
+have “entered” the model.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="k">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">ndist</span>
+<span class="n">spacings</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">2000</span><span class="p">,</span><span class="mi">9</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2000</span><span class="p">):</span>
+    <span class="n">W</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">Z</span><span class="p">[</span><span class="n">i</span><span class="p">])[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">9</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">j</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">spacings</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="p">((</span><span class="n">ndist</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">ndist</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span> <span class="o">/</span>
+                             <span class="p">(</span><span class="n">ndist</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">ndist</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">spacings</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">ndist</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="p">])</span> <span class="o">/</span> <span class="n">ndist</span><span class="o">.</span><span class="n">sf</span><span class="p">(</span><span class="n">W</span><span class="p">[</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ugrid</span><span class="p">,</span> <span class="n">ECDF</span><span class="p">(</span><span class="n">spacings</span><span class="p">[:,</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">])(</span><span class="n">Ugrid</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;steps&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="s1">&#39;spacings&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">covtest_fig</span>
+</pre></div>
+</div>
+<img alt="_images/spacings_9_0.png" src="_images/spacings_9_0.png" />
+</div>
+<div class="section" id="spacings-in-a-regression-setting">
+<h1>Spacings in a regression setting<a class="headerlink" href="#spacings-in-a-regression-setting" title="Permalink to this headline">¶</a></h1>
+<p>The spacings test can be used in a regression setting as well. The
+<a class="reference external" href="http://arxiv.org/abs/1401.3889">spacings paper</a> describes this
+approach for the LARS path, though it can also be used in other
+contexts.</p>
+<p>Below, we use it in forward stepwise model selection.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">nsim</span><span class="p">,</span> <span class="n">sigma</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mf">1.5</span>
+
+<span class="k">def</span> <span class="nf">instance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">):</span>
+    <span class="n">X</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">((</span><span class="n">n</span><span class="p">,</span><span class="n">p</span><span class="p">))</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n</span><span class="p">)[:,</span><span class="kc">None</span><span class="p">])</span>
+    <span class="n">X</span> <span class="o">-=</span> <span class="n">X</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="kc">None</span><span class="p">,:]</span>
+    <span class="n">X</span> <span class="o">/=</span> <span class="n">X</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="kc">None</span><span class="p">,:]</span>
+    <span class="n">X</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">Y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">*</span> <span class="n">sigma</span>
+    <span class="k">if</span> <span class="n">beta</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">Y</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">X</span><span class="p">,</span> <span class="n">Y</span>
+</pre></div>
+</div>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">selection.forward_step</span> <span class="k">import</span> <span class="n">forward_stepwise</span>
+<span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">instance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+<span class="n">FS</span> <span class="o">=</span> <span class="n">forward_stepwise</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">5</span><span class="p">):</span>
+    <span class="n">FS</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+<span class="n">FS</span><span class="o">.</span><span class="n">variables</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">[</span><span class="mi">106</span><span class="p">,</span> <span class="mi">78</span><span class="p">,</span> <span class="mi">58</span><span class="p">,</span> <span class="mi">135</span><span class="p">,</span> <span class="mi">97</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>The steps taken above should match <code class="docutils literal"><span class="pre">R</span></code>’s output. We first load the
+<code class="docutils literal"><span class="pre">%R</span></code> magic.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="o">%</span><span class="n">load_ext</span> <span class="n">rmagic</span>
+</pre></div>
+</div>
+<p>Recall that <code class="docutils literal"><span class="pre">R</span></code> uses 1-based indexing so there will be a difference of
+1 in the indexes of selected variables.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="o">%%</span><span class="n">R</span> <span class="o">-</span><span class="n">i</span> <span class="n">X</span><span class="p">,</span><span class="n">Y</span>
+<span class="n">D</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">frame</span><span class="p">(</span><span class="n">X</span><span class="p">,</span><span class="n">Y</span><span class="p">)</span>
+<span class="n">model5</span> <span class="o">=</span> <span class="n">step</span><span class="p">(</span><span class="n">lm</span><span class="p">(</span><span class="n">Y</span> <span class="o">~</span> <span class="mi">1</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">D</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">upper</span><span class="o">=</span><span class="n">lm</span><span class="p">(</span><span class="n">Y</span> <span class="o">~</span> <span class="o">.</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">D</span><span class="p">)),</span> <span class="n">direction</span><span class="o">=</span><span class="s1">&#39;forward&#39;</span><span class="p">,</span>
+     <span class="n">k</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">trace</span><span class="o">=</span><span class="n">FALSE</span><span class="p">)</span>
+<span class="n">model5</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">Call</span><span class="p">:</span>
+<span class="n">lm</span><span class="p">(</span><span class="n">formula</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">~</span> <span class="n">X107</span> <span class="o">+</span> <span class="n">X79</span> <span class="o">+</span> <span class="n">X59</span> <span class="o">+</span> <span class="n">X136</span> <span class="o">+</span> <span class="n">X98</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">D</span><span class="p">)</span>
+
+<span class="n">Coefficients</span><span class="p">:</span>
+<span class="p">(</span><span class="n">Intercept</span><span class="p">)</span>         <span class="n">X107</span>          <span class="n">X79</span>          <span class="n">X59</span>         <span class="n">X136</span>          <span class="n">X98</span>
+     <span class="mf">0.1062</span>      <span class="o">-</span><span class="mf">4.1047</span>       <span class="mf">8.2780</span>      <span class="o">-</span><span class="mf">6.4041</span>       <span class="mf">6.1924</span>      <span class="o">-</span><span class="mf">4.7872</span>
+</pre></div>
+</div>
+<div class="section" id="covariance-test-for-forward-stepwise">
+<h2>Covariance test for forward stepwise<a class="headerlink" href="#covariance-test-for-forward-stepwise" title="Permalink to this headline">¶</a></h2>
+<p>While the <code class="docutils literal"><span class="pre">covtest</span></code> was derived for the LASSO, it can be used
+sequentially in forward stepwise as well. Consider the model</p>
+<div class="math">
+\[y|X \sim N(\mu, \sigma^2 I).\]</div>
+<p>The basic approach is to note that <code class="docutils literal"><span class="pre">covtest</span></code> provides, a test of the
+null</p>
+<div class="math">
+\[H_0 : \mu = 0\]</div>
+<p>Subsequent steps essentially reapply this same test forgetting what has
+happened previously. In the case of the LARS path, each addition step
+can be expressed as a choice among several competing variables to add
+(see <a class="reference external" href="http://arxiv.org/abs/1206.0313">uniqueness</a> and
+<a class="reference external" href="http://arxiv.org/abs/1401.3889">spacings</a> for more details).</p>
+<p>To use the <code class="docutils literal"><span class="pre">covtest</span></code> for forward stepwise, we orthogonalize with
+respect to the variables already chosen and apply the covtest to the
+residual and orthogonalized <span class="math">\(X\)</span> matrix.</p>
+<p>Specifically, denote <span class="math">\(R_{M[j]}\)</span> the residual forming matrix at the
+<span class="math">\(j\)</span>-th step, with <span class="math">\(R_0=I\)</span> with <span class="math">\(M[j]\)</span> the <span class="math">\(j\)</span>-th
+model. At the <span class="math">\(j+1\)</span>-st step, we simply compute the <code class="docutils literal"><span class="pre">covtest</span></code>
+with design <span class="math">\(R_{M[j]}X\)</span> (with normalized columns) and response
+<span class="math">\(R_{M[j]}Y\)</span>.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">selection.affine</span> <span class="k">import</span> <span class="n">constraints</span>
+
+<span class="k">def</span> <span class="nf">forward_step</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+                 <span class="n">nstep</span><span class="o">=</span><span class="mi">9</span><span class="p">):</span>
+
+    <span class="n">n</span><span class="p">,</span> <span class="n">p</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">FS</span> <span class="o">=</span> <span class="n">forward_stepwise</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">)</span>
+    <span class="n">spacings_P</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">covtest_P</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">nstep</span><span class="p">):</span>
+        <span class="n">FS</span><span class="o">.</span><span class="n">next</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="n">FS</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">RX</span> <span class="o">=</span> <span class="n">X</span> <span class="o">-</span> <span class="n">FS</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">X</span><span class="p">)</span>
+            <span class="n">RY</span> <span class="o">=</span> <span class="n">Y</span> <span class="o">-</span> <span class="n">FS</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">Y</span><span class="p">)</span>
+            <span class="n">covariance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">U</span><span class="p">,</span> <span class="n">FS</span><span class="o">.</span><span class="n">P</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">U</span><span class="o">.</span><span class="n">T</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">RX</span> <span class="o">=</span> <span class="n">X</span>
+            <span class="n">RY</span> <span class="o">=</span> <span class="n">Y</span>
+            <span class="n">covariance</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">RX</span> <span class="o">-=</span> <span class="n">RX</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="kc">None</span><span class="p">,:]</span>
+        <span class="n">RX</span> <span class="o">/=</span> <span class="n">RX</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="mi">0</span><span class="p">)[</span><span class="kc">None</span><span class="p">,:]</span>
+
+        <span class="n">con</span><span class="p">,</span> <span class="n">pval</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">sign</span> <span class="o">=</span> <span class="n">covtest</span><span class="p">(</span><span class="n">RX</span><span class="p">,</span> <span class="n">RY</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+                                       <span class="n">covariance</span><span class="o">=</span><span class="n">covariance</span><span class="p">,</span>
+                                       <span class="n">exact</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">covtest_P</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pval</span><span class="p">)</span>
+
+        <span class="c1"># spacings</span>
+
+        <span class="n">eta</span> <span class="o">=</span> <span class="n">RX</span><span class="p">[:,</span><span class="n">idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">sign</span>
+        <span class="n">spacings_constraint</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">A</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">FS</span><span class="o">.</span><span class="n">A</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+        <span class="n">spacings_constraint</span><span class="o">.</span><span class="n">covariance</span> <span class="o">*=</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">spacings_P</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">spacings_constraint</span><span class="o">.</span><span class="n">pivot</span><span class="p">(</span><span class="n">eta</span><span class="p">,</span> <span class="n">Y</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">covtest_P</span><span class="p">,</span> <span class="n">spacings_P</span>
+</pre></div>
+</div>
+<p>The above function computes our covtest and spacings <span class="math">\(p\)</span>-values
+for several steps of forward stepwise.</p>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">forward_step</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">([</span><span class="mf">0.73909103381622476</span><span class="p">,</span>
+  <span class="mf">0.69360763579435791</span><span class="p">,</span>
+  <span class="mf">0.39906919537104235</span><span class="p">,</span>
+  <span class="mf">0.81146065359168629</span><span class="p">,</span>
+  <span class="mf">0.55327261959262941</span><span class="p">,</span>
+  <span class="mf">0.80265701686406743</span><span class="p">,</span>
+  <span class="mf">0.90884645708288014</span><span class="p">,</span>
+  <span class="mf">0.99181179452730495</span><span class="p">,</span>
+  <span class="mf">0.64069596746441959</span><span class="p">],</span>
+ <span class="p">[</span><span class="mf">0.694095750161889</span><span class="p">,</span>
+  <span class="mf">0.6513481019927231</span><span class="p">,</span>
+  <span class="mf">0.3234919672656077</span><span class="p">,</span>
+  <span class="mf">0.573180829314827</span><span class="p">,</span>
+  <span class="mf">0.44008971114931383</span><span class="p">,</span>
+  <span class="mf">0.5542519955483218</span><span class="p">,</span>
+  <span class="mf">0.8596480260839896</span><span class="p">,</span>
+  <span class="mf">0.9073752648845056</span><span class="p">,</span>
+  <span class="mf">0.11680940361115943</span><span class="p">])</span>
+</pre></div>
+</div>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">simulation</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">beta</span><span class="p">):</span>
+    <span class="n">covtest_P</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">spacings_P</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">):</span>
+        <span class="n">X</span><span class="p">,</span> <span class="n">Y</span> <span class="o">=</span> <span class="n">instance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">)</span>
+        <span class="n">_cov</span><span class="p">,</span> <span class="n">_spac</span> <span class="o">=</span> <span class="n">forward_step</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">Y</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+        <span class="n">covtest_P</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_cov</span><span class="p">)</span>
+        <span class="n">spacings_P</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">_spac</span><span class="p">)</span>
+
+    <span class="n">covtest_P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">covtest_P</span><span class="p">)</span>
+    <span class="n">spacings_P</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spacings_P</span><span class="p">)</span>
+
+    <span class="n">regression_fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span><span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span><span class="mi">12</span><span class="p">))</span>
+    <span class="n">Ugrid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">101</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">ax</span> <span class="o">=</span> <span class="n">axes</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ugrid</span><span class="p">,</span> <span class="n">ECDF</span><span class="p">(</span><span class="n">covtest_P</span><span class="p">[:,</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">])(</span><span class="n">Ugrid</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;steps&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;covtest&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">Ugrid</span><span class="p">,</span> <span class="n">ECDF</span><span class="p">(</span><span class="n">spacings_P</span><span class="p">[:,</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="p">])(</span><span class="n">Ugrid</span><span class="p">),</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;steps&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s1">&#39;blue&#39;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="s1">&#39;spacings&#39;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s1">&#39;Step </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">):</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;lower right&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">covtest_P</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spacings_P</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="null-behavior">
+<h2>Null behavior<a class="headerlink" href="#null-behavior" title="Permalink to this headline">¶</a></h2>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">simulation</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">));</span>
+</pre></div>
+</div>
+<img alt="_images/spacings_25_0.png" src="_images/spacings_25_0.png" />
+</div>
+<div class="section" id="sparse-model">
+<h2>1-sparse model<a class="headerlink" href="#sparse-model" title="Permalink to this headline">¶</a></h2>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">sigma</span>
+<span class="n">simulation</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">beta</span><span class="p">);</span>
+</pre></div>
+</div>
+<img alt="_images/spacings_27_0.png" src="_images/spacings_27_0.png" />
+</div>
+<div class="section" id="id1">
+<h2>2-sparse model<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="n">beta</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mf">4.5</span><span class="p">])</span> <span class="o">*</span> <span class="n">sigma</span>
+<span class="n">simulation</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">beta</span><span class="p">);</span>
+</pre></div>
+</div>
+<img alt="_images/spacings_29_0.png" src="_images/spacings_29_0.png" />
+</div>
+<div class="section" id="id2">
+<h2>5-sparse model<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="code python highlight-default"><div class="highlight"><pre><span></span><span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+<span class="n">beta</span><span class="p">[:</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">4</span><span class="p">,</span><span class="mf">4.5</span><span class="p">,</span><span class="mi">5</span><span class="p">,</span><span class="mf">5.5</span><span class="p">,</span><span class="mf">3.5</span><span class="p">])</span> <span class="o">*</span> <span class="n">sigma</span>
+<span class="n">simulation</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">beta</span><span class="p">);</span>
+</pre></div>
+</div>
+<img alt="_images/spacings_31_0.png" src="_images/spacings_31_0.png" />
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="docattribute.html" title="Selection documentation attribution"
+             >previous</a> |</li>
+  <li><a href="index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

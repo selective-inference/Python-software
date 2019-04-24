@@ -1,0 +1,29 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+truncated.T
+===========
+
+Module: :mod:`truncated.T`
+--------------------------
+Inheritance diagram for ``selection.truncated.T``:
+
+.. inheritance-diagram:: selection.truncated.T 
+   :parts: 3
+
+.. automodule:: selection.truncated.T
+
+.. currentmodule:: selection.truncated.T
+
+:class:`truncated_T`
+--------------------
+
+
+.. autoclass:: truncated_T
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+.. autofunction:: selection.truncated.T.sf_T
+

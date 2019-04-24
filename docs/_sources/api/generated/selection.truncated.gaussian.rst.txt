@@ -1,0 +1,64 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+truncated.gaussian
+==================
+
+Module: :mod:`truncated.gaussian`
+---------------------------------
+Inheritance diagram for ``selection.truncated.gaussian``:
+
+.. inheritance-diagram:: selection.truncated.gaussian 
+   :parts: 3
+
+.. automodule:: selection.truncated.gaussian
+
+.. currentmodule:: selection.truncated.gaussian
+
+Classes
+-------
+
+:class:`TruncatedGaussianError`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: TruncatedGaussianError
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`truncated_gaussian`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: truncated_gaussian
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`truncated_gaussian_old`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: truncated_gaussian_old
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.truncated.gaussian.G
+
+
+.. autofunction:: selection.truncated.gaussian.dG
+
+
+.. autofunction:: selection.truncated.gaussian.find_root
+

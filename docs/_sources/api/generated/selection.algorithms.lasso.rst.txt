@@ -1,0 +1,95 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+algorithms.lasso
+================
+
+Module: :mod:`algorithms.lasso`
+-------------------------------
+Inheritance diagram for ``selection.algorithms.lasso``:
+
+.. inheritance-diagram:: selection.algorithms.lasso 
+   :parts: 3
+
+.. automodule:: selection.algorithms.lasso
+
+.. currentmodule:: selection.algorithms.lasso
+
+Classes
+-------
+
+:class:`ROSI`
+~~~~~~~~~~~~~
+
+
+.. autoclass:: ROSI
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`ROSI_modelQ`
+~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: ROSI_modelQ
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`data_carving`
+~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: data_carving
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`data_splitting`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: data_splitting
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`lasso`
+~~~~~~~~~~~~~~
+
+
+.. autoclass:: lasso
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.algorithms.lasso.additive_noise
+
+
+.. autofunction:: selection.algorithms.lasso.glm_parametric_estimator
+
+
+.. autofunction:: selection.algorithms.lasso.glm_sandwich_estimator
+
+
+.. autofunction:: selection.algorithms.lasso.nominal_intervals
+
+
+.. autofunction:: selection.algorithms.lasso.split_model
+
+
+.. autofunction:: selection.algorithms.lasso.standard_lasso
+

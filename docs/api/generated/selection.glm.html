@@ -1,0 +1,366 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="../../_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../../index.html">
+  <img src="../../_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">glm</a><ul>
+<li><a class="reference internal" href="#module-selection.glm">Module: <code class="docutils literal"><span class="pre">glm</span></code></a></li>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/selection.glm.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="glm">
+<h1>glm<a class="headerlink" href="#glm" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-selection.glm">
+<span id="module-glm"></span><h2>Module: <code class="xref py py-mod docutils literal"><span class="pre">glm</span></code><a class="headerlink" href="#module-selection.glm" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selection.glm.bootstrap_cov">
+<code class="descclassname">selection.glm.</code><code class="descname">bootstrap_cov</code><span class="sig-paren">(</span><em>sampler</em>, <em>boot_target</em>, <em>cross_terms=()</em>, <em>nsample=2000</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.bootstrap_cov" title="Permalink to this definition">¶</a></dt>
+<dd><p>m out of n bootstrap</p>
+<p>returns estimates of covariance matrices: boot_target with itself,
+and the blocks of (boot_target, boot_other) for other in cross_terms</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.glm_nonparametric_bootstrap">
+<code class="descclassname">selection.glm.</code><code class="descname">glm_nonparametric_bootstrap</code><span class="sig-paren">(</span><em>m</em>, <em>n</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.glm_nonparametric_bootstrap" title="Permalink to this definition">¶</a></dt>
+<dd><p>The m out of n bootstrap.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.glm_parametric_covariance">
+<code class="descclassname">selection.glm.</code><code class="descname">glm_parametric_covariance</code><span class="sig-paren">(</span><em>glm_loss</em>, <em>solve_args={'min_its': 50</em>, <em>'tol': 1e-10}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.glm_parametric_covariance" title="Permalink to this definition">¶</a></dt>
+<dd><p>A constructor for parametric covariance</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.pairs_bootstrap_glm">
+<code class="descclassname">selection.glm.</code><code class="descname">pairs_bootstrap_glm</code><span class="sig-paren">(</span><em>glm_loss</em>, <em>active</em>, <em>beta_full=None</em>, <em>inactive=None</em>, <em>scaling=1.0</em>, <em>solve_args={'min_its': 50</em>, <em>'tol': 1e-10}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.pairs_bootstrap_glm" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Construct a non-parametric bootstrap sampler that 
+samples the estimates (<span class="math">\(ar{eta}_E^*\)</span>) of a generalized 
+linear model (GLM) restricted to <cite>active</cite>
+as well as, optionally, the inactive coordinates of the score of the 
+GLM evaluated at the estimates (:math:<a href="#id1"><span class="problematic" id="id2">`</span></a></div></blockquote>
+<dl class="docutils">
+<dt>abla ell(ar{eta}_E)[-E]`) where</dt>
+<dd><span class="math">\(ar{eta}_E\)</span> is padded with zeros where necessary.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>active <span class="classifier-delimiter">:</span> <span class="classifier">np.bool</span></dt>
+<dd><p class="first last">Boolean indexing array</p>
+</dd>
+<dt>beta_full <span class="classifier-delimiter">:</span> <span class="classifier">np.float (optional)</span></dt>
+<dd><p class="first last">Solution to the restricted problem, zero except where active is nonzero.</p>
+</dd>
+<dt>inactive <span class="classifier-delimiter">:</span> <span class="classifier">np.bool (optional)</span></dt>
+<dd><p class="first last">Boolean indexing array</p>
+</dd>
+<dt>scaling <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">Scaling to keep entries of roughly constant order. Active entries
+are multiplied by sqrt(scaling) inactive ones are divided
+by sqrt(scaling).</p>
+</dd>
+<dt>solve_args <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>bootstrap_sampler</strong> : callable</p>
+<blockquote class="last">
+<div><p>A callable object that takes a sample of indices and returns
+the corresponding bootstrap sample.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.pairs_bootstrap_score">
+<code class="descclassname">selection.glm.</code><code class="descname">pairs_bootstrap_score</code><span class="sig-paren">(</span><em>glm_loss</em>, <em>active</em>, <em>beta_active=None</em>, <em>solve_args={'min_its': 50</em>, <em>'tol': 1e-10}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.pairs_bootstrap_score" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Construct a non-parametric bootstrap sampler that 
+samples the score (:math:<a href="#id3"><span class="problematic" id="id4">`</span></a></div></blockquote>
+<dl class="docutils">
+<dt>abla ell(ar{eta}_E)) ofa generalized </dt>
+<dd>linear model (GLM) restricted to <cite>active</cite>
+as well as, optionally, the inactive coordinates of the score of the 
+GLM evaluated at the estimates (`</dd>
+<dt>abla ell(ar{eta}_E)[-E]:math:<a href="#id5"><span class="problematic" id="id6">`</span></a>) where</dt>
+<dd><a href="#id7"><span class="problematic" id="id8">`</span></a>ar{eta}_E$ is padded with zeros where necessary.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>active <span class="classifier-delimiter">:</span> <span class="classifier">np.bool</span></dt>
+<dd><p class="first last">Boolean indexing array</p>
+</dd>
+<dt>beta_active <span class="classifier-delimiter">:</span> <span class="classifier">np.float (optional)</span></dt>
+<dd><p class="first last">Solution to the restricted problem.</p>
+</dd>
+<dt>solve_args <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>bootstrap_sampler</strong> : callable</p>
+<blockquote class="last">
+<div><p>A callable object that takes a sample of indices and returns
+the corresponding bootstrap sample.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.pairs_inactive_score_glm">
+<code class="descclassname">selection.glm.</code><code class="descname">pairs_inactive_score_glm</code><span class="sig-paren">(</span><em>glm_loss</em>, <em>active</em>, <em>beta_active</em>, <em>scaling=1.0</em>, <em>inactive=None</em>, <em>solve_args={'min_its': 50</em>, <em>'tol': 1e-10}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.pairs_inactive_score_glm" title="Permalink to this definition">¶</a></dt>
+<dd><blockquote>
+<div>Construct a non-parametric bootstrap sampler that 
+samples the inactive coordinates of the score of the 
+GLM evaluated at the estimates (:math:<a href="#id9"><span class="problematic" id="id10">`</span></a></div></blockquote>
+<dl class="docutils">
+<dt>abla ell(ar{eta}_E)[-E]`) where</dt>
+<dd><span class="math">\(ar{eta}_E\)</span> is padded with zeros where necessary.</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<dl class="docutils">
+<dt>active <span class="classifier-delimiter">:</span> <span class="classifier">np.bool</span></dt>
+<dd><p class="first last">Boolean indexing array</p>
+</dd>
+<dt>beta_active <span class="classifier-delimiter">:</span> <span class="classifier">np.float (optional)</span></dt>
+<dd><p class="first last">Solution to the restricted problem.</p>
+</dd>
+<dt>scaling <span class="classifier-delimiter">:</span> <span class="classifier">float</span></dt>
+<dd><p class="first last">Scaling to keep entries of roughly constant order. Active entries
+are multiplied by sqrt(scaling) inactive ones are divided
+by sqrt(scaling).</p>
+</dd>
+<dt>inactive <span class="classifier-delimiter">:</span> <span class="classifier">np.bool (optional)</span></dt>
+<dd><p class="first last">Which coordinates to return. If None, defaults
+to ~active.</p>
+</dd>
+<dt>solve_args <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</dd>
+</dl>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>bootstrap_sampler</strong> : callable</p>
+<blockquote class="last">
+<div><p>A callable object that takes a sample of indices and returns
+the corresponding bootstrap sample.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.parametric_cov">
+<code class="descclassname">selection.glm.</code><code class="descname">parametric_cov</code><span class="sig-paren">(</span><em>glm_loss</em>, <em>target_with_linear_func</em>, <em>cross_terms=()</em>, <em>dispersion=None</em>, <em>solve_args={'min_its': 50</em>, <em>'tol': 1e-10}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.parametric_cov" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.resid_bootstrap">
+<code class="descclassname">selection.glm.</code><code class="descname">resid_bootstrap</code><span class="sig-paren">(</span><em>gaussian_loss</em>, <em>active</em>, <em>inactive=None</em>, <em>scaling=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.resid_bootstrap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.set_alpha_matrix">
+<code class="descclassname">selection.glm.</code><code class="descname">set_alpha_matrix</code><span class="sig-paren">(</span><em>glm_loss</em>, <em>active</em>, <em>beta_full=None</em>, <em>inactive=None</em>, <em>scaling=1.0</em>, <em>solve_args={'min_its': 50</em>, <em>'tol': 1e-10}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.set_alpha_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>DESCRIBE WHAT THIS DOES</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>glm_loss</strong> : regreg.smooth.glm.glm</p>
+<blockquote>
+<div><p>The loss of the generalized linear model.</p>
+</div></blockquote>
+<p><strong>active</strong> : np.bool</p>
+<blockquote>
+<div><p>Boolean indexing array</p>
+</div></blockquote>
+<p><strong>beta_full</strong> : np.float (optional)</p>
+<blockquote>
+<div><p>Solution to the restricted problem, zero except where active is nonzero.</p>
+</div></blockquote>
+<p><strong>inactive</strong> : np.bool (optional)</p>
+<blockquote>
+<div><p>Boolean indexing array</p>
+</div></blockquote>
+<p><strong>scaling</strong> : float</p>
+<blockquote>
+<div><p>Scaling to keep entries of roughly constant order. Active entries
+are multiplied by sqrt(scaling) inactive ones are divided
+by sqrt(scaling).</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict</p>
+<blockquote>
+<div><p>Arguments passed to solver of restricted problem (<cite>restricted_estimator</cite>) if 
+beta_full is None.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"></td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.glm.standard_split_ci">
+<code class="descclassname">selection.glm.</code><code class="descname">standard_split_ci</code><span class="sig-paren">(</span><em>glm_loss</em>, <em>X</em>, <em>y</em>, <em>active</em>, <em>leftout_indices</em>, <em>alpha=0.1</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.glm.standard_split_ci" title="Permalink to this definition">¶</a></dt>
+<dd><p>Data plitting confidence intervals via bootstrap.</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

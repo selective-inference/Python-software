@@ -1,0 +1,651 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="../../_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../../index.html">
+  <img src="../../_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">randomized.lasso</a><ul>
+<li><a class="reference internal" href="#module-randomized-lasso">Module: <code class="docutils literal"><span class="pre">randomized.lasso</span></code></a></li>
+<li><a class="reference internal" href="#lasso"><code class="docutils literal"><span class="pre">lasso</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/selection.randomized.lasso.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="randomized-lasso">
+<h1>randomized.lasso<a class="headerlink" href="#randomized-lasso" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-randomized-lasso">
+<h2>Module: <code class="xref py py-mod docutils literal"><span class="pre">randomized.lasso</span></code><a class="headerlink" href="#module-randomized-lasso" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal"><span class="pre">selection.randomized.lasso</span></code>:</p>
+<span class="target" id="module-selection.randomized.lasso"></span></div>
+<div class="section" id="lasso">
+<h2><a class="reference internal" href="#selection.randomized.lasso.lasso" title="selection.randomized.lasso.lasso"><code class="xref py py-class docutils literal"><span class="pre">lasso</span></code></a><a class="headerlink" href="#lasso" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="selection.randomized.lasso.lasso">
+<em class="property">class </em><code class="descclassname">selection.randomized.lasso.</code><code class="descname">lasso</code><span class="sig-paren">(</span><em>loglike</em>, <em>feature_weights</em>, <em>ridge_term</em>, <em>randomizer</em>, <em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selection.randomized.query.html#selection.randomized.query.gaussian_query" title="selection.randomized.query.gaussian_query"><code class="xref py py-class docutils literal"><span class="pre">selection.randomized.query.gaussian_query</span></code></a></p>
+<p>A class for the randomized LASSO for post-selection inference.
+The problem solved is</p>
+<div class="math">
+\[\text{minimize}_{\beta} \ell(\beta) + 
+    \sum_{i=1}^p \lambda_i |\beta_i\| - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2\]</div>
+<p>where <span class="math">\(\lambda\)</span> is <cite>lam</cite>, <span class="math">\(\omega\)</span> is a randomization generated below
+and the last term is a small ridge penalty. Each static method
+forms <span class="math">\(\ell\)</span> as well as the <span class="math">\(\ell_1\)</span> penalty. The generic class
+forms the remaining two terms in the objective.</p>
+<dl class="method">
+<dt id="selection.randomized.lasso.lasso.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>loglike</em>, <em>feature_weights</em>, <em>ridge_term</em>, <em>randomizer</em>, <em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new post-selection object for the LASSO problem</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>loglike</strong> : <cite>regreg.smooth.glm.glm</cite></p>
+<blockquote>
+<div><p>A (negative) log-likelihood as implemented in <cite>regreg</cite>.</p>
+</div></blockquote>
+<p><strong>feature_weights</strong> : np.ndarray</p>
+<blockquote>
+<div><p>Feature weights for L-1 penalty. If a float,
+it is brodcast to all features.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer</strong> : object</p>
+<blockquote>
+<div><p>Randomizer – contains representation of randomization density.</p>
+</div></blockquote>
+<p><strong>perturb</strong> : np.ndarray</p>
+<blockquote class="last">
+<div><p>Random perturbation subtracted as a linear
+term in the objective function.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.lasso.lasso.fit">
+<code class="descname">fit</code><span class="sig-paren">(</span><em>solve_args={'tol': 1e-12</em>, <em>'min_its': 50}</em>, <em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit the randomized lasso using <cite>regreg</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>solve_args</strong> : keyword args</p>
+<blockquote>
+<div><p>Passed to <cite>regreg.problems.simple_problem.solve</cite>.</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>signs</strong> : np.float</p>
+<blockquote class="last">
+<div><p>Support and non-zero signs of randomized lasso solution.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="selection.randomized.lasso.lasso.gaussian">
+<em class="property">static </em><code class="descname">gaussian</code><span class="sig-paren">(</span><em>X</em>, <em>Y</em>, <em>feature_weights</em>, <em>sigma=1.0</em>, <em>quadratic=None</em>, <em>ridge_term=None</em>, <em>randomizer_scale=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.gaussian" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Squared-error LASSO with feature weights.
+Objective function is (before randomization)</p>
+<div class="math">
+\[\beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|\]</div>
+<p>where <span class="math">\(\lambda\)</span> is <cite>feature_weights</cite>. The ridge term
+is determined by the Hessian and <cite>np.std(Y)</cite> by default,
+as is the randomizer scale.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<p><strong>Y</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,) – the response.</p>
+</div></blockquote>
+<p><strong>feature_weights: [float, sequence]</strong></p>
+<blockquote>
+<div><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</div></blockquote>
+<p><strong>sigma</strong> : float (optional)</p>
+<blockquote>
+<div><p>Noise variance. Set to 1 if <cite>covariance_estimator</cite> is not None.
+This scales the loglikelihood by <cite>sigma**(-2)</cite>.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</p>
+<blockquote>
+<div><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer_scale</strong> : float</p>
+<blockquote>
+<div><p>Scale for IID components of randomizer.</p>
+</div></blockquote>
+<p><strong>randomizer</strong> : str</p>
+<blockquote>
+<div><p>One of [‘laplace’, ‘logistic’, ‘gaussian’]</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>L</strong> : <cite>selection.randomized.lasso.lasso</cite></p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="staticmethod">
+<dt id="selection.randomized.lasso.lasso.logistic">
+<em class="property">static </em><code class="descname">logistic</code><span class="sig-paren">(</span><em>X</em>, <em>successes</em>, <em>feature_weights</em>, <em>trials=None</em>, <em>quadratic=None</em>, <em>ridge_term=None</em>, <em>randomizer_scale=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.logistic" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Logistic LASSO with feature weights (before randomization)</p>
+<div class="math">
+\[\beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|\]</div>
+<p>where <span class="math">\(\ell\)</span> is the negative of the logistic
+log-likelihood (half the logistic deviance)
+and <span class="math">\(\lambda\)</span> is <cite>feature_weights</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<p><strong>successes</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,) – response vector. An integer number of successes.
+For data that is proportions, multiply the proportions
+by the number of trials first.</p>
+</div></blockquote>
+<p><strong>feature_weights: [float, sequence]</strong></p>
+<blockquote>
+<div><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</div></blockquote>
+<p><strong>trials</strong> : ndarray (optional)</p>
+<blockquote>
+<div><p>Number of trials per response, defaults to
+ones the same shape as Y.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</p>
+<blockquote>
+<div><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer_scale</strong> : float</p>
+<blockquote>
+<div><p>Scale for IID components of randomizer.</p>
+</div></blockquote>
+<p><strong>randomizer</strong> : str</p>
+<blockquote>
+<div><p>One of [‘laplace’, ‘logistic’, ‘gaussian’]</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>L</strong> : <cite>selection.randomized.lasso.lasso</cite></p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="staticmethod">
+<dt id="selection.randomized.lasso.lasso.coxph">
+<em class="property">static </em><code class="descname">coxph</code><span class="sig-paren">(</span><em>X</em>, <em>times</em>, <em>status</em>, <em>feature_weights</em>, <em>quadratic=None</em>, <em>ridge_term=None</em>, <em>randomizer_scale=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.coxph" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Cox proportional hazards LASSO with feature weights.
+Objective function is (before randomization)</p>
+<div class="math">
+\[\beta \mapsto \ell^{\text{Cox}}(\beta) + 
+\sum_{i=1}^p \lambda_i |\beta_i|\]</div>
+<p>where <span class="math">\(\ell^{\text{Cox}}\)</span> is the
+negative of the log of the Cox partial
+likelihood and <span class="math">\(\lambda\)</span> is <cite>feature_weights</cite>.
+Uses Efron’s tie breaking method.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<p><strong>times</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,) – the survival times.</p>
+</div></blockquote>
+<p><strong>status</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,) – the censoring status.</p>
+</div></blockquote>
+<p><strong>feature_weights: [float, sequence]</strong></p>
+<blockquote>
+<div><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</div></blockquote>
+<p><strong>covariance_estimator</strong> : optional</p>
+<blockquote>
+<div><p>If None, use the parameteric
+covariance estimate of the selected model.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</p>
+<blockquote>
+<div><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer_scale</strong> : float</p>
+<blockquote>
+<div><p>Scale for IID components of randomizer.</p>
+</div></blockquote>
+<p><strong>randomizer</strong> : str</p>
+<blockquote>
+<div><p>One of [‘laplace’, ‘logistic’, ‘gaussian’]</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>L</strong> : <cite>selection.randomized.lasso.lasso</cite></p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="staticmethod">
+<dt id="selection.randomized.lasso.lasso.poisson">
+<em class="property">static </em><code class="descname">poisson</code><span class="sig-paren">(</span><em>X</em>, <em>counts</em>, <em>feature_weights</em>, <em>quadratic=None</em>, <em>ridge_term=None</em>, <em>randomizer_scale=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.poisson" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Poisson log-linear LASSO with feature weights.
+Objective function is (before randomization)</p>
+<div class="math">
+\[\beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|\]</div>
+<p>where <span class="math">\(\ell^{\text{Poisson}}\)</span> is the negative
+of the log of the Poisson likelihood (half the deviance)
+and <span class="math">\(\lambda\)</span> is <cite>feature_weights</cite>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<p><strong>counts</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,) – the response.</p>
+</div></blockquote>
+<p><strong>feature_weights: [float, sequence]</strong></p>
+<blockquote>
+<div><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</p>
+<blockquote>
+<div><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer_scale</strong> : float</p>
+<blockquote>
+<div><p>Scale for IID components of randomizer.</p>
+</div></blockquote>
+<p><strong>randomizer</strong> : str</p>
+<blockquote>
+<div><p>One of [‘laplace’, ‘logistic’, ‘gaussian’]</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>L</strong> : <cite>selection.randomized.lasso.lasso</cite></p>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="staticmethod">
+<dt id="selection.randomized.lasso.lasso.sqrt_lasso">
+<em class="property">static </em><code class="descname">sqrt_lasso</code><span class="sig-paren">(</span><em>X</em>, <em>Y</em>, <em>feature_weights</em>, <em>quadratic=None</em>, <em>ridge_term=None</em>, <em>randomizer_scale=None</em>, <em>solve_args={'min_its': 200}</em>, <em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.sqrt_lasso" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>Use sqrt-LASSO to choose variables.
+Objective function is (before randomization)</p>
+<div class="math">
+\[\beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|\]</div>
+<p>where <span class="math">\(\lambda\)</span> is <cite>feature_weights</cite>. After solving the problem
+treat as if <cite>gaussian</cite> with implied variance and choice of
+multiplier. See arxiv.org/abs/1504.08031 for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,p) – the design matrix.</p>
+</div></blockquote>
+<p><strong>Y</strong> : ndarray</p>
+<blockquote>
+<div><p>Shape (n,) – the response.</p>
+</div></blockquote>
+<p><strong>feature_weights: [float, sequence]</strong></p>
+<blockquote>
+<div><p>Penalty weights. An intercept, or other unpenalized
+features are handled by setting those entries of
+<cite>feature_weights</cite> to 0. If <cite>feature_weights</cite> is
+a float, then all parameters are penalized equally.</p>
+</div></blockquote>
+<p><strong>quadratic</strong> : <cite>regreg.identity_quadratic.identity_quadratic</cite> (optional)</p>
+<blockquote>
+<div><p>An optional quadratic term to be added to the objective.
+Can also be a linear term by setting quadratic
+coefficient to 0.</p>
+</div></blockquote>
+<p><strong>covariance</strong> : str</p>
+<blockquote>
+<div><p>One of ‘parametric’ or ‘sandwich’. Method
+used to estimate covariance for inference
+in second stage.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict</p>
+<blockquote>
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+<p><strong>ridge_term</strong> : float</p>
+<blockquote>
+<div><p>How big a ridge term to add?</p>
+</div></blockquote>
+<p><strong>randomizer_scale</strong> : float</p>
+<blockquote>
+<div><p>Scale for IID components of randomizer.</p>
+</div></blockquote>
+<p><strong>randomizer</strong> : str</p>
+<blockquote>
+<div><p>One of [‘laplace’, ‘logistic’, ‘gaussian’]</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>L</strong> : <cite>selection.randomized.lasso.lasso</cite></p>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Notes</p>
+<p>Unlike other variants of LASSO, this
+solves the problem on construction as the active
+set is needed to find equivalent gaussian LASSO.
+Assumes parametric model is correct for inference,
+i.e. does not accept a covariance estimator.</p>
+<dl class="method">
+<dt id="selection.randomized.lasso.lasso.linear_decomposition">
+<code class="descname">linear_decomposition</code><span class="sig-paren">(</span><em>target_score_cov</em>, <em>target_cov</em>, <em>observed_target_state</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.linear_decomposition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute out the linear decomposition
+of the score based on the target. This decomposition
+writes the (limiting CLT version) of the data in the score 
+as linear in the target and in some independent Gaussian error.</p>
+<p>This second independent piece is conditioned on, resulting
+in a reconstruction of the score as an affine function of the target
+where the offset is the part related to this independent
+Gaussian error.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.lasso.lasso.randomize">
+<code class="descname">randomize</code><span class="sig-paren">(</span><em>perturb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.randomize" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The actual randomization step.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>perturb</strong> : ndarray, optional</p>
+<blockquote class="last">
+<div><p>Value of randomization vector, an instance of <span class="math">\(\omega\)</span>.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="attribute">
+<dt id="selection.randomized.lasso.lasso.sampler">
+<code class="descname">sampler</code><a class="headerlink" href="#selection.randomized.lasso.lasso.sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sampler of optimization (augmented) variables.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.lasso.lasso.selective_MLE">
+<code class="descname">selective_MLE</code><span class="sig-paren">(</span><em>observed_target</em>, <em>target_cov</em>, <em>target_score_cov</em>, <em>level=0.9</em>, <em>solve_args={'tol': 1e-12}</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.selective_MLE" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>observed_target</strong> : ndarray</p>
+<blockquote>
+<div><p>Observed estimate of target.</p>
+</div></blockquote>
+<p><strong>target_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covaraince of target.</p>
+</div></blockquote>
+<p><strong>target_score_cov</strong> : ndarray</p>
+<blockquote>
+<div><p>Estimated covariance of target and score of randomized query.</p>
+</div></blockquote>
+<p><strong>level</strong> : float, optional</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>solve_args</strong> : dict, optional</p>
+<blockquote class="last">
+<div><p>Arguments passed to solver.</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.lasso.lasso.setup_sampler">
+<code class="descname">setup_sampler</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.setup_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup query to prepare for sampling.
+Should set a few key attributes:</p>
+<blockquote>
+<div><ul class="simple">
+<li>observed_score_state</li>
+<li>num_opt_var</li>
+<li>observed_opt_state</li>
+<li>opt_transform</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.randomized.lasso.lasso.summary">
+<code class="descname">summary</code><span class="sig-paren">(</span><em>observed_target</em>, <em>target_cov</em>, <em>target_score_cov</em>, <em>alternatives</em>, <em>opt_sample=None</em>, <em>target_sample=None</em>, <em>parameter=None</em>, <em>level=0.9</em>, <em>ndraw=10000</em>, <em>burnin=2000</em>, <em>compute_intervals=False</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.randomized.lasso.lasso.summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produce p-values and confidence intervals for targets
+of model including selected features</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>target</strong> : one of [‘selected’, ‘full’]</p>
+<p><strong>features</strong> : np.bool</p>
+<blockquote>
+<div><p>Binary encoding of which features to use in final
+model and targets.</p>
+</div></blockquote>
+<p><strong>parameter</strong> : np.array</p>
+<blockquote>
+<div><p>Hypothesized value for parameter – defaults to 0.</p>
+</div></blockquote>
+<p><strong>level</strong> : float</p>
+<blockquote>
+<div><p>Confidence level.</p>
+</div></blockquote>
+<p><strong>ndraw</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>burnin</strong> : int (optional)</p>
+<blockquote>
+<div><p>Defaults to 1000.</p>
+</div></blockquote>
+<p><strong>compute_intervals</strong> : bool</p>
+<blockquote>
+<div><p>Compute confidence intervals?</p>
+</div></blockquote>
+<p><strong>dispersion</strong> : float (optional)</p>
+<blockquote class="last">
+<div><p>Use a known value for dispersion, or Pearson’s X^2?</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

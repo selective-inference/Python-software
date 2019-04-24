@@ -1,0 +1,95 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+constraints.estimation
+======================
+
+Module: :mod:`constraints.estimation`
+-------------------------------------
+Inheritance diagram for ``selection.constraints.estimation``:
+
+.. inheritance-diagram:: selection.constraints.estimation 
+   :parts: 3
+
+.. automodule:: selection.constraints.estimation
+
+.. currentmodule:: selection.constraints.estimation
+
+Classes
+-------
+
+:class:`gaussian_cumulant`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: gaussian_cumulant
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`gaussian_cumulant_conjugate`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: gaussian_cumulant_conjugate
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`gaussian_cumulant_conjugate_known`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: gaussian_cumulant_conjugate_known
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`gaussian_cumulant_known`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: gaussian_cumulant_known
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`optimal_tilt`
+~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: optimal_tilt
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`softmax`
+~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: softmax
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`softmax_conjugate`
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: softmax_conjugate
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

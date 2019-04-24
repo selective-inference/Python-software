@@ -1,0 +1,13 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+base
+====
+
+Module: :mod:`base`
+-------------------
+.. automodule:: selection.base
+
+.. currentmodule:: selection.base
+
+.. autofunction:: selection.base.restricted_estimator
+
