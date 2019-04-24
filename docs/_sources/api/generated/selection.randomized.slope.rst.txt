@@ -1,0 +1,26 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+randomized.slope
+================
+
+Module: :mod:`randomized.slope`
+-------------------------------
+Inheritance diagram for ``selection.randomized.slope``:
+
+.. inheritance-diagram:: selection.randomized.slope 
+   :parts: 3
+
+.. automodule:: selection.randomized.slope
+
+.. currentmodule:: selection.randomized.slope
+
+:class:`slope`
+--------------
+
+
+.. autoclass:: slope
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

@@ -1,0 +1,32 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+learning.fitters
+================
+
+Module: :mod:`learning.fitters`
+-------------------------------
+.. automodule:: selection.learning.fitters
+
+.. currentmodule:: selection.learning.fitters
+
+Functions
+---------
+
+
+.. autofunction:: selection.learning.fitters.gbm_fit
+
+
+.. autofunction:: selection.learning.fitters.gbm_fit_sk
+
+
+.. autofunction:: selection.learning.fitters.logit_fit
+
+
+.. autofunction:: selection.learning.fitters.probit_fit
+
+
+.. autofunction:: selection.learning.fitters.random_forest_fit
+
+
+.. autofunction:: selection.learning.fitters.random_forest_fit_sk
+

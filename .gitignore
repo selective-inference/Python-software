@@ -31,3 +31,11 @@ build
 .idea/*
 */.idea/*
 */*/.idea/*
+*.log
+*~
+.*sw*
+*/*~
+*pyc
+*/*pyc
+*.pdf
+*.csv

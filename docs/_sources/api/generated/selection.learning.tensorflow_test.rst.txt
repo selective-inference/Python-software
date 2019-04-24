@@ -1,0 +1,29 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+learning.tensorflow_test
+========================
+
+Module: :mod:`learning.tensorflow_test`
+---------------------------------------
+.. automodule:: selection.learning.tensorflow_test
+
+.. currentmodule:: selection.learning.tensorflow_test
+
+Functions
+---------
+
+
+.. autofunction:: selection.learning.tensorflow_test.algorithm
+
+
+.. autofunction:: selection.learning.tensorflow_test.create_network
+
+
+.. autofunction:: selection.learning.tensorflow_test.fit_algorithm
+
+
+.. autofunction:: selection.learning.tensorflow_test.pivot1
+
+
+.. autofunction:: selection.learning.tensorflow_test.simulate
+

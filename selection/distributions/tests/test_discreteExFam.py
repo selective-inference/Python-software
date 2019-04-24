@@ -5,6 +5,17 @@ import nose.tools as nt
 from scipy.stats import poisson
 from selection.distributions.discrete_family import discrete_family
 
+def test_MLE():
+
+    X = np.arange(100)
+    observed = 4
+    pois = discrete_family(X, poisson.pmf(X, 4.5))
+
+    MLE, var = pois.MLE(observed, tol=1.e-7, max_iter=30)[:2]
+    mean_param = pois.E(MLE, lambda x: x)
+    nt.assert_true(np.fabs(mean_param - observed) / observed < 1.e-4)
+    nt.assert_true(np.fabs(mean_param - var*mean_param**2) < 1.e-3)
+
 def test_discreteExFam():
 
     X = np.arange(100)
@@ -16,6 +27,8 @@ def test_discreteExFam():
 
     print (abs(1-sum(pois.pdf(0))))
     pois.ccdf(0, 3, .4)
+
+    print(pois.MLE(1.3))
 
     print (pois.Var(np.log(2), lambda x: x))
     print (pois.Cov(np.log(2), lambda x: x, lambda x: x))

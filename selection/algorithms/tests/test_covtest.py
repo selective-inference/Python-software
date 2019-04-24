@@ -3,12 +3,12 @@ import itertools
 import numpy as np
 import numpy.testing.decorators as dec
 
-from selection.tests.instance import gaussian_instance
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
-from selection.algorithms.lasso import lasso
-from selection.algorithms.covtest import covtest, selected_covtest
-from selection.constraints.affine import gibbs_test
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from ...tests.instance import gaussian_instance
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ..lasso import lasso
+from ..covtest import covtest, selected_covtest
+from ...constraints.affine import gibbs_test
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 @set_seed_iftrue(SET_SEED)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
@@ -43,7 +43,7 @@ def test_tilting(nsim=100, ndraw=50000, burnin=10000):
     screen = 0
 
     for i in range(nsim):
-        X, Y, beta, active, sigma = gaussian_instance(n=20, p=30)
+        X, Y, beta, active, sigma, _ = gaussian_instance(n=20, p=30)
 
         Y0 = np.random.standard_normal(X.shape[0]) * sigma
 

@@ -1,6 +1,6 @@
 from __future__ import print_function
 
-import numpy as np
+import numpy as np, pandas as pd
 import regreg.api as rr
 import nose.tools as nt
 
@@ -11,8 +11,9 @@ try:
 except ImportError:
     rpy2_available = False
 
-from ..lasso import lasso, lasso_full
+from ..lasso import lasso, ROSI
 from ..forward_step import forward_step
+from ...randomized.lasso import lasso as rlasso, selected_targets, full_targets, debiased_targets
 from ...tests.instance import gaussian_instance, logistic_instance
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
@@ -298,6 +299,7 @@ def test_logistic():
     x = np.asarray(rpy.r('x'))
     x = np.hstack([np.ones((x.shape[0],1)), x])
     L = lasso.logistic(x, y, [0] + [0.8] * (x.shape[1]-1))
+
     beta2 = L.fit()[L.active]
 
     yield np.testing.assert_equal, L.active[1:], selected_vars
@@ -500,11 +502,12 @@ def test_liu_gaussian():
 
     while True:
 
-        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=10, sigma=1.)
+        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=10, sigma=1.)
 
         lam = 4. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.gaussian(X, y, lam)
+        L = ROSI.gaussian(X, y, lam, approximate_inverse=None)
+
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=sigma**2)
@@ -520,7 +523,11 @@ def test_liu_gaussian():
             p = ncol(X)
             #sigma_est = sigma(lm(y ~ X - 1))
             penalty_factor = rep(1, p);
-            soln = selectiveInference:::solve_problem_glmnet(X, y, lam/n, penalty_factor=penalty_factor, family="gaussian")
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam/n, 
+                                                             penalty_factor=penalty_factor,
+                                                             family="gaussian")
             PVS = ROSI(X, 
                        y, 
                        soln, 
@@ -528,6 +535,7 @@ def test_liu_gaussian():
                        penalty_factor=penalty_factor, 
                        dispersion=sigma_est^2, 
                        family="gaussian",
+                       debiasing_method="JM",
                        solver="QP", 
                        construct_ci=FALSE,
                        use_debiased=FALSE)
@@ -551,11 +559,12 @@ def test_liu_logistic():
     
     while True:
 
-        X, y, _, _ = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)
+        X, y = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)[:2]
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.logistic(X, y, lam)
+        L = ROSI.logistic(X, y, lam, approximate_inverse=None)
+
         L.fit()
         if len(L.active) > 4:
             S = L.summary(compute_intervals=False, dispersion=1)
@@ -574,7 +583,7 @@ def test_liu_logistic():
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
                                                              lam/n, 
-                                                             penalty_factor=penalty_factor, 
+                                                             penalty_factor=penalty_factor,
                                                              family="binomial")
             PVS = ROSI(X, 
                        y, 
@@ -583,6 +592,7 @@ def test_liu_logistic():
                        penalty_factor=penalty_factor, 
                        dispersion=1,
                        family="binomial",
+                       debiasing_method="JM",
                        solver="Q", 
                        construct_ci=FALSE,
                        use_debiased=FALSE)
@@ -600,15 +610,15 @@ def test_liu_logistic():
             break 
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_ROSI_gaussian():
+def test_ROSI_gaussian_JM():
     n, p, s = 100, 30, 15
 
     while True:
-        X, y, _, _, sigma = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
+        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=4)
 
         lam = 7. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.gaussian(X, y, lam)
+        L = ROSI.gaussian(X, y, lam, approximate_inverse='JM')
         L.sparse_inverse = True
         L.fit()
 
@@ -632,7 +642,7 @@ def test_ROSI_gaussian():
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
                                                              lam/n, 
-                                                             penalty_factor=penalty_factor, 
+                                                             penalty_factor=penalty_factor,
                                                              family="gaussian")
             PVS = ROSI(X, 
                        y, 
@@ -659,16 +669,15 @@ def test_ROSI_gaussian():
             break
 
 @np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
-def test_ROSI_logistic():
+def test_ROSI_logistic_JM():
     n, p, s = 100, 30, 15
 
     while True:
-        X, y, _, _ = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)
+        X, y = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)[:2]
 
         lam = 1. * np.sqrt(n)
         X *= np.sqrt(n)
-        L = lasso_full.logistic(X, y, lam)
-        L.sparse_inverse = True
+        L = ROSI.logistic(X, y, lam, approximate_inverse='JM')
         L.fit()
 
         if len(L.active) > 4:
@@ -688,7 +697,7 @@ def test_ROSI_logistic():
             soln = selectiveInference:::solve_problem_glmnet(X, 
                                                              y, 
                                                              lam/n, 
-                                                             penalty_factor=penalty_factor, 
+                                                             penalty_factor=penalty_factor,
                                                              family="binomial")
             PVS = ROSI(X, 
                        y, 
@@ -713,3 +722,266 @@ def test_ROSI_logistic():
             nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
             numpy2ri.deactivate()
             break
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
+def test_ROSI_gaussian_BN():
+    n, p, s = 200, 500, 20
+
+    while True:
+        X, y, _, _, sigma, _ = gaussian_instance(n=n, p=p, s=s, equicorrelated=False, signal=3.5, sigma=1)
+
+        lam = np.sqrt(n * 2 * np.log(p))
+        X *= np.sqrt(n)
+        L = ROSI.gaussian(X, y, lam, approximate_inverse='BN')
+        L.sparse_inverse = True
+        L.fit()
+
+        print('here', len(L.active))
+        if len(L.active) > 4:
+
+            df = pd.DataFrame(X, 
+                              columns=['X%d' % i for i in range(1, X.shape[1]+1)])
+            df['y'] = y
+            df.to_csv('data.csv', index=False)
+
+            S = L.summary(compute_intervals=False, 
+                          dispersion=sigma**2)
+            numpy2ri.activate()
+
+            rpy.r.assign("X", X)
+            rpy.r.assign("y", y)
+            rpy.r.assign("sigma_est", sigma)
+            rpy.r.assign("lam", lam)
+            rpy.r("""
+
+            y = as.numeric(y)
+            n = nrow(X)
+            p = ncol(X)
+
+            penalty_factor = rep(1, p);
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam/n, 
+                                                             penalty_factor=penalty_factor,
+                                                             family="gaussian")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=sigma_est^2, 
+                       family="gaussian",
+                       debiasing_method="BN",
+                       solver="QP", 
+                       construct_ci=FALSE,  
+                       use_debiased=TRUE)
+            active_vars=PVS$active_vars - 1 # for 0-based
+            pvalues = PVS$pvalues
+            """)
+            pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
+            active_set = rpy.r('active_vars')
+
+            print(pvalues)
+            print(np.asarray(S['pval']))
+
+            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            numpy2ri.deactivate()
+            break
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
+def test_ROSI_logistic_BN():
+    n, p, s = 100, 120, 15
+
+    while True:
+        X, y = logistic_instance(n=n, p=p, s=s, equicorrelated=False, signal=10)[:2]
+
+        lam = 1. * np.sqrt(n)
+        X *= np.sqrt(n)
+        L = ROSI.logistic(X, y, lam, approximate_inverse='BN')
+        L.fit()
+
+        if len(L.active) > 4:
+            S = L.summary(compute_intervals=False, dispersion=1.)
+            numpy2ri.activate()
+
+            rpy.r.assign("X", X)
+            rpy.r.assign("y", y)
+            rpy.r.assign("lam", lam)
+            rpy.r("""
+
+            y = as.numeric(y)
+            n = nrow(X)
+            p = ncol(X)
+
+            penalty_factor = rep(1, p);
+            soln = selectiveInference:::solve_problem_glmnet(X, 
+                                                             y, 
+                                                             lam/n, 
+                                                             penalty_factor=penalty_factor,
+                                                             family="binomial")
+            PVS = ROSI(X, 
+                       y, 
+                       soln, 
+                       lambda=lam, 
+                       penalty_factor=penalty_factor, 
+                       dispersion=1., 
+                       family="binomial", 
+                       debiasing_method="BN",
+                       solver="QP", 
+                       construct_ci=FALSE,
+                       use_debiased=TRUE)
+            active_vars=PVS$active_vars - 1 # for 0-based
+            pvalues = PVS$pvalues
+            """)
+            pvalues = rpy.r('pvalues')
+            pvalues = pvalues[~np.isnan(pvalues)]
+            active_set = rpy.r('active_vars')
+
+            print(pvalues)
+            print(np.asarray(S['pval']))
+
+            nt.assert_true(np.corrcoef(pvalues, S['pval'])[0,1] > 0.999)
+            numpy2ri.deactivate()
+            break
+
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available")
+def test_rlasso_gaussian():
+    """
+    Check that the randomized results agree with 
+    R given same inputs, randomization & samples
+    """
+    n, p, s, sigma, signal_fac, rho = 100, 30, 15, 3, 1.5, 0.4
+    randomizer_scale, ndraw, burnin = 1, 5000, 1000
+    target = 'selected'
+    R_target = 'selected'
+
+    while True:
+        signal = np.sqrt(signal_fac * np.log(p))
+        X, y, beta, active, sigma, _ = gaussian_instance(n=n,
+                                                         p=p, 
+                                                         signal=signal, 
+                                                         s=s, 
+                                                         equicorrelated=False, 
+                                                         rho=rho, 
+                                                         sigma=sigma, 
+                                                         random_signs=True)
+
+        sigma_ = np.std(y)
+        if target is not 'debiased':
+            lam = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
+        else:
+            lam = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
+        L = rlasso.gaussian(X,y,lam)
+        ridge_term = L.ridge_term
+        _,prec = L.randomizer.cov_prec
+        noise_scale = np.sqrt(1./prec)
+
+        numpy2ri.activate()
+
+        rpy.r.assign("X", X)
+        rpy.r.assign("y", y)
+        rpy.r.assign("lam", lam)
+        rpy.r.assign("ridge_term", ridge_term)
+        rpy.r.assign("type", R_target)
+        rpy.r.assign("noise_scale",noise_scale)
+        rpy.r("""
+
+        library(selectiveInference)
+
+        y = as.numeric(y)
+        n = nrow(X)
+        p = ncol(X)
+
+        penalty_factor = rep(1, p);
+        soln = randomizedLasso(X, 
+                               y, 
+                               lam, 
+                               family="gaussian",
+                               noise_scale=noise_scale,
+                               ridge_term=ridge_term)
+        perturb = soln$perturb
+        obs_soln = soln$soln
+        cond_mean = soln$law$cond_mean
+        cond_cov = soln$law$cond_cov
+
+        if (type != 'selected') {
+            targets = selectiveInference:::compute_target(soln, type)
+        } else {
+            targets = NULL
+        }
+
+        PVS = randomizedLassoInf(soln,
+                                 targets=targets,
+                                 sampler="norejection")
+        opt_samples = PVS$opt_samples
+        target_samples = PVS$target_samples
+        pvalues = PVS$pvalues
+        """)
+        R_perturb = rpy.r('perturb')
+
+        R_soln = rpy.r('obs_soln')
+        R_cond_mean = rpy.r('cond_mean')
+        R_cond_mean = np.squeeze(R_cond_mean)
+        R_cond_cov = rpy.r('cond_cov')
+
+        R_pvalues = rpy.r('pvalues')
+        R_pvalues = R_pvalues[~np.isnan(R_pvalues)]
+
+        R_opt_samples = rpy.r('opt_samples')
+        R_target_samples = rpy.r('target_samples')
+
+        numpy2ri.deactivate()
+
+        signs = L.fit(perturb=R_perturb)
+        active_set = np.where(signs != 0)[0]
+        nonzero = signs != 0
+
+        initial_soln = L.initial_soln
+        cond_mean = L.cond_mean
+        cond_cov = L.cond_cov
+
+        if nonzero.sum() > 4:
+            if target == 'full':
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = full_targets(L.loglike, 
+                                              L._W, 
+                                              nonzero)
+            elif target == 'selected':
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = selected_targets(L.loglike, 
+                                                  L._W, 
+                                                  nonzero)
+            elif target == 'debiased':
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = debiased_targets(L.loglike, 
+                                                  L._W, 
+                                                  nonzero,
+                                                  penalty=L.penalty)
+
+            _, pval, intervals = L.summary(observed_target, 
+                                           cov_target, 
+                                           cov_target_score, 
+                                           alternatives,
+                                           opt_sample=R_opt_samples,
+                                           target_sample=R_target_samples,
+                                           ndraw=8000,#ndraw,
+                                           burnin=burnin, 
+                                           compute_intervals=True)
+
+            tol = 1.e-5
+            yield np.testing.assert_allclose, initial_soln, R_soln, tol, tol, False, 'checking initial rlasso solution'
+            yield np.testing.assert_allclose, cond_mean, R_cond_mean, tol, tol, False, 'checking conditional mean'
+            yield np.testing.assert_allclose, cond_cov, R_cond_cov, tol, tol, False, 'checking conditional covariance'
+            yield np.testing.assert_allclose, pval, R_pvalues, tol, tol, False, 'checking pvalues'
+
+            break
+
+
+        

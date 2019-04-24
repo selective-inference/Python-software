@@ -12,16 +12,24 @@ def _design(n, p, rho, equicorrelated):
     if equicorrelated:
         X = (np.sqrt(1 - rho) * np.random.standard_normal((n, p)) +
              np.sqrt(rho) * np.random.standard_normal(n)[:, None])
+        def equi(rho, p):
+            if ('equi', p, rho) not in _cov_cache:
+                sigmaX = (1 - rho) * np.identity(p) + rho * np.ones((p, p))
+                cholX = np.linalg.cholesky(sigmaX)
+                _cov_cache[('equi', p, rho)] = sigmaX, cholX
+            return _cov_cache[('equi', p, rho)]
+        sigmaX, cholX = equi(rho=rho, p=p)
     else:
         def AR1(rho, p):
-            idx = np.arange(p)
-            cov = rho ** np.abs(np.subtract.outer(idx, idx))
             if ('AR1', p, rho) not in _cov_cache:
+                idx = np.arange(p)
+                cov = rho ** np.abs(np.subtract.outer(idx, idx))
                 _cov_cache[('AR1', p, rho)] = cov, np.linalg.cholesky(cov)
-            return _cov_cache[('AR1', p, rho)]
+            cov, chol = _cov_cache[('AR1', p, rho)]
+            return cov, chol
         sigmaX, cholX = AR1(rho=rho, p=p)
         X = np.random.standard_normal((n, p)).dot(cholX.T)
-    return X
+    return X, sigmaX, cholX
 
 def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
                       random_signs=False, df=np.inf,
@@ -59,6 +67,8 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
+        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -88,14 +98,16 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
 
     sigma : float
         Noise level.
+
+    sigmaX : np.ndarray((p,p))
+        Row covariance.
     """
 
-    X = _design(n, p, rho, equicorrelated)
+    X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
 
     if center:
         X -= X.mean(0)[None, :]
-    if scale:
-        X /= (X.std(0)[None,:] * np.sqrt(n))
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -105,6 +117,13 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+    beta /= np.sqrt(n)
+
+    if scale:
+        scaling = X.std(0) * np.sqrt(n)
+        X /= scaling[None, :]
+        beta *= np.sqrt(n)
+        sigmaX = sigmaX / np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -118,7 +137,7 @@ def gaussian_instance(n=100, p=200, s=7, sigma=5, rho=0., signal=7,
         return tdist.rvs(df, size=n) / sd_t
 
     Y = (X.dot(beta) + _noise(n, df)) * sigma
-    return X, Y, beta * sigma, np.nonzero(active)[0], sigma
+    return X, Y, beta * sigma, np.nonzero(active)[0], sigma, sigmaX
 
 
 def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
@@ -149,6 +168,8 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
+        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -169,15 +190,16 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     active : np.int(s)
         Non-zero pattern.
 
+    sigmaX : np.ndarray((p,p))
+        Row covariance.
+
     """
 
-    X = _design(n, p, rho, equicorrelated)
+    X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
 
     if center:
         X -= X.mean(0)[None,:]
-    if scale:
-        X /= X.std(0)[None,:]
-    X /= np.sqrt(n)
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -187,6 +209,13 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+    beta /= np.sqrt(n)
+
+    if scale:
+        scaling = X.std(0) * np.sqrt(n)
+        X /= scaling[None, :]
+        beta *= np.sqrt(n)
+        sigmaX = sigmaX / np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -195,7 +224,7 @@ def logistic_instance(n=100, p=200, s=7, rho=0.3, signal=14,
     pi = np.exp(eta) / (1 + np.exp(eta))
 
     Y = np.random.binomial(1, pi)
-    return X, Y, beta, np.nonzero(active)[0]
+    return X, Y, beta, np.nonzero(active)[0], sigmaX
 
 def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
                      random_signs=False, 
@@ -225,6 +254,8 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     signal : float or (float, float)
         Sizes for the coefficients. If a tuple -- then coefficients
         are equally spaced between these values using np.linspace.
+        Note: the size of signal is for a "normalized" design, where np.diag(X.T.dot(X)) == np.ones(p).
+        If scale=False, this signal is divided by np.sqrt(n), otherwise it is unchanged.
 
     random_signs : bool
         If true, assign random signs to coefficients.
@@ -245,15 +276,16 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     active : np.int(s)
         Non-zero pattern.
 
+    sigmaX : np.ndarray((p,p))
+        Row covariance.
+
     """
 
-    X = _design(n, p, rho, equicorrelated)
+    X, sigmaX = _design(n, p, rho, equicorrelated)[:2]
 
     if center:
         X -= X.mean(0)[None,:]
-    if scale:
-        X /= X.std(0)[None,:]
-    X /= np.sqrt(n)
+
     beta = np.zeros(p) 
     signal = np.atleast_1d(signal)
     if signal.shape == (1,):
@@ -263,6 +295,13 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     if random_signs:
         beta[:s] *= (2 * np.random.binomial(1, 0.5, size=(s,)) - 1.)
     np.random.shuffle(beta)
+    beta /= np.sqrt(n)
+
+    if scale:
+        scaling = X.std(0) * np.sqrt(n)
+        X /= scaling[None, :]
+        beta *= np.sqrt(n)
+        sigmaX = sigmaX / np.multiply.outer(scaling, scaling)
 
     active = np.zeros(p, np.bool)
     active[beta != 0] = True
@@ -271,7 +310,7 @@ def poisson_instance(n=100, p=200, s=7, rho=0.3, signal=4,
     mu = np.exp(eta)
 
     Y = np.random.poisson(mu)
-    return X, Y, beta, np.nonzero(active)[0]
+    return X, Y, beta, np.nonzero(active)[0], sigmaX
 
 def HIV_NRTI(drug='3TC', 
              standardize=True, 

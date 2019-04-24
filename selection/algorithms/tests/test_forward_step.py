@@ -85,7 +85,7 @@ def test_subset(k=10, ndraw=5000, burnin=5000):
 def test_BIC(do_sample=True, ndraw=8000, burnin=2000, 
              force=False):
 
-    X, Y, beta, active, sigma = gaussian_instance()
+    X, Y, beta, active, sigma, _ = gaussian_instance()
     n, p = X.shape
     FS = info_crit_stop(Y, X, sigma, cost=np.log(n))
     final_model = len(FS.variables) 
@@ -150,13 +150,13 @@ def test_data_carving_IC(nsim=500,
 
     while counter < nsim:
         counter += 1
-        X, y, beta, active, sigma = gaussian_instance(n=n, 
-                                                      p=p, 
-                                                      s=s, 
-                                                      sigma=sigma, 
-                                                      rho=rho, 
-                                                      signal=signal, 
-                                                      df=df)
+        X, y, beta, active, sigma, _ = gaussian_instance(n=n, 
+                                                         p=p, 
+                                                         s=s, 
+                                                         sigma=sigma, 
+                                                         rho=rho, 
+                                                         signal=signal, 
+                                                         df=df)
         mu = np.dot(X, beta)
         splitn = int(n*split_frac)
         indices = np.arange(n)
@@ -202,7 +202,7 @@ def test_data_carving_IC(nsim=500,
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_full_pvals(n=100, p=40, rho=0.3, signal=4, ndraw=8000, burnin=2000):
 
-    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, signal=signal, rho=rho)
+    X, y, beta, active, sigma, _ = gaussian_instance(n=n, p=p, signal=signal, rho=rho)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     from scipy.stats import norm as ndist
@@ -237,7 +237,7 @@ def test_mcmc_tests(n=100, p=40, s=4, rho=0.3, signal=5, ndraw=None, burnin=2000
                     nstep=200,
                     method='serial'):
 
-    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, signal=signal, rho=rho, s=s)
+    X, y, beta, active, sigma, _ = gaussian_instance(n=n, p=p, signal=signal, rho=rho, s=s)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     extra_steps = 4
@@ -272,7 +272,7 @@ def test_independence_null_mcmc(n=100, p=40, s=4, rho=0.5, signal=5,
                                 nstep=200,
                                 method='serial'):
 
-    X, y, beta, active, sigma = gaussian_instance(n=n, p=p, signal=signal, rho=rho, s=s)
+    X, y, beta, active, sigma, _ = gaussian_instance(n=n, p=p, signal=signal, rho=rho, s=s)
     FS = forward_step(X, y, covariance=sigma**2 * np.identity(n))
 
     extra_steps = 4

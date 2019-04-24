@@ -1,0 +1,287 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="../../_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../../index.html">
+  <img src="../../_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">truncated.base</a><ul>
+<li><a class="reference internal" href="#module-truncated-base">Module: <code class="docutils literal"><span class="pre">truncated.base</span></code></a></li>
+<li><a class="reference internal" href="#truncated"><code class="docutils literal"><span class="pre">truncated</span></code></a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/selection.truncated.base.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="truncated-base">
+<h1>truncated.base<a class="headerlink" href="#truncated-base" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-truncated-base">
+<h2>Module: <code class="xref py py-mod docutils literal"><span class="pre">truncated.base</span></code><a class="headerlink" href="#module-truncated-base" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal"><span class="pre">selection.truncated.base</span></code>:</p>
+<span class="target" id="module-selection.truncated.base"></span><p>This module implements the class <cite>truncated_gaussian</cite> which 
+performs (conditional) UMPU tests for Gaussians
+restricted to a set of intervals.</p>
+</div>
+<div class="section" id="truncated">
+<h2><a class="reference internal" href="#selection.truncated.base.truncated" title="selection.truncated.base.truncated"><code class="xref py py-class docutils literal"><span class="pre">truncated</span></code></a><a class="headerlink" href="#truncated" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="selection.truncated.base.truncated">
+<em class="property">class </em><code class="descclassname">selection.truncated.base.</code><code class="descname">truncated</code><span class="sig-paren">(</span><em>intervals</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.truncated.base.truncated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A distribution, truncated to a union of intervals</p>
+<p>HOW TO MAKE A SUBCLASS : 
+You have to implement :</p>
+<dl class="docutils">
+<dt>__init__(self, args*) <span class="classifier-delimiter">:</span> <span class="classifier">It has to call the method from the base class</span></dt>
+<dd>Since the method is abstract, you can’t have an instance of the
+subclass if the method __init__ is not implemented</dd>
+</dl>
+<p>_cdf_notTruncated(self, a, b, dps) :</p>
+<dl class="docutils">
+<dt>With these two methods, you can use <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>-&gt; cdf
+-&gt; sf</dd>
+</dl>
+<p>You should implement :</p>
+<dl class="docutils">
+<dt>_pdf_notTruncated(self, z, dps) <span class="classifier-delimiter">:</span> <span class="classifier">it allows you to use</span> <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>-&gt; pdf
+-&gt; plt_pdf (if you also have _quantile_notTruncated)</dd>
+<dt>_quantile_notTruncated(self, q, tol) <span class="classifier-delimiter">:</span> <span class="classifier">it allows  you to use</span> <span class="classifier-delimiter">:</span> <span class="classifier"></span></dt>
+<dd>-&gt; quantile
+-&gt; rvs 
+-&gt; plt_cdf
+-&gt; plt_pdf (if you also have  _pdf_notTruncated)</dd>
+</dl>
+<dl class="method">
+<dt id="selection.truncated.base.truncated.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>intervals</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.truncated.base.truncated.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new truncated distribution object
+This method is abstract : it has to be overriden</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>intervals</strong> : [(float, float)]</p>
+<blockquote class="last">
+<div><p>The intervals the distribution is truncated to</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.truncated.base.truncated.rvs">
+<code class="descname">rvs</code><span class="sig-paren">(</span><em>size=1</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.truncated.base.truncated.rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample a random variable from the truncated disribution</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>size</strong> : int</p>
+<blockquote>
+<div><p>Number of samples. Default : 1</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>X</strong> : np.array</p>
+<blockquote class="last">
+<div><p>array of sample</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.truncated.base.truncated.sf">
+<code class="descname">sf</code><span class="sig-paren">(</span><em>z</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.truncated.base.truncated.sf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the survival function of the truncated distribution</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>z</strong> : float</p>
+<blockquote>
+<div><p>Minimum bound of the interval</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>sf</strong> : float</p>
+<blockquote class="last">
+<div><p>The survival function of the truncated distribution
+sf(z) = P( X &gt; z | X is in intervals )</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.truncated.base.truncated.cdf">
+<code class="descname">cdf</code><span class="sig-paren">(</span><em>z</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.truncated.base.truncated.cdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the survival function of the truncated distribution</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>z</strong> : float</p>
+<blockquote>
+<div><p>Minimum bound of the interval</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>cdf</strong> : float</p>
+<blockquote>
+<div><p>function  The cumulative distribution function of the 
+truncated distribution
+cdf(z) = P( X &lt; z | X is in intervals )</p>
+</div></blockquote>
+<p><strong>WARNING</strong> : This method only use the sf method</p>
+<p class="last">more precise</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.truncated.base.truncated.pdf">
+<code class="descname">pdf</code><span class="sig-paren">(</span><em>z</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.truncated.base.truncated.pdf" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute the probability distribution funtion of the
+truncated distribution</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>z</strong> : float</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>p</strong> : float</p>
+<blockquote class="last">
+<div><p>p(z) such that E[f(X)] = int f(z)p(z)dz</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="selection.truncated.base.find_root">
+<code class="descclassname">selection.truncated.base.</code><code class="descname">find_root</code><span class="sig-paren">(</span><em>f</em>, <em>y</em>, <em>lb</em>, <em>ub</em>, <em>tol=1e-06</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.truncated.base.find_root" title="Permalink to this definition">¶</a></dt>
+<dd><p>searches for solution to f(x) = y in (lb, ub), where 
+f is a monotone decreasing function</p>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

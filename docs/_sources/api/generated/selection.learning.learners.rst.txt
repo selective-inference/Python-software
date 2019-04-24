@@ -1,0 +1,40 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+learning.learners
+=================
+
+Module: :mod:`learning.learners`
+--------------------------------
+Inheritance diagram for ``selection.learning.learners``:
+
+.. inheritance-diagram:: selection.learning.learners 
+   :parts: 3
+
+.. automodule:: selection.learning.learners
+
+.. currentmodule:: selection.learning.learners
+
+Classes
+-------
+
+:class:`mixture_learner`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: mixture_learner
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`sparse_mixture_learner`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: sparse_mixture_learner
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

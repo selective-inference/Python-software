@@ -1,0 +1,68 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+constraints.quasi_affine
+========================
+
+Module: :mod:`constraints.quasi_affine`
+---------------------------------------
+Inheritance diagram for ``selection.constraints.quasi_affine``:
+
+.. inheritance-diagram:: selection.constraints.quasi_affine 
+   :parts: 3
+
+.. automodule:: selection.constraints.quasi_affine
+
+.. currentmodule:: selection.constraints.quasi_affine
+
+Classes
+-------
+
+:class:`constraints`
+~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: constraints
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`orthogonal`
+~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: orthogonal
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.constraints.quasi_affine.constraints_unknown_sigma
+
+
+.. autofunction:: selection.constraints.quasi_affine.gibbs_test
+
+
+.. autofunction:: selection.constraints.quasi_affine.intersection
+
+
+.. autofunction:: selection.constraints.quasi_affine.quadratic_inequality_solver
+
+
+.. autofunction:: selection.constraints.quasi_affine.sample_from_constraints
+
+
+.. autofunction:: selection.constraints.quasi_affine.sample_from_sphere
+
+
+.. autofunction:: selection.constraints.quasi_affine.sqrt_inequality_solver
+
+
+.. autofunction:: selection.constraints.quasi_affine.stack
+

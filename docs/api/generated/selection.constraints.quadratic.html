@@ -1,0 +1,398 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>Selection &#8212; Selection Documentation</title>
+    <link rel="stylesheet" href="../../_static/selection.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.0.1.dev',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+
+
+  </head>
+  <body>
+<div style="background-color: white; text-align: left; padding: 10px 10px 15px 15px">
+ <a href="../../index.html">
+  <img src="../../_static/logo.png" height="200" width="200" alt="Selection logo"  border="0" /><h1>Post-selection inference</h1>
+</div>
+
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+
+  <h3><a href="../../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">constraints.quadratic</a><ul>
+<li><a class="reference internal" href="#module-constraints-quadratic">Module: <code class="docutils literal"><span class="pre">constraints.quadratic</span></code></a></li>
+<li><a class="reference internal" href="#classes">Classes</a><ul>
+<li><a class="reference internal" href="#constraints"><code class="docutils literal"><span class="pre">constraints</span></code></a></li>
+<li><a class="reference internal" href="#constraints-vecnorm"><code class="docutils literal"><span class="pre">constraints_vecnorm</span></code></a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
+</ul>
+
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../../_sources/api/generated/selection.constraints.quadratic.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+
+<div id="searchbox-site" style="display: none">
+  <h3>Search this site</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="13" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox-ml').show(0);</script>
+<script type="text/javascript">$('#searchbox-site').show(0);</script>
+
+
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="constraints-quadratic">
+<h1>constraints.quadratic<a class="headerlink" href="#constraints-quadratic" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-constraints-quadratic">
+<h2>Module: <code class="xref py py-mod docutils literal"><span class="pre">constraints.quadratic</span></code><a class="headerlink" href="#module-constraints-quadratic" title="Permalink to this headline">¶</a></h2>
+<p>Inheritance diagram for <code class="docutils literal"><span class="pre">selection.constraints.quadratic</span></code>:</p>
+<span class="target" id="module-selection.constraints.quadratic"></span></div>
+<div class="section" id="classes">
+<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="constraints">
+<h3><a class="reference internal" href="#selection.constraints.quadratic.constraints" title="selection.constraints.quadratic.constraints"><code class="xref py py-class docutils literal"><span class="pre">constraints</span></code></a><a class="headerlink" href="#constraints" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selection.constraints.quadratic.constraints">
+<em class="property">class </em><code class="descclassname">selection.constraints.quadratic.</code><code class="descname">constraints</code><span class="sig-paren">(</span><em>quad_part</em>, <em>lin_part=None</em>, <em>offset=None</em>, <em>covariance=None</em>, <em>mean=None</em>, <em>rank=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="selection.constraints.base.html#selection.constraints.base.constraints" title="selection.constraints.base.constraints"><code class="xref py py-class docutils literal"><span class="pre">selection.constraints.base.constraints</span></code></a></p>
+<p>Object solving the problems of slices for quadratic and linear 
+inequalities</p>
+<div class="math">
+\[\forall i, y^T Q_i y + a_i^t &lt; b_i\]</div>
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>quad_part</em>, <em>lin_part=None</em>, <em>offset=None</em>, <em>covariance=None</em>, <em>mean=None</em>, <em>rank=None</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a new object for quadratic constraints</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>quad_part</strong> : np.float(l, p, p)</p>
+<blockquote>
+<div><p>3-dimensions array. The lines are some quadratic forms</p>
+</div></blockquote>
+<p><strong>lin_part</strong> : np.float(l, p)</p>
+<blockquote>
+<div><p>The lines are the vector of the linear forms in the inquality       
+Default to np.zeros(l, p)</p>
+</div></blockquote>
+<p><strong>offset</strong> : np.float(l)</p>
+<blockquote>
+<div><p>The offsets of all inequalities
+Defaults to np.zeros(l)</p>
+</div></blockquote>
+<p><strong>covariance</strong> : np.float((p,p))</p>
+<blockquote>
+<div><p>Covariance matrix of Gaussian distribution to be 
+truncated. Defaults to <cite>np.identity(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>mean</strong> : np.float(p)</p>
+<blockquote>
+<div><p>Mean vector of Gaussian distribution to be 
+truncated. Defaults to <cite>np.zeros(self.dim)</cite>.</p>
+</div></blockquote>
+<p><strong>rank</strong> : int</p>
+<blockquote>
+<div><p>If not None, this should specify
+the rank of the covariance matrix. Defaults
+to self.dim.</p>
+</div></blockquote>
+<p class="last"><strong>WARNING</strong> : The shapes of the three parameters must fit</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints.bounds">
+<code class="descname">bounds</code><span class="sig-paren">(</span><em>nu</em>, <em>y</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the intervals of the slice in a direction nu, which 
+respects the inequality</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>nu</strong> : np.float(p)</p>
+<blockquote>
+<div><p>The direction of the slice</p>
+</div></blockquote>
+<p><strong>y</strong> : np.float(p)</p>
+<blockquote>
+<div><p>A point on the affine slice</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>intervals</strong> : array of couples</p>
+<blockquote class="last">
+<div><p>Array of (a, b), which means that the set is the union
+of [a, b]</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Examples</p>
+<p>The constraints are : 
+(x - 1)^2 + y ^ 2    &lt; 4
+10 * x^2  - 10 * y^2 &lt; -1
+(x + 1)^2 + y ^ 2    &lt; 4</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">q1</span><span class="p">,</span> <span class="n">lin1</span><span class="p">,</span> <span class="n">off1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]),</span> <span class="mf">3.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q2</span><span class="p">,</span> <span class="n">lin2</span><span class="p">,</span> <span class="n">off2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">10.</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.</span><span class="p">]]),</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">q3</span><span class="p">,</span> <span class="n">lin3</span><span class="p">,</span> <span class="n">off3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="o">-</span><span class="mf">2.</span><span class="p">,</span> <span class="mf">0.</span><span class="p">]),</span> <span class="mf">3.</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cons</span> <span class="o">=</span> <span class="n">constraints</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">q1</span><span class="p">,</span> <span class="n">q2</span><span class="p">,</span> <span class="n">q3</span><span class="p">]),</span>                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lin1</span><span class="p">,</span> <span class="n">lin2</span><span class="p">,</span> <span class="n">lin3</span><span class="p">]),</span>                                <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">off1</span><span class="p">,</span> <span class="n">off2</span><span class="p">,</span> <span class="n">off3</span><span class="p">]))</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu1</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I1_expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span><span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">)],</span>                                      <span class="p">[</span><span class="mf">1.</span> <span class="o">+</span> <span class="mf">1.</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">10</span><span class="p">),</span> <span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I1 - I1_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu2</span> <span class="o">=</span> <span class="mi">2</span><span class="o">*</span><span class="n">nu1</span>             <span class="c1">## Try with a nu not unitary</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu2</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I2_expected</span> <span class="o">=</span> <span class="n">I1_expected</span> <span class="o">/</span><span class="mi">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I2 - I2_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">nu3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span><span class="p">,</span> <span class="mi">0</span><span class="p">]])</span><span class="o">.</span><span class="n">T</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cons</span><span class="o">.</span><span class="n">bounds</span><span class="p">(</span><span class="n">nu3</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span><span class="o">.</span><span class="n">intersection</span><span class="p">())</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">I3_expected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="mf">1.</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1">#np.all(np.fabs(I3 - I3_expected) &lt; 1.e-10)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints.gen_p_value">
+<code class="descname">gen_p_value</code><span class="sig-paren">(</span><em>y</em>, <em>f</em>, <em>sigma=1.0</em>, <em>n_samples=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints.gen_p_value" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>f</strong> : z -&gt; x</p>
+<blockquote class="last">
+<div><p>observed value</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints.distr_norm">
+<code class="descname">distr_norm</code><span class="sig-paren">(</span><em>X_s</em>, <em>y</em>, <em>sigma=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints.distr_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the norm of X_s.T*y and an instance of truncated : 
+the distribution of X_s.T*y
+This is implementing the forward stepwise paper in the general case</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X_s</strong> : np.float(p, k):</p>
+<blockquote>
+<div><p>X_s is a full ranked matrix</p>
+</div></blockquote>
+<p><strong>y</strong> : np.float(p):</p>
+<blockquote>
+<div><p>y is the data, and satisfies the constraints</p>
+</div></blockquote>
+<p><strong>sigma: float</strong></p>
+<blockquote>
+<div><p>sigma is the variance of the normal distribution under wich
+y is chosen</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>distr</strong> : truncated_chi</p>
+<blockquote class="last">
+<div><p>distr is an object used to study the distribution of
+np.linalg.norm(np.dot(X_s.T, y)), when y is a gaussian vector,
+chosen under the constraints and on the slice given by nu</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints.p_value">
+<code class="descname">p_value</code><span class="sig-paren">(</span><em>X_s</em>, <em>y</em>, <em>sigma=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints.p_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="constraints-vecnorm">
+<h3><a class="reference internal" href="#selection.constraints.quadratic.constraints_vecnorm" title="selection.constraints.quadratic.constraints_vecnorm"><code class="xref py py-class docutils literal"><span class="pre">constraints_vecnorm</span></code></a><a class="headerlink" href="#constraints-vecnorm" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="selection.constraints.quadratic.constraints_vecnorm">
+<em class="property">class </em><code class="descclassname">selection.constraints.quadratic.</code><code class="descname">constraints_vecnorm</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em>, <em>dim</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints_vecnorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#selection.constraints.quadratic.constraints" title="selection.constraints.quadratic.constraints"><code class="xref py py-class docutils literal"><span class="pre">selection.constraints.quadratic.constraints</span></code></a></p>
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints_vecnorm.__init__">
+<code class="descname">__init__</code><span class="sig-paren">(</span><em>alpha</em>, <em>beta</em>, <em>dim</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints_vecnorm.__init__" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints_vecnorm.distr_norm">
+<code class="descname">distr_norm</code><span class="sig-paren">(</span><em>X_s</em>, <em>y</em>, <em>sigma=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints_vecnorm.distr_norm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the value of the norm of X_s.T*y and an instance of truncated : 
+the distribution of X_s.T*y
+This is implementing the forward stepwise paper in the general case</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>X_s</strong> : np.float(p, k):</p>
+<blockquote>
+<div><p>X_s is a full ranked matrix</p>
+</div></blockquote>
+<p><strong>y</strong> : np.float(p):</p>
+<blockquote>
+<div><p>y is the data, and satisfies the constraints</p>
+</div></blockquote>
+<p><strong>sigma: float</strong></p>
+<blockquote>
+<div><p>sigma is the variance of the normal distribution under wich
+y is chosen</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>distr</strong> : truncated_chi</p>
+<blockquote class="last">
+<div><p>distr is an object used to study the distribution of
+np.linalg.norm(np.dot(X_s.T, y)), when y is a gaussian vector,
+chosen under the constraints and on the slice given by nu</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints_vecnorm.gen_p_value">
+<code class="descname">gen_p_value</code><span class="sig-paren">(</span><em>y</em>, <em>f</em>, <em>sigma=1.0</em>, <em>n_samples=1000</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints_vecnorm.gen_p_value" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>f</strong> : z -&gt; x</p>
+<blockquote class="last">
+<div><p>observed value</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="selection.constraints.quadratic.constraints_vecnorm.p_value">
+<code class="descname">p_value</code><span class="sig-paren">(</span><em>X_s</em>, <em>y</em>, <em>sigma=1.0</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.constraints_vecnorm.p_value" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="selection.constraints.quadratic.roots_poly2">
+<code class="descclassname">selection.constraints.quadratic.</code><code class="descname">roots_poly2</code><span class="sig-paren">(</span><em>a</em>, <em>b</em>, <em>c</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.roots_poly2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="selection.constraints.quadratic.stack">
+<code class="descclassname">selection.constraints.quadratic.</code><code class="descname">stack</code><span class="sig-paren">(</span><em>*quad_cons</em><span class="sig-paren">)</span><a class="headerlink" href="#selection.constraints.quadratic.stack" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+  <li><a href="../../index.html">Selection home</a> |&nbsp;</li>
+ 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright J. Taylor and others.
+      Last updated on Apr 23, 2019.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.3.
+    </div>
+  </body>
+</html>

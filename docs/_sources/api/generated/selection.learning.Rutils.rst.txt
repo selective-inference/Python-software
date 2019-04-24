@@ -1,0 +1,64 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+learning.Rutils
+===============
+
+Module: :mod:`learning.Rutils`
+------------------------------
+Inheritance diagram for ``selection.learning.Rutils``:
+
+.. inheritance-diagram:: selection.learning.Rutils 
+   :parts: 3
+
+.. automodule:: selection.learning.Rutils
+
+.. currentmodule:: selection.learning.Rutils
+
+Classes
+-------
+
+:class:`generic_method`
+~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: generic_method
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`knockoffs_sigma`
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: knockoffs_sigma
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+:class:`lasso_glmnet`
+~~~~~~~~~~~~~~~~~~~~~
+
+
+.. autoclass:: lasso_glmnet
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__
+
+Functions
+---------
+
+
+.. autofunction:: selection.learning.Rutils.cv_glmnet_lam
+
+
+.. autofunction:: selection.learning.Rutils.factor_knockoffs
+
+
+.. autofunction:: selection.learning.Rutils.null_print
+

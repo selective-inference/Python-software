@@ -1,0 +1,26 @@
+.. AUTO-GENERATED FILE -- DO NOT EDIT!
+
+constraints.intervals
+=====================
+
+Module: :mod:`constraints.intervals`
+------------------------------------
+Inheritance diagram for ``selection.constraints.intervals``:
+
+.. inheritance-diagram:: selection.constraints.intervals 
+   :parts: 3
+
+.. automodule:: selection.constraints.intervals
+
+.. currentmodule:: selection.constraints.intervals
+
+:class:`intervals`
+------------------
+
+
+.. autoclass:: intervals
+  :members:
+  :show-inheritance:
+  :inherited-members:
+
+  .. automethod:: __init__

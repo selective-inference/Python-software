@@ -2,14 +2,11 @@
 This module contains a class `lasso`_ that implements
 post selection for the lasso
 as described in `post selection LASSO`_.
-
-
 .. _covTest: http://arxiv.org/abs/1301.7161
 .. _Kac Rice: http://arxiv.org/abs/1308.3020
 .. _Spacings: http://arxiv.org/abs/1401.3889
 .. _post selection LASSO: http://arxiv.org/abs/1311.6238
 .. _sample carving: http://arxiv.org/abs/1410.2597
-
 """
 from __future__ import division
 
@@ -21,8 +18,8 @@ import pandas as pd
 from scipy.stats import norm as ndist, t as tdist
 from scipy.linalg import block_diag
 
-from regreg.api import (glm, 
-                        weighted_l1norm, 
+from regreg.api import (glm,
+                        weighted_l1norm,
                         simple_problem,
                         coxph as coxph_obj,
                         smooth_sum,
@@ -31,67 +28,57 @@ from regreg.api import (glm,
                         quadratic_loss)
 
 from .sqrt_lasso import solve_sqrt_lasso, estimate_sigma
-from .debiased_lasso import debiasing_matrix
+from .debiased_lasso import (debiasing_matrix,
+                             pseudoinverse_debiasing_matrix)
 
-from ..constraints.affine import (constraints, selection_interval,
-                                 interval_constraints,
-                                 sample_from_constraints,
-                                 gibbs_test,
-                                 stack)
+from ..constraints.affine import (constraints, 
+                                  selection_interval,
+                                  interval_constraints,
+                                  sample_from_constraints,
+                                  gibbs_test,
+                                  stack)
 
 from ..distributions.discrete_family import discrete_family
 from ..truncated.gaussian import truncated_gaussian_old as TG
 from ..glm import pairs_bootstrap_glm
 
-class lasso(object):
 
+class lasso(object):
     r"""
     A class for the LASSO for post-selection inference.
     The problem solved is
-
     .. math::
-
-        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
+        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 +
             \lambda \|\beta\|_1
-
     where $\lambda$ is `lam`.
-
     """
 
-    def __init__(self, 
-                 loglike, 
+    def __init__(self,
+                 loglike,
                  feature_weights,
                  covariance_estimator=None,
                  ignore_inactive_constraints=False):
         r"""
-
         Create a new post-selection dor the LASSO problem
-
         Parameters
         ----------
-
         loglike : `regreg.smooth.glm.glm`
             A (negative) log-likelihood as implemented in `regreg`.
-
         feature_weights : np.ndarray
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
-
         covariance_estimator : callable (optional)
             If None, use the parameteric
             covariance estimate of the selected model.
-
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
 
         self.loglike = loglike
@@ -102,41 +89,33 @@ class lasso(object):
         self.covariance_estimator = covariance_estimator
         self.ignore_inactive_constraints = ignore_inactive_constraints
 
-    def fit(self, lasso_solution=None, solve_args={'tol':1.e-12, 'min_its':50}):
+    def fit(self, lasso_solution=None, solve_args={'tol': 1.e-12, 'min_its': 50}):
         """
         Fit the lasso using `regreg`.
         This sets the attributes `soln`, `onestep` and
         forms the constraints necessary for post-selection inference
         by calling `form_constraints()`.
-
         Parameters
         ----------
-
         lasso_solution : optional
-
              If not None, this is taken to be the solution
              of the optimization problem. No checks
              are done, though the implied affine
              constraints will generally not be satisfied.
-
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
-
         Returns
         -------
-
         soln : np.float
              Solution to lasso.
-             
+
         Notes
         -----
-
         If `self` already has an attribute `lasso_solution`
-        this will be taken to be the solution and 
+        this will be taken to be the solution and
         no optimization problem will be solved. Supplying
         the optional argument `lasso_solution` will
         overwrite `self`'s `lasso_solution`.
-
         """
 
         self._penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
@@ -146,7 +125,7 @@ class lasso(object):
         elif lasso_solution is not None:
             self.lasso_solution = lasso_solution
 
-        lasso_solution = self.lasso_solution # shorthand after setting it correctly above
+        lasso_solution = self.lasso_solution  # shorthand after setting it correctly above
 
         if not np.all(lasso_solution == 0):
 
@@ -155,7 +134,7 @@ class lasso(object):
             self.active_signs = np.sign(lasso_solution[self.active])
             self._active_soln = lasso_solution[self.active]
             H = self.loglike.hessian(self.lasso_solution)
-            H_AA = H[self.active][:,self.active]
+            H_AA = H[self.active][:, self.active]
             H_AAinv = np.linalg.inv(H_AA)
             Q = self.loglike.quadratic
             G_Q = Q.objective(self.lasso_solution, 'grad')
@@ -168,19 +147,20 @@ class lasso(object):
 
             if self.active_penalized.sum():
                 self._constraints = constraints(-np.diag(self.active_signs)[self.active_penalized],
-                                                 (self.active_signs * dbeta_A)[self.active_penalized],
-                                                 covariance=H_AAinv)
+                                                (self.active_signs * dbeta_A)[self.active_penalized],
+                                                covariance=H_AAinv)
             else:
                 self._constraints = constraints(np.identity(self.active.shape[0]),
-                                                1.e12 * np.ones(self.active.shape[0]) * H_AAinv.max(), # XXX np.inf seems to fail tests
+                                                1.e12 * np.ones(self.active.shape[0]) * H_AAinv.max(),
+                                                # XXX np.inf seems to fail tests
                                                 covariance=H_AAinv)
 
             if self.inactive.sum():
 
                 # inactive constraints
 
-                H_IA = H[self.inactive][:,self.active]
-                H_II = H[self.inactive][:,self.inactive]
+                H_IA = H[self.inactive][:, self.active]
+                H_II = H[self.inactive][:, self.inactive]
                 inactive_cov = H_II - H_IA.dot(H_AAinv).dot(H_IA.T)
                 irrepresentable = H_IA.dot(H_AAinv)
                 inactive_mean = irrepresentable.dot(-G_A)
@@ -191,7 +171,8 @@ class lasso(object):
                                                          covariance=inactive_cov,
                                                          mean=inactive_mean)
                 if not self._inactive_constraints(G_I):
-                    warnings.warn('inactive constraint of KKT conditions not satisfied -- perhaps need to solve with more accuracy')
+                    warnings.warn(
+                        'inactive constraint of KKT conditions not satisfied -- perhaps need to solve with more accuracy')
 
                 if self.covariance_estimator is not None:
 
@@ -220,10 +201,10 @@ class lasso(object):
                         # we "fix" _nuisance, effectively conditioning on it
 
                         _nuisance = _inactive_score - _indep_linear_part.dot(_beta_bar)
-                        _upper_lim = (self.feature_weights[self.inactive] - 
-                                      _nuisance - 
+                        _upper_lim = (self.feature_weights[self.inactive] -
+                                      _nuisance -
                                       inactive_mean)
-                        _lower_lim = (_nuisance + 
+                        _lower_lim = (_nuisance +
                                       self.feature_weights[self.inactive] +
                                       inactive_mean)
 
@@ -246,8 +227,8 @@ class lasso(object):
                         self._constraints.covariance[:] = _cov_AA
 
                     if not self._constraints(_beta_bar):
-                        warnings.warn('constraints of KKT conditions on one-step estimator ' + 
-                                      ' not satisfied -- perhaps need to solve with more' + 
+                        warnings.warn('constraints of KKT conditions on one-step estimator ' +
+                                      ' not satisfied -- perhaps need to solve with more' +
                                       'accuracy')
 
             else:
@@ -259,10 +240,11 @@ class lasso(object):
             self._inactive_constraints = None
         return self.lasso_solution
 
-    def summary(self, 
-                alternative='twosided', 
+    def summary(self,
+                alternative='twosided',
                 level=0.95,
-                compute_intervals=False):
+                compute_intervals=False,
+                truth=None):
         """
         Summary table for inference adjusted for selection.
 
@@ -278,29 +260,34 @@ class lasso(object):
         compute_intervals : bool
             Should we compute confidence intervals?
 
+        truth : np.array
+            True values of each beta for selected variables. If not None, a column 'pval' are p-values
+            computed under these corresponding null hypotheses.
+
         Returns
         -------
-
         pval_summary : np.recarray
             Array with one entry per active variable.
             Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
-
         """
 
         if alternative not in ['twosided', 'onesided']:
             raise ValueError("alternative must be one of ['twosided', 'onesided']")
 
+        if truth is None:
+            truth = np.zeros_like(self.active_signs)
+
         result = []
-        C = self.constraints
+        C = self._constraints
         if C is not None:
             one_step = self.onestep_estimator
             for i in range(one_step.shape[0]):
                 eta = np.zeros_like(one_step)
                 eta[i] = self.active_signs[i]
-                _alt = {"onesided":'greater',
-                        'twosided':"twosided"}[alternative]
-                if C.linear_part.shape[0] > 0: # there were some constraints
-                    _pval = C.pivot(eta, one_step, alternative=_alt)
+                _alt = {"onesided": 'greater',
+                        'twosided': "twosided"}[alternative]
+                if C.linear_part.shape[0] > 0:  # there were some constraints
+                    _pval = C.pivot(eta, one_step, null_value=truth[i], alternative=_alt)
                 else:
                     obs = (eta * one_step).sum()
                     sd = np.sqrt((eta * C.covariance.dot(eta)))
@@ -309,7 +296,7 @@ class lasso(object):
 
                 alpha = 1 - level
                 if compute_intervals:
-                    if C.linear_part.shape[0] > 0: # there were some constraints
+                    if C.linear_part.shape[0] > 0:  # there were some constraints
                         try:
                             _interval = C.interval(eta, one_step,
                                                    alpha=alpha)
@@ -335,17 +322,17 @@ class lasso(object):
                                lower_trunc,
                                upper_trunc,
                                sd))
-                
+
         df = pd.DataFrame(index=self.active,
                           data=dict([(n, d) for n, d in zip(['variable',
-                                                             'pval', 
-                                                             'lasso', 
-                                                             'onestep', 
-                                                             'lower_confidence', 
+                                                             'pval',
+                                                             'lasso',
+                                                             'onestep',
+                                                             'lower_confidence',
                                                              'upper_confidence',
                                                              'lower_trunc',
                                                              'upper_trunc',
-                                                             'sd'], 
+                                                             'sd'],
                                                             np.array(result).T)]))
         df['variable'] = df['variable'].astype(int)
         return df
@@ -369,59 +356,47 @@ class lasso(object):
         return self._constraints
 
     @staticmethod
-    def gaussian(X, 
-                 Y, 
-                 feature_weights, 
-                 sigma=1., 
+    def gaussian(X,
+                 Y,
+                 feature_weights,
+                 sigma=1.,
                  covariance_estimator=None,
                  quadratic=None):
         r"""
         Squared-error LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         Y : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         sigma : float (optional)
             Noise variance. Set to 1 if `covariance_estimator` is not None.
             This scales the loglikelihood by `sigma**(-2)`.
-
         covariance_estimator : callable (optional)
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of some of the
         rows and columns of the covariance of
@@ -429,284 +404,229 @@ class lasso(object):
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
         if covariance_estimator is not None:
             sigma = 1.
-        loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
-        return lasso(loglike, np.asarray(feature_weights) / sigma**2,
+        loglike = glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
+        return lasso(loglike, np.asarray(feature_weights) / sigma ** 2,
                      covariance_estimator=covariance_estimator)
 
     @staticmethod
-    def logistic(X, 
-                 successes, 
-                 feature_weights, 
-                 trials=None, 
+    def logistic(X,
+                 successes,
+                 feature_weights,
+                 trials=None,
                  covariance_estimator=None,
                  quadratic=None):
         r"""
         Logistic LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
-        where $\ell$ is the negative of the logistic 
+        where $\ell$ is the negative of the logistic
         log-likelihood (half the logistic deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         successes : ndarray
             Shape (n,) -- response vector. An integer number of successes.
             For data that is proportions, multiply the proportions
             by the number of trials first.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         trials : ndarray (optional)
             Number of trials per response, defaults to
-            ones the same shape as Y. 
-
+            ones the same shape as Y.
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
         return lasso(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
     @staticmethod
-    def coxph(X, 
-              times, 
-              status, 
-              feature_weights, 
+    def coxph(X,
+              times,
+              status,
+              feature_weights,
               covariance_estimator=None,
               quadratic=None):
         r"""
         Cox proportional hazards LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell^{\text{Cox}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
-        where $\ell^{\text{Cox}}$ is the 
+        where $\ell^{\text{Cox}}$ is the
         negative of the log of the Cox partial
         likelihood and $\lambda$ is `feature_weights`.
-
         Uses Efron's tie breaking method.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         times : ndarray
             Shape (n,) -- the survival times.
-
         status : ndarray
             Shape (n,) -- the censoring status.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
         loglike = coxph_obj(X, times, status, quadratic=quadratic)
         return lasso(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
     @staticmethod
-    def poisson(X, 
-                counts, 
-                feature_weights, 
+    def poisson(X,
+                counts,
+                feature_weights,
                 covariance_estimator=None,
                 quadratic=None):
         r"""
         Poisson log-linear LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\ell^{\text{Poisson}}$ is the negative
         of the log of the Poisson likelihood (half the deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         counts : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
         return lasso(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
     @staticmethod
-    def sqrt_lasso(X, 
-                   Y, 
-                   feature_weights, 
+    def sqrt_lasso(X,
+                   Y,
+                   feature_weights,
                    quadratic=None,
                    covariance='parametric',
                    sigma_estimate='truncated',
-                   solve_args={'min_its':200}):
+                   solve_args={'min_its': 200}):
         r"""
         Use sqrt-LASSO to choose variables.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\lambda$ is `feature_weights`. After solving the problem
-        treat as if `gaussian` with implied variance and choice of 
+        treat as if `gaussian` with implied variance and choice of
         multiplier. See arxiv.org/abs/1504.08031 for details.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         Y : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         covariance : str
             One of 'parametric' or 'sandwich'. Method
             used to estimate covariance for inference
             in second stage.
-
         sigma_estimate : str
             One of 'truncated' or 'OLS'. Method
             used to estimate $\sigma$ when using
             parametric covariance.
-
         solve_args : dict
             Arguments passed to solver.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
         Unlike other variants of LASSO, this
         solves the problem on construction as the active
         set is needed to find equivalent gaussian LASSO.
-
         Assumes parametric model is correct for inference,
         i.e. does not accept a covariance estimator.
-
         """
 
         n, p = X.shape
@@ -727,10 +647,10 @@ class lasso(object):
         if nactive:
 
             subgrad = np.sign(soln[active]) * feature_weights[active]
-            X_E = X[:,active]
+            X_E = X[:, active]
             X_Ei = np.linalg.pinv(X_E)
             sigma_E = np.linalg.norm(Y - X_E.dot(X_Ei.dot(Y))) / np.sqrt(n - nactive)
-            multiplier = np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad))**2))
+            multiplier = np.sqrt((n - nactive) / (1 - np.linalg.norm(X_Ei.T.dot(subgrad)) ** 2))
 
             # check truncation interval for sigma_E
 
@@ -740,18 +660,19 @@ class lasso(object):
             penalized = feature_weights[active] != 0
 
             if penalized.sum():
-                D_E = np.sign(soln[active][penalized]) # diagonal matrix of signs
+                D_E = np.sign(soln[active][penalized])  # diagonal matrix of signs
                 LHS = D_E * np.linalg.solve(X_E.T.dot(X_E), subgrad)[penalized]
-                RHS = D_E * X_Ei.dot(Y)[penalized] 
+                RHS = D_E * X_Ei.dot(Y)[penalized]
 
                 ratio = RHS / LHS
 
                 group1 = LHS > 0
                 upper_bound = np.inf
                 if group1.sum():
-                    upper_bound = min(upper_bound, np.min(ratio[group1])) # necessarily these will have RHS > 0
+                    upper_bound = min(upper_bound, np.min(ratio[group1]))  # necessarily these will have RHS > 0
 
-                group2 = (LHS <= 0) * (RHS <= 0) # we can ignore the other possibility since this gives a lower bound of 0
+                group2 = ((LHS <= 0) * 
+                          (RHS <= 0))  # we can ignore the other possibility since this gives a lower bound of 0
                 lower_bound = 0
                 if group2.sum():
                     lower_bound = max(lower_bound, np.max(ratio[group2]))
@@ -763,9 +684,9 @@ class lasso(object):
                 lower_bound = 0
                 upper_bound = np.inf
 
-            _sigma_estimator_args = (sigma_E, 
+            _sigma_estimator_args = (sigma_E,
                                      n - nactive,
-                                     lower_bound, 
+                                     lower_bound,
                                      upper_bound)
 
             if sigma_estimate == 'truncated':
@@ -813,7 +734,6 @@ class lasso(object):
         return L
 
 
-
 def nominal_intervals(lasso_obj, level=0.95):
     """
     Intervals for OLS parameters of active variables
@@ -827,36 +747,32 @@ def nominal_intervals(lasso_obj, level=0.95):
             eta = np.ones_like(lasso_obj.onestep_estimator)
             eta[i] = 1.
             center = lasso_obj.onestep_estimator[i]
-            width = ndist.ppf(1-alpha/2.) * np.sqrt(SigmaE[i,i])
-            _interval = [center-width, center+width]
+            width = ndist.ppf(1 - alpha / 2.) * np.sqrt(SigmaE[i, i])
+            _interval = [center - width, center + width]
             unadjusted_intervals.append((lasso_obj.active[i], eta, center,
                                          _interval))
     return unadjusted_intervals
 
+
 def glm_sandwich_estimator(loss, B=1000):
     """
-    Bootstrap estimator of covariance of 
-    
-    .. math::
-    
-        (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}_E)
+    Bootstrap estimator of covariance of
 
-    the OLS estimator of population regression 
+    .. math::
+
+        (\bar{\beta}_E, X_{-E}^T(y-X_E\bar{\beta}_E)
+    the OLS estimator of population regression
     coefficients and inactive correlation with the
     OLS residuals.
-
     Returns
     -------
-
     estimator : callable
         Takes arguments (beta, active, inactive)
-
     """
-    
+
     def _estimator(loss, B, beta, active, inactive):
-        
         X, Y = loss.data
-        n, p = X.shape # shorthand
+        n, p = X.shape  # shorthand
 
         beta_full = np.zeros(p)
         beta_full[active] = beta
@@ -869,8 +785,8 @@ def glm_sandwich_estimator(loss, B=1000):
         inactive_bool = np.zeros(p, np.bool)
         inactive_bool[inactive] = 1
 
-        bootstrapper = pairs_bootstrap_glm(loss, 
-                                           active_bool, 
+        bootstrapper = pairs_bootstrap_glm(loss,
+                                           active_bool,
                                            beta_full=beta_full,
                                            inactive=inactive_bool)[0]
 
@@ -887,46 +803,41 @@ def glm_sandwich_estimator(loss, B=1000):
         first_moment /= B
         second_moment /= B
 
-        cov = second_moment - np.multiply.outer(first_moment, 
+        cov = second_moment - np.multiply.outer(first_moment,
                                                 first_moment[:nactive])
 
         return cov
 
     return functools.partial(_estimator, loss, B)
 
+
 def glm_parametric_estimator(loglike, dispersion=None):
     """
-    Parametric estimator of covariance of 
-    
-    .. math::
-    
-        (\bar{\beta}_E, X_{-E}^T(y-\nabla \ell(X_E\bar{\beta}_E))
+    Parametric estimator of covariance of
 
-    the OLS estimator of population regression 
+    .. math::
+
+        (\bar{\beta}_E, X_{-E}^T(y-\nabla \ell(X_E\bar{\beta}_E))
+    the OLS estimator of population regression
     coefficients and inactive correlation with the
     OLS residuals.
-
-    If `sigma` is None, it computes usual unbiased estimate 
-    of variance in Gaussian model and plugs it in, 
+    If `sigma` is None, it computes usual unbiased estimate
+    of variance in Gaussian model and plugs it in,
     assuming parametric form is correct.
-
     Returns
     -------
-
     estimator : callable
         Takes arguments (beta, active, inactive)
-
     """
-    
+
     def _estimator(loglike, dispersion, beta, active, inactive):
-        
         X, Y = loglike.data
         n, p = X.shape
         nactive = len(active)
 
-        linear_predictor = X[:,active].dot(beta)
+        linear_predictor = X[:, active].dot(beta)
         W = loglike.saturated_loss.hessian(linear_predictor)
-        Sigma_A = X[:,active].T.dot(W[:, None] * X[:,active]) 
+        Sigma_A = X[:, active].T.dot(W[:, None] * X[:, active])
         Sigma_Ainv = np.linalg.inv(Sigma_A)
 
         _unscaled = np.zeros((p, len(active)))
@@ -939,45 +850,37 @@ def glm_parametric_estimator(loglike, dispersion=None):
         # if no dispersion, use Pearson's X^2
 
         if dispersion is None:
-            eta = X[:,active].dot(beta)
-            dispersion= ((loglike.saturated_loss.smooth_objective(eta, 'grad'))**2 / W).sum() / (n - nactive)
+            eta = X[:, active].dot(beta)
+            dispersion = ((loglike.saturated_loss.smooth_objective(eta, 'grad')) ** 2 / W).sum() / (n - nactive)
 
-        _unscaled *= dispersion**2
+        _unscaled *= dispersion ** 2
 
         return _unscaled
 
     return functools.partial(_estimator, loglike, dispersion)
+
 
 def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
     """
     Fit a LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
     with $\epsilon$ IID N(0,1).
-
     Parameters
     ----------
-
     y : np.float
         Response vector
-
     X : np.float
         Design matrix
-
     sigma : np.float
         Noise variance
-
     lam_frac : float
         Multiplier for choice of $\lambda$
-
     solve_args : keyword args
         Passed to `regreg.problems.simple_problem.solve`.
-
     Returns
     -------
-
     lasso_selection : `lasso`
-         Instance of `lasso` after fitting. 
-
+         Instance of `lasso` after fitting.
     """
     n, p = X.shape
     lam = lam_frac * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 50000)))).max(0)) * sigma
@@ -986,22 +889,19 @@ def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
 
     return lasso_selector
 
+
 class data_carving(lasso):
-
     """
-
     Notes
     -----
-
     Even if a covariance estimator is supplied,
-    we assume that we can drop inactive constraints, 
+    we assume that we can drop inactive constraints,
     i.e. the same (asymptotic) independence that
     holds for parametric model is assumed to hold here
     as well.
-
     """
 
-    def __init__(self, 
+    def __init__(self,
                  loglike_select,
                  loglike_inference,
                  loglike_full,
@@ -1014,16 +914,16 @@ class data_carving(lasso):
 
     @classmethod
     def gaussian(klass,
-                 X, 
-                 Y, 
-                 feature_weights, 
+                 X,
+                 Y,
+                 feature_weights,
                  split_frac=0.9,
                  sigma=1.,
                  stage_one=None):
-        
+
         n, p = X.shape
         if stage_one is None:
-            splitn = int(n*split_frac)
+            splitn = int(n * split_frac)
             indices = np.arange(n)
             np.random.shuffle(indices)
             stage_one = indices[:splitn]
@@ -1033,25 +933,25 @@ class data_carving(lasso):
         Y1, X1 = Y[stage_one], X[stage_one]
         Y2, X2 = Y[stage_two], X[stage_two]
 
-        loglike = glm.gaussian(X, Y, coef=1. / sigma**2)
-        loglike1 = glm.gaussian(X1, Y1, coef=1. / sigma**2)
-        loglike2 = glm.gaussian(X2, Y2, coef=1. / sigma**2)
+        loglike = glm.gaussian(X, Y, coef=1. / sigma ** 2)
+        loglike1 = glm.gaussian(X1, Y1, coef=1. / sigma ** 2)
+        loglike2 = glm.gaussian(X2, Y2, coef=1. / sigma ** 2)
 
-        return klass(loglike1, loglike2, loglike, feature_weights / sigma**2)
+        return klass(loglike1, loglike2, loglike, feature_weights / sigma ** 2)
 
     @classmethod
     def logistic(klass,
-                 X, 
+                 X,
                  successes,
-                 feature_weights, 
+                 feature_weights,
                  trials=None,
                  split_frac=0.9,
                  sigma=1.,
                  stage_one=None):
-        
+
         n, p = X.shape
         if stage_one is None:
-            splitn = int(n*split_frac)
+            splitn = int(n * split_frac)
             indices = np.arange(n)
             np.random.shuffle(indices)
             stage_one = indices[:splitn]
@@ -1073,16 +973,16 @@ class data_carving(lasso):
 
     @classmethod
     def poisson(klass,
-                X, 
+                X,
                 counts,
-                feature_weights, 
+                feature_weights,
                 split_frac=0.9,
                 sigma=1.,
                 stage_one=None):
-        
+
         n, p = X.shape
         if stage_one is None:
-            splitn = int(n*split_frac)
+            splitn = int(n * split_frac)
             indices = np.arange(n)
             np.random.shuffle(indices)
             stage_one = indices[:splitn]
@@ -1101,17 +1001,17 @@ class data_carving(lasso):
 
     @classmethod
     def coxph(klass,
-              X, 
-              times, 
-              status, 
-              feature_weights, 
+              X,
+              times,
+              status,
+              feature_weights,
               split_frac=0.9,
               sigma=1.,
               stage_one=None):
-        
+
         n, p = X.shape
         if stage_one is None:
-            splitn = int(n*split_frac)
+            splitn = int(n * split_frac)
             indices = np.arange(n)
             np.random.shuffle(indices)
             stage_one = indices[:splitn]
@@ -1130,17 +1030,17 @@ class data_carving(lasso):
 
     @classmethod
     def sqrt_lasso(klass,
-                   X, 
-                   Y, 
-                   feature_weights, 
+                   X,
+                   Y,
+                   feature_weights,
                    split_frac=0.9,
                    stage_one=None,
-                   solve_args={'min_its':200}):
-        
+                   solve_args={'min_its': 200}):
+
         n, p = X.shape
 
         if stage_one is None:
-            splitn = int(n*split_frac)
+            splitn = int(n * split_frac)
             indices = np.arange(n)
             np.random.shuffle(indices)
             stage_one = indices[:splitn]
@@ -1158,9 +1058,9 @@ class data_carving(lasso):
         _sigma_E1, _df1, _lower, _upper = L._sigma_estimator_args
         _df2 = max(len(stage_two) - len(L.active), 0)
         if _df2:
-            X_E2 = X2[:,L.active]
+            X_E2 = X2[:, L.active]
             _sigma_E2 = np.linalg.norm(Y2 - X_E2.dot(np.linalg.pinv(X_E2).dot(Y2))) / (len(stage_two) - len(L.active))
-            _sigma_hat = estimate_sigma(np.sqrt((_sigma_E1**2 * _df1 + _sigma_E2**2 * _df2) / (_df1 + _df2)),
+            _sigma_hat = estimate_sigma(np.sqrt((_sigma_E1 ** 2 * _df1 + _sigma_E2 ** 2 * _df2) / (_df1 + _df2)),
                                         _df1,
                                         _lower,
                                         _upper,
@@ -1179,7 +1079,7 @@ class data_carving(lasso):
         L.lasso_solution = soln
         return L
 
-    def fit(self, solve_args={'tol':1.e-12, 'min_its':50}):
+    def fit(self, solve_args={'tol': 1.e-12, 'min_its': 50}):
 
         lasso.fit(self, solve_args=solve_args)
 
@@ -1189,8 +1089,8 @@ class data_carving(lasso):
         _feature_weights = self.feature_weights.copy()
         _feature_weights[self.active] = 0.
         _feature_weights[self.inactive] = np.inf
-        
-        _unpenalized_problem = simple_problem(self.loglike_full, 
+
+        _unpenalized_problem = simple_problem(self.loglike_full,
                                               weighted_l1norm(_feature_weights, lagrange=1.))
         _unpenalized = _unpenalized_problem.solve(**solve_args)
         _unpenalized_active = _unpenalized[self.active]
@@ -1199,22 +1099,22 @@ class data_carving(lasso):
 
         if self.covariance_estimator is None:
             H = self.loglike_full.hessian(_unpenalized)
-            H_AA = H[self.active][:,self.active]
+            H_AA = H[self.active][:, self.active]
             _cov_block = np.linalg.inv(H_AA)
             self._carve_invcov = H_AA
         else:
             C = self.covariance_estimator(_unpenalized_active, self.active, self.inactive)
-            _cov_block = C[:len(self.active)][:,:len(self.active)]
+            _cov_block = C[:len(self.active)][:, :len(self.active)]
             self._carve_invcov = np.linalg.pinv(_cov_block)
 
         _subsample_block = (n * 1. / n1) * _cov_block
-        _carve_cov = np.zeros((2*s,2*s))
-        _carve_cov[:s][:,:s] = _cov_block
-        _carve_cov[s:][:,:s] = _subsample_block
-        _carve_cov[:s][:,s:] = _subsample_block
-        _carve_cov[s:][:,s:] = _subsample_block
+        _carve_cov = np.zeros((2 * s, 2 * s))
+        _carve_cov[:s][:, :s] = _cov_block
+        _carve_cov[s:][:, :s] = _subsample_block
+        _carve_cov[:s][:, s:] = _subsample_block
+        _carve_cov[s:][:, s:] = _subsample_block
 
-        _carve_linear_part = self._constraints.linear_part.dot(np.identity(2*s)[s:])
+        _carve_linear_part = self._constraints.linear_part.dot(np.identity(2 * s)[s:])
         _carve_offset = self._constraints.offset
         self._carve_constraints = constraints(_carve_linear_part,
                                               _carve_offset,
@@ -1233,19 +1133,19 @@ class data_carving(lasso):
             raise ValueError('expecting an active variable')
 
         # shorthand
-        j = list(self.active).index(variable) 
-        twice_s = self._carve_constraints.linear_part.shape[1] 
+        j = list(self.active).index(variable)
+        twice_s = self._carve_constraints.linear_part.shape[1]
         s = sparsity = int(twice_s / 2)
 
         keep = np.ones(s, np.bool)
         keep[j] = 0
         conditioning = self._carve_invcov.dot(np.identity(twice_s)[:s])[keep]
 
-        contrast = np.zeros(2*s)
+        contrast = np.zeros(2 * s)
         contrast[j] = 1.
 
         # condition to remove dependence on nuisance parameters
-        if len(self.active) > 1: 
+        if len(self.active) > 1:
             conditional_law = self._carve_constraints.conditional(conditioning,
                                                                   conditioning.dot(self._carve_feasible))
         else:
@@ -1267,8 +1167,8 @@ class data_carving(lasso):
 
             pval = family.cdf(0, observed)
             pval = 2 * min(pval, 1 - pval)
-        
-        else: # only unpenalized coefficients were nonzero, no constraints
+
+        else:  # only unpenalized coefficients were nonzero, no constraints
 
             sd = np.sqrt((contrast * self._carve_constraints.covariance.dot(contrast)).sum())
             Z = observed / sd
@@ -1276,16 +1176,17 @@ class data_carving(lasso):
 
         return pval
 
+
 class data_splitting(data_carving):
 
-    def fit(self, solve_args={'tol':1.e-12, 'min_its':500}, use_full_cov=True):
+    def fit(self, solve_args={'tol': 1.e-12, 'min_its': 500}, use_full_cov=True):
 
         lasso.fit(self, solve_args=solve_args)
 
         _feature_weights = self.feature_weights.copy()
         _feature_weights[self.active] = 0.
         _feature_weights[self.inactive] = np.inf
-        
+
         _unpenalized_problem = simple_problem(self.loglike_inference,
                                               weighted_l1norm(_feature_weights, lagrange=1.))
         _unpenalized = _unpenalized_problem.solve(**solve_args)
@@ -1300,115 +1201,98 @@ class data_splitting(data_carving):
         else:
             H = self.loglike_inference.hessian(_unpenalized)
 
-        H_AA = H[self.active][:,self.active]
+        H_AA = H[self.active][:, self.active]
         self._cov_inference = np.linalg.inv(H_AA)
 
     def hypothesis_test(self,
                         variable,
                         df=np.inf):
         """
-
         Wald test for an active variable.
-
         """
         if variable not in self.active:
             raise ValueError('expecting an active variable')
 
         # shorthand
-        j = list(self.active).index(variable) 
+        j = list(self.active).index(variable)
 
-        Z = self._unpenalized_active[j] / np.sqrt(self._cov_inference[j,j])
+        Z = self._unpenalized_active[j] / np.sqrt(self._cov_inference[j, j])
 
         if df == np.inf:
             return 2 * ndist.sf(np.abs(Z))
         else:
             return 2 * tdist.sf(np.abs(Z), df)
 
-def _data_carving_deprec(X, y, 
-                        lam_frac=2.,
-                        sigma=1., 
-                        stage_one=None,
-                        split_frac=0.9,
-                        coverage=0.95, 
-                        ndraw=8000,
-                        burnin=2000,
-                        splitting=False,
-                        compute_intervals=True,
-                        UMPU=False):
 
+def _data_carving_deprec(X, y,
+                         lam_frac=2.,
+                         sigma=1.,
+                         stage_one=None,
+                         split_frac=0.9,
+                         coverage=0.95,
+                         ndraw=8000,
+                         burnin=2000,
+                         splitting=False,
+                         compute_intervals=True,
+                         UMPU=False):
     """
     Fit a LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
     with $\epsilon$ IID N(0,1) on a proportion (`split_frac`) of
     the data.
-
     Parameters
     ----------
-
     y : np.float
         Response vector
-
     X : np.float
         Design matrix
-
     sigma : np.float
         Noise variance
-
     lam_frac : float (optional)
         Multiplier for choice of $\lambda$. Defaults to 2.
-
     coverage : float
         Coverage for selective intervals. Defaults to 0.95.
-
     stage_one : [np.array(np.int), None] (optional)
         Index of data points to be used in  first stage.
         If None, a randomly chosen set of entries is used based on
         `split_frac`.
-
     split_frac : float (optional)
         What proportion of the data to use in the first stage?
         Defaults to 0.9.
-
     ndraw : int (optional)
         How many draws to keep from Gibbs hit-and-run sampler.
         Defaults to 8000.
-
     burnin : int (optional)
         Defaults to 2000.
-
     splitting : bool (optional)
         If True, also return splitting pvalues and intervals.
-
     compute_intervals : bool (optional)
         Compute selective intervals?
-
     UMPU : bool (optional)
         Perform the UMPU test?
-      
+
     Returns
     -------
-
     results : [(variable, pvalue, interval)
-        Indices of active variables, 
+        Indices of active variables,
         selected (twosided) pvalue and selective interval.
         If splitting, then each entry also includes
         a (split_pvalue, split_interval) using stage_two
         for inference.
-
     stage_one : `lasso`
         Results of fitting LASSO to stage one data.
-
     """
 
     n, p = X.shape
-    first_stage, stage_one, stage_two = split_model(X, y,
+    first_stage, stage_one, stage_two = split_model(X, 
+                                                    y,
                                                     sigma=sigma,
                                                     lam_frac=lam_frac,
                                                     split_frac=split_frac,
                                                     stage_one=stage_one)
     splitn = stage_one.shape[0]
 
-    L = first_stage # shorthand
+    L = first_stage  # shorthand
     s = sparsity = L.active.shape[0]
 
     if splitn < n:
@@ -1420,9 +1304,9 @@ def _data_carving_deprec(X, y,
         # stage_one and full dataset
 
         y1, X1 = y[stage_one], X[stage_one]
-        X_E = X[:,L.active] 
+        X_E = X[:, L.active]
         X_Ei = np.linalg.pinv(X_E)
-        X_E1 = X1[:,L.active]
+        X_E1 = X1[:, L.active]
         X_Ei1 = np.linalg.pinv(X_E1)
 
         inv_info_E = X_Ei.dot(X_Ei.T)
@@ -1433,31 +1317,31 @@ def _data_carving_deprec(X, y,
 
         if n - splitn > s:
 
-            linear_part = np.zeros((s, 2*s))
+            linear_part = np.zeros((s, 2 * s))
             linear_part[:, s:] = -np.diag(L.active_signs)
             b = L.constraints.offset
             con = constraints(linear_part, b)
 
             # specify covariance of 2s Gaussian vector
 
-            cov = np.zeros((2*s, 2*s))
+            cov = np.zeros((2 * s, 2 * s))
             cov[:s, :s] = inv_info_E
             cov[s:, :s] = inv_info_E
             cov[:s, s:] = inv_info_E
             cov[s:, s:] = inv_info_E1
 
-            con.covariance[:] = cov * sigma**2
+            con.covariance[:] = cov * sigma ** 2
 
             # for the conditional law
             # we will change the linear function for each coefficient
 
-            selector = np.zeros((s, 2*s))
-            selector[:, :s]  = np.identity(s)
-            conditional_linear = X_E.T.dot(X_E).dot(selector) 
+            selector = np.zeros((s, 2 * s))
+            selector[:, :s] = np.identity(s)
+            conditional_linear = X_E.T.dot(X_E).dot(selector)
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E, beta_E1]) 
+            initial = np.hstack([beta_E, beta_E1])
             OLS_func = selector
 
         else:
@@ -1473,33 +1357,33 @@ def _data_carving_deprec(X, y,
             cov[:s, :s] = inv_info_E1
             cov[s:, :s] = 0
             cov[:s, s:] = 0
-            cov[s:, s:] = np.identity(n - splitn) 
+            cov[s:, s:] = np.identity(n - splitn)
 
-            con.covariance[:] = cov * sigma**2
+            con.covariance[:] = cov * sigma ** 2
 
             conditional_linear = np.zeros((s, s + n - splitn))
-            conditional_linear[:, :s]  = np.linalg.pinv(inv_info_E1)
-            conditional_linear[:, s:] = X[stage_two,:][:,L.active].T
+            conditional_linear[:, :s] = np.linalg.pinv(inv_info_E1)
+            conditional_linear[:, s:] = X[stage_two, :][:, L.active].T
 
             selector1 = np.zeros((s, s + n - splitn))
-            selector1[:, :s]  = np.identity(s)
+            selector1[:, :s] = np.identity(s)
             selector2 = np.zeros((n - splitn, s + n - splitn))
-            selector2[:, s:]  = np.identity(n - splitn)
+            selector2[:, s:] = np.identity(n - splitn)
 
             # write the OLS estimates of full model in terms of X_E1^{dagger}y_1, y2
 
-            OLS_func = inv_info_E.dot(conditional_linear) 
+            OLS_func = inv_info_E.dot(conditional_linear)
 
             # a valid initial condition
 
-            initial = np.hstack([beta_E1, y[stage_two]]) 
-            
+            initial = np.hstack([beta_E1, y[stage_two]])
+
         pvalues = []
         intervals = []
 
         if splitting:
             y2, X2 = y[stage_two], X[stage_two]
-            X_E2 = X2[:,L.active]
+            X_E2 = X2[:, L.active]
             X_Ei2 = np.linalg.pinv(X_E2)
             beta_E2 = X_Ei2.dot(y2)
             inv_info_E2 = X_Ei2.dot(X_Ei2.T)
@@ -1526,16 +1410,16 @@ def _data_carving_deprec(X, y,
             con_cp = copy(con)
             conditional_law = con_cp.conditional(conditional_linear[keep], \
                                                  X_E.T.dot(y)[keep])
-            
+
             # tilt so that samples are closer to observed values
             # the multiplier should be the pseudoMLE so that
-            # the observed value is likely 
+            # the observed value is likely
 
             observed = (initial * eta).sum()
 
             if compute_intervals:
                 _, _, _, family = gibbs_test(conditional_law,
-                                             initial, 
+                                             initial,
                                              eta,
                                              sigma_known=True,
                                              white=False,
@@ -1555,9 +1439,9 @@ def _data_carving_deprec(X, y,
                 upper_lim_final = eta.dot(conditional_law.covariance.dot(eta)) * upper_lim
 
                 intervals.append((lower_lim_final, upper_lim_final))
-            else: # we do not really need to tilt just for p-values
+            else:  # we do not really need to tilt just for p-values
                 _, _, _, family = gibbs_test(conditional_law,
-                                             initial, 
+                                             initial,
                                              eta,
                                              sigma_known=True,
                                              white=False,
@@ -1574,28 +1458,28 @@ def _data_carving_deprec(X, y,
 
             if splitting:
 
-                if s < n - splitn: # enough data to generically
-                                   # test hypotheses. proceed as usual
+                if s < n - splitn:  # enough data to generically
+                    # test hypotheses. proceed as usual
 
-                    split_pval = ndist.cdf(beta_E2[j] / (np.sqrt(inv_info_E2[j,j]) * sigma))
+                    split_pval = ndist.cdf(beta_E2[j] / (np.sqrt(inv_info_E2[j, j]) * sigma))
                     split_pval = 2 * min(split_pval, 1. - split_pval)
                     splitting_pvalues.append(split_pval)
 
-                    splitting_interval = (beta_E2[j] - 
-                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma,
-                                          beta_E2[j] + 
-                                          split_cutoff * np.sqrt(inv_info_E2[j,j]) * sigma)
+                    splitting_interval = (beta_E2[j] -
+                                          split_cutoff * np.sqrt(inv_info_E2[j, j]) * sigma,
+                                          beta_E2[j] +
+                                          split_cutoff * np.sqrt(inv_info_E2[j, j]) * sigma)
                     splitting_intervals.append(splitting_interval)
                 else:
                     splitting_pvalues.append(np.random.sample())
                     splitting_intervals.append((np.nan, np.nan))
 
         if not splitting:
-            return zip(L.active, 
+            return zip(L.active,
                        pvalues,
                        intervals), L
         else:
-            return zip(L.active, 
+            return zip(L.active,
                        pvalues,
                        intervals,
                        splitting_pvalues,
@@ -1605,72 +1489,61 @@ def _data_carving_deprec(X, y,
         intervals = np.array([L.intervals['lower'], L.intervals['upper']]).T
         if splitting:
             splitting_pvalues = np.random.sample(len(pvalues))
-            splitting_intervals = [(np.nan, np.nan) for _ in 
+            splitting_intervals = [(np.nan, np.nan) for _ in
                                    range(len(pvalues))]
 
-            return zip(L.active, 
-                       pvalues, 
+            return zip(L.active,
+                       pvalues,
                        intervals,
                        splitting_pvalues,
                        splitting_intervals), L
         else:
-            return zip(L.active, 
+            return zip(L.active,
                        pvalues,
                        intervals), L
-            
-def split_model(X, y, 
-                sigma=1, 
+
+
+def split_model(X, 
+                y,
+                sigma=1,
                 lam_frac=1.,
                 split_frac=0.9,
                 stage_one=None):
-
     """
     Fit a LASSO with a default choice of Lagrange parameter
     equal to `lam_frac` times $\sigma \cdot E(|X^T\epsilon|)$
     with $\epsilon$ IID N(0,1) on a proportion (`split_frac`) of
     the data.
-
     Parameters
     ----------
-
     y : np.float
         Response vector
-
     X : np.float
         Design matrix
-
     sigma : np.float
         Noise variance
-
     lam_frac : float (optional)
         Multiplier for choice of $\lambda$. Defaults to 2.
-
     split_frac : float (optional)
         What proportion of the data to use in the first stage?
         Defaults to 0.9.
-
     stage_one : [np.array(np.int), None] (optional)
         Index of data points to be used in  first stage.
         If None, a randomly chosen set of entries is used based on
         `split_frac`.
-
     Returns
     -------
-
     first_stage : `lasso`
         Lasso object from stage one.
-
     stage_one : np.array(int)
         Indices used for stage one.
-
     stage_two : np.array(int)
         Indices used for stage two.
-
     """
 
     n, p = X.shape
     if stage_one is None:
-        splitn = int(n*split_frac)
+        splitn = int(n * split_frac)
         indices = np.arange(n)
         np.random.shuffle(indices)
         stage_one = indices[:splitn]
@@ -1682,75 +1555,61 @@ def split_model(X, y,
     first_stage = standard_lasso(X1, y1, sigma=sigma, lam_frac=lam_frac)
     return first_stage, stage_one, stage_two
 
-def additive_noise(X, 
-                   y, 
-                   sigma, 
+
+def additive_noise(X,
+                   y,
+                   sigma,
                    lam_frac=1.,
-                   perturb_frac=0.2, 
+                   perturb_frac=0.2,
                    y_star=None,
                    coverage=0.95,
-                   ndraw=8000, 
+                   ndraw=8000,
                    compute_intervals=True,
                    burnin=2000):
-
-
     """
-    
-    Additive noise LASSO.
 
+    Additive noise LASSO.
     Parameters
     ----------
-
     y : np.float
         Response vector
-
     X : np.float
         Design matrix
-
     sigma : np.float
         Noise variance
-
     lam_frac : float (optional)
         Multiplier for choice of $\lambda$. Defaults to 2.
-
     perturb_frac : float (optional)
         How much noise to add? Noise added has variance
         proportional to existing variance.
-
     coverage : float
         Coverage for selective intervals. Defaults to 0.95.
-
     ndraw : int (optional)
         How many draws to keep from Gibbs hit-and-run sampler.
         Defaults to 8000.
-
     burnin : int (optional)
         Defaults to 2000.
-
     compute_intervals : bool (optional)
         Compute selective intervals?
-      
+
     Returns
     -------
-
     results : [(variable, pvalue, interval)
-        Indices of active variables, 
+        Indices of active variables,
         selected (twosided) pvalue and selective interval.
         If splitting, then each entry also includes
         a (split_pvalue, split_interval) using stage_two
         for inference.
-
     randomized_lasso : `lasso`
         Results of fitting LASSO to randomized data.
-
     """
 
     n, p = X.shape
 
     # Add some noise to y and fit the LASSO at a fixed lambda
 
-    gamma = np.sqrt(perturb_frac) * sigma 
-    sigma_star = np.sqrt(sigma**2 + gamma**2)
+    gamma = np.sqrt(perturb_frac) * sigma
+    sigma_star = np.sqrt(sigma ** 2 + gamma ** 2)
     lam = lam_frac * np.mean(np.fabs(X.T.dot(np.random.standard_normal((n, 5000)))).max(0)) * sigma_star
     y_star = y + np.random.standard_normal(n) * gamma
 
@@ -1758,7 +1617,7 @@ def additive_noise(X,
     L.fit()
 
     # Form the constraint matrix on (y,y^*)
-    X_E = X[:,L.active]
+    X_E = X[:, L.active]
     X_Ei = np.linalg.pinv(X_E)
     Cov_E = X_Ei.dot(X_Ei.T)
     W_E = Cov_E.dot(L.active_signs)
@@ -1776,24 +1635,24 @@ def additive_noise(X,
 
         # form the 2s Gaussian vector we will condition on
 
-        X_minus_j = X_E[:,keep]
+        X_minus_j = X_E[:, keep]
         P_minus_j = X_minus_j.dot(np.linalg.pinv(X_minus_j))
         R_minus_j = np.identity(n) - P_minus_j
 
         theta_E = L.active_signs * (X_Ei.dot(P_minus_j.dot(y)) - lam * W_E)
-        scale = np.sqrt(Cov_E[j,j])
-        kappa = 1. / scale**2
+        scale = np.sqrt(Cov_E[j, j])
+        kappa = 1. / scale ** 2
         alpha_E = kappa * L.active_signs * Cov_E[j]
-        A = np.hstack([-alpha_E.reshape((s_obs,1)), np.identity(s_obs)])
+        A = np.hstack([-alpha_E.reshape((s_obs, 1)), np.identity(s_obs)])
         con = constraints(A, theta_E)
-        cov = np.zeros((s_obs+1, s_obs+1))
-        cov[0,0] = scale**2 * sigma**2
-        cov[1:,1:] = Cov_E * gamma**2 * np.outer(L.active_signs, L.active_signs)
+        cov = np.zeros((s_obs + 1, s_obs + 1))
+        cov[0, 0] = scale ** 2 * sigma ** 2
+        cov[1:, 1:] = Cov_E * gamma ** 2 * np.outer(L.active_signs, L.active_signs)
         con.covariance[:] = cov
-        initial = np.zeros(s_obs+1)
+        initial = np.zeros(s_obs + 1)
         initial[0] = beta_E[j]
-        initial[1:] = -X_Ei.dot(y_star-y) * L.active_signs
-        eta = np.zeros(s_obs+1)
+        initial[1:] = -X_Ei.dot(y_star - y) * L.active_signs
+        eta = np.zeros(s_obs + 1)
         eta[0] = 1.
 
         observed = (initial * eta).sum()
@@ -1837,9 +1696,10 @@ def additive_noise(X,
         pval = 2 * min(pval, 1 - pval)
         pvalues.append(pval)
 
-    return zip(L.active, 
+    return zip(L.active,
                pvalues,
                intervals), randomized_lasso
+
 
 ## Liu, Markovic and Tibshirani method based on full model
 ## conditioning only on the event j \in E for each active j
@@ -1857,10 +1717,10 @@ def _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange, initial=None,
     else:
         Q = Xinfo
         loss = quadratic_loss(Q.shape[0], Q=Q)
-        
-    loss.quadratic = identity_quadratic(0, 
-                                        0, 
-                                        -Qbeta_bar, 
+
+    loss.quadratic = identity_quadratic(0,
+                                        0,
+                                        -Qbeta_bar,
                                         0)
 
     lagrange = np.asarray(lagrange)
@@ -1873,23 +1733,25 @@ def _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange, initial=None,
     soln = problem.solve(tol=tol, min_its=min_its)
     return soln
 
+
 def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=True):
     if lagrange[j] != 0:
         lagrange_cp = lagrange.copy()
     else:
         return -np.inf, np.inf
     lagrange_cp[j] = np.inf
+
     # TODO: use initial solution for speed
-    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide) 
+    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide)
 
     p = Qbeta_bar.shape[0]
     Ij = np.zeros(p)
     Ij[j] = 1.
     nuisance = Qbeta_bar - Ij / Qi_jj * beta_barj
-    
+
     if wide:
         X, W = Xinfo
-        Qj = X.T.dot(X[:,j] * W)
+        Qj = X.T.dot(X[:, j] * W)
     else:
         Q = Xinfo
         Qj = Q[j]
@@ -1902,51 +1764,39 @@ def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=T
 
     return lower, upper
 
-class lasso_full(lasso):
-
+class ROSI(lasso):
     r"""
     A class for the LASSO for post-selection inference.
     The problem solved is
-
     .. math::
-
-        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 + 
+        \text{minimize}_{\beta} \frac{1}{2n} \|y-X\beta\|^2_2 +
             \lambda \|\beta\|_1
-
     where $\lambda$ is `lam`.
-
     Notes
     -----
-
     In solving the debiasing problem to approximate the inverse
     of (X^TWX) in a GLM, this class makes the implicit assumption
     that the scaling of X is such that diag(X^TWX) is O(n)
     with n=X.shape[0]. That is, X's are similar to IID samples
     from a population that does not depend on n.
-
     """
 
-    def __init__(self, 
-                 loglike, 
+    def __init__(self,
+                 loglike,
                  feature_weights,
-                 sparse_inverse=False):
+                 approximate_inverse='BN'):
         r"""
-
         Create a new post-selection for the LASSO problem
-
         Parameters
         ----------
-
         loglike : `regreg.smooth.glm.glm`
             A (negative) log-likelihood as implemented in `regreg`.
-
         feature_weights : np.ndarray
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
-
-        sparse_inverse : bool
-             If True, use the sparse LASSO estimate of the
-             inverse of X.T.dot(X).
+        approximate_inverse : str (optional)
+             One of "JM" (Javanmard, Montanari) or "BN" (Boot, Niedderling) or None.
+             A form of approximate inverse when p is close to (or larger) than n.
 
         """
 
@@ -1954,48 +1804,42 @@ class lasso_full(lasso):
         if np.asarray(feature_weights).shape == ():
             feature_weights = np.ones(loglike.shape) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
-        self.sparse_inverse = sparse_inverse
+        self.approximate_inverse = approximate_inverse
 
-    def fit(self, 
-            lasso_solution=None, 
-            solve_args={'tol':1.e-12, 'min_its':50},
+    def fit(self,
+            lasso_solution=None,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
             debiasing_args={}):
         """
         Fit the lasso using `regreg`.
         This sets the attributes `soln`, `onestep` and
         forms the constraints necessary for post-selection inference
         by calling `form_constraints()`.
-
         Parameters
         ----------
-
         lasso_solution : optional
              If not None, this is taken to be the solution
              of the optimization problem. No checks
              are done, though the implied affine
              constraints will generally not be satisfied.
-
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
-
         debiasing_args : dict
-             Arguments passed to `.debiased_lasso.debiasing_matrix`.
-
+             Arguments passed to `.debiased_lasso.debiasing_matrix`
+             or `.debiased_lasso.pseudoinverse_debiasing_matrix` depending
+             on `self.approximate_inverse`.
         Returns
         -------
-
         soln : np.float
              Solution to lasso.
-             
+
         Notes
         -----
-
         If `self` already has an attribute `lasso_solution`
-        this will be taken to be the solution and 
+        this will be taken to be the solution and
         no optimization problem will be solved. Supplying
         the optional argument `lasso_solution` will
         overwrite `self`'s `lasso_solution`.
-
         """
 
         self._penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
@@ -2005,7 +1849,7 @@ class lasso_full(lasso):
         elif lasso_solution is not None:
             self.lasso_solution = lasso_solution
 
-        lasso_solution = self.lasso_solution # shorthand after setting it correctly above
+        lasso_solution = self.lasso_solution  # shorthand after setting it correctly above
 
         if not np.all(lasso_solution == 0):
 
@@ -2014,7 +1858,7 @@ class lasso_full(lasso):
             self.active_signs = np.sign(lasso_solution[self.active])
             self._active_soln = lasso_solution[self.active]
 
-            X, y = self.loglike.data # presuming GLM here
+            X, y = self.loglike.data  # presuming GLM here
             n, p = X.shape
 
             W = self.loglike.saturated_loss.hessian(X.dot(lasso_solution))
@@ -2024,20 +1868,23 @@ class lasso_full(lasso):
             self._Qbeta_bar = X.T.dot(W * X.dot(lasso_solution)) - self.loglike.smooth_objective(lasso_solution, 'grad')
             self._W = W
 
-            if n > p and not self.sparse_inverse:
+            if n > p and self.approximate_inverse is None:
 
                 Q = self.loglike.hessian(lasso_solution)
                 E = self.active
                 Qi = np.linalg.inv(Q)
-                self._QiE = Qi[E][:,E]
+                self._QiE = Qi[E][:, E]
                 _beta_bar = Qi.dot(self._Qbeta_bar)
                 self._beta_barE = _beta_bar[E]
                 one_step = self._beta_barE
 
                 # Pearson's X^2 to estimate sigma
 
-                self._pearson_sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(X.dot(_beta_bar)))**2 / self._W).sum() / (n - p))
-                
+                y_hat = self.loglike.saturated_loss.mean_function(X.dot(_beta_bar))
+                self._pearson_sigma = np.sqrt(((y - y_hat) ** 2 / self._W).sum() / (n - p))
+
+            elif self.approximate_inverse is None:
+                raise ValueError('n is less than or equal to p, an approximate inverse is needed.')
             else:
 
                 X, y = self.loglike.data
@@ -2045,39 +1892,48 @@ class lasso_full(lasso):
                 # target is one-step estimator
 
                 G = self.loglike.smooth_objective(lasso_solution, 'grad')
-                M = self._M = debiasing_matrix(X * np.sqrt(W)[:, None], 
-                                               self.active,
-                                               **debiasing_args)
+                
+                if self.approximate_inverse == 'JM':
+                    M = self._M = debiasing_matrix(X * np.sqrt(W)[:, None],
+                                                   self.active,
+                                                   **debiasing_args) / n
+                    # the n is to make sure we get rows of the inverse
+                    # of (X^TWX) instead of (X^TWX/n).
 
-                # the n is to make sure we get rows of the inverse 
-                # of (X^TWX) instead of (X^TWX/n).
+                elif self.approximate_inverse == 'BN':
+                    M = self._M = pseudoinverse_debiasing_matrix(X * np.sqrt(W)[:, None],
+                                                                 self.active,
+                                                                 **debiasing_args)
+                else:
+                    raise ValueError('approximate inverse should be one of ["JM", "BN"]')
 
-                Qinv_hat = np.atleast_2d(M) / n 
+                Qinv_hat = np.atleast_2d(M) 
                 observed_target = lasso_solution[self.active] - Qinv_hat.dot(G)
                 M1 = Qinv_hat.dot(X.T)
-                self._QiE = (M1 * self._W[None,:]).dot(M1.T)
-                Xfeat = X[:,self.active]
+                self._QiE = (M1 * self._W[None, :]).dot(M1.T)
+                Xfeat = X[:, self.active]
                 Qrelax = Xfeat.T.dot(self._W[:, None] * Xfeat)
                 relaxed_soln = lasso_solution[self.active] - np.linalg.inv(Qrelax).dot(G[self.active])
                 self._beta_barE = observed_target
 
                 # relaxed Pearson's X^2 to estimate sigma
-                self._pearson_sigma = np.sqrt(((y - self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / self._W).sum() / (n - len(self.active)))
+                y_hat = self.loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)) 
+                self._pearson_sigma = np.sqrt(((y - y_hat) ** 2 / self._W).sum() / (n - len(self.active)))
 
         else:
             self.active = []
             self.inactive = np.arange(lasso_solution.shape[0])
         return self.lasso_solution
 
-    def summary(self, level=0.95,
+    def summary(self, 
+                level=0.95,
                 compute_intervals=False,
-                dispersion=None):
+                dispersion=None,
+                truth=None):
         """
         Summary table for inference adjusted for selection.
-
         Parameters
         ----------
-
         level : float
             Form level*100% selective confidence intervals.
 
@@ -2087,13 +1943,15 @@ class lasso_full(lasso):
         dispersion : float
             Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
 
+        truth : np.array
+            True values of each beta for selected variables. If not None, a column 'pval' are p-values
+            computed under these corresponding null hypotheses.
+
         Returns
         -------
-
         pval_summary : np.recarray
             Array with one entry per active variable.
             Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
-
         """
 
         if len(self.active) > 0:
@@ -2105,17 +1963,27 @@ class lasso_full(lasso):
             else:
                 sqrt_dispersion = np.sqrt(dispersion)
 
-            result = [] 
+            result = []
 
             # note that QiE is the dispersion free covariance
             # matrix!
             # dispersion comes into truncated Gaussian below
 
+            if truth is None:
+                truth = np.zeros(len(active_set))
+
             for j in range(len(active_set)):
                 idx = self.active[j]
-                lower, upper = _truncation_interval(Qbeta_bar, (X, W), QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=True)
-                sd = sqrt_dispersion * np.sqrt(QiE[j,j])
-                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
+                lower, upper = _truncation_interval(Qbeta_bar, 
+                                                    (X, W), 
+                                                    QiE[j, j], 
+                                                    idx, 
+                                                    beta_barE[j],
+                                                    self.feature_weights, 
+                                                    wide=True)
+
+                sd = sqrt_dispersion * np.sqrt(QiE[j, j])
+                tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd, mu=truth[j])
                 pvalue = tg.cdf(beta_barE[j])
                 pvalue = float(2 * min(pvalue, 1 - pvalue))
 
@@ -2128,14 +1996,14 @@ class lasso_full(lasso):
 
             df = pd.DataFrame(index=self.active,
                               data=dict([(n, d) for n, d in zip(['variable',
-                                                                 'pval', 
-                                                                 'lasso', 
+                                                                 'pval',
+                                                                 'lasso',
                                                                  'onestep',
                                                                  'sd',
-                                                                 'lower_confidence', 
+                                                                 'lower_confidence',
                                                                  'upper_confidence',
-                                                                 'lower_truncation', 
-                                                                 'upper_truncation'], 
+                                                                 'lower_truncation',
+                                                                 'upper_truncation'],
                                                                 np.array(result).T)]))
             df['variable'] = df['variable'].astype(int)
             return df
@@ -2150,59 +2018,48 @@ class lasso_full(lasso):
         return self.lasso_solution
 
     @staticmethod
-    def gaussian(X, 
-                 Y, 
-                 feature_weights, 
-                 sigma=1., 
+    def gaussian(X,
+                 Y,
+                 feature_weights,
+                 sigma=1.,
                  covariance_estimator=None,
-                 quadratic=None):
+                 quadratic=None,
+                 approximate_inverse=None):
         r"""
         Squared-error LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         Y : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         sigma : float (optional)
             Noise variance. Set to 1 if `covariance_estimator` is not None.
             This scales the loglikelihood by `sigma**(-2)`.
-
         covariance_estimator : callable (optional)
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of some of the
         rows and columns of the covariance of
@@ -2210,192 +2067,156 @@ class lasso_full(lasso):
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
         if covariance_estimator is not None:
             sigma = 1.
-        loglike = glm.gaussian(X, Y, coef=1. / sigma**2, quadratic=quadratic)
-        return lasso_full(loglike, np.asarray(feature_weights) / sigma**2)
+        loglike = glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
+        return ROSI(loglike, np.asarray(feature_weights) / sigma ** 2,
+                    approximate_inverse=approximate_inverse)
 
     @staticmethod
-    def logistic(X, 
-                 successes, 
-                 feature_weights, 
-                 trials=None, 
+    def logistic(X,
+                 successes,
+                 feature_weights,
+                 trials=None,
                  covariance_estimator=None,
-                 quadratic=None):
+                 quadratic=None,
+                 approximate_inverse=None):
         r"""
         Logistic LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
-        where $\ell$ is the negative of the logistic 
+        where $\ell$ is the negative of the logistic
         log-likelihood (half the logistic deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         successes : ndarray
             Shape (n,) -- response vector. An integer number of successes.
             For data that is proportions, multiply the proportions
             by the number of trials first.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         trials : ndarray (optional)
             Number of trials per response, defaults to
-            ones the same shape as Y. 
-
+            ones the same shape as Y.
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
-        return lasso_full(loglike, feature_weights)
+        return ROSI(loglike, feature_weights,
+                    approximate_inverse=approximate_inverse)
 
     @staticmethod
-    def poisson(X, 
-                counts, 
-                feature_weights, 
+    def poisson(X,
+                counts,
+                feature_weights,
                 covariance_estimator=None,
-                quadratic=None):
+                quadratic=None,
+                approximate_inverse=None):
         r"""
         Poisson log-linear LASSO with feature weights.
-
-        Objective function is 
+        Objective function is
         $$
         \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
         $$
-
         where $\ell^{\text{Poisson}}$ is the negative
         of the log of the Poisson likelihood (half the deviance)
         and $\lambda$ is `feature_weights`.
-
         Parameters
         ----------
-
         X : ndarray
             Shape (n,p) -- the design matrix.
-
         counts : ndarray
             Shape (n,) -- the response.
-
         feature_weights: [float, sequence]
-            Penalty weights. An intercept, or other unpenalized 
-            features are handled by setting those entries of 
-            `feature_weights` to 0. If `feature_weights` is 
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
             a float, then all parameters are penalized equally.
-
         covariance_estimator : optional
             If None, use the parameteric
             covariance estimate of the selected model.
-
         quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
             An optional quadratic term to be added to the objective.
-            Can also be a linear term by setting quadratic 
+            Can also be a linear term by setting quadratic
             coefficient to 0.
-
         Returns
         -------
-
         L : `selection.algorithms.lasso.lasso`
-        
+
         Notes
         -----
-
-        If not None, `covariance_estimator` should 
+        If not None, `covariance_estimator` should
         take arguments (beta, active, inactive)
         and return an estimate of the covariance of
         $(\bar{\beta}_E, \nabla \ell(\bar{\beta}_E)_{-E})$,
         the unpenalized estimator and the inactive
         coordinates of the gradient of the likelihood at
         the unpenalized estimator.
-
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
-        return lasso_full(loglike, feature_weights)
+        return ROSI(loglike, feature_weights,
+                    approximate_inverse=approximate_inverse)
 
-class lasso_full_modelQ(lasso):
-
+class ROSI_modelQ(lasso):
     r"""
     A class for the LASSO for post-selection inference
-    in which 
+    in which
     The problem solved is
-
     .. math::
-
-        \text{minimize}_{\beta} -(X\beta)^Ty + \frac{1}{2} \beta^TQ\beta + 
+        \text{minimize}_{\beta} -(X\beta)^Ty + \frac{1}{2} \beta^TQ\beta +
             \sum_i \lambda_i |\beta_i|
-
     where $\lambda$ is `feature_weights`.
-
     Notes
     -----
-
     In solving the debiasing problem to approximate the inverse
     of (X^TWX) in a GLM, this class makes the implicit assumption
     that the scaling of X is such that diag(X^TWX) is O(n)
     with n=X.shape[0]. That is, X's are similar to IID samples
     from a population that does not depend on n.
-
     """
 
-
-    def __init__(self, 
-                 Q,               # population or semi-supervised version of X.T.dot(X)
-                 X, 
+    def __init__(self,
+                 Q,  # population or semi-supervised version of X.T.dot(X)
+                 X,
                  y,
                  feature_weights):
         r"""
-
         Create a new post-selection for the LASSO problem
-
         Parameters
         ----------
-
         Q : np.ndarray((p,p))
-
         X : np.ndarray((n, p))
-
         y : np.ndarray(n)
-
         feature_weights : np.ndarray
             Feature weights for L-1 penalty. If a float,
             it is brodcast to all features.
-
         """
 
         self.Q = Q
@@ -2406,50 +2227,42 @@ class lasso_full_modelQ(lasso):
             feature_weights = np.ones(Q.shape[0]) * feature_weights
         self.feature_weights = np.asarray(feature_weights)
 
-    def fit(self, 
-            solve_args={'tol':1.e-12, 'min_its':50},
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
             debiasing_args={}):
         """
         Fit the lasso using `regreg`.
         This sets the attributes `soln`, `onestep` and
         forms the constraints necessary for post-selection inference
         by calling `form_constraints()`.
-
         Parameters
         ----------
-
         lasso_solution : optional
-
              If not None, this is taken to be the solution
              of the optimization problem. No checks
              are done, though the implied affine
              constraints will generally not be satisfied.
-
         solve_args : keyword args
              Passed to `regreg.problems.simple_problem.solve`.
-
         Returns
         -------
-
         soln : np.float
              Solution to lasso.
-             
+
         Notes
         -----
-
         If `self` already has an attribute `lasso_solution`
-        this will be taken to be the solution and 
+        this will be taken to be the solution and
         no optimization problem will be solved. Supplying
         the optional argument `lasso_solution` will
         overwrite `self`'s `lasso_solution`.
-
         """
 
         self._penalty = weighted_l1norm(self.feature_weights, lagrange=1.)
         problem = simple_problem(self._loss, self._penalty)
         self.lasso_solution = problem.solve(self._linear_term, **solve_args)
 
-        lasso_solution = self.lasso_solution # shorthand after setting it correctly above
+        lasso_solution = self.lasso_solution  # shorthand after setting it correctly above
 
         if not np.all(lasso_solution == 0):
 
@@ -2460,20 +2273,22 @@ class lasso_full_modelQ(lasso):
 
             # Needed for finding truncation intervals
 
-            G = self._loss.smooth_objective(lasso_solution, 'grad') + self._linear_term.objective(lasso_solution, 'grad')
-            self._Qbeta_bar = self.Q.dot(lasso_solution) - G 
+            G = (self._loss.smooth_objective(lasso_solution, 'grad') + 
+                 self._linear_term.objective(lasso_solution, 'grad'))
+
+            self._Qbeta_bar = self.Q.dot(lasso_solution) - G
 
             Q = self.Q
             E = self.active
-            QiE = np.linalg.inv(Q)[E] # maybe we want to use a debised estimate
-            self._QiE = QiE[:,E]
+            QiE = np.linalg.inv(Q)[E]  # maybe we want to use a debised estimate
+            self._QiE = QiE[:, E]
             self._beta_barE = QiE.dot(self._Qbeta_bar)
 
             # Pearson's X^2 to estimate sigma from relaxed estimator
             y, X = self.y, self.X
             n, p = X.shape
-            relaxed_beta_barE = np.linalg.inv(Q[E][:,E]).dot(X[:,E].T.dot(y))
-            self._pearson_sigma = np.sqrt(((y - X[:,E].dot(relaxed_beta_barE))**2).sum() / (n - len(self.active)))
+            relaxed_beta_barE = np.linalg.inv(Q[E][:, E]).dot(X[:, E].T.dot(y))
+            self._pearson_sigma = np.sqrt(((y - X[:, E].dot(relaxed_beta_barE)) ** 2).sum() / (n - len(self.active)))
 
         else:
             self.active = []
@@ -2485,26 +2300,19 @@ class lasso_full_modelQ(lasso):
                 dispersion=None):
         """
         Summary table for inference adjusted for selection.
-
         Parameters
         ----------
-
         level : float
             Form level*100% selective confidence intervals.
-
         compute_intervals : bool
             Should we compute confidence intervals?
-
         dispersion : float
             Estimate of dispersion. Defaults to a Pearson's X^2 estimate in the relaxed model.
-
         Returns
         -------
-
         pval_summary : np.recarray
             Array with one entry per active variable.
             Columns are 'variable', 'pval', 'lasso', 'onestep', 'lower_trunc', 'upper_trunc', 'sd'.
-
         """
 
         if len(self.active) > 0:
@@ -2516,19 +2324,25 @@ class lasso_full_modelQ(lasso):
                 sqrt_dispersion = np.sqrt(dispersion)
             active_set, QiE, beta_barE, Qbeta_bar = self.active, self._QiE, self._beta_barE, self._Qbeta_bar
 
-            result = [] 
+            result = []
 
             for j in range(len(active_set)):
                 idx = self.active[j]
-                lower, upper = _truncation_interval(Qbeta_bar, self.Q, QiE[j,j], idx, beta_barE[j], self.feature_weights, wide=False)
+                lower, upper = _truncation_interval(Qbeta_bar, 
+                                                    self.Q, 
+                                                    QiE[j, j], 
+                                                    idx, 
+                                                    beta_barE[j],
+                                                    self.feature_weights, 
+                                                    wide=False)
 
-                sd = sqrt_dispersion * np.sqrt(QiE[j,j])
+                sd = sqrt_dispersion * np.sqrt(QiE[j, j])
                 tg = TG([(-np.inf, lower), (upper, np.inf)], scale=sd)
                 pvalue = tg.cdf(beta_barE[j])
                 pvalue = float(2 * min(pvalue, 1 - pvalue))
 
                 if compute_intervals:
-                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=1-level)
+                    l, u = tg.equal_tailed_interval(beta_barE[j], alpha=1 - level)
                 else:
                     l, u = np.nan, np.nan
 
@@ -2536,14 +2350,14 @@ class lasso_full_modelQ(lasso):
 
             df = pd.DataFrame(index=self.active,
                               data=dict([(n, d) for n, d in zip(['variable',
-                                                                 'pval', 
-                                                                 'lasso', 
+                                                                 'pval',
+                                                                 'lasso',
                                                                  'onestep',
                                                                  'sd',
-                                                                 'lower_confidence', 
+                                                                 'lower_confidence',
                                                                  'upper_confidence',
-                                                                 'lower_truncation', 
-                                                                 'upper_truncation'], 
+                                                                 'lower_truncation',
+                                                                 'upper_truncation'],
                                                                 np.array(result).T)]))
             df['variable'] = df['variable'].astype(int)
             return df
