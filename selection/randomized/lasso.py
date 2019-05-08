@@ -153,12 +153,6 @@ class lasso(gaussian_query):
         beta_bar[overall] = _beta_unpenalized
         self._beta_full = beta_bar
 
-        # observed state for score in internal coordinates
-        # XXX is this used anywhere?
-
-        #self.observed_internal_state = np.hstack([_beta_unpenalized,
-         #                                         -self.loglike.smooth_objective(beta_bar, 'grad')[inactive]])
-
         # form linear part
 
         self.num_opt_var = self.observed_opt_state.shape[0]
