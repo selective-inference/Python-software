@@ -1,3 +1,8 @@
+"""
+Core module for learning selection
+
+"""
+
 from copy import copy
 import functools
 
