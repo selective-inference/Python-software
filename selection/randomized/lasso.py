@@ -17,8 +17,7 @@ import regreg.affine as ra
 from ..constraints.affine import constraints
 from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 
-from .query import (gaussian_query,
-                    affine_gaussian_sampler)
+from .query import gaussian_query
 
 from .randomization import randomization
 from ..base import restricted_estimator
@@ -176,6 +175,13 @@ class lasso(gaussian_query):
 
         # set the observed score (data dependent) state
 
+        # observed_score_state is
+        # \nabla \ell(\bar{\beta}_E) + Q(\bar{\beta}_E) \bar{\beta}_E
+        # in linear regression this is _ALWAYS_ -X^TY
+        # 
+        # should be asymptotically equivalent to
+        # \nabla \ell(\beta^*) + Q(\beta^*)\beta^*
+
         self.observed_score_state = _score_linear_term.dot(_beta_unpenalized)
         self.observed_score_state[inactive] += self.loglike.smooth_objective(beta_bar, 'grad')[inactive]
 
@@ -196,10 +202,12 @@ class lasso(gaussian_query):
         # beta_U piece
 
         unpenalized_slice = slice(active.sum(), self.num_opt_var)
-        unpenalized_directions = np.array([signed_basis_vector(p, j, 1) for j in np.nonzero(unpenalized)[0]]).T
+        unpenalized_directions = np.array([signed_basis_vector(p, j, 1) for 
+                                           j in np.nonzero(unpenalized)[0]]).T
         if unpenalized.sum():
             opt_linear[:, unpenalized_slice] = (_hessian_unpen
-                                                      + self.ridge_term * unpenalized_directions)
+                                                + self.ridge_term *
+                                                unpenalized_directions)
 
         opt_offset = self.initial_subgrad
 
@@ -226,11 +234,15 @@ class lasso(gaussian_query):
         if self._initial_omega is None:
             self._initial_omega = self.randomizer.sample()
 
-        quad = rr.identity_quadratic(self.ridge_term, 0, -self._initial_omega, 0)
+        quad = rr.identity_quadratic(self.ridge_term, 
+                                     0, 
+                                     -self._initial_omega, 
+                                     0)
         problem = rr.simple_problem(self.loglike, self.penalty)
 
         initial_soln = problem.solve(quad, **solve_args) 
-        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 'grad') +
+        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
+                                                          'grad') +
                             quad.objective(initial_soln, 'grad'))
 
         return initial_soln, initial_subgrad

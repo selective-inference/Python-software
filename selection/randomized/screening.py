@@ -69,8 +69,6 @@ class screening(gaussian_query):
 
 class marginal_screening(screening):
 
-    useC = True
-
     def __init__(self,
                  observed_data,
                  covariance, 
