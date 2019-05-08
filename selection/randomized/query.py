@@ -649,7 +649,7 @@ class optimization_sampler(object):
 
         Parameters
         ----------
-
+ 
         observed : np.float
             A vector of parameters with shape `self.shape`,
             representing coordinates of the target.
@@ -763,14 +763,21 @@ class optimization_sampler(object):
         if parameter is None:
             parameter = np.zeros(observed_target.shape[0])
 
-        _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target, ndraw, normal_sample=normal_sample)
+        _intervals = optimization_intervals([(self, 
+                                              sample, 
+                                              target_cov, 
+                                              score_cov)],
+                                            observed_target, 
+                                            ndraw, 
+                                            normal_sample=normal_sample)
         pvals = []
 
         for i in range(observed_target.shape[0]):
             keep = np.zeros_like(observed_target)
             keep[i] = 1.
-            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternatives[i]))
+            pvals.append(_intervals.pivot(keep, 
+                                          candidate=parameter[i], 
+                                          alternative=alternatives[i]))
 
         return np.array(pvals)
 
@@ -853,9 +860,10 @@ class affine_gaussian_sampler(optimization_sampler):
                       observed_target, 
                       target_cov, 
                       target_score_cov, 
-                      init_soln, # initial (observed) value of optimization variables -- 
-                                 # used as a feasible point.
-                                 # precise value used only for independent estimator 
+                      # initial (observed) value of optimization variables -- 
+                      # used as a feasible point.
+                      # precise value used only for independent estimator 
+                      init_soln, 
                       solve_args={'tol':1.e-12}, 
                       level=0.9):
         """
@@ -1037,9 +1045,13 @@ class optimization_intervals(object):
             if opt_sample is not None:
                 if opt_sample.shape[0] < nsample:
                     if opt_sample.ndim == 1:
-                        tiled_opt_sample = np.tile(opt_sample, int(np.ceil(nsample / opt_sample.shape[0])))[:nsample]
+                        tiled_opt_sample = np.tile(opt_sample, 
+                                              int(np.ceil(nsample / 
+                                              opt_sample.shape[0])))[:nsample]
                     else:
-                        tiled_opt_sample = np.tile(opt_sample, (int(np.ceil(nsample / opt_sample.shape[0])), 1))[:nsample]
+                        tiled_opt_sample = np.tile(opt_sample, 
+                                              (int(np.ceil(nsample / 
+                                              opt_sample.shape[0])), 1))[:nsample]
                 else:
                     tiled_opt_sample = opt_sample[:nsample]
             else:
@@ -1052,12 +1064,16 @@ class optimization_intervals(object):
         self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
         for opt_sampler, opt_sample, _, _ in opt_sampling_info:
-            self._logden += opt_sampler.log_density(opt_sampler.observed_score_state, 
-                                                    opt_sample)
+            self._logden += opt_sampler.log_density(
+                                opt_sampler.observed_score_state, 
+                                opt_sample)
             if opt_sample.shape[0] < nsample:
-                self._logden = np.tile(self._logden, int(np.ceil(nsample / opt_sample.shape[0])))[:nsample]
+                self._logden = np.tile(self._logden, 
+                                       int(np.ceil(nsample / 
+                                       opt_sample.shape[0])))[:nsample]
 
-        self.observed = observed.copy() # this is our observed unpenalized estimator
+        # this is our observed unpenalized estimator
+        self.observed = observed.copy()
 
         # average covariances in case they might be different
 
@@ -1068,9 +1084,10 @@ class optimization_intervals(object):
             self.target_cov /= len(opt_sampling_info)
 
         if normal_sample is None:
-            self._normal_sample = np.random.multivariate_normal(mean=np.zeros(self.target_cov.shape[0]), 
-                                                                cov=self.target_cov, 
-                                                                size=(nsample,))
+            self._normal_sample = np.random.multivariate_normal(
+                                      mean=np.zeros(self.target_cov.shape[0]), 
+                                      cov=self.target_cov, 
+                                      size=(nsample,))
         else:
             self._normal_sample = normal_sample
 
@@ -1172,23 +1189,6 @@ class optimization_intervals(object):
                 delta *= 2
                 count += 1
             lower = bisect(_rootL, Ll, Ul)
-        DEBUG = False
-        if DEBUG:
-            print(_rootL(lower), _rootU(upper))
-            print(_rootL(lower-0.01*(upper-lower)), _rootU(upper+0.01*(upper-lower)), 'perturb')
-            import matplotlib.pyplot as plt
-            plt.clf()
-            X = np.linspace(lower, upper, 101)
-            plt.plot(X, [_rootL(x) + (1 + level) / 2. for x in X])
-            plt.plot([lower, lower], [0, 1], 'k--')
-            plt.plot([upper, upper], [0, 1], 'k--')
-            plt.plot([guess[0], guess[0]], [0, 1], 'r--')
-            plt.plot([guess[1], guess[1]], [0, 1], 'r--')
-            plt.plot([Ll, Ll], [0, 1], 'g--')
-            plt.plot([Ul, Ul], [0, 1], 'g--')
-            plt.plot([Lu, Lu], [0, 1], 'g--')
-            plt.plot([Uu, Uu], [0, 1], 'g--')
-            plt.savefig('pivot.pdf')
 
         return lower + observed_stat, upper + observed_stat
 
