@@ -121,7 +121,7 @@ def projection_cone_nosign(p, max_idx):
 
 def test_fstep(s=0, n=100, p=10, Langevin_steps=10000, burning=2000, condition_on_sign=True):
 
-    X, y, _, nonzero, sigma = gaussian_instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)
+    X, y, _, nonzero, sigma = gaussian_instance(n=n, p=p, random_signs=True, s=s, sigma=1.,rho=0)[:5]
     epsilon = 0.
     randomization = laplace(loc=0, scale=1.)
 
