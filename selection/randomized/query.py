@@ -298,7 +298,9 @@ class gaussian_query(query):
                                                selection_info=self.selection_variable,
                                                useC=self.useC)
 
-    def _setup_implied_gaussian(self, opt_linear, opt_offset):
+    def _setup_implied_gaussian(self, 
+                                opt_linear, 
+                                opt_offset):
 
         _, prec = self.randomizer.cov_prec
 

@@ -113,7 +113,10 @@ class lasso(gaussian_query):
 
         p = self.nfeature
 
-        self.initial_soln, self.initial_subgrad = self._solve_randomized_problem(perturb=perturb, solve_args=solve_args)
+        (self.initial_soln, 
+         self.initial_subgrad) = self._solve_randomized_problem(
+                                     perturb=perturb, 
+                                     solve_args=solve_args)
 
         active_signs = np.sign(self.initial_soln)
         active = self._active = active_signs != 0
@@ -128,7 +131,9 @@ class lasso(gaussian_query):
         self._unpenalized = unpenalized
 
         _active_signs = active_signs.copy()
-        _active_signs[unpenalized] = np.nan  # don't release sign of unpenalized variables
+
+        # don't release sign of unpenalized variables
+        _active_signs[unpenalized] = np.nan  
         self.selection_variable = {'sign': _active_signs,
                                    'variables': self._overall}
 
@@ -140,7 +145,9 @@ class lasso(gaussian_query):
         self.observed_opt_state = np.concatenate([initial_scalings,
                                                   initial_unpenalized])
 
-        _beta_unpenalized = restricted_estimator(self.loglike, self._overall, solve_args=solve_args)
+        _beta_unpenalized = restricted_estimator(self.loglike, 
+                                                 self._overall, 
+                                                 solve_args=solve_args)
 
         beta_bar = np.zeros(p)
         beta_bar[overall] = _beta_unpenalized
@@ -149,8 +156,8 @@ class lasso(gaussian_query):
         # observed state for score in internal coordinates
         # XXX is this used anywhere?
 
-        self.observed_internal_state = np.hstack([_beta_unpenalized,
-                                                  -self.loglike.smooth_objective(beta_bar, 'grad')[inactive]])
+        #self.observed_internal_state = np.hstack([_beta_unpenalized,
+         #                                         -self.loglike.smooth_objective(beta_bar, 'grad')[inactive]])
 
         # form linear part
 
@@ -822,7 +829,14 @@ class split_lasso(lasso):
                              feature_weights,
                              proportion)
 
-    def _setup_implied_gaussian(self):
+    def _setup_implied_gaussian(self, 
+                                opt_linear, 
+                                opt_offset):
+
+        # key identity, prec.dot(opt_linear) = scalar * I[:,E]
+        # so, the conditional precision is Q[E][:,E]
+        # and logdens_linear is Q[E][:,E]^{-1} padded with zeros
+        # to be E x p
 
         _, prec = self.randomizer.cov_prec
         opt_linear, opt_offset = self.opt_transform
@@ -841,19 +855,26 @@ class split_lasso(lasso):
         return cond_mean, cond_cov, cond_precision, logdens_linear
 
     def _solve_randomized_problem(self, 
-                                  perturb=None, # optional binary vector indicating selection data 
+                                  # optional binary vector 
+                                  # indicating selection data 
+                                  perturb=None, 
                                   solve_args={'tol': 1.e-12, 'min_its': 50}):
 
-        # take a new perturbation if supplied
+        # take a new perturbation if none supplied
         if perturb is not None:
             self._selection_idx = perturb
         if self._selection_idx is None:
             X, y = self.loglike.data
             total_size = n = X.shape[0]
             subsample = np.random.binomial(1, self.proportion, size=(n,))
+
         n, m = self.total_size, self.subsample_size
         inv_frac = n / m
-        quadratic = rr.identity_quadratic(epsilon, 0, 0, 0)
+        quad = rr.identity_quadratic(self.ridge_term,
+                                     0,
+                                     0,
+                                     0,)
+        
         m, n = self.subsample_size, self.total_size # shorthand
         idx = np.zeros(n, np.bool)
         idx[:m] = 1
@@ -864,12 +885,11 @@ class split_lasso(lasso):
 
         randomized_loss.quadratic = quadratic
 
-
-
         problem = rr.simple_problem(self.loglike, self.penalty)
 
         initial_soln = problem.solve(quad, **solve_args) 
-        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 'grad') +
+        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
+                                                          'grad') +
                             quad.objective(initial_soln, 'grad'))
 
         initial_soln = problem.solve(quad, **solve_args)         
