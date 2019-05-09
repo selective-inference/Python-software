@@ -526,7 +526,9 @@ class multiple_queries(object):
 
         ndraw = self.opt_sampling_info[0][1].shape[0] # nsample for normal samples taken from the 1st objective
 
-        _intervals = optimization_intervals(self.opt_sampling_info, observed_target, ndraw)
+        _intervals = optimization_intervals(self.opt_sampling_info, 
+                                            observed_target, 
+                                            ndraw)
 
         limits = []
 

@@ -134,8 +134,10 @@ class lasso(gaussian_query):
 
         # don't release sign of unpenalized variables
         _active_signs[unpenalized] = np.nan  
+        ordered_variables = list((tuple(np.nonzero(active)[0]) +
+                                  tuple(np.nonzero(unpenalized)[0])))
         self.selection_variable = {'sign': _active_signs,
-                                   'variables': self._overall}
+                                   'variables': ordered_variables}
 
         # initial state for opt variables
 
@@ -191,13 +193,17 @@ class lasso(gaussian_query):
             v[j] = s
             return v
 
-        active_directions = np.array([signed_basis_vector(p, j, active_signs[j]) for j in np.nonzero(active)[0]]).T
+        active_directions = np.array([signed_basis_vector(p, 
+                                                          j, 
+                                                          active_signs[j]) 
+                                      for j in np.nonzero(active)[0]]).T
 
         scaling_slice = slice(0, active.sum())
         if np.sum(active) == 0:
             _opt_hessian = 0
         else:
-            _opt_hessian = _hessian_active * active_signs[None, active] + self.ridge_term * active_directions
+            _opt_hessian = (_hessian_active * active_signs[None, active] 
+                            + self.ridge_term * active_directions)
         opt_linear[:, scaling_slice] = _opt_hessian
 
         # beta_U piece
@@ -239,6 +245,7 @@ class lasso(gaussian_query):
                                      0, 
                                      -self._initial_omega, 
                                      0)
+
         problem = rr.simple_problem(self.loglike, self.penalty)
 
         initial_soln = problem.solve(quad, **solve_args) 
@@ -815,35 +822,53 @@ class split_lasso(lasso):
     def __init__(self,
                  loglike,
                  feature_weights,
-                 proportion):
+                 proportion_select,
+                 ridge_term,
+                 perturb=None):
 
         (self.loglike,
          self.feature_weights,
-         self.proportion) = (loglike,
+         self.proportion_select,
+         self.ridge_term) = (loglike,
                              feature_weights,
-                             proportion)
+                             proportion_select,
+                             ridge_term)
+
+        self.nfeature = p = self.loglike.shape[0]
+        self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
+        self._initial_omega = perturb
 
     def _setup_implied_gaussian(self, 
                                 opt_linear, 
                                 opt_offset):
 
-        # key identity, prec.dot(opt_linear) = scalar * I[:,E]
-        # so, the conditional precision is Q[E][:,E]
-        # and logdens_linear is Q[E][:,E]^{-1} padded with zeros
+        # key observation is that the covariance of the added noise is 
+        # roughly (1 - pi) / pi * X^TX (in OLS regression, similar for other
+        # models), so the precision is formally pi / (1 - pi) (X^TX)^{-1}
+        # and prec.dot(opt_linear) = pi / (1 - pi) * I[:,num(E)]
+        # (because opt_linear has shape p x E with the columns
+        # being those non-zero columns of the solution
+        # the conditional precision is Q[E][:,E] * (pi / (1 - pi))
+        # and logdens_linear is (1 - pi) / pi * Q[E][:,E]^{-1} 
+        # padded with zeros
         # to be E x p
 
-        _, prec = self.randomizer.cov_prec
-        opt_linear, opt_offset = self.opt_transform
+        pi_s = self.proportion_select
+        ratio = (1 - pi_s) / pi_s
 
-        if np.asarray(prec).shape in [(), (0,)]:
-            cond_precision = opt_linear.T.dot(opt_linear) * prec
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T) * prec
-        else:
-            cond_precision = opt_linear.T.dot(prec.dot(opt_linear))
-            cond_cov = np.linalg.inv(cond_precision)
-            logdens_linear = cond_cov.dot(opt_linear.T).dot(prec)
+        ordered_vars = self.selection_variable['variables']
+        cond_precision = opt_linear[ordered_vars] / ratio
+        # for unpenalized this will be a problem
+        signs = self.selection_variable['sign'][ordered_vars]
+        signs[np.isnan(signs)] = 1
 
+        cond_precision *= signs[:, None]
+        assert(np.linalg.norm(cond_precision - cond_precision.T) / 
+               np.linalg.norm(cond_precision) < 1.e-6)
+        cond_cov = np.linalg.inv(cond_precision)
+        logdens_linear = np.zeros((len(ordered_vars),
+                                   self.nfeature))
+        logdens_linear[:,ordered_vars] = cond_cov
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         return cond_mean, cond_cov, cond_precision, logdens_linear
@@ -857,35 +882,104 @@ class split_lasso(lasso):
         # take a new perturbation if none supplied
         if perturb is not None:
             self._selection_idx = perturb
-        if self._selection_idx is None:
+        if not hasattr(self, "_selection_idx"):
             X, y = self.loglike.data
             total_size = n = X.shape[0]
-            subsample = np.random.binomial(1, self.proportion, size=(n,))
+            pi_s = self.proportion_select
+            self._selection_idx = np.zeros(n, np.bool)
+            self._selection_idx[:int(pi_s*n)] = True
+            np.random.shuffle(self._selection_idx)
 
-        n, m = self.total_size, self.subsample_size
-        inv_frac = n / m
+        inv_frac = 1 / self.proportion_select
         quad = rr.identity_quadratic(self.ridge_term,
                                      0,
                                      0,
                                      0,)
         
-        m, n = self.subsample_size, self.total_size # shorthand
-        idx = np.zeros(n, np.bool)
-        idx[:m] = 1
-        np.random.shuffle(idx)
-
-        randomized_loss = loss.subsample(idx)
+        randomized_loss = self.loglike.subsample(self._selection_idx)
         randomized_loss.coef *= inv_frac
 
-        randomized_loss.quadratic = quadratic
-
-        problem = rr.simple_problem(self.loglike, self.penalty)
-
+        problem = rr.simple_problem(randomized_loss, self.penalty)
         initial_soln = problem.solve(quad, **solve_args) 
         initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
                                                           'grad') +
                             quad.objective(initial_soln, 'grad'))
 
-        initial_soln = problem.solve(quad, **solve_args)         
         return initial_soln, initial_subgrad
+
+    @staticmethod
+    def gaussian(X,
+                 Y,
+                 feature_weights,
+                 proportion,
+                 sigma=1.,
+                 quadratic=None,
+                 ridge_term=None):
+        r"""
+        Squared-error LASSO with feature weights.
+        Objective function is (before randomization)
+
+        .. math::
+
+            \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + 
+           \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\lambda$ is `feature_weights`. The ridge term
+        is determined by the Hessian and `np.std(Y)` by default.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        Y : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        sigma : float (optional)
+            Noise variance. Set to 1 if `covariance_estimator` is not None.
+            This scales the loglikelihood by `sigma**(-2)`.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        randomizer : str
+            One of ['laplace', 'logistic', 'gaussian']
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+
+        loglike = rr.glm.gaussian(X, 
+                                  Y, 
+                                  coef=1. / sigma ** 2, 
+                                  quadratic=quadratic)
+        n, p = X.shape
+
+        mean_diag = np.mean((X ** 2).sum(0))
+        if ridge_term is None:
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+
+        return split_lasso(loglike, 
+                           np.asarray(feature_weights) / sigma ** 2,
+                           proportion,
+                           ridge_term) 
+
 
