@@ -16,16 +16,17 @@ from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
 
-def test_split_lasso(n=100, 
+def test_split_lasso(n=400, 
                      p=200, 
                      signal_fac=1.5, 
                      s=5, 
                      sigma=3, 
-                     target='full', 
+                     target='full',
                      rho=0.4, 
                      proportion=0.5,
-                     ndraw=5000, 
-                     burnin=1000):
+                     orthogonal=False,
+                     ndraw=10000, 
+                     burnin=5000):
     """
     Test data splitting lasso
     """
@@ -41,13 +42,17 @@ def test_split_lasso(n=100,
                       sigma=sigma, 
                       random_signs=True)[:3]
 
+    if orthogonal:
+        X = np.linalg.svd(X, full_matrices=False)[0] * np.sqrt(n)
+        Y = X.dot(beta) + np.random.standard_normal(n) * sigma
+
     n, p = X.shape
 
     sigma_ = np.std(Y)
     if target is not 'debiased':
         W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
     else:
-        W = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
+        W = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_ * 1.5
 
     conv = const(X, 
                  Y, 
@@ -100,7 +105,7 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          rho=rho, 
                          target=target)
 
-def main(nsim=500, n=100, p=200, target='full', sigma=3):
+def main(nsim=500, n=400, p=50, target='selected', sigma=3):
 
     import matplotlib.pyplot as plt
     P0, PA = [], []

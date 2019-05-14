@@ -255,20 +255,25 @@ class gaussian_query(query):
 
     # Private methods
 
-    def _set_sampler(self, 
-                     A_scaling,
-                     b_scaling,
-                     opt_linear,
-                     opt_offset):
+    def _setup_sampler(self, 
+                       A_scaling,
+                       b_scaling,
+                       opt_linear,
+                       opt_offset,
+                       # optional dispersion parameter
+                       # for covariance of randomization
+                       dispersion=1):
 
         if not np.all(A_scaling.dot(self.observed_opt_state) - b_scaling <= 0):
             raise ValueError('constraints not satisfied')
 
+        #print(dispersion, 'huh')
         (cond_mean, 
          cond_cov, 
          cond_precision, 
          logdens_linear) = self._setup_implied_gaussian(opt_linear, 
-                                                        opt_offset)
+                                                        opt_offset,
+                                                        dispersion)
 
         def log_density(logdens_linear, offset, cond_prec, opt, score):
             if score.ndim == 1:
@@ -278,6 +283,7 @@ class gaussian_query(query):
             arg = opt + mean_term
             return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
 
+        # print(cond_precision, 'precision')
         log_density = functools.partial(log_density, 
                                         logdens_linear, 
                                         opt_offset, 
@@ -300,9 +306,12 @@ class gaussian_query(query):
 
     def _setup_implied_gaussian(self, 
                                 opt_linear, 
-                                opt_offset):
+                                opt_offset,
+                                # optional dispersion parameter
+                                # for covariance of randomization
+                                dispersion=1):
 
-        _, prec = self.randomizer.cov_prec
+        _, prec = self.randomizer.cov_prec / dispersion
 
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec

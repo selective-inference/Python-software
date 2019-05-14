@@ -224,10 +224,11 @@ class lasso(gaussian_query):
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = np.zeros(self.num_opt_var)
 
-        self._set_sampler(A_scaling,
-                          b_scaling,
-                          opt_linear,
-                          opt_offset)
+        self._setup_sampler_data = (A_scaling,
+                                    b_scaling,
+                                    opt_linear,
+                                    opt_offset)
+        self._setup_sampler(*self._setup_sampler_data)
 
         return active_signs
 
@@ -838,14 +839,48 @@ class split_lasso(lasso):
         self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
         self._initial_omega = perturb
 
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
+            perturb=None,
+            estimate_dispersion=True):
+
+        signs = lasso.fit(self, 
+                          solve_args=solve_args,
+                          perturb=perturb)
+        
+        # for data splitting randomization,
+        # we need to estimate a dispersion parameter
+
+        # we then setup up the sampler again
+
+        if estimate_dispersion:
+
+            X, y = self.loglike.data
+            n, p = X.shape
+            df_fit = len(self.selection_variable['variables'])
+
+            dispersion = 2 * (self.loglike.smooth_objective(self._beta_full, 
+                                                            'func') /
+                          (n - df_fit))
+
+            #print('dispersion', dispersion)
+
+            # run setup again after 
+            # estimating dispersion 
+            self._setup_sampler(*self._setup_sampler_data, 
+                                 dispersion=dispersion)
+
+        return signs
+
     def _setup_implied_gaussian(self, 
                                 opt_linear, 
-                                opt_offset):
+                                opt_offset,
+                                dispersion):
 
         # key observation is that the covariance of the added noise is 
         # roughly (1 - pi) / pi * X^TX (in OLS regression, similar for other
-        # models), so the precision is formally pi / (1 - pi) (X^TX)^{-1}
-        # and prec.dot(opt_linear) = pi / (1 - pi) * I[:,num(E)]
+        # models), so the precision is \phi * pi / (1 - pi) (X^TX)^{-1} 
+        # and prec.dot(opt_linear) = pi / (1 - pi) * I[:,num(E)] * dispersion
         # (because opt_linear has shape p x E with the columns
         # being those non-zero columns of the solution
         # the conditional precision is Q[E][:,E] * (pi / (1 - pi))
@@ -857,8 +892,9 @@ class split_lasso(lasso):
         ratio = (1 - pi_s) / pi_s
 
         ordered_vars = self.selection_variable['variables']
-        cond_precision = opt_linear[ordered_vars] / ratio
-        # for unpenalized this will be a problem
+        
+        cond_precision = opt_linear[ordered_vars] / (dispersion * ratio)
+
         signs = self.selection_variable['sign'][ordered_vars]
         signs[np.isnan(signs)] = 1
 
@@ -867,7 +903,7 @@ class split_lasso(lasso):
                np.linalg.norm(cond_precision) < 1.e-6)
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = np.zeros((len(ordered_vars),
-                                   self.nfeature))
+                                   self.nfeature)) 
         logdens_linear[:,ordered_vars] = cond_cov
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
