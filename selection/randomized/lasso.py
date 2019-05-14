@@ -5,16 +5,8 @@ from copy import copy
 import numpy as np
 from scipy.stats import norm as ndist
 
-import functools
-from copy import copy
-
-import numpy as np
-from scipy.stats import norm as ndist
-
 import regreg.api as rr
-import regreg.affine as ra
 
-from ..constraints.affine import constraints
 from ..algorithms.sqrt_lasso import solve_sqrt_lasso, choose_lambda
 
 from .query import gaussian_query
@@ -157,15 +149,15 @@ class lasso(gaussian_query):
 
         # form linear part
 
-        self.num_opt_var = self.observed_opt_state.shape[0]
+        num_opt_var = self.observed_opt_state.shape[0]
 
         # (\bar{\beta}_{E \cup U}, N_{-E}, c_E, \beta_U, z_{-E})
         # E for active
         # U for unpenalized
         # -E for inactive
 
-        opt_linear = np.zeros((p, self.num_opt_var))
-        _score_linear_term = np.zeros((p, self.num_opt_var))
+        opt_linear = np.zeros((p, num_opt_var))
+        _score_linear_term = np.zeros((p, num_opt_var))
 
         # \bar{\beta}_{E \cup U} piece -- the unpenalized M estimator
 
@@ -209,7 +201,7 @@ class lasso(gaussian_query):
 
         # beta_U piece
 
-        unpenalized_slice = slice(active.sum(), self.num_opt_var)
+        unpenalized_slice = slice(active.sum(), num_opt_var)
         unpenalized_directions = np.array([signed_basis_vector(p, j, 1) for 
                                            j in np.nonzero(unpenalized)[0]]).T
         if unpenalized.sum():
@@ -222,8 +214,8 @@ class lasso(gaussian_query):
         # now make the constraints and implied gaussian
 
         self._setup = True
-        A_scaling = -np.identity(self.num_opt_var)
-        b_scaling = np.zeros(self.num_opt_var)
+        A_scaling = -np.identity(num_opt_var)
+        b_scaling = np.zeros(num_opt_var)
 
         self._setup_sampler_data = (A_scaling,
                                     b_scaling,
@@ -825,7 +817,7 @@ class split_lasso(lasso):
                  loglike,
                  feature_weights,
                  proportion_select,
-                 ridge_term,
+                 ridge_term=0,
                  perturb=None):
 
         (self.loglike,
@@ -951,7 +943,7 @@ class split_lasso(lasso):
                  proportion,
                  sigma=1.,
                  quadratic=None,
-                 ridge_term=None):
+                 ridge_term=0):
         r"""
         Squared-error LASSO with feature weights.
         Objective function is (before randomization)
@@ -988,9 +980,6 @@ class split_lasso(lasso):
             Can also be a linear term by setting quadratic
             coefficient to 0.
 
-        ridge_term : float
-            How big a ridge term to add?
-
         randomizer_scale : float
             Scale for IID components of randomizer.
 
@@ -1011,12 +1000,9 @@ class split_lasso(lasso):
         n, p = X.shape
 
         mean_diag = np.mean((X ** 2).sum(0))
-        if ridge_term is None:
-            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
 
         return split_lasso(loglike, 
                            np.asarray(feature_weights) / sigma ** 2,
-                           proportion,
-                           ridge_term) 
+                           proportion)
 
 

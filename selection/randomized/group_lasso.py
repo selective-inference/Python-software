@@ -1272,7 +1272,7 @@ def _reference_density_info(soln,
                 num = np.multiply.outer(factors_g, r - r_g)
                 den = np.add.outer(lambda_g * np.ones_like(factors_g), 
                                      r)
-                print(np.min(lambda_g + r), np.max(num / den), np.min(num / den), 'logdet calc')
+                print(np.min(lambda_g + r), np.max(num / den), np.min(num / den), r.min(), r.max(), r_g, lambda_g, 'logdet calc')
 
                 return np.squeeze(np.log(1 + num / den).sum(0) + 
                                   + np.log(lambda_g + r) * (k_g - 1))
