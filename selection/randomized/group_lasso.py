@@ -1,0 +1,1193 @@
+
+from __future__ import print_function
+import functools
+from copy import copy
+
+import numpy as np
+from scipy.stats import norm as ndist
+
+import regreg.api as rr
+
+from .query import query
+
+from .randomization import randomization
+from ..base import restricted_estimator
+from ..algorithms.debiased_lasso import (debiasing_matrix,
+                                         pseudoinverse_debiasing_matrix)
+
+#### High dimensional version
+#### - parametric covariance
+#### - Gaussian randomization
+
+class group_lasso(query):
+
+
+    r"""
+    A class for the randomized LASSO for post-selection inference.
+    The problem solved is
+
+    .. math::
+
+        \text{minimize}_{\beta} \ell(\beta) + 
+            \sum_{i=1}^p \lambda_i |\beta_i\| - \omega^T\beta + \frac{\epsilon}{2} \|\beta\|^2_2
+
+    where $\lambda$ is `lam`, $\omega$ is a randomization generated below
+    and the last term is a small ridge penalty. Each static method
+    forms $\ell$ as well as the $\ell_1$ penalty. The generic class
+    forms the remaining two terms in the objective.
+
+    """
+
+    def __init__(self,
+                  loglike,
+                  groups,
+                  weights,
+                  ridge_term,
+                  randomizer,
+                  perturb=None):
+         r"""
+         Create a new post-selection object for the LASSO problem
+
+         Parameters
+         ----------
+
+         loglike : `regreg.smooth.glm.glm`
+             A (negative) log-likelihood as implemented in `regreg`.
+
+         feature_weights : np.ndarray
+             Feature weights for L-1 penalty. If a float,
+             it is brodcast to all features.
+
+         ridge_term : float
+             How big a ridge term to add?
+
+         randomizer : object
+             Randomizer -- contains representation of randomization density.
+
+         perturb : np.ndarray
+             Random perturbation subtracted as a linear
+             term in the objective function.
+         """
+
+         self.loglike = loglike
+         self.nfeature = p = self.loglike.shape[0]
+
+         self.ridge_term = ridge_term
+         self.penalty = rr.group_lasso(groups,
+                                       weights=weights,
+                                       lagrange=1.)
+         self._initial_omega = perturb  # random perturbation
+
+         self.randomizer = randomizer
+
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
+            perturb=None):
+        """
+
+        Fit the randomized lasso using `regreg`.
+
+        Parameters
+        ----------
+
+        solve_args : keyword args
+            Passed to `regreg.problems.simple_problem.solve`.
+
+        Returns
+        -------
+
+        signs : np.float
+            Support and non-zero signs of randomized lasso solution.
+
+        """
+
+        p = self.nfeature
+
+        (self.initial_soln, 
+         self.initial_subgrad) = self._solve_randomized_problem(
+                                      perturb=perturb, 
+                                      solve_args=solve_args)
+
+        # assuming solution is non-zero here!
+
+        active = []
+        active_dirs = {}
+        unpenalized = []
+        overall = np.ones(self.penalty.shape[0], np.bool)
+
+        ordered_groups = []
+        ordered_opt = []
+        ordered_vars = []
+
+        tol = 1.e-6
+
+        for g in sorted(np.unique(self.penalty.groups)):
+            group = self.penalty.groups == g
+
+            soln = self.initial_soln
+            if np.linalg.norm(soln[group]) * tol * np.linalg.norm(soln):
+                ordered_groups.append(g)
+                ordered_vars.extend(np.nonzero(group)[0])
+
+                if self.penalty.weights[g] == 0:
+                    unpenalized.append(g)
+                    ordered_opt.append(soln[group])
+                else:
+                    active.append(g)
+                    dir = soln[group] / np.linalg.norm(soln[group])
+                    active_dirs[g] = dir
+                    ordered_opt.append(np.linalg.norm(soln[group]) - self.penalty.weights[g])
+            else:
+                overall[group] = False
+
+        self.selection_variable = {'directions': active_dirs}
+        self._ordered_groups = ordered_groups
+
+        # initial state for opt variables
+
+        self.observed_opt_state = np.hstack(ordered_opt)
+
+        _beta_unpenalized = restricted_estimator(self.loglike, 
+                                                 overall, 
+                                                 solve_args=solve_args)
+
+        beta_bar = np.zeros(p)
+        beta_bar[overall] = _beta_unpenalized
+        self._beta_full = beta_bar
+
+        # form linear part
+
+        num_opt_var = self.observed_opt_state.shape[0]
+
+        # setup hessian and ridge term
+
+        X, y = self.loglike.data
+        W = self._W = self.loglike.saturated_loss.hessian(X.dot(beta_bar))
+        opt_linear = np.dot(X.T, X[:, ordered_vars] * W[:, None])
+
+        # set the observed score (data dependent) state
+
+        # observed_score_state is
+        # \nabla \ell(\bar{\beta}_E) + Q(\bar{\beta}_E) \bar{\beta}_E
+        # in linear regression this is _ALWAYS_ -X^TY
+        # 
+        # should be asymptotically equivalent to
+        # \nabla \ell(\beta^*) + Q(\beta^*)\beta^*
+
+        self.observed_score_state = -opt_linear.dot(_beta_unpenalized)
+        self.observed_score_state[~overall] += self.loglike.smooth_objective(beta_bar, 'grad')[~overall]
+
+        # now adjust for ridge term
+
+        for i, var in enumerate(ordered_vars):
+            opt_linear[var, i] += self.ridge_term
+
+        opt_offset = self.initial_subgrad
+         
+        # for group LASSO, we will have
+        # a different sampler for each group
+        # based on conditioning on all scalings
+        # except that group
+
+        # means targets will also need to say what group 
+        # they are "targeting"...
+
+        self._samplers = {}
+
+        # dispersion will have to be adjusted for data splitting
+
+        dispersion = 1.
+
+        prec_opt_linear = self._get_precision_opt_linear(opt_linear,
+                                                         ordered_vars,
+                                                         dispersion)
+
+        for group, dens_info in _reference_density_info(soln, 
+                                                        ordered_groups,
+                                                        ordered_vars,
+                                                        opt_linear,
+                                                        opt_offset,
+                                                        self.observed_score_state,
+                                                        self.initial_subgrad,
+                                                        self.penalty, 
+                                                        prec_opt_linear).items():
+
+            (implied_mean, 
+             implied_variance, 
+             log_poly,
+             log_cond_dens) = dens_info
+            
+            sampler = None
+ #            sampler = polynomial_gaussian_sampler(implied_mean,
+ #                                                  implied_variance,
+ #                                                  log_poly,
+ #                                                  log_cond_dens)
+            self._samplers[group] = sampler
+
+        self._setup = True
+        stop
+
+        return self.selection_variable
+
+    def _get_precision_opt_linear(self, opt_linear, variables, dispersion=1):
+        """
+        Precision of randomization times columns of restricted Hessian
+        """
+        _, prec = self.randomizer.cov_prec 
+        if np.asarray(prec).shape in [(), (0,)]:
+            return prec * opt_linear / dispersion
+        else:
+            return prec.dot(opt_linear) / dispersion
+
+    def _solve_randomized_problem(self, 
+                                  perturb=None, 
+                                  solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+        # take a new perturbation if supplied
+        if perturb is not None:
+            self._initial_omega = perturb
+        if self._initial_omega is None:
+            self._initial_omega = self.randomizer.sample()
+
+        quad = rr.identity_quadratic(self.ridge_term, 
+                                     0, 
+                                     -self._initial_omega, 
+                                     0)
+        
+        problem = rr.simple_problem(self.loglike, self.penalty)
+
+        initial_soln = problem.solve(quad, **solve_args) 
+        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
+                                                          'grad') +
+                            quad.objective(initial_soln, 'grad'))
+
+        return initial_soln, initial_subgrad
+
+    @staticmethod
+    def gaussian(X,
+                 Y,
+                 groups,
+                 weights,
+                 sigma=1.,
+                 quadratic=None,
+                 ridge_term=None,
+                 randomizer_scale=None):
+        r"""
+        Squared-error LASSO with feature weights.
+        Objective function is (before randomization)
+        
+        .. math::
+        
+            \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\lambda$ is `feature_weights`. The ridge term
+        is determined by the Hessian and `np.std(Y)` by default,
+        as is the randomizer scale.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        Y : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        sigma : float (optional)
+            Noise variance. Set to 1 if `covariance_estimator` is not None.
+            This scales the loglikelihood by `sigma**(-2)`.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        randomizer : str
+            One of ['laplace', 'logistic', 'gaussian']
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+
+        loglike = rr.glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
+        n, p = X.shape
+
+        mean_diag = np.mean((X ** 2).sum(0))
+        if ridge_term is None:
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        if sigma != 1:
+            weights = copy(weights)
+            for k in weights.keys():
+                weights[k] = weights[k] / sigma**2
+
+        return group_lasso(loglike, 
+                           groups, 
+                           weights,
+                           ridge_term, 
+                           randomizer)
+
+    @staticmethod
+    def logistic(X,
+                 successes,
+                 groups,
+                 weights,
+                 trials=None,
+                 quadratic=None,
+                 ridge_term=None,
+                 randomizer_scale=None):
+        r"""
+        Logistic LASSO with feature weights (before randomization)
+
+        .. math::
+
+             \beta \mapsto \ell(X\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\ell$ is the negative of the logistic
+        log-likelihood (half the logistic deviance)
+        and $\lambda$ is `feature_weights`.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        successes : ndarray
+            Shape (n,) -- response vector. An integer number of successes.
+            For data that is proportions, multiply the proportions
+            by the number of trials first.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        trials : ndarray (optional)
+            Number of trials per response, defaults to
+            ones the same shape as Y.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        randomizer : str
+            One of ['laplace', 'logistic', 'gaussian']
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+        """
+
+        n, p = X.shape
+
+        loglike = rr.glm.logistic(X, successes, trials=trials, quadratic=quadratic)
+
+        mean_diag = np.mean((X ** 2).sum(0))
+
+        if ridge_term is None:
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5
+
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        return group_lasso(loglike, 
+                           groups,
+                           weights,
+                           ridge_term, 
+                           randomizer)
+
+    @staticmethod
+    def coxph(X,
+              times,
+              status,
+              groups,
+              weights,
+              quadratic=None,
+              ridge_term=None,
+              randomizer_scale=None):
+        r"""
+        Cox proportional hazards LASSO with feature weights.
+        Objective function is (before randomization)
+
+        .. math::
+
+            \beta \mapsto \ell^{\text{Cox}}(\beta) + 
+            \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\ell^{\text{Cox}}$ is the
+        negative of the log of the Cox partial
+        likelihood and $\lambda$ is `feature_weights`.
+        Uses Efron's tie breaking method.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        times : ndarray
+            Shape (n,) -- the survival times.
+
+        status : ndarray
+            Shape (n,) -- the censoring status.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        covariance_estimator : optional
+            If None, use the parameteric
+            covariance estimate of the selected model.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        randomizer : str
+            One of ['laplace', 'logistic', 'gaussian']
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+        loglike = coxph_obj(X, times, status, quadratic=quadratic)
+
+        # scale for randomization seems kind of meaningless here...
+
+        mean_diag = np.mean((X ** 2).sum(0))
+
+        if ridge_term is None:
+            ridge_term = np.std(times) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(Y) * np.sqrt(n / (n - 1.))
+
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        return group_lasso(loglike,
+                           groups,
+                           weights,
+                           ridge_term,
+                           randomizer)
+
+    @staticmethod
+    def poisson(X,
+                counts,
+                groups,
+                weights,
+                quadratic=None,
+                ridge_term=None,
+                randomizer_scale=None):
+        r"""
+        Poisson log-linear LASSO with feature weights.
+        Objective function is (before randomization)
+
+        .. math::
+
+            \beta \mapsto \ell^{\text{Poisson}}(\beta) + \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\ell^{\text{Poisson}}$ is the negative
+        of the log of the Poisson likelihood (half the deviance)
+        and $\lambda$ is `feature_weights`.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        counts : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        randomizer : str
+            One of ['laplace', 'logistic', 'gaussian']
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+        n, p = X.shape
+        loglike = rr.glm.poisson(X, counts, quadratic=quadratic)
+
+        # scale for randomizer seems kind of meaningless here...
+
+        mean_diag = np.mean((X ** 2).sum(0))
+
+        if ridge_term is None:
+            ridge_term = np.std(counts) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+
+        if randomizer_scale is None:
+            randomizer_scale = np.sqrt(mean_diag) * 0.5 * np.std(counts) * np.sqrt(n / (n - 1.))
+
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale)
+
+        return group_lasso(loglike,
+                           groups,
+                           weights,
+                           ridge_term,
+                           randomizer)
+
+    @staticmethod
+    def sqrt_lasso(X,
+                   Y,
+                   groups,
+                   weights,
+                   quadratic=None,
+                   ridge_term=None,
+                   randomizer_scale=None,
+                   solve_args={'min_its': 200},
+                   perturb=None):
+        r"""
+        Use sqrt-LASSO to choose variables.
+        Objective function is (before randomization)
+
+        .. math::
+
+            \beta \mapsto \|Y-X\beta\|_2 + \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\lambda$ is `feature_weights`. After solving the problem
+        treat as if `gaussian` with implied variance and choice of
+        multiplier. See arxiv.org/abs/1504.08031 for details.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        Y : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        covariance : str
+            One of 'parametric' or 'sandwich'. Method
+            used to estimate covariance for inference
+            in second stage.
+
+        solve_args : dict
+            Arguments passed to solver.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        randomizer : str
+            One of ['laplace', 'logistic', 'gaussian']
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        Notes
+        -----
+
+        Unlike other variants of LASSO, this
+        solves the problem on construction as the active
+        set is needed to find equivalent gaussian LASSO.
+        Assumes parametric model is correct for inference,
+        i.e. does not accept a covariance estimator.
+        """
+
+        n, p = X.shape
+
+        if np.asarray(feature_weights).shape == ():
+            feature_weights = np.ones(p) * feature_weights
+
+        mean_diag = np.mean((X ** 2).sum(0))
+        if ridge_term is None:
+            ridge_term = np.sqrt(mean_diag) / (n - 1)
+
+        if randomizer_scale is None:
+            randomizer_scale = 0.5 * np.sqrt(mean_diag) / np.sqrt(n - 1)
+
+        if perturb is None:
+            perturb = np.random.standard_normal(p) * randomizer_scale
+
+        randomQ = rr.identity_quadratic(ridge_term, 0, -perturb, 0)  # a ridge + linear term
+
+        if quadratic is not None:
+            totalQ = randomQ + quadratic
+        else:
+            totalQ = randomQ
+
+        soln, sqrt_loss = solve_sqrt_lasso(X,
+                                           Y,
+                                           weights=feature_weights,
+                                           quadratic=totalQ,
+                                           solve_args=solve_args,
+                                           force_fat=True)
+
+        denom = np.linalg.norm(Y - X.dot(soln))
+        loglike = rr.glm.gaussian(X, Y)
+
+        randomizer = randomization.isotropic_gaussian((p,), randomizer_scale * denom)
+        
+        weights = copy(weights)
+        for k in weights.keys():
+            weights[k] = weights[k] * denom
+
+        obj = lasso(loglike, 
+                    groups,
+                    weights,
+                    ridge_term * denom,
+                    randomizer,
+                    perturb=perturb * denom)
+        obj._sqrt_soln = soln
+
+        return obj
+
+# private functions
+
+# functions construct targets of inference
+# and covariance with score representation
+
+def selected_targets(loglike, 
+                     W, 
+                     features, 
+                     sign_info={}, 
+                     dispersion=None,
+                     solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+    X, y = loglike.data
+    n, p = X.shape
+
+    Xfeat = X[:, features]
+    Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
+    observed_target = restricted_estimator(loglike, features, solve_args=solve_args)
+    cov_target = np.linalg.inv(Qfeat)
+    _score_linear = -Xfeat.T.dot(W[:, None] * X).T
+    crosscov_target_score = _score_linear.dot(cov_target)
+    alternatives = ['twosided'] * features.sum()
+    features_idx = np.arange(p)[features]
+
+    for i in range(len(alternatives)):
+        if features_idx[i] in sign_info.keys():
+            alternatives[i] = sign_info[features_idx[i]]
+
+    if dispersion is None:  # use Pearson's X^2
+        dispersion = ((y - loglike.saturated_loss.mean_function(
+            Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
+
+    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+def full_targets(loglike, 
+                 W, 
+                 features, 
+                 dispersion=None,
+                 solve_args={'tol': 1.e-12, 'min_its': 50}):
+    
+    X, y = loglike.data
+    n, p = X.shape
+    features_bool = np.zeros(p, np.bool)
+    features_bool[features] = True
+    features = features_bool
+
+    # target is one-step estimator
+
+    Qfull = X.T.dot(W[:, None] * X)
+    Qfull_inv = np.linalg.inv(Qfull)
+    full_estimator = loglike.solve(**solve_args)
+    cov_target = Qfull_inv[features][:, features]
+    observed_target = full_estimator[features]
+    crosscov_target_score = np.zeros((p, cov_target.shape[0]))
+    crosscov_target_score[features] = -np.identity(cov_target.shape[0])
+
+    if dispersion is None:  # use Pearson's X^2
+        dispersion = (((y - loglike.saturated_loss.mean_function(X.dot(full_estimator))) ** 2 / W).sum() / 
+                      (n - p))
+
+    alternatives = ['twosided'] * features.sum()
+    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+def debiased_targets(loglike, 
+                     W, 
+                     features, 
+                     sign_info={}, 
+                     penalty=None, #required kwarg
+                     dispersion=None,
+                     approximate_inverse='JM',
+                     debiasing_args={}):
+
+    if penalty is None:
+        raise ValueError('require penalty for consistent estimator')
+
+    X, y = loglike.data
+    n, p = X.shape
+    features_bool = np.zeros(p, np.bool)
+    features_bool[features] = True
+    features = features_bool
+
+    # relevant rows of approximate inverse
+
+
+    if approximate_inverse == 'JM':
+        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(W)[:, None], 
+                                                  np.nonzero(features)[0],
+                                                  **debiasing_args)) / n
+    else:
+        Qinv_hat = np.atleast_2d(pseudoinverse_debiasing_matrix(X * np.sqrt(W)[:, None],
+                                                                np.nonzero(features)[0],
+                                                                **debiasing_args))
+
+    problem = rr.simple_problem(loglike, penalty)
+    nonrand_soln = problem.solve()
+    G_nonrand = loglike.smooth_objective(nonrand_soln, 'grad')
+
+    observed_target = nonrand_soln[features] - Qinv_hat.dot(G_nonrand)
+
+    if p > n:
+        M1 = Qinv_hat.dot(X.T)
+        cov_target = (M1 * W[None, :]).dot(M1.T)
+        crosscov_target_score = -(M1 * W[None, :]).dot(X).T
+    else:
+        Qfull = X.T.dot(W[:, None] * X)
+        cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
+        crosscov_target_score = -Qinv_hat.dot(Qfull).T
+
+    if dispersion is None:  # use Pearson's X^2
+        Xfeat = X[:, features]
+        Qrelax = Xfeat.T.dot(W[:, None] * Xfeat)
+        relaxed_soln = nonrand_soln[features] - np.linalg.inv(Qrelax).dot(G_nonrand[features])
+        dispersion = (((y - loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / W).sum() / 
+                      (n - features.sum()))
+
+    alternatives = ['twosided'] * features.sum()
+    return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
+
+def form_targets(target, 
+                 loglike, 
+                 W, 
+                 features, 
+                 **kwargs):
+    _target = {'full':full_targets,
+               'selected':selected_targets,
+               'debiased':debiased_targets}[target]
+    return _target(loglike,
+                   W,
+                   features,
+                   **kwargs)
+
+class split_lasso(group_lasso):
+
+    """
+    Data split, then LASSO (i.e. data carving)
+    """
+
+    def __init__(self,
+                 loglike,
+                 feature_weights,
+                 proportion_select,
+                 ridge_term,
+                 perturb=None):
+
+        (self.loglike,
+         self.feature_weights,
+         self.proportion_select,
+         self.ridge_term) = (loglike,
+                             feature_weights,
+                             proportion_select,
+                             ridge_term)
+
+        self.nfeature = p = self.loglike.shape[0]
+        self.penalty = rr.weighted_l1norm(self.feature_weights, lagrange=1.)
+        self._initial_omega = perturb
+
+    def fit(self,
+            solve_args={'tol': 1.e-12, 'min_its': 50},
+            perturb=None,
+            estimate_dispersion=True):
+
+        signs = lasso.fit(self, 
+                          solve_args=solve_args,
+                          perturb=perturb)
+        
+        # for data splitting randomization,
+        # we need to estimate a dispersion parameter
+
+        # we then setup up the sampler again
+
+        if estimate_dispersion:
+
+            X, y = self.loglike.data
+            n, p = X.shape
+            df_fit = len(self.selection_variable['variables'])
+
+            dispersion = 2 * (self.loglike.smooth_objective(self._beta_full, 
+                                                            'func') /
+                          (n - df_fit))
+
+            #print('dispersion', dispersion)
+
+            # run setup again after 
+            # estimating dispersion 
+            self._setup_sampler(*self._setup_sampler_data, 
+                                 dispersion=dispersion)
+
+        return signs
+
+    def _setup_implied_gaussian(self, 
+                                opt_linear, 
+                                opt_offset,
+                                dispersion):
+
+        # key observation is that the covariance of the added noise is 
+        # roughly (1 - pi) / pi * X^TX (in OLS regression, similar for other
+        # models), so the precision is \phi * pi / (1 - pi) (X^TX)^{-1} 
+        # and prec.dot(opt_linear) = pi / (1 - pi) * I[:,num(E)] * dispersion
+        # (because opt_linear has shape p x E with the columns
+        # being those non-zero columns of the solution
+        # the conditional precision is Q[E][:,E] * (pi / (1 - pi))
+        # and logdens_linear is (1 - pi) / pi * Q[E][:,E]^{-1} 
+        # padded with zeros
+        # to be E x p
+
+        pi_s = self.proportion_select
+        ratio = (1 - pi_s) / pi_s
+
+        ordered_vars = self.selection_variable['variables']
+        
+        cond_precision = opt_linear[ordered_vars] / (dispersion * ratio)
+
+        signs = self.selection_variable['sign'][ordered_vars]
+        signs[np.isnan(signs)] = 1
+
+        cond_precision *= signs[:, None]
+        assert(np.linalg.norm(cond_precision - cond_precision.T) / 
+               np.linalg.norm(cond_precision) < 1.e-6)
+        cond_cov = np.linalg.inv(cond_precision)
+        logdens_linear = np.zeros((len(ordered_vars),
+                                   self.nfeature)) 
+        logdens_linear[:,ordered_vars] = cond_cov
+        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
+
+        return cond_mean, cond_cov, cond_precision, logdens_linear
+
+    def _solve_randomized_problem(self, 
+                                  # optional binary vector 
+                                  # indicating selection data 
+                                  perturb=None, 
+                                  solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+        # take a new perturbation if none supplied
+        if perturb is not None:
+            self._selection_idx = perturb
+        if not hasattr(self, "_selection_idx"):
+            X, y = self.loglike.data
+            total_size = n = X.shape[0]
+            pi_s = self.proportion_select
+            self._selection_idx = np.zeros(n, np.bool)
+            self._selection_idx[:int(pi_s*n)] = True
+            np.random.shuffle(self._selection_idx)
+
+        inv_frac = 1 / self.proportion_select
+        quad = rr.identity_quadratic(self.ridge_term,
+                                     0,
+                                     0,
+                                     0,)
+        
+        randomized_loss = self.loglike.subsample(self._selection_idx)
+        randomized_loss.coef *= inv_frac
+
+        problem = rr.simple_problem(randomized_loss, self.penalty)
+        initial_soln = problem.solve(quad, **solve_args) 
+        initial_subgrad = -(self.loglike.smooth_objective(initial_soln, 
+                                                          'grad') +
+                            quad.objective(initial_soln, 'grad'))
+
+        return initial_soln, initial_subgrad
+
+    @staticmethod
+    def gaussian(X,
+                 Y,
+                 feature_weights,
+                 proportion,
+                 sigma=1.,
+                 quadratic=None,
+                 ridge_term=None):
+        r"""
+        Squared-error LASSO with feature weights.
+        Objective function is (before randomization)
+
+        .. math::
+
+            \beta \mapsto \frac{1}{2} \|Y-X\beta\|^2_2 + 
+           \sum_{i=1}^p \lambda_i |\beta_i|
+
+        where $\lambda$ is `feature_weights`. The ridge term
+        is determined by the Hessian and `np.std(Y)` by default.
+
+        Parameters
+        ----------
+
+        X : ndarray
+            Shape (n,p) -- the design matrix.
+
+        Y : ndarray
+            Shape (n,) -- the response.
+
+        feature_weights: [float, sequence]
+            Penalty weights. An intercept, or other unpenalized
+            features are handled by setting those entries of
+            `feature_weights` to 0. If `feature_weights` is
+            a float, then all parameters are penalized equally.
+
+        sigma : float (optional)
+            Noise variance. Set to 1 if `covariance_estimator` is not None.
+            This scales the loglikelihood by `sigma**(-2)`.
+
+        quadratic : `regreg.identity_quadratic.identity_quadratic` (optional)
+            An optional quadratic term to be added to the objective.
+            Can also be a linear term by setting quadratic
+            coefficient to 0.
+
+        ridge_term : float
+            How big a ridge term to add?
+
+        randomizer_scale : float
+            Scale for IID components of randomizer.
+
+        randomizer : str
+            One of ['laplace', 'logistic', 'gaussian']
+
+        Returns
+        -------
+
+        L : `selection.randomized.lasso.lasso`
+
+        """
+
+        loglike = rr.glm.gaussian(X, 
+                                  Y, 
+                                  coef=1. / sigma ** 2, 
+                                  quadratic=quadratic)
+        n, p = X.shape
+
+        mean_diag = np.mean((X ** 2).sum(0))
+        if ridge_term is None:
+            ridge_term = np.std(Y) * np.sqrt(mean_diag) / np.sqrt(n - 1)
+
+        return split_lasso(loglike, 
+                           np.asarray(feature_weights) / sigma ** 2,
+                           proportion,
+                           ridge_term) 
+
+def _reference_density_info(soln, 
+                            ordered_groups, # ordering is used in assumptions about columns opt_linear
+                            ordered_variables,
+                            opt_linear,
+                            opt_offset,
+                            observed_score_state,
+                            observed_subgrad,
+                            group_lasso_penalty, 
+                            # randomization precision times opt_linear
+                            precision_opt_linear, 
+                            tol=1.e-6):
+    '''
+    
+    Parameters
+    ----------
+    
+    Compute generalized eigenvalues above and return
+    function to evaluate jacobian as a function of $r_g=\|z_g\|_2$
+    fixing everything in the optimization variables except $r_g$.
+    
+    Above, $A_0$ is the Hessian of loss evaluated at an appropriate point.
+    '''
+    pen = group_lasso_penalty       # shorthand 
+    nz = soln != 0                  # nonzero
+    nnz = nz.sum()                  # num nonzero
+    Hr = np.zeros((nnz, nnz))       # restricted hessian   
+
+    nz_groups = []
+
+    for group in ordered_groups:
+        group_idx = pen.groups == group
+        group_soln = soln[pen.groups == group]
+
+        ng = group_idx.sum()
+        group_direction = u_g = group_soln / np.linalg.norm(group_soln)
+        group_norm = r_g = np.linalg.norm(group_soln)   # really r_g^*
+        group_weight = lambda_g = pen.weights[group]
+
+        fraction = np.sqrt(r_g / (lambda_g + r_g))
+
+        # one of the blocks in D_0^{1/2}
+        group_block = (np.identity(ng) * fraction + (1 - fraction) * 
+                       np.multiply.outer(u_g, u_g))
+        group_P = np.identity(ng) - np.multiply.outer(u_g, u_g)
+        nz_groups.append((group,         # a group index g
+                          group_idx,   # indices where group==idx
+                          group_block, 
+                          group_P,
+                          r_g,          
+                          lambda_g,
+                          group_direction)
+                        )
+            
+    # setup the block hessian Hr=D_0^{1/2}A_0D_0^{1/2}
+    
+    ctr_g = 0
+    for group_g in nz_groups:
+        which_idx_g, block_g = group_g[1], group_g[2]
+        idx_g = slice(ctr_g, ctr_g + which_idx_g.sum())
+        ctr_h = 0
+        for group_h in nz_groups:
+            which_idx_h, block_h = group_h[1], group_h[2]
+            idx_h = slice(ctr_h, ctr_h + which_idx_h.sum())
+            H_hg = opt_linear[which_idx_h][:,idx_g]
+            Hr[idx_g][:,idx_h] += block_h.dot(H_hg).dot(block_g).T
+            ctr_h += which_idx_h.sum()
+        ctr_g += which_idx_g.sum()
+        
+    implied_precision = np.dot(opt_linear.T,
+                               precision_opt_linear)
+    
+    # compute (I+Hr)^{-1}Hr
+    
+    final_matrix = np.linalg.inv(np.identity(Hr.shape[0]) + Hr).dot(Hr)
+    
+    ctr_g = 0
+    ref_dens_info = {}
+
+    for group_g in nz_groups:
+        which_g, which_idx_g, _, P_g, r_g, lambda_g, u_g = group_g
+        if which_idx_g.sum() > 1:
+            idx_g = slice(ctr_g, ctr_g + which_idx_g.sum())
+            block_g = final_matrix[idx_g][:,idx_g]
+            block_g = P_g.dot(block_g).dot(P_g)
+            # \tilde{\gamma}'s
+            eigvals_g = np.linalg.eigvalsh(block_g)[1:]        
+
+            # factors in the determinant
+            factors_g = lambda_g / (eigvals_g * r_g)           
+            k_g = which_idx_g.sum()
+            def logdet_g(factors_g, r_g, k_g, lambda_g, r):
+                return (np.log(1 + np.multiply.outer(factors_g, r - r_g) / 
+                               np.add.outer(lambda_g * 
+                                            np.ones_like(factors_g), r)).sum(0)
+                        + np.log(lambda_g + r) * (k_g - 1))
+
+            logdet_g = functools.partial(logdet_g, 
+                                         factors_g, 
+                                         r_g, 
+                                         k_g, 
+                                         lambda_g)
+            
+        else: 
+            logdet_g = lambda r: np.zeros_like(r)
+
+        implied_variance = 1 / (np.dot(implied_precision[idx_g][:,idx_g],
+                                       u_g) * u_g).sum()
+
+        # zero out this group's coordinate in the solution
+
+        soln_idx = soln.copy()[ordered_variables]
+        soln_idx[idx_g] = 0
+        offset = -(observed_subgrad + 
+                   opt_linear.dot(soln_idx))
+        direction = precision_opt_linear[:,idx_g].dot(u_g)
+        num_implied_mean = ((observed_score_state + offset) * 
+                            direction).sum()
+        implied_mean = num_implied_mean * implied_variance
+
+        def log_cond_density(offset, 
+                             direction, 
+                             implied_variance, 
+                             log_det,
+                             r, 
+                             score_state):
+            num_implied_mean = ((score_state + offset) * direction).sum()
+            implied_mean = num_implied_mean * implied_variance
+            return (log_det(r) - 0.5 * 
+                    (r - implied_mean)**2 / implied_variance)
+
+        log_cond_density_g = functools.partial(log_cond_density,
+                                               offset,
+                                               direction,
+                                               implied_variance,
+                                               logdet_g)
+
+        ref_dens_info[which_g] = (implied_mean,
+                                  implied_variance,
+                                  logdet_g,
+                                  log_cond_density_g)
+
+        ctr_g += which_idx_g.sum()
+        
+
+    return ref_dens_info
