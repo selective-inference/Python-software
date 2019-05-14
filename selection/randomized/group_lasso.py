@@ -8,7 +8,7 @@ from scipy.stats import norm as ndist
 
 import regreg.api as rr
 
-from .query import query
+from .query import query, affine_gaussian_sampler
 
 from .randomization import randomization
 from ..base import restricted_estimator
@@ -141,6 +141,7 @@ class group_lasso(query):
                 overall[group] = False
 
         self.selection_variable = {'directions': active_dirs}
+
         self._ordered_groups = ordered_groups
 
         # initial state for opt variables
@@ -198,9 +199,10 @@ class group_lasso(query):
 
         dispersion = 1.
 
-        prec_opt_linear = self._get_precision_opt_linear(opt_linear,
-                                                         ordered_vars,
-                                                         dispersion)
+        (prec_opt_linear,
+         logdens_linear) = self._get_precision_opt_linear(opt_linear,
+                                                          ordered_vars,
+                                                          dispersion)
 
         for group, dens_info in _reference_density_info(soln, 
                                                         ordered_groups,
@@ -212,22 +214,145 @@ class group_lasso(query):
                                                         self.penalty, 
                                                         prec_opt_linear).items():
 
-            (implied_mean, 
+            (dir_g,
+             idx_g,
+             implied_mean, 
              implied_variance, 
-             log_poly,
-             log_cond_dens) = dens_info
+             log_det,
+             log_cond_density) = dens_info
             
-            sampler = None
- #            sampler = polynomial_gaussian_sampler(implied_mean,
- #                                                  implied_variance,
- #                                                  log_poly,
- #                                                  log_cond_dens)
+            group_idx = self.penalty.groups == group
+            initial_scaling = np.linalg.norm(soln[group]) - self.penalty.weights[group]
+
+            sampler = polynomial_gaussian_sampler(implied_mean,
+                                                  implied_variance,
+                                                  initial_scaling,
+                                                  self.observed_score_state,
+                                                  log_cond_density,
+                                                  log_det,
+                                                  (np.atleast_2d(logdens_linear.T[:,idx_g].dot(dir_g).T), 
+                                                   opt_offset))
             self._samplers[group] = sampler
 
         self._setup = True
-        stop
 
         return self.selection_variable
+
+    def summary(self,
+                observed_target, 
+                group_assignments,
+                target_cov, 
+                target_score_cov, 
+                alternatives,
+                opt_sample=None,
+                target_sample=None,
+                parameter=None,
+                level=0.9,
+                ndraw=10000,
+                burnin=None,
+                compute_intervals=False):
+
+        # for smoke test, let's just 
+        # use the first non-zero group for everything
+
+        return self._inference_for_target(
+                          observed_target,
+                          sorted(self.selection_variable['directions'].keys())[0],
+                          target_cov,
+                          target_score_cov,
+                          alternatives,
+                          opt_sample=opt_sample,
+                          target_sample=target_sample,
+                          parameter=parameter,
+                          level=level,
+                          ndraw=ndraw,
+                          compute_intervals=compute_intervals)
+
+    def _inference_for_target(self,
+                              observed_target, 
+                              group,
+                              target_cov, 
+                              target_score_cov, 
+                              alternatives,
+                              opt_sample=None,
+                              target_sample=None,
+                              parameter=None,
+                              level=0.9,
+                              ndraw=10000,
+                              burnin=2000,
+                              compute_intervals=False):
+        """
+        Produce p-values and confidence intervals for targets
+        of model including selected features
+
+        Parameters
+        ----------
+
+        target : one of ['selected', 'full']
+
+        features : np.bool
+            Binary encoding of which features to use in final
+            model and targets.
+
+        parameter : np.array
+            Hypothesized value for parameter -- defaults to 0.
+
+        level : float
+            Confidence level.
+
+        ndraw : int (optional)
+            Defaults to 1000.
+
+        burnin : int (optional)
+            Defaults to 1000.
+
+        compute_intervals : bool
+            Compute confidence intervals?
+
+        dispersion : float (optional)
+            Use a known value for dispersion, or Pearson's X^2?
+        """
+
+        sampler = self._samplers[group]
+        if parameter is None:
+            parameter = np.zeros_like(observed_target)
+
+        if opt_sample is None:
+            opt_sample, logW = sampler.sample(ndraw, burnin)
+        else:
+            ndraw = opt_sample.shape[0]
+
+        pivots = sampler.coefficient_pvalues(observed_target,
+                                             target_cov,
+                                             target_score_cov,
+                                             parameter=parameter,
+                                             sample=(opt_sample, logW),
+                                             normal_sample=target_sample,
+                                             alternatives=alternatives)
+
+        if not np.all(parameter == 0):
+            pvalues = sampler.coefficient_pvalues(observed_target,
+                                                  target_cov,
+                                                  target_score_cov,
+                                                  parameter=np.zeros_like(parameter),
+                                                  sample=(opt_sample, logW),
+                                                  normal_sample=target_sample,
+                                                  alternatives=alternatives)
+        else:
+            pvalues = pivots
+
+        intervals = None
+        if compute_intervals:
+
+            intervals = sampler.confidence_intervals(observed_target,
+                                                     target_cov,
+                                                     target_score_cov,
+                                                     sample=(opt_sample, logW),
+                                                     normal_sample=target_sample,
+                                                     level=level)
+
+        return pivots, pvalues, intervals
+
 
     def _get_precision_opt_linear(self, opt_linear, variables, dispersion=1):
         """
@@ -235,9 +360,15 @@ class group_lasso(query):
         """
         _, prec = self.randomizer.cov_prec 
         if np.asarray(prec).shape in [(), (0,)]:
-            return prec * opt_linear / dispersion
+            value = prec * opt_linear / dispersion
         else:
-            return prec.dot(opt_linear) / dispersion
+            value = prec.dot(opt_linear) / dispersion
+
+        cond_precision = opt_linear.T.dot(value)
+        cond_cov = np.linalg.inv(cond_precision)
+        logdens_linear = cond_cov.dot(value.T) * dispersion # is this last dispersion correct?
+
+        return value, logdens_linear
 
     def _solve_randomized_problem(self, 
                                   perturb=None, 
@@ -1137,10 +1268,14 @@ def _reference_density_info(soln,
             factors_g = lambda_g / (eigvals_g * r_g)           
             k_g = which_idx_g.sum()
             def logdet_g(factors_g, r_g, k_g, lambda_g, r):
-                return (np.log(1 + np.multiply.outer(factors_g, r - r_g) / 
-                               np.add.outer(lambda_g * 
-                                            np.ones_like(factors_g), r)).sum(0)
-                        + np.log(lambda_g + r) * (k_g - 1))
+                r = np.reshape(r, (-1))
+                num = np.multiply.outer(factors_g, r - r_g)
+                den = np.add.outer(lambda_g * np.ones_like(factors_g), 
+                                     r)
+                print(np.min(lambda_g + r), np.max(num / den), np.min(num / den), 'logdet calc')
+
+                return np.squeeze(np.log(1 + num / den).sum(0) + 
+                                  + np.log(lambda_g + r) * (k_g - 1))
 
             logdet_g = functools.partial(logdet_g, 
                                          factors_g, 
@@ -1158,11 +1293,12 @@ def _reference_density_info(soln,
 
         soln_idx = soln.copy()[ordered_variables]
         soln_idx[idx_g] = 0
-        offset = -(observed_subgrad + 
-                   opt_linear.dot(soln_idx))
+        offset = (observed_subgrad + 
+                  opt_linear.dot(soln_idx))
         direction = precision_opt_linear[:,idx_g].dot(u_g)
-        num_implied_mean = ((observed_score_state + offset) * 
-                            direction).sum()
+        num_implied_mean = -((observed_score_state + offset) * 
+                             direction).sum()
+        print(num_implied_mean, observed_score_state.shape, 'whatwhat?')
         implied_mean = num_implied_mean * implied_variance
 
         def log_cond_density(offset, 
@@ -1171,10 +1307,15 @@ def _reference_density_info(soln,
                              log_det,
                              r, 
                              score_state):
+            r = np.reshape(r, (-1,))
+            print(direction.shape, 'direction')
+            print(score_state.shape, 'score')
             num_implied_mean = ((score_state + offset) * direction).sum()
+            print(num_implied_mean.shape, 'implied mean')
             implied_mean = num_implied_mean * implied_variance
-            return (log_det(r) - 0.5 * 
-                    (r - implied_mean)**2 / implied_variance)
+            return np.squeeze(
+                    (log_det(r) - 0.5 * 
+                    (r - implied_mean)**2 / implied_variance))
 
         log_cond_density_g = functools.partial(log_cond_density,
                                                offset,
@@ -1182,12 +1323,256 @@ def _reference_density_info(soln,
                                                implied_variance,
                                                logdet_g)
 
-        ref_dens_info[which_g] = (implied_mean,
+        ref_dens_info[which_g] = (u_g,
+                                  idx_g,
+                                  implied_mean,
                                   implied_variance,
                                   logdet_g,
                                   log_cond_density_g)
 
         ctr_g += which_idx_g.sum()
         
-
     return ref_dens_info
+
+class polynomial_gaussian_sampler(affine_gaussian_sampler):
+
+    """
+    1-dimensional Gaussian density restricted to [0,\infty) times a polynomial
+    """
+
+    def __init__(self,
+                 implied_mean,
+                 implied_covariance,
+                 initial_point,
+                 observed_score_state,
+                 log_cond_density,
+                 log_det,
+                 logdens_transform, # describes how score enters log_density.
+                 selection_info=None,
+                 useC=False):
+
+        self.mean = implied_mean
+        self.covariance = np.zeros((1, 1))
+        self.covariance[0, 0] = implied_covariance
+
+        self._log_cond_density = log_cond_density
+        self._log_det = log_det
+        self.initial_point = initial_point
+        self.observed_score_state = observed_score_state
+        self.selection_info = selection_info
+        self.logdens_transform = logdens_transform
+
+    def sample(self, ndraw, burnin):
+        '''
+        Sample from a Gaussian truncated at zero
+        with our mean and covariance,
+        but give weight based on `self.log_det`
+
+        Parameters
+        ----------
+
+        ndraw : int
+           How long a chain to return?
+
+        burnin : ignored
+
+        '''
+
+        mean, variance = self.mean, self.covariance[0,0]
+        sd = np.sqrt(variance)
+        Zscore = mean / sd
+        selection_prob = ndist.sf(-Zscore)
+        print(mean, variance, selection_prob, Zscore, 'normal')
+        truncated_Z = ndist.ppf((1 - selection_prob) + selection_prob * np.random.sample(ndraw))
+        truncated_normal = truncated_Z * sd + mean
+        logW = self._log_det(truncated_normal)
+        print(np.mean(logW), np.std(logW), 'logdet')
+        return truncated_normal.reshape((-1,1)), logW
+
+    def selective_MLE(self, 
+                      observed_target, 
+                      target_cov, 
+                      target_score_cov, 
+                      # initial (observed) value of optimization variables -- 
+                      # used as a feasible point.
+                      # precise value used only for independent estimator 
+                      init_soln, 
+                      solve_args={'tol':1.e-12}, 
+                      level=0.9):
+
+        raise NotImplementedError
+
+    def reparam_map(self, 
+                    parameter_target, 
+                    observed_target, 
+                    target_cov, 
+                    target_score_cov, 
+                    init_soln, 
+                    solve_args={'tol':1.e-12},
+                    useC=True):
+
+        raise NotImplementedError
+
+    def _log_density_ray(self,
+                         candidate,
+                         direction,
+                         nuisance,
+                         gaussian_sample,
+                         opt_sample):
+
+        value = affine_gaussian_sampler._log_density_ray(self,
+                                                         candidate,
+                                                         direction,
+                                                         nuisance,
+                                                         gaussian_sample,
+                                                         opt_sample)
+        value += self._log_det(opt_sample)
+        return value
+
+def selected_targets(loglike, 
+                     W, 
+                     features, 
+                     sign_info={}, 
+                     dispersion=None,
+                     solve_args={'tol': 1.e-12, 'min_its': 50}):
+
+    X, y = loglike.data
+    n, p = X.shape
+    features = []
+    
+    group_assignments = []
+    for group in groups:
+        group_idx = penalty.groups == group
+        features.extend(np.nonzero(group_idx)[0])
+        group_assignments.append([group] * group_idx.sum())
+
+    Xfeat = X[:, features]
+    Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
+    observed_target = restricted_estimator(loglike, features, solve_args=solve_args)
+    cov_target = np.linalg.inv(Qfeat)
+    _score_linear = -Xfeat.T.dot(W[:, None] * X).T
+    crosscov_target_score = _score_linear.dot(cov_target)
+    alternatives = ['twosided'] * len(features)
+
+    if dispersion is None:  # use Pearson's X^2
+        dispersion = ((y - loglike.saturated_loss.mean_function(
+            Xfeat.dot(observed_target))) ** 2 / W).sum() / (n - Xfeat.shape[1])
+
+    return (observed_target, 
+            group_assignments,
+            cov_target * dispersion, 
+            crosscov_target_score.T * dispersion, 
+            alternatives)
+
+def full_targets(loglike, 
+                 W, 
+                 groups,
+                 penalty,
+                 dispersion=None,
+                 solve_args={'tol': 1.e-12, 'min_its': 50}):
+    
+    X, y = loglike.data
+    n, p = X.shape
+    features = []
+    
+    group_assignments = []
+    for group in groups:
+        group_idx = penalty.groups == group
+        features.extend(np.nonzero(group_idx)[0])
+        group_assignments.append([group] * group_idx.sum())
+
+    # target is one-step estimator
+
+    Qfull = X.T.dot(W[:, None] * X)
+    Qfull_inv = np.linalg.inv(Qfull)
+    full_estimator = loglike.solve(**solve_args)
+    cov_target = Qfull_inv[features][:, features]
+    observed_target = full_estimator[features]
+    crosscov_target_score = np.zeros((p, cov_target.shape[0]))
+    crosscov_target_score[features] = -np.identity(cov_target.shape[0])
+
+    if dispersion is None:  # use Pearson's X^2
+        dispersion = (((y - loglike.saturated_loss.mean_function(X.dot(full_estimator))) ** 2 / W).sum() / 
+                      (n - p))
+
+    alternatives = ['twosided'] * len(features)
+
+    return (observed_target, 
+            group_assignments,
+            cov_target * dispersion, 
+            crosscov_target_score.T * dispersion, 
+            alternatives)
+
+def debiased_targets(loglike, 
+                     W, 
+                     groups,
+                     penalty,
+                     sign_info={}, 
+                     dispersion=None,
+                     approximate_inverse='JM',
+                     debiasing_args={}):
+
+    X, y = loglike.data
+    n, p = X.shape
+    features = []
+    
+    group_assignments = []
+    for group in groups:
+        group_idx = penalty.groups == group
+        features.extend(np.nonzero(group_idx)[0])
+        group_assignments.append([group] * group_idx.sum())
+
+    # relevant rows of approximate inverse
+
+    if approximate_inverse == 'JM':
+        Qinv_hat = np.atleast_2d(debiasing_matrix(X * np.sqrt(W)[:, None], 
+                                                  features,
+                                                  **debiasing_args)) / n
+    else:
+        Qinv_hat = np.atleast_2d(pseudoinverse_debiasing_matrix(X * np.sqrt(W)[:, None],
+                                                                features,
+                                                                **debiasing_args))
+
+    problem = rr.simple_problem(loglike, penalty)
+    nonrand_soln = problem.solve()
+    G_nonrand = loglike.smooth_objective(nonrand_soln, 'grad')
+
+    observed_target = nonrand_soln[features] - Qinv_hat.dot(G_nonrand)
+
+    if p > n:
+        M1 = Qinv_hat.dot(X.T)
+        cov_target = (M1 * W[None, :]).dot(M1.T)
+        crosscov_target_score = -(M1 * W[None, :]).dot(X).T
+    else:
+        Qfull = X.T.dot(W[:, None] * X)
+        cov_target = Qinv_hat.dot(Qfull.dot(Qinv_hat.T))
+        crosscov_target_score = -Qinv_hat.dot(Qfull).T
+
+    if dispersion is None:  # use Pearson's X^2
+        Xfeat = X[:, features]
+        Qrelax = Xfeat.T.dot(W[:, None] * Xfeat)
+        relaxed_soln = nonrand_soln[features] - np.linalg.inv(Qrelax).dot(G_nonrand[features])
+        dispersion = (((y - loglike.saturated_loss.mean_function(Xfeat.dot(relaxed_soln)))**2 / W).sum() / 
+                      (n - len(features)))
+
+    alternatives = ['twosided'] * len(features)
+    return (observed_target, 
+            group_assignments,
+            cov_target * dispersion, 
+            crosscov_target_score.T * dispersion, 
+            alternatives)
+
+def form_targets(target, 
+                 loglike, 
+                 W, 
+                 groups,
+                 penalty,
+                 **kwargs):
+    _target = {'full':full_targets,
+               'selected':selected_targets,
+               'debiased':debiased_targets}[target]
+    return _target(loglike,
+                   W,
+                   features,
+                   penalty,
+                   **kwargs)
