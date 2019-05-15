@@ -244,8 +244,6 @@ class group_lasso(query):
                 target_cov, 
                 target_score_cov, 
                 alternatives,
-                opt_sample=None,
-                target_sample=None,
                 parameter=None,
                 level=0.9,
                 ndraw=10000,
@@ -255,18 +253,34 @@ class group_lasso(query):
         # for smoke test, let's just 
         # use the first non-zero group for everything
 
-        return self._inference_for_target(
-                          observed_target,
-                          sorted(self.selection_variable['directions'].keys())[0],
-                          target_cov,
-                          target_score_cov,
-                          alternatives,
-                          opt_sample=opt_sample,
-                          target_sample=target_sample,
-                          parameter=parameter,
-                          level=level,
-                          ndraw=ndraw,
-                          compute_intervals=compute_intervals)
+        if parameter is None:
+            parameter = np.zeros_like(observed_target)
+
+        pvalues = np.zeros_like(parameter)
+        pivots = np.zeros_like(parameter)
+        intervals = np.zeros((parameter.shape[0], 2))
+
+        for group in np.unique(group_assignments):
+            group_idx = group_assignments == group
+
+            print(target_score_cov.shape, 'blah')
+            (pvalues_, 
+             pivots_,
+             intervals_) = self._inference_for_target(
+                               observed_target[group_idx],
+                               group,
+                               target_cov[group_idx][:, group_idx],
+                               target_score_cov[group_idx],
+                               [alternatives[i] for i in np.nonzero(group_idx)[0]],
+                               parameter=parameter[group_idx],
+                               level=level,
+                               ndraw=ndraw,
+                               compute_intervals=compute_intervals)
+            pvalues[group_idx] = pvalues_
+            pivots[group_idx] = pivots_
+            intervals[group_idx] = np.array(intervals_)
+
+        return pvalues, pivots, intervals
 
     def _inference_for_target(self,
                               observed_target, 
@@ -1241,6 +1255,8 @@ def _reference_density_info(soln,
             which_idx_h, block_h = group_h[1], group_h[2]
             idx_h = slice(ctr_h, ctr_h + which_idx_h.sum())
             H_hg = opt_linear[which_idx_h][:,idx_g]
+            if group_h[0] == group_g[0]:
+                H_hg -= np.identity(H_hg.shape[0])
             Hr[idx_g][:,idx_h] += block_h.dot(H_hg).dot(block_g).T
             ctr_h += which_idx_h.sum()
         ctr_g += which_idx_g.sum()
@@ -1444,7 +1460,7 @@ def selected_targets(loglike,
     for group in groups:
         group_idx = penalty.groups == group
         features.extend(np.nonzero(group_idx)[0])
-        group_assignments.append([group] * group_idx.sum())
+        group_assignments.extend([group] * group_idx.sum())
 
     Xfeat = X[:, features]
     Qfeat = Xfeat.T.dot(W[:, None] * Xfeat)
@@ -1479,7 +1495,7 @@ def full_targets(loglike,
     for group in groups:
         group_idx = penalty.groups == group
         features.extend(np.nonzero(group_idx)[0])
-        group_assignments.append([group] * group_idx.sum())
+        group_assignments.extend([group] * group_idx.sum())
 
     # target is one-step estimator
 
@@ -1520,7 +1536,7 @@ def debiased_targets(loglike,
     for group in groups:
         group_idx = penalty.groups == group
         features.extend(np.nonzero(group_idx)[0])
-        group_assignments.append([group] * group_idx.sum())
+        group_assignments.extend([group] * group_idx.sum())
 
     # relevant rows of approximate inverse
 
