@@ -182,6 +182,93 @@ def test_lasso(n=400,
         which += which_group
     return pval[beta[which] == 0], pval[beta[which] != 0]
 
+def test_mixed(n=400, 
+               p=200, 
+               signal_fac=1.5, 
+               s=5, 
+               sigma=3, 
+               target='full',
+               rho=0.4, 
+               proportion=0.5,
+               ndraw=10000, 
+               burnin=5000):
+    """
+    Test group lasso with a mix of groups of size 1, and larger
+    """
+
+    inst, const = gaussian_instance, group_lasso.gaussian
+    signal = np.sqrt(signal_fac * np.log(p))
+    X, Y, beta = inst(n=n,
+                      p=p, 
+                      signal=signal, 
+                      s=s, 
+                      equicorrelated=False, 
+                      rho=rho, 
+                      sigma=sigma, 
+                      random_signs=True)[:3]
+
+    n, p = X.shape
+
+    sigma_ = np.std(Y)
+
+    groups = np.arange(p)
+    groups[-5:] = -1
+    groups[-8:-5] = -2
+    Y += X[:,-8:].dot(np.ones(8)) * 5 # so we select the last two groups
+
+    weights = dict([(i, sigma_ * 2 * np.sqrt(2)) for i in np.unique(groups)])
+    conv = const(X, 
+                 Y, 
+                 groups,
+                 weights,
+                 proportion)
+    
+    signs = conv.fit()
+    nonzero = conv.selection_variable['directions'].keys()
+
+    if target == 'full':
+        (observed_target, 
+         group_assignments,
+         cov_target, 
+         cov_target_score, 
+         alternatives) = full_targets(conv.loglike, 
+                                      conv._W, 
+                                      nonzero,
+                                      conv.penalty)
+    elif target == 'selected':
+        (observed_target, 
+         group_assignments,
+         cov_target, 
+         cov_target_score, 
+         alternatives) = selected_targets(conv.loglike, 
+                                          conv._W, 
+                                          nonzero,
+                                          conv.penalty)
+    elif target == 'debiased':
+        (observed_target, 
+         group_assignments,
+         cov_target, 
+         cov_target_score, 
+         alternatives) = debiased_targets(conv.loglike, 
+                                          conv._W, 
+                                          nonzero,
+                                          conv.penalty)
+
+    _, pval, intervals = conv.summary(observed_target, 
+                                      group_assignments,
+                                      cov_target, 
+                                      cov_target_score, 
+                                      alternatives,
+                                      ndraw=ndraw,
+                                      burnin=burnin, 
+                                      compute_intervals=False)
+        
+    which = np.zeros(p, np.bool)
+    for group in conv.selection_variable['directions'].keys():
+        which_group = conv.penalty.groups == group
+        which += which_group
+    return pval[beta[which] == 0], pval[beta[which] != 0]
+
 def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
     for target in ['full', 'selected', 'debiased']:
         test_split_lasso(n=n, 

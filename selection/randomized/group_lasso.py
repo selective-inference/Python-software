@@ -1070,8 +1070,10 @@ def _reference_density_info(soln,
 
     for group_g in nz_groups:
         which_g, which_idx_g, _, P_g, r_g, lambda_g, u_g = group_g
+        idx_g = slice(ctr_g, ctr_g + which_idx_g.sum())
+        print(u_g, which_idx_g, idx_g, 'u_g')
+
         if which_idx_g.sum() > 1:
-            idx_g = slice(ctr_g, ctr_g + which_idx_g.sum())
             block_g = final_matrix[idx_g][:,idx_g]
             block_g = P_g.dot(block_g).dot(P_g)
             # \tilde{\gamma}'s
