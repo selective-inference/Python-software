@@ -1097,7 +1097,7 @@ def _reference_density_info(soln,
                                          lambda_g)
             
         else: 
-            logdet_g = lambda r: np.zeros_like(r)
+            logdet_g = lambda r: np.zeros_like(r).reshape(-1)
 
         implied_variance = 1 / (np.dot(implied_precision[idx_g][:,idx_g],
                                        u_g) * u_g).sum()
