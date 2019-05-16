@@ -45,6 +45,7 @@ def test_highdim_lasso(n=500,
         W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
     else:
         W = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_
+    W[0] = 0
 
     conv = const(X, 
                  Y, 

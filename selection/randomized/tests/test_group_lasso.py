@@ -23,7 +23,7 @@ def test_group_lasso(n=400,
                      sigma=3, 
                      target='full',
                      rho=0.4, 
-                     randomizer_scale=0.5,
+                     randomizer_scale=.75,
                      ndraw=100000):
     """
     Test group lasso
@@ -89,7 +89,7 @@ def test_group_lasso(n=400,
                                       cov_target_score, 
                                       alternatives,
                                       ndraw=ndraw,
-                                      compute_intervals=True)
+                                      compute_intervals=False)
         
     which = np.zeros(p, np.bool)
     for group in conv.selection_variable['directions'].keys():

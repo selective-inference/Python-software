@@ -16,9 +16,9 @@ from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
 
-def test_split_lasso(n=400, 
-                     p=50, 
-                     signal_fac=1.5, 
+def test_split_lasso(n=100, 
+                     p=150, 
+                     signal_fac=3, 
                      s=5, 
                      sigma=3, 
                      target='full',
@@ -49,10 +49,8 @@ def test_split_lasso(n=400,
     n, p = X.shape
 
     sigma_ = np.std(Y)
-    if target is not 'debiased':
-        W = np.ones(X.shape[1]) * np.sqrt(1.5 * np.log(p)) * sigma_
-    else:
-        W = np.ones(X.shape[1]) * np.sqrt(2 * np.log(p)) * sigma_ * 1.5
+    W = np.ones(X.shape[1]) * np.sqrt(np.log(p)) * sigma_
+    W[0] = 0
 
     conv = const(X, 
                  Y, 
@@ -62,38 +60,42 @@ def test_split_lasso(n=400,
     signs = conv.fit()
     nonzero = signs != 0
 
-    if target == 'full':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = full_targets(conv.loglike, 
-                                      conv._W, 
-                                      nonzero)
-    elif target == 'selected':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = selected_targets(conv.loglike, 
+    if nonzero.sum() > 0:
+
+        if target == 'full':
+            (observed_target, 
+             cov_target, 
+             cov_target_score, 
+             alternatives) = full_targets(conv.loglike, 
                                           conv._W, 
                                           nonzero)
-    elif target == 'debiased':
-        (observed_target, 
-         cov_target, 
-         cov_target_score, 
-         alternatives) = debiased_targets(conv.loglike, 
-                                          conv._W, 
-                                          nonzero,
-                                          penalty=conv.penalty)
+        elif target == 'selected':
+            (observed_target, 
+             cov_target, 
+             cov_target_score, 
+             alternatives) = selected_targets(conv.loglike, 
+                                              conv._W, 
+                                              nonzero)
+        elif target == 'debiased':
+            (observed_target, 
+             cov_target, 
+             cov_target_score, 
+             alternatives) = debiased_targets(conv.loglike, 
+                                              conv._W, 
+                                              nonzero,
+                                              penalty=conv.penalty)
 
-    _, pval, intervals = conv.summary(observed_target, 
-                                      cov_target, 
-                                      cov_target_score, 
-                                      alternatives,
-                                      ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=False)
-        
-    return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
+        _, pval, intervals = conv.summary(observed_target, 
+                                          cov_target, 
+                                          cov_target_score, 
+                                          alternatives,
+                                          ndraw=ndraw,
+                                          burnin=burnin, 
+                                          compute_intervals=False)
+
+        return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
+    else:
+        return [], []
 
 def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
     for target in ['full', 'selected', 'debiased']:
@@ -105,17 +107,18 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          rho=rho, 
                          target=target)
 
-def main(nsim=500, n=400, p=50, target='full', sigma=3):
+def main(nsim=500, n=400, p=50, target='full', sigma=3, s=3):
 
     import matplotlib.pyplot as plt
     P0, PA = [], []
     from statsmodels.distributions import ECDF
 
     for i in range(nsim):
-        p0, pA = test_split_lasso(n=n, p=p, target=target, sigma=sigma)
+        p0, pA = test_split_lasso(n=n, p=p, target=target, sigma=sigma, s=s)
         print(len(p0), len(pA))
-        P0.extend(p0)
-        PA.extend(pA)
+        if not (len(pA) < s and target=='selected'):
+            P0.extend(p0)
+            PA.extend(pA)
 
         P0_clean = np.array(P0)
         

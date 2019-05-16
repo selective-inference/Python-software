@@ -217,11 +217,12 @@ class lasso(gaussian_query):
         A_scaling = -np.identity(num_opt_var)
         b_scaling = np.zeros(num_opt_var)
 
-        self._setup_sampler_data = (A_scaling,
-                                    b_scaling,
+        self._setup_sampler_data = (A_scaling[:active.sum()],
+                                    b_scaling[:active.sum()],
                                     opt_linear,
                                     opt_offset)
-        self._setup_sampler(*self._setup_sampler_data)
+        if num_opt_var > 0:
+            self._setup_sampler(*self._setup_sampler_data)
 
         return active_signs
 
@@ -736,7 +737,6 @@ def full_targets(loglike,
         dispersion = (((y - loglike.saturated_loss.mean_function(X.dot(full_estimator))) ** 2 / W).sum() / 
                       (n - p))
 
-    print(dispersion, 'dispersion')
     alternatives = ['twosided'] * features.sum()
     return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 
@@ -857,12 +857,13 @@ class split_lasso(lasso):
                                                             'func') /
                           (n - df_fit))
 
-            #print('dispersion', dispersion)
-
             # run setup again after 
             # estimating dispersion 
-            self._setup_sampler(*self._setup_sampler_data, 
-                                 dispersion=dispersion)
+
+            print(dispersion, 'dispersion')
+            if df_fit > 0:
+                self._setup_sampler(*self._setup_sampler_data, 
+                                     dispersion=dispersion)
 
         return signs
 
@@ -872,13 +873,13 @@ class split_lasso(lasso):
                                 dispersion):
 
         # key observation is that the covariance of the added noise is 
-        # roughly (1 - pi) / pi * X^TX (in OLS regression, similar for other
-        # models), so the precision is \phi * pi / (1 - pi) (X^TX)^{-1} 
-        # and prec.dot(opt_linear) = pi / (1 - pi) * I[:,num(E)] * dispersion
-        # (because opt_linear has shape p x E with the columns
-        # being those non-zero columns of the solution
-        # the conditional precision is Q[E][:,E] * (pi / (1 - pi))
-        # and logdens_linear is (1 - pi) / pi * Q[E][:,E]^{-1} 
+        # roughly dispersion * (1 - pi) / pi * X^TX (in OLS regression, similar for other
+        # models), so the precision is  (X^TX)^{-1} * (pi / ((1 - pi) * dispersion))
+        # and prec.dot(opt_linear) = S_E / (dispersion * (1 - pi) / pi)
+        # because opt_linear has shape p x E with the columns
+        # being those non-zero columns of the solution. Above S_E = np.diag(signs)
+        # the conditional precision is S_E Q[E][:,E] * pi / ((1 - pi) * dispersion) S_E
+        # and logdens_linear is Q[E][:,E]^{-1} S_E
         # padded with zeros
         # to be E x p
 
@@ -898,7 +899,7 @@ class split_lasso(lasso):
         cond_cov = np.linalg.inv(cond_precision)
         logdens_linear = np.zeros((len(ordered_vars),
                                    self.nfeature)) 
-        logdens_linear[:,ordered_vars] = cond_cov
+        logdens_linear[:, ordered_vars] = cond_cov * signs[None, :] / (dispersion * ratio)
         cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
 
         return cond_mean, cond_cov, cond_precision, logdens_linear
