@@ -271,7 +271,7 @@ def test_mixed(n=400,
 
 def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
     for target in ['full', 'selected', 'debiased']:
-        test_split_lasso(n=n, 
+        test_group_lasso(n=n, 
                          p=p, 
                          signal_fac=signal_fac, 
                          s=s, 
