@@ -1,0 +1,494 @@
+---
+jupyter:
+  jupytext:
+    cell_metadata_filter: all,-slideshow
+    formats: ipynb,Rmd
+    text_representation:
+      extension: .Rmd
+      format_name: rmarkdown
+      format_version: '1.1'
+      jupytext_version: 1.1.1
+  kernelspec:
+    display_name: Python 3
+    language: python
+    name: python3
+---
+
+```{python collapsed=TRUE}
+import numpy as np
+from scipy.linalg import eigvalsh
+import functools
+import regreg.api as rr
+```
+
+<!-- #region -->
+## Jacobian for Group LASSO
+
+I want to finally get a working sampler for group LASSO.
+Let $\pi:\mathbb{R}^p \rightarrow \mathbb{R}^p$ denote the proximal map 
+of our penalty ${\cal P}$.
+
+The map, $z \mapsto (\pi(z), z - \pi(z))$ is a bijection from $\mathbb{R}^p$ to
+$$
+\left\{(\beta, u): u \in \partial {\cal P}(\beta) \right\}.
+$$
+
+Our selective change of variables can then be expressed as
+$$
+\omega(z;{\cal D}) = \nabla \ell(\beta; {\cal D}) + \epsilon \beta+ u
+= \nabla \ell(\pi(z)) + \epsilon \pi(z) + z - \pi(z)
+$$
+
+The Jacobian is therefore
+$$
+\left(\nabla^2 \ell(\pi(z)) + (\epsilon - 1) \cdot I\right) D_z\pi(z) + I 
+$$
+
+We know that
+$D\pi(z)$ is block diagonal with $g$ block
+$$
+D_z\pi(z)[g,g] = D_{z_g}\left( \frac{z_g}{\|z_g\|_2}(\|z_g\|_2 - \lambda_g) \right) = 
+\begin{cases}
+0 & \|z_g\|_2 \leq \lambda_g \\
+I_g - \frac{\lambda_g}{\|z_g\|_2} \left(I - \frac{1}{\|z_g\|^2_2}z_g z_g^T \right) & \|z_g\|_2 > \lambda_g
+\end{cases}
+$$
+For a given active group $g$, our plan is to condition on $z_h, h \neq g$.
+This might be easier to express in polar coordinates. Let 
+$$
+(u_g(z_g), r_g(z_g)) = \left(z_g / \|z_g\|_2, \|z_g\|_2 - \lambda_g\right)
+$$
+be our group specific polar coordinates so that the
+$(g,g)$ block of $D_z(\pi(z))$ is (when non-zero)
+$$
+I_g - \frac{\lambda_g}{r_g + \lambda_g} \left(I - u_g u_g^T \right) = u_gu_g^T + \frac{r_g}{\lambda_g + r_g} \left(I_g - u_gu_g^T \right)
+$$
+
+
+Therefore, keeping $z_h, h \neq g$ in standard coordinates
+and polar coordinates for $z_g$ the matrix takes the form
+$$
+\left( \nabla^2 \ell(\pi(z)) + (\epsilon - 1) \cdot I \right)  
+\begin{pmatrix}
+u_gu_g^T + \frac{r_g}{\lambda_g + r_g} \left(I_g - u_gu_g^T \right) & 0  & 0\\
+0 & \left(u_hu_h^T + \frac{r_h}{r_h + \lambda_h} \left(I_h - u_h u_h^T  \right)\right)_{h \neq g \in E} & 0 \\ 0 & 0 & 0\\
+\end{pmatrix} + I
+= A(z) \begin{pmatrix}
+u_gu_g^T + \frac{r_g}{\lambda_g + r_g} \left(I_g - u_gu_g^T \right) & 0  & 0\\
+0 & \left(u_hu_h^T + \frac{r_h}{r_h + \lambda_h} \left(I_h - u_h u_h^T \right)\right)_{h \neq g \in E} & 0 \\ 0 & 0 & 0\\
+\end{pmatrix} + I
+$$
+
+Finally, we will condition on $u_g$ as well (we could try conditioning 
+on its projective direction too, I suppose).
+So, ultimately we will just need to evaluate the determinant of this matrix
+as a function of $r_g$ (and integrate over $r_g$).
+
+Due to the block structure, we see that the determinant
+is the determinant of the smaller matrix
+$$
+A(z)[E,E] \begin{pmatrix}
+u_gu_g^T + \frac{r_g}{r_g + \lambda_g} \left(I_g - u_g u_g^T \right) & 0  \\
+0 & \left( u_hu_h^T + \frac{r_h}{r_h + \lambda_h} \left(I_h - u_hu_h^T \right)\right)_{h \neq g} 
+\end{pmatrix} + I_E
+$$
+
+We evaluate the matrix $A(z)[E, E]$ at $r_g=r_g^*$, calling this $A_0$, 
+we see want the eigenvalues of
+$$
+A_0 \begin{pmatrix}
+u_gu_g^T + \frac{r^*_g}{r^*_g + \lambda_g} \left(I_g - u_gu_g^T \right) & 0  \\
+0 & \left( u_hu_h^T + \frac{r_h}{r_h + \lambda_h} \left(I_h - u_hu_h^T \right)\right)_{h \neq g} 
+\end{pmatrix} + 
+A_0 \begin{pmatrix}
+\left(\frac{r_g}{\lambda_g + r_g} - \frac{r_g^*}{\lambda_g + r_g^*} \right) (I_g - u_gu_g^T) & 0  \\
+0 & 0
+\end{pmatrix} +
+I_E
+ = A_0 (D_0 + c P) + I
+$$
+where 
+$$
+c(r_g, r_g^*) = \left(\frac{r_g}{\lambda_g + r_g} - \frac{r_g^*}{r_g^*+\lambda_g} \right), \qquad P = \begin{pmatrix} I_g - u_gu_g^T & 0 \\ 0 & 0 \end{pmatrix}.
+$$
+
+We have used the approximation that $\nabla^2 \ell(\pi(z))$ does not change
+noticably change with $r_g$ -- this is certainly true for least squares
+problems. Above $A_0$ is the matrix function $A(z_0)[E,E]$ evaluated at 
+$z_0=(r_g^*, u_g, (z_h)_{h \neq g})$ and
+$$
+P(z_0) = I - u_g u_g^T
+$$
+padded out appropriately to zero so it is of size $p$.
+We also know that only $|g|-1$ of these eigenvalues are non-zero and that
+$P$ commutes with $D_0$ (and hence $D_0^{\pm 1/2}$ and $D_0^{-1}$ when
+these are symmetric square roots -- $D_0$ is symmetric because it is
+the Hessian of the value of a proximal problem).
+
+We want
+$$
+\begin{aligned}
+\text{det}(A_0 D_0 + c A_0 P + I) &= 
+\text{det}(D_0^{1/2} A_0 D_0^{1/2} + c D_0^{1/2} A_0 P D_0^{-1/2} + I) \\
+&= \text{det}(D_0^{1/2} A_0 D_0^{1/2} + c D_0^{1/2} A_0 D_0^{-1/2} P + I) \\
+&= \text{det}(D_0^{1/2} A_0 D_0^{1/2} + c D_0^{1/2} A_0 D_0^{1/2} D_0^{-1} P + I) \\
+ &= \text{det}(D_0^{1/2} A_0 D_0^{1/2} + I)^{-1} \cdot \text{det}(I + c(D_0^{1/2} A_0 D_0^{1/2} + I)^{-1}D_0^{1/2} A_0 D_0^{1/2} D_0^{-1} P)
+\end{aligned}
+$$
+We see then that it is sufficient to find the eigenvalues of
+$$
+(D_0^{1/2} A_0 D_0^{1/2} + I)^{-1}D_0^{1/2} A_0 D_0^{1/2} D_0^{-1} P
+$$
+which is the product of two symmetric matrices. Hence all its eigenvalues are real and there are $|g|-1$ non-zero ones as the matrix $D_0^{-1}P$ is of rank $|g|-1$.
+
+Given these eigenvalues $\gamma_j$ the determinant is
+$$
+\text{det}(D_0^{1/2} A_0 D_0^{1/2} + I)^{-1} \cdot \prod_{j=1}^{|g|-1} \left(1 + \frac{r_g}{\lambda_g + r_g} \gamma_j\right)
+$$
+and the first term will cancel in the integral.
+
+The eigenvalues of the above matrix are the top $|g|-1$ eigenvalues in
+the generalized eigenvalue problem
+$$
+D_0^{-1}Pv = \gamma ( D_0^{1/2}A_0D_0^{1/2} + I) ( D_0^{1/2}A_0D_0^{1/2})^{-1}v.
+$$
+
+
+<!-- #endregion -->
+
+<!-- #region {"lines_to_next_cell": 0} -->
+Lastly, we should calculate $D_0^{1/2}$ and $D_0^{-1}$. For which we need
+the inverse and symmetric square-root of
+$$
+uu^T + \frac{r}{\lambda + r} \left(I - u u^T\right)?
+$$
+
+Hence, we see
+$$
+D_0^{-1/2} =  \begin{pmatrix}
+u_gu_g^T + \left(\frac{\lambda_g + r^*_g}{r_g}\right)^{1/2} \left(I_g - u_gu_g^T \right) & 0  \\
+0 & \left( u_hu_h^T + \left(\frac{\lambda_h + r_h}{r_h}\right)^{1/2} \left(I_h - u_hu_h^T \right)\right)_{h \neq g} 
+\end{pmatrix}
+$$
+
+Also,
+$$
+\left(uu^T + \frac{r}{\lambda + r}(I - uu^T) \right)^{-1} = uu^T + \frac{\lambda + r}{r} (I - uu^T)
+$$
+so that
+$$
+D_0^{-1}P = \begin{pmatrix} \frac{\lambda_g + r^*_g}{r^*_g} (I_g - u_g u_g^T) & 0 \\ 0 & 0 \end{pmatrix}
+$$
+
+Going back to our generalized eigenvalue problem, we note a few things.
+First, when $|g|=1$, all eigenvalues are 0. Second, we note that
+any eigenvectors in this problem must be in $\text{row}(P) = \text{row}(I_g-u_gu_g^T) \subset \text{row}(I_g)$. Let $WW^T=I_g-u_gu_g^T$. Writing $v=WW^Tv$ and setting $\eta=W^Tv$, the 
+equation for the generalized eigenvalue problem reads
+$$
+\begin{aligned}
+D_0^{-1}PW\eta &= \gamma ( D_0^{1/2}A_0D_0^{1/2} + I)  (D_0^{1/2}A_0D_0^{1/2})^{-1}W\eta \\
+&= \gamma (I + (D_0^{1/2}A_0D_0^{1/2})^{-1})W \eta
+\end{aligned}
+$$
+
+Multiplying both sides by $W^T$ yields
+$$
+\begin{aligned}
+W^TD_0^{-1}PW\eta &= \frac{\lambda_g+ r^*_g}{r^*_g}  \eta \\
+&= \gamma W^T ( I  + (D_0^{1/2}A_0D_0^{1/2})^{-1})W\eta \\
+&= \gamma (I + W^T(D_0^{1/2}A_0D_0^{1/2})^{-1}W)\eta \\
+\end{aligned}
+$$
+Or,
+$$
+\gamma W^T(D_0^{1/2}A_0D_0^{1/2})^{-1}W\eta = \left( \frac{\lambda_g+ r^*_g}{r^*_g} - \gamma \right) \eta
+$$
+ $\eta$ is a (regular) eigenvector of 
+$$
+W^T(D_0^{1/2}A_0D_0^{1/2})^{-1}W
+$$
+with eigenvalue 
+$$
+\frac{\lambda_g + r^*_g}{ \gamma r^*_g} - 1.$$
+
+(I think?) the non-zero eigenvalues of $W^T(D_0^{1/2}A_0D_0^{1/2})^{-1}W$ agree with those of
+$$
+P(D_0^{1/2}A_0D_0^{1/2})^{-1}P = D_0^{-1/2}PA_0^{-1}PD_0^{-1/2} = 
+(I_g - u_gu_g^T)\left(\nabla^2 \ell(\pi(z_0)) + (\epsilon - 1) I \right)^{-1}[g,g](I_g - u_gu_g^T)
+$$
+
+
+Let $\tilde{\gamma}$ denote the (regular) eigenvalues of $W^T(D_0^{1/2}A_0D_0^{1/2})^{-1}W$, then
+$$
+\gamma_j = \frac{\lambda_g + r_g^*}{(\tilde{\gamma}_j + 1) r^*_g}
+$$
+so that
+$$
+c(r_g, r_g^*) \gamma_j = \frac{\lambda_g}{r_g^* (\tilde{\gamma}_j + 1)} \frac{r_g - r_g^*}{r_g+\lambda_g}.$$
+
+The ultimate determinant should not depend on the value $r_g^*$ chosen?
+<!-- #endregion -->
+<!-- #region {"collapsed": true} -->
+
+
+<!-- #endregion -->
+
+```{python collapsed=TRUE}
+def jacobian(hessian, 
+             soln, 
+             group_lasso_penalty, 
+             randomization_precision, 
+             tol=1.e-6, ff=1):
+    '''
+    
+    Parameters
+    ----------
+    
+    hessian : the [:,E] block of the Hessian so hessian[E] is A_0 above
+    
+    group_id : a group index of group_lasso_penalty
+    
+    group_norm : $\lambda_g$ above
+    
+    group_direction : $u_g$ above
+    
+    base_point: $r_g$ above
+    
+    Compute generalized eigenvalues above and return
+    function to evaluate jacobian as a function of $r_g=\|z_g\|_2$
+    fixing everything in the optimization variables except $r_g$.
+    
+    Above, $A_0$ is the Hessian of loss evaluated at an appropriate point.
+    '''
+    H, pen = hessian, group_lasso_penalty       # shorthand 
+    nz = soln != 0                              # nonzero
+    nnz = nz.sum()                              # num nonzero
+    Hr = np.zeros((nnz, nnz))                            # restricted hessian   
+    sqrt_block = np.zeros((nnz, nnz))
+    group_idx = pen.groups == group_id
+    nz_groups = []
+
+    for idx in np.unique(pen.groups):
+        group_idx = pen.groups == idx
+        group_soln = soln[pen.groups == idx]
+        is_nz = np.linalg.norm(group_soln) > tol * np.linalg.norm(soln)
+        if is_nz:
+            ng = group_idx.sum()
+            group_direction = u_g = group_soln / np.linalg.norm(group_soln)
+            group_norm = r_g = ff * np.linalg.norm(group_soln)   # really r_g^*
+            group_weight = lambda_g = pen.weights[idx]
+            
+            fraction = np.sqrt(r_g / (lambda_g + r_g))
+            # one of the blocks in D_0^{1/2}
+            group_block = np.identity(ng) * fraction + (1 - fraction) * np.multiply.outer(u_g, u_g)
+            group_P = np.identity(ng) - np.multiply.outer(u_g, u_g)
+            nz_groups.append((idx, # a group index g
+                              group_idx, # indices where group==idx
+                              group_block, 
+                              group_P,
+                              r_g,          
+                              lambda_g,
+                              group_direction)
+                            )
+            
+    # setup the block hessian Hr=D_0^{1/2}A_0D_0^{1/2}
+    
+    Q_blocks = []
+    ctr_g = 0
+    for group_g in nz_groups:
+        which_idx_g, block_g = group_g[1], group_g[2]
+        idx_g = slice(ctr_g, ctr_g + which_idx_g.sum())
+        Q_blocks.append(get_hessian(which_idx_g), slice(None, None))
+        ctr_h = 0
+        for group_h in nz_groups:
+            which_idx_h, block_h = group_h[1], group_h[2]
+            idx_h = slice(ctr_h, ctr_h + which_idx_h.sum())
+            H_hg = get_hessian(which_idx_h, which_idx_g)
+            Hr[idx_g][:,idx_h] += block_h.dot(H_hg).dot(block_g).T
+            ctr_h += which_idx_h.sum()
+        ctr_g += which_idx_g.sum()
+        
+    Q = np.vstack(Q_blocks)
+    implied_precision = Q.dot(randomization_precision).dot(Q.T)
+    
+    # compute (I+Hr)^{-1}Hr
+    
+    final_matrix = np.linalg.inv(Hr)
+    
+    ctr_g = 0
+    factors = []
+    ref_dens_info = {}
+    implied_variances = {}
+    for group_g in nz_groups:
+        which_g, which_idx_g, _, P_g, r_g, lambda_g, u_g = group_g
+        if which_idx_g.sum() > 1:
+            idx_g = slice(ctr_g, ctr_g + which_idx_g.sum())
+            block_g = final_matrix[idx_g][:,idx_g]
+            block_g = P_g.dot(block_g).dot(P_g)
+            eigvals_g = np.linalg.eigvalsh(block_g)[1:]               # \tilde{\gamma}'s
+            factors_g = lambda_g / ((eigvals_g + 1) * r_g)           # factors in the determinant
+            k_g = which_idx_g.sum()
+            def logdet_g(factors_g, r_g, k_g, lambda_g, r):
+                return (np.log(1 + np.multiply.outer(factors_g, r - r_g) / 
+                               np.add.outer(lambda_g * 
+                                            np.ones_like(factors_g), r)).sum(0)
+                        + np.log(lambda_g + r) * (k_g - 1))
+            logdet_g = functools.partial(logdet_g, factors_g, r_g, k_g, lambda_g)
+            
+            implied_variance = 1 / (u_g * implied_precision[idx_g][:,idx_g].dot(u_g)).sum()
+            ctr_g += which_idx_g.sum()
+        else: 
+            logdet_g = lambda r: np.zeros_like(r)
+        
+        ref_dens_info[which_g] = (logdet_g, implied_variance)
+
+    return log_determinants
+
+    
+```
+
+```{python}
+groups = [1]*5 + [2]*10 + [3]*3 + [4]*6 + [5]*1
+group_weights = {1:0, 2:1, 3:3.5, 4:2, 5:0.2}
+pen = rr.group_lasso(groups, group_weights, lagrange=1)
+soln = np.zeros(pen.shape)
+soln[:5] = np.random.standard_normal(5)
+soln[15:18] = np.random.standard_normal(3)
+soln[-1] = 2.
+pen.groups
+
+p = pen.shape[0]
+n = 100
+X = np.random.standard_normal((n, p))
+H = X.T.dot(X)
+
+def get_hessian(idx_i, idx_j):
+    return H[idx_i][:, idx_j]
+V0 = jacobian(get_hessian, soln, pen)
+for i in V0.keys():
+    print(i, V0[i](np.array([3.,4., 5., 7.])))
+
+
+```
+
+## Checking with a fudge factor to choose a different $r_g^*$
+
+```{python}
+soln = np.zeros(pen.shape)
+soln[15:18] = np.random.standard_normal(3)
+V0 = jacobian(get_hessian, soln, pen)
+
+V1 = jacobian(get_hessian, soln, pen, ff=1.5)
+for i in V0.keys():
+    print(i, V1[i](np.array([3.,4., 5., 7.])) - V0[i](np.array([3.,4., 5., 7.]))) # these are log-dets -- subtract
+
+```
+
+## General penalties
+
+What we used crucially here to get into a generalized eigenvalue problem
+with symmetric matrices (i.e. real eigenvalues) was that $D_0$ commutes with $P$. If we want to condition on
+some function of optimization variables for general penalties (that are support functions of $K$) this property is not guaranteed. We will typically condition on the subgradient $u$ which
+fixes $N_uK$ and its dimension $d(u)$. Suppose we want to condition on $d(u)-1$ linear functions of the normal vector $\beta$ -- this will correspond
+to taking an affine ray through $\beta_0$ the observed $\beta$. We will need that
+the Hessian of the prox along the ray $\beta_{obs} + t \alpha$ all have the same eigenspace. One direction $\alpha$ that satisfies this is $\alpha=\beta/\|\beta\|_2$. In the case $K$ is a product like the group LASSO we can find other examples. 
+
+We also used the fact that $D_0$ was invertible. Generally the Hessian of the prox is not invertible, but it is invertible on the space spanned by its non-zero eigenvectors. This is what we used here in reducing the large block to a smaller block. Such a reduction will work generally -- under the assumption that $D_0$ and $P$ share the same eigenvectors corresponding to eigenvalue 0. 
+
+
+## Selective density
+
+Finally, let's pick a target and see how to compute appropriate reference densities.
+
+For group $g$, let $J'_g(r_g)=  J'_g(r_g;u, r_g^*, (\beta_h)_{h \neq g \in E}); $ denote the determinant above. The map to polar coordinates picks up an extra factor of $(\lambda_g + r_g )^{|g|-1}$.
+
+Let $$
+\beta(r_g) = \beta(r_g;u_g, (\beta_h)_{h \neq g \in E}) = \begin{pmatrix} r_g u_g \\ (\beta_h)_{h \neq g \in E} = 
+\alpha_g r_g + \kappa_g
+\end{pmatrix}.
+$$
+
+We consider Gaussian randomization $\omega$ having precision $\Theta$, and for active set $E$ write
+$$
+\nabla \ell(\beta_E) =  \nabla\ell(\bar{\beta}_E) + Q(\bar{\beta}_E)(\beta_E- \bar{\beta}_E) = \nabla \ell(\bar{\beta}_E) -Q(\bar{\beta}_E)\bar{\beta}_E + Q\beta_E
+$$
+where $\nabla \ell(\bar{\beta}_E)[E]=0$ and $\bar{\beta}_E, \beta_E$ above are presumed filled out to 
+be $p$-dimensional. Alternatively, we can take $Q=Q[:,E]$ to be only the active columns of the Hessian
+and then $\bar{\beta}_E$ and $\beta_E$ are $E$-dimensional. In the argument of $\nabla \ell$, however, they will have to be padded. In any case, we see we never have to form the full $p \times p$ matrix $Q$.
+
+The quantity $ \nabla \ell(\bar{\beta}_E) - Q(\bar{\beta}_E)\bar{\beta}_E$ is asymptotically equivalent (OK, low dim) to $ \nabla\ell(\beta^*_E) - Q(\beta^*_E)\beta^*_E$ and is exactly $-X^TY$ in the linear regression setting. It is this quantity
+we linearly decompose as
+$$
+\nabla \ell(\bar{\beta}_E) + Q\bar{\beta}_E = N + AT.
+$$
+
+Hence, our reference distribution under $N(\mu, \Sigma)$ for target $T_g$ is proportional to (starting to drop $g$'s and $|g|=k$)
+$$
+\phi_{(\mu,\Sigma)}(T) J'(r) (\lambda + r)^{k-1} \exp \left(-\frac{1}{2}\left(N+AT+Q(\alpha r + \kappa)+u\right)^T \Theta \left(N+AT+Q(\alpha r + \kappa)+u\right)\right)
+$$
+
+
+Conditional on $(T, N, \alpha, u, \kappa)$  this is (as a function of $r$) proportional to 
+$$
+J'(r) (\lambda + r)^{k-1} \exp\left(-\frac{r^2 \alpha^TQ^T\Theta Q\alpha}{2} - (N+AT+Q\kappa+u)^T\Theta Q\alpha r\right)
+1_{(0,\infty)}(r)
+$$
+
+
+When $k=1$, this is a Gaussian density with variance
+$$
+\frac{1}{\alpha^TQ^T\Theta Q\alpha}
+$$
+and mean
+$$
+-\frac{(N+AT+Q\kappa+u)^T\Theta Q\alpha}{\alpha^TQ^T\Theta Q\alpha}.
+$$
+
+Hence, the normalization is just
+$$
+1 - \Phi \left(\frac{(N+AT+Q\kappa+u)^T\Theta Q\alpha}{(\alpha^TQ^T\Theta Q\alpha)^{1/2}}\right).
+$$
+
+Therefore, for $k=1$ the appropriate reference density for target $T$ is proportional to
+$$
+t \mapsto \phi_{(\mu,\Sigma})(t) \cdot \left(1 - \Phi \left(\frac{(N+AT+Q\kappa+u)^T\Theta Q\alpha}{(\alpha^TQ^T\Theta Q\alpha)^{1/2}}\right) \right).
+$$
+
+
+For $k > 1$, it is this Gaussian density, modified by the term $J'(r)(\lambda+r)^{k-1}$.
+A cheap way to sample this would be to sample from the truncated Gaussian at some $T_0$ ($N$ will be fixed because we condition on it) and use importance weights.
+The appropriate reference density is proportional to
+$$
+t \mapsto \phi_{(\mu,\Sigma})(t) \cdot \int_0^{\infty} J'(r) (\lambda+r)^{k-1}
+\exp\left(-\frac{r^2 \alpha^TQ^T\Theta Q\alpha}{2} - (N + At + Q\kappa + u)^T\Theta Q\alpha r\right) \; dr.
+$$
+or, for some $T_0$
+$$
+t \mapsto \phi_{(\mu,\Sigma})(t) \cdot \int_0^{\infty} J'(r) (\lambda+r)^{k-1} \exp \left((t-T_0)^TA^T\Theta Q\alpha r \right)
+\exp\left(-\frac{r^2 \alpha^TQ^T\Theta Q\alpha}{2} - (N + AT_0 + Q\kappa +u)^T\Theta Q\alpha r\right) \; dr.
+$$
+
+This second term can be evaluated as an expectation against a sample drawn from the above density at some reference $T_0$.
+
+<!-- #region {"collapsed": true, "trusted": true} -->
+## Data carving
+
+In the data carving scenario , we note that, at least in the correctly specified parametric selected model
+$$
+Q^T\Theta Q = c(\alpha) Q[E] \in \mathbb{R}^{E \times E}
+$$
+i.e. it is a multiple of the precision matrix of the selected model, with the precision depending on the splitting proportion $\alpha$.
+<!-- #endregion -->
+
+```{python collapsed=TRUE}
+randomization_variance = 1.
+prec = 1 / randomization_variance * np.identity(pen.shape[0])
+full_Q = get_hessian(soln != 0, slice(None, None))
+implied_precision = full_Q.dot(prec).dot(full_Q.T)
+
+implied_variances = []
+```
+
+```{python collapsed=TRUE}
+
+```

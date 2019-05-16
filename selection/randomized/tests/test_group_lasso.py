@@ -17,15 +17,13 @@ from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
 
 def test_group_lasso(n=400, 
-                     p=200, 
+                     p=100, 
                      signal_fac=1.5, 
                      s=5, 
                      sigma=3, 
                      target='full',
                      rho=0.4, 
-                     proportion=0.5,
-                     ndraw=10000, 
-                     burnin=5000):
+                     ndraw=30000):
     """
     Test group lasso
     """
@@ -50,8 +48,7 @@ def test_group_lasso(n=400,
     conv = const(X, 
                  Y, 
                  groups,
-                 weights,
-                 proportion)
+                 weights)
     
     signs = conv.fit()
     nonzero = conv.selection_variable['directions'].keys()
@@ -90,8 +87,7 @@ def test_group_lasso(n=400,
                                       cov_target_score, 
                                       alternatives,
                                       ndraw=ndraw,
-                                      burnin=burnin, 
-                                      compute_intervals=False)
+                                      compute_intervals=True)
         
     which = np.zeros(p, np.bool)
     for group in conv.selection_variable['directions'].keys():
@@ -106,9 +102,7 @@ def test_lasso(n=400,
                sigma=3, 
                target='full',
                rho=0.4, 
-               proportion=0.5,
-               ndraw=10000, 
-               burnin=5000):
+               ndraw=10000):
     """
     Test group lasso with groups of size 1, ie lasso
     """
@@ -133,8 +127,7 @@ def test_lasso(n=400,
     conv = const(X, 
                  Y, 
                  groups,
-                 weights,
-                 proportion)
+                 weights)
     
     signs = conv.fit()
     nonzero = conv.selection_variable['directions'].keys()
@@ -173,7 +166,6 @@ def test_lasso(n=400,
                                       cov_target_score, 
                                       alternatives,
                                       ndraw=ndraw,
-                                      burnin=burnin, 
                                       compute_intervals=False)
         
     which = np.zeros(p, np.bool)
@@ -189,9 +181,7 @@ def test_mixed(n=400,
                sigma=3, 
                target='full',
                rho=0.4, 
-               proportion=0.5,
-               ndraw=10000, 
-               burnin=5000):
+               ndraw=10000):
     """
     Test group lasso with a mix of groups of size 1, and larger
     """
@@ -220,8 +210,7 @@ def test_mixed(n=400,
     conv = const(X, 
                  Y, 
                  groups,
-                 weights,
-                 proportion)
+                 weights)
     
     signs = conv.fit()
     nonzero = conv.selection_variable['directions'].keys()
@@ -260,7 +249,6 @@ def test_mixed(n=400,
                                       cov_target_score, 
                                       alternatives,
                                       ndraw=ndraw,
-                                      burnin=burnin, 
                                       compute_intervals=False)
         
     which = np.zeros(p, np.bool)
@@ -279,14 +267,17 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          rho=rho, 
                          target=target)
 
-def main(nsim=500, n=400, p=50, target='selected', sigma=3):
+def main(nsim=500, n=100, p=50, target='full', sigma=3):
 
     import matplotlib.pyplot as plt
     P0, PA = [], []
     from statsmodels.distributions import ECDF
 
     for i in range(nsim):
-        p0, pA = test_split_lasso(n=n, p=p, target=target, sigma=sigma)
+        try:
+            p0, pA = test_group_lasso(n=n, p=p, target=target, sigma=sigma)
+        except:
+            pass
         print(len(p0), len(pA))
         P0.extend(p0)
         PA.extend(pA)
