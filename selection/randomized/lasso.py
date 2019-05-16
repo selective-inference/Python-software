@@ -736,6 +736,7 @@ def full_targets(loglike,
         dispersion = (((y - loglike.saturated_loss.mean_function(X.dot(full_estimator))) ** 2 / W).sum() / 
                       (n - p))
 
+    print(dispersion, 'dispersion')
     alternatives = ['twosided'] * features.sum()
     return observed_target, cov_target * dispersion, crosscov_target_score.T * dispersion, alternatives
 

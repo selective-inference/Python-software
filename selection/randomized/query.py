@@ -266,8 +266,6 @@ class gaussian_query(query):
         if not np.all(A_scaling.dot(self.observed_opt_state) - b_scaling <= 0):
             raise ValueError('constraints not satisfied')
 
-        #print(dispersion, 'huh')
-
         (cond_mean, 
          cond_cov, 
          cond_precision, 
@@ -282,8 +280,6 @@ class gaussian_query(query):
                 mean_term = logdens_linear.dot(score.T + offset[:, None]).T
             arg = opt + mean_term
             return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
-
-        # print(cond_precision, 'precision')
 
         log_density = functools.partial(log_density, 
                                         logdens_linear, 
@@ -1145,14 +1141,12 @@ class optimization_intervals(object):
         self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
         for opt_sampler, opt_sample, opt_logW, _, _ in opt_sampling_info:
-            print(np.asarray(self._logden).shape, 'huh1')
+
             self._logden += opt_sampler.log_cond_density(
                                 opt_sample,
                                 opt_sampler.observed_score_state,
                                 transform=None) 
-            print(self._logden.shape, 'huh2')
             self._logden -= opt_logW
-            print(np.asarray(self._logden).shape, 'huh3')
             if opt_sample.shape[0] < nsample:
                 self._logden = np.tile(self._logden, 
                                        int(np.ceil(nsample / 

@@ -13,7 +13,16 @@ from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
 from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
 
-def test_highdim_lasso(n=500, p=200, signal_fac=1.5, s=5, sigma=3, target='full', rho=0.4, randomizer_scale=1, ndraw=5000, burnin=1000):
+def test_highdim_lasso(n=500, 
+                       p=200, 
+                       signal_fac=1.5, 
+                       s=5, 
+                       sigma=3, 
+                       target='full', 
+                       rho=0.4, 
+                       randomizer_scale=1, 
+                       ndraw=5000, 
+                       burnin=1000):
     """
     Compare to R randomized lasso
     """

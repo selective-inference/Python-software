@@ -18,12 +18,13 @@ from ...tests.decorators import rpy_test_safe
 
 def test_group_lasso(n=400, 
                      p=100, 
-                     signal_fac=1.5, 
+                     signal_fac=3, 
                      s=5, 
                      sigma=3, 
                      target='full',
                      rho=0.4, 
-                     ndraw=30000):
+                     randomizer_scale=0.5,
+                     ndraw=100000):
     """
     Test group lasso
     """
@@ -48,7 +49,8 @@ def test_group_lasso(n=400,
     conv = const(X, 
                  Y, 
                  groups,
-                 weights)
+                 weights, 
+                 randomizer_scale=randomizer_scale * sigma_)
     
     signs = conv.fit()
     nonzero = conv.selection_variable['directions'].keys()
@@ -267,7 +269,7 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          rho=rho, 
                          target=target)
 
-def main(nsim=500, n=100, p=50, target='full', sigma=3):
+def main(nsim=500, n=200, p=50, target='full', sigma=3):
 
     import matplotlib.pyplot as plt
     P0, PA = [], []
@@ -275,6 +277,7 @@ def main(nsim=500, n=100, p=50, target='full', sigma=3):
 
     for i in range(nsim):
         try:
+            print('what')
             p0, pA = test_group_lasso(n=n, p=p, target=target, sigma=sigma)
         except:
             pass

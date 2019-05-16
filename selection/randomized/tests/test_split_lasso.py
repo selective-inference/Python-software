@@ -17,7 +17,7 @@ from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
 
 def test_split_lasso(n=400, 
-                     p=200, 
+                     p=50, 
                      signal_fac=1.5, 
                      s=5, 
                      sigma=3, 
@@ -105,7 +105,7 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          rho=rho, 
                          target=target)
 
-def main(nsim=500, n=400, p=50, target='selected', sigma=3):
+def main(nsim=500, n=400, p=50, target='full', sigma=3):
 
     import matplotlib.pyplot as plt
     P0, PA = [], []
