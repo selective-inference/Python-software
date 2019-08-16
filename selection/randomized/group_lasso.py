@@ -113,7 +113,7 @@ class group_lasso(query):
         active = []
         active_dirs = {}
         unpenalized = []
-        overall = np.ones(self.penalty.shape[0], np.bool)
+        overall = np.ones(p, np.bool)
 
         ordered_groups = []
         ordered_opt = []
@@ -140,7 +140,8 @@ class group_lasso(query):
             else:
                 overall[group] = False
 
-        self.selection_variable = {'directions': active_dirs}
+        self.selection_variable = {'directions': active_dirs,
+                                   'active_groups':active}
 
         self._ordered_groups = ordered_groups
 
@@ -255,8 +256,8 @@ class group_lasso(query):
         if parameter is None:
             parameter = np.zeros_like(observed_target)
 
-        pvalues = np.zeros_like(parameter)
-        pivots = np.zeros_like(parameter)
+        pvalues = np.zeros_like(observed_target)
+        pivots = np.zeros_like(observed_target)
         intervals = np.zeros((parameter.shape[0], 2))
 
         for group in np.unique(group_assignments):
@@ -1106,7 +1107,7 @@ class polynomial_gaussian_sampler(affine_gaussian_sampler):
 
 def selected_targets(loglike, 
                      W, 
-                     groups,
+                     active_groups,
                      penalty,
                      sign_info={}, 
                      dispersion=None,
@@ -1117,7 +1118,7 @@ def selected_targets(loglike,
     features = []
     
     group_assignments = []
-    for group in groups:
+    for group in active_groups:
         group_idx = penalty.groups == group
         features.extend(np.nonzero(group_idx)[0])
         group_assignments.extend([group] * group_idx.sum())
@@ -1142,7 +1143,7 @@ def selected_targets(loglike,
 
 def full_targets(loglike, 
                  W, 
-                 groups,
+                 active_groups,
                  penalty,
                  dispersion=None,
                  solve_args={'tol': 1.e-12, 'min_its': 50}):
@@ -1152,7 +1153,7 @@ def full_targets(loglike,
     features = []
     
     group_assignments = []
-    for group in groups:
+    for group in active_groups:
         group_idx = penalty.groups == group
         features.extend(np.nonzero(group_idx)[0])
         group_assignments.extend([group] * group_idx.sum())
@@ -1164,6 +1165,7 @@ def full_targets(loglike,
     full_estimator = loglike.solve(**solve_args)
     cov_target = Qfull_inv[features][:, features]
     observed_target = full_estimator[features]
+
     crosscov_target_score = np.zeros((p, cov_target.shape[0]))
     crosscov_target_score[features] = -np.identity(cov_target.shape[0])
 
@@ -1181,7 +1183,7 @@ def full_targets(loglike,
 
 def debiased_targets(loglike, 
                      W, 
-                     groups,
+                     active_groups,
                      penalty,
                      sign_info={}, 
                      dispersion=None,
@@ -1193,7 +1195,7 @@ def debiased_targets(loglike,
     features = []
     
     group_assignments = []
-    for group in groups:
+    for group in active_groups:
         group_idx = penalty.groups == group
         features.extend(np.nonzero(group_idx)[0])
         group_assignments.extend([group] * group_idx.sum())
@@ -1241,7 +1243,7 @@ def debiased_targets(loglike,
 def form_targets(target, 
                  loglike, 
                  W, 
-                 groups,
+                 active_groups,
                  penalty,
                  **kwargs):
     _target = {'full':full_targets,

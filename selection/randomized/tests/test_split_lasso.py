@@ -3,6 +3,8 @@ from __future__ import division, print_function
 import numpy as np
 import nose.tools as nt
 
+from scipy.stats import norm as ndist
+
 import regreg.api as rr
 
 from ..lasso import (split_lasso, 
@@ -17,7 +19,7 @@ from ..randomization import randomization
 from ...tests.decorators import rpy_test_safe
 
 def test_split_lasso(n=100, 
-                     p=150, 
+                     p=200, 
                      signal_fac=3, 
                      s=5, 
                      sigma=3, 
@@ -26,6 +28,7 @@ def test_split_lasso(n=100,
                      proportion=0.5,
                      orthogonal=False,
                      ndraw=10000, 
+                     MLE=True,
                      burnin=5000):
     """
     Test data splitting lasso
@@ -68,14 +71,17 @@ def test_split_lasso(n=100,
              cov_target_score, 
              alternatives) = full_targets(conv.loglike, 
                                           conv._W, 
-                                          nonzero)
+                                          nonzero,
+                                          dispersion=sigma**2)
         elif target == 'selected':
             (observed_target, 
              cov_target, 
              cov_target_score, 
              alternatives) = selected_targets(conv.loglike, 
                                               conv._W, 
-                                              nonzero)
+                                              nonzero) #,
+                                              #dispersion=sigma**2)
+
         elif target == 'debiased':
             (observed_target, 
              cov_target, 
@@ -83,7 +89,8 @@ def test_split_lasso(n=100,
              alternatives) = debiased_targets(conv.loglike, 
                                               conv._W, 
                                               nonzero,
-                                              penalty=conv.penalty)
+                                              penalty=conv.penalty,
+                                              dispersion=sigma**2)
 
         _, pval, intervals = conv.summary(observed_target, 
                                           cov_target, 
@@ -93,7 +100,24 @@ def test_split_lasso(n=100,
                                           burnin=burnin, 
                                           compute_intervals=False)
 
-        return pval[beta[nonzero] == 0], pval[beta[nonzero] != 0]
+        final_estimator, observed_info_mean = conv.selective_MLE(
+                                                 observed_target,
+                                                 cov_target,
+                                                 cov_target_score)[:2]
+        
+        if target == 'selected':
+            true_target = np.linalg.pinv(X[:,nonzero]).dot(X.dot(beta))
+        else:
+            true_target = beta[nonzero]
+
+        MLE_pivot = ndist.cdf((final_estimator - true_target) / 
+                             np.sqrt(np.diag(observed_info_mean)))
+        MLE_pivot = 2 * np.minimum(MLE_pivot, 1 - MLE_pivot)
+        
+        if MLE:
+            return MLE_pivot[true_target == 0], MLE_pivot[true_target != 0]
+        else:
+            return pval[true_target == 0], pval[true_target != 0]
     else:
         return [], []
 
@@ -107,7 +131,7 @@ def test_all_targets(n=100, p=20, signal_fac=1.5, s=5, sigma=3, rho=0.4):
                          rho=rho, 
                          target=target)
 
-def main(nsim=500, n=400, p=50, target='full', sigma=3, s=3):
+def main(nsim=500, n=100, p=200, target='selected', sigma=3, s=3):
 
     import matplotlib.pyplot as plt
     P0, PA = [], []

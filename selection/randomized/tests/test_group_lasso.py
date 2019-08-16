@@ -31,6 +31,7 @@ def test_group_lasso(n=400,
 
     inst, const = gaussian_instance, group_lasso.gaussian
     signal = np.sqrt(signal_fac * np.log(p))
+
     X, Y, beta = inst(n=n,
                       p=p, 
                       signal=signal, 
@@ -39,6 +40,11 @@ def test_group_lasso(n=400,
                       rho=rho, 
                       sigma=sigma, 
                       random_signs=True)[:3]
+
+    orthogonal = True
+    if orthogonal:
+        X = np.linalg.svd(X, full_matrices=False)[0] 
+        Y = X.dot(beta) + sigma * np.random.standard_normal(n)
 
     n, p = X.shape
 
@@ -277,7 +283,6 @@ def main(nsim=500, n=200, p=50, target='full', sigma=3):
 
     for i in range(nsim):
         try:
-            print('what')
             p0, pA = test_group_lasso(n=n, p=p, target=target, sigma=sigma)
         except:
             pass

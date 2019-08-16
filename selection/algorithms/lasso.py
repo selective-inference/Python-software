@@ -175,7 +175,7 @@ class lasso(object):
                         'inactive constraint of KKT conditions not satisfied -- perhaps need to solve with more accuracy')
 
                 if self.covariance_estimator is not None:
-
+                    stop
                     # make full constraints
 
                     # A: active
@@ -355,8 +355,9 @@ class lasso(object):
         """
         return self._constraints
 
-    @staticmethod
-    def gaussian(X,
+    @classmethod
+    def gaussian(klass,
+                 X,
                  Y,
                  feature_weights,
                  sigma=1.,
@@ -408,11 +409,12 @@ class lasso(object):
         if covariance_estimator is not None:
             sigma = 1.
         loglike = glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
-        return lasso(loglike, np.asarray(feature_weights) / sigma ** 2,
+        return klass(loglike, np.asarray(feature_weights) / sigma ** 2,
                      covariance_estimator=covariance_estimator)
 
-    @staticmethod
-    def logistic(X,
+    @classmethod
+    def logistic(klass, 
+                 X,
                  successes,
                  feature_weights,
                  trials=None,
@@ -465,11 +467,12 @@ class lasso(object):
         the unpenalized estimator.
         """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
-        return lasso(loglike, feature_weights,
+        return klass(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
-    @staticmethod
-    def coxph(X,
+    @classmethod
+    def coxph(klass,
+              X,
               times,
               status,
               feature_weights,
@@ -520,11 +523,12 @@ class lasso(object):
         the unpenalized estimator.
         """
         loglike = coxph_obj(X, times, status, quadratic=quadratic)
-        return lasso(loglike, feature_weights,
+        return klass(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
-    @staticmethod
-    def poisson(X,
+    @classmethod
+    def poisson(klass,
+                X,
                 counts,
                 feature_weights,
                 covariance_estimator=None,
@@ -571,11 +575,12 @@ class lasso(object):
         the unpenalized estimator.
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
-        return lasso(loglike, feature_weights,
+        return klass(loglike, feature_weights,
                      covariance_estimator=covariance_estimator)
 
-    @staticmethod
-    def sqrt_lasso(X,
+    @classmethod
+    def sqrt_lasso(klass,
+                   X,
                    Y,
                    feature_weights,
                    quadratic=None,
@@ -718,7 +723,7 @@ class lasso(object):
         else:
             raise ValueError('covariance must be one of ["parametric", "sandwich"]')
 
-        L = lasso(loglike, feature_weights * multiplier * sigma_E,
+        L = klass(loglike, feature_weights * multiplier * sigma_E,
                   covariance_estimator=cov_est,
                   ignore_inactive_constraints=True)
 
@@ -888,7 +893,6 @@ def standard_lasso(X, y, sigma=1, lam_frac=1., **solve_args):
     lasso_selector.fit(**solve_args)
 
     return lasso_selector
-
 
 class data_carving(lasso):
     """
@@ -1734,7 +1738,14 @@ def _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange, initial=None,
     return soln
 
 
-def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=True):
+def _truncation_interval(Qbeta_bar, 
+                         Xinfo, 
+                         Qi_jj, 
+                         j, 
+                         beta_barj, 
+                         lagrange, 
+                         wide=True):
+
     if lagrange[j] != 0:
         lagrange_cp = lagrange.copy()
     else:
@@ -1742,7 +1753,10 @@ def _truncation_interval(Qbeta_bar, Xinfo, Qi_jj, j, beta_barj, lagrange, wide=T
     lagrange_cp[j] = np.inf
 
     # TODO: use initial solution for speed
-    restricted_soln = _solve_restricted_problem(Qbeta_bar, Xinfo, lagrange_cp, wide=wide)
+    restricted_soln = _solve_restricted_problem(Qbeta_bar, 
+                                                Xinfo, 
+                                                lagrange_cp, 
+                                                wide=wide)
 
     p = Qbeta_bar.shape[0]
     Ij = np.zeros(p)
@@ -2017,8 +2031,9 @@ class ROSI(lasso):
             self.fit()
         return self.lasso_solution
 
-    @staticmethod
-    def gaussian(X,
+    @classmethod
+    def gaussian(klass,
+                 X,
                  Y,
                  feature_weights,
                  sigma=1.,
@@ -2071,11 +2086,12 @@ class ROSI(lasso):
         if covariance_estimator is not None:
             sigma = 1.
         loglike = glm.gaussian(X, Y, coef=1. / sigma ** 2, quadratic=quadratic)
-        return ROSI(loglike, np.asarray(feature_weights) / sigma ** 2,
+        return klass(loglike, np.asarray(feature_weights) / sigma ** 2,
                     approximate_inverse=approximate_inverse)
 
-    @staticmethod
-    def logistic(X,
+    @classmethod
+    def logistic(klass,
+                 X,
                  successes,
                  feature_weights,
                  trials=None,
@@ -2129,11 +2145,12 @@ class ROSI(lasso):
         the unpenalized estimator.
         """
         loglike = glm.logistic(X, successes, trials=trials, quadratic=quadratic)
-        return ROSI(loglike, feature_weights,
-                    approximate_inverse=approximate_inverse)
+        return klass(loglike, feature_weights,
+                     approximate_inverse=approximate_inverse)
 
-    @staticmethod
-    def poisson(X,
+    @classmethod
+    def poisson(klass,
+                X,
                 counts,
                 feature_weights,
                 covariance_estimator=None,
@@ -2181,8 +2198,8 @@ class ROSI(lasso):
         the unpenalized estimator.
         """
         loglike = glm.poisson(X, counts, quadratic=quadratic)
-        return ROSI(loglike, feature_weights,
-                    approximate_inverse=approximate_inverse)
+        return klass(loglike, feature_weights,
+                     approximate_inverse=approximate_inverse)
 
 class ROSI_modelQ(lasso):
     r"""
