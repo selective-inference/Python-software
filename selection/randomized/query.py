@@ -155,6 +155,11 @@ class query(object):
         if opt_sample is None:
             opt_sample, logW = self.sampler.sample(ndraw, burnin)
         else:
+            if len(opt_sample) == 1: # only a sample, so weights are 1s
+                opt_sample = opt_sample[0]
+                logW = np.zeros(ndraw)
+            else:
+                opt_sample, logW = opt_sample
             ndraw = opt_sample.shape[0]
 
         pivots = self.sampler.coefficient_pvalues(observed_target,

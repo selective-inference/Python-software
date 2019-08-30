@@ -175,7 +175,6 @@ class lasso(object):
                         'inactive constraint of KKT conditions not satisfied -- perhaps need to solve with more accuracy')
 
                 if self.covariance_estimator is not None:
-                    stop
                     # make full constraints
 
                     # A: active

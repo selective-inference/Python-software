@@ -353,20 +353,38 @@ def _inference(observed_target,
 
     k, m = success_params # need at least k of m successes
 
-    target_sd = np.sqrt(target_cov[0, 0])
+    target_var = target_cov[0, 0]
+    target_sd = np.sqrt(target_var)
               
-    target_val = np.linspace(-20 * target_sd, 20 * target_sd, 5001) + observed_target
+    target_val = (np.linspace(-20 * target_sd, 20 * target_sd, 5001) + 
+                  observed_target)
 
     if (k, m) != (1, 1):
-        weight_val = np.array([binom(m, p).sf(k-1) for p in weight_fn(target_val)])
+        weight_val = np.array([binom(m, p).sf(k-1) for p in 
+                               weight_fn(target_val)])
     else:
         weight_val = np.squeeze(weight_fn(target_val))
 
+    if DEBUG:
+        import matplotlib.pyplot as plt, uuid
+        plt.plot(target_val, weight_val)
+        id_ = 'inference_' + str(uuid.uuid1())
+        plt.savefig(id_+'_prob.png')
+        plt.clf()
+
     weight_val *= ndist.pdf((target_val - observed_target) / target_sd)
+
+    plt.plot(target_val, weight_val)
+    plt.plot(target_val, ndist.pdf((target_val - observed_target) / target_sd), label='gaussian')
+    plt.plot([hypothesis], [0], '+', color='orange')
+    plt.legend()
+    plt.savefig(id_+'_dens.png')
+    plt.clf()
+
     exp_family = discrete_family(target_val, weight_val)
 
     pivot = exp_family.cdf((hypothesis - observed_target) 
-                           / target_cov[0, 0], x=observed_target)
+                           / target_var, x=observed_target)
     pivot = 2 * min(pivot, 1-pivot)
 
     pvalue = exp_family.cdf(- observed_target / target_cov[0, 0], 
@@ -374,8 +392,8 @@ def _inference(observed_target,
     pvalue = 2 * min(pvalue, 1-pvalue)
 
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
-    rescaled_interval = (interval[0] * target_cov[0, 0] + observed_target,
-                         interval[1] * target_cov[0, 0] + observed_target)
+    rescaled_interval = (interval[0] * target_var + observed_target,
+                         interval[1] * target_var + observed_target)
 
     return pivot, rescaled_interval, pvalue, weight_fn, exp_family  # TODO: should do MLE as well does discrete_family do this?
 
@@ -430,7 +448,8 @@ def _single_parameter_inference(observed_target,
     pvalue = 2 * min(pvalue, 1-pvalue)
 
     interval = exp_family.equal_tailed_interval(observed_target, alpha=alpha)
-    rescaled_interval = (interval[0] * target_var, interval[1] * target_var)
+    rescaled_interval = (interval[0] * target_var + observed_target[0], 
+                         interval[1] * target_var + observed_target[0])
 
     return pivot, rescaled_interval, pvalue, exp_family  # TODO: should do MLE as well does discrete_family do this?
 
