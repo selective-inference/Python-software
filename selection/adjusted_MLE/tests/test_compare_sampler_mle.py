@@ -8,10 +8,19 @@ from selection.adjusted_MLE.cv_MLE import (sim_xy,
                                            coverage,
                                            compare_sampler_MLE)
 
-def output_compare_sampler_mle(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0.10, 0.15, 0.20, 0.25, 0.30,
-                                                                                              0.35, 0.42, 0.71, 1.22, 2.07]),
-                               target="selected", tuning_rand="lambda.1se", randomizing_scale = np.sqrt(0.50), ndraw = 50, outpath = None):
-
+def test_compare_sampler_mle(n=500, 
+                             p=100, 
+                             rho=0.35, 
+                             s=5, 
+                             beta_type=1, 
+                             snr_values=np.array([0.10, 0.15, 0.20, 0.25, 0.30,
+                                                  0.35, 0.42, 0.71, 1.22, 2.07]),
+                             target="selected", 
+                             tuning_rand="lambda.1se", 
+                             randomizing_scale= np.sqrt(0.50), 
+                             ndraw=50, 
+                             outpath=None):
+    
     df_selective_inference = pd.DataFrame()
 
     if n > p:
@@ -25,20 +34,52 @@ def output_compare_sampler_mle(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_val
         output_overall = np.zeros(23)
         for i in range(ndraw):
             output_overall += np.squeeze(
-                compare_sampler_MLE(n=n, p=p, nval=n, rho=rho, s=s, beta_type=beta_type, snr=snr, target = target,
-                                    randomizer_scale=randomizing_scale, full_dispersion=full_dispersion, tuning_rand=tuning_rand))
+                compare_sampler_MLE(n=n, 
+                                    p=p, 
+                                    nval=n, 
+                                    rho=rho, 
+                                    s=s, 
+                                    beta_type=beta_type, 
+                                    snr=snr, 
+                                    target = target,
+                                    randomizer_scale=randomizing_scale, 
+                                    full_dispersion=full_dispersion, 
+                                    tuning_rand=tuning_rand))
 
         nreport = output_overall[22]
-        randomized_MLE_inf = np.hstack(((output_overall[0:7] / float(ndraw - nreport)).reshape((1, 7)),
-                                       (output_overall[7:11] / float(ndraw)).reshape((1, 4))))
-        randomized_sampler_inf = np.hstack(((output_overall[11:18] / float(ndraw - nreport)).reshape((1, 7)),
-                                        (output_overall[18:22] / float(ndraw)).reshape((1, 4))))
+        randomized_MLE_inf = np.hstack(((output_overall[0:7] / 
+                                         float(ndraw - nreport)).reshape((1, 7)),
+                                       (output_overall[7:11] /
+                                        float(ndraw)).reshape((1, 4))))
+        randomized_sampler_inf = np.hstack(((output_overall[11:18] / 
+                                             float(ndraw - nreport)).reshape((1, 7)),
+                                        (output_overall[18:22] / 
+                                         float(ndraw)).reshape((1, 4))))
 
-        df_MLE = pd.DataFrame(data=randomized_MLE_inf, columns=['coverage', 'length', 'prop-infty', 'tot-active','bias', 'sel-power', 'time',
-                                                                'power', 'power-BH', 'fdr-BH', 'tot-discoveries'])
+        df_MLE = pd.DataFrame(data=randomized_MLE_inf, columns=['coverage', 
+                                                                'length', 
+                                                                'prop-infty', 
+                                                                'tot-active',
+                                                                'bias', 
+                                                                'sel-power', 
+                                                                'time',
+                                                                'power', 
+                                                                'power-BH', 
+                                                                'fdr-BH', 
+                                                                'tot-discoveries'])
+
         df_MLE['method'] = "MLE"
-        df_sampler = pd.DataFrame(data=randomized_sampler_inf, columns=['coverage', 'length', 'prop-infty', 'tot-active', 'bias', 'sel-power', 'time',
-                                                                        'power', 'power-BH', 'fdr-BH', 'tot-discoveries'])
+        df_sampler = pd.DataFrame(data=randomized_sampler_inf, columns=['coverage', 
+                                                                        'length', 
+                                                                        'prop-infty', 
+                                                                        'tot-active', 
+                                                                        'bias', 
+                                                                        'sel-power', 
+                                                                        'time',
+                                                                        'power', 
+                                                                        'power-BH', 
+                                                                        'fdr-BH',
+                                                                        'tot-discoveries'])
         df_sampler['method'] = "Sampler"
 
         df_selective_inference = df_selective_inference.append(df_MLE, ignore_index=True)
@@ -56,10 +97,13 @@ def output_compare_sampler_mle(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_val
     if outpath is None:
         outpath = os.path.dirname(__file__)
 
-    outfile_inf_csv = os.path.join(outpath, "compare_" + str(n) + "_" + str(p) + "_inference_betatype" + str(beta_type) + target + "_rho_" + str(rho) + ".csv")
-    outfile_inf_html = os.path.join(outpath, "compare_" + str(n) + "_" + str(p) + "_inference_betatype" + str(beta_type) + target + "_rho_" + str(rho) + ".html")
+    outfile_inf_csv = (os.path.join(outpath, "compare_" + str(n) + 
+                                    "_" + str(p) + "_inference_betatype" + 
+                                    str(beta_type) + target + "_rho_" + str(rho) + ".csv")
+    outfile_inf_html = os.path.join(outpath, "compare_" + str(n) + 
+                                    "_" + str(p) + "_inference_betatype" + 
+                                    str(beta_type) + target + "_rho_" + str(rho) + ".html")
     df_selective_inference.to_csv(outfile_inf_csv, index=False)
     df_selective_inference.to_html(outfile_inf_html)
 
-output_compare_sampler_mle(outpath='/Users/psnigdha/adjusted_MLE/n_500_p_100/lam_1se/betatype_1/')
 
