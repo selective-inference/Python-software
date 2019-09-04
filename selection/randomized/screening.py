@@ -354,10 +354,10 @@ class topK(screening):
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = -np.ones(self.num_opt_var) * lower_bound
 
-        self._set_sampler(A_scaling,
-                          b_scaling,
-                          opt_linear,
-                          opt_offset)
+        self._setup_sampler(A_scaling,
+                            b_scaling,
+                            opt_linear,
+                            opt_offset)
 
         return self._selected
 
