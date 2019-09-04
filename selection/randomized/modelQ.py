@@ -4,10 +4,10 @@ import numpy as np
 import regreg.api as rr
 from ..constraints.affine import constraints
 
-from .query import affine_gaussian_sampler
+from .query import gaussian_query
 from .randomization import randomization
 
-class modelQ(object):
+class modelQ(gaussian_query):
 
     r"""
     A class for the randomized LASSO for post-selection inference.
@@ -224,42 +224,15 @@ class modelQ(object):
 
         # compute implied mean and covariance
 
-        cov, prec = self.randomizer.cov_prec
         opt_linear, opt_offset = self.opt_transform
-
-        cond_precision = opt_linear.T.dot(opt_linear) * prec
-        cond_cov = np.linalg.inv(cond_precision)
-        logdens_linear = cond_cov.dot(opt_linear.T) * prec
-
-        cond_mean = -logdens_linear.dot(self.observed_score_state + opt_offset)
-
-        def log_density(logdens_linear, offset, cond_prec, score, opt):
-            if score.ndim == 1:
-                mean_term = logdens_linear.dot(score.T + offset).T
-            else:
-                mean_term = logdens_linear.dot(score.T + offset[:, None]).T
-            arg = opt + mean_term
-            return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
-        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
-
-        # now make the constraints
 
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = np.zeros(self.num_opt_var)
 
-        affine_con = constraints(A_scaling,
-                                 b_scaling,
-                                 mean=cond_mean,
-                                 covariance=cond_cov)
-
-        logdens_transform = (logdens_linear, opt_offset)
-
-        self.sampler = affine_gaussian_sampler(affine_con,
-                                               self.observed_opt_state,
-                                               self.observed_score_state,
-                                               log_density,
-                                               logdens_transform,
-                                               selection_info=self.selection_variable) # should be signs and the subgradients we've conditioned on
+        self._setup_sampler(A_scaling,
+                            b_scaling,
+                            opt_linear,
+                            opt_offset)
         
         return active_signs
 
@@ -309,15 +282,27 @@ class modelQ(object):
             parameter = np.zeros(self.loss.shape[0])
 
         if target == 'selected':
-            observed_target, cov_target, cov_target_score, alternatives = self.selected_targets(features=features, dispersion=dispersion)
+            (observed_target, 
+             cov_target, 
+             cov_target_score, 
+             alternatives) = self.selected_targets(features=features, 
+                                                   dispersion=dispersion)
         else:
             X, y = self.loglike.data
             n, p = X.shape
             if n > p and target == 'full':
-                observed_target, cov_target, cov_target_score, alternatives = self.full_targets(features=features, dispersion=dispersion)
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = self.full_targets(features=features, 
+                                                   dispersion=dispersion)
             else:
                 raise NotImplementedError
-                observed_target, cov_target, cov_target_score, alternatives = self.debiased_targets(features=features, dispersion=dispersion)
+                (observed_target, 
+                 cov_target, 
+                 cov_target_score, 
+                 alternatives) = self.debiased_targets(features=features, 
+                                                       dispersion=dispersion)
 
         if self._overall.sum() > 0:
             opt_sample = self.sampler.sample(ndraw,  burnin)

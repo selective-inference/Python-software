@@ -3,9 +3,9 @@ import nose.tools as nt
 import numpy as np
 import numpy.testing.decorators as dec
 
-from selection.truncated.gaussian import truncated_gaussian, truncated_gaussian_old
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
+from ..gaussian import truncated_gaussian, truncated_gaussian_old
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
 
 intervals = [(-np.inf,-4.),(3.,np.inf)]
 
@@ -25,6 +25,7 @@ def test_sigma():
                             np.around(np.array(tg2.equal_tailed_interval(Z,0.05)), 4))
 
 @set_seed_iftrue(SET_SEED)
+@dec.skipif(True, 'checking coverage: this is random with highish failure rate')
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=100)
 def test_equal_tailed_coverage(nsim=1000):
 
