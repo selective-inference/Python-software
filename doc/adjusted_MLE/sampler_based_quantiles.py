@@ -7,7 +7,14 @@ import pylab
 import matplotlib.pyplot as plt
 import scipy.stats as stats
 
-def compute_sampler_quantiles(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0., randomizer_scale=1, full_dispersion=True):
+def compute_sampler_quantiles(n=500, 
+                              p=100, 
+                              signal_fac=1.2, 
+                              s=5, 
+                              sigma=1., 
+                              rho=0., 
+                              randomizer_scale=1, 
+                              full_dispersion=True):
 
     inst, const = gaussian_instance, lasso.gaussian
     signal = np.sqrt(signal_fac * 2 * np.log(p))
@@ -119,5 +126,4 @@ def compute_sampler_quantiles(n=500, p=100, signal_fac=1.2, s=5, sigma=1., rho=0
         print("normal quantiles", normal_quantiles.T)
         break
 
-compute_sampler_quantiles()
 

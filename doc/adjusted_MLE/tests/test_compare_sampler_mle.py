@@ -1,25 +1,24 @@
 import numpy as np, os, itertools
 import pandas as pd
 
-from selection.adjusted_MLE.cv_MLE import (sim_xy,
-                                           selInf_R,
-                                           glmnet_lasso,
-                                           BHfilter,
-                                           coverage,
-                                           compare_sampler_MLE)
+from .comparison_metrics import (sim_xy,
+                                 selInf_R,
+                                 glmnet_lasso,
+                                 coverage,
+                                 compare_sampler_MLE)
 
-def test_compare_sampler_mle(n=500, 
-                             p=100, 
-                             rho=0.35, 
-                             s=5, 
-                             beta_type=1, 
-                             snr_values=np.array([0.10, 0.15, 0.20, 0.25, 0.30,
-                                                  0.35, 0.42, 0.71, 1.22, 2.07]),
-                             target="selected", 
-                             tuning_rand="lambda.1se", 
-                             randomizing_scale= np.sqrt(0.50), 
-                             ndraw=50, 
-                             outpath=None):
+def compare_sampler_mle(n=500, 
+                        p=100, 
+                        rho=0.35, 
+                        s=5, 
+                        beta_type=1, 
+                        snr_values=np.array([0.10, 0.15, 0.20, 0.25, 0.30,
+                                             0.35, 0.42, 0.71, 1.22, 2.07]),
+                        target="selected", 
+                        tuning_rand="lambda.1se", 
+                        randomizing_scale= np.sqrt(0.50), 
+                        ndraw=50, 
+                        outpath=None):
     
     df_selective_inference = pd.DataFrame()
 
@@ -99,7 +98,7 @@ def test_compare_sampler_mle(n=500,
 
     outfile_inf_csv = (os.path.join(outpath, "compare_" + str(n) + 
                                     "_" + str(p) + "_inference_betatype" + 
-                                    str(beta_type) + target + "_rho_" + str(rho) + ".csv")
+                                    str(beta_type) + target + "_rho_" + str(rho) + ".csv"))
     outfile_inf_html = os.path.join(outpath, "compare_" + str(n) + 
                                     "_" + str(p) + "_inference_betatype" + 
                                     str(beta_type) + target + "_rho_" + str(rho) + ".html")
