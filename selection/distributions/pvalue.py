@@ -252,10 +252,9 @@ def gauss_poly(lower_bound, upper_bound, curvature, nsim=100):
     """
 
     T, H = lower_bound, curvature
-    Z = np.fabs(np.random.standard_normal(nsim))
-    keep = Z < upper_bound - T
-    proportion = keep.sum() * 1. / nsim
-    Z = Z[keep]
+    proportion = ndist.cdf(upper_bound - T) - ndist.cdf(0)
+    U = np.random.sample(nsim)  
+    Z = ndist.ppf(U * proportion + ndist.cdf(0))
     if H != []:
         HT = H + T 
         exponent = np.log(np.fabs(np.add.outer(Z, HT))).sum(1) - T*Z - T**2/2.
