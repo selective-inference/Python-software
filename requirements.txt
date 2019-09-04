@@ -7,4 +7,4 @@ pyinter
 statsmodels
 sklearn
 regreg
-rpy2
+
