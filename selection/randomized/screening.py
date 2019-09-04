@@ -114,10 +114,10 @@ class marginal_screening(screening):
         A_scaling = -np.identity(len(active_signs))
         b_scaling = np.zeros(self.num_opt_var)
 
-        self._set_sampler(A_scaling,
-                          b_scaling,
-                          opt_linear,
-                          opt_offset)
+        self._setup_sampler(A_scaling,
+                            b_scaling,
+                            opt_linear,
+                            opt_offset)
 
         return self._selected
 
