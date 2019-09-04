@@ -1,6 +1,6 @@
 cython
 pandas
-numpy
+numpy>=1.12.0
 scipy
 mpmath
 pyinter
