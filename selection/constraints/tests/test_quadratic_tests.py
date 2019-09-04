@@ -4,9 +4,9 @@ from scipy.stats import chi
 import nose.tools as nt
 import numpy.testing.decorators as dec
 
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
-import selection.constraints.affine as AC
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue, rpy_test_safe
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
+import ..affine as AC
 
 
 # we use R's chisq
@@ -43,8 +43,7 @@ def test_chisq_central(nsim=None, burnin=5000, ndraw=20000):
     nt.assert_true(np.fabs(np.mean(P)-0.5) < 0.03)
     nt.assert_true(np.fabs(np.std(P)-1/np.sqrt(12)) < 0.03)
     
-
-@dec.skipif(not R_available, "needs rpy2")
+@rpy_test_safe()
 @set_sampling_params_iftrue(SMALL_SAMPLES, nsim=10, burnin=10, ndraw=10)
 @set_seed_iftrue(SET_SEED)
 def test_chisq_noncentral(nsim=1000, burnin=2000, ndraw=5000):

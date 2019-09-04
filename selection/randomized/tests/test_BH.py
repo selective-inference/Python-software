@@ -3,9 +3,6 @@ import numpy.testing.decorators as dec
 
 from scipy.stats import norm as ndist
 
-import rpy2.robjects as rpy
-from rpy2.robjects import numpy2ri
-
 from ...tests.instance import gaussian_instance
 from ...tests.decorators import rpy_test_safe
 
@@ -14,14 +11,14 @@ from ..screening import stepup, stepup_selection
 from ..randomization import randomization
 
 def BHfilter(pval, q=0.2):
-    numpy2ri.activate()
-    rpy.r.assign('pval', pval)
-    rpy.r.assign('q', q)
-    rpy.r('Pval = p.adjust(pval, method="BH")')
-    rpy.r('S = which((Pval < q)) - 1')
-    S = rpy.r('S')
-    numpy2ri.deactivate()
-    return np.asarray(S, np.int)
+    pval = np.asarray(pval)
+    pval_sort = np.sort(pval)
+    comparison = q * np.arange(1, pval.shape[0] + 1.) / pval.shape[0]
+    passing = pval_sort < comparison
+    if passing.sum():
+        thresh = comparison[np.nonzero(passing)[0].max()]
+        return np.nonzero(pval <= thresh)[0]
+    return []
 
 @rpy_test_safe()
 def test_BH_procedure():
