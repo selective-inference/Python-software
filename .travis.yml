@@ -83,7 +83,7 @@ before_install:
   - pip install -r requirements.txt
   - pip install -e .
   - cd ..
-  - git clone https://github.com/rpy2/rpy2.git
+  - git clone https://github.com/jonathan-taylor/rpy2.git
   - cd rpy2
   - pip install -e .
   - cd ..
