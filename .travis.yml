@@ -85,7 +85,7 @@ before_install:
   - cd ..
   - git clone https://github.com/rpy2/rpy2.git
   - cd rpy2
-  - python setup.py install
+  - pip install -e .
   - cd ..
   - sudo apt-get install software-properties-common
   - sudo add-apt-repository -y ppa:marutter/c2d4u
