@@ -84,7 +84,7 @@ before_install:
   - pip install -e .
   - cd ..
   - git clone https://github.com/rpy2/rpy2.git
-  - cd rpy
+  - cd rpy2
   - python setup.py install
   - cd ..
   - sudo apt-get install software-properties-common
