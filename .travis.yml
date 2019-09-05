@@ -80,6 +80,7 @@ before_install:
   # Install regreg 
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
+  - pip install rpy2
   - pip install -r requirements.txt
   - pip install -e .
   - cd ..
