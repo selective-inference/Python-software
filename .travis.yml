@@ -80,9 +80,12 @@ before_install:
   # Install regreg 
   - git clone https://github.com/jonathan-taylor/regreg.git
   - cd regreg
-  - pip install rpy2
   - pip install -r requirements.txt
   - pip install -e .
+  - cd ..
+  - git clone https://github.com/rpy2/rpy2.git
+  - cd rpy
+  - python setup.py install
   - cd ..
   - sudo apt-get install software-properties-common
   - sudo add-apt-repository -y ppa:marutter/c2d4u
