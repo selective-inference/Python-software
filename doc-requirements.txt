@@ -7,3 +7,5 @@ matplotlib
 texext
 nb2plots
 rpy2
+seaborn
+statsmodels
