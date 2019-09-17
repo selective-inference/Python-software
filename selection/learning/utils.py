@@ -1,11 +1,9 @@
-import hashlib
+import hashlib, warnings
 
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
-import statsmodels.api as sm
 from scipy.stats import norm as normal_dbn
-import seaborn as sns
 
 from selection.algorithms.lasso import ROSI, lasso
 
@@ -472,67 +470,6 @@ def pivot_plot(df,
 
     return pivot_ax
 
-def pvalue_plot(df, 
-                outbase,
-                figsize=(8, 8),
-                naive=True,
-                split=False,
-                bonferroni=False):
-
-    print("selective:", np.mean(df['pvalue']), np.std(df['pvalue']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
-
-    if naive:
-        print("naive:", np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
-        print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
-
-    if split:
-        print("split:", np.mean(df['split_length']), np.std(df['split_length']), np.mean(df['split_coverage']))
-        print("len ratio selective divided by split:", np.mean(np.array(df['length']) / np.array(df['split_length'])))
-
-    if bonferroni:
-        print("bonferroni:", np.mean(df['bonferroni_length']), np.std(df['bonferroni_length']), np.mean(df['bonferroni_coverage']))
-        print("len ratio selective divided by bonferroni:", np.mean(np.array(df['length']) / np.array(df['bonferroni_length'])))
-    
-    f = plt.figure(figsize=figsize)
-    plt.clf()
-    U = np.linspace(0, 1, 101)
-    non_null = df['target'] != 0
-    null = ~non_null
-    if non_null.sum():
-        plt.plot(U, sm.distributions.ECDF(df['pvalue'][non_null])(U), 'b', label='Learned', linewidth=3)
-    if null.sum():
-        plt.plot(U, sm.distributions.ECDF(df['pvalue'][null])(U), 'b--', linewidth=3)
-
-    if naive:
-        if non_null.sum():
-            plt.plot(U, sm.distributions.ECDF(df['naive_pvalue'][non_null])(U), 'r', label='Naive', linewidth=3)
-        if null.sum():
-            plt.plot(U, sm.distributions.ECDF(df['naive_pvalue'][null])(U), 'r--', linewidth=3)
-
-    if split:
-        if non_null.sum():
-            plt.plot(U, sm.distributions.ECDF(df['split_pvalue'][non_null])(U), color='gray', label='Split', linewidth=3)
-        if null.sum():
-            plt.plot(U, sm.distributions.ECDF(df['split_pvalue'][null])(U), linestyle='dashed', color='gray', linewidth=3)
-
-    if bonferroni:
-        if non_null.sum():
-            plt.plot(U, sm.distributions.ECDF(df['bonferroni_pvalue'][non_null])(U), color='purple', label='Bonferroni', linewidth=3)
-        if null.sum():
-            plt.plot(U, sm.distributions.ECDF(df['bonferroni_pvalue'][null])(U), linestyle='dashed', color='purple', linewidth=3)
-
-    plt.legend(fontsize=15)
-    plt.plot([0,1], [0,1], 'k--', linewidth=3)
-
-    pvalue_ax = plt.gca()
-    pvalue_ax.set_ylabel(r'ECDF(pvalue)', fontsize=20)
-    pvalue_ax.set_xlabel(r'pvalue', fontsize=20)
-
-    plt.savefig(outbase + '_pvalues.pdf')
-    plt.savefig(outbase + '_pvalues.png', dpi=300)
-
-    return pvalue_ax
-
 def liu_inference(X,
                   y,
                   lam,
@@ -575,70 +512,144 @@ def liu_inference(X,
                          'id':[instance_id]*len(liu_pivots),
                          'variable':variable})
 
+
+try:
+    import statsmodels.api as sm
+
+    def pvalue_plot(df, 
+                    outbase,
+                    figsize=(8, 8),
+                    naive=True,
+                    split=False,
+                    bonferroni=False):
+
+        print("selective:", np.mean(df['pvalue']), np.std(df['pvalue']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
+
+        if naive:
+            print("naive:", np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
+            print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
+
+        if split:
+            print("split:", np.mean(df['split_length']), np.std(df['split_length']), np.mean(df['split_coverage']))
+            print("len ratio selective divided by split:", np.mean(np.array(df['length']) / np.array(df['split_length'])))
+
+        if bonferroni:
+            print("bonferroni:", np.mean(df['bonferroni_length']), np.std(df['bonferroni_length']), np.mean(df['bonferroni_coverage']))
+            print("len ratio selective divided by bonferroni:", np.mean(np.array(df['length']) / np.array(df['bonferroni_length'])))
+
+        f = plt.figure(figsize=figsize)
+        plt.clf()
+        U = np.linspace(0, 1, 101)
+        non_null = df['target'] != 0
+        null = ~non_null
+        if non_null.sum():
+            plt.plot(U, sm.distributions.ECDF(df['pvalue'][non_null])(U), 'b', label='Learned', linewidth=3)
+        if null.sum():
+            plt.plot(U, sm.distributions.ECDF(df['pvalue'][null])(U), 'b--', linewidth=3)
+
+        if naive:
+            if non_null.sum():
+                plt.plot(U, sm.distributions.ECDF(df['naive_pvalue'][non_null])(U), 'r', label='Naive', linewidth=3)
+            if null.sum():
+                plt.plot(U, sm.distributions.ECDF(df['naive_pvalue'][null])(U), 'r--', linewidth=3)
+
+        if split:
+            if non_null.sum():
+                plt.plot(U, sm.distributions.ECDF(df['split_pvalue'][non_null])(U), color='gray', label='Split', linewidth=3)
+            if null.sum():
+                plt.plot(U, sm.distributions.ECDF(df['split_pvalue'][null])(U), linestyle='dashed', color='gray', linewidth=3)
+
+        if bonferroni:
+            if non_null.sum():
+                plt.plot(U, sm.distributions.ECDF(df['bonferroni_pvalue'][non_null])(U), color='purple', label='Bonferroni', linewidth=3)
+            if null.sum():
+                plt.plot(U, sm.distributions.ECDF(df['bonferroni_pvalue'][null])(U), linestyle='dashed', color='purple', linewidth=3)
+
+        plt.legend(fontsize=15)
+        plt.plot([0,1], [0,1], 'k--', linewidth=3)
+
+        pvalue_ax = plt.gca()
+        pvalue_ax.set_ylabel(r'ECDF(pvalue)', fontsize=20)
+        pvalue_ax.set_xlabel(r'pvalue', fontsize=20)
+
+        plt.savefig(outbase + '_pvalues.pdf')
+        plt.savefig(outbase + '_pvalues.png', dpi=300)
+
+        return pvalue_ax
+
+    def pivot_plot_new(df,
+                       outbase,
+                       palette = {'Learned': 'b',
+                                  'Naive': 'r',
+                                  'Bonferroni': 'gray',
+                                  'Lee':'gray',
+                                  'Strawman':'gray'},
+                       figsize=(8, 8), straw=False):
+
+        f = plt.figure(figsize=figsize)
+        new_df = pd.DataFrame({'Learned': df['pivot'],
+                               'Naive': df['naive_pivot']})
+        if straw:
+            new_df = pd.DataFrame({'Learned': new_df['Learned'],
+                                   'Strawman': new_df['Naive']})
+        U = np.linspace(0, 1, 101)
+        ax = f.gca()
+        for k in new_df.keys():
+            plt.plot(U, sm.distributions.ECDF(new_df[k])(U), color=palette[k], label=k, linewidth=5)
+        plt.plot([0,1], [0,1], 'k--', linewidth=3)
+        ax.set_xlabel('pivot', fontsize=20)
+        ax.set_ylabel('ECDF(pivot)', fontsize=20)
+        ax.legend(fontsize=15)
+
+        pngfile = outbase + '_pivot.png'
+        plt.savefig(pngfile, dpi=300)
+
+        return ax, f, pngfile, df, new_df
+
+    except:
+        warnings.warn('statsmodels not importable, `pvalue_plot` and `pvalue_plot_new` unavaliable')
+
 # Some plotting functions
 
-def interval_plot(df, 
-                  outbase,
-                  palette = {'Learned': 'b',
-                             'Naive': 'r',
-                             'Bonferroni': 'purple',
-                             'Split':'gray'},
-                  figsize=(8, 8), 
-                  naive=True,
-                  bonferroni=True,
-                  split=False,
-                  xlim=None):
+try:
+    import seaborn as sns
 
-    f = plt.figure(figsize=figsize)
-    new_df = pd.DataFrame({'Learned': df['length'],
-                           'Naive': df['naive_length']})
-    if bonferroni:
-        new_df['Bonferroni'] = df['bonferroni_length']
-    ax = f.gca()
-    
-    if split:
-        new_df['Split'] = df['split_length']
-    for k in new_df.keys():
-        l = new_df[k]
-        l = l[~np.isnan(l)]
-        sns.distplot(l, ax=ax, color=palette[k], label=k)
-    ax.set_xlabel('Interval length', fontsize=20)
-    ax.set_yticks([])
-    ax.legend(fontsize=15)
-    if xlim is not None:
-        ax.set_xlim(xlim)
-    
-    pngfile = outbase + '_intervals.png'
-    plt.savefig(pngfile, dpi=300)
-    plt.savefig(outbase + '_intervals.pdf')
-    
-    return ax, f, pngfile, df, new_df
-    
-def pivot_plot_new(df,
-                   outbase,
-                   palette = {'Learned': 'b',
-                              'Naive': 'r',
-                              'Bonferroni': 'gray',
-                              'Lee':'gray',
-                              'Strawman':'gray'},
-                   figsize=(8, 8), straw=False):
+    def interval_plot(df, 
+                      outbase,
+                      palette = {'Learned': 'b',
+                                 'Naive': 'r',
+                                 'Bonferroni': 'purple',
+                                 'Split':'gray'},
+                      figsize=(8, 8), 
+                      naive=True,
+                      bonferroni=True,
+                      split=False,
+                      xlim=None):
 
-    f = plt.figure(figsize=figsize)
-    new_df = pd.DataFrame({'Learned': df['pivot'],
-                           'Naive': df['naive_pivot']})
-    if straw:
-        new_df = pd.DataFrame({'Learned': new_df['Learned'],
-                               'Strawman': new_df['Naive']})
-    U = np.linspace(0, 1, 101)
-    ax = f.gca()
-    for k in new_df.keys():
-        plt.plot(U, sm.distributions.ECDF(new_df[k])(U), color=palette[k], label=k, linewidth=5)
-    plt.plot([0,1], [0,1], 'k--', linewidth=3)
-    ax.set_xlabel('pivot', fontsize=20)
-    ax.set_ylabel('ECDF(pivot)', fontsize=20)
-    ax.legend(fontsize=15)
-    
-    pngfile = outbase + '_pivot.png'
-    plt.savefig(pngfile, dpi=300)
-    
-    return ax, f, pngfile, df, new_df
+        f = plt.figure(figsize=figsize)
+        new_df = pd.DataFrame({'Learned': df['length'],
+                               'Naive': df['naive_length']})
+        if bonferroni:
+            new_df['Bonferroni'] = df['bonferroni_length']
+        ax = f.gca()
+
+        if split:
+            new_df['Split'] = df['split_length']
+        for k in new_df.keys():
+            l = new_df[k]
+            l = l[~np.isnan(l)]
+            sns.distplot(l, ax=ax, color=palette[k], label=k)
+        ax.set_xlabel('Interval length', fontsize=20)
+        ax.set_yticks([])
+        ax.legend(fontsize=15)
+        if xlim is not None:
+            ax.set_xlim(xlim)
+
+        pngfile = outbase + '_intervals.png'
+        plt.savefig(pngfile, dpi=300)
+        plt.savefig(outbase + '_intervals.pdf')
+
+        return ax, f, pngfile, df, new_df
+
+except ImportError:
+    warnings.warn('seaborn not found, `interval_plot` will not be available')
