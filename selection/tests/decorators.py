@@ -5,6 +5,11 @@ import numpy as np
 import nose
 import nose.tools
 
+try:
+    from numpy.testing.decorators import SkipTest
+except AttributeError:
+    from numpy.testing import SkipTest
+
 def set_seed_iftrue(condition, seed=10):
     """
     Fix the seed for random test.
@@ -191,7 +196,7 @@ def rpy_test_safe(libraries=[], msg=None):
         def modified_func(*args, **kwargs):
             """Modified for normal test functions."""
             if not rpy_loaded:
-                raise np.testing.decorators.SkipTest(get_msg(f, msg))
+                raise SkipTest(get_msg(f, msg))
             else:
                 return f(*args, **kwargs)
 
