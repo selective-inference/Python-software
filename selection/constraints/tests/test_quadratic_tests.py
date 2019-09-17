@@ -6,8 +6,7 @@ import numpy.testing.decorators as dec
 
 from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue, rpy_test_safe
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
-import ..affine as AC
-
+from .. import affine as AC
 
 # we use R's chisq
 
