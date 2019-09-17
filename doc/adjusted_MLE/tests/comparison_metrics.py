@@ -10,14 +10,14 @@ from ...algorithms.lasso import ROSI
 from ...tests.instance import gaussian_instance
 
 def BHfilter(pval, q=0.2):
-    robjects.r.assign('pval', pval)
-    robjects.r.assign('q', q)
-    robjects.r('Pval = p.adjust(pval, method="BH")')
-    robjects.r('S = which((Pval < q)) - 1')
-    S = robjects.r('S')
-    ind = np.zeros(pval.shape[0], np.bool)
-    ind[np.asarray(S, np.int)] = 1
-    return ind
+    pval = np.asarray(pval)
+    pval_sort = np.sort(pval)
+    comparison = q * np.arange(1, pval.shape[0] + 1.) / pval.shape[0]
+    passing = pval_sort < comparison
+    if passing.sum():
+        thresh = comparison[np.nonzero(passing)[0].max()]
+        return np.nonzero(pval <= thresh)[0]
+    return []
 
 def sim_xy(n, 
            p, 

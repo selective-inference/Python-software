@@ -84,7 +84,7 @@ if __name__ == "__main__":
     import pandas as pd
 
     for i in range(500):
-        df = simulate()
+        df = simulate(B=3000)
         csvfile = 'stability_selection_harder.csv'
         outbase = csvfile[:-4]
 
