@@ -7,4 +7,5 @@ pyinter
 statsmodels
 sklearn
 regreg
-
+keras
+tensorflow
