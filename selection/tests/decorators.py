@@ -7,7 +7,7 @@ import nose.tools
 
 try:
     from numpy.testing.decorators import SkipTest
-except AttributeError:
+except (ImportError, AttributeError):
     from numpy.testing import SkipTest
 
 def set_seed_iftrue(condition, seed=10):

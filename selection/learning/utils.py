@@ -606,8 +606,8 @@ try:
 
         return ax, f, pngfile, df, new_df
 
-    except:
-        warnings.warn('statsmodels not importable, `pvalue_plot` and `pvalue_plot_new` unavaliable')
+except:
+    warnings.warn('statsmodels not importable, `pvalue_plot` and `pvalue_plot_new` unavaliable')
 
 # Some plotting functions
 
