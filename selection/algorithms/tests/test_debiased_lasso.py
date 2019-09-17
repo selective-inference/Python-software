@@ -16,12 +16,13 @@ from regreg.api import (quadratic_loss,
                         l1norm,
                         simple_problem)
 
-# to compare to R code
-
-import rpy2.robjects as rpy
-from rpy2.robjects import numpy2ri
-
-rpy.r('library(selectiveInference)')
+try:
+    import rpy2.robjects as rpy
+    rpy2_available = True
+    import rpy2.robjects.numpy2ri as numpy2ri
+    rpy.r('library(selectiveInference)')
+except ImportError:
+    rpy2_available = False
 
 
 def test_gaussian(n=100, p=20):
@@ -84,7 +85,7 @@ def test_approx_inverse_nondegen(n=100, p=20):
 
     M = debiasing_matrix(X, np.arange(p))
 
-
+@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
 def test_compareR(n=100, p=30):
     X = np.random.standard_normal((n, p))
     j = 5
