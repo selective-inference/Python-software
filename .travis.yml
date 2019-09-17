@@ -92,7 +92,9 @@ before_install:
 
 install:
   # Install selection
-  - pip install  -r requirements.txt -c constraints.txt;  # older rpy2
+  - if [ "$RUN_R_TESTS" ]; then
+    pip install rpy2 -c constraints.txt;  # older rpy2
+    fi
   - git submodule init
   - git submodule update
   - git clone https://github.com/jonathan-taylor/R-selective.git
@@ -128,7 +130,6 @@ script:
       fi
     - |
       if [ "$RUN_R_TESTS" ]; then
-        pip install rpy2 -c ../selection/constraints.txt
         nosetests -v ../selection/algorithms/tests/test_compareR.py
       else 
         env USE_SMALL_SAMPLES=1 USE_TEST_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
