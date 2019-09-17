@@ -15,11 +15,7 @@ from selection.distributions.discrete_family import discrete_family
 
 # local imports
 
-from .fitters import (logit_fit,
-                      probit_fit,
-                      gbm_fit,
-                      gbm_fit_sk,
-                      random_forest_fit,
+from .fitters import (gbm_fit_sk,
                       random_forest_fit_sk)
 from .samplers import (normal_sampler,
                        split_sampler)
@@ -30,8 +26,8 @@ def infer_general_target(observed_outcome,
                          observed_target,
                          target_cov,
                          learner,
-                         fit_probability=probit_fit,
-                         fit_args={'df':20},
+                         fit_probability=gbm_fit_sk,
+                         fit_args={'n_estimators':500},
                          hypothesis=0,
                          alpha=0.1,
                          success_params=(1, 1),
