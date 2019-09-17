@@ -93,7 +93,7 @@ before_install:
 install:
   # Install selection
   - if [ "$RUN_R_TESTS" ]; then
-    pip install rpy2 -c constraints.txt;  # older rpy2
+      pip install rpy2 -c constraints.txt;  # older rpy2
     fi
   - git submodule init
   - git submodule update
