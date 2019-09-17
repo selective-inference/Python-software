@@ -111,7 +111,7 @@ script:
 
     - pip install nose
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
-    - pip install -c constraints.txt; # older rpy2
+    - pip install -r requirements.txt -c constraints.txt; # older rpy2
     # Change into an innocuous directory and find tests from installation
     - mkdir for_testing
     - cd for_testing
