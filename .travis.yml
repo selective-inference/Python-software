@@ -111,11 +111,7 @@ script:
 
     - pip install nose
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
-        pip install  -r doc-requirements.txt -c constraints.txt; 
-      else
-        pip install  -r doc-requirements.txt; 
-      fi
+    - pip install -c constraints.txt; # older rpy2
     # Change into an innocuous directory and find tests from installation
     - mkdir for_testing
     - cd for_testing
