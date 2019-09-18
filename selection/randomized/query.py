@@ -78,31 +78,6 @@ class query(object):
             self.randomized_loss, self._initial_omega = self.randomization.randomize(self.loss, self.epsilon, perturb=perturb)
         self._randomized = True
 
-#     def linear_decomposition(self, 
-#                              target_score_cov, 
-#                              target_cov, 
-#                              observed_target_state):
-#         """
-#         Compute out the linear decomposition
-#         of the score based on the target. This decomposition
-#         writes the (limiting CLT version) of the data in the score 
-#         as linear in the target and in some independent Gaussian error.
-
-#         This second independent piece is conditioned on, resulting
-#         in a reconstruction of the score as an affine function of the target
-#         where the offset is the part related to this independent
-#         Gaussian error.
-#         """
-
-#         target_score_cov = np.atleast_2d(target_score_cov)
-#         target_cov = np.atleast_2d(target_cov)
-#         observed_target_state = np.atleast_1d(observed_target_state)
-
-#         linear_part = target_score_cov.T.dot(np.linalg.pinv(target_cov))
-#         offset = self.observed_score_state - linear_part.dot(observed_target_state) + score_offset
-
-#         return (linear_part, offset)
-
     def get_sampler(self):
         if hasattr(self, "_sampler"):
             return self._sampler
@@ -124,7 +99,6 @@ class query(object):
         Should set a few key attributes:
 
             - observed_score_state
-            - num_opt_var
             - observed_opt_state
             - opt_transform
 
@@ -179,15 +153,20 @@ class query(object):
             parameter = np.zeros_like(observed_target)
 
         if opt_sample is None:
-            opt_sample = self.sampler.sample(ndraw, burnin)
+            opt_sample, logW = self.sampler.sample(ndraw, burnin)
         else:
+            if len(opt_sample) == 1: # only a sample, so weights are 1s
+                opt_sample = opt_sample[0]
+                logW = np.zeros(ndraw)
+            else:
+                opt_sample, logW = opt_sample
             ndraw = opt_sample.shape[0]
 
         pivots = self.sampler.coefficient_pvalues(observed_target,
                                                   target_cov,
                                                   target_score_cov,
                                                   parameter=parameter,
-                                                  sample=opt_sample,
+                                                  sample=(opt_sample, logW),
                                                   normal_sample=target_sample,
                                                   alternatives=alternatives)
 
@@ -200,7 +179,7 @@ class query(object):
                                                        target_cov,
                                                        target_score_cov,
                                                        parameter=np.zeros_like(parameter),
-                                                       sample=opt_sample,
+                                                       sample=(opt_sample, logW),
                                                        normal_sample=target_sample,
                                                        alternatives=alternatives)
         else:
@@ -216,7 +195,7 @@ class query(object):
             intervals = self.sampler.confidence_intervals(observed_target,
                                                           target_cov,
                                                           target_score_cov,
-                                                          sample=opt_sample,
+                                                          sample=(opt_sample, logW),
                                                           normal_sample=target_sample,
                                                           initial_guess=MLE_intervals,
                                                           level=level)
@@ -280,18 +259,26 @@ class gaussian_query(query):
 
     # Private methods
 
-    def _set_sampler(self, 
-                     A_scaling,
-                     b_scaling,
-                     opt_linear,
-                     opt_offset):
+    def _setup_sampler(self, 
+                       A_scaling,
+                       b_scaling,
+                       opt_linear,
+                       opt_offset,
+                       # optional dispersion parameter
+                       # for covariance of randomization
+                       dispersion=1):
 
         if not np.all(A_scaling.dot(self.observed_opt_state) - b_scaling <= 0):
             raise ValueError('constraints not satisfied')
 
-        cond_mean, cond_cov, cond_precision, logdens_linear = self._setup_implied_gaussian(opt_linear, opt_offset)
+        (cond_mean, 
+         cond_cov, 
+         cond_precision, 
+         logdens_linear) = self._setup_implied_gaussian(opt_linear, 
+                                                        opt_offset,
+                                                        dispersion)
 
-        def log_density(logdens_linear, offset, cond_prec, score, opt):
+        def log_density(logdens_linear, offset, cond_prec, opt, score):
             if score.ndim == 1:
                 mean_term = logdens_linear.dot(score.T + offset).T
             else:
@@ -299,7 +286,10 @@ class gaussian_query(query):
             arg = opt + mean_term
             return - 0.5 * np.sum(arg * cond_prec.dot(arg.T).T, 1)
 
-        log_density = functools.partial(log_density, logdens_linear, opt_offset, cond_precision)
+        log_density = functools.partial(log_density, 
+                                        logdens_linear, 
+                                        opt_offset, 
+                                        cond_precision)
 
         self.cond_mean, self.cond_cov = cond_mean, cond_cov
 
@@ -316,9 +306,15 @@ class gaussian_query(query):
                                                selection_info=self.selection_variable,
                                                useC=self.useC)
 
-    def _setup_implied_gaussian(self, opt_linear, opt_offset):
+    def _setup_implied_gaussian(self, 
+                                opt_linear, 
+                                opt_offset,
+                                # optional dispersion parameter
+                                # for covariance of randomization
+                                dispersion=1):
 
-        _, prec = self.randomizer.cov_prec
+        _, prec = self.randomizer.cov_prec 
+        prec = prec / dispersion
 
         if np.asarray(prec).shape in [(), (0,)]:
             cond_precision = opt_linear.T.dot(opt_linear) * prec
@@ -432,8 +428,12 @@ class multiple_queries(object):
         for i in range(len(self.objectives)):
             if opt_sampling_info[i][0] is None or opt_sampling_info[i][1] is None:
                 raise ValueError("did not input target and score covariance info")
-            opt_sample = self.objectives[i].sampler.sample(ndraw, burnin)
-            self.opt_sampling_info.append((self.objectives[i].sampler, opt_sample, opt_sampling_info[i][0], opt_sampling_info[i][1]))
+            opt_sample, opt_logW = self.objectives[i].sampler.sample(ndraw, burnin)
+            self.opt_sampling_info.append((self.objectives[i].sampler, 
+                                           opt_sample, 
+                                           opt_logW,
+                                           opt_sampling_info[i][0], 
+                                           opt_sampling_info[i][1]))
 
         pivots = self.coefficient_pvalues(observed_target,
                                           parameter=parameter,
@@ -491,11 +491,15 @@ class multiple_queries(object):
 
         for i in range(len(self.objectives)):
             if self.opt_sampling_info[i][1] is None:
-                self.opt_sampling_info[i][1] = self.objectives[i].sampler.sample(*sample_args)
+                _sample, _logW = self.objectives[i].sampler.sample(*sample_args)
+                self.opt_sampling_info[i][1] = _sample
+                self.opt_sampling_info[i][2] = _logW
 
         ndraw = self.opt_sampling_info[0][1].shape[0] # nsample for normal samples taken from the 1st objective
 
-        _intervals = optimization_intervals(self.opt_sampling_info, observed_target, ndraw)
+        _intervals = optimization_intervals(self.opt_sampling_info, 
+                                            observed_target, 
+                                            ndraw)
 
         pvals = []
 
@@ -538,11 +542,15 @@ class multiple_queries(object):
 
         for i in range(len(self.objectives)):
             if self.opt_sampling_info[i][1] is None:
-                self.opt_sampling_info[i][1] = self.objectives[i].sampler.sample(*sample_args)
+                _sample, _logW = self.objectives[i].sampler.sample(*sample_args)
+                self.opt_sampling_info[i][1] = _sample
+                self.opt_sampling_info[i][2] = _logW
 
         ndraw = self.opt_sampling_info[0][1].shape[0] # nsample for normal samples taken from the 1st objective
 
-        _intervals = optimization_intervals(self.opt_sampling_info, observed_target, ndraw)
+        _intervals = optimization_intervals(self.opt_sampling_info, 
+                                            observed_target, 
+                                            ndraw)
 
         limits = []
 
@@ -560,6 +568,15 @@ class optimization_sampler(object):
         raise NotImplementedError("abstract method")
 
     def sample(self):
+        raise NotImplementedError("abstract method")
+
+    def log_cond_density(self,
+                         opt_sample,
+                         target_sample,
+                         transform=None):
+        """
+        Density of opt_sample | target_sample
+        """
         raise NotImplementedError("abstract method")
 
     def hypothesis_test(self,
@@ -614,7 +631,7 @@ class optimization_sampler(object):
             raise ValueError("alternative should be one of ['greater', 'less', 'twosided']")
 
         if sample is None:
-            sample = self.sample(*sample_args)
+            sample, logW = self.sample(*sample_args)
             sample = np.atleast_2d(sample)
 
         if parameter is None:
@@ -624,7 +641,7 @@ class optimization_sampler(object):
 
         target_inv_cov = np.linalg.inv(target_cov)
         delta = target_inv_cov.dot(parameter - self.reference)
-        W = np.exp(sample.dot(delta))
+        W = np.exp(sample.dot(delta) + logW)
 
         family = discrete_family(sample_test_stat, W)
         pval = family.cdf(0, observed_value)
@@ -649,7 +666,7 @@ class optimization_sampler(object):
 
         Parameters
         ----------
-
+ 
         observed : np.float
             A vector of parameters with shape `self.shape`,
             representing coordinates of the target.
@@ -684,11 +701,17 @@ class optimization_sampler(object):
         '''
 
         if sample is None:
-            sample = self.sample(*sample_args)
-            sample = np.vstack([sample]*5)
+            sample, logW = self.sample(*sample_args)
+            sample = np.vstack([sample]*5) # why times 5?
+            logW = np.hstack([logW]*5) 
+        else:
+            sample, logW = sample
+
         ndraw = sample.shape[0]
 
-        _intervals = optimization_intervals([(self, sample, 
+        _intervals = optimization_intervals([(self, 
+                                              sample, 
+                                              logW,
                                               target_cov, 
                                               score_cov)],
                                             observed_target, 
@@ -756,23 +779,44 @@ class optimization_sampler(object):
             alternatives = ['twosided'] * observed_target.shape[0]
 
         if sample is None:
-            sample = self.sample(*sample_args)
+            sample, logW = self.sample(*sample_args)
         else:
+            sample, logW = sample
             ndraw = sample.shape[0]
 
         if parameter is None:
             parameter = np.zeros(observed_target.shape[0])
 
-        _intervals = optimization_intervals([(self, sample, target_cov, score_cov)],
-                                            observed_target, ndraw, normal_sample=normal_sample)
+        _intervals = optimization_intervals([(self, 
+                                              sample, 
+                                              logW,
+                                              target_cov, 
+                                              score_cov)],
+                                            observed_target, 
+                                            ndraw, 
+                                            normal_sample=normal_sample)
         pvals = []
 
         for i in range(observed_target.shape[0]):
             keep = np.zeros_like(observed_target)
             keep[i] = 1.
-            pvals.append(_intervals.pivot(keep, candidate=parameter[i], alternative=alternatives[i]))
+            pvals.append(_intervals.pivot(keep, 
+                                          candidate=parameter[i], 
+                                          alternative=alternatives[i]))
 
         return np.array(pvals)
+
+    def _reconstruct_score_from_target(self,
+                                       target_sample,
+                                       transform=None):
+        if transform is not None:
+            direction, nuisance = transform
+            score_sample = (np.multiply.outer(target_sample,
+                                              direction) + 
+                            nuisance[None, :])
+        else:
+            score_sample = target_sample
+        return score_sample
 
 class affine_gaussian_sampler(optimization_sampler):
 
@@ -784,7 +828,7 @@ class affine_gaussian_sampler(optimization_sampler):
                  affine_con,
                  initial_point,
                  observed_score_state,
-                 log_density,
+                 log_cond_density,
                  logdens_transform, # described how score enters log_density.
                  selection_info=None,
                  useC=False):
@@ -800,9 +844,14 @@ class affine_gaussian_sampler(optimization_sampler):
              Feasible point for affine constraints.
 
         observed_score_state : ndarray
-             Observed score of convex loss.
+             Observed score of convex loss (slightly modified).
+             Essentially (asymptotically) equivalent 
+             to $\nabla \ell(\beta^*) + 
+             Q(\beta^*)\beta^*$ where $\beta^*$ is population
+             minimizer. For linear regression, it is always
+             $-X^Ty$.
 
-        log_density : callable
+        log_cond_density : callable
              Density of optimization variables given score
 
         logdens_transform : tuple
@@ -819,12 +868,39 @@ class affine_gaussian_sampler(optimization_sampler):
         '''
 
         self.affine_con = affine_con
+
+        self.covariance = self.affine_con.covariance
+        self.mean = self.affine_con.mean
+
         self.initial_point = initial_point
         self.observed_score_state = observed_score_state
         self.selection_info = selection_info
-        self.log_density = log_density
+        self._log_cond_density = log_cond_density
         self.logdens_transform = logdens_transform
         self.useC = useC
+
+    def log_cond_density(self,
+                         opt_sample,
+                         target_sample,
+                         transform=None):
+
+        if transform is not None:
+            direction, nuisance = transform
+            return self._log_density_ray(0,   # candidate
+                                              # has been added to
+                                              # target
+                                         direction,
+                                         nuisance,
+                                         target_sample,
+                                         opt_sample)
+        else:
+            # target must be in score coordinates
+            score_sample = target_sample
+
+            # probably should switch
+            # order of signature
+            return self._log_cond_density(opt_sample,
+                                          score_sample)
 
     def sample(self, ndraw, burnin):
         '''
@@ -844,18 +920,20 @@ class affine_gaussian_sampler(optimization_sampler):
 
         '''
 
-        return sample_from_constraints(self.affine_con,
-                                       self.initial_point,
-                                       ndraw=ndraw,
-                                       burnin=burnin)
+        _sample = sample_from_constraints(self.affine_con,
+                                          self.initial_point,
+                                          ndraw=ndraw,
+                                          burnin=burnin)
+        return _sample, np.zeros(_sample.shape[0])
 
     def selective_MLE(self, 
                       observed_target, 
                       target_cov, 
                       target_score_cov, 
-                      init_soln, # initial (observed) value of optimization variables -- 
-                                 # used as a feasible point.
-                                 # precise value used only for independent estimator 
+                      # initial (observed) value of optimization variables -- 
+                      # used as a feasible point.
+                      # precise value used only for independent estimator 
+                      init_soln, 
                       solve_args={'tol':1.e-12}, 
                       level=0.9):
         """
@@ -889,8 +967,8 @@ class affine_gaussian_sampler(optimization_sampler):
                              target_cov, 
                              target_score_cov, 
                              init_soln, 
-                             self.affine_con.mean,
-                             self.affine_con.covariance,
+                             self.mean,
+                             self.covariance,
                              self.logdens_transform[0],
                              self.affine_con.linear_part,
                              self.affine_con.offset,
@@ -904,15 +982,16 @@ class affine_gaussian_sampler(optimization_sampler):
                     target_cov, 
                     target_score_cov, 
                     init_soln, 
-                    solve_args={'tol':1.e-12}):
+                    solve_args={'tol':1.e-12},
+                    useC=True):
 
         prec_target = np.linalg.inv(target_cov)
         ndim = prec_target.shape[0]
         logdens_lin, _ = self.logdens_transform
         target_lin = - logdens_lin.dot(target_score_cov.T.dot(prec_target))
-        target_offset = self.affine_con.mean - target_lin.dot(observed_target)
+        target_offset = self.mean - target_lin.dot(observed_target)
 
-        cov_opt = self.affine_con.covariance
+        cov_opt = self.covariance
         prec_opt = np.linalg.inv(cov_opt)
 
         mean_param = target_lin.dot(parameter_target) + target_offset
@@ -940,21 +1019,23 @@ class affine_gaussian_sampler(optimization_sampler):
 
         return param_map, log_normalizer_map, jacobian_map
 
-    def log_density_ray(self,
-                        candidate,
-                        direction,
-                        nuisance,
-                        gaussian_sample,
-                        opt_sample):
-                        # implicitly caching (opt_sample, gaussian_sample) !!!
+    def _log_density_ray(self,
+                         candidate,
+                         direction,
+                         nuisance,
+                         gaussian_sample,
+                         opt_sample):
 
-        if not hasattr(self, "_direction") or not np.all(self._direction == direction):
+        # implicitly caching (opt_sample, gaussian_sample) ?
+
+        if (not hasattr(self, "_direction") or not 
+            np.all(self._direction == direction)):
 
             logdens_lin, logdens_offset = self.logdens_transform
 
             if opt_sample.shape[1] == 1:
 
-                prec = 1. / self.affine_con.covariance[0,0]
+                prec = 1. / self.covariance[0, 0]
                 quadratic_term = logdens_lin.dot(direction)**2 * prec
                 arg = (logdens_lin.dot(nuisance + logdens_offset) + 
                        logdens_lin.dot(direction) * gaussian_sample +
@@ -982,13 +1063,13 @@ class affine_gaussian_sampler(optimization_sampler):
                 # then it is of the form (arg1 + arg2 + theta * A gamma)
 
                 logdens_lin, logdens_offset = self.logdens_transform
-                cov = self.affine_con.covariance
+                cov = self.covariance
                 prec = np.linalg.inv(cov)
                 linear_part = logdens_lin.dot(direction) # A gamma
 
                 if 1 in opt_sample.shape:
-                    pass # stop3
-                cov = self.affine_con.covariance
+                    pass # stop3 what's this for?
+                cov = self.covariance
 
                 quadratic_term = linear_part.T.dot(prec).dot(linear_part)
 
@@ -1016,6 +1097,7 @@ class optimization_intervals(object):
                  opt_sampling_info, # a sequence of 
                                     # (opt_sampler, 
                                     #  opt_sample, 
+                                    #  opt_logweights,
                                     #  target_cov, 
                                     #  score_cov) objects
                                     #  in theory all target_cov 
@@ -1025,52 +1107,72 @@ class optimization_intervals(object):
                  target_cov=None,
                  normal_sample=None):
 
-        self.blahvals = []
         # not all opt_samples will be of the same size as nsample 
         # let's repeat them as necessary
         
         tiled_sampling_info = []
         for (opt_sampler, 
              opt_sample, 
+             opt_logW,
              t_cov, 
              t_score_cov) in opt_sampling_info: 
             if opt_sample is not None:
                 if opt_sample.shape[0] < nsample:
                     if opt_sample.ndim == 1:
-                        tiled_opt_sample = np.tile(opt_sample, int(np.ceil(nsample / opt_sample.shape[0])))[:nsample]
+                        tiled_opt_sample = np.tile(opt_sample, 
+                                              int(np.ceil(nsample / 
+                                              opt_sample.shape[0])))[:nsample]
+                        tiled_opt_logW = np.tile(opt_logW,
+                                                 int(np.ceil(nsample / 
+                                                             opt_logW.shape[0])))[:nsample]
                     else:
-                        tiled_opt_sample = np.tile(opt_sample, (int(np.ceil(nsample / opt_sample.shape[0])), 1))[:nsample]
+                        tiled_opt_sample = np.tile(opt_sample, 
+                                              (int(np.ceil(nsample / 
+                                              opt_sample.shape[0])), 1))[:nsample]
+                        tiled_opt_logW = np.tile(opt_logW,
+                                                 (int(np.ceil(nsample / 
+                                                              opt_logW.shape[0])), 1))[:nsample]
                 else:
                     tiled_opt_sample = opt_sample[:nsample]
+                    tiled_opt_logW = opt_logW[:nsample]
             else:
                 tiled_sample = None
             tiled_sampling_info.append((opt_sampler, 
                                         tiled_opt_sample, 
+                                        tiled_opt_logW,
                                         t_cov, 
                                         t_score_cov))
 
         self.opt_sampling_info = tiled_sampling_info
         self._logden = 0
-        for opt_sampler, opt_sample, _, _ in opt_sampling_info:
-            self._logden += opt_sampler.log_density(opt_sampler.observed_score_state, 
-                                                    opt_sample)
-            if opt_sample.shape[0] < nsample:
-                self._logden = np.tile(self._logden, int(np.ceil(nsample / opt_sample.shape[0])))[:nsample]
+        for opt_sampler, opt_sample, opt_logW, _, _ in opt_sampling_info:
 
-        self.observed = observed.copy() # this is our observed unpenalized estimator
+            self._logden += opt_sampler.log_cond_density(
+                                opt_sample,
+                                opt_sampler.observed_score_state,
+                                transform=None) 
+            self._logden -= opt_logW
+            if opt_sample.shape[0] < nsample:
+                self._logden = np.tile(self._logden, 
+                                       int(np.ceil(nsample / 
+                                       opt_sample.shape[0])))[:nsample]
+
+        # this is our observed unpenalized estimator
+        self.observed = observed.copy()
 
         # average covariances in case they might be different
 
         if target_cov is None:
             self.target_cov = 0
-            for _, _, target_cov, _ in opt_sampling_info:
+            for _, _, _, target_cov, _ in opt_sampling_info:
                 self.target_cov += target_cov
             self.target_cov /= len(opt_sampling_info)
 
         if normal_sample is None:
-            self._normal_sample = np.random.multivariate_normal(mean=np.zeros(self.target_cov.shape[0]), 
-                                                                cov=self.target_cov, 
-                                                                size=(nsample,))
+            self._normal_sample = np.random.multivariate_normal(
+                                      mean=np.zeros(self.target_cov.shape[0]), 
+                                      cov=self.target_cov, 
+                                      size=(nsample,))
         else:
             self._normal_sample = normal_sample
 
@@ -1099,6 +1201,7 @@ class optimization_intervals(object):
 
         for (opt_sampler, 
              opt_sample, 
+             _, 
              _, 
              target_score_cov) in self.opt_sampling_info:
 
@@ -1172,30 +1275,13 @@ class optimization_intervals(object):
                 delta *= 2
                 count += 1
             lower = bisect(_rootL, Ll, Ul)
-        DEBUG = False
-        if DEBUG:
-            print(_rootL(lower), _rootU(upper))
-            print(_rootL(lower-0.01*(upper-lower)), _rootU(upper+0.01*(upper-lower)), 'perturb')
-            import matplotlib.pyplot as plt
-            plt.clf()
-            X = np.linspace(lower, upper, 101)
-            plt.plot(X, [_rootL(x) + (1 + level) / 2. for x in X])
-            plt.plot([lower, lower], [0, 1], 'k--')
-            plt.plot([upper, upper], [0, 1], 'k--')
-            plt.plot([guess[0], guess[0]], [0, 1], 'r--')
-            plt.plot([guess[1], guess[1]], [0, 1], 'r--')
-            plt.plot([Ll, Ll], [0, 1], 'g--')
-            plt.plot([Ul, Ul], [0, 1], 'g--')
-            plt.plot([Lu, Lu], [0, 1], 'g--')
-            plt.plot([Uu, Uu], [0, 1], 'g--')
-            plt.savefig('pivot.pdf')
 
         return lower + observed_stat, upper + observed_stat
 
     # Private methods
 
     def _weights(self, 
-                 sample_stat,
+                 stat_sample,
                  candidate,
                  nuisance,
                  translate_dirs):
@@ -1220,15 +1306,13 @@ class optimization_intervals(object):
         _lognum = 0
         for i, opt_info in enumerate(self.opt_sampling_info):
             opt_sampler, opt_sample = opt_info[:2]
-            if not isinstance(opt_sampler, affine_gaussian_sampler):
-                score_sample = np.multiply.outer(sample_stat + candidate, translate_dirs[i]) + nuisance[i][None, :] # these are now score coordinates
-                _lognum += opt_sampler.log_density(score_sample, opt_sample)
-            else:
-                _lognum += opt_sampler.log_density_ray(candidate,
-                                                       translate_dirs[i],
-                                                       nuisance[i],
-                                                       sample_stat, 
-                                                       opt_sample)
+
+            _lognum += opt_sampler.log_cond_density(opt_sample,
+                                                    stat_sample + candidate,
+                                                    transform=
+                                                    (translate_dirs[i],
+                                                     nuisance[i]))
+
         _logratio = _lognum - self._logden
         _logratio -= _logratio.max()
 

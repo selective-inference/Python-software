@@ -542,7 +542,7 @@ def test_liu_gaussian():
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
-            pvalues = rpy.r('pvalues')
+            pvalues = np.asarray(rpy.r('pvalues'))
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
@@ -599,7 +599,7 @@ def test_liu_logistic():
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
-            pvalues = rpy.r('pvalues')
+            pvalues = np.asarray(rpy.r('pvalues'))
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
             print(pvalues)
@@ -657,7 +657,7 @@ def test_ROSI_gaussian_JM():
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
-            pvalues = rpy.r('pvalues')
+            pvalues = np.asarray(rpy.r('pvalues'))
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
@@ -712,7 +712,7 @@ def test_ROSI_logistic_JM():
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
-            pvalues = rpy.r('pvalues')
+            pvalues = np.asarray(rpy.r('pvalues'))
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
@@ -778,7 +778,7 @@ def test_ROSI_gaussian_BN():
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
-            pvalues = rpy.r('pvalues')
+            pvalues = np.asarray(rpy.r('pvalues'))
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
@@ -834,7 +834,7 @@ def test_ROSI_logistic_BN():
             active_vars=PVS$active_vars - 1 # for 0-based
             pvalues = PVS$pvalues
             """)
-            pvalues = rpy.r('pvalues')
+            pvalues = np.asarray(rpy.r('pvalues'))
             pvalues = pvalues[~np.isnan(pvalues)]
             active_set = rpy.r('active_vars')
 
@@ -925,7 +925,7 @@ def test_rlasso_gaussian():
         R_cond_mean = np.squeeze(R_cond_mean)
         R_cond_cov = rpy.r('cond_cov')
 
-        R_pvalues = rpy.r('pvalues')
+        R_pvalues = np.asarray(rpy.r('pvalues'))
         R_pvalues = R_pvalues[~np.isnan(R_pvalues)]
 
         R_opt_samples = rpy.r('opt_samples')
@@ -933,7 +933,7 @@ def test_rlasso_gaussian():
 
         numpy2ri.deactivate()
 
-        signs = L.fit(perturb=R_perturb)
+        signs = L.fit(perturb=np.asarray(R_perturb))
         active_set = np.where(signs != 0)[0]
         nonzero = signs != 0
 
@@ -969,8 +969,8 @@ def test_rlasso_gaussian():
                                            cov_target, 
                                            cov_target_score, 
                                            alternatives,
-                                           opt_sample=R_opt_samples,
-                                           target_sample=R_target_samples,
+                                           opt_sample=(np.asarray(R_opt_samples),),
+                                           target_sample=np.asarray(R_target_samples),
                                            ndraw=8000,#ndraw,
                                            burnin=burnin, 
                                            compute_intervals=True)

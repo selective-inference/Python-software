@@ -57,6 +57,10 @@ dist: clean all
 public_html: dist
 	rsync -avH --delete dist/* $(WWW)
 
+github_docs: html
+	rm -fr ../docs/*
+	cp -r build/html/* ../docs
+
 htmlonly:
 	mkdir -p $(BUILDROOT)/html $(BUILDROOT)/doctrees
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDROOT)/html

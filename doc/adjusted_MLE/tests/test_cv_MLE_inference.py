@@ -7,15 +7,15 @@ rpy2.robjects.numpy2ri.activate()
 import rpy2.robjects.pandas2ri
 from rpy2.robjects.packages import importr
 
-from selection.adjusted_MLE.cv_MLE import (sim_xy,
-                                           selInf_R,
-                                           glmnet_lasso,
-                                           BHfilter,
-                                           coverage,
-                                           relative_risk,
-                                           comparison_cvmetrics_selected,
-                                           comparison_cvmetrics_full,
-                                           comparison_cvmetrics_debiased)
+from .comparison_metrics import (sim_xy,
+                                 selInf_R,
+                                 glmnet_lasso,
+                                 BHfilter,
+                                 coverage,
+                                 relative_risk,
+                                 comparison_cvmetrics_selected,
+                                 comparison_cvmetrics_full,
+                                 comparison_cvmetrics_debiased)
 
 def plotRisk(df_risk):
     robjects.r("""
@@ -306,7 +306,6 @@ def output_file(n=500, p=100, rho=0.35, s=5, beta_type=1, snr_values=np.array([0
         plotRisk(df_risk)
         plotCoveragePower(df_selective_inference)
 
-output_file()
 
 
 

@@ -14,26 +14,6 @@ def relative_risk(est, truth, Sigma):
     else:
         return (est - truth).T.dot(Sigma).dot(est - truth)
 
-def sim_xy(n, p, nval, rho=0, s=5, beta_type=2, snr=1):
-    robjects.r('''
-    #library(bestsubset)
-    source('~/best-subset/bestsubset/R/sim.R')
-    sim_xy = sim.xy
-    ''')
-
-    r_simulate = robjects.globalenv['sim_xy']
-    sim = r_simulate(n, p, nval, rho, s, beta_type, snr)
-    X = np.array(sim.rx2('x'))
-    y = np.array(sim.rx2('y'))
-    X_val = np.array(sim.rx2('xval'))
-    y_val = np.array(sim.rx2('yval'))
-    Sigma = np.array(sim.rx2('Sigma'))
-    beta = np.array(sim.rx2('beta'))
-    sigma = np.array(sim.rx2('sigma'))
-
-    return X, y, X_val, y_val, Sigma, beta, sigma
-
-
 def glmnet_lasso(X, y, lambda_val):
     robjects.r('''
                 library(glmnet)

@@ -13,11 +13,23 @@ from .randomization import randomization
 
 class CV_view(query):
 
-    def __init__(self, glm_loss, loss_label, lasso_randomization=None, epsilon=None,  scale1=None, scale2=None):
+    def __init__(self, 
+                 glm_loss, 
+                 loss_label, 
+                 lasso_randomization=None, 
+                 epsilon=None,  
+                 scale1=None, 
+                 scale2=None):
 
         self.loss = glm_loss
         self.loss_label = loss_label
-        self.lasso_randomization=lasso_randomization
+        if lasso_randomization is None:
+            X, y = glm_loss.data
+            n, p = X.shape
+            randomizer_scale = 0.5 * np.std(y)
+            lasso_randomization = randomization.isotropic_gaussian((p,), 
+                                                                   randomizer_scale)
+        self.lasso_randomization = lasso_randomization
         self.epsilon = epsilon
         self.scale1 = scale1
         self.scale2 = scale2

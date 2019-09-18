@@ -2,13 +2,13 @@ from __future__ import print_function
 import numpy as np
 from .test_fstep_langevin import test_fstep
 from .test_kfstep import test_kfstep
-from matplotlib import pyplot as plt
-from scipy.stats import probplot, uniform
 import random
 import statsmodels.api as sm
 
 def main():
 
+    from scipy.stats import probplot, uniform
+    from matplotlib import pyplot as plt
     random.seed(4)
 
     fig = plt.figure()

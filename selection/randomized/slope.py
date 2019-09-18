@@ -168,10 +168,10 @@ class slope(gaussian_query):
             A_scaling = np.vstack([A_scaling_0, A_scaling_1])
             b_scaling = np.zeros(2 * self.num_opt_var - 1)
 
-            self._set_sampler(A_scaling,
-                              b_scaling,
-                              opt_linear,
-                              opt_offset)
+            self._setup_sampler(A_scaling,
+                                b_scaling,
+                                opt_linear,
+                                opt_offset)
 
             return active_signs
 

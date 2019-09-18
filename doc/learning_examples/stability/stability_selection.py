@@ -83,8 +83,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import pandas as pd
 
-    for i in range(500):
-        df = simulate()
+    for i in range(2000):
+        df = simulate(B=3000)
         csvfile = 'stability_selection.csv'
         outbase = csvfile[:-4]
 

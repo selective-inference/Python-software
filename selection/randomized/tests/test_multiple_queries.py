@@ -10,7 +10,6 @@ from ..screening import marginal_screening
 from ..query import multiple_queries
 from ...tests.instance import gaussian_instance
 from ...algorithms.sqrt_lasso import choose_lambda, solve_sqrt_lasso
-import matplotlib.pyplot as plt
 
 # the test here is marginal_screening + lasso
 def test_multiple_queries(n=500, p=100, signal_fac=1.5, s=5, sigma=3, rho=0.4, randomizer_scale=1, ndraw=5000, burnin=1000):
@@ -75,6 +74,7 @@ def main(nsim=500, n=500, p=100, sigma=3):
 
     P0, PA = [], []
     from statsmodels.distributions import ECDF
+    import matplotlib.pyplot as plt
 
     for i in range(nsim):
         if True:

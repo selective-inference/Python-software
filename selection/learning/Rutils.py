@@ -1,4 +1,4 @@
-import os, glob, tempfile
+import os, glob, tempfile, warnings
 import numpy as np
 
 from traitlets import (HasTraits, 
@@ -12,10 +12,13 @@ from traitlets import (HasTraits,
                        default)
 # Rpy
 
-import rpy2.robjects as rpy
-from rpy2.robjects import numpy2ri
-rpy.r('library(knockoff); library(glmnet)')
-from rpy2 import rinterface
+try:
+    import rpy2.robjects as rpy
+    from rpy2.robjects import numpy2ri
+    rpy.r('library(knockoff); library(glmnet)')
+    from rpy2 import rinterface
+except ImportError:
+    warnings.warn("rpy2 with knockoff and glmnet unavailable")
 
 def null_print(x):
     pass
@@ -75,76 +78,6 @@ class generic_method(HasTraits):
         else:
             return self.selected_target(active, beta)
 
-class knockoffs_sigma(generic_method):
-
-    factor_method = 'equi'
-    method_name = Unicode('Knockoffs')
-    knockoff_method = Unicode("ModelX (asdp)")
-    model_target = Unicode("full")
-    selectiveR_method = True
-    forward_step = False
-    sqrt_lasso = False
-
-    @classmethod
-    def setup(cls, feature_cov):
-
-        cls.feature_cov = feature_cov
-        numpy2ri.activate()
-
-        # see if we've factored this before
-
-        have_factorization = False
-        if not os.path.exists('.knockoff_factorizations'):
-            os.mkdir('.knockoff_factorizations')
-        factors = glob.glob('.knockoff_factorizations/*npz')
-        for factor_file in factors:
-            factor = np.load(factor_file)
-            feature_cov_f = factor['feature_cov']
-            if ((feature_cov_f.shape == feature_cov.shape) and
-                (factor['method'] == cls.factor_method) and
-                np.allclose(feature_cov_f, feature_cov)):
-                have_factorization = True
-                cls.knockoff_chol = factor['knockoff_chol']
-
-        if not have_factorization:
-            cls.knockoff_chol = factor_knockoffs(feature_cov, cls.factor_method)
-
-        numpy2ri.deactivate()
-
-    def select(self):
-
-        numpy2ri.activate()
-        rpy.r.assign('chol_k', self.knockoff_chol)
-        rpy.r('''
-        knockoffs = function(X) {
-           mu = rep(0, ncol(X))
-           mu_k = X # sweep(X, 2, mu, "-") %*% SigmaInv_s
-           X_k = mu_k + matrix(rnorm(ncol(X) * nrow(X)), nrow(X)) %*% chol_k
-           return(X_k)
-        }
-            ''')
-        numpy2ri.deactivate()
-
-        if True:
-            numpy2ri.activate()
-            rpy.r.assign('X', self.X)
-            rpy.r.assign('Y', self.Y)
-            rpy.r.assign('q', self.q)
-            if self.forward_step:
-                rpy.r('V = knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs, stat=stat.forward_selection)$selected')
-            elif self.sqrt_lasso:
-                rinterface.set_writeconsole_regular(null_print)
-                rpy.r('V = knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs, stat=stat.sqrt_lasso)$selected')
-                rinterface.set_writeconsole_regular(rinterface.consolePrint)
-            else:
-                rpy.r('V = knockoff.filter(X, Y, fdr=q, knockoffs=knockoffs)$selected')
-            rpy.r('if (length(V) > 0) {V = V-1}')
-            V = rpy.r('V')
-            numpy2ri.deactivate()
-            return np.asarray(V, np.int), np.asarray(V, np.int)
-        else: # except:
-            return [], []
-
 class lasso_glmnet(generic_method):
 
     def select(self, CV=True, seed=0):
@@ -175,7 +108,7 @@ class lasso_glmnet(generic_method):
         else:
             return [], []
 
-knockoffs_sigma.register(); lasso_glmnet.register()
+lasso_glmnet.register()
 
 def factor_knockoffs(feature_cov, method='asdp'):
 

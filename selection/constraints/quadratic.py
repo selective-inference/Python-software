@@ -66,10 +66,10 @@ class constraints(base_constraints):
         self.dim = p
         l = len(quad_part)
         
-        if lin_part == None:
+        if lin_part is None:
             lin_part = np.zeros((l, p))
 
-        if offset == None:
+        if offset is None:
             offset = np.zeros(l)
         
         if len(lin_part) != l or len(offset) != l:

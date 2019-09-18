@@ -10,8 +10,6 @@ from ..lasso import full_targets
 from ...tests.decorators import rpy_test_safe
 from statsmodels.distributions import ECDF
 
-import matplotlib.pyplot as plt
-
 try:
     from rpy2.robjects.packages import importr
     from rpy2 import robjects
@@ -78,7 +76,7 @@ if rpy_loaded:
 
         return result
 
-#@rpy_test_safe(libraries=['SLOPE'])
+@rpy_test_safe(libraries=['SLOPE'])
 def test_outputs_SLOPE_weights(n=500, p=100, signal_fac=1., s=5, sigma=3., rho=0.35):
 
     inst = gaussian_instance

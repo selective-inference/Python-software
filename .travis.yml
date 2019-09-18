@@ -92,11 +92,9 @@ before_install:
 
 install:
   # Install selection
-  - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
-      pip install  -r requirements.txt -c constraints.txt; 
-    else
-      pip install  -r requirements.txt; 
-    fi
+  - if [ "$RUN_R_TESTS" ]; then
+     pip install rpy2 -c constraints.txt ;   
+     fi ; 
   - git submodule init
   - git submodule update
   - git clone https://github.com/jonathan-taylor/R-selective.git
@@ -104,10 +102,9 @@ install:
   - git submodule init
   - git submodule update
   - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
-  - sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE'), repos='http://cloud.r-project.org')"
+  - sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE', 'knockoff'), repos='http://cloud.r-project.org')"
   - sudo make install
   - cd ..
-  - python -c "from statsmodels.api import PHReg"
   - travis_install $INSTALL_TYPE
 
 # command to run tests, e.g. python setup.py test
@@ -115,11 +112,7 @@ script:
 
     - pip install nose
     # No figure windows for mpl; quote to hide : from travis-ci yaml parsing
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then 
-        pip install  -r doc-requirements.txt -c constraints.txt; 
-      else
-        pip install  -r doc-requirements.txt; 
-      fi
+    - pip install -r requirements.txt -c constraints.txt; # older rpy2
     # Change into an innocuous directory and find tests from installation
     - mkdir for_testing
     - cd for_testing

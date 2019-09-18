@@ -69,8 +69,6 @@ class screening(gaussian_query):
 
 class marginal_screening(screening):
 
-    useC = True
-
     def __init__(self,
                  observed_data,
                  covariance, 
@@ -116,10 +114,10 @@ class marginal_screening(screening):
         A_scaling = -np.identity(len(active_signs))
         b_scaling = np.zeros(self.num_opt_var)
 
-        self._set_sampler(A_scaling,
-                          b_scaling,
-                          opt_linear,
-                          opt_offset)
+        self._setup_sampler(A_scaling,
+                            b_scaling,
+                            opt_linear,
+                            opt_offset)
 
         return self._selected
 
@@ -219,10 +217,10 @@ class stepup(screening):
             A_scaling = -np.identity(self.num_opt_var)
             b_scaling = np.zeros(self.num_opt_var)
 
-            self._set_sampler(A_scaling,
-                              b_scaling,
-                              opt_linear,
-                              opt_offset)
+            self._setup_sampler(A_scaling,
+                                b_scaling,
+                                opt_linear,
+                                opt_offset)
         else:
             self._selected = np.zeros(p, np.bool)
         return self._selected
@@ -356,10 +354,10 @@ class topK(screening):
         A_scaling = -np.identity(self.num_opt_var)
         b_scaling = -np.ones(self.num_opt_var) * lower_bound
 
-        self._set_sampler(A_scaling,
-                          b_scaling,
-                          opt_linear,
-                          opt_offset)
+        self._setup_sampler(A_scaling,
+                            b_scaling,
+                            opt_linear,
+                            opt_offset)
 
         return self._selected
 
