@@ -65,8 +65,12 @@ def test_naive(n=300,
     truth = np.nonzero(beta != 0)[0]
 
     if cross_validation:
-        cv = CV_view(rr.glm.gaussian(X,y), loss_label="gaussian", lasso_randomization=None, epsilon=None,
-                     scale1=None, scale2=None)
+        cv = CV_view(rr.glm.gaussian(X,y), 
+                     loss_label="gaussian", 
+                     lasso_randomization=None, 
+                     epsilon=None,
+                     scale1=None, 
+                     scale2=None)
 
         cv.solve(glmnet=glmnet and have_glmnet)
         lam = cv.lam_CVR

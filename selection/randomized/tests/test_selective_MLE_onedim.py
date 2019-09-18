@@ -2,7 +2,6 @@ import functools
 
 import numpy as np
 from scipy.stats import norm as ndist
-import matplotlib.pyplot as plt
 import nose.tools as nt
 
 from ..lasso import lasso, full_targets
@@ -101,6 +100,7 @@ def main():
 
     beta_seq, MLE_cur, MLE_prev, pivot = test_agreement()
 
+    import matplotlib.pyplot as plt
     plt.figure(num=1)
 
     plt.plot(beta_seq, np.array(MLE_cur), label='MLE now')
