@@ -10,8 +10,6 @@ from ..lasso import full_targets
 from ...tests.decorators import rpy_test_safe
 from statsmodels.distributions import ECDF
 
-import matplotlib.pyplot as plt
-
 try:
     from rpy2.robjects.packages import importr
     from rpy2 import robjects
