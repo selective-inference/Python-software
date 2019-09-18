@@ -20,8 +20,11 @@ from .fitters import (gbm_fit_sk,
 from .samplers import (normal_sampler,
                        split_sampler)
 from .learners import mixture_learner
-from .keras_fit import keras_fit
-                     
+try:
+    from .keras_fit import keras_fit
+except ImportError:
+    pass
+
 def infer_general_target(observed_outcome,
                          observed_target,
                          target_cov,

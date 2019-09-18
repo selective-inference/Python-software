@@ -2,43 +2,49 @@
 Based on https://stackoverflow.com/questions/44164749/how-does-keras-handle-multilabel-classification
 '''
 
-from keras.models import Sequential
-from keras.layers import Dense, Dropout
-from keras.optimizers import SGD
+import warnings
 
-def keras_fit(T, Y, **kwargs):
+try:
 
-    if Y.ndim == 1:
-        Y.shape = (-1, 1)
+    from keras.models import Sequential
+    from keras.layers import Dense, Dropout
+    from keras.optimizers import SGD
 
-    fitfns = []
+    def keras_fit(T, Y, **kwargs):
 
-    for j in range(Y.shape[1]):
-        y = Y[:,j]
+        if Y.ndim == 1:
+            Y.shape = (-1, 1)
 
-        fit_fn = keras_fit_multilabel(T, y, **kwargs)[0]
-        fitfns.append(fit_fn)
-    return fitfns
+        fitfns = []
 
-def keras_fit_multilabel(T, Y, sizes=[500, 500], epochs=50, activation='relu', dropout=0, **ignored):
+        for j in range(Y.shape[1]):
+            y = Y[:,j]
 
-    if Y.ndim == 1:
-        Y.shape = (-1, 1)
+            fit_fn = keras_fit_multilabel(T, y, **kwargs)[0]
+            fitfns.append(fit_fn)
+        return fitfns
 
-    model = Sequential()
-    for s in sizes:
-        model.add(Dense(s, activation=activation, input_dim=T.shape[1]))
-        if dropout > 0:
-            model.add(Dropout(dropout))
+    def keras_fit_multilabel(T, Y, sizes=[500, 500], epochs=50, activation='relu', dropout=0, **ignored):
 
-    # the final layer
-    model.add(Dense(Y.shape[1], activation='sigmoid'))
+        if Y.ndim == 1:
+            Y.shape = (-1, 1)
 
-    sgd = SGD(lr=0.03, decay=1e-3, momentum=0.6, nesterov=True)
-    model.compile(loss='binary_crossentropy',
-                  optimizer=sgd)
+        model = Sequential()
+        for s in sizes:
+            model.add(Dense(s, activation=activation, input_dim=T.shape[1]))
+            if dropout > 0:
+                model.add(Dropout(dropout))
 
-    model.fit(T, Y, epochs=epochs)
-    fitfns = [lambda T_test: model.predict(T_test)[:,j] for j in range(Y.shape[1])]
-    return fitfns
+        # the final layer
+        model.add(Dense(Y.shape[1], activation='sigmoid'))
 
+        sgd = SGD(lr=0.03, decay=1e-3, momentum=0.6, nesterov=True)
+        model.compile(loss='binary_crossentropy',
+                      optimizer=sgd)
+
+        model.fit(T, Y, epochs=epochs)
+        fitfns = [lambda T_test: model.predict(T_test)[:,j] for j in range(Y.shape[1])]
+        return fitfns
+
+except ImportError:
+    warnings.warn('module `keras` not importable, `keras_fit` and `keras_fit_multilabel` will not be importable')

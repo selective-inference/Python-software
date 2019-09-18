@@ -7,6 +7,6 @@ mpmath
 pyinter
 sklearn
 regreg
-keras
-tensorflow
+# keras
+# tensorflow
 traitlets

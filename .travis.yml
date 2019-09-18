@@ -13,7 +13,7 @@ addons:
 env:
     global:
         # Maximal dependencies
-        - DEPENDS="cython numpy scipy matplotlib"
+        - DEPENDS="cython numpy scipy matplotlib pandas"
 matrix:
   include:
     - python: 3.5
@@ -25,7 +25,7 @@ matrix:
     # Testing without matplotlib
     - python: 3.5
       env:
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     # Setup.py install
     - python: 3.5
       env:
@@ -34,12 +34,12 @@ matrix:
       env:
         # Sdist install should collect all dependencies
         - INSTALL_TYPE=sdist
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 2.7
       env:
         # Wheel install should collect all dependencies
         - INSTALL_TYPE=wheel
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 2.7
       env:
         - INSTALL_TYPE=requirements
@@ -47,7 +47,7 @@ matrix:
     # Testing without matplotlib
     - python: 3.5
       env:
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     # Documentation doctests
     - python: 3.5
       env:
@@ -57,12 +57,12 @@ matrix:
       env:
         # Sdist install should collect all dependencies
         - INSTALL_TYPE=sdist
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 3.5
       env:
         # Wheel install should collect all dependencies
         - INSTALL_TYPE=wheel
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 3.5
       env:
         - INSTALL_TYPE=requirements
@@ -74,12 +74,12 @@ before_install:
   - sudo add-apt-repository -y ppa:marutter/c2d4u
   - sudo add-apt-repository -y ppa:marutter/rrutter
   - sudo apt-get update
-  - sudo apt-get install -y r-base r-base-dev r-cran-devtools r-cran-rcpp
 
 
 install:
   # Install selectinf
   - if [ "$RUN_R_TESTS" ]; then
+     sudo apt-get install -y r-base r-base-dev r-cran-devtools r-cran-rcpp;
      pip install rpy2 -c constraints.txt ;   
      Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')";
      sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE', 'knockoff'), repos='http://cloud.r-project.org')";
