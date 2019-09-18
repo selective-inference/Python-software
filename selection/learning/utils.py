@@ -1,7 +1,6 @@
 import hashlib, warnings
 
 import numpy as np
-import matplotlib.pyplot as plt
 import pandas as pd
 from scipy.stats import norm as normal_dbn
 
@@ -448,28 +447,34 @@ def lee_inference(X,
                          'lee_coverage':lee_covered,
                          'variable':summaryL0['variable']})
 
-def pivot_plot(df, 
-               outbase,
-               figsize=(8,8)):
+try:
+    import matplotlib.pyplot as plt
 
-    print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
-    print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
+    def pivot_plot(df, 
+                   outbase,
+                   figsize=(8,8)):
 
-    print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
+        print("selective:", np.mean(df['pivot']), np.std(df['pivot']), np.mean(df['length']), np.std(df['length']), np.mean(df['coverage']))
+        print("naive:", np.mean(df['naive_pivot']), np.std(df['naive_pivot']), np.mean(df['naive_length']), np.std(df['naive_length']), np.mean(df['naive_coverage']))
 
-    f = plt.figure(num=1, figsize=figsize)
-    plt.clf()
-    U = np.linspace(0, 1, 101)
-    plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'b', label='Selective', linewidth=3)
-    plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'r', label='Naive', linewidth=3)
-    plt.legend(fontsize=15)
-    plt.plot([0,1], [0,1], 'k--', linewidth=2)
-    plt.savefig(outbase + '.pdf')
-    pivot_ax = plt.gca()
-    pivot_ax.set_ylabel(r'P(pivot < t)')
-    pivot_ax.set_xlabel(r't')
+        print("len ratio selective divided by naive:", np.mean(np.array(df['length']) / np.array(df['naive_length'])))
 
-    return pivot_ax
+        f = plt.figure(num=1, figsize=figsize)
+        plt.clf()
+        U = np.linspace(0, 1, 101)
+        plt.plot(U, sm.distributions.ECDF(df['pivot'])(U), 'b', label='Selective', linewidth=3)
+        plt.plot(U, sm.distributions.ECDF(df['naive_pivot'])(U), 'r', label='Naive', linewidth=3)
+        plt.legend(fontsize=15)
+        plt.plot([0,1], [0,1], 'k--', linewidth=2)
+        plt.savefig(outbase + '.pdf')
+        pivot_ax = plt.gca()
+        pivot_ax.set_ylabel(r'P(pivot < t)')
+        pivot_ax.set_xlabel(r't')
+
+        return pivot_ax
+
+except ImportError:
+    warnings.warn('matplotlib not importable, pivot_plot will not be available')
 
 def liu_inference(X,
                   y,
