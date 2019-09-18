@@ -2,6 +2,7 @@ cython
 pandas
 numpy>=1.12.0
 scipy
+regreg
 mpmath
 pyinter
 statsmodels
