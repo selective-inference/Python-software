@@ -26,10 +26,6 @@ matrix:
     - python: 3.5
       env:
         - DEPENDS="cython numpy scipy"
-    # Documentation doctests
-    - python: 3.5
-      env:
-        - DOC_DOC_TEST=1
     # Setup.py install
     - python: 3.5
       env:
