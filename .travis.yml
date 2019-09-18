@@ -81,17 +81,17 @@ install:
   # Install selectinf
   - if [ "$RUN_R_TESTS" ]; then
      pip install rpy2 -c constraints.txt ;   
+     Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')";
+     sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE', 'knockoff'), repos='http://cloud.r-project.org')";
+     git clone https://github.com/jonathan-taylor/R-selective.git;
+     cd R-selective;
+     git submodule init;
+     git submodule update;
+     sudo make install;
+     cd ..;
      fi ; 
   - git submodule init
   - git submodule update
-  - git clone https://github.com/jonathan-taylor/R-selective.git
-  - cd R-selective
-  - git submodule init
-  - git submodule update
-  - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
-  - sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE', 'knockoff'), repos='http://cloud.r-project.org')"
-  - sudo make install
-  - cd ..
   - travis_install $INSTALL_TYPE
 
 # command to run tests, e.g. python setup.py test
