@@ -77,12 +77,6 @@ matrix:
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
-  # Install regreg 
-  - git clone https://github.com/jonathan-taylor/regreg.git
-  - cd regreg
-  - pip install -r requirements.txt
-  - pip install -e .
-  - cd ..
   - sudo apt-get install software-properties-common
   - sudo add-apt-repository -y ppa:marutter/c2d4u
   - sudo add-apt-repository -y ppa:marutter/rrutter
