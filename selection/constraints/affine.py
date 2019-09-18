@@ -59,11 +59,11 @@ class constraints(object):
     >>> Y = np.array([3,4.4])
     >>> eta = np.array([1,1])
     >>> positive.interval(eta, Y)
-    array([  4.6212814 ,  10.17180724])
-    >>> positive.pivot(eta, Y) # doctest: +ELLIPSIS
+    array([  4.6212814 ,  10.17180724]) # doctest: +NORMALIZE_WHITESPACE
+    >>> positive.pivot(eta, Y) # doctest: +ELLIPSIS 
     5.187...-07
-    >>> np.array(positive.bounds(eta, Y)) # doctest: +ELLIPSIS
-    array([ 1.4       ,  7.4       ,         inf,  1.41421356])
+    >>> np.array(positive.bounds(eta, Y)) # doctest: +NORMALIZE_WHITESPACE
+    array([ 1.4 , 7.4  , inf, 1.41421356])
     >>> 
 
     """
