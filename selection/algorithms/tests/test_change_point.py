@@ -1,5 +1,5 @@
 import numpy as np
-from selection.algorithms.change_point import one_jump_instance, change_point
+from ..change_point import one_jump_instance, change_point
 
 def test_change_point(delta=0.1, p=60, sigma=1, plot=False):
 

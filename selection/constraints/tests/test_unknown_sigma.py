@@ -1,7 +1,7 @@
 from __future__ import print_function
 import numpy as np
-import selection.constraints.affine
-from selection.constraints.quasi_affine import constraints_unknown_sigma
+from .. import affine
+from ..quasi_affine import constraints_unknown_sigma
 
 def simulate(A=None, theta=0, R=None, eta=None):
 
@@ -46,7 +46,7 @@ def instance(theta=0, A=None, R=None, eta=None):
         result = simulate(theta=theta, A=A, R=R, eta=eta)
 
     A, b, R, Z, eta, counter = result
-    from selection.truncated_T import truncated_T
+    from ..truncated_T import truncated_T
     
     intervals, obs = constraints_unknown_sigma(A, b, Z, eta, R,
                                                value_under_null=theta)

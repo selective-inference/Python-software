@@ -3,7 +3,7 @@ from __future__ import print_function
 import numpy as np
 import nose.tools as nt
 
-from selection.randomized.randomization import randomization
+from ..randomization import randomization
 
 def test_noise_dbns():
 

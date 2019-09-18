@@ -3,7 +3,7 @@ import functools
 import numpy as np
 from scipy.stats import norm as ndist
 
-from selection.distributions.discrete_family import discrete_family
+from ...distributions.discrete_family import discrete_family
 
 from .samplers import normal_sampler
 

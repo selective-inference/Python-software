@@ -1,11 +1,11 @@
 import numpy as np
 import numpy.testing.decorators as dec
-from selection.constraints.affine import constraints
-from selection.sampling.sequential import sample
 from scipy.stats import norm as ndist
 
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
-from selection.tests.flags import SMALL_SAMPLES, SET_SEED
+from ...constraints.affine import constraints
+from ..sequential import sample
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from ...tests.flags import SMALL_SAMPLES, SET_SEED
 
 @dec.slow
 @set_seed_iftrue(SET_SEED)

@@ -2,9 +2,9 @@ from __future__ import print_function
 import numpy as np
 from scipy.stats import laplace, uniform
 
-from selection.tests.instance import gaussian_instance
-from selection.distributions.discrete_family import discrete_family
-from selection.sampling.langevin import projected_langevin
+from ...tests.instance import gaussian_instance
+from ...distributions.discrete_family import discrete_family
+from ..langevin import projected_langevin
 
 import regreg.api as rr
 

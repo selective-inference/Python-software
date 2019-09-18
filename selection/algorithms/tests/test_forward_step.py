@@ -1,13 +1,14 @@
 import numpy as np
 
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
-from selection.tests.instance import gaussian_instance
-from selection.algorithms.forward_step import (forward_step, 
-                                               info_crit_stop, 
-                                               data_carving_IC)
-import selection.algorithms.forward_step as forward_mod
-from selection.tests.decorators import (set_sampling_params_iftrue, 
-                                        set_seed_iftrue)
+from ..forward_step import (forward_step, 
+                            info_crit_stop, 
+                            data_carving_IC)
+from .. import forward_step as forward_mod
+
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ...tests.instance import gaussian_instance
+from ...tests.decorators import (set_sampling_params_iftrue, 
+                                 set_seed_iftrue)
 
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_FS(k=10, ndraw=5000, burnin=5000):

@@ -1,10 +1,11 @@
 from copy import copy
 
 import numpy as np
-from selection.tests.instance import gaussian_instance
-from selection.algorithms.forward_step import info_crit_stop
-from selection.constraints.affine import sample_from_constraints
-from selection.distributions.discrete_family import discrete_family
+from ...tests.instance import gaussian_instance
+from ...constraints.affine import sample_from_constraints
+from ...distributions.discrete_family import discrete_family
+
+from ..forward_step import info_crit_stop
 
 def test_data_carving_IC(n=600,
                          p=100,

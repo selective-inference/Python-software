@@ -1,5 +1,5 @@
 
-from selection.tests.instance import gaussian_instance
+from ...tests.instance import gaussian_instance
 
 import numpy as np
 from regreg.atoms.slope import slope as slope_atom

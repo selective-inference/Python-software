@@ -7,9 +7,9 @@ import nose.tools as nt
 
 import regreg.api as rr
 
-from selection.tests.flags import SET_SEED
-import selection.constraints.affine as AC
-from selection.tests.decorators import set_seed_iftrue
+from .. import affine as AC
+from ...tests.flags import SET_SEED
+from ...tests.decorators import set_seed_iftrue
 
 @set_seed_iftrue(SET_SEED)
 def test_conditional():

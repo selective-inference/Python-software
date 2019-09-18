@@ -1,6 +1,6 @@
 import numpy as np
-from selection.tests.instance import gaussian_instance
-from selection.algorithms.lasso import data_carving, data_splitting
+from ...tests.instance import gaussian_instance
+from ..lasso import data_carving, data_splitting
 
 def sim():
     X, Y, _, active, sigma = gaussian_instance()

@@ -1,5 +1,5 @@
 import numpy as np
-from selection.algorithms.screening import topK
+from ..screening import topK
 import nose.tools as nt
 
 def test_class(threshold=1):

@@ -8,12 +8,12 @@ from scipy.stats import chi
 import nose.tools as nt
 
 
-from selection.tests.flags import SET_SEED, SMALL_SAMPLES
-import selection.constraints.affine as AC
-from selection.algorithms.lasso import lasso
-from selection.algorithms.sqrt_lasso import choose_lambda
-from selection.distributions.discrete_family import discrete_family
-from selection.tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
+from ...tests.flags import SET_SEED, SMALL_SAMPLES
+from ...constraints import affine as AC
+from ...algorithms.lasso import lasso
+from ...algorithms.sqrt_lasso import choose_lambda
+from ...distributions.discrete_family import discrete_family
+from ...tests.decorators import set_sampling_params_iftrue, set_seed_iftrue
 
 # generate a cone from a sqrt_lasso problem
 

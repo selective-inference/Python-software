@@ -2,16 +2,16 @@ from __future__ import print_function
 import numpy as np
 
 import regreg.api as rr
-from selection.constraints.estimation import (softmax,
-                                              softmax_conjugate,
-                                              gaussian_cumulant,
-                                              gaussian_cumulant_conjugate,
-                                              gaussian_cumulant_known,
-                                              gaussian_cumulant_conjugate_known)
+from ..estimation import (softmax,
+                          softmax_conjugate,
+                          gaussian_cumulant,
+                          gaussian_cumulant_conjugate,
+                          gaussian_cumulant_known,
+                          gaussian_cumulant_conjugate_known)
 
-from selection.tests.flags import SET_SEED
-from selection.tests.decorators import set_seed_iftrue
-from selection.constraints.affine import constraints
+from ...tests.flags import SET_SEED
+from ...tests.decorators import set_seed_iftrue
+from ..affine import constraints
 
 @set_seed_iftrue(SET_SEED)
 def test_softmax():

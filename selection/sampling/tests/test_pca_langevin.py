@@ -1,6 +1,6 @@
 import numpy as np
 
-from selection.sampling.langevin import projected_langevin
+from ..langevin import projected_langevin
 
 ### Some examples: PCA from https://arxiv.org/abs/1410.8260
  

@@ -198,7 +198,7 @@ class CV(object):
         return _CVR_boot, _CV1_boot
 
 def main():
-    from selection.tests.instance import gaussian_instance
+    from ...tests.instance import gaussian_instance
     np.random.seed(1)
     n, p = 3000, 1000
     X, y, beta, nonzero, sigma = gaussian_instance(n=n, p=p, s=30, rho=0., sigma=1)
