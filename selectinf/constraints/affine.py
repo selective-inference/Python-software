@@ -63,7 +63,7 @@ class constraints(object):
     >>> positive.pivot(eta, Y) # doctest: +ELLIPSIS 
     5.187...-07
     >>> np.array(positive.bounds(eta, Y)) # doctest: +NORMALIZE_WHITESPACE
-    array([1.4 , 7.4  , inf, 1.41421356])  
+    array([ 1.4 , 7.4  , inf, 1.41421356])  
     >>> 
 
     """
