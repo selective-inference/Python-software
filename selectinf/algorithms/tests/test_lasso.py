@@ -6,7 +6,9 @@ from itertools import product
 from ...tests.flags import SMALL_SAMPLES
 from ...tests.instance import (gaussian_instance as instance,
                                       logistic_instance)
-from ...tests.decorators import set_sampling_params_iftrue, wait_for_return_value
+from ...tests.decorators import (set_sampling_params_iftrue, 
+                                 wait_for_return_value,
+                                 set_seed_iftrue)
 
 from ..lasso import (lasso, 
                      ROSI,
@@ -162,6 +164,7 @@ def test_coxph():
     return L, C, P
 
 @wait_for_return_value(max_tries=100)
+@set_seed_iftrue(True)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_gaussian(n=200,
                                p=200,
@@ -229,6 +232,7 @@ def test_data_carving_gaussian(n=200,
         return v
 
 @wait_for_return_value()
+@set_seed_iftrue(True)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_sqrt_lasso(n=200,
                                  p=200,
@@ -295,6 +299,7 @@ def test_data_carving_sqrt_lasso(n=200,
 
 
 @wait_for_return_value()
+@set_seed_iftrue(True)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_logistic(n=700,
                                p=300,
@@ -368,6 +373,7 @@ def test_data_carving_logistic(n=700,
         return v
 
 @wait_for_return_value()
+@set_seed_iftrue(True)
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_poisson(n=500,
                               p=300,
@@ -410,7 +416,7 @@ def test_data_carving_poisson(n=500,
 
     if len(DC.active) < n - int(n*split_frac):
         DS = data_splitting.poisson(X, y, feature_weights=lam_theor,
-                                     stage_one=stage_one)
+                                    stage_one=stage_one)
         DS.fit(use_full_cov=True)
         data_split = True
     else:
@@ -418,13 +424,15 @@ def test_data_carving_poisson(n=500,
         print(DC.active)
         data_split = False
 
+    if set(DS.active) != set(DC.active):
+        raise ValueError('different active sets for carving and splitting')
     print(DC.active)
     if set(true_active).issubset(DC.active):
         carve = []
         split = []
         for var in DC.active:
             carve.append(DC.hypothesis_test(var, burnin=burnin, ndraw=ndraw))
-            if data_split:
+            if data_split and var in DS.active:
                 split.append(DS.hypothesis_test(var))
             else:
                 split.append(np.random.sample())
@@ -437,6 +445,7 @@ def test_data_carving_poisson(n=500,
         return v
        
 @wait_for_return_value()
+@set_seed_iftrue(True)
 @dec.skipif(not statsmodels_available, "needs statsmodels")
 @set_sampling_params_iftrue(SMALL_SAMPLES, ndraw=10, burnin=10)
 def test_data_carving_coxph(n=400,

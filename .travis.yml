@@ -80,7 +80,7 @@ install:
   # Install selectinf
   - if [ "$RUN_R_TESTS" ]; then
      sudo apt-get install -y r-base r-base-dev r-cran-devtools r-cran-rcpp;
-     pip install rpy2 -c constraints.txt ;   
+     pip install rpy2 statsmodels -c constraints.txt ;   
      Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')";
      sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE', 'knockoff'), repos='http://cloud.r-project.org')";
      git clone https://github.com/jonathan-taylor/R-selective.git;

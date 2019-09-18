@@ -11,6 +11,11 @@ try:
 except ImportError:
     rpy2_available = False
 
+try:
+    import statsmodels.api as sm
+except ImportError:
+    statsmodels_available = False
+
 from ..lasso import lasso, ROSI
 from ..forward_step import forward_step
 from ...randomized.lasso import lasso as rlasso, selected_targets, full_targets, debiased_targets
@@ -187,7 +192,7 @@ def test_forward_step_all():
 
     print (R_pvals, [p for i, p in steps])
 
-@np.testing.dec.skipif(not rpy2_available, msg="rpy2 not available, skipping test")
+@np.testing.dec.skipif(not rpy2_available or not statsmodels_available, msg="rpy2 not available, skipping test")
 def test_coxph():
     """
     Check that Cox results agree with R
