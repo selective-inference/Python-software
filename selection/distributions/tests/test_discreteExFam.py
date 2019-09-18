@@ -3,7 +3,7 @@ from __future__ import print_function
 import numpy as np
 import nose.tools as nt
 from scipy.stats import poisson
-from selection.distributions.discrete_family import discrete_family
+from ..discrete_family import discrete_family
 
 def test_MLE():
 

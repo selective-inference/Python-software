@@ -1,5 +1,5 @@
 import numpy as np
-from selection.distributions.discrete_multiparameter import multiparameter_family
+from ..discrete_multiparameter import multiparameter_family
 
 def test_multiparameter():
 

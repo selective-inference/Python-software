@@ -1,7 +1,7 @@
 import numpy as np
 
-from selection.distributions.chain import parallel_test, serial_test
-from selection.constraints.affine import constraints, gaussian_hit_and_run
+from ..chain import parallel_test, serial_test
+from ...constraints.affine import constraints, gaussian_hit_and_run
 
 def test_gaussian_chain():
 
