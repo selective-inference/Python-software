@@ -30,17 +30,17 @@ matrix:
     - python: 3.5
       env:
         - INSTALL_TYPE=setup
-    - python: 3.5
+    - python: 2.7
       env:
         # Sdist install should collect all dependencies
         - INSTALL_TYPE=sdist
         - DEPENDS="cython numpy scipy"
-    - python: 3.5
+    - python: 2.7
       env:
         # Wheel install should collect all dependencies
         - INSTALL_TYPE=wheel
         - DEPENDS="cython numpy scipy"
-    - python: 3.5
+    - python: 2.7
       env:
         - INSTALL_TYPE=requirements
         - DEPENDS=
