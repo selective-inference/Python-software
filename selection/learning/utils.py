@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy.stats import norm as normal_dbn
 
-from ...algorithms.lasso import ROSI, lasso
+from ..algorithms.lasso import ROSI, lasso
 
 from .core import (infer_full_target,
                    infer_general_target,

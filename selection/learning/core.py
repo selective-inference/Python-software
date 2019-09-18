@@ -11,7 +11,7 @@ import pandas as pd
 from scipy.stats import norm as ndist
 from scipy.stats import binom
 
-from ...distributions.discrete_family import discrete_family
+from ..distributions.discrete_family import discrete_family
 
 # local imports
 
