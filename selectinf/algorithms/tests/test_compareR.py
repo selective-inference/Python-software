@@ -13,6 +13,7 @@ except ImportError:
 
 try:
     import statsmodels.api as sm
+    statsmodels_available = True
 except ImportError:
     statsmodels_available = False
 
