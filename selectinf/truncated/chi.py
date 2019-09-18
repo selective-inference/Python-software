@@ -13,7 +13,7 @@ from .base import truncated, find_root
 class truncated_chi(truncated):
 
     """
-    >>> from selection.constraints.intervals import intervals
+    >>> from selectinf.constraints.intervals import intervals
     >>> I = intervals.intersection(intervals((-1, 6)),
     ...                            intervals(( 0, 7)),
     ...                           ~intervals((1, 4)))
@@ -126,7 +126,7 @@ class truncated_chi2(truncated):
 
     """
 
-    >>> from selection.constraints.intervals import intervals
+    >>> from selectinf.constraints.intervals import intervals
     >>> I = intervals.intersection(intervals((-1, 6)),
     ...                            intervals(( 0, 7)),
     ...                           ~intervals((1, 4)))
