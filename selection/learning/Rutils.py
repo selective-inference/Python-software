@@ -108,7 +108,7 @@ class lasso_glmnet(generic_method):
         else:
             return [], []
 
-knockoffs_sigma.register(); lasso_glmnet.register()
+lasso_glmnet.register()
 
 def factor_knockoffs(feature_cov, method='asdp'):
 

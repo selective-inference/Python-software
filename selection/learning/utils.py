@@ -9,9 +9,7 @@ from selection.algorithms.lasso import ROSI, lasso
 
 from .core import (infer_full_target,
                    infer_general_target,
-                   logit_fit,
                    repeat_selection,
-                   probit_fit, 
                    keras_fit)
 from .learners import mixture_learner
 
@@ -22,7 +20,10 @@ def full_model_inference(X,
                          sampler,
                          success_params=(1, 1),
                          fit_probability=keras_fit,
-                         fit_args={'epochs':10, 'sizes':[100]*5, 'dropout':0., 'activation':'relu'},
+                         fit_args={'epochs':10, 
+                                   'sizes':[100]*5, 
+                                   'dropout':0., 
+                                   'activation':'relu'},
                          alpha=0.1,
                          B=2000,
                          naive=True,
