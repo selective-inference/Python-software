@@ -4,8 +4,6 @@ import pandas as pd
 from scipy.stats import norm as ndist
 from scipy.optimize import bisect
 
-from statsmodels.sandbox.stats.multicomp import multipletests
-
 from ...tests.instance import gaussian_instance
 from ...algorithms.lasso import lasso
 from ...tests.flags import SMALL_SAMPLES, SET_SEED
