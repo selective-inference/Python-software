@@ -19,9 +19,11 @@ matrix:
     - python: 3.5
       env:
         - RUN_R_TESTS=1
+        - DEPENDS="cython numpy scipy statsmodels pandas"
     - python: 2.7
       env:
         - RUN_R_TESTS=1
+        - DEPENDS="cython numpy scipy statsmodels pandas"
     # Testing without matplotlib
     - python: 3.5
       env:
