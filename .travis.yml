@@ -91,7 +91,7 @@ before_install:
 
 
 install:
-  # Install selection
+  # Install selectinf
   - if [ "$RUN_R_TESTS" ]; then
      pip install rpy2 -c constraints.txt ;   
      fi ; 
@@ -125,13 +125,13 @@ script:
       fi
     - if [ "${COVERAGE}" == "1" ]; then
       cp ../.coveragerc .;
-      COVER_ARGS="--with-coverage --cover-package selection";
+      COVER_ARGS="--with-coverage --cover-package selectinf";
       fi
     - |
       if [ "$RUN_R_TESTS" ]; then
-        nosetests -v ../selection/algorithms/tests/test_compareR.py
+        nosetests -v ../selectinf/algorithms/tests/test_compareR.py
       else 
-        env USE_SMALL_SAMPLES=1 USE_TEST_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+        env USE_SMALL_SAMPLES=1 USE_TEST_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selectinf
       fi
 after_success:
     - if [ "${COVERAGE}" == "1" ]; then coveralls; fi
