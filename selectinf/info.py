@@ -7,9 +7,9 @@ In setup.py in particular, we exec this file, so it cannot import regreg
 # full release.  '.dev' as a _version_extra string means this is a development
 # version
 _version_major = 0
-_version_minor = 0
-_version_micro = 1
-_version_extra = '.dev'
+_version_minor = 1
+_version_micro = 0
+_version_extra = ''
 
 # Format expected by setup.py and doc/source/conf.py: string of form "X.Y.Z"
 __version__ = "%s.%s.%s%s" % (_version_major,
@@ -48,12 +48,12 @@ MPMATH_MIN_VERSION = "0.18"
 PYINTER_MIN_VERSION = "0.1.6"
 SKLEARN_MIN_VERSION = '0.19'
 
-NAME                = 'selection'
+NAME                = 'selectinf'
 MAINTAINER          = "Jonathan Taylor"
 MAINTAINER_EMAIL    = ""
 DESCRIPTION         = description
 LONG_DESCRIPTION    = long_description
-URL                 = "http://github.org/jonathan.taylor/fixed_lambda"
+URL                 = "http://github.org/jonathan.taylor/selective-inference"
 DOWNLOAD_URL        = ""
 LICENSE             = "BSD license"
 CLASSIFIERS         = CLASSIFIERS

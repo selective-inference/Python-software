@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-''' Installation script for selection package '''
+''' Installation script for selectinf package '''
 
 import os
 import sys
@@ -24,8 +24,8 @@ from cythexts import cyproc_exts, get_pyx_sdist
 from setup_helpers import (SetupDependency, read_vars_from,
                            make_np_ext_builder)
 
-# Get various parameters for this version, stored in selection/info.py
-info = read_vars_from(pjoin('selection', 'info.py'))
+# Get various parameters for this version, stored in selectinf/info.py
+info = read_vars_from(pjoin('selectinf', 'info.py'))
 
 # Try to preempt setuptools monkeypatching of Extension handling when Pyrex
 # is missing.  Otherwise the monkeypatched Extension will change .pyx
@@ -43,23 +43,23 @@ extra_setuptools_args = dict(
 # Define extensions
 EXTS = []
 for modulename, other_sources in (
-    ('selection.sampling.truncnorm', []),
-    ('selection.sampling.truncnorm_quadratic', []),
-    ('selection.sampling.sqrt_lasso', []),
+    ('selectinf.sampling.truncnorm', []),
+    ('selectinf.sampling.truncnorm_quadratic', []),
+    ('selectinf.sampling.sqrt_lasso', []),
     ):
     pyx_src = pjoin(*modulename.split('.')) + '.pyx'
     EXTS.append(Extension(modulename,[pyx_src] + other_sources,
                           libraries=['m']),
                 )
 
-EXTS.append(Extension('selection.algorithms.debiased_lasso_utils',
-                      ['selection/algorithms/debiased_lasso_utils.pyx',
+EXTS.append(Extension('selectinf.algorithms.debiased_lasso_utils',
+                      ['selectinf/algorithms/debiased_lasso_utils.pyx',
                        'C-software/src/quadratic_program_wide.c'],
                       libraries=['m'],
                       include_dirs=['C-software/src']))
 
-EXTS.append(Extension('selection.randomized.selective_MLE_utils',
-                      ['selection/randomized/selective_MLE_utils.pyx',
+EXTS.append(Extension('selectinf.randomized.selective_MLE_utils',
+                      ['selectinf/randomized/selective_MLE_utils.pyx',
                        'C-software/src/selective_mle.c'],
                       libraries=['m'],
                       include_dirs=['C-software/src']))
@@ -107,21 +107,22 @@ def main(**extra_args):
           version=versioneer.get_version(),
           requires=info.REQUIRES,
           provides=info.PROVIDES,
-          packages     = ['selection',
-                          'selection.utils',
-                          'selection.truncated',
-                          'selection.truncated.tests',
-                          'selection.constraints',
-                          'selection.constraints.tests',
-                          'selection.distributions',
-                          'selection.distributions.tests',
-                          'selection.algorithms',
-                          'selection.algorithms.tests',
-                          'selection.sampling',
-                          'selection.sampling.tests',
-                          'selection.randomized',
-                          'selection.randomized.tests',
-                          'selection.tests'
+          packages     = ['selectinf',
+                          'selectinf.utils',
+                          'selectinf.truncated',
+                          'selectinf.truncated.tests',
+                          'selectinf.constraints',
+                          'selectinf.constraints.tests',
+                          'selectinf.distributions',
+                          'selectinf.distributions.tests',
+                          'selectinf.algorithms',
+                          'selectinf.algorithms.tests',
+                          'selectinf.sampling',
+                          'selectinf.sampling.tests',
+                          'selectinf.randomized',
+                          'selectinf.randomized.tests',
+                          'selectinf.tests',
+                          'selectinf.learning'
                           ],
           ext_modules = EXTS,
           package_data = {},
