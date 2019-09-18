@@ -1,12 +1,12 @@
 cython
-pandas
-numpy>=1.12.0
+numpy
 scipy
+pandas
+regreg
 mpmath
 pyinter
-statsmodels
 sklearn
 regreg
-keras
-tensorflow
+# keras
+# tensorflow
 traitlets

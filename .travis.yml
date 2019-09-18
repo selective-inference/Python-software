@@ -13,37 +13,35 @@ addons:
 env:
     global:
         # Maximal dependencies
-        - DEPENDS="cython numpy scipy matplotlib"
+        - DEPENDS="cython numpy scipy matplotlib pandas"
 matrix:
   include:
     - python: 3.5
       env:
         - RUN_R_TESTS=1
+        - DEPENDS="cython numpy scipy statsmodels pandas"
     - python: 2.7
       env:
         - RUN_R_TESTS=1
+        - DEPENDS="cython numpy scipy statsmodels pandas"
     # Testing without matplotlib
-    - python: 2.7
+    - python: 3.5
       env:
-        - DEPENDS="cython numpy scipy"
-    # Documentation doctests
-    - python: 2.7
-      env:
-        - DOC_DOC_TEST=1
+        - DEPENDS="cython numpy scipy pandas"
     # Setup.py install
-    - python: 2.7
+    - python: 3.5
       env:
         - INSTALL_TYPE=setup
     - python: 2.7
       env:
         # Sdist install should collect all dependencies
         - INSTALL_TYPE=sdist
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 2.7
       env:
         # Wheel install should collect all dependencies
         - INSTALL_TYPE=wheel
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 2.7
       env:
         - INSTALL_TYPE=requirements
@@ -51,7 +49,7 @@ matrix:
     # Testing without matplotlib
     - python: 3.5
       env:
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     # Documentation doctests
     - python: 3.5
       env:
@@ -59,17 +57,14 @@ matrix:
     # Setup.py install
     - python: 3.5
       env:
-        - INSTALL_TYPE=setup
-    - python: 3.5
-      env:
         # Sdist install should collect all dependencies
         - INSTALL_TYPE=sdist
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 3.5
       env:
         # Wheel install should collect all dependencies
         - INSTALL_TYPE=wheel
-        - DEPENDS="cython numpy scipy"
+        - DEPENDS="cython numpy scipy pandas"
     - python: 3.5
       env:
         - INSTALL_TYPE=requirements
@@ -77,34 +72,32 @@ matrix:
 before_install:
   - source travis-tools/utils.sh
   - travis_before_install
-  # Install regreg 
-  - git clone https://github.com/jonathan-taylor/regreg.git
-  - cd regreg
-  - pip install -r requirements.txt
-  - pip install -e .
-  - cd ..
   - sudo apt-get install software-properties-common
   - sudo add-apt-repository -y ppa:marutter/c2d4u
   - sudo add-apt-repository -y ppa:marutter/rrutter
   - sudo apt-get update
-  - sudo apt-get install -y r-base r-base-dev r-cran-devtools r-cran-rcpp
-
+  # would like to have this stably installed by pip but without DEPENDS it fails
+  - git clone https://github.com/jonathan-taylor/regreg.git
+  - cd regreg
+  - pip install -e .
+  - cd ..
 
 install:
-  # Install selection
+  # Install selectinf
   - if [ "$RUN_R_TESTS" ]; then
-     pip install rpy2 -c constraints.txt ;   
+     sudo apt-get install -y r-base r-base-dev r-cran-devtools r-cran-rcpp;
+     pip install rpy2 statsmodels -c constraints.txt ;   
+     Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')";
+     sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE', 'knockoff'), repos='http://cloud.r-project.org')";
+     git clone https://github.com/jonathan-taylor/R-selective.git;
+     cd R-selective;
+     git submodule init;
+     git submodule update;
+     sudo make install;
+     cd ..;
      fi ; 
   - git submodule init
   - git submodule update
-  - git clone https://github.com/jonathan-taylor/R-selective.git
-  - cd R-selective
-  - git submodule init
-  - git submodule update
-  - Rscript -e "library(Rcpp); Rcpp::compileAttributes('selectiveInference')"
-  - sudo Rscript -e "install.packages(c('glmnet', 'intervals', 'adaptMCMC', 'SLOPE', 'knockoff'), repos='http://cloud.r-project.org')"
-  - sudo make install
-  - cd ..
   - travis_install $INSTALL_TYPE
 
 # command to run tests, e.g. python setup.py test
@@ -125,13 +118,13 @@ script:
       fi
     - if [ "${COVERAGE}" == "1" ]; then
       cp ../.coveragerc .;
-      COVER_ARGS="--with-coverage --cover-package selection";
+      COVER_ARGS="--with-coverage --cover-package selectinf";
       fi
     - |
       if [ "$RUN_R_TESTS" ]; then
-        nosetests -v ../selection/algorithms/tests/test_compareR.py
+        nosetests -v ../selectinf/algorithms/tests/test_compareR.py
       else 
-        env USE_SMALL_SAMPLES=1 USE_TEST_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selection
+        env USE_SMALL_SAMPLES=1 USE_TEST_SEED=1 nosetests $DOCTEST_ARGS --verbose $COVER_ARGS selectinf
       fi
 after_success:
     - if [ "${COVERAGE}" == "1" ]; then coveralls; fi

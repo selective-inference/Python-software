@@ -176,7 +176,7 @@ htmlhelp_basename = project
 
 latex_documents = [ 
   ('documentation', 'selection.tex', 'Selection Documentation',
-   ur'J. Taylor and others','manual'),
+   r'J. Taylor and others','manual'),
   ]
 
 # The name of an image file (relative to this directory) to place at the top of

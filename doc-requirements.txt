@@ -9,3 +9,6 @@ nb2plots
 rpy2
 seaborn
 statsmodels
+tensorflow
+keras
+nbsphinx
