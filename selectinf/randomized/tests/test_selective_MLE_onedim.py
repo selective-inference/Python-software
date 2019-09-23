@@ -6,7 +6,6 @@ import nose.tools as nt
 
 from ..lasso import lasso, full_targets
 from ...tests.instance import gaussian_instance
-from statsmodels.distributions import ECDF
 
 def test_onedim_lasso(n=50000, W=1.5, signal=2., sigma=1, randomizer_scale=1):
 
@@ -101,6 +100,8 @@ def main():
     beta_seq, MLE_cur, MLE_prev, pivot = test_agreement()
 
     import matplotlib.pyplot as plt
+    from statsmodels.distributions import ECDF
+
     plt.figure(num=1)
 
     plt.plot(beta_seq, np.array(MLE_cur), label='MLE now')

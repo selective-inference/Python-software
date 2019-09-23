@@ -3,10 +3,10 @@ import numpy as np
 from .test_fstep_langevin import test_fstep
 from .test_kfstep import test_kfstep
 import random
-import statsmodels.api as sm
 
 def main():
 
+    import statsmodels.api as sm
     from scipy.stats import probplot, uniform
     from matplotlib import pyplot as plt
     random.seed(4)

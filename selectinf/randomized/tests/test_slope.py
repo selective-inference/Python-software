@@ -8,7 +8,6 @@ import regreg.api as rr
 from ..slope import slope
 from ..lasso import full_targets
 from ...tests.decorators import rpy_test_safe
-from statsmodels.distributions import ECDF
 
 try:
     from rpy2.robjects.packages import importr

@@ -171,4 +171,3 @@ def main(nsim=500, full=False):
             np.array(PA) < 0.1, np.mean(P0), np.std(P0), np.mean(np.array(P0) < 0.1), np.mean(np.array(PA) < 0.1), np.mean(cover),
             np.mean(avg_length), 'null pvalue + power + length')
 
-main(nsim=1, full=False)

@@ -5,9 +5,8 @@ pandas
 regreg
 mpmath
 pyinter
-statsmodels
 sklearn
 regreg
-keras
-tensorflow
+# keras
+# tensorflow
 traitlets
