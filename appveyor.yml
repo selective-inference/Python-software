@@ -1,0 +1,95 @@
+# vim ft=yaml
+# CI on Windows via appveyor
+# Largely from:
+# https://github.com/ogrisel/python-appveyor-demo/blob/master/appveyor.yml
+#
+# Builds version specified in BUILD_COMMIT variable
+# To chose version to build, edit value of BUILD_COMMIT
+
+os: Visual Studio 2015
+
+environment:
+    global:
+      # Remember to edit .travis.yml too
+      BUILD_COMMIT: master
+      NP_BUILD_DEP: "1.10.4"
+      NP_TEST_DEP: "1.10.4"
+      SCIPY_BUILD_DEP: "1.0.1"
+      WHEELHOUSE_UPLOADER_USERNAME: travis-worker
+      WHEELHOUSE_UPLOADER_SECRET:
+        secure:
+           9s0gdDGnNnTt7hvyNpn0/ZzOMGPdwPp2SewFTfGzYk7uI+rdAN9rFq2D1gAP4NQh
+
+    matrix:
+    - PYTHON: C:\Python37-x64
+      NP_BUILD_DEP: "1.14.5"
+      NP_TEST_DEP: "1.14.5"
+      SCIPY_BUILD_DEP: "1.3.1"
+    - PYTHON: C:\Python36-x64
+      NP_BUILD_DEP: "1.11.3"
+      NP_TEST_DEP: "1.11.3"
+    - PYTHON: C:\Python35-x64
+
+    - PYTHON: C:\Python37
+      NP_BUILD_DEP: "1.14.5"
+      NP_TEST_DEP: "1.14.5"
+      SCIPY_BUILD_DEP: "1.3.1"
+    - PYTHON: C:\Python36
+      NP_BUILD_DEP: "1.13.3"
+      NP_TEST_DEP: "1.13.3"
+    - PYTHON: C:\Python35
+
+install:
+  - cmd: echo "Using cmd"
+
+  # Prepend newly installed Python to the PATH of this build (this cannot be
+  # done from inside the powershell script as it would require to restart
+  # the parent CMD process).
+  - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
+
+  # Fix MSVC builds for 64-bit Python
+  # See
+  # http://stackoverflow.com/questions/32091593/cannot-install-windows-sdk-7-1-on-windows-10
+  - echo "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64 > "C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\amd64/vcvars64.bat"
+
+  # Check that we have the expected version and architecture for Python
+  - python --version
+  - python -c "import struct; print(struct.calcsize('P') * 8)"
+
+  - python -m pip install --upgrade pip
+  # Pin wheel to 0.26 to avoid Windows ABI tag for built wheel
+  - pip install wheel==0.26
+  - git submodule update --init
+  # Dependencies for package
+  - pip install numpy==%NP_BUILD_DEP% 
+  - pip install scipy==%SCIPY_BUILD_DEP% Cython
+  - pip install -r requirements.txt 
+
+build_script:
+  # Build and install the wheel
+  - git fetch origin
+  - git checkout %BUILD_COMMIT%
+  - python setup.py bdist_wheel
+  - ps: |
+      # Upload artifact to Appveyor immediately after build
+      ls dist -r | Foreach-Object {
+          appveyor PushArtifact $_.FullName
+          pip install $_.FullName
+      }
+  - pip install --pre --no-index -f . selectinf
+
+test_script:
+  # Run some tests
+  - mkdir tmp
+  - cd tmp
+  - pip install numpy==%NP_TEST_DEP% nose
+  - nosetests -v selectinf
+  - cd ..
+
+after_test:
+  # If tests are successful, create binary packages for the project.
+  - dir dist
+
+on_success:
+  # Let the wheel repo do the uploading
+  - dir ..

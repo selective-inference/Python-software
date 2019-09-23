@@ -17,11 +17,12 @@ import sys, os
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-sys.path.append(os.path.abspath('sphinxext'))
+
+import sphinx_rtd_theme
 
 # Get project related strings.  Please do not change this line to use
 # execfile because execfile is not available in Python 3
-_info_fname = os.path.join('..', '..', 'selection', 'info.py')
+_info_fname = os.path.join('..', '..', 'selectinf', 'info.py')
 rel = {}
 exec(open(_info_fname, 'rt').read(), {}, rel)
 
@@ -37,8 +38,12 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.autosummary',
               'sphinx.ext.doctest',
               'sphinx.ext.mathjax',
+              'sphinx.ext.viewcode',
+              'sphinx.ext.intersphinx',
               'numpydoc.numpydoc',
-              'math_dollar'
+              'sphinx_rtd_theme',
+              'texext.math_dollar',
+              'nbsphinx'
               ]
 
 # Current version (as of 11/2010) of numpydoc is only compatible with sphinx >
@@ -106,12 +111,18 @@ pygments_style = 'sphinx'
 #
 # The theme to use for HTML and HTML Help pages.  Major themes that come with
 # Sphinx are currently 'default' and 'sphinxdoc'.
-html_theme = 'sphinxdoc'
+html_theme = 'sphinx_rtd_theme'
 
 # The style sheet to use for HTML and HTML Help pages. A file of that name
 # must exist either in Sphinx' static/ path, or in one of the custom paths
 # given in html_static_path.
-html_style = 'selection.css'
+
+html_theme_options = {
+    'logo_only': True
+}
+html_theme_path = ["../.."]
+html_logo = "_static/logo.png"
+html_show_sourcelink = True
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
@@ -205,3 +216,8 @@ latex_use_modindex = True
 
 autodoc_member_order = 'bysource'
 autoclass_content = 'class'
+
+intersphinx_mapping = {
+    'rtd': ('https://docs.readthedocs.io/en/latest/', None),
+    'sphinx': ('http://www.sphinx-doc.org/en/stable/', None),
+}
