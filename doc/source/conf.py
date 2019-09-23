@@ -40,7 +40,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.mathjax',
               'numpydoc.numpydoc',
               'sphinx_rtd_theme',
-              'texext.math_dollar'
+              'texext.math_dollar',
+              'nbsphinx'
               ]
 
 # Current version (as of 11/2010) of numpydoc is only compatible with sphinx >
