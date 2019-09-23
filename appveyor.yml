@@ -63,6 +63,7 @@ install:
   # Dependencies for package
   - pip install numpy==%NP_BUILD_DEP% 
   - pip install scipy==%SCIPY_BUILD_DEP% Cython
+  - pip install -r requirements.txt 
 
 build_script:
   # Build and install the wheel
