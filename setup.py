@@ -49,19 +49,20 @@ for modulename, other_sources in (
     ):
     pyx_src = pjoin(*modulename.split('.')) + '.pyx'
     EXTS.append(Extension(modulename,[pyx_src] + other_sources,
-                          libraries=['m']),
+                          libraries=[], # in principle 'm' but does not seem to be required 
+                          ),
                 )
 
 EXTS.append(Extension('selectinf.algorithms.debiased_lasso_utils',
                       ['selectinf/algorithms/debiased_lasso_utils.pyx',
                        'C-software/src/quadratic_program_wide.c'],
-                      libraries=['m'],
+                      libraries=[],
                       include_dirs=['C-software/src']))
 
 EXTS.append(Extension('selectinf.randomized.selective_MLE_utils',
                       ['selectinf/randomized/selective_MLE_utils.pyx',
                        'C-software/src/selective_mle.c'],
-                      libraries=['m'],
+                      libraries=[],
                       include_dirs=['C-software/src']))
 
 # Cython is a dependency for building extensions, iff we don't have stamped
