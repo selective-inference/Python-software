@@ -46,6 +46,8 @@ install:
   # done from inside the powershell script as it would require to restart
   # the parent CMD process).
   - SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%
+  - SET USE_SMALL_SAMPLES=1
+  - SET USE_TEST_SEED=1
 
   # Fix MSVC builds for 64-bit Python
   # See
