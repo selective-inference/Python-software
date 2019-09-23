@@ -17,11 +17,12 @@ import sys, os
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
-sys.path.append(os.path.abspath('sphinxext'))
+
+import sphinx_rtd_theme
 
 # Get project related strings.  Please do not change this line to use
 # execfile because execfile is not available in Python 3
-_info_fname = os.path.join('..', '..', 'selection', 'info.py')
+_info_fname = os.path.join('..', '..', 'selectinf', 'info.py')
 rel = {}
 exec(open(_info_fname, 'rt').read(), {}, rel)
 
@@ -38,7 +39,8 @@ extensions = ['sphinx.ext.autodoc',
               'sphinx.ext.doctest',
               'sphinx.ext.mathjax',
               'numpydoc.numpydoc',
-              'math_dollar'
+              'sphinx_rtd_theme',
+              'texext.math_dollar'
               ]
 
 # Current version (as of 11/2010) of numpydoc is only compatible with sphinx >

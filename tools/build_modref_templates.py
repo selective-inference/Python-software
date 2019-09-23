@@ -11,7 +11,7 @@ from apigen import ApiDocWriter
 
 #*****************************************************************************
 if __name__ == '__main__':
-    package = 'selection'
+    package = 'selectinf'
     outdir = os.path.join('source','api','generated')
     docwriter = ApiDocWriter(package)
     docwriter.write_api_docs(outdir)
