@@ -25,7 +25,7 @@ environment:
       NP_BUILD_DEP: "1.14.5"
       NP_TEST_DEP: "1.14.5"
       SCIPY_BUILD_DEP: "1.3.1"
-    - PYTHON: C:\Python36
+    - PYTHON: C:\Python36-x64
       NP_BUILD_DEP: "1.11.3"
       NP_TEST_DEP: "1.11.3"
     - PYTHON: C:\Python35-x64
@@ -34,9 +34,9 @@ environment:
       NP_BUILD_DEP: "1.14.5"
       NP_TEST_DEP: "1.14.5"
       SCIPY_BUILD_DEP: "1.3.1"
-    - PYTHON: C:\Python36-x64
-      NP_BUILD_DEP: "1.11.3"
-      NP_TEST_DEP: "1.11.3"
+    - PYTHON: C:\Python36
+      NP_BUILD_DEP: "1.13.3"
+      NP_TEST_DEP: "1.13.3"
     - PYTHON: C:\Python35
 
 install:
