@@ -92,6 +92,12 @@ cmdclass.update(dict(
     build_ext=build_ext,
     sdist=get_pyx_sdist()))
 
+# get long_description
+
+if sys.version_info[0] > 2:
+    long_description = open('README.rst', 'rt', encoding='utf-8').read()
+else:
+    long_description = unicode(file('README.rst').read(), 'utf-8')
 
 def main(**extra_args):
     setup(name=info.NAME,
@@ -129,7 +135,7 @@ def main(**extra_args):
           package_data = {},
           data_files=[],
           scripts=[],
-          long_description=open('README.rst', 'rt', encoding='utf-8').read(),
+          long_description=long_description,
           cmdclass = cmdclass,
           **extra_args
          )
