@@ -129,8 +129,7 @@ def main(**extra_args):
           package_data = {},
           data_files=[],
           scripts=[],
-          long_description=open('README.md', 'rt').read(),
-          long_description_content_type='text/markdown',
+          long_description=open('README.rst', 'rt').read(),
           cmdclass = cmdclass,
           **extra_args
          )
