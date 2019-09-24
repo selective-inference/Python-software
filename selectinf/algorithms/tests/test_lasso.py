@@ -506,6 +506,7 @@ def test_data_carving_coxph(n=400,
         v = (carve, split, active)
         return v
 
+@set_seed_iftrue(True)
 def test_intervals(n=100, p=20, s=5):
     t = []
     X, y, beta, true_active, sigma, _ = instance(n=n, p=p, s=s)
@@ -691,6 +692,7 @@ def test_logistic_pvals(n=500,
     if set(true_active).issubset(L.active):
         return S['pval'], [v in true_active for v in S['variable']]
 
+@set_seed_iftrue(True)
 def test_adding_quadratic_lasso():
 
     X, y, beta, true_active, sigma, _ = instance(n=300, p=200)
@@ -707,6 +709,7 @@ def test_adding_quadratic_lasso():
     G2 = X[:,L2.active].T.dot(X.dot(beta2) - y) + lin.objective(beta2,'grad')[L2.active]
     np.testing.assert_allclose(G2 * np.sign(beta2[L2.active]), -20)
 
+@set_seed_iftrue(True)
 def test_equivalence_sqrtlasso(n=200, p=400, s=10, sigma=3.):
 
     """
@@ -751,6 +754,7 @@ def test_equivalence_sqrtlasso(n=200, p=400, s=10, sigma=3.):
     np.testing.assert_allclose(G1[3:], G2[3:])
     np.testing.assert_allclose(soln1, soln2)
     
+@set_seed_iftrue(True)
 def test_gaussian_full(n=100, p=20):
 
     y = np.random.standard_normal(n)
@@ -766,6 +770,7 @@ def test_gaussian_full(n=100, p=20):
     L.fit()
     print(L.summary(compute_intervals=True))
 
+@set_seed_iftrue(True)
 def test_logistic_full():
 
     for Y, T in [(np.random.binomial(1,0.5,size=(10,)),
@@ -780,6 +785,7 @@ def test_logistic_full():
         L.fit()
         L.summary(compute_intervals=True)
 
+@set_seed_iftrue(True)
 def test_poisson_full():
 
     X = np.random.standard_normal((10,5))
