@@ -1,11 +1,10 @@
 import warnings
 import numpy as np, cython
-cimport numpy as np
+cimport numpy as cnp
 
 DTYPE_float = np.float
-ctypedef np.float_t DTYPE_float_t
+ctypedef cnp.float_t DTYPE_float_t
 DTYPE_int = np.int
-ctypedef np.int_t DTYPE_int_t
 
 cdef extern from "selective_mle.h":
 
@@ -37,12 +36,12 @@ cdef extern from "selective_mle.h":
                                 double value_tol,                   # Tolerance for convergence based on value
                                 double initial_step);               # Initial step size
 
-def barrier_solve_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient vector
-                   np.ndarray[DTYPE_float_t, ndim=1] opt_variable,  # Optimization variable
-                   np.ndarray[DTYPE_float_t, ndim=1] opt_proposed,  # New value of optimization variable
-                   np.ndarray[DTYPE_float_t, ndim=1] conjugate_arg, # Argument to conjugate of Gaussian
-                   np.ndarray[DTYPE_float_t, ndim=2] precision,     # Precision matrix of Gaussian
-                   np.ndarray[DTYPE_float_t, ndim=1] scaling,       # Diagonal scaling matrix for log barrier
+def barrier_solve_(cnp.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient vector
+                   cnp.ndarray[DTYPE_float_t, ndim=1] opt_variable,  # Optimization variable
+                   cnp.ndarray[DTYPE_float_t, ndim=1] opt_proposed,  # New value of optimization variable
+                   cnp.ndarray[DTYPE_float_t, ndim=1] conjugate_arg, # Argument to conjugate of Gaussian
+                   cnp.ndarray[DTYPE_float_t, ndim=2] precision,     # Precision matrix of Gaussian
+                   cnp.ndarray[DTYPE_float_t, ndim=1] scaling,       # Diagonal scaling matrix for log barrier
                    double initial_step,
                    int max_iter=1000,
                    int min_iter=50,
@@ -66,15 +65,15 @@ def barrier_solve_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient v
     hess = np.linalg.inv(precision + np.diag(barrier_hessian(opt_variable, scaling)))
     return value, opt_variable, hess
 
-def barrier_solve_affine_(np.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient vector
-                          np.ndarray[DTYPE_float_t, ndim=1] opt_variable,  # Optimization variable
-                          np.ndarray[DTYPE_float_t, ndim=1] opt_proposed,  # New value of optimization variable
-                          np.ndarray[DTYPE_float_t, ndim=1] conjugate_arg, # Argument to conjugate of Gaussian
-                          np.ndarray[DTYPE_float_t, ndim=2] precision,     # Precision matrix of Gaussian
-                          np.ndarray[DTYPE_float_t, ndim=1] scaling,       # Diagonal scaling matrix for log barrier
-                          np.ndarray[DTYPE_float_t, ndim=2] linear_term,   # Linear part of affine constraint: A
-                          np.ndarray[DTYPE_float_t, ndim=1] offset,        # Offset part of affine constraint: b
-                          np.ndarray[DTYPE_float_t, ndim=1] affine_term,   # b - A.dot(opt)
+def barrier_solve_affine_(cnp.ndarray[DTYPE_float_t, ndim=1] gradient ,     # Gradient vector
+                          cnp.ndarray[DTYPE_float_t, ndim=1] opt_variable,  # Optimization variable
+                          cnp.ndarray[DTYPE_float_t, ndim=1] opt_proposed,  # New value of optimization variable
+                          cnp.ndarray[DTYPE_float_t, ndim=1] conjugate_arg, # Argument to conjugate of Gaussian
+                          cnp.ndarray[DTYPE_float_t, ndim=2] precision,     # Precision matrix of Gaussian
+                          cnp.ndarray[DTYPE_float_t, ndim=1] scaling,       # Diagonal scaling matrix for log barrier
+                          cnp.ndarray[DTYPE_float_t, ndim=2] linear_term,   # Linear part of affine constraint: A
+                          cnp.ndarray[DTYPE_float_t, ndim=1] offset,        # Offset part of affine constraint: b
+                          cnp.ndarray[DTYPE_float_t, ndim=1] affine_term,   # b - A.dot(opt)
                           double initial_step,
                           int max_iter=1000,
                           int min_iter=50,
